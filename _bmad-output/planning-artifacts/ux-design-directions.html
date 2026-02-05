@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfraBooth Downloader - Design Directions</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366F1;
+            --primary-dark: #4F46E5;
+            --primary-light: #A5B4FC;
+            --success: #10B981;
+            --warning: #F59E0B;
+            --error: #F43F5E;
+            --info: #0EA5E9;
+            --bg: #FAFAFA;
+            --surface: #FFFFFF;
+            --border: #E5E7EB;
+            --text-primary: #111827;
+            --text-secondary: #6B7280;
+            --text-muted: #9CA3AF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0F172A;
+            color: #F8FAFC;
+            min-height: 100vh;
+        }
+
+        /* Navigation */
+        .nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 16px 24px;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .nav h1 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-light);
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 8px;
+            color: #94A3B8;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-tab:hover {
+            background: rgba(255,255,255,0.05);
+            color: #F8FAFC;
+        }
+
+        .nav-tab.active {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        /* Main content */
+        .main {
+            padding-top: 80px;
+        }
+
+        .direction {
+            display: none;
+            min-height: calc(100vh - 80px);
+            padding: 40px;
+        }
+
+        .direction.active {
+            display: block;
+        }
+
+        .direction-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .direction-header h2 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .direction-header p {
+            color: #94A3B8;
+            font-size: 16px;
+        }
+
+        /* Mockup frame */
+        .mockup-frame {
+            max-width: 800px;
+            margin: 0 auto;
+            background: var(--bg);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .mockup-titlebar {
+            background: #E5E7EB;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mockup-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .mockup-dot.red { background: #EF4444; }
+        .mockup-dot.yellow { background: #F59E0B; }
+        .mockup-dot.green { background: #10B981; }
+
+        .mockup-content {
+            padding: 32px;
+            min-height: 500px;
+        }
+
+        /* Direction 1: Minimal Focus */
+        .d1-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 32px;
+            min-height: 450px;
+        }
+
+        .d1-logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .d1-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #F0FDF4;
+            border-radius: 20px;
+            font-size: 13px;
+            color: var(--success);
+        }
+
+        .d1-input-group {
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .d1-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            font-size: 15px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .d1-input:focus {
+            border-color: var(--primary);
+        }
+
+        .d1-btn {
+            width: 100%;
+            max-width: 500px;
+            padding: 16px 32px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .d1-btn:hover {
+            background: var(--primary-dark);
+        }
+
+        /* Direction 2: Compact Utility */
+        .d2-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .d2-logo {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .d2-user {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .d2-badge {
+            padding: 2px 8px;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .d2-form {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .d2-input {
+            flex: 1;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .d2-btn {
+            padding: 10px 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .d2-progress {
+            background: #F9FAFB;
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .d2-progress-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 13px;
+        }
+
+        .d2-progress-bar {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .d2-progress-fill {
+            height: 100%;
+            width: 65%;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+
+        .d2-track {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .d2-track:last-child {
+            border-bottom: none;
+        }
+
+        .d2-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .d2-check.done {
+            background: var(--success);
+            color: white;
+        }
+
+        .d2-check.current {
+            background: var(--primary);
+            color: white;
+        }
+
+        .d2-check.pending {
+            background: var(--border);
+            color: var(--text-muted);
+        }
+
+        /* Direction 3: Card-Based */
+        .d3-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .d3-logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .d3-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .d3-avatar {
+            width: 32px;
+            height: 32px;
+            background: var(--primary-light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--primary-dark);
+        }
+
+        .d3-user-info {
+            font-size: 13px;
+        }
+
+        .d3-user-name {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .d3-user-quality {
+            font-size: 11px;
+            color: var(--success);
+        }
+
+        .d3-playlist-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .d3-playlist-header {
+            display: flex;
+            gap: 16px;
+            padding: 20px;
+            background: linear-gradient(135deg, var(--primary-light) 0%, #E0E7FF 100%);
+        }
+
+        .d3-playlist-art {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+        }
+
+        .d3-playlist-info {
+            flex: 1;
+        }
+
+        .d3-playlist-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .d3-playlist-meta {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+        }
+
+        .d3-download-btn {
+            padding: 10px 24px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .d3-tracks {
+            padding: 16px 20px;
+        }
+
+        .d3-track {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .d3-track:last-child {
+            border-bottom: none;
+        }
+
+        .d3-track-num {
+            width: 24px;
+            font-size: 12px;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        .d3-track-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .d3-track-status.done { background: var(--success); color: white; }
+        .d3-track-status.current { background: var(--primary); color: white; }
+        .d3-track-status.pending { background: var(--border); }
+
+        .d3-track-info { flex: 1; }
+        .d3-track-title { font-size: 14px; color: var(--text-primary); }
+        .d3-track-artist { font-size: 12px; color: var(--text-secondary); }
+
+        /* Direction 4: Split Panel */
+        .d4-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            min-height: 450px;
+        }
+
+        .d4-left {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-right: 24px;
+            border-right: 1px solid var(--border);
+        }
+
+        .d4-logo {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+        }
+
+        .d4-tagline {
+            font-size: 14px;
+            color: var(--text-secondary);
+            margin-bottom: 32px;
+        }
+
+        .d4-user {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #F0FDF4;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-size: 13px;
+            color: var(--success);
+        }
+
+        .d4-input {
+            width: 100%;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
+
+        .d4-btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .d4-right {
+            padding-left: 24px;
+        }
+
+        .d4-progress-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .d4-track {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #F9FAFB;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+
+        .d4-track-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            background: var(--primary-light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .d4-track-info { flex: 1; }
+        .d4-track-title { font-size: 13px; font-weight: 500; }
+        .d4-track-artist { font-size: 11px; color: var(--text-secondary); }
+
+        .d4-track-status {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+
+        .d4-track-status.done { background: var(--success); color: white; }
+        .d4-track-status.current { border: 2px solid var(--primary); }
+
+        /* Direction 5: Stacked Progress */
+        .d5-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+        }
+
+        .d5-logo {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .d5-user {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .d5-quality-badge {
+            padding: 4px 10px;
+            background: var(--info);
+            color: white;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .d5-input-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+        }
+
+        .d5-input {
+            flex: 1;
+            padding: 14px 16px;
+            border: 2px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .d5-btn {
+            padding: 14px 28px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .d5-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .d5-progress-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .d5-progress-count {
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        .d5-progress-bar {
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .d5-progress-fill {
+            height: 100%;
+            width: 45%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-light));
+            border-radius: 4px;
+        }
+
+        .d5-tracks {
+            display: grid;
+            gap: 8px;
+        }
+
+        .d5-track {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+        }
+
+        .d5-track.current {
+            border-color: var(--primary);
+            background: #F5F3FF;
+        }
+
+        .d5-track-art {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-light);
+            border-radius: 6px;
+        }
+
+        .d5-track-info { flex: 1; }
+        .d5-track-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+        .d5-track-artist { font-size: 12px; color: var(--text-secondary); }
+
+        .d5-track-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+        }
+
+        .d5-status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .d5-status-icon.done { background: var(--success); color: white; }
+        .d5-status-icon.current { background: var(--primary); color: white; }
+        .d5-status-icon.pending { background: var(--border); }
+
+        /* Direction 6: Dark Professional */
+        .d6-mockup .mockup-content {
+            background: #0F172A;
+            color: #F8FAFC;
+        }
+
+        .d6-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
+        }
+
+        .d6-logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-light), var(--primary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .d6-user {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .d6-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .d6-user-text {
+            font-size: 13px;
+        }
+
+        .d6-user-name {
+            font-weight: 500;
+        }
+
+        .d6-user-quality {
+            color: var(--success);
+            font-size: 11px;
+        }
+
+        .d6-input-section {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .d6-label {
+            font-size: 14px;
+            color: #94A3B8;
+            margin-bottom: 16px;
+        }
+
+        .d6-input-wrapper {
+            display: flex;
+            gap: 12px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .d6-input {
+            flex: 1;
+            padding: 16px 20px;
+            background: #1E293B;
+            border: 1px solid #334155;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+        }
+
+        .d6-input::placeholder {
+            color: #64748B;
+        }
+
+        .d6-btn {
+            padding: 16px 32px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .d6-progress-section {
+            background: #1E293B;
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .d6-progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .d6-progress-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .d6-progress-stats {
+            font-size: 13px;
+            color: #94A3B8;
+        }
+
+        .d6-progress-bar {
+            height: 6px;
+            background: #334155;
+            border-radius: 3px;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .d6-progress-fill {
+            height: 100%;
+            width: 70%;
+            background: linear-gradient(90deg, var(--primary), var(--success));
+            border-radius: 3px;
+        }
+
+        .d6-tracks {
+            display: grid;
+            gap: 8px;
+        }
+
+        .d6-track {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            background: #0F172A;
+            border-radius: 8px;
+        }
+
+        .d6-track-status {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+        }
+
+        .d6-track-status.done { background: var(--success); color: white; }
+        .d6-track-status.current { background: var(--primary); color: white; }
+        .d6-track-status.pending { background: #334155; }
+
+        .d6-track-info { flex: 1; }
+        .d6-track-title { font-size: 13px; font-weight: 500; }
+        .d6-track-artist { font-size: 11px; color: #64748B; }
+
+        /* Comparison section */
+        .comparison {
+            padding: 60px 40px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .comparison h2 {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 40px;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .comparison-card {
+            background: #1E293B;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .comparison-card:hover {
+            transform: translateY(-4px);
+        }
+
+        .comparison-preview {
+            height: 200px;
+            background: var(--bg);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .comparison-info {
+            padding: 20px;
+        }
+
+        .comparison-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .comparison-desc {
+            font-size: 13px;
+            color: #94A3B8;
+        }
+
+        /* Features list */
+        .features {
+            margin-top: 16px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .feature-tag {
+            padding: 4px 10px;
+            background: rgba(99, 102, 241, 0.2);
+            color: var(--primary-light);
+            border-radius: 4px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <h1>InfraBooth Downloader - Design Directions</h1>
+        <div class="nav-tabs">
+            <button class="nav-tab active" onclick="showDirection(1)">1. Minimal Focus</button>
+            <button class="nav-tab" onclick="showDirection(2)">2. Compact Utility</button>
+            <button class="nav-tab" onclick="showDirection(3)">3. Card-Based</button>
+            <button class="nav-tab" onclick="showDirection(4)">4. Split Panel</button>
+            <button class="nav-tab" onclick="showDirection(5)">5. Stacked Progress</button>
+            <button class="nav-tab" onclick="showDirection(6)">6. Dark Professional</button>
+            <button class="nav-tab" onclick="showDirection(0)">Compare All</button>
+        </div>
+    </nav>
+
+    <main class="main">
+        <!-- Direction 1: Minimal Focus -->
+        <section class="direction active" id="direction-1">
+            <div class="direction-header">
+                <h2>Direction 1: Minimal Focus</h2>
+                <p>Maximum whitespace, single dominant action. WeTransfer-inspired simplicity.</p>
+            </div>
+            <div class="mockup-frame">
+                <div class="mockup-titlebar">
+                    <div class="mockup-dot red"></div>
+                    <div class="mockup-dot yellow"></div>
+                    <div class="mockup-dot green"></div>
+                </div>
+                <div class="mockup-content">
+                    <div class="d1-content">
+                        <div class="d1-logo">InfraBooth Downloader</div>
+                        <div class="d1-user">
+                            <span>&#10003;</span>
+                            <span>Signed in as marcus_beats</span>
+                            <span style="color: var(--info);">&#8226; Go+ 256kbps</span>
+                        </div>
+                        <div class="d1-input-group">
+                            <input type="text" class="d1-input" placeholder="Paste SoundCloud playlist or track URL...">
+                        </div>
+                        <button class="d1-btn">Download</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Direction 2: Compact Utility -->
+        <section class="direction" id="direction-2">
+            <div class="direction-header">
+                <h2>Direction 2: Compact Utility</h2>
+                <p>Efficient, desktop-native density. For users who value productivity.</p>
+            </div>
+            <div class="mockup-frame">
+                <div class="mockup-titlebar">
+                    <div class="mockup-dot red"></div>
+                    <div class="mockup-dot yellow"></div>
+                    <div class="mockup-dot green"></div>
+                </div>
+                <div class="mockup-content">
+                    <div class="d2-header">
+                        <div class="d2-logo">InfraBooth Downloader</div>
+                        <div class="d2-user">
+                            <span>marcus_beats</span>
+                            <span class="d2-badge">Go+ 256kbps</span>
+                        </div>
+                    </div>
+                    <div class="d2-form">
+                        <input type="text" class="d2-input" placeholder="Paste SoundCloud URL...">
+                        <button class="d2-btn">Download</button>
+                    </div>
+                    <div class="d2-progress">
+                        <div class="d2-progress-header">
+                            <span style="font-weight: 500;">Camping Vibes 2024</span>
+                            <span style="color: var(--text-secondary);">31 of 47</span>
+                        </div>
+                        <div class="d2-progress-bar">
+                            <div class="d2-progress-fill"></div>
+                        </div>
+                        <div class="d2-track">
+                            <div class="d2-check done">&#10003;</div>
+                            <span style="flex: 1;">Midnight Train - Kadebostany</span>
+                            <span style="color: var(--success); font-size: 11px;">Complete</span>
+                        </div>
+                        <div class="d2-track">
+                            <div class="d2-check done">&#10003;</div>
+                            <span style="flex: 1;">Innerbloom - RÜFÜS DU SOL</span>
+                            <span style="color: var(--success); font-size: 11px;">Complete</span>
+                        </div>
+                        <div class="d2-track">
+                            <div class="d2-check current">&#8595;</div>
+                            <span style="flex: 1;">Strobe - deadmau5</span>
+                            <span style="color: var(--primary); font-size: 11px;">Downloading...</span>
+                        </div>
+                        <div class="d2-track">
+                            <div class="d2-check pending"></div>
+                            <span style="flex: 1; color: var(--text-muted);">Cola - CamelPhat</span>
+                            <span style="color: var(--text-muted); font-size: 11px;">Pending</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Direction 3: Card-Based -->
+        <section class="direction" id="direction-3">
+            <div class="direction-header">
+                <h2>Direction 3: Card-Based</h2>
+                <p>Playlist preview as visual card with artwork. Rich, visual hierarchy.</p>
+            </div>
+            <div class="mockup-frame">
+                <div class="mockup-titlebar">
+                    <div class="mockup-dot red"></div>
+                    <div class="mockup-dot yellow"></div>
+                    <div class="mockup-dot green"></div>
+                </div>
+                <div class="mockup-content">
+                    <div class="d3-header">
+                        <div class="d3-logo">InfraBooth</div>
+                        <div class="d3-user">
+                            <div class="d3-avatar">M</div>
+                            <div class="d3-user-info">
+                                <div class="d3-user-name">marcus_beats</div>
+                                <div class="d3-user-quality">&#10003; Go+ Quality Enabled</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d3-playlist-card">
+                        <div class="d3-playlist-header">
+                            <div class="d3-playlist-art">&#9835;</div>
+                            <div class="d3-playlist-info">
+                                <div class="d3-playlist-title">Camping Vibes 2024</div>
+                                <div class="d3-playlist-meta">47 tracks &#8226; 3h 24m &#8226; 256kbps AAC</div>
+                                <button class="d3-download-btn">Download All</button>
+                            </div>
+                        </div>
+                        <div class="d3-tracks">
+                            <div class="d3-track">
+                                <div class="d3-track-num">1</div>
+                                <div class="d3-track-status done">&#10003;</div>
+                                <div class="d3-track-info">
+                                    <div class="d3-track-title">Midnight Train</div>
+                                    <div class="d3-track-artist">Kadebostany</div>
+                                </div>
+                            </div>
+                            <div class="d3-track">
+                                <div class="d3-track-num">2</div>
+                                <div class="d3-track-status done">&#10003;</div>
+                                <div class="d3-track-info">
+                                    <div class="d3-track-title">Innerbloom</div>
+                                    <div class="d3-track-artist">RÜFÜS DU SOL</div>
+                                </div>
+                            </div>
+                            <div class="d3-track">
+                                <div class="d3-track-num">3</div>
+                                <div class="d3-track-status current">&#8595;</div>
+                                <div class="d3-track-info">
+                                    <div class="d3-track-title">Strobe</div>
+                                    <div class="d3-track-artist">deadmau5</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Direction 4: Split Panel -->
+        <section class="direction" id="direction-4">
+            <div class="direction-header">
+                <h2>Direction 4: Split Panel</h2>
+                <p>Input left, progress right. Clear separation of concerns.</p>
+            </div>
+            <div class="mockup-frame">
+                <div class="mockup-titlebar">
+                    <div class="mockup-dot red"></div>
+                    <div class="mockup-dot yellow"></div>
+                    <div class="mockup-dot green"></div>
+                </div>
+                <div class="mockup-content">
+                    <div class="d4-container">
+                        <div class="d4-left">
+                            <div class="d4-logo">InfraBooth Downloader</div>
+                            <div class="d4-tagline">Get what you paid for.</div>
+                            <div class="d4-user">
+                                <span>&#10003;</span>
+                                marcus_beats &#8226; Go+ 256kbps
+                            </div>
+                            <input type="text" class="d4-input" placeholder="Paste SoundCloud URL...">
+                            <button class="d4-btn">Download</button>
+                        </div>
+                        <div class="d4-right">
+                            <div class="d4-progress-title">Downloading: Camping Vibes 2024</div>
+                            <div class="d4-track">
+                                <div class="d4-track-icon">&#9835;</div>
+                                <div class="d4-track-info">
+                                    <div class="d4-track-title">Midnight Train</div>
+                                    <div class="d4-track-artist">Kadebostany</div>
+                                </div>
+                                <div class="d4-track-status done">&#10003;</div>
+                            </div>
+                            <div class="d4-track">
+                                <div class="d4-track-icon">&#9835;</div>
+                                <div class="d4-track-info">
+                                    <div class="d4-track-title">Innerbloom</div>
+                                    <div class="d4-track-artist">RÜFÜS DU SOL</div>
+                                </div>
+                                <div class="d4-track-status done">&#10003;</div>
+                            </div>
+                            <div class="d4-track">
+                                <div class="d4-track-icon">&#9835;</div>
+                                <div class="d4-track-info">
+                                    <div class="d4-track-title">Strobe</div>
+                                    <div class="d4-track-artist">deadmau5</div>
+                                </div>
+                                <div class="d4-track-status current"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Direction 5: Stacked Progress -->
+        <section class="direction" id="direction-5">
+            <div class="direction-header">
+                <h2>Direction 5: Stacked Progress</h2>
+                <p>Prominent track list with live status. Transmit-inspired progress detail.</p>
+            </div>
+            <div class="mockup-frame">
+                <div class="mockup-titlebar">
+                    <div class="mockup-dot red"></div>
+                    <div class="mockup-dot yellow"></div>
+                    <div class="mockup-dot green"></div>
+                </div>
+                <div class="mockup-content">
+                    <div class="d5-header">
+                        <div class="d5-logo">InfraBooth Downloader</div>
+                        <div class="d5-user">
+                            <span>marcus_beats</span>
+                            <span class="d5-quality-badge">Go+ 256kbps</span>
+                        </div>
+                    </div>
+                    <div class="d5-input-row">
+                        <input type="text" class="d5-input" placeholder="Paste SoundCloud playlist or track URL...">
+                        <button class="d5-btn">Download</button>
+                    </div>
+                    <div class="d5-progress-header">
+                        <div class="d5-progress-title">Camping Vibes 2024</div>
+                        <div class="d5-progress-count">21 of 47 tracks</div>
+                    </div>
+                    <div class="d5-progress-bar">
+                        <div class="d5-progress-fill"></div>
+                    </div>
+                    <div class="d5-tracks">
+                        <div class="d5-track">
+                            <div class="d5-track-art"></div>
+                            <div class="d5-track-info">
+                                <div class="d5-track-title">Midnight Train</div>
+                                <div class="d5-track-artist">Kadebostany</div>
+                            </div>
+                            <div class="d5-track-status">
+                                <div class="d5-status-icon done">&#10003;</div>
+                                <span style="color: var(--success);">Complete</span>
+                            </div>
+                        </div>
+                        <div class="d5-track current">
+                            <div class="d5-track-art"></div>
+                            <div class="d5-track-info">
+                                <div class="d5-track-title">Strobe</div>
+                                <div class="d5-track-artist">deadmau5</div>
+                            </div>
+                            <div class="d5-track-status">
+                                <div class="d5-status-icon current">&#8595;</div>
+                                <span style="color: var(--primary);">Downloading...</span>
+                            </div>
+                        </div>
+                        <div class="d5-track">
+                            <div class="d5-track-art"></div>
+                            <div class="d5-track-info">
+                                <div class="d5-track-title">Cola</div>
+                                <div class="d5-track-artist">CamelPhat & Elderbrook</div>
+                            </div>
+                            <div class="d5-track-status">
+                                <div class="d5-status-icon pending"></div>
+                                <span style="color: var(--text-muted);">Pending</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Direction 6: Dark Professional -->
+        <section class="direction" id="direction-6">
+            <div class="direction-header">
+                <h2>Direction 6: Dark Professional</h2>
+                <p>Dark mode variant with premium feel. Modern, sophisticated aesthetic.</p>
+            </div>
+            <div class="mockup-frame d6-mockup">
+                <div class="mockup-titlebar" style="background: #1E293B;">
+                    <div class="mockup-dot red"></div>
+                    <div class="mockup-dot yellow"></div>
+                    <div class="mockup-dot green"></div>
+                </div>
+                <div class="mockup-content">
+                    <div class="d6-header">
+                        <div class="d6-logo">InfraBooth Downloader</div>
+                        <div class="d6-user">
+                            <div class="d6-avatar">M</div>
+                            <div class="d6-user-text">
+                                <div class="d6-user-name">marcus_beats</div>
+                                <div class="d6-user-quality">&#10003; Go+ 256kbps Enabled</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="d6-input-section">
+                        <div class="d6-label">Paste a SoundCloud playlist or track URL</div>
+                        <div class="d6-input-wrapper">
+                            <input type="text" class="d6-input" placeholder="https://soundcloud.com/...">
+                            <button class="d6-btn">Download</button>
+                        </div>
+                    </div>
+                    <div class="d6-progress-section">
+                        <div class="d6-progress-header">
+                            <div class="d6-progress-title">Camping Vibes 2024</div>
+                            <div class="d6-progress-stats">33 of 47 &#8226; 70%</div>
+                        </div>
+                        <div class="d6-progress-bar">
+                            <div class="d6-progress-fill"></div>
+                        </div>
+                        <div class="d6-tracks">
+                            <div class="d6-track">
+                                <div class="d6-track-status done">&#10003;</div>
+                                <div class="d6-track-info">
+                                    <div class="d6-track-title">Midnight Train</div>
+                                    <div class="d6-track-artist">Kadebostany</div>
+                                </div>
+                            </div>
+                            <div class="d6-track">
+                                <div class="d6-track-status done">&#10003;</div>
+                                <div class="d6-track-info">
+                                    <div class="d6-track-title">Innerbloom</div>
+                                    <div class="d6-track-artist">RÜFÜS DU SOL</div>
+                                </div>
+                            </div>
+                            <div class="d6-track">
+                                <div class="d6-track-status current">&#8595;</div>
+                                <div class="d6-track-info">
+                                    <div class="d6-track-title">Strobe</div>
+                                    <div class="d6-track-artist">deadmau5</div>
+                                </div>
+                            </div>
+                            <div class="d6-track">
+                                <div class="d6-track-status pending"></div>
+                                <div class="d6-track-info">
+                                    <div class="d6-track-title">Cola</div>
+                                    <div class="d6-track-artist">CamelPhat</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Compare All -->
+        <section class="direction" id="direction-0">
+            <div class="comparison">
+                <h2>Compare All Directions</h2>
+                <div class="comparison-grid">
+                    <div class="comparison-card" onclick="showDirection(1)">
+                        <div class="comparison-preview" style="background: linear-gradient(135deg, #FAFAFA, #E5E7EB);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 8px;">Minimal Focus</div>
+                                <div style="font-size: 40px;">&#9675;</div>
+                            </div>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="comparison-title">1. Minimal Focus</div>
+                            <div class="comparison-desc">Maximum whitespace, single dominant action</div>
+                            <div class="features">
+                                <span class="feature-tag">Clean</span>
+                                <span class="feature-tag">Simple</span>
+                                <span class="feature-tag">WeTransfer-like</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-card" onclick="showDirection(2)">
+                        <div class="comparison-preview" style="background: linear-gradient(135deg, #FAFAFA, #E5E7EB);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 8px;">Compact Utility</div>
+                                <div style="font-size: 40px;">&#9638;</div>
+                            </div>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="comparison-title">2. Compact Utility</div>
+                            <div class="comparison-desc">Efficient, desktop-native density</div>
+                            <div class="features">
+                                <span class="feature-tag">Dense</span>
+                                <span class="feature-tag">Efficient</span>
+                                <span class="feature-tag">Pro</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-card" onclick="showDirection(3)">
+                        <div class="comparison-preview" style="background: linear-gradient(135deg, #FAFAFA, #E5E7EB);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 8px;">Card-Based</div>
+                                <div style="font-size: 40px;">&#9634;</div>
+                            </div>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="comparison-title">3. Card-Based</div>
+                            <div class="comparison-desc">Rich playlist preview with artwork</div>
+                            <div class="features">
+                                <span class="feature-tag">Visual</span>
+                                <span class="feature-tag">Rich</span>
+                                <span class="feature-tag">Engaging</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-card" onclick="showDirection(4)">
+                        <div class="comparison-preview" style="background: linear-gradient(135deg, #FAFAFA, #E5E7EB);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 8px;">Split Panel</div>
+                                <div style="font-size: 40px;">&#9643;&#9643;</div>
+                            </div>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="comparison-title">4. Split Panel</div>
+                            <div class="comparison-desc">Input left, progress right</div>
+                            <div class="features">
+                                <span class="feature-tag">Organized</span>
+                                <span class="feature-tag">Clear</span>
+                                <span class="feature-tag">Balanced</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-card" onclick="showDirection(5)">
+                        <div class="comparison-preview" style="background: linear-gradient(135deg, #FAFAFA, #E5E7EB);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; font-weight: 600; color: var(--primary); margin-bottom: 8px;">Stacked Progress</div>
+                                <div style="font-size: 40px;">&#9776;</div>
+                            </div>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="comparison-title">5. Stacked Progress</div>
+                            <div class="comparison-desc">Prominent track list with status</div>
+                            <div class="features">
+                                <span class="feature-tag">Detailed</span>
+                                <span class="feature-tag">Transmit-like</span>
+                                <span class="feature-tag">Progress</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="comparison-card" onclick="showDirection(6)">
+                        <div class="comparison-preview" style="background: linear-gradient(135deg, #0F172A, #1E293B);">
+                            <div style="text-align: center;">
+                                <div style="font-size: 16px; font-weight: 600; color: var(--primary-light); margin-bottom: 8px;">Dark Professional</div>
+                                <div style="font-size: 40px;">&#9790;</div>
+                            </div>
+                        </div>
+                        <div class="comparison-info">
+                            <div class="comparison-title">6. Dark Professional</div>
+                            <div class="comparison-desc">Premium dark mode aesthetic</div>
+                            <div class="features">
+                                <span class="feature-tag">Dark</span>
+                                <span class="feature-tag">Premium</span>
+                                <span class="feature-tag">Modern</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        function showDirection(num) {
+            // Hide all directions
+            document.querySelectorAll('.direction').forEach(d => d.classList.remove('active'));
+
+            // Show selected direction
+            document.getElementById('direction-' + num).classList.add('active');
+
+            // Update nav tabs
+            document.querySelectorAll('.nav-tab').forEach((tab, i) => {
+                tab.classList.remove('active');
+                if ((num === 0 && i === 6) || (num === i + 1)) {
+                    tab.classList.add('active');
+                }
+            });
+
+            // Scroll to top
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>

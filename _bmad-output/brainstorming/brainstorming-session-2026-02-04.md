@@ -117,7 +117,7 @@ AI-Recommended Techniques - customized suggestions based on MVP + architecture g
 | # | Dimension | Decision |
 |---|-----------|----------|
 | 1 | Framework | Tauri (Rust + Web) |
-| 2 | Frontend | Vanilla TypeScript |
+| 2 | Frontend | React + TypeScript |
 | 3 | Download Engine | yt-dlp (bundled) |
 | 4 | Audio Processing | FFmpeg (bundled) |
 | 5 | Auth Flow | OAuth popup → token to yt-dlp |
@@ -140,7 +140,7 @@ AI-Recommended Techniques - customized suggestions based on MVP + architecture g
 ┌──────────────────────────────────────────────────┐
 │  InfraBooth Downloader (Tauri)                   │
 │  ┌────────────────┐    ┌──────────────────────┐ │
-│  │ UI (Vanilla TS)│◄──►│ Rust Backend         │ │
+│  │ UI (React)     │◄──►│ Rust Backend         │ │
 │  │ • Login button │    │ ├─ OAuth handler     │ │
 │  │ • URL input    │    │ ├─ yt-dlp wrapper    │ │
 │  │ • Progress list│    │ ├─ FFmpeg wrapper    │ │
@@ -224,7 +224,7 @@ AI-Recommended Techniques - customized suggestions based on MVP + architecture g
 3. Select download location
 
 **Theme 3: Technical Stack**
-- Tauri (Rust + Vanilla TypeScript)
+- Tauri (Rust + React + TypeScript)
 - yt-dlp + FFmpeg bundled
 - Windows + macOS installers
 
@@ -261,7 +261,7 @@ AI-Recommended Techniques - customized suggestions based on MVP + architecture g
 ### Action Plan
 
 **Week 1: Foundation**
-- [ ] Initialize Tauri project with Vanilla TS
+- [ ] Initialize Tauri project with React + Vite + TypeScript
 - [ ] Set up CI for Windows + macOS builds
 - [ ] Implement OAuth browser flow
 - [ ] Test yt-dlp integration with SoundCloud
