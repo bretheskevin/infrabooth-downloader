@@ -1,6 +1,6 @@
 # Story 2.6: Implement Sign-Out Functionality
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -31,8 +31,8 @@ so that **I can switch accounts or revoke the app's access**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create sign-out Tauri command (AC: #2)
-  - [ ] 1.1 Add to `src-tauri/src/commands/auth.rs`:
+- [x] Task 1: Create sign-out Tauri command (AC: #2)
+  - [x] 1.1 Add to `src-tauri/src/commands/auth.rs`:
     ```rust
     #[tauri::command]
     pub async fn sign_out(app: AppHandle) -> Result<(), String> {
@@ -51,19 +51,19 @@ so that **I can switch accounts or revoke the app's access**.
         Ok(())
     }
     ```
-  - [ ] 1.2 Register command in lib.rs
+  - [x] 1.2 Register command in lib.rs
 
-- [ ] Task 2: Create TypeScript sign-out function (AC: #2)
-  - [ ] 2.1 Add to `src/lib/auth.ts`:
+- [x] Task 2: Create TypeScript sign-out function (AC: #2)
+  - [x] 2.1 Add to `src/lib/auth.ts`:
     ```typescript
     export async function signOut(): Promise<void> {
       await invoke('sign_out');
     }
     ```
 
-- [ ] Task 3: Create UserMenu component with sign-out (AC: #1)
-  - [ ] 3.1 Add Shadcn dropdown: `npx shadcn@latest add dropdown-menu`
-  - [ ] 3.2 Create `src/components/features/auth/UserMenu.tsx`:
+- [x] Task 3: Create UserMenu component with sign-out (AC: #1)
+  - [x] 3.1 Add Shadcn dropdown: `npx shadcn@latest add dropdown-menu`
+  - [x] 3.2 Create `src/components/features/auth/UserMenu.tsx`:
     ```typescript
     import { useTranslation } from 'react-i18next';
     import { useAuthStore } from '@/stores/authStore';
@@ -109,8 +109,8 @@ so that **I can switch accounts or revoke the app's access**.
     }
     ```
 
-- [ ] Task 4: Update AuthContainer to use UserMenu (AC: #1)
-  - [ ] 4.1 Update `src/components/features/auth/AuthContainer.tsx`:
+- [x] Task 4: Update AuthContainer to use UserMenu (AC: #1)
+  - [x] 4.1 Update `src/components/features/auth/AuthContainer.tsx`:
     ```typescript
     import { useAuthStore } from '@/stores/authStore';
     import { SignInButton } from './SignInButton';
@@ -123,14 +123,14 @@ so that **I can switch accounts or revoke the app's access**.
     }
     ```
 
-- [ ] Task 5: Update auth store clearAuth action (AC: #2)
-  - [ ] 5.1 Ensure `authStore.clearAuth()` properly resets state:
+- [x] Task 5: Update auth store clearAuth action (AC: #2)
+  - [x] 5.1 Ensure `authStore.clearAuth()` properly resets state:
     ```typescript
     clearAuth: () => set({ isSignedIn: false, username: null }),
     ```
 
-- [ ] Task 6: Add smooth transition styling (AC: #3)
-  - [ ] 6.1 Add transition classes to AuthContainer:
+- [x] Task 6: Add smooth transition styling (AC: #3)
+  - [x] 6.1 Add transition classes to AuthContainer:
     ```typescript
     export function AuthContainer() {
       const isSignedIn = useAuthStore((state) => state.isSignedIn);
@@ -143,24 +143,24 @@ so that **I can switch accounts or revoke the app's access**.
     }
     ```
 
-- [ ] Task 7: Update translations (AC: #1)
-  - [ ] 7.1 Verify `en.json` has:
+- [x] Task 7: Update translations (AC: #1)
+  - [x] 7.1 Verify `en.json` has:
     ```json
     "auth": {
       "signOut": "Sign out"
     }
     ```
-  - [ ] 7.2 Verify `fr.json` has:
+  - [x] 7.2 Verify `fr.json` has:
     ```json
     "auth": {
       "signOut": "Se déconnecter"
     }
     ```
 
-- [ ] Task 8: Test account switching (AC: #4)
-  - [ ] 8.1 Sign out should clear all tokens
-  - [ ] 8.2 New sign-in should start fresh OAuth flow
-  - [ ] 8.3 No cached credentials should affect new sign-in
+- [x] Task 8: Test account switching (AC: #4)
+  - [x] 8.1 Sign out should clear all tokens
+  - [x] 8.2 New sign-in should start fresh OAuth flow
+  - [x] 8.3 No cached credentials should affect new sign-in
 
 ## Dev Notes
 
@@ -276,11 +276,42 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None - implementation completed without issues.
+
 ### Completion Notes List
 
+- Implemented sign_out Tauri command in src-tauri/src/commands/auth.rs
+- Added signOut function to src/lib/auth.ts with TypeScript bindings
+- Created UserMenu component with dropdown trigger and sign-out option
+- Updated AuthContainer to use UserMenu instead of UserBadge with transition styling
+- Verified existing translations for signOut in en.json and fr.json
+- Auth store clearAuth action already properly implemented
+- All 157 tests pass including 51 Rust tests
+- Frontend build (tsc + vite) successful
+- Backend build (cargo build --release) successful
+
 ### File List
+
+**New Files:**
+- src/components/features/auth/UserMenu.tsx
+- src/components/features/auth/UserMenu.test.tsx
+- src/components/ui/dropdown-menu.tsx (shadcn)
+
+**Modified Files:**
+- src-tauri/src/commands/auth.rs (added sign_out command + test)
+- src-tauri/src/commands/mod.rs (exported sign_out)
+- src-tauri/src/lib.rs (registered sign_out in invoke_handler)
+- src/lib/auth.ts (added signOut function)
+- src/lib/auth.test.ts (added signOut tests)
+- src/components/features/auth/AuthContainer.tsx (use UserMenu + transition)
+- src/components/features/auth/AuthContainer.test.tsx (updated for UserMenu)
+- src/components/layout/Header.test.tsx (updated for UserMenu)
+
+### Change Log
+
+- 2026-02-06: Implemented sign-out functionality per Story 2.6
 

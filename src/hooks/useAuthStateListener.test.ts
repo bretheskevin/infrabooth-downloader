@@ -23,7 +23,7 @@ describe('useAuthStateListener', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     eventListeners.clear();
-    useAuthStore.setState({ isSignedIn: false, username: null });
+    useAuthStore.setState({ isSignedIn: false, username: null, plan: null });
   });
 
   afterEach(() => {
@@ -63,17 +63,19 @@ describe('useAuthStateListener', () => {
         payload: {
           isSignedIn: true,
           username: 'testuser',
+          plan: 'Pro Unlimited',
         },
       });
     });
 
     expect(useAuthStore.getState().isSignedIn).toBe(true);
     expect(useAuthStore.getState().username).toBe('testuser');
+    expect(useAuthStore.getState().plan).toBe('Pro Unlimited');
   });
 
   it('should handle sign out event', async () => {
     // Start signed in
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     renderHook(() => useAuthStateListener());
 
@@ -85,17 +87,19 @@ describe('useAuthStateListener', () => {
         payload: {
           isSignedIn: false,
           username: null,
+          plan: null,
         },
       });
     });
 
     expect(useAuthStore.getState().isSignedIn).toBe(false);
     expect(useAuthStore.getState().username).toBeNull();
+    expect(useAuthStore.getState().plan).toBeNull();
   });
 
   it('should clear auth when auth-reauth-needed event is received', async () => {
     // Start signed in
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     renderHook(() => useAuthStateListener());
 
