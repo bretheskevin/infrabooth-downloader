@@ -7,6 +7,7 @@ describe('authStore', () => {
     useAuthStore.setState({
       isSignedIn: false,
       username: null,
+      plan: null,
     });
   });
 
@@ -25,7 +26,7 @@ describe('authStore', () => {
   describe('setAuth', () => {
     it('should set isSignedIn to true when signed in', () => {
       const { setAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser');
+      setAuth(true, 'testuser', 'Pro Unlimited');
 
       const { isSignedIn } = useAuthStore.getState();
       expect(isSignedIn).toBe(true);
@@ -33,7 +34,7 @@ describe('authStore', () => {
 
     it('should set username when signed in', () => {
       const { setAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser');
+      setAuth(true, 'testuser', 'Pro Unlimited');
 
       const { username } = useAuthStore.getState();
       expect(username).toBe('testuser');
@@ -41,8 +42,8 @@ describe('authStore', () => {
 
     it('should set isSignedIn to false with null username when signed out', () => {
       const { setAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser');
-      setAuth(false, null);
+      setAuth(true, 'testuser', 'Pro Unlimited');
+      setAuth(false, null, null);
 
       const { isSignedIn, username } = useAuthStore.getState();
       expect(isSignedIn).toBe(false);
@@ -53,7 +54,7 @@ describe('authStore', () => {
   describe('clearAuth', () => {
     it('should reset isSignedIn to false', () => {
       const { setAuth, clearAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser');
+      setAuth(true, 'testuser', 'Pro Unlimited');
       clearAuth();
 
       const { isSignedIn } = useAuthStore.getState();
@@ -62,7 +63,7 @@ describe('authStore', () => {
 
     it('should reset username to null', () => {
       const { setAuth, clearAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser');
+      setAuth(true, 'testuser', 'Pro Unlimited');
       clearAuth();
 
       const { username } = useAuthStore.getState();

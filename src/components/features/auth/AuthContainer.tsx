@@ -1,9 +1,13 @@
 import { useAuthStore } from '@/stores/authStore';
 import { SignInButton } from './SignInButton';
-import { UserBadge } from './UserBadge';
+import { UserMenu } from './UserMenu';
 
 export function AuthContainer() {
   const isSignedIn = useAuthStore((state) => state.isSignedIn);
 
-  return isSignedIn ? <UserBadge /> : <SignInButton />;
+  return (
+    <div className="transition-opacity duration-200">
+      {isSignedIn ? <UserMenu /> : <SignInButton />}
+    </div>
+  );
 }

@@ -1,9 +1,9 @@
-use tauri::{AppHandle, Emitter};
+use tauri::{AppHandle, Emitter, Manager};
 use url::Url;
 
 /// Protocol scheme for OAuth callbacks
-const SCHEME: &str = "sc-downloader";
-/// Host for OAuth callback endpoint (URL parses sc-downloader://auth/callback as host=auth, path=/callback)
+const SCHEME: &str = "ib-downloader";
+/// Host for OAuth callback endpoint (URL parses ib-downloader://auth/callback as host=auth, path=/callback)
 const AUTH_HOST: &str = "auth";
 /// Path for OAuth callback endpoint
 const CALLBACK_PATH: &str = "/callback";
@@ -17,17 +17,28 @@ const AUTH_CALLBACK_EVENT: &str = "auth-callback";
 /// * `app` - The Tauri app handle for emitting events
 /// * `urls` - Vector of URL strings received from the deep link plugin
 pub fn handle_deep_link(app: &AppHandle, urls: Vec<String>) {
+    log::info!("[deep-link] handle_deep_link called with {} URLs: {:?}", urls.len(), urls);
     for url_str in urls {
         if let Some(code) = extract_auth_code(&url_str) {
-            let _ = app.emit(AUTH_CALLBACK_EVENT, code);
+            log::info!("[deep-link] Extracted auth code, emitting auth-callback event");
+            match app.emit(AUTH_CALLBACK_EVENT, code) {
+                Ok(_) => log::info!("[deep-link] auth-callback event emitted successfully"),
+                Err(e) => log::error!("[deep-link] Failed to emit auth-callback event: {}", e),
+            }
+            // Bring app window to front after receiving the callback
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.set_focus();
+            }
+        } else {
+            log::warn!("[deep-link] Could not extract auth code from URL: {}", url_str);
         }
     }
 }
 
 /// Extracts the authorization code from a deep link URL if valid.
 ///
-/// URL format: sc-downloader://auth/callback?code=xxx
-/// - scheme: sc-downloader
+/// URL format: ib-downloader://auth/callback?code=xxx
+/// - scheme: ib-downloader
 /// - host: auth
 /// - path: /callback
 /// - query: code=xxx
@@ -46,7 +57,7 @@ fn extract_auth_code(url_str: &str) -> Option<String> {
         return None;
     }
 
-    // Validate host (auth in sc-downloader://auth/callback)
+    // Validate host (auth in ib-downloader://auth/callback)
     if url.host_str() != Some(AUTH_HOST) {
         return None;
     }
@@ -68,14 +79,14 @@ mod tests {
 
     #[test]
     fn test_extract_auth_code_valid_url() {
-        let url = "sc-downloader://auth/callback?code=abc123";
+        let url = "ib-downloader://auth/callback?code=abc123";
         let result = extract_auth_code(url);
         assert_eq!(result, Some("abc123".to_string()));
     }
 
     #[test]
     fn test_extract_auth_code_with_extra_params() {
-        let url = "sc-downloader://auth/callback?code=xyz789&state=foo";
+        let url = "ib-downloader://auth/callback?code=xyz789&state=foo";
         let result = extract_auth_code(url);
         assert_eq!(result, Some("xyz789".to_string()));
     }
@@ -89,21 +100,21 @@ mod tests {
 
     #[test]
     fn test_extract_auth_code_wrong_host() {
-        let url = "sc-downloader://other/callback?code=abc123";
+        let url = "ib-downloader://other/callback?code=abc123";
         let result = extract_auth_code(url);
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_extract_auth_code_wrong_path() {
-        let url = "sc-downloader://auth/other?code=abc123";
+        let url = "ib-downloader://auth/other?code=abc123";
         let result = extract_auth_code(url);
         assert_eq!(result, None);
     }
 
     #[test]
     fn test_extract_auth_code_missing_code() {
-        let url = "sc-downloader://auth/callback?state=foo";
+        let url = "ib-downloader://auth/callback?state=foo";
         let result = extract_auth_code(url);
         assert_eq!(result, None);
     }
@@ -117,7 +128,7 @@ mod tests {
 
     #[test]
     fn test_extract_auth_code_empty_code() {
-        let url = "sc-downloader://auth/callback?code=";
+        let url = "ib-downloader://auth/callback?code=";
         let result = extract_auth_code(url);
         assert_eq!(result, Some("".to_string()));
     }

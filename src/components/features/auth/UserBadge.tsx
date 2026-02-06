@@ -6,6 +6,8 @@ import { User, Loader2 } from 'lucide-react';
 export function UserBadge() {
   const { t } = useTranslation();
   const username = useAuthStore((state) => state.username);
+  const plan = useAuthStore((state) => state.plan);
+  const isGoPlus = plan != null && plan !== '';
 
   // Show loading state while profile is being fetched
   if (!username) {
@@ -30,12 +32,14 @@ export function UserBadge() {
           {t('auth.signedInAs', { username })}
         </span>
       </div>
-      <Badge
-        variant="secondary"
-        className="bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300"
-      >
-        {t('auth.qualityBadge', 'Go+ 256kbps')}
-      </Badge>
+      {isGoPlus && (
+        <Badge
+          variant="secondary"
+          className="bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300"
+        >
+          {t('auth.qualityBadge', 'Go+ 256kbps')}
+        </Badge>
+      )}
     </div>
   );
 }

@@ -24,7 +24,7 @@ vi.mock('react-i18next', () => ({
 
 describe('UserBadge', () => {
   beforeEach(() => {
-    useAuthStore.setState({ isSignedIn: false, username: null });
+    useAuthStore.setState({ isSignedIn: false, username: null, plan: null });
   });
 
   it('should display loading state when username is null', () => {
@@ -43,16 +43,24 @@ describe('UserBadge', () => {
     expect(screen.getByText('Signed in as marcus_dj')).toBeInTheDocument();
   });
 
-  it('should display Go+ quality badge', () => {
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+  it('should display Go+ quality badge when user has a plan', () => {
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     render(<UserBadge />);
 
     expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
   });
 
+  it('should not display Go+ badge for free users', () => {
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: null });
+
+    render(<UserBadge />);
+
+    expect(screen.queryByText('Go+ 256kbps')).not.toBeInTheDocument();
+  });
+
   it('should have accessible status role', () => {
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     render(<UserBadge />);
 
@@ -62,7 +70,7 @@ describe('UserBadge', () => {
   });
 
   it('should have accessible label for screen readers', () => {
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     render(<UserBadge />);
 
@@ -74,7 +82,7 @@ describe('UserBadge', () => {
   });
 
   it('should render user icon as decorative', () => {
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     const { container } = render(<UserBadge />);
 
@@ -93,7 +101,7 @@ describe('UserBadge', () => {
   });
 
   it('should apply correct badge styling for Go+ badge', () => {
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     render(<UserBadge />);
 

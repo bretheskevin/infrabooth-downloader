@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { startOAuth, completeOAuth, checkAuthState } from './auth';
+import { startOAuth, completeOAuth, checkAuthState, signOut } from './auth';
 
 // Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
@@ -82,6 +82,22 @@ describe('auth', () => {
       vi.mocked(invoke).mockRejectedValue(new Error('Keychain error'));
 
       await expect(checkAuthState()).rejects.toThrow('Keychain error');
+    });
+  });
+
+  describe('signOut', () => {
+    it('should invoke sign_out command', async () => {
+      vi.mocked(invoke).mockResolvedValue(undefined);
+
+      await signOut();
+
+      expect(invoke).toHaveBeenCalledWith('sign_out');
+    });
+
+    it('should throw when sign-out fails', async () => {
+      vi.mocked(invoke).mockRejectedValue(new Error('Keychain deletion failed'));
+
+      await expect(signOut()).rejects.toThrow('Keychain deletion failed');
     });
   });
 });

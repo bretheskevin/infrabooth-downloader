@@ -47,3 +47,16 @@ export async function completeOAuth(code: string): Promise<void> {
 export async function checkAuthState(): Promise<boolean> {
   return await invoke<boolean>('check_auth_state');
 }
+
+/**
+ * Signs out the user by deleting stored tokens.
+ *
+ * This function:
+ * 1. Deletes tokens from the OS keychain
+ * 2. Emits an auth-state-changed event with signed-out state
+ *
+ * @throws Error if sign-out fails
+ */
+export async function signOut(): Promise<void> {
+  await invoke('sign_out');
+}

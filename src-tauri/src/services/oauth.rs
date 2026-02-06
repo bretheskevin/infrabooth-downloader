@@ -2,12 +2,13 @@ use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
 use rand::Rng;
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+use url::Url;
 
 use crate::models::AuthError;
 
 /// OAuth configuration constants
 pub const CLIENT_ID: &str = "4CHDCUOhHIdSxBv4XN0msyZXuIXbB5wv";
-pub const REDIRECT_URI: &str = "sc-downloader://auth/callback";
+pub const REDIRECT_URI: &str = "ib-downloader://auth/callback";
 pub const AUTH_URL: &str = "https://api.soundcloud.com/connect";
 pub const TOKEN_URL: &str = "https://api.soundcloud.com/oauth2/token";
 
@@ -48,11 +49,15 @@ pub fn generate_pkce() -> (String, String) {
 ///
 /// # Returns
 /// The complete authorization URL to open in the browser
-pub fn build_auth_url(code_challenge: &str) -> String {
-    format!(
-        "{}?client_id={}&redirect_uri={}&response_type=code&code_challenge={}&code_challenge_method=S256",
-        AUTH_URL, CLIENT_ID, REDIRECT_URI, code_challenge
-    )
+pub fn build_auth_url(code_challenge: &str, redirect_uri: &str) -> String {
+    let mut url = Url::parse(AUTH_URL).expect("AUTH_URL is a valid URL");
+    url.query_pairs_mut()
+        .append_pair("client_id", CLIENT_ID)
+        .append_pair("redirect_uri", redirect_uri)
+        .append_pair("response_type", "code")
+        .append_pair("code_challenge", code_challenge)
+        .append_pair("code_challenge_method", "S256");
+    url.to_string()
 }
 
 /// Exchanges an authorization code for access and refresh tokens.
@@ -69,6 +74,7 @@ pub async fn exchange_code(
     code: &str,
     code_verifier: &str,
     client_secret: &str,
+    redirect_uri: &str,
 ) -> Result<TokenResponse, AuthError> {
     let client = reqwest::Client::new();
     let response = client
@@ -77,7 +83,7 @@ pub async fn exchange_code(
             ("grant_type", "authorization_code"),
             ("client_id", CLIENT_ID),
             ("client_secret", client_secret),
-            ("redirect_uri", REDIRECT_URI),
+            ("redirect_uri", redirect_uri),
             ("code", code),
             ("code_verifier", code_verifier),
         ])
@@ -96,13 +102,17 @@ pub async fn exchange_code(
     }
 }
 
-/// Retrieves the client secret from environment variable.
+/// Returns the client secret embedded at compile time from .env.
 ///
 /// # Returns
-/// * `Ok(String)` - The client secret
-/// * `Err(AuthError)` - If SOUNDCLOUD_CLIENT_SECRET is not set
-pub fn get_client_secret() -> Result<String, AuthError> {
-    std::env::var("SOUNDCLOUD_CLIENT_SECRET").map_err(|_| AuthError::MissingClientSecret)
+/// * `Ok(&str)` - The client secret
+/// * `Err(AuthError)` - If SOUNDCLOUD_CLIENT_SECRET was not set at compile time
+pub fn get_client_secret() -> Result<&'static str, AuthError> {
+    let secret = option_env!("SOUNDCLOUD_CLIENT_SECRET").ok_or(AuthError::MissingClientSecret)?;
+    if secret.is_empty() || secret == "your_client_secret_here" {
+        return Err(AuthError::MissingClientSecret);
+    }
+    Ok(secret)
 }
 
 /// User profile response from SoundCloud /me endpoint.
@@ -231,56 +241,54 @@ mod tests {
 
     #[test]
     fn test_build_auth_url_contains_client_id() {
-        let url = build_auth_url("test_challenge");
+        let url = build_auth_url("test_challenge", REDIRECT_URI);
         assert!(url.contains(&format!("client_id={}", CLIENT_ID)));
     }
 
     #[test]
     fn test_build_auth_url_contains_redirect_uri() {
-        let url = build_auth_url("test_challenge");
-        assert!(url.contains(&format!("redirect_uri={}", REDIRECT_URI)));
+        let url_str = build_auth_url("test_challenge", REDIRECT_URI);
+        let url = Url::parse(&url_str).unwrap();
+        let redirect_uri: String = url
+            .query_pairs()
+            .find(|(k, _)| k == "redirect_uri")
+            .map(|(_, v)| v.to_string())
+            .unwrap();
+        assert_eq!(redirect_uri, REDIRECT_URI);
     }
 
     #[test]
     fn test_build_auth_url_contains_response_type_code() {
-        let url = build_auth_url("test_challenge");
+        let url = build_auth_url("test_challenge", REDIRECT_URI);
         assert!(url.contains("response_type=code"));
     }
 
     #[test]
     fn test_build_auth_url_contains_code_challenge() {
         let challenge = "abc123_challenge";
-        let url = build_auth_url(challenge);
+        let url = build_auth_url(challenge, REDIRECT_URI);
         assert!(url.contains(&format!("code_challenge={}", challenge)));
     }
 
     #[test]
     fn test_build_auth_url_contains_s256_method() {
-        let url = build_auth_url("test_challenge");
+        let url = build_auth_url("test_challenge", REDIRECT_URI);
         assert!(url.contains("code_challenge_method=S256"));
     }
 
     #[test]
     fn test_build_auth_url_starts_with_soundcloud_connect() {
-        let url = build_auth_url("test_challenge");
+        let url = build_auth_url("test_challenge", REDIRECT_URI);
         assert!(url.starts_with(AUTH_URL));
     }
 
     // Client secret tests
     #[test]
-    fn test_get_client_secret_returns_value_when_set() {
-        std::env::set_var("SOUNDCLOUD_CLIENT_SECRET", "test_secret_123");
+    fn test_get_client_secret_returns_value_when_embedded() {
+        // The .env file should provide SOUNDCLOUD_CLIENT_SECRET at compile time
         let result = get_client_secret();
         assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "test_secret_123");
-        std::env::remove_var("SOUNDCLOUD_CLIENT_SECRET");
-    }
-
-    #[test]
-    fn test_get_client_secret_returns_error_when_not_set() {
-        std::env::remove_var("SOUNDCLOUD_CLIENT_SECRET");
-        let result = get_client_secret();
-        assert!(result.is_err());
+        assert!(!result.unwrap().is_empty());
     }
 
     // UserProfile tests
