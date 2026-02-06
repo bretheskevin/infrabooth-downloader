@@ -15,6 +15,9 @@ pub enum AuthError {
 
     #[error("No OAuth flow in progress")]
     NoFlowInProgress,
+
+    #[error("Profile fetch failed: {0}")]
+    ProfileFetchFailed(String),
 }
 
 /// Serializable error response for IPC.
@@ -31,6 +34,7 @@ impl From<AuthError> for ErrorResponse {
             AuthError::TokenExchangeFailed(_) => "TOKEN_EXCHANGE_FAILED",
             AuthError::NetworkError(_) => "NETWORK_ERROR",
             AuthError::NoFlowInProgress => "NO_FLOW_IN_PROGRESS",
+            AuthError::ProfileFetchFailed(_) => "PROFILE_FETCH_FAILED",
         };
 
         ErrorResponse {
@@ -87,5 +91,18 @@ mod tests {
         let err = AuthError::NoFlowInProgress;
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "NO_FLOW_IN_PROGRESS");
+    }
+
+    #[test]
+    fn test_profile_fetch_failed_error_message() {
+        let err = AuthError::ProfileFetchFailed("User not found".to_string());
+        assert_eq!(err.to_string(), "Profile fetch failed: User not found");
+    }
+
+    #[test]
+    fn test_error_response_from_profile_fetch_failed() {
+        let err = AuthError::ProfileFetchFailed("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "PROFILE_FETCH_FAILED");
     }
 }

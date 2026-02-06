@@ -52,7 +52,8 @@ describe('Header', () => {
 
     render(<Header />);
 
-    expect(screen.getByText('testuser')).toBeInTheDocument();
+    expect(screen.getByText('Signed in as testuser')).toBeInTheDocument();
+    expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
   });
 });

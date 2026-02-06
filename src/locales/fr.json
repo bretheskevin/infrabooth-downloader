@@ -6,6 +6,9 @@
     "signIn": "Se connecter avec SoundCloud",
     "signOut": "Se déconnecter",
     "signedInAs": "Connecté en tant que {{username}}",
+    "accessibilityStatus": "Connecté en tant que {{username}}, qualité Go+ activée",
+    "qualityBadge": "Go+ 256kbps",
+    "loading": "Chargement...",
     "openingBrowser": "Ouverture du navigateur..."
   },
   "download": {

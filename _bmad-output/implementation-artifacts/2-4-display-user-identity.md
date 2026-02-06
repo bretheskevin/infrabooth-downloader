@@ -1,6 +1,6 @@
 # Story 2.4: Display Authenticated User Identity
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -32,8 +32,8 @@ so that **I know authentication succeeded and which account I'm using**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Implement user profile fetch in Rust (AC: #1)
-  - [ ] 1.1 Add to `src-tauri/src/services/oauth.rs`:
+- [x] Task 1: Implement user profile fetch in Rust (AC: #1)
+  - [x] 1.1 Add to `src-tauri/src/services/oauth.rs`:
     ```rust
     #[derive(Deserialize)]
     pub struct UserProfile {
@@ -57,11 +57,11 @@ so that **I know authentication succeeded and which account I'm using**.
         }
     }
     ```
-  - [ ] 1.2 Update `complete_oauth` to fetch profile after token exchange
-  - [ ] 1.3 Emit username in `auth-state-changed` event
+  - [x] 1.2 Update `complete_oauth` to fetch profile after token exchange
+  - [x] 1.3 Emit username in `auth-state-changed` event
 
-- [ ] Task 2: Update auth store with username (AC: #1, #2)
-  - [ ] 2.1 Ensure `authStore` receives username from event:
+- [x] Task 2: Update auth store with username (AC: #1, #2)
+  - [x] 2.1 Ensure `authStore` receives username from event:
     ```typescript
     // auth-state-changed payload now includes username
     interface AuthStatePayload {
@@ -69,10 +69,10 @@ so that **I know authentication succeeded and which account I'm using**.
       username: string | null;
     }
     ```
-  - [ ] 2.2 Verify `setAuth` updates both `isSignedIn` and `username`
+  - [x] 2.2 Verify `setAuth` updates both `isSignedIn` and `username`
 
-- [ ] Task 3: Create full UserBadge component (AC: #2, #3)
-  - [ ] 3.1 Update `src/components/features/auth/UserBadge.tsx`:
+- [x] Task 3: Create full UserBadge component (AC: #2, #3)
+  - [x] 3.1 Update `src/components/features/auth/UserBadge.tsx`:
     ```typescript
     import { useTranslation } from 'react-i18next';
     import { useAuthStore } from '@/stores/authStore';
@@ -98,10 +98,10 @@ so that **I know authentication succeeded and which account I'm using**.
       );
     }
     ```
-  - [ ] 3.2 Add Shadcn Badge component: `npx shadcn@latest add badge`
+  - [x] 3.2 Add Shadcn Badge component: `npx shadcn@latest add badge`
 
-- [ ] Task 4: Style quality badge (AC: #2, #3)
-  - [ ] 4.1 Create QualityBadge variant:
+- [x] Task 4: Style quality badge (AC: #2, #3)
+  - [x] 4.1 Create QualityBadge variant:
     ```typescript
     // In UserBadge.tsx or separate QualityBadge.tsx
     <Badge
@@ -111,11 +111,11 @@ so that **I know authentication succeeded and which account I'm using**.
       Go+ 256kbps
     </Badge>
     ```
-  - [ ] 4.2 Ensure contrast meets WCAG AA (4.5:1)
-  - [ ] 4.3 Badge color: Info blue (#0EA5E9) per UX spec
+  - [x] 4.2 Ensure contrast meets WCAG AA (4.5:1)
+  - [x] 4.3 Badge color: Info blue (#0EA5E9) per UX spec
 
-- [ ] Task 5: Add accessibility announcements (AC: #4)
-  - [ ] 5.1 Add aria-live region for auth status:
+- [x] Task 5: Add accessibility announcements (AC: #4)
+  - [x] 5.1 Add aria-live region for auth status:
     ```typescript
     export function UserBadge() {
       // ...
@@ -131,15 +131,15 @@ so that **I know authentication succeeded and which account I'm using**.
       );
     }
     ```
-  - [ ] 5.2 Add translation key:
+  - [x] 5.2 Add translation key:
     ```json
     "auth": {
       "accessibilityStatus": "Signed in as {{username}}, Go+ quality enabled"
     }
     ```
 
-- [ ] Task 6: Handle loading state during profile fetch (AC: #1)
-  - [ ] 6.1 Add intermediate state while fetching profile:
+- [x] Task 6: Handle loading state during profile fetch (AC: #1)
+  - [x] 6.1 Add intermediate state while fetching profile:
     ```typescript
     export function UserBadge() {
       const username = useAuthStore((state) => state.username);
@@ -156,8 +156,8 @@ so that **I know authentication succeeded and which account I'm using**.
     }
     ```
 
-- [ ] Task 7: Update translation files (AC: #2, #4)
-  - [ ] 7.1 Add to `en.json`:
+- [x] Task 7: Update translation files (AC: #2, #4)
+  - [x] 7.1 Add to `en.json`:
     ```json
     "auth": {
       "signedInAs": "Signed in as {{username}}",
@@ -165,7 +165,7 @@ so that **I know authentication succeeded and which account I'm using**.
       "qualityBadge": "Go+ 256kbps"
     }
     ```
-  - [ ] 7.2 Add to `fr.json`:
+  - [x] 7.2 Add to `fr.json`:
     ```json
     "auth": {
       "signedInAs": "Connecté en tant que {{username}}",
@@ -309,11 +309,38 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A - No debug issues encountered
+
 ### Completion Notes List
+
+- **Task 1**: Added `UserProfile` struct and `fetch_user_profile()` async function to `oauth.rs`. Added `ProfileFetchFailed` error variant to `AuthError`. Updated `complete_oauth` command to fetch profile after token exchange and emit username in event payload.
+- **Task 2**: Auth store already had username field. Fixed serde serialization to use camelCase (`isSignedIn` instead of `is_signed_in`) to match TypeScript interface. Frontend event listener already handled username correctly.
+- **Task 3**: Implemented full UserBadge component with User icon from lucide-react, translated "Signed in as {username}" text, and Go+ 256kbps quality badge using Shadcn Badge component.
+- **Task 4**: Applied sky-100/sky-700 colors for badge with dark mode support (sky-900/sky-300). Badge uses Tailwind utility classes meeting WCAG AA contrast requirements.
+- **Task 5**: Added `role="status"`, `aria-live="polite"`, and `aria-label` with full accessibility status message. User icon marked as decorative with `aria-hidden="true"`.
+- **Task 6**: Added loading state with Loader2 spinner when username is null (profile still being fetched).
+- **Task 7**: Added `accessibilityStatus`, `qualityBadge`, and `loading` keys to both en.json and fr.json translation files.
+
+### Change Log
+
+- 2026-02-06: Story 2.4 implementation complete - all 7 tasks finished, 38 Rust tests + 138 frontend tests passing, builds verified
 
 ### File List
 
+**Modified:**
+- `src-tauri/src/services/oauth.rs` - Added UserProfile struct and fetch_user_profile function
+- `src-tauri/src/models/error.rs` - Added ProfileFetchFailed error variant
+- `src-tauri/src/commands/auth.rs` - Updated complete_oauth to fetch profile, added serde rename for camelCase
+- `src/components/features/auth/UserBadge.tsx` - Full implementation with accessibility
+- `src/components/features/auth/UserBadge.test.tsx` - Updated tests for new component
+- `src/components/features/auth/AuthContainer.test.tsx` - Updated tests for new behavior
+- `src/components/layout/Header.test.tsx` - Updated test expectations
+- `src/locales/en.json` - Added accessibilityStatus, qualityBadge, loading keys
+- `src/locales/fr.json` - Added French translations for new keys
+
+**Added:**
+- `src/components/ui/badge.tsx` - Shadcn Badge component
