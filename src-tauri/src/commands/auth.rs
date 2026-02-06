@@ -2,7 +2,14 @@ use serde::Serialize;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 
-use crate::services::oauth::{build_auth_url, exchange_code, fetch_user_profile, generate_pkce, get_client_secret};
+use crate::services::oauth::{
+    build_auth_url, exchange_code, fetch_user_profile, generate_pkce, get_client_secret,
+    refresh_tokens,
+};
+use crate::services::storage::{
+    calculate_expires_at, delete_tokens, is_token_expired_or_expiring, load_tokens, store_tokens,
+    StoredTokens,
+};
 
 /// Holds the PKCE code verifier during the OAuth flow.
 /// The verifier is stored temporarily between `start_oauth` and `complete_oauth`.
@@ -84,8 +91,17 @@ pub async fn complete_oauth(
         .await
         .map_err(|e| e.to_string())?;
 
+    // Calculate expiry timestamp and store tokens
+    let expires_at = calculate_expires_at(tokens.expires_in);
+    let stored = StoredTokens {
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at,
+        username: profile.username.clone(),
+    };
+    store_tokens(&stored).map_err(|e| e.to_string())?;
+
     // Emit success event to frontend with username
-    // Note: Token storage will be implemented in Story 2.5
     app.emit(
         AUTH_STATE_CHANGED_EVENT,
         AuthStatePayload {
@@ -96,6 +112,104 @@ pub async fn complete_oauth(
     .map_err(|e| e.to_string())?;
 
     Ok(())
+}
+
+/// Event name emitted when re-authentication is required.
+pub const AUTH_REAUTH_NEEDED_EVENT: &str = "auth-reauth-needed";
+
+/// Checks authentication state on app startup.
+///
+/// Loads stored tokens from the OS keychain, checks if they're valid,
+/// and refreshes them if needed. Emits auth state to the frontend.
+///
+/// # Returns
+/// * `Ok(true)` - User is authenticated (tokens valid or refreshed)
+/// * `Ok(false)` - User is not authenticated (no tokens or refresh failed)
+/// * `Err(String)` - Error during the check
+#[tauri::command]
+pub async fn check_auth_state(app: AppHandle) -> Result<bool, String> {
+    // Try to load stored tokens
+    let tokens = match load_tokens() {
+        Ok(Some(tokens)) => tokens,
+        Ok(None) => {
+            // No tokens stored, user is signed out
+            emit_signed_out(&app)?;
+            return Ok(false);
+        }
+        Err(e) => {
+            // Error loading tokens, treat as signed out
+            log::warn!("Error loading tokens: {}", e);
+            emit_signed_out(&app)?;
+            return Ok(false);
+        }
+    };
+
+    // Check if token is expired or expiring soon
+    if is_token_expired_or_expiring(tokens.expires_at) {
+        // Need to refresh
+        match refresh_and_store(&tokens, &app).await {
+            Ok(new_username) => {
+                emit_signed_in(&app, &new_username)?;
+                Ok(true)
+            }
+            Err(e) => {
+                // Refresh failed, clean up and sign out
+                log::warn!("Token refresh failed: {}", e);
+                let _ = delete_tokens();
+                emit_signed_out(&app)?;
+                app.emit(AUTH_REAUTH_NEEDED_EVENT, ())
+                    .map_err(|e| e.to_string())?;
+                Ok(false)
+            }
+        }
+    } else {
+        // Token still valid
+        emit_signed_in(&app, &tokens.username)?;
+        Ok(true)
+    }
+}
+
+/// Refreshes tokens and stores the new ones.
+async fn refresh_and_store(tokens: &StoredTokens, _app: &AppHandle) -> Result<String, String> {
+    let client_secret = get_client_secret().map_err(|e| e.to_string())?;
+    let new_tokens = refresh_tokens(&tokens.refresh_token, &client_secret)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let expires_at = calculate_expires_at(new_tokens.expires_in);
+    let stored = StoredTokens {
+        access_token: new_tokens.access_token,
+        refresh_token: new_tokens.refresh_token,
+        expires_at,
+        username: tokens.username.clone(),
+    };
+    store_tokens(&stored).map_err(|e| e.to_string())?;
+
+    Ok(tokens.username.clone())
+}
+
+/// Emits signed-in auth state to the frontend.
+fn emit_signed_in(app: &AppHandle, username: &str) -> Result<(), String> {
+    app.emit(
+        AUTH_STATE_CHANGED_EVENT,
+        AuthStatePayload {
+            is_signed_in: true,
+            username: Some(username.to_string()),
+        },
+    )
+    .map_err(|e| e.to_string())
+}
+
+/// Emits signed-out auth state to the frontend.
+fn emit_signed_out(app: &AppHandle) -> Result<(), String> {
+    app.emit(
+        AUTH_STATE_CHANGED_EVENT,
+        AuthStatePayload {
+            is_signed_in: false,
+            username: None,
+        },
+    )
+    .map_err(|e| e.to_string())
 }
 
 #[cfg(test)]
