@@ -7,11 +7,12 @@ import { useAuthStore } from '@/stores/authStore';
 // Mock auth module
 vi.mock('@/lib/auth', () => ({
   startOAuth: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 describe('Header', () => {
   beforeEach(async () => {
-    useAuthStore.setState({ isSignedIn: false, username: null });
+    useAuthStore.setState({ isSignedIn: false, username: null, plan: null });
     await act(async () => {
       await i18n.changeLanguage('en');
     });
@@ -47,12 +48,13 @@ describe('Header', () => {
     expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
   });
 
-  it('should render AuthContainer with UserBadge when authenticated', () => {
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+  it('should render AuthContainer with UserMenu when authenticated', () => {
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     render(<Header />);
 
-    expect(screen.getByText('Signed in as testuser')).toBeInTheDocument();
+    // UserMenu displays username and quality badge in a dropdown trigger
+    expect(screen.getByText('testuser')).toBeInTheDocument();
     expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
   });

@@ -18,9 +18,11 @@ import { useAuthCallback } from './useAuthCallback';
 export function useOAuthFlow(): void {
   const handleCallback = useCallback(async (code: string) => {
     try {
+      console.log('[useOAuthFlow] Received code, calling completeOAuth...');
       await completeOAuth(code);
+      console.log('[useOAuthFlow] completeOAuth succeeded');
     } catch (error) {
-      console.error('OAuth completion failed:', error);
+      console.error('[useOAuthFlow] OAuth completion failed:', error);
     }
   }, []);
 

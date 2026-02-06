@@ -68,7 +68,7 @@ describe('useOAuthFlow', () => {
       authCallbackHandler!({ payload: 'invalid-code' });
     });
 
-    expect(consoleSpy).toHaveBeenCalledWith('OAuth completion failed:', expect.any(Error));
+    expect(consoleSpy).toHaveBeenCalledWith('[useOAuthFlow] OAuth completion failed:', expect.any(Error));
     consoleSpy.mockRestore();
   });
 });

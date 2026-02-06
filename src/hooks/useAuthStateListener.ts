@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/authStore';
 interface AuthStatePayload {
   isSignedIn: boolean;
   username: string | null;
+  plan: string | null;
 }
 
 /**
@@ -36,8 +37,9 @@ export function useAuthStateListener(): void {
       try {
         // Listen for auth state changes
         unlistenAuthState = await listen<AuthStatePayload>('auth-state-changed', (event) => {
+          console.log('[useAuthStateListener] Received auth-state-changed:', event.payload);
           if (mounted && event.payload) {
-            setAuth(event.payload.isSignedIn, event.payload.username);
+            setAuth(event.payload.isSignedIn, event.payload.username, event.payload.plan);
           }
         });
 

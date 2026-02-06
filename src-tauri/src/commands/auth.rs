@@ -4,23 +4,25 @@ use tauri::{AppHandle, Emitter, State};
 
 use crate::services::oauth::{
     build_auth_url, exchange_code, fetch_user_profile, generate_pkce, get_client_secret,
-    refresh_tokens,
+    refresh_tokens, REDIRECT_URI,
 };
+#[cfg(debug_assertions)]
+use crate::services::dev_server::start_dev_callback_server;
 use crate::services::storage::{
     calculate_expires_at, delete_tokens, is_token_expired_or_expiring, load_tokens, store_tokens,
     StoredTokens,
 };
 
-/// Holds the PKCE code verifier during the OAuth flow.
-/// The verifier is stored temporarily between `start_oauth` and `complete_oauth`.
 pub struct OAuthState {
     pub verifier: Mutex<Option<String>>,
+    pub redirect_uri: Mutex<Option<String>>,
 }
 
 impl Default for OAuthState {
     fn default() -> Self {
         Self {
             verifier: Mutex::new(None),
+            redirect_uri: Mutex::new(None),
         }
     }
 }
@@ -31,6 +33,7 @@ impl Default for OAuthState {
 pub struct AuthStatePayload {
     pub is_signed_in: bool,
     pub username: Option<String>,
+    pub plan: Option<String>,
 }
 
 /// Event name for auth state changes.
@@ -44,13 +47,32 @@ pub const AUTH_STATE_CHANGED_EVENT: &str = "auth-state-changed";
 /// * `Ok(String)` - The authorization URL to open in the browser
 /// * `Err(String)` - Error message if generation fails
 #[tauri::command]
-pub async fn start_oauth(state: State<'_, OAuthState>) -> Result<String, String> {
+pub async fn start_oauth(
+    state: State<'_, OAuthState>,
+    app: AppHandle,
+) -> Result<String, String> {
     let (verifier, challenge) = generate_pkce();
 
-    // Store the verifier for later use in complete_oauth
     *state.verifier.lock().map_err(|e| e.to_string())? = Some(verifier);
 
-    Ok(build_auth_url(&challenge))
+    let redirect_uri;
+
+    #[cfg(debug_assertions)]
+    {
+        let port = start_dev_callback_server(app).await?;
+        redirect_uri = format!("http://127.0.0.1:{}/callback", port);
+        log::info!("[start_oauth] Dev mode: using localhost callback at {}", redirect_uri);
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        let _ = &app;
+        redirect_uri = REDIRECT_URI.to_string();
+    }
+
+    *state.redirect_uri.lock().map_err(|e| e.to_string())? = Some(redirect_uri.clone());
+
+    Ok(build_auth_url(&challenge, &redirect_uri))
 }
 
 /// Completes the OAuth flow by exchanging the authorization code for tokens.
@@ -70,7 +92,8 @@ pub async fn complete_oauth(
     state: State<'_, OAuthState>,
     app: AppHandle,
 ) -> Result<(), String> {
-    // Retrieve and clear the stored verifier
+    log::info!("[complete_oauth] Called with code: {}...", &code[..code.len().min(10)]);
+
     let verifier = state
         .verifier
         .lock()
@@ -78,18 +101,38 @@ pub async fn complete_oauth(
         .take()
         .ok_or("No OAuth flow in progress")?;
 
-    // Get client secret from environment
-    let client_secret = get_client_secret().map_err(|e| e.to_string())?;
+    let redirect_uri = state
+        .redirect_uri
+        .lock()
+        .map_err(|e| e.to_string())?
+        .take()
+        .unwrap_or_else(|| REDIRECT_URI.to_string());
 
-    // Exchange code for tokens
-    let tokens = exchange_code(&code, &verifier, &client_secret)
+    log::info!("[complete_oauth] Using redirect_uri: {}", redirect_uri);
+
+    let client_secret = get_client_secret().map_err(|e| {
+        log::error!("[complete_oauth] Failed to get client secret: {}", e);
+        e.to_string()
+    })?;
+
+    let tokens = exchange_code(&code, &verifier, &client_secret, &redirect_uri)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            log::error!("[complete_oauth] Token exchange failed: {}", e);
+            e.to_string()
+        })?;
+
+    log::info!("[complete_oauth] Token exchange succeeded, fetching user profile...");
 
     // Fetch user profile to get username
     let profile = fetch_user_profile(&tokens.access_token)
         .await
-        .map_err(|e| e.to_string())?;
+        .map_err(|e| {
+            log::error!("[complete_oauth] Profile fetch failed: {}", e);
+            e.to_string()
+        })?;
+
+    log::info!("[complete_oauth] Got profile for user: {}", profile.username);
 
     // Calculate expiry timestamp and store tokens
     let expires_at = calculate_expires_at(tokens.expires_in);
@@ -98,15 +141,17 @@ pub async fn complete_oauth(
         refresh_token: tokens.refresh_token,
         expires_at,
         username: profile.username.clone(),
+        plan: profile.plan.clone(),
     };
     store_tokens(&stored).map_err(|e| e.to_string())?;
 
-    // Emit success event to frontend with username
+    // Emit success event to frontend with username and plan
     app.emit(
         AUTH_STATE_CHANGED_EVENT,
         AuthStatePayload {
             is_signed_in: true,
             username: Some(profile.username),
+            plan: profile.plan,
         },
     )
     .map_err(|e| e.to_string())?;
@@ -148,8 +193,8 @@ pub async fn check_auth_state(app: AppHandle) -> Result<bool, String> {
     if is_token_expired_or_expiring(tokens.expires_at) {
         // Need to refresh
         match refresh_and_store(&tokens, &app).await {
-            Ok(new_username) => {
-                emit_signed_in(&app, &new_username)?;
+            Ok(refreshed) => {
+                emit_signed_in(&app, &refreshed.username, &refreshed.plan)?;
                 Ok(true)
             }
             Err(e) => {
@@ -164,13 +209,13 @@ pub async fn check_auth_state(app: AppHandle) -> Result<bool, String> {
         }
     } else {
         // Token still valid
-        emit_signed_in(&app, &tokens.username)?;
+        emit_signed_in(&app, &tokens.username, &tokens.plan)?;
         Ok(true)
     }
 }
 
 /// Refreshes tokens and stores the new ones.
-async fn refresh_and_store(tokens: &StoredTokens, _app: &AppHandle) -> Result<String, String> {
+async fn refresh_and_store(tokens: &StoredTokens, _app: &AppHandle) -> Result<StoredTokens, String> {
     let client_secret = get_client_secret().map_err(|e| e.to_string())?;
     let new_tokens = refresh_tokens(&tokens.refresh_token, &client_secret)
         .await
@@ -182,19 +227,21 @@ async fn refresh_and_store(tokens: &StoredTokens, _app: &AppHandle) -> Result<St
         refresh_token: new_tokens.refresh_token,
         expires_at,
         username: tokens.username.clone(),
+        plan: tokens.plan.clone(),
     };
     store_tokens(&stored).map_err(|e| e.to_string())?;
 
-    Ok(tokens.username.clone())
+    Ok(stored)
 }
 
 /// Emits signed-in auth state to the frontend.
-fn emit_signed_in(app: &AppHandle, username: &str) -> Result<(), String> {
+fn emit_signed_in(app: &AppHandle, username: &str, plan: &Option<String>) -> Result<(), String> {
     app.emit(
         AUTH_STATE_CHANGED_EVENT,
         AuthStatePayload {
             is_signed_in: true,
             username: Some(username.to_string()),
+            plan: plan.clone(),
         },
     )
     .map_err(|e| e.to_string())
@@ -207,9 +254,30 @@ fn emit_signed_out(app: &AppHandle) -> Result<(), String> {
         AuthStatePayload {
             is_signed_in: false,
             username: None,
+            plan: None,
         },
     )
     .map_err(|e| e.to_string())
+}
+
+/// Signs out the user by deleting stored tokens and emitting signed-out state.
+///
+/// This command:
+/// 1. Deletes tokens from the OS keychain
+/// 2. Emits an auth-state-changed event with signed-out state
+///
+/// # Returns
+/// * `Ok(())` - If sign-out succeeds
+/// * `Err(String)` - Error message if sign-out fails
+#[tauri::command]
+pub async fn sign_out(app: AppHandle) -> Result<(), String> {
+    // Delete stored tokens from OS keychain
+    delete_tokens().map_err(|e| e.to_string())?;
+
+    // Emit signed-out state to frontend
+    emit_signed_out(&app)?;
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -255,20 +323,36 @@ mod tests {
         let payload = AuthStatePayload {
             is_signed_in: true,
             username: Some("testuser".to_string()),
+            plan: Some("Pro Unlimited".to_string()),
         };
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":true"));
         assert!(json.contains("\"username\":\"testuser\""));
+        assert!(json.contains("\"plan\":\"Pro Unlimited\""));
     }
 
     #[test]
-    fn test_auth_state_payload_serializes_without_username() {
+    fn test_auth_state_payload_serializes_without_plan() {
         let payload = AuthStatePayload {
             is_signed_in: true,
-            username: None,
+            username: Some("testuser".to_string()),
+            plan: None,
         };
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":true"));
+        assert!(json.contains("\"plan\":null"));
+    }
+
+    #[test]
+    fn test_sign_out_payload_is_correct() {
+        let payload = AuthStatePayload {
+            is_signed_in: false,
+            username: None,
+            plan: None,
+        };
+        let json = serde_json::to_string(&payload).unwrap();
+        assert!(json.contains("\"isSignedIn\":false"));
         assert!(json.contains("\"username\":null"));
+        assert!(json.contains("\"plan\":null"));
     }
 }

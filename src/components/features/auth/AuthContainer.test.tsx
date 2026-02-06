@@ -27,12 +27,13 @@ vi.mock('react-i18next', () => ({
 // Mock auth module
 vi.mock('@/lib/auth', () => ({
   startOAuth: vi.fn(),
+  signOut: vi.fn(),
 }));
 
 describe('AuthContainer', () => {
   beforeEach(() => {
     // Reset store to default state
-    useAuthStore.setState({ isSignedIn: false, username: null });
+    useAuthStore.setState({ isSignedIn: false, username: null, plan: null });
   });
 
   it('should render SignInButton when not signed in', () => {
@@ -41,17 +42,18 @@ describe('AuthContainer', () => {
     expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
   });
 
-  it('should render UserBadge when signed in with username', () => {
-    useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+  it('should render UserMenu when signed in with username', () => {
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     render(<AuthContainer />);
 
-    expect(screen.getByText('Signed in as testuser')).toBeInTheDocument();
+    // UserMenu shows username and quality badge in a dropdown trigger button
+    expect(screen.getByText('testuser')).toBeInTheDocument();
     expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
   });
 
-  it('should switch from SignInButton to UserBadge when auth state changes', () => {
+  it('should switch from SignInButton to UserMenu when auth state changes', () => {
     const { rerender } = render(<AuthContainer />);
 
     // Initially shows sign-in button
@@ -59,22 +61,21 @@ describe('AuthContainer', () => {
 
     // Change auth state (wrapped in act)
     act(() => {
-      useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
+      useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
     });
 
     // Rerender to pick up state change
     rerender(<AuthContainer />);
 
-    // Now shows user badge with username
-    expect(screen.getByText('Signed in as testuser')).toBeInTheDocument();
+    // Now shows user menu with username
+    expect(screen.getByText('testuser')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
   });
 
-  it('should show loading state when signed in without username', () => {
-    useAuthStore.setState({ isSignedIn: true, username: null });
+  it('should have transition classes for smooth state changes', () => {
+    const { container } = render(<AuthContainer />);
 
-    render(<AuthContainer />);
-
-    expect(screen.getByText('Loading...')).toBeInTheDocument();
+    const wrapper = container.firstChild;
+    expect(wrapper).toHaveClass('transition-opacity', 'duration-200');
   });
 });

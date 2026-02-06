@@ -50,6 +50,11 @@ pub struct StoredTokens {
 
     /// Cached username to avoid profile fetch on startup.
     pub username: String,
+
+    /// SoundCloud subscription plan (e.g. "Pro Unlimited").
+    /// None for free users. Used to determine download quality.
+    #[serde(default)]
+    pub plan: Option<String>,
 }
 
 /// Stores OAuth tokens securely in the OS keychain.
@@ -159,6 +164,7 @@ mod tests {
             refresh_token: "refresh_456".to_string(),
             expires_at: 1234567890,
             username: "testuser".to_string(),
+            plan: Some("Pro Unlimited".to_string()),
         };
 
         let json = serde_json::to_string(&tokens).unwrap();
@@ -166,6 +172,7 @@ mod tests {
         assert!(json.contains("\"refresh_token\":\"refresh_456\""));
         assert!(json.contains("\"expires_at\":1234567890"));
         assert!(json.contains("\"username\":\"testuser\""));
+        assert!(json.contains("\"plan\":\"Pro Unlimited\""));
     }
 
     #[test]
@@ -174,7 +181,8 @@ mod tests {
             "access_token": "access_123",
             "refresh_token": "refresh_456",
             "expires_at": 1234567890,
-            "username": "testuser"
+            "username": "testuser",
+            "plan": "Pro Unlimited"
         }"#;
 
         let tokens: StoredTokens = serde_json::from_str(json).unwrap();
@@ -182,6 +190,21 @@ mod tests {
         assert_eq!(tokens.refresh_token, "refresh_456");
         assert_eq!(tokens.expires_at, 1234567890);
         assert_eq!(tokens.username, "testuser");
+        assert_eq!(tokens.plan, Some("Pro Unlimited".to_string()));
+    }
+
+    #[test]
+    fn test_stored_tokens_deserializes_without_plan() {
+        // Backwards compatibility: existing keychain entries without plan field
+        let json = r#"{
+            "access_token": "access_123",
+            "refresh_token": "refresh_456",
+            "expires_at": 1234567890,
+            "username": "testuser"
+        }"#;
+
+        let tokens: StoredTokens = serde_json::from_str(json).unwrap();
+        assert_eq!(tokens.plan, None);
     }
 
     #[test]
