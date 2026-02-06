@@ -2,7 +2,7 @@ mod commands;
 mod models;
 mod services;
 
-use commands::{complete_oauth, start_oauth, OAuthState};
+use commands::{check_auth_state, complete_oauth, start_oauth, OAuthState};
 use services::deep_link::handle_deep_link;
 use tauri_plugin_deep_link::DeepLinkExt;
 
@@ -15,7 +15,7 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_shell::init())
         .manage(OAuthState::default())
-        .invoke_handler(tauri::generate_handler![start_oauth, complete_oauth])
+        .invoke_handler(tauri::generate_handler![start_oauth, complete_oauth, check_auth_state])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

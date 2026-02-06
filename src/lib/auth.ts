@@ -33,3 +33,17 @@ export async function startOAuth(): Promise<void> {
 export async function completeOAuth(code: string): Promise<void> {
   await invoke('complete_oauth', { code });
 }
+
+/**
+ * Checks authentication state on app startup.
+ *
+ * This function loads stored tokens from the OS keychain, checks if they're valid,
+ * and refreshes them if needed. It emits auth state events to notify the app
+ * whether the user is signed in.
+ *
+ * @returns true if the user is authenticated, false otherwise
+ * @throws Error if the check fails
+ */
+export async function checkAuthState(): Promise<boolean> {
+  return await invoke<boolean>('check_auth_state');
+}
