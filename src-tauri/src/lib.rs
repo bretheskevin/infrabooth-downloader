@@ -1,12 +1,21 @@
+mod commands;
+mod models;
 mod services;
 
+use commands::{complete_oauth, start_oauth, OAuthState};
 use services::deep_link::handle_deep_link;
 use tauri_plugin_deep_link::DeepLinkExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Load environment variables from .env file if present
+    let _ = dotenvy::dotenv();
+
     tauri::Builder::default()
         .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_shell::init())
+        .manage(OAuthState::default())
+        .invoke_handler(tauri::generate_handler![start_oauth, complete_oauth])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

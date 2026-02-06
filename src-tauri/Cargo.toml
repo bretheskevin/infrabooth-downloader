@@ -24,4 +24,12 @@ log = "0.4"
 tauri = { version = "2.10.0", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-deep-link = "2"
+tauri-plugin-shell = "2"
 url = "2"
+rand = "0.8"
+base64 = "0.21"
+sha2 = "0.10"
+reqwest = { version = "0.11", features = ["json"] }
+tokio = { version = "1", features = ["full"] }
+thiserror = "1"
+dotenvy = "0.15"

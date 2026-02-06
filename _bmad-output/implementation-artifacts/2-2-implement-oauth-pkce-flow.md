@@ -1,6 +1,6 @@
 # Story 2.2: Implement OAuth 2.1 Flow with PKCE
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -44,9 +44,9 @@ so that **my credentials are never exposed to the app directly**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create OAuth service module (AC: #1, #2)
-  - [ ] 1.1 Create `src-tauri/src/services/oauth.rs`
-  - [ ] 1.2 Implement PKCE code verifier generation:
+- [x] Task 1: Create OAuth service module (AC: #1, #2)
+  - [x] 1.1 Create `src-tauri/src/services/oauth.rs`
+  - [x] 1.2 Implement PKCE code verifier generation:
     ```rust
     use rand::Rng;
     use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
@@ -66,22 +66,22 @@ so that **my credentials are never exposed to the app directly**.
         (verifier, challenge)
     }
     ```
-  - [ ] 1.3 Add dependencies to Cargo.toml:
+  - [x] 1.3 Add dependencies to Cargo.toml:
     ```toml
     rand = "0.8"
     base64 = "0.21"
     sha2 = "0.10"
     ```
 
-- [ ] Task 2: Implement authorization URL builder (AC: #2)
-  - [ ] 2.1 Create constants for OAuth config:
+- [x] Task 2: Implement authorization URL builder (AC: #2)
+  - [x] 2.1 Create constants for OAuth config:
     ```rust
     const CLIENT_ID: &str = "4CHDCUOhHIdSxBv4XN0msyZXuIXbB5wv";
     const REDIRECT_URI: &str = "sc-downloader://auth/callback";
     const AUTH_URL: &str = "https://api.soundcloud.com/connect";
     const TOKEN_URL: &str = "https://api.soundcloud.com/oauth2/token";
     ```
-  - [ ] 2.2 Implement `build_auth_url()` function:
+  - [x] 2.2 Implement `build_auth_url()` function:
     ```rust
     pub fn build_auth_url(code_challenge: &str) -> String {
         format!(
@@ -91,15 +91,15 @@ so that **my credentials are never exposed to the app directly**.
     }
     ```
 
-- [ ] Task 3: Implement token exchange (AC: #3, #4, #5)
-  - [ ] 3.1 Add reqwest for HTTP requests:
+- [x] Task 3: Implement token exchange (AC: #3, #4, #5)
+  - [x] 3.1 Add reqwest for HTTP requests:
     ```toml
     reqwest = { version = "0.11", features = ["json"] }
     tokio = { version = "1", features = ["full"] }
     serde = { version = "1", features = ["derive"] }
     serde_json = "1"
     ```
-  - [ ] 3.2 Define token response struct:
+  - [x] 3.2 Define token response struct:
     ```rust
     #[derive(Deserialize)]
     pub struct TokenResponse {
@@ -109,7 +109,7 @@ so that **my credentials are never exposed to the app directly**.
         pub token_type: String,
     }
     ```
-  - [ ] 3.3 Implement `exchange_code()` function:
+  - [x] 3.3 Implement `exchange_code()` function:
     ```rust
     pub async fn exchange_code(
         code: &str,
@@ -138,8 +138,8 @@ so that **my credentials are never exposed to the app directly**.
     }
     ```
 
-- [ ] Task 4: Create OAuth state manager (AC: #1, #5)
-  - [ ] 4.1 Create state struct to hold PKCE values:
+- [x] Task 4: Create OAuth state manager (AC: #1, #5)
+  - [x] 4.1 Create state struct to hold PKCE values:
     ```rust
     use std::sync::Mutex;
     use tauri::State;
@@ -148,15 +148,15 @@ so that **my credentials are never exposed to the app directly**.
         pub verifier: Mutex<Option<String>>,
     }
     ```
-  - [ ] 4.2 Register state in Tauri app:
+  - [x] 4.2 Register state in Tauri app:
     ```rust
     .manage(OAuthState { verifier: Mutex::new(None) })
     ```
-  - [ ] 4.3 Clear state after use or on error
+  - [x] 4.3 Clear state after use or on error
 
-- [ ] Task 5: Create Tauri commands (AC: #2, #3, #4)
-  - [ ] 5.1 Create `src-tauri/src/commands/auth.rs`
-  - [ ] 5.2 Implement `start_oauth` command:
+- [x] Task 5: Create Tauri commands (AC: #2, #3, #4)
+  - [x] 5.1 Create `src-tauri/src/commands/auth.rs`
+  - [x] 5.2 Implement `start_oauth` command:
     ```rust
     #[tauri::command]
     pub async fn start_oauth(
@@ -167,7 +167,7 @@ so that **my credentials are never exposed to the app directly**.
         Ok(build_auth_url(&challenge))
     }
     ```
-  - [ ] 5.3 Implement `complete_oauth` command (called after callback):
+  - [x] 5.3 Implement `complete_oauth` command (called after callback):
     ```rust
     #[tauri::command]
     pub async fn complete_oauth(
@@ -194,25 +194,25 @@ so that **my credentials are never exposed to the app directly**.
         Ok(())
     }
     ```
-  - [ ] 5.4 Register commands in lib.rs
+  - [x] 5.4 Register commands in lib.rs
 
-- [ ] Task 6: Implement client secret handling (AC: #3)
-  - [ ] 6.1 Create `.env.example` with `SOUNDCLOUD_CLIENT_SECRET=`
-  - [ ] 6.2 Add `dotenvy` crate for env loading:
+- [x] Task 6: Implement client secret handling (AC: #3)
+  - [x] 6.1 Create `.env.example` with `SOUNDCLOUD_CLIENT_SECRET=`
+  - [x] 6.2 Add `dotenvy` crate for env loading:
     ```toml
     dotenvy = "0.15"
     ```
-  - [ ] 6.3 Implement `get_client_secret()`:
+  - [x] 6.3 Implement `get_client_secret()`:
     ```rust
     fn get_client_secret() -> Result<String, AuthError> {
         std::env::var("SOUNDCLOUD_CLIENT_SECRET")
             .map_err(|_| AuthError::MissingClientSecret)
     }
     ```
-  - [ ] 6.4 Document secure configuration in README
+  - [x] 6.4 Document secure configuration in README
 
-- [ ] Task 7: Create TypeScript bindings (AC: #4)
-  - [ ] 7.1 Create `src/lib/auth.ts`:
+- [x] Task 7: Create TypeScript bindings (AC: #4)
+  - [x] 7.1 Create `src/lib/auth.ts`:
     ```typescript
     import { invoke } from '@tauri-apps/api/core';
     import { open } from '@tauri-apps/plugin-shell';
@@ -226,7 +226,7 @@ so that **my credentials are never exposed to the app directly**.
       await invoke('complete_oauth', { code });
     }
     ```
-  - [ ] 7.2 Add shell plugin: `npm install @tauri-apps/plugin-shell`
+  - [x] 7.2 Add shell plugin: `npm install @tauri-apps/plugin-shell`
 
 ## Dev Notes
 
@@ -366,11 +366,54 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A - No debug issues encountered.
+
 ### Completion Notes List
 
+- ✅ Implemented PKCE generation with 64-char verifier and SHA-256 challenge (12 unit tests)
+- ✅ Created OAuth service module with constants for SoundCloud endpoints
+- ✅ Implemented token exchange function with proper error handling
+- ✅ Created AuthError enum using thiserror with 4 error variants (6 unit tests)
+- ✅ Created OAuthState struct with Mutex for thread-safe verifier storage (5 unit tests)
+- ✅ Implemented `start_oauth` and `complete_oauth` Tauri commands
+- ✅ Registered commands and state in lib.rs
+- ✅ Added dotenvy for environment variable loading
+- ✅ Created .env.example template for client secret
+- ✅ Added .env to .gitignore for security
+- ✅ Created TypeScript auth module with startOAuth and completeOAuth functions (5 unit tests)
+- ✅ Installed @tauri-apps/plugin-shell for browser opening
+- ✅ Added shell:allow-open permission to capabilities
+
+**Test Summary:**
+- Rust tests: 33 passing
+- TypeScript tests: 108 passing (5 new auth tests)
+- Total: 141 tests
+
 ### File List
+
+**New Files:**
+- src-tauri/src/services/oauth.rs
+- src-tauri/src/models/mod.rs
+- src-tauri/src/models/error.rs
+- src-tauri/src/commands/mod.rs
+- src-tauri/src/commands/auth.rs
+- src-tauri/.env.example
+- src/lib/auth.ts
+- src/lib/auth.test.ts
+
+**Modified Files:**
+- src-tauri/Cargo.toml (added rand, base64, sha2, reqwest, tokio, thiserror, dotenvy, tauri-plugin-shell)
+- src-tauri/src/lib.rs (added commands, models modules, registered state and commands)
+- src-tauri/src/services/mod.rs (added oauth module export)
+- src-tauri/capabilities/default.json (added shell:allow-open permission)
+- .gitignore (added .env, target/, Cargo.lock)
+- package.json (added @tauri-apps/plugin-shell dependency)
+
+### Change Log
+
+- 2026-02-06: Implemented OAuth 2.1 with PKCE flow for SoundCloud authentication (Story 2.2)
 
