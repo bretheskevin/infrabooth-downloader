@@ -1,2 +1,14 @@
 .idea/
 node_modules/
+
+# Build output
+dist/
+
+# Environment files with secrets
+.env
+.env.local
+src-tauri/.env
+
+# Rust build artifacts
+target/
+Cargo.lock
