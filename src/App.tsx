@@ -1,8 +1,10 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { useLanguageSync } from '@/hooks/useLanguageSync';
+import { useLanguageSync, useAuthStateListener, useOAuthFlow } from '@/hooks';
 
 export function App() {
   useLanguageSync();
+  useAuthStateListener();
+  useOAuthFlow();
 
   return (
     <AppLayout>
