@@ -105,6 +105,42 @@ pub fn get_client_secret() -> Result<String, AuthError> {
     std::env::var("SOUNDCLOUD_CLIENT_SECRET").map_err(|_| AuthError::MissingClientSecret)
 }
 
+/// User profile response from SoundCloud /me endpoint.
+#[derive(Debug, Deserialize)]
+pub struct UserProfile {
+    pub username: String,
+    pub avatar_url: Option<String>,
+    pub plan: Option<String>,
+}
+
+/// Fetches the authenticated user's profile from SoundCloud.
+///
+/// # Arguments
+/// * `access_token` - The OAuth access token
+///
+/// # Returns
+/// * `Ok(UserProfile)` - The user's profile data
+/// * `Err(AuthError)` - Error if fetch fails
+pub async fn fetch_user_profile(access_token: &str) -> Result<UserProfile, AuthError> {
+    let client = reqwest::Client::new();
+    let response = client
+        .get("https://api.soundcloud.com/me")
+        .header("Authorization", format!("OAuth {}", access_token))
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        Ok(response.json().await?)
+    } else {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        Err(AuthError::ProfileFetchFailed(format!(
+            "HTTP {}: {}",
+            status, body
+        )))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -208,5 +244,41 @@ mod tests {
         std::env::remove_var("SOUNDCLOUD_CLIENT_SECRET");
         let result = get_client_secret();
         assert!(result.is_err());
+    }
+
+    // UserProfile tests
+    #[test]
+    fn test_user_profile_deserializes_with_all_fields() {
+        let json = r#"{
+            "username": "test_user",
+            "avatar_url": "https://example.com/avatar.jpg",
+            "plan": "Pro Unlimited"
+        }"#;
+        let profile: UserProfile = serde_json::from_str(json).unwrap();
+        assert_eq!(profile.username, "test_user");
+        assert_eq!(profile.avatar_url, Some("https://example.com/avatar.jpg".to_string()));
+        assert_eq!(profile.plan, Some("Pro Unlimited".to_string()));
+    }
+
+    #[test]
+    fn test_user_profile_deserializes_with_optional_fields_missing() {
+        let json = r#"{"username": "minimal_user"}"#;
+        let profile: UserProfile = serde_json::from_str(json).unwrap();
+        assert_eq!(profile.username, "minimal_user");
+        assert!(profile.avatar_url.is_none());
+        assert!(profile.plan.is_none());
+    }
+
+    #[test]
+    fn test_user_profile_deserializes_with_null_optional_fields() {
+        let json = r#"{
+            "username": "null_user",
+            "avatar_url": null,
+            "plan": null
+        }"#;
+        let profile: UserProfile = serde_json::from_str(json).unwrap();
+        assert_eq!(profile.username, "null_user");
+        assert!(profile.avatar_url.is_none());
+        assert!(profile.plan.is_none());
     }
 }

@@ -6,12 +6,20 @@ import { useAuthStore } from '@/stores/authStore';
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => {
+    t: (key: string, options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
         'auth.signIn': 'Sign in with SoundCloud',
         'auth.openingBrowser': 'Opening browser...',
+        'auth.signedInAs': 'Signed in as {{username}}',
+        'auth.accessibilityStatus': 'Signed in as {{username}}, Go+ quality enabled',
+        'auth.qualityBadge': 'Go+ 256kbps',
+        'auth.loading': 'Loading...',
       };
-      return translations[key] || key;
+      const template = translations[key] || key;
+      if (options) {
+        return template.replace(/\{\{(\w+)\}\}/g, (_, k) => String(options[k] || ''));
+      }
+      return template;
     },
   }),
 }));
@@ -33,12 +41,13 @@ describe('AuthContainer', () => {
     expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
   });
 
-  it('should render UserBadge when signed in', () => {
+  it('should render UserBadge when signed in with username', () => {
     useAuthStore.setState({ isSignedIn: true, username: 'testuser' });
 
     render(<AuthContainer />);
 
-    expect(screen.getByText('testuser')).toBeInTheDocument();
+    expect(screen.getByText('Signed in as testuser')).toBeInTheDocument();
+    expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
   });
 
@@ -56,16 +65,16 @@ describe('AuthContainer', () => {
     // Rerender to pick up state change
     rerender(<AuthContainer />);
 
-    // Now shows user badge
-    expect(screen.getByText('testuser')).toBeInTheDocument();
+    // Now shows user badge with username
+    expect(screen.getByText('Signed in as testuser')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
   });
 
-  it('should show fallback text when signed in without username', () => {
+  it('should show loading state when signed in without username', () => {
     useAuthStore.setState({ isSignedIn: true, username: null });
 
     render(<AuthContainer />);
 
-    expect(screen.getByText('Signed in')).toBeInTheDocument();
+    expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
 });

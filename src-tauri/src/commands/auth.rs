@@ -2,7 +2,7 @@ use serde::Serialize;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 
-use crate::services::oauth::{build_auth_url, exchange_code, generate_pkce, get_client_secret};
+use crate::services::oauth::{build_auth_url, exchange_code, fetch_user_profile, generate_pkce, get_client_secret};
 
 /// Holds the PKCE code verifier during the OAuth flow.
 /// The verifier is stored temporarily between `start_oauth` and `complete_oauth`.
@@ -20,6 +20,7 @@ impl Default for OAuthState {
 
 /// Auth state payload emitted to the frontend.
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct AuthStatePayload {
     pub is_signed_in: bool,
     pub username: Option<String>,
@@ -74,18 +75,22 @@ pub async fn complete_oauth(
     let client_secret = get_client_secret().map_err(|e| e.to_string())?;
 
     // Exchange code for tokens
-    let _tokens = exchange_code(&code, &verifier, &client_secret)
+    let tokens = exchange_code(&code, &verifier, &client_secret)
         .await
         .map_err(|e| e.to_string())?;
 
-    // Emit success event to frontend
+    // Fetch user profile to get username
+    let profile = fetch_user_profile(&tokens.access_token)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // Emit success event to frontend with username
     // Note: Token storage will be implemented in Story 2.5
-    // Note: Username will be fetched in Story 2.4
     app.emit(
         AUTH_STATE_CHANGED_EVENT,
         AuthStatePayload {
             is_signed_in: true,
-            username: None,
+            username: Some(profile.username),
         },
     )
     .map_err(|e| e.to_string())?;
@@ -138,7 +143,7 @@ mod tests {
             username: Some("testuser".to_string()),
         };
         let json = serde_json::to_string(&payload).unwrap();
-        assert!(json.contains("\"is_signed_in\":true"));
+        assert!(json.contains("\"isSignedIn\":true"));
         assert!(json.contains("\"username\":\"testuser\""));
     }
 
@@ -149,7 +154,7 @@ mod tests {
             username: None,
         };
         let json = serde_json::to_string(&payload).unwrap();
-        assert!(json.contains("\"is_signed_in\":true"));
+        assert!(json.contains("\"isSignedIn\":true"));
         assert!(json.contains("\"username\":null"));
     }
 }
