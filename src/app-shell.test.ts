@@ -114,7 +114,8 @@ describe('Story 1.3: App Shell Layout', () => {
         join(PROJECT_ROOT, 'src/components/layout/Header.tsx'),
         'utf-8'
       );
-      expect(content).toContain('InfraBooth Downloader');
+      // Title is now pulled from i18n translations
+      expect(content).toContain("t('app.title')");
     });
 
     it('should have border-b for visual separation', () => {
