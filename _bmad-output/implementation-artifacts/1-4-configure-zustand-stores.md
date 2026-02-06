@@ -1,6 +1,6 @@
 # Story 1.4: Configure Zustand Store Structure
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -36,13 +36,13 @@ so that **application state can be managed consistently across components**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install Zustand (AC: #1)
-  - [ ] 1.1 Run `npm install zustand`
-  - [ ] 1.2 Create `/src/stores/` directory
+- [x] Task 1: Install Zustand (AC: #1)
+  - [x] 1.1 Run `npm install zustand`
+  - [x] 1.2 Create `/src/stores/` directory
 
-- [ ] Task 2: Create authStore (AC: #1, #2)
-  - [ ] 2.1 Create `src/stores/authStore.ts`
-  - [ ] 2.2 Define `AuthState` interface:
+- [x] Task 2: Create authStore (AC: #1, #2)
+  - [x] 2.1 Create `src/stores/authStore.ts`
+  - [x] 2.2 Define `AuthState` interface:
     ```typescript
     interface AuthState {
       isSignedIn: boolean;
@@ -52,12 +52,12 @@ so that **application state can be managed consistently across components**.
       clearAuth: () => void;
     }
     ```
-  - [ ] 2.3 Implement store with `create<AuthState>()`
-  - [ ] 2.4 Export `useAuthStore` hook
+  - [x] 2.3 Implement store with `create<AuthState>()`
+  - [x] 2.4 Export `useAuthStore` hook
 
-- [ ] Task 3: Create queueStore (AC: #1, #2)
-  - [ ] 3.1 Create `src/stores/queueStore.ts`
-  - [ ] 3.2 Define `Track` and `QueueState` interfaces:
+- [x] Task 3: Create queueStore (AC: #1, #2)
+  - [x] 3.1 Create `src/stores/queueStore.ts`
+  - [x] 3.2 Define `Track` and `QueueState` interfaces:
     ```typescript
     interface Track {
       id: string;
@@ -77,12 +77,12 @@ so that **application state can be managed consistently across components**.
       clearQueue: () => void;
     }
     ```
-  - [ ] 3.3 Implement store with actions
-  - [ ] 3.4 Export `useQueueStore` hook
+  - [x] 3.3 Implement store with actions
+  - [x] 3.4 Export `useQueueStore` hook
 
-- [ ] Task 4: Create settingsStore with persistence (AC: #1, #2, #3)
-  - [ ] 4.1 Create `src/stores/settingsStore.ts`
-  - [ ] 4.2 Define `SettingsState` interface:
+- [x] Task 4: Create settingsStore with persistence (AC: #1, #2, #3)
+  - [x] 4.1 Create `src/stores/settingsStore.ts`
+  - [x] 4.2 Define `SettingsState` interface:
     ```typescript
     interface SettingsState {
       downloadPath: string;
@@ -92,19 +92,19 @@ so that **application state can be managed consistently across components**.
       setLanguage: (lang: 'en' | 'fr') => void;
     }
     ```
-  - [ ] 4.3 Implement store with default values
-  - [ ] 4.4 Add Zustand persist middleware for settings persistence
-  - [ ] 4.5 Export `useSettingsStore` hook
+  - [x] 4.3 Implement store with default values
+  - [x] 4.4 Add Zustand persist middleware for settings persistence
+  - [x] 4.5 Export `useSettingsStore` hook
 
-- [ ] Task 5: Create shared types file (AC: #4)
-  - [ ] 5.1 Create `src/types/track.ts` with Track interface
-  - [ ] 5.2 Create `src/types/errors.ts` with error code types
-  - [ ] 5.3 Import types in stores from `@/types/`
+- [x] Task 5: Create shared types file (AC: #4)
+  - [x] 5.1 Create `src/types/track.ts` with Track interface
+  - [x] 5.2 Create `src/types/errors.ts` with error code types
+  - [x] 5.3 Import types in stores from `@/types/`
 
-- [ ] Task 6: Verify TypeScript integration (AC: #4)
-  - [ ] 6.1 Import `useAuthStore` in a test component
-  - [ ] 6.2 Verify TypeScript autocomplete works for state and actions
-  - [ ] 6.3 Verify no TypeScript errors
+- [x] Task 6: Verify TypeScript integration (AC: #4)
+  - [x] 6.1 Import `useAuthStore` in a test component
+  - [x] 6.2 Verify TypeScript autocomplete works for state and actions
+  - [x] 6.3 Verify no TypeScript errors
 
 ## Dev Notes
 
@@ -266,11 +266,37 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- Implemented three Zustand stores following domain-specific pattern: authStore, queueStore, settingsStore
+- Each store includes TypeScript interfaces for state shape and typed hooks
+- settingsStore uses Zustand persist middleware for localStorage persistence
+- Created shared types in `src/types/` for Track and Error types following project-context.md patterns
+- All stores follow action naming conventions: set, update, clear prefixes
+- Added localStorage mock setup file for Vitest to enable settingsStore persistence testing
+- All 70 tests pass including 25 store-specific tests
+- TypeScript strict mode passes with no errors
+
 ### File List
+
+**New Files:**
+- src/stores/authStore.ts
+- src/stores/authStore.test.ts
+- src/stores/queueStore.ts
+- src/stores/queueStore.test.ts
+- src/stores/settingsStore.ts
+- src/stores/settingsStore.test.ts
+- src/types/track.ts
+- src/types/errors.ts
+- src/test/setup-localStorage.ts
+
+**Modified Files:**
+- package.json (added zustand dependency)
+- vitest.config.ts (added setupFiles for localStorage mock)
 
