@@ -1,0 +1,34 @@
+{
+  "app": {
+    "title": "InfraBooth Downloader"
+  },
+  "auth": {
+    "signIn": "Sign in with SoundCloud",
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as {{username}}",
+    "openingBrowser": "Opening browser..."
+  },
+  "download": {
+    "button": "Download",
+    "progress": "{{current}} of {{total}} tracks",
+    "complete": "Download complete!",
+    "pasteUrl": "Paste a SoundCloud playlist or track URL"
+  },
+  "errors": {
+    "invalidUrl": "Not a SoundCloud URL",
+    "geoBlocked": "Unavailable in your region",
+    "rateLimited": "Brief pause — SoundCloud rate limit (this is normal)",
+    "networkError": "No internet connection",
+    "downloadFailed": "Download failed",
+    "conversionFailed": "Conversion failed"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "downloadPath": "Download location"
+  },
+  "completion": {
+    "openFolder": "Open Folder",
+    "downloadAnother": "Download Another"
+  }
+}

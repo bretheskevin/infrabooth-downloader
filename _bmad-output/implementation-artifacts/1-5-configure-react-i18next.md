@@ -1,6 +1,6 @@
 # Story 1.5: Configure react-i18next Foundation
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -43,12 +43,12 @@ so that **the app is ready for multi-language support**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Install i18n dependencies (AC: #1)
-  - [ ] 1.1 Run `npm install react-i18next i18next`
-  - [ ] 1.2 Create `/src/locales/` directory
+- [x] Task 1: Install i18n dependencies (AC: #1)
+  - [x] 1.1 Run `npm install react-i18next i18next`
+  - [x] 1.2 Create `/src/locales/` directory
 
-- [ ] Task 2: Create i18n configuration (AC: #1, #2)
-  - [ ] 2.1 Create `src/lib/i18n.ts`:
+- [x] Task 2: Create i18n configuration (AC: #1, #2)
+  - [x] 2.1 Create `src/lib/i18n.ts`:
     ```typescript
     import i18n from 'i18next';
     import { initReactI18next } from 'react-i18next';
@@ -71,10 +71,10 @@ so that **the app is ready for multi-language support**.
 
     export default i18n;
     ```
-  - [ ] 2.2 Import i18n in `main.tsx` before App render
+  - [x] 2.2 Import i18n in `main.tsx` before App render
 
-- [ ] Task 3: Create English translation file (AC: #1, #4)
-  - [ ] 3.1 Create `src/locales/en.json` with initial structure:
+- [x] Task 3: Create English translation file (AC: #1, #4)
+  - [x] 3.1 Create `src/locales/en.json` with initial structure:
     ```json
     {
       "app": {
@@ -112,8 +112,8 @@ so that **the app is ready for multi-language support**.
     }
     ```
 
-- [ ] Task 4: Create French translation file (AC: #1, #4)
-  - [ ] 4.1 Create `src/locales/fr.json` with same structure:
+- [x] Task 4: Create French translation file (AC: #1, #4)
+  - [x] 4.1 Create `src/locales/fr.json` with same structure:
     ```json
     {
       "app": {
@@ -151,8 +151,8 @@ so that **the app is ready for multi-language support**.
     }
     ```
 
-- [ ] Task 5: Integrate with settings store (AC: #2, #5)
-  - [ ] 5.1 Create `src/hooks/useLanguageSync.ts`:
+- [x] Task 5: Integrate with settings store (AC: #2, #5)
+  - [x] 5.1 Create `src/hooks/useLanguageSync.ts`:
     ```typescript
     import { useEffect } from 'react';
     import { useTranslation } from 'react-i18next';
@@ -169,10 +169,10 @@ so that **the app is ready for multi-language support**.
       }, [language, i18n]);
     }
     ```
-  - [ ] 5.2 Call `useLanguageSync()` in App.tsx
+  - [x] 5.2 Call `useLanguageSync()` in App.tsx
 
-- [ ] Task 6: Update Header to use translation (AC: #3)
-  - [ ] 6.1 Update `Header.tsx` to use `useTranslation`:
+- [x] Task 6: Update Header to use translation (AC: #3)
+  - [x] 6.1 Update `Header.tsx` to use `useTranslation`:
     ```typescript
     import { useTranslation } from 'react-i18next';
 
@@ -185,12 +185,12 @@ so that **the app is ready for multi-language support**.
       );
     }
     ```
-  - [ ] 6.2 Verify translation displays correctly
+  - [x] 6.2 Verify translation displays correctly
 
-- [ ] Task 7: Verify configuration (AC: #3)
-  - [ ] 7.1 Test `useTranslation` hook in a component
-  - [ ] 7.2 Verify interpolation works: `t('auth.signedInAs', { username: 'Test' })`
-  - [ ] 7.3 Verify missing keys show key name in development
+- [x] Task 7: Verify configuration (AC: #3)
+  - [x] 7.1 Test `useTranslation` hook in a component
+  - [x] 7.2 Verify interpolation works: `t('auth.signedInAs', { username: 'Test' })`
+  - [x] 7.3 Verify missing keys show key name in development
 
 ## Dev Notes
 
@@ -329,11 +329,43 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+- None required
+
 ### Completion Notes List
 
+- Installed react-i18next and i18next packages
+- Created i18n configuration in `src/lib/i18n.ts` with EN/FR translations
+- Created English translation file with all app strings
+- Created French translation file with all app strings (natural French, not literal translation)
+- Created `useLanguageSync` hook to sync i18n with Zustand settings store
+- Updated Header component to use `useTranslation` hook
+- Added `@testing-library/jest-dom` for extended matchers
+- Updated test setup to include jest-dom matchers
+- Fixed existing tests to work with i18n
+- All 97 tests pass, TypeScript compiles cleanly
+
 ### File List
+
+**New Files:**
+- src/lib/i18n.ts
+- src/lib/i18n.test.ts
+- src/lib/i18n.integration.test.tsx
+- src/locales/en.json
+- src/locales/fr.json
+- src/hooks/useLanguageSync.ts
+- src/hooks/useLanguageSync.test.tsx
+- src/components/layout/Header.test.tsx
+
+**Modified Files:**
+- src/main.tsx (added i18n import)
+- src/App.tsx (added useLanguageSync hook)
+- src/components/layout/Header.tsx (updated to use useTranslation)
+- src/App.test.tsx (added i18n import)
+- src/app-shell.test.ts (updated test for i18n)
+- src/test/setup-localStorage.ts (added jest-dom import)
+- package.json (added i18next, react-i18next, @testing-library/jest-dom)
 
