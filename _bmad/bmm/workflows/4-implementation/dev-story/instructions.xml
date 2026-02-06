@@ -327,6 +327,12 @@
     <action>Execute enhanced definition-of-done validation</action>
     <action>Update the story Status to: "review"</action>
 
+    <!-- BUILD VERIFICATION - MANDATORY -->
+    <critical>Run a FULL BUILD of the application to verify it compiles and builds correctly</critical>
+    <action>Run frontend build (e.g., `npm run build`) - verify no TypeScript or bundling errors</action>
+    <action>Run backend build (e.g., `cargo build --release`) - verify no Rust compilation errors</action>
+    <action if="build fails">HALT - Fix build errors before marking story complete. Tests passing does NOT guarantee the app builds.</action>
+
     <!-- Enhanced Definition of Done Validation -->
     <action>Validate definition-of-done checklist with essential requirements:
       - All tasks/subtasks marked complete with [x]
@@ -335,6 +341,7 @@
       - Integration tests for component interactions added when required
       - End-to-end tests for critical flows added when story demands them
       - All tests pass (no regressions, new tests successful)
+      - Full application build succeeds (frontend AND backend)
       - Code quality checks pass (linting, static analysis if configured)
       - File List includes every new/modified/deleted file (relative paths)
       - Dev Agent Record contains implementation notes
@@ -366,6 +373,7 @@
     <!-- Final validation gates -->
     <action if="any task is incomplete">HALT - Complete remaining tasks before marking ready for review</action>
     <action if="regression failures exist">HALT - Fix regression issues before completing</action>
+    <action if="build fails">HALT - Fix build errors before completing (tests passing ≠ app builds)</action>
     <action if="File List is incomplete">HALT - Update File List with all changed files</action>
     <action if="definition-of-done validation fails">HALT - Address DoD failures before completing</action>
   </step>
