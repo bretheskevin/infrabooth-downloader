@@ -113,6 +113,43 @@ pub struct UserProfile {
     pub plan: Option<String>,
 }
 
+/// Refreshes OAuth tokens using a refresh token.
+///
+/// Note: SoundCloud refresh tokens are single-use. After a successful refresh,
+/// the old refresh token is invalid and must be replaced with the new one.
+///
+/// # Arguments
+/// * `refresh_token` - The current refresh token
+/// * `client_secret` - The SoundCloud client secret
+///
+/// # Returns
+/// * `Ok(TokenResponse)` - New tokens if refresh succeeds
+/// * `Err(AuthError)` - Error if refresh fails (e.g., invalid token)
+pub async fn refresh_tokens(
+    refresh_token: &str,
+    client_secret: &str,
+) -> Result<TokenResponse, AuthError> {
+    let client = reqwest::Client::new();
+    let response = client
+        .post(TOKEN_URL)
+        .form(&[
+            ("grant_type", "refresh_token"),
+            ("client_id", CLIENT_ID),
+            ("client_secret", client_secret),
+            ("refresh_token", refresh_token),
+        ])
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        Ok(response.json().await?)
+    } else {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        Err(AuthError::RefreshFailed(format!("HTTP {}: {}", status, body)))
+    }
+}
+
 /// Fetches the authenticated user's profile from SoundCloud.
 ///
 /// # Arguments

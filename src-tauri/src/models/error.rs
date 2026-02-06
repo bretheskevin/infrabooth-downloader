@@ -18,6 +18,9 @@ pub enum AuthError {
 
     #[error("Profile fetch failed: {0}")]
     ProfileFetchFailed(String),
+
+    #[error("Token refresh failed: {0}")]
+    RefreshFailed(String),
 }
 
 /// Serializable error response for IPC.
@@ -35,6 +38,7 @@ impl From<AuthError> for ErrorResponse {
             AuthError::NetworkError(_) => "NETWORK_ERROR",
             AuthError::NoFlowInProgress => "NO_FLOW_IN_PROGRESS",
             AuthError::ProfileFetchFailed(_) => "PROFILE_FETCH_FAILED",
+            AuthError::RefreshFailed(_) => "REFRESH_FAILED",
         };
 
         ErrorResponse {
@@ -104,5 +108,18 @@ mod tests {
         let err = AuthError::ProfileFetchFailed("test".to_string());
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "PROFILE_FETCH_FAILED");
+    }
+
+    #[test]
+    fn test_refresh_failed_error_message() {
+        let err = AuthError::RefreshFailed("Invalid refresh token".to_string());
+        assert_eq!(err.to_string(), "Token refresh failed: Invalid refresh token");
+    }
+
+    #[test]
+    fn test_error_response_from_refresh_failed() {
+        let err = AuthError::RefreshFailed("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "REFRESH_FAILED");
     }
 }

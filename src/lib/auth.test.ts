@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { startOAuth, completeOAuth } from './auth';
+import { startOAuth, completeOAuth, checkAuthState } from './auth';
 
 // Mock Tauri APIs
 vi.mock('@tauri-apps/api/core', () => ({
@@ -56,6 +56,32 @@ describe('auth', () => {
       vi.mocked(invoke).mockRejectedValue(new Error('Token exchange failed'));
 
       await expect(completeOAuth('invalid_code')).rejects.toThrow('Token exchange failed');
+    });
+  });
+
+  describe('checkAuthState', () => {
+    it('should invoke check_auth_state and return true when authenticated', async () => {
+      vi.mocked(invoke).mockResolvedValue(true);
+
+      const result = await checkAuthState();
+
+      expect(invoke).toHaveBeenCalledWith('check_auth_state');
+      expect(result).toBe(true);
+    });
+
+    it('should invoke check_auth_state and return false when not authenticated', async () => {
+      vi.mocked(invoke).mockResolvedValue(false);
+
+      const result = await checkAuthState();
+
+      expect(invoke).toHaveBeenCalledWith('check_auth_state');
+      expect(result).toBe(false);
+    });
+
+    it('should throw when the check fails', async () => {
+      vi.mocked(invoke).mockRejectedValue(new Error('Keychain error'));
+
+      await expect(checkAuthState()).rejects.toThrow('Keychain error');
     });
   });
 });
