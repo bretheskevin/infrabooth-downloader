@@ -3,6 +3,13 @@
   "productName": "InfraBooth Downloader",
   "version": "0.1.0",
   "identifier": "com.infrabooth.downloader",
+  "plugins": {
+    "deep-link": {
+      "desktop": {
+        "schemes": ["sc-downloader"]
+      }
+    }
+  },
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
