@@ -13,6 +13,6 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/**/*.test.{ts,tsx}'],
-    setupFiles: ['./src/test/setup-localStorage.ts'],
+    setupFiles: ['./src/test/setup-localStorage.ts', './src/test/setup-tauri.ts'],
   },
 });
