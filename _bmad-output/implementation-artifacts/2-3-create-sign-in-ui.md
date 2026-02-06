@@ -1,6 +1,6 @@
 # Story 2.3: Create Sign-In UI Component
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -38,8 +38,8 @@ so that **I can authenticate to access my Go+ subscription benefits**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create SignInButton component (AC: #1, #2)
-  - [ ] 1.1 Create `src/components/features/auth/SignInButton.tsx`:
+- [x] Task 1: Create SignInButton component (AC: #1, #2)
+  - [x] 1.1 Create `src/components/features/auth/SignInButton.tsx`:
     ```typescript
     import { useState } from 'react';
     import { useTranslation } from 'react-i18next';
@@ -79,10 +79,10 @@ so that **I can authenticate to access my Go+ subscription benefits**.
       );
     }
     ```
-  - [ ] 1.2 Add lucide-react for icons: `npm install lucide-react`
+  - [x] 1.2 Add lucide-react for icons: `npm install lucide-react`
 
-- [ ] Task 2: Create AuthContainer component (AC: #1, #5)
-  - [ ] 2.1 Create `src/components/features/auth/AuthContainer.tsx`:
+- [x] Task 2: Create AuthContainer component (AC: #1, #5)
+  - [x] 2.1 Create `src/components/features/auth/AuthContainer.tsx`:
     ```typescript
     import { useAuthStore } from '@/stores/authStore';
     import { SignInButton } from './SignInButton';
@@ -94,10 +94,10 @@ so that **I can authenticate to access my Go+ subscription benefits**.
       return isSignedIn ? <UserBadge /> : <SignInButton />;
     }
     ```
-  - [ ] 2.2 This switches between sign-in button and user badge
+  - [x] 2.2 This switches between sign-in button and user badge
 
-- [ ] Task 3: Implement auth state listener (AC: #4, #5)
-  - [ ] 3.1 Create `src/hooks/useAuthStateListener.ts`:
+- [x] Task 3: Implement auth state listener (AC: #4, #5)
+  - [x] 3.1 Create `src/hooks/useAuthStateListener.ts`:
     ```typescript
     import { useEffect } from 'react';
     import { listen } from '@tauri-apps/api/event';
@@ -122,10 +122,10 @@ so that **I can authenticate to access my Go+ subscription benefits**.
       }, [setAuth]);
     }
     ```
-  - [ ] 3.2 Call `useAuthStateListener()` in App.tsx
+  - [x] 3.2 Call `useAuthStateListener()` in App.tsx
 
-- [ ] Task 4: Wire up deep link to OAuth completion (AC: #5)
-  - [ ] 4.1 Update `src/hooks/useAuthCallback.ts` to call `completeOAuth`:
+- [x] Task 4: Wire up deep link to OAuth completion (AC: #5)
+  - [x] 4.1 Update `src/hooks/useAuthCallback.ts` to call `completeOAuth`:
     ```typescript
     import { useCallback } from 'react';
     import { completeOAuth } from '@/lib/auth';
@@ -143,10 +143,10 @@ so that **I can authenticate to access my Go+ subscription benefits**.
       useDeepLinkCallback(handleCallback);
     }
     ```
-  - [ ] 4.2 Call `useOAuthFlow()` in App.tsx
+  - [x] 4.2 Call `useOAuthFlow()` in App.tsx
 
-- [ ] Task 5: Handle cancel/timeout (AC: #4)
-  - [ ] 5.1 Add timeout handling (reset loading after 5 minutes):
+- [x] Task 5: Handle cancel/timeout (AC: #4)
+  - [x] 5.1 Add timeout handling (reset loading after 5 minutes):
     ```typescript
     useEffect(() => {
       if (isLoading) {
@@ -157,10 +157,10 @@ so that **I can authenticate to access my Go+ subscription benefits**.
       }
     }, [isLoading]);
     ```
-  - [ ] 5.2 Listen for window focus to reset state if user cancels
+  - [x] 5.2 Listen for window focus to reset state if user cancels
 
-- [ ] Task 6: Update Header to include AuthContainer (AC: #1)
-  - [ ] 6.1 Update `src/components/layout/Header.tsx`:
+- [x] Task 6: Update Header to include AuthContainer (AC: #1)
+  - [x] 6.1 Update `src/components/layout/Header.tsx`:
     ```typescript
     import { AuthContainer } from '@/components/features/auth/AuthContainer';
 
@@ -175,8 +175,8 @@ so that **I can authenticate to access my Go+ subscription benefits**.
     }
     ```
 
-- [ ] Task 7: Create placeholder UserBadge (AC: #5)
-  - [ ] 7.1 Create `src/components/features/auth/UserBadge.tsx` (placeholder):
+- [x] Task 7: Create placeholder UserBadge (AC: #5)
+  - [x] 7.1 Create `src/components/features/auth/UserBadge.tsx` (placeholder):
     ```typescript
     import { useAuthStore } from '@/stores/authStore';
 
@@ -189,7 +189,7 @@ so that **I can authenticate to access my Go+ subscription benefits**.
       );
     }
     ```
-  - [ ] 7.2 Full implementation in Story 2.4
+  - [x] 7.2 Full implementation in Story 2.4
 
 ## Dev Notes
 
@@ -329,11 +329,46 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5-20251101)
 
 ### Debug Log References
 
+None - implementation completed without issues.
+
 ### Completion Notes List
 
+- Task 1: Created SignInButton with loading state, timeout handling (5min), and window focus reset. 8 unit tests covering click behavior, loading states, styling, accessibility, and error handling.
+- Task 2: Created AuthContainer that switches between SignInButton and UserBadge based on auth state. 4 unit tests.
+- Task 3: Created useAuthStateListener hook that subscribes to 'auth-state-changed' Tauri events and updates the auth store. 4 unit tests.
+- Task 4: Created useOAuthFlow hook that wires useAuthCallback to completeOAuth for token exchange. 3 unit tests.
+- Task 5: Timeout and window focus reset integrated into SignInButton component.
+- Task 6: Updated Header to include AuthContainer. Added 2 new tests for auth states in Header.
+- Task 7: Created placeholder UserBadge that displays username or fallback text. 3 unit tests.
+- lucide-react was already installed (v0.563.0).
+- All 133 tests pass. TypeScript typecheck passes. Frontend build succeeds.
+
 ### File List
+
+**New Files:**
+- src/components/features/auth/SignInButton.tsx
+- src/components/features/auth/SignInButton.test.tsx
+- src/components/features/auth/AuthContainer.tsx
+- src/components/features/auth/AuthContainer.test.tsx
+- src/components/features/auth/UserBadge.tsx
+- src/components/features/auth/UserBadge.test.tsx
+- src/hooks/useAuthStateListener.ts
+- src/hooks/useAuthStateListener.test.ts
+- src/hooks/useOAuthFlow.ts
+- src/hooks/useOAuthFlow.test.ts
+
+**Modified Files:**
+- src/App.tsx
+- src/App.test.tsx
+- src/components/layout/Header.tsx
+- src/components/layout/Header.test.tsx
+- src/hooks/index.ts
+
+## Change Log
+
+- 2026-02-06: Story 2.3 implementation complete - Sign-in UI with loading states, auth state listener, OAuth flow wiring, and Header integration
 
