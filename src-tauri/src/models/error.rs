@@ -1,0 +1,91 @@
+use serde::Serialize;
+use thiserror::Error;
+
+/// Authentication errors that can occur during the OAuth flow.
+#[derive(Debug, Error)]
+pub enum AuthError {
+    #[error("Missing client secret configuration")]
+    MissingClientSecret,
+
+    #[error("Token exchange failed: {0}")]
+    TokenExchangeFailed(String),
+
+    #[error("Network error: {0}")]
+    NetworkError(#[from] reqwest::Error),
+
+    #[error("No OAuth flow in progress")]
+    NoFlowInProgress,
+}
+
+/// Serializable error response for IPC.
+#[derive(Debug, Serialize)]
+pub struct ErrorResponse {
+    pub code: String,
+    pub message: String,
+}
+
+impl From<AuthError> for ErrorResponse {
+    fn from(err: AuthError) -> Self {
+        let code = match &err {
+            AuthError::MissingClientSecret => "MISSING_CLIENT_SECRET",
+            AuthError::TokenExchangeFailed(_) => "TOKEN_EXCHANGE_FAILED",
+            AuthError::NetworkError(_) => "NETWORK_ERROR",
+            AuthError::NoFlowInProgress => "NO_FLOW_IN_PROGRESS",
+        };
+
+        ErrorResponse {
+            code: code.to_string(),
+            message: err.to_string(),
+        }
+    }
+}
+
+impl From<AuthError> for String {
+    fn from(err: AuthError) -> Self {
+        err.to_string()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_missing_client_secret_error_message() {
+        let err = AuthError::MissingClientSecret;
+        assert_eq!(err.to_string(), "Missing client secret configuration");
+    }
+
+    #[test]
+    fn test_token_exchange_failed_error_message() {
+        let err = AuthError::TokenExchangeFailed("Invalid grant".to_string());
+        assert_eq!(err.to_string(), "Token exchange failed: Invalid grant");
+    }
+
+    #[test]
+    fn test_no_flow_in_progress_error_message() {
+        let err = AuthError::NoFlowInProgress;
+        assert_eq!(err.to_string(), "No OAuth flow in progress");
+    }
+
+    #[test]
+    fn test_error_response_from_missing_client_secret() {
+        let err = AuthError::MissingClientSecret;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "MISSING_CLIENT_SECRET");
+    }
+
+    #[test]
+    fn test_error_response_from_token_exchange_failed() {
+        let err = AuthError::TokenExchangeFailed("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "TOKEN_EXCHANGE_FAILED");
+    }
+
+    #[test]
+    fn test_error_response_from_no_flow_in_progress() {
+        let err = AuthError::NoFlowInProgress;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "NO_FLOW_IN_PROGRESS");
+    }
+}
