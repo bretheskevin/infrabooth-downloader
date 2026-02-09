@@ -35,3 +35,4 @@ tokio = { version = "1", features = ["full"] }
 thiserror = "1"
 keyring = "2"
 regex = "1"
+urlencoding = "2"
