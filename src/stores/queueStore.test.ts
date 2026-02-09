@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useQueueStore } from './queueStore';
 import type { Track } from '@/types/track';
+import type { QueueCompleteEvent } from '@/types/events';
 
 describe('queueStore', () => {
   const mockTracks: Track[] = [
@@ -24,6 +25,11 @@ describe('queueStore', () => {
     useQueueStore.setState({
       tracks: [],
       currentIndex: 0,
+      totalTracks: 0,
+      isProcessing: false,
+      isComplete: false,
+      completedCount: 0,
+      failedCount: 0,
     });
   });
 
@@ -37,6 +43,31 @@ describe('queueStore', () => {
       const { currentIndex } = useQueueStore.getState();
       expect(currentIndex).toBe(0);
     });
+
+    it('should have totalTracks as 0', () => {
+      const { totalTracks } = useQueueStore.getState();
+      expect(totalTracks).toBe(0);
+    });
+
+    it('should have isProcessing as false', () => {
+      const { isProcessing } = useQueueStore.getState();
+      expect(isProcessing).toBe(false);
+    });
+
+    it('should have isComplete as false', () => {
+      const { isComplete } = useQueueStore.getState();
+      expect(isComplete).toBe(false);
+    });
+
+    it('should have completedCount as 0', () => {
+      const { completedCount } = useQueueStore.getState();
+      expect(completedCount).toBe(0);
+    });
+
+    it('should have failedCount as 0', () => {
+      const { failedCount } = useQueueStore.getState();
+      expect(failedCount).toBe(0);
+    });
   });
 
   describe('enqueueTracks', () => {
@@ -46,6 +77,41 @@ describe('queueStore', () => {
 
       const { tracks } = useQueueStore.getState();
       expect(tracks).toEqual(mockTracks);
+    });
+
+    it('should set totalTracks to tracks length', () => {
+      const { enqueueTracks } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
+
+      const { totalTracks } = useQueueStore.getState();
+      expect(totalTracks).toBe(2);
+    });
+
+    it('should reset currentIndex to 0', () => {
+      useQueueStore.setState({ currentIndex: 5 });
+      const { enqueueTracks } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
+
+      const { currentIndex } = useQueueStore.getState();
+      expect(currentIndex).toBe(0);
+    });
+
+    it('should reset isProcessing to false', () => {
+      useQueueStore.setState({ isProcessing: true });
+      const { enqueueTracks } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
+
+      const { isProcessing } = useQueueStore.getState();
+      expect(isProcessing).toBe(false);
+    });
+
+    it('should reset isComplete to false', () => {
+      useQueueStore.setState({ isComplete: true });
+      const { enqueueTracks } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
+
+      const { isComplete } = useQueueStore.getState();
+      expect(isComplete).toBe(false);
     });
 
     it('should replace existing tracks', () => {
@@ -81,6 +147,15 @@ describe('queueStore', () => {
       expect(tracks[0]?.status).toBe('complete');
     });
 
+    it('should update status to rate_limited', () => {
+      const { enqueueTracks, updateTrackStatus } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
+      updateTrackStatus('track-1', 'rate_limited');
+
+      const { tracks } = useQueueStore.getState();
+      expect(tracks[0]?.status).toBe('rate_limited');
+    });
+
     it('should set error when status is failed', () => {
       const { enqueueTracks, updateTrackStatus } = useQueueStore.getState();
       enqueueTracks(mockTracks);
@@ -108,6 +183,77 @@ describe('queueStore', () => {
     });
   });
 
+  describe('setQueueProgress', () => {
+    it('should update currentIndex and totalTracks', () => {
+      const { setQueueProgress } = useQueueStore.getState();
+      setQueueProgress(5, 10);
+
+      const { currentIndex, totalTracks } = useQueueStore.getState();
+      expect(currentIndex).toBe(5);
+      expect(totalTracks).toBe(10);
+    });
+
+    it('should set isProcessing to true', () => {
+      const { setQueueProgress } = useQueueStore.getState();
+      setQueueProgress(1, 5);
+
+      const { isProcessing } = useQueueStore.getState();
+      expect(isProcessing).toBe(true);
+    });
+  });
+
+  describe('setQueueComplete', () => {
+    it('should update completed and failed counts', () => {
+      const result: QueueCompleteEvent = {
+        completed: 8,
+        failed: 2,
+        total: 10,
+        failedTracks: [
+          ['track-1', 'Error 1'],
+          ['track-2', 'Error 2'],
+        ],
+      };
+
+      const { setQueueComplete } = useQueueStore.getState();
+      setQueueComplete(result);
+
+      const { completedCount, failedCount } = useQueueStore.getState();
+      expect(completedCount).toBe(8);
+      expect(failedCount).toBe(2);
+    });
+
+    it('should set isProcessing to false', () => {
+      useQueueStore.setState({ isProcessing: true });
+      const result: QueueCompleteEvent = {
+        completed: 5,
+        failed: 0,
+        total: 5,
+        failedTracks: [],
+      };
+
+      const { setQueueComplete } = useQueueStore.getState();
+      setQueueComplete(result);
+
+      const { isProcessing } = useQueueStore.getState();
+      expect(isProcessing).toBe(false);
+    });
+
+    it('should set isComplete to true', () => {
+      const result: QueueCompleteEvent = {
+        completed: 5,
+        failed: 0,
+        total: 5,
+        failedTracks: [],
+      };
+
+      const { setQueueComplete } = useQueueStore.getState();
+      setQueueComplete(result);
+
+      const { isComplete } = useQueueStore.getState();
+      expect(isComplete).toBe(true);
+    });
+  });
+
   describe('clearQueue', () => {
     it('should clear all tracks', () => {
       const { enqueueTracks, clearQueue } = useQueueStore.getState();
@@ -126,6 +272,26 @@ describe('queueStore', () => {
 
       const { currentIndex } = useQueueStore.getState();
       expect(currentIndex).toBe(0);
+    });
+
+    it('should reset all progress state', () => {
+      useQueueStore.setState({
+        totalTracks: 10,
+        isProcessing: true,
+        isComplete: true,
+        completedCount: 8,
+        failedCount: 2,
+      });
+
+      const { clearQueue } = useQueueStore.getState();
+      clearQueue();
+
+      const state = useQueueStore.getState();
+      expect(state.totalTracks).toBe(0);
+      expect(state.isProcessing).toBe(false);
+      expect(state.isComplete).toBe(false);
+      expect(state.completedCount).toBe(0);
+      expect(state.failedCount).toBe(0);
     });
   });
 });

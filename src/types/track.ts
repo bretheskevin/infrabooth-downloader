@@ -5,7 +5,8 @@ export type TrackStatus =
   | 'downloading'
   | 'converting'
   | 'complete'
-  | 'failed';
+  | 'failed'
+  | 'rate_limited';
 
 export interface Track {
   id: string;
