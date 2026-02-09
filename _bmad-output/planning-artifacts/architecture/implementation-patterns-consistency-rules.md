@@ -117,11 +117,23 @@ src/stores/
 
 | Action Type | Prefix | Example |
 |-------------|--------|---------|
-| Set/replace | `set` | `setTracks`, `setAuth` |
+| Set/replace | `set` | `setAuth`, `setDownloadPath` |
 | Update partial | `update` | `updateTrackStatus` |
 | Add to collection | `add` | `addTrack` |
 | Remove | `remove` | `removeTrack` |
 | Clear/reset | `clear` | `clearQueue` |
+| **Domain actions** | verb | `enqueueTracks`, `startDownload` |
+
+**Prefer domain actions over generic CRUD:**
+```typescript
+// ❌ Generic - unclear intent
+setTracks(tracks);
+
+// ✅ Domain action - expresses intent
+enqueueTracks(tracks);  // "media loaded → feed queue"
+```
+
+Domain actions make the code self-documenting and prevent sync bugs when requirements change.
 
 ## Localization Patterns
 
@@ -140,6 +152,129 @@ src/stores/
 - camelCase for keys (`signedInAs`)
 - `{{variable}}` for interpolation
 - Group by feature/screen
+
+## Custom Hook Patterns
+
+**Single Responsibility Rule:** Each hook does ONE thing. Components orchestrate hooks, not logic.
+
+**Hook Categories:**
+
+| Category | Purpose | Example |
+|----------|---------|---------|
+| Data fetching | Call backend, manage loading/error | `useMediaFetch(url, type)` |
+| Validation | Validate input, debounce | `useUrlValidation(url)` |
+| Side effects | Sync state, push to stores | `useSyncToQueue(media)` |
+| Orchestrator | Compose multiple hooks | `useDownloadFlow(url)` |
+
+**Hook File Structure:**
+
+```
+src/hooks/
+├── download/                    # Feature-specific hooks
+│   ├── useUrlValidation.ts      # Debounce + validate
+│   ├── useMediaFetch.ts         # Fetch playlist/track
+│   ├── useSyncToQueue.ts        # Push to queueStore
+│   └── useDownloadFlow.ts       # Orchestrator
+├── auth/                        # Auth-related hooks
+│   ├── useOAuthFlow.ts
+│   └── useAuthCallback.ts
+└── index.ts                     # Re-export all
+```
+
+**Hook Return Patterns:**
+
+```typescript
+// Data fetching hook
+interface UseMediaFetchReturn {
+  data: PlaylistInfo | TrackInfo | null;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+// Validation hook
+interface UseUrlValidationReturn {
+  result: ValidationResult | null;
+  isValidating: boolean;
+}
+
+// Orchestrator hook (composes others)
+interface UseDownloadFlowReturn {
+  url: string;
+  setUrl: (url: string) => void;
+  validation: ValidationResult | null;
+  media: PlaylistInfo | TrackInfo | null;
+  isLoading: boolean;
+  error: FetchError | null;
+  handleDownload: () => void;
+}
+```
+
+**Transform Functions:**
+
+Data transformations live in `src/lib/transforms.ts` as pure functions:
+
+```typescript
+// src/lib/transforms.ts
+export function trackInfoToQueueTrack(track: TrackInfo): Track {
+  return {
+    id: String(track.id),
+    title: track.title,
+    artist: track.user.username,
+    artworkUrl: track.artwork_url,
+    status: 'pending',
+  };
+}
+
+export function playlistTracksToQueueTracks(tracks: TrackInfo[]): Track[] {
+  return tracks.map(trackInfoToQueueTrack);
+}
+```
+
+**Component Responsibility:**
+
+Components should ONLY:
+1. Call hooks
+2. Render UI based on hook return values
+3. Pass callbacks to children
+
+Components should NEVER:
+- Call `invoke()` directly
+- Manage loading states with `useState`
+- Transform backend data inline
+- Have multiple `useEffect` for different concerns
+
+**Anti-Patterns to Avoid:**
+
+```typescript
+// ❌ BAD: Component does everything
+function DownloadSection() {
+  const [isLoading, setIsLoading] = useState(false);
+  const [data, setData] = useState(null);
+
+  useEffect(() => {
+    setIsLoading(true);
+    invoke('get_playlist_info', { url })
+      .then(data => {
+        setData(data);
+        setTracks(data.tracks.map(t => ({ /* transform */ })));
+      })
+      .finally(() => setIsLoading(false));
+  }, [url]);
+}
+
+// ✅ GOOD: Component uses hooks
+function DownloadSection() {
+  const { validation, media, isLoading, handleDownload } = useDownloadFlow(url);
+  return <UI data={media} onDownload={handleDownload} />;
+}
+```
+
+**Testing Hooks:**
+
+- Use `@testing-library/react` with `renderHook`
+- Mock Tauri `invoke` at the module level
+- Test loading states, success, and error paths
+- Co-locate tests: `useMediaFetch.test.ts`
 
 ## Enforcement Guidelines
 

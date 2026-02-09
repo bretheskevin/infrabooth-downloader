@@ -6,8 +6,13 @@
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
-use crate::services::oauth::CLIENT_ID;
 use crate::services::storage::{is_token_expired_or_expiring, load_tokens};
+
+#[derive(Debug, Deserialize)]
+struct ResolveResponse {
+    status: Option<String>,
+    location: Option<String>,
+}
 
 /// Errors that can occur during playlist operations.
 #[derive(Debug, Error)]
@@ -93,12 +98,15 @@ fn get_valid_access_token() -> Result<String, PlaylistError> {
 pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistError> {
     let access_token = get_valid_access_token()?;
 
+    log::info!("[playlist] Fetching playlist info for URL: {}", url);
+
     let client = reqwest::Client::new();
     let resolve_url = format!(
-        "https://api.soundcloud.com/resolve?url={}&client_id={}",
+        "https://api.soundcloud.com/resolve?url={}",
         urlencoding::encode(url),
-        CLIENT_ID
     );
+
+    log::info!("[playlist] Resolve URL: {}", resolve_url);
 
     let response = client
         .get(&resolve_url)
@@ -106,7 +114,17 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
         .send()
         .await?;
 
-    if !response.status().is_success() {
+    log::info!("[playlist] Response status: {}", response.status());
+
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
+        return Err(PlaylistError::TrackNotFound);
+    }
+
+    if response.status() == reqwest::StatusCode::FORBIDDEN {
+        return Err(PlaylistError::GeoBlocked);
+    }
+
+    if !response.status().is_success() && response.status() != reqwest::StatusCode::FOUND {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
         return Err(PlaylistError::FetchFailed(format!(
@@ -115,12 +133,34 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
         )));
     }
 
-    let playlist: PlaylistInfo = response
-        .json()
-        .await
-        .map_err(|_| PlaylistError::InvalidResponse)?;
+    let body = response.text().await?;
 
-    Ok(playlist)
+    if let Ok(redirect) = serde_json::from_str::<ResolveResponse>(&body) {
+        if let Some(location) = redirect.location {
+            log::info!("[playlist] Following redirect to: {}", location);
+            let playlist_response = client
+                .get(&location)
+                .header("Authorization", format!("OAuth {}", access_token))
+                .send()
+                .await?;
+
+            if !playlist_response.status().is_success() {
+                let status = playlist_response.status();
+                let body = playlist_response.text().await.unwrap_or_default();
+                return Err(PlaylistError::FetchFailed(format!(
+                    "HTTP {}: {}",
+                    status, body
+                )));
+            }
+
+            return playlist_response
+                .json()
+                .await
+                .map_err(|_| PlaylistError::InvalidResponse);
+        }
+    }
+
+    serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)
 }
 
 /// Fetches track information from SoundCloud using the resolve endpoint.
@@ -138,9 +178,8 @@ pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
 
     let client = reqwest::Client::new();
     let resolve_url = format!(
-        "https://api.soundcloud.com/resolve?url={}&client_id={}",
+        "https://api.soundcloud.com/resolve?url={}",
         urlencoding::encode(url),
-        CLIENT_ID
     );
 
     let response = client
@@ -157,7 +196,7 @@ pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
         return Err(PlaylistError::GeoBlocked);
     }
 
-    if !response.status().is_success() {
+    if !response.status().is_success() && response.status() != reqwest::StatusCode::FOUND {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
         return Err(PlaylistError::FetchFailed(format!(
@@ -166,12 +205,34 @@ pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
         )));
     }
 
-    let track: TrackInfo = response
-        .json()
-        .await
-        .map_err(|_| PlaylistError::InvalidResponse)?;
+    let body = response.text().await?;
 
-    Ok(track)
+    if let Ok(redirect) = serde_json::from_str::<ResolveResponse>(&body) {
+        if let Some(location) = redirect.location {
+            log::info!("[track] Following redirect to: {}", location);
+            let track_response = client
+                .get(&location)
+                .header("Authorization", format!("OAuth {}", access_token))
+                .send()
+                .await?;
+
+            if !track_response.status().is_success() {
+                let status = track_response.status();
+                let body = track_response.text().await.unwrap_or_default();
+                return Err(PlaylistError::FetchFailed(format!(
+                    "HTTP {}: {}",
+                    status, body
+                )));
+            }
+
+            return track_response
+                .json()
+                .await
+                .map_err(|_| PlaylistError::InvalidResponse);
+        }
+    }
+
+    serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)
 }
 
 #[cfg(test)]

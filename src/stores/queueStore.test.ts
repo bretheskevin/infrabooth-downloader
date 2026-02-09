@@ -39,21 +39,21 @@ describe('queueStore', () => {
     });
   });
 
-  describe('setTracks', () => {
+  describe('enqueueTracks', () => {
     it('should set tracks array', () => {
-      const { setTracks } = useQueueStore.getState();
-      setTracks(mockTracks);
+      const { enqueueTracks } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
 
       const { tracks } = useQueueStore.getState();
       expect(tracks).toEqual(mockTracks);
     });
 
     it('should replace existing tracks', () => {
-      const { setTracks } = useQueueStore.getState();
+      const { enqueueTracks } = useQueueStore.getState();
       const firstTrack = mockTracks[0];
       expect(firstTrack).toBeDefined();
-      setTracks(mockTracks);
-      setTracks([firstTrack!]);
+      enqueueTracks(mockTracks);
+      enqueueTracks([firstTrack!]);
 
       const { tracks } = useQueueStore.getState();
       expect(tracks).toHaveLength(1);
@@ -63,8 +63,8 @@ describe('queueStore', () => {
 
   describe('updateTrackStatus', () => {
     it('should update status of specific track', () => {
-      const { setTracks, updateTrackStatus } = useQueueStore.getState();
-      setTracks(mockTracks);
+      const { enqueueTracks, updateTrackStatus } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
       updateTrackStatus('track-1', 'downloading');
 
       const { tracks } = useQueueStore.getState();
@@ -73,8 +73,8 @@ describe('queueStore', () => {
     });
 
     it('should update status to complete', () => {
-      const { setTracks, updateTrackStatus } = useQueueStore.getState();
-      setTracks(mockTracks);
+      const { enqueueTracks, updateTrackStatus } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
       updateTrackStatus('track-1', 'complete');
 
       const { tracks } = useQueueStore.getState();
@@ -82,8 +82,8 @@ describe('queueStore', () => {
     });
 
     it('should set error when status is failed', () => {
-      const { setTracks, updateTrackStatus } = useQueueStore.getState();
-      setTracks(mockTracks);
+      const { enqueueTracks, updateTrackStatus } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
       updateTrackStatus('track-1', 'failed', {
         code: 'DOWNLOAD_FAILED',
         message: 'Download failed',
@@ -98,8 +98,8 @@ describe('queueStore', () => {
     });
 
     it('should not modify tracks if id not found', () => {
-      const { setTracks, updateTrackStatus } = useQueueStore.getState();
-      setTracks(mockTracks);
+      const { enqueueTracks, updateTrackStatus } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
       updateTrackStatus('nonexistent', 'downloading');
 
       const { tracks } = useQueueStore.getState();
@@ -110,8 +110,8 @@ describe('queueStore', () => {
 
   describe('clearQueue', () => {
     it('should clear all tracks', () => {
-      const { setTracks, clearQueue } = useQueueStore.getState();
-      setTracks(mockTracks);
+      const { enqueueTracks, clearQueue } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
       clearQueue();
 
       const { tracks } = useQueueStore.getState();
@@ -119,8 +119,8 @@ describe('queueStore', () => {
     });
 
     it('should reset currentIndex to 0', () => {
-      const { setTracks, clearQueue } = useQueueStore.getState();
-      setTracks(mockTracks);
+      const { enqueueTracks, clearQueue } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
       useQueueStore.setState({ currentIndex: 5 });
       clearQueue();
 

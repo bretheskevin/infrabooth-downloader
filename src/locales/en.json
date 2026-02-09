@@ -33,7 +33,11 @@
     "downloadFailed": "Download failed",
     "conversionFailed": "Conversion failed",
     "trackNotFound": "Track not found",
-    "trackNotFoundHint": "This track may have been removed or made private"
+    "trackNotFoundHint": "This track may have been removed or made private",
+    "fetchFailed": "Failed to load content",
+    "authExpired": "Session expired",
+    "authExpiredHint": "Please sign out and sign in again",
+    "notSignedIn": "Please sign in to continue"
   },
   "settings": {
     "title": "Settings",

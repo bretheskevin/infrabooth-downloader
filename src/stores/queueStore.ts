@@ -7,7 +7,7 @@ interface QueueState {
   tracks: Track[];
   currentIndex: number;
   // Actions
-  setTracks: (tracks: Track[]) => void;
+  enqueueTracks: (tracks: Track[]) => void;
   updateTrackStatus: (
     id: string,
     status: Track['status'],
@@ -19,7 +19,7 @@ interface QueueState {
 export const useQueueStore = create<QueueState>((set) => ({
   tracks: [],
   currentIndex: 0,
-  setTracks: (tracks) => set({ tracks }),
+  enqueueTracks: (tracks) => set({ tracks }),
   updateTrackStatus: (id, status, error) =>
     set((state) => ({
       tracks: state.tracks.map((track) =>

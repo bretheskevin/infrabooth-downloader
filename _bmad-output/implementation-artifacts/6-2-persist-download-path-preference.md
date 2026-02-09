@@ -109,6 +109,17 @@ so that **I don't have to set it every time I open the application**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story configures **Zustand store persistence**. Following the custom hooks architecture:
+- Components access `settingsStore` via hooks (e.g., `useFolderSelection` from Story 6.1)
+- Store persistence is transparent to components
+- Hooks wrap store selectors — components don't directly access store
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Zustand Persist Middleware Configuration
 
 **From Story 1.4 and Architecture:**

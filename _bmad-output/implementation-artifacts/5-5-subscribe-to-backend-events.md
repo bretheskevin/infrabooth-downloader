@@ -80,6 +80,30 @@ so that **the UI reflects backend state accurately and users see live download p
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates `useDownloadProgress` which follows the **custom hooks architecture**:
+- Single responsibility: subscribe to backend events and update store
+- No UI logic — just event handling
+- Cleanup on unmount to prevent memory leaks
+- Place in `src/hooks/download/useDownloadProgress.ts`
+
+**Hook placement:**
+```
+src/hooks/
+├── download/
+│   ├── useUrlValidation.ts      # From Story 0.1
+│   ├── useMediaFetch.ts         # From Story 0.1
+│   ├── useSyncToQueue.ts        # From Story 0.1
+│   ├── useDownloadFlow.ts       # From Story 0.1
+│   └── useDownloadProgress.ts   # NEW - This story
+└── index.ts
+```
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Tauri Event Listener Pattern
 
 **From Architecture (ARCH-8):**

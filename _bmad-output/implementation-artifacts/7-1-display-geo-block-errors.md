@@ -233,6 +233,20 @@ so that **I know it's a SoundCloud restriction, not an app problem**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story primarily adds **backend error detection** and updates **presentation components**:
+- Error detection happens in Rust backend (not frontend hooks)
+- Frontend receives errors via existing `download-progress` events
+- `TrackCard` and `TrackStatusBadge` already handle `failed` status from Story 5.2
+- This story adds specific geo-block messaging to existing error handling
+
+**No new hooks needed** — existing `useDownloadProgress` (Story 5.5) handles error events.
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### GEO_BLOCKED Error Code
 
 The `GEO_BLOCKED` error code is one of the predefined error codes. Use it exactly as specified:

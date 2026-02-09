@@ -150,6 +150,33 @@ so that **I know when new versions are available**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates a **custom hook** for update checking:
+- Create `useUpdateChecker` hook in `src/hooks/updates/useUpdateChecker.ts`
+- Hook checks for updates on mount (app launch)
+- Stores update info in a Zustand store or local state
+- Returns `{ updateAvailable, updateInfo, checkForUpdates, installUpdate }`
+
+**Hook pattern:**
+```typescript
+// src/hooks/updates/useUpdateChecker.ts
+export function useUpdateChecker() {
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+
+  useEffect(() => {
+    // Check for updates on mount
+    checkForUpdatesOnLaunch().then(setUpdateInfo);
+  }, []);
+
+  return { updateAvailable: !!updateInfo, updateInfo, installUpdate };
+}
+```
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Tauri 2.0 Updater Plugin
 
 Tauri 2.0 uses the plugin-based updater system. The legacy `@tauri-apps/api/updater` is deprecated.

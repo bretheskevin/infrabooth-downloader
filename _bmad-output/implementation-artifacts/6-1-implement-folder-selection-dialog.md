@@ -110,6 +110,33 @@ so that **I can organize my music library my way**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates a **custom hook** for folder selection:
+- Create `useFolderSelection` hook in `src/hooks/settings/useFolderSelection.ts`
+- Hook wraps Tauri dialog API and updates settingsStore
+- Returns `{ downloadPath, selectFolder, isSelecting }`
+
+**Hook pattern:**
+```typescript
+// src/hooks/settings/useFolderSelection.ts
+export function useFolderSelection() {
+  const downloadPath = useSettingsStore(state => state.downloadPath);
+  const setDownloadPath = useSettingsStore(state => state.setDownloadPath);
+
+  const selectFolder = async () => {
+    const selected = await open({ directory: true });
+    if (selected) setDownloadPath(selected);
+  };
+
+  return { downloadPath, selectFolder };
+}
+```
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Tauri 2.0 Dialog Plugin Setup
 
 **Cargo.toml dependencies:**

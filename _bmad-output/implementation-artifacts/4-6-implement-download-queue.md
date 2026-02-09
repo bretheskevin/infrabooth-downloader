@@ -327,7 +327,7 @@ so that **I can start the download and walk away**.
       completedCount: number;
       failedCount: number;
       // Actions
-      setTracks: (tracks: Track[]) => void;
+      enqueueTracks: (tracks: Track[]) => void;
       updateTrackStatus: (id: string, status: Track['status'], error?: Track['error']) => void;
       setQueueProgress: (current: number, total: number) => void;
       setQueueComplete: (result: QueueCompleteEvent) => void;
@@ -343,7 +343,7 @@ so that **I can start the download and walk away**.
       completedCount: 0,
       failedCount: 0,
 
-      setTracks: (tracks) => set({
+      enqueueTracks: (tracks) => set({
         tracks,
         totalTracks: tracks.length,
         currentIndex: 0,
@@ -405,6 +405,29 @@ so that **I can start the download and walk away**.
     ```
 
 ## Dev Notes
+
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+After the refactor, the download flow uses the custom hooks architecture:
+- `useDownloadFlow` orchestrates URL validation, media fetching, and queue sync
+- `handleDownload` in `useDownloadFlow` should be updated to call `startDownloadQueue`
+- Components remain thin — they call hooks and render UI
+
+**Integration point:**
+```typescript
+// In useDownloadFlow.ts (updated in this story)
+const handleDownload = useCallback(async () => {
+  const queueTracks = useQueueStore.getState().tracks;
+  await startDownloadQueue({
+    tracks: queueTracks.map(t => ({ /* ... */ })),
+    albumName: media && 'title' in media ? media.title : undefined,
+  });
+}, [media]);
+```
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
 
 ### Queue Processing Flow
 

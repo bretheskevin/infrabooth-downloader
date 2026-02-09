@@ -9,6 +9,7 @@ import type { PlaylistInfo, TrackInfo } from '@/types/playlist';
  * @throws Error if the fetch fails
  */
 export async function fetchPlaylistInfo(url: string): Promise<PlaylistInfo> {
+  console.log('[playlist.ts] Invoking get_playlist_info with url:', url);
   return invoke<PlaylistInfo>('get_playlist_info', { url });
 }
 
@@ -20,5 +21,6 @@ export async function fetchPlaylistInfo(url: string): Promise<PlaylistInfo> {
  * @throws Error if the fetch fails (track not found, geo-blocked, etc.)
  */
 export async function fetchTrackInfo(url: string): Promise<TrackInfo> {
+  console.log('[playlist.ts] Invoking get_track_info with url:', url);
   return invoke<TrackInfo>('get_track_info', { url });
 }

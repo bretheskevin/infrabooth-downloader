@@ -7,7 +7,7 @@ export function UserBadge() {
   const { t } = useTranslation();
   const username = useAuthStore((state) => state.username);
   const plan = useAuthStore((state) => state.plan);
-  const isGoPlus = plan != null && plan !== '';
+  const isGoPlus = plan != null && plan !== '' && plan !== 'Free';
 
   // Show loading state while profile is being fetched
   if (!username) {

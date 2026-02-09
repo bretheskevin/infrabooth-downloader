@@ -15,7 +15,7 @@ export function UserMenu() {
   const { t } = useTranslation();
   const username = useAuthStore((state) => state.username);
   const plan = useAuthStore((state) => state.plan);
-  const isGoPlus = plan != null && plan !== '';
+  const isGoPlus = plan != null && plan !== '' && plan !== 'Free';
 
   const handleSignOut = async () => {
     await signOut();

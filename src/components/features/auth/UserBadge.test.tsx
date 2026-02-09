@@ -51,8 +51,16 @@ describe('UserBadge', () => {
     expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
   });
 
-  it('should not display Go+ badge for free users', () => {
+  it('should not display Go+ badge when plan is null', () => {
     useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: null });
+
+    render(<UserBadge />);
+
+    expect(screen.queryByText('Go+ 256kbps')).not.toBeInTheDocument();
+  });
+
+  it('should not display Go+ badge when plan is "Free"', () => {
+    useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Free' });
 
     render(<UserBadge />);
 

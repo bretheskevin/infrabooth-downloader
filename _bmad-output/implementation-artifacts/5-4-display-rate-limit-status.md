@@ -104,6 +104,28 @@ so that **I don't think the app is broken**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates a **presentation-only component** with a thin hook. Following the custom hooks architecture:
+- `RateLimitBanner` is a presentation component receiving `isRateLimited` as prop
+- Create `useRateLimitStatus` hook to subscribe to rate limit events and update store
+- Place hook in `src/hooks/download/useRateLimitStatus.ts`
+- Component renders based on hook return value — no direct event handling
+
+**Hook pattern:**
+```typescript
+// src/hooks/download/useRateLimitStatus.ts
+export function useRateLimitStatus() {
+  const isRateLimited = useQueueStore(state => state.isRateLimited);
+  // Subscribe to rate-limit events from backend
+  // Return { isRateLimited, rateLimitedAt }
+}
+```
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### RateLimitBanner Component Design
 
 **From UX Specification:**

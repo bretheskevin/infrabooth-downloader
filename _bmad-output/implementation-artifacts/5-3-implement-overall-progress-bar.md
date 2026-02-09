@@ -119,6 +119,18 @@ so that **I know how much of my playlist is complete**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates a **presentation-only component**. Following the custom hooks architecture:
+- `OverallProgress` receives `completedCount` and `totalCount` as props
+- Parent component uses `useQueueStore` selectors to get counts
+- No direct store access in the progress component itself
+- Consider creating `useQueueProgress` hook if logic becomes complex
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Shadcn/ui Progress Component
 
 **Installation:**

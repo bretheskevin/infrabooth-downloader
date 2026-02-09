@@ -143,6 +143,29 @@ so that **I can enjoy my music right away**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates `useDownloadCompletion` which follows the **custom hooks architecture**:
+- Single responsibility: derive completion state from queueStore
+- Returns `isComplete`, `completedCount`, `failedCount`, `resetQueue`
+- Components are thin — just render based on hook return values
+
+**Hook placement:**
+```
+src/hooks/
+├── download/
+│   ├── useDownloadFlow.ts       # From Story 0.1
+│   ├── useDownloadProgress.ts   # From Story 5.5
+│   └── useDownloadCompletion.ts # NEW - This story
+└── index.ts
+```
+
+**Component responsibility:** `CompletionPanel` only renders UI. All state derivation happens in the hook.
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Tauri 2.0 Shell Plugin Setup
 
 **Cargo.toml dependencies:**
