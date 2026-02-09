@@ -4,26 +4,14 @@ use thiserror::Error;
 /// Errors that can occur during FFmpeg operations.
 #[derive(Debug, Error, Serialize)]
 pub enum FfmpegError {
-    #[error("Conversion failed: {0}")]
-    ConversionFailed(String),
-
     #[error("FFmpeg binary not found")]
     BinaryNotFound,
-
-    #[error("Invalid input file: {0}")]
-    InvalidInput(String),
-
-    #[error("Output path error: {0}")]
-    OutputError(String),
 }
 
 impl From<FfmpegError> for ErrorResponse {
     fn from(err: FfmpegError) -> Self {
         let code = match &err {
-            FfmpegError::ConversionFailed(_) => "CONVERSION_FAILED",
             FfmpegError::BinaryNotFound => "BINARY_NOT_FOUND",
-            FfmpegError::InvalidInput(_) => "INVALID_INPUT",
-            FfmpegError::OutputError(_) => "OUTPUT_ERROR",
         };
 
         ErrorResponse {
@@ -48,9 +36,6 @@ pub enum YtDlpError {
     #[error("Content is geo-blocked")]
     GeoBlocked,
 
-    #[error("Invalid URL")]
-    InvalidUrl,
-
     #[error("Track not found")]
     NotFound,
 
@@ -59,14 +44,12 @@ pub enum YtDlpError {
 }
 
 impl YtDlpError {
-    /// Returns the error code for IPC communication.
     pub fn code(&self) -> &'static str {
         match self {
             YtDlpError::DownloadFailed(_) => "DOWNLOAD_FAILED",
             YtDlpError::BinaryNotFound => "DOWNLOAD_FAILED",
             YtDlpError::RateLimited => "RATE_LIMITED",
             YtDlpError::GeoBlocked => "GEO_BLOCKED",
-            YtDlpError::InvalidUrl => "INVALID_URL",
             YtDlpError::NotFound => "INVALID_URL",
             YtDlpError::AuthRequired => "AUTH_REQUIRED",
         }
@@ -102,6 +85,30 @@ pub enum AuthError {
 
     #[error("Token refresh failed: {0}")]
     RefreshFailed(String),
+}
+
+/// Errors that can occur during the download pipeline.
+#[derive(Debug, Error)]
+pub enum PipelineError {
+    #[error("Download failed: {0}")]
+    Download(#[from] YtDlpError),
+}
+
+impl PipelineError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            PipelineError::Download(e) => e.code(),
+        }
+    }
+}
+
+impl From<PipelineError> for ErrorResponse {
+    fn from(err: PipelineError) -> Self {
+        ErrorResponse {
+            code: err.code().to_string(),
+            message: err.to_string(),
+        }
+    }
 }
 
 /// Serializable error response for IPC.
@@ -204,8 +211,6 @@ mod tests {
         assert_eq!(response.code, "REFRESH_FAILED");
     }
 
-    // YtDlpError tests
-
     #[test]
     fn test_ytdlp_download_failed_error_message() {
         let err = YtDlpError::DownloadFailed("Connection timeout".to_string());
@@ -228,12 +233,6 @@ mod tests {
     fn test_ytdlp_geo_blocked_error_message() {
         let err = YtDlpError::GeoBlocked;
         assert_eq!(err.to_string(), "Content is geo-blocked");
-    }
-
-    #[test]
-    fn test_ytdlp_invalid_url_error_message() {
-        let err = YtDlpError::InvalidUrl;
-        assert_eq!(err.to_string(), "Invalid URL");
     }
 
     #[test]
@@ -263,13 +262,6 @@ mod tests {
         let err = YtDlpError::GeoBlocked;
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "GEO_BLOCKED");
-    }
-
-    #[test]
-    fn test_error_response_from_ytdlp_invalid_url() {
-        let err = YtDlpError::InvalidUrl;
-        let response: ErrorResponse = err.into();
-        assert_eq!(response.code, "INVALID_URL");
     }
 
     #[test]
@@ -304,43 +296,14 @@ mod tests {
         assert_eq!(YtDlpError::BinaryNotFound.code(), "DOWNLOAD_FAILED");
         assert_eq!(YtDlpError::RateLimited.code(), "RATE_LIMITED");
         assert_eq!(YtDlpError::GeoBlocked.code(), "GEO_BLOCKED");
-        assert_eq!(YtDlpError::InvalidUrl.code(), "INVALID_URL");
         assert_eq!(YtDlpError::NotFound.code(), "INVALID_URL");
         assert_eq!(YtDlpError::AuthRequired.code(), "AUTH_REQUIRED");
-    }
-
-    // FfmpegError tests
-
-    #[test]
-    fn test_ffmpeg_conversion_failed_error_message() {
-        let err = FfmpegError::ConversionFailed("Codec not supported".to_string());
-        assert_eq!(err.to_string(), "Conversion failed: Codec not supported");
     }
 
     #[test]
     fn test_ffmpeg_binary_not_found_error_message() {
         let err = FfmpegError::BinaryNotFound;
         assert_eq!(err.to_string(), "FFmpeg binary not found");
-    }
-
-    #[test]
-    fn test_ffmpeg_invalid_input_error_message() {
-        let err = FfmpegError::InvalidInput("File not found".to_string());
-        assert_eq!(err.to_string(), "Invalid input file: File not found");
-    }
-
-    #[test]
-    fn test_ffmpeg_output_error_message() {
-        let err = FfmpegError::OutputError("Permission denied".to_string());
-        assert_eq!(err.to_string(), "Output path error: Permission denied");
-    }
-
-    #[test]
-    fn test_error_response_from_ffmpeg_conversion_failed() {
-        let err = FfmpegError::ConversionFailed("test".to_string());
-        let response: ErrorResponse = err.into();
-        assert_eq!(response.code, "CONVERSION_FAILED");
-        assert!(response.message.contains("Conversion failed"));
     }
 
     #[test]
@@ -351,16 +314,21 @@ mod tests {
     }
 
     #[test]
-    fn test_error_response_from_ffmpeg_invalid_input() {
-        let err = FfmpegError::InvalidInput("test".to_string());
-        let response: ErrorResponse = err.into();
-        assert_eq!(response.code, "INVALID_INPUT");
+    fn test_pipeline_download_error_message() {
+        let err = PipelineError::Download(YtDlpError::DownloadFailed("test".to_string()));
+        assert!(err.to_string().contains("Download failed"));
     }
 
     #[test]
-    fn test_error_response_from_ffmpeg_output_error() {
-        let err = FfmpegError::OutputError("test".to_string());
+    fn test_pipeline_error_code_download() {
+        let err = PipelineError::Download(YtDlpError::GeoBlocked);
+        assert_eq!(err.code(), "GEO_BLOCKED");
+    }
+
+    #[test]
+    fn test_error_response_from_pipeline_download() {
+        let err = PipelineError::Download(YtDlpError::RateLimited);
         let response: ErrorResponse = err.into();
-        assert_eq!(response.code, "OUTPUT_ERROR");
+        assert_eq!(response.code, "RATE_LIMITED");
     }
 }
