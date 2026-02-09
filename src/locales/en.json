@@ -22,7 +22,8 @@
     "validating": "Checking URL...",
     "fetchingPlaylist": "Loading playlist...",
     "trackCount_one": "{{count}} track",
-    "trackCount_other": "{{count}} tracks"
+    "trackCount_other": "{{count}} tracks",
+    "singleTrack": "1 track"
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",
@@ -30,7 +31,9 @@
     "rateLimited": "Brief pause — SoundCloud rate limit (this is normal)",
     "networkError": "No internet connection",
     "downloadFailed": "Download failed",
-    "conversionFailed": "Conversion failed"
+    "conversionFailed": "Conversion failed",
+    "trackNotFound": "Track not found",
+    "trackNotFoundHint": "This track may have been removed or made private"
   },
   "settings": {
     "title": "Settings",
