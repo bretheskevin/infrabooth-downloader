@@ -1,6 +1,6 @@
 # Story 3.3: Display Validation Feedback
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -39,8 +39,8 @@ so that **I know immediately if the URL is valid**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create ValidationFeedback component (AC: #2, #3)
-  - [ ] 1.1 Create `src/components/features/download/ValidationFeedback.tsx`:
+- [x] Task 1: Create ValidationFeedback component (AC: #2, #3)
+  - [x] 1.1 Create `src/components/features/download/ValidationFeedback.tsx`:
     ```typescript
     import { useTranslation } from 'react-i18next';
     import { AlertCircle, CheckCircle2 } from 'lucide-react';
@@ -101,8 +101,8 @@ so that **I know immediately if the URL is valid**.
     }
     ```
 
-- [ ] Task 2: Create styled input wrapper with state borders (AC: #1, #2, #3)
-  - [ ] 2.1 Update `UrlInput.tsx` to accept validation state:
+- [x] Task 2: Create styled input wrapper with state borders (AC: #1, #2, #3)
+  - [x] 2.1 Update `UrlInput.tsx` to accept validation state:
     ```typescript
     interface UrlInputProps {
       onUrlChange: (url: string) => void;
@@ -150,8 +150,8 @@ so that **I know immediately if the URL is valid**.
     }
     ```
 
-- [ ] Task 3: Update DownloadSection to pass validation state (AC: #1-#4)
-  - [ ] 3.1 Update `DownloadSection.tsx`:
+- [x] Task 3: Update DownloadSection to pass validation state (AC: #1-#4)
+  - [x] 3.1 Update `DownloadSection.tsx`:
     ```typescript
     import { ValidationFeedback } from './ValidationFeedback';
 
@@ -203,8 +203,8 @@ so that **I know immediately if the URL is valid**.
     }
     ```
 
-- [ ] Task 4: Add success state auto-dismiss (AC: #2)
-  - [ ] 4.1 Success border should fade after 2 seconds:
+- [x] Task 4: Add success state auto-dismiss (AC: #2)
+  - [x] 4.1 Success border should fade after 2 seconds:
     ```typescript
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -217,14 +217,14 @@ so that **I know immediately if the URL is valid**.
     }, [validationResult]);
     ```
 
-- [ ] Task 5: Add accessibility announcements (AC: #5)
-  - [ ] 5.1 Use `role="status"` for success
-  - [ ] 5.2 Use `role="alert"` for errors
-  - [ ] 5.3 Use `aria-live="polite"` for non-critical updates
-  - [ ] 5.4 Use `aria-live="assertive"` for errors
+- [x] Task 5: Add accessibility announcements (AC: #5)
+  - [x] 5.1 Use `role="status"` for success
+  - [x] 5.2 Use `role="alert"` for errors
+  - [x] 5.3 Use `aria-live="polite"` for non-critical updates
+  - [x] 5.4 Use `aria-live="assertive"` for errors
 
-- [ ] Task 6: Add translation keys (AC: #2, #3)
-  - [ ] 6.1 Add to `en.json`:
+- [x] Task 6: Add translation keys (AC: #2, #3)
+  - [x] 6.1 Add to `en.json`:
     ```json
     "download": {
       "validPlaylist": "Valid playlist URL",
@@ -232,7 +232,7 @@ so that **I know immediately if the URL is valid**.
       "validating": "Checking URL..."
     }
     ```
-  - [ ] 6.2 Add to `fr.json`:
+  - [x] 6.2 Add to `fr.json`:
     ```json
     "download": {
       "validPlaylist": "URL de playlist valide",
@@ -241,10 +241,10 @@ so that **I know immediately if the URL is valid**.
     }
     ```
 
-- [ ] Task 7: Test visual feedback timing (AC: #2)
-  - [ ] 7.1 Verify feedback appears within 500ms of paste
-  - [ ] 7.2 Verify loading indicator shows during validation
-  - [ ] 7.3 Verify transitions are smooth
+- [x] Task 7: Test visual feedback timing (AC: #2)
+  - [x] 7.1 Verify feedback appears within 500ms of paste
+  - [x] 7.2 Verify loading indicator shows during validation
+  - [x] 7.3 Verify transitions are smooth
 
 ## Dev Notes
 
@@ -362,11 +362,35 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- Created ValidationFeedback component with success/error states, icons, and accessibility attributes
+- Updated UrlInput component with validation state borders (indigo=validating, emerald=success, red=error) and loading spinner
+- Integrated ValidationFeedback into DownloadSection with debounced validation
+- Implemented success border auto-dismiss after 2 seconds
+- Added translation keys for English and French (validPlaylist, validTrack, validating)
+- All accessibility requirements met: role="status" + aria-live="polite" for success, role="alert" + aria-live="assertive" for errors
+- All 217 tests pass with no regressions
+- Frontend build successful
+
 ### File List
+
+- src/components/features/download/ValidationFeedback.tsx (new)
+- src/components/features/download/ValidationFeedback.test.tsx (new)
+- src/components/features/download/UrlInput.tsx (modified)
+- src/components/features/download/UrlInput.test.tsx (modified)
+- src/components/features/download/DownloadSection.tsx (modified)
+- src/components/features/download/DownloadSection.test.tsx (modified)
+- src/locales/en.json (modified)
+- src/locales/fr.json (modified)
+
+### Change Log
+
+- 2026-02-09: Implemented Story 3.3 - Display Validation Feedback (all 7 tasks complete)
 

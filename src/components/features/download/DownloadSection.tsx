@@ -5,12 +5,14 @@ import { validateUrl } from '@/lib/validation';
 import type { ValidationResult } from '@/types/url';
 import { UrlInput } from './UrlInput';
 import { AuthPrompt } from './AuthPrompt';
+import { ValidationFeedback } from './ValidationFeedback';
 
 export function DownloadSection() {
   const isSignedIn = useAuthStore((state) => state.isSignedIn);
   const [url, setUrl] = useState('');
   const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const debouncedUrl = useDebounce(url, 300);
 
@@ -26,9 +28,27 @@ export function DownloadSection() {
       .finally(() => setIsValidating(false));
   }, [debouncedUrl]);
 
+  // Auto-dismiss success border after 2 seconds
+  useEffect(() => {
+    if (validationResult?.valid) {
+      setShowSuccess(true);
+      const timer = setTimeout(() => setShowSuccess(false), 2000);
+      return () => clearTimeout(timer);
+    }
+    setShowSuccess(false);
+  }, [validationResult]);
+
   const handleUrlChange = useCallback((newUrl: string) => {
     setUrl(newUrl);
+    if (!newUrl) {
+      setValidationResult(null);
+    }
   }, []);
+
+  // For border display: show success only while showSuccess is true, always show errors
+  const displayResult = validationResult?.valid
+    ? (showSuccess ? validationResult : null)
+    : validationResult;
 
   return (
     <section className="space-y-4">
@@ -37,11 +57,15 @@ export function DownloadSection() {
           onUrlChange={handleUrlChange}
           disabled={!isSignedIn}
           isValidating={isValidating}
-          validationResult={validationResult}
+          validationResult={displayResult}
         />
         {!isSignedIn && <AuthPrompt />}
       </div>
-      {/* Preview and progress will be added in later stories */}
+      <ValidationFeedback
+        result={validationResult}
+        isValidating={isValidating}
+      />
+      {/* Preview will be added in Story 3.4 */}
     </section>
   );
 }
