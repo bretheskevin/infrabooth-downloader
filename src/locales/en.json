@@ -16,7 +16,10 @@
     "progress": "{{current}} of {{total}} tracks",
     "complete": "Download complete!",
     "pasteUrl": "Paste a SoundCloud playlist or track URL",
-    "signInRequired": "Sign in to download"
+    "signInRequired": "Sign in to download",
+    "validPlaylist": "Valid playlist URL",
+    "validTrack": "Valid track URL",
+    "validating": "Checking URL..."
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",
