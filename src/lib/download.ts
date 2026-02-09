@@ -66,3 +66,46 @@ export async function downloadAndConvertTrack(
     outputDir,
   });
 }
+
+/**
+ * An item in the download queue.
+ */
+export interface QueueItem {
+  /** The SoundCloud track URL to download */
+  trackUrl: string;
+  /** Unique identifier for the track (used in progress events) */
+  trackId: string;
+  /** Track title */
+  title: string;
+  /** Artist/creator name */
+  artist: string;
+  /** URL to artwork image for embedding */
+  artworkUrl?: string;
+}
+
+/**
+ * Request payload for starting a download queue.
+ */
+export interface StartQueueRequest {
+  /** Array of tracks to download */
+  tracks: QueueItem[];
+  /** Album name - typically playlist title */
+  albumName?: string;
+}
+
+/**
+ * Start processing a download queue.
+ *
+ * This function adds all tracks to the queue and starts processing them sequentially.
+ * Progress events are emitted via event channels:
+ * - `queue-progress`: Overall queue progress (X of Y)
+ * - `download-progress`: Per-track status
+ * - `queue-complete`: Final results when queue finishes
+ *
+ * @param request - Queue request containing tracks and optional album name
+ */
+export async function startDownloadQueue(
+  request: StartQueueRequest
+): Promise<void> {
+  await invoke('start_download_queue', { request });
+}

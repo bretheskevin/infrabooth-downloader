@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { downloadTrack, downloadAndConvertTrack, DownloadRequest } from './download';
+import {
+  downloadTrack,
+  downloadAndConvertTrack,
+  startDownloadQueue,
+  DownloadRequest,
+  StartQueueRequest,
+} from './download';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
@@ -166,5 +172,89 @@ describe('downloadAndConvertTrack (deprecated)', () => {
         outputDir,
       },
     });
+  });
+});
+
+describe('startDownloadQueue', () => {
+  const mockInvoke = vi.mocked(invoke);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should invoke start_download_queue with request object', async () => {
+    const request: StartQueueRequest = {
+      tracks: [
+        {
+          trackUrl: 'https://soundcloud.com/artist/track1',
+          trackId: '1',
+          title: 'Track 1',
+          artist: 'Artist',
+        },
+        {
+          trackUrl: 'https://soundcloud.com/artist/track2',
+          trackId: '2',
+          title: 'Track 2',
+          artist: 'Artist',
+          artworkUrl: 'https://example.com/art.jpg',
+        },
+      ],
+      albumName: 'Playlist Name',
+    };
+
+    mockInvoke.mockResolvedValue(undefined);
+
+    await startDownloadQueue(request);
+
+    expect(mockInvoke).toHaveBeenCalledWith('start_download_queue', { request });
+  });
+
+  it('should work without album name', async () => {
+    const request: StartQueueRequest = {
+      tracks: [
+        {
+          trackUrl: 'https://soundcloud.com/artist/track',
+          trackId: '123',
+          title: 'Single Track',
+          artist: 'Artist',
+        },
+      ],
+    };
+
+    mockInvoke.mockResolvedValue(undefined);
+
+    await startDownloadQueue(request);
+
+    expect(mockInvoke).toHaveBeenCalledWith('start_download_queue', { request });
+  });
+
+  it('should handle empty tracks array', async () => {
+    const request: StartQueueRequest = {
+      tracks: [],
+    };
+
+    mockInvoke.mockResolvedValue(undefined);
+
+    await startDownloadQueue(request);
+
+    expect(mockInvoke).toHaveBeenCalledWith('start_download_queue', { request });
+  });
+
+  it('should propagate errors from the backend', async () => {
+    const request: StartQueueRequest = {
+      tracks: [
+        {
+          trackUrl: 'https://soundcloud.com/artist/track',
+          trackId: '123',
+          title: 'Track',
+          artist: 'Artist',
+        },
+      ],
+    };
+    const error = { code: 'DOWNLOAD_FAILED', message: 'Failed to start queue' };
+
+    mockInvoke.mockRejectedValue(error);
+
+    await expect(startDownloadQueue(request)).rejects.toEqual(error);
   });
 });
