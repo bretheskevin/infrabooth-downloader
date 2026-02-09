@@ -25,9 +25,9 @@ describe('App', () => {
     expect(screen.getByText('InfraBooth Downloader')).toBeDefined();
   });
 
-  it('should render the welcome message', () => {
+  it('should render the URL input section', () => {
     render(<App />);
-    expect(screen.getByText('Welcome to InfraBooth Downloader')).toBeDefined();
+    expect(screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL')).toBeInTheDocument();
   });
 
   it('should render sign-in button when not authenticated', () => {
