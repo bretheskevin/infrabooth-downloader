@@ -1,4 +1,5 @@
 import { AppLayout } from '@/components/layout/AppLayout';
+import { DownloadSection } from '@/components/features/download/DownloadSection';
 import { useLanguageSync, useAuthStateListener, useOAuthFlow, useStartupAuth } from '@/hooks';
 
 export function App() {
@@ -9,7 +10,7 @@ export function App() {
 
   return (
     <AppLayout>
-      <p>Welcome to InfraBooth Downloader</p>
+      <DownloadSection />
     </AppLayout>
   );
 }
