@@ -4,7 +4,8 @@ export type ErrorCode =
   | 'RATE_LIMITED'
   | 'NETWORK_ERROR'
   | 'DOWNLOAD_FAILED'
-  | 'CONVERSION_FAILED';
+  | 'CONVERSION_FAILED'
+  | 'AUTH_REQUIRED';
 
 export interface AppError {
   code: ErrorCode;
