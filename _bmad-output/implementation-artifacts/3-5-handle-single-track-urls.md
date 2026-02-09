@@ -1,6 +1,6 @@
 # Story 3.5: Handle Single Track URLs
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -36,8 +36,8 @@ so that **I can grab specific songs I want**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create track fetch service in Rust (AC: #1)
-  - [ ] 1.1 Add to `src-tauri/src/services/playlist.rs`:
+- [x] Task 1: Create track fetch service in Rust (AC: #1)
+  - [x] 1.1 Add to `src-tauri/src/services/playlist.rs`:
     ```rust
     pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
         let access_token = get_valid_access_token().await?;
@@ -72,8 +72,8 @@ so that **I can grab specific songs I want**.
     }
     ```
 
-- [ ] Task 2: Create Tauri command for track info (AC: #1)
-  - [ ] 2.1 Add to `src-tauri/src/commands/playlist.rs`:
+- [x] Task 2: Create Tauri command for track info (AC: #1)
+  - [x] 2.1 Add to `src-tauri/src/commands/playlist.rs`:
     ```rust
     #[command]
     pub async fn get_track_info(url: String) -> Result<TrackInfo, String> {
@@ -82,18 +82,18 @@ so that **I can grab specific songs I want**.
             .map_err(|e| e.to_string())
     }
     ```
-  - [ ] 2.2 Register command in `lib.rs`
+  - [x] 2.2 Register command in `lib.rs`
 
-- [ ] Task 3: Create TypeScript fetch function (AC: #1)
-  - [ ] 3.1 Add to `src/lib/playlist.ts`:
+- [x] Task 3: Create TypeScript fetch function (AC: #1)
+  - [x] 3.1 Add to `src/lib/playlist.ts`:
     ```typescript
     export async function fetchTrackInfo(url: string): Promise<TrackInfo> {
       return invoke<TrackInfo>('get_track_info', { url });
     }
     ```
 
-- [ ] Task 4: Create TrackPreview component (AC: #2, #3)
-  - [ ] 4.1 Create `src/components/features/download/TrackPreview.tsx`:
+- [x] Task 4: Create TrackPreview component (AC: #2, #3)
+  - [x] 4.1 Create `src/components/features/download/TrackPreview.tsx`:
     ```typescript
     import { useTranslation } from 'react-i18next';
     import { Card, CardContent } from '@/components/ui/card';
@@ -167,8 +167,8 @@ so that **I can grab specific songs I want**.
     }
     ```
 
-- [ ] Task 5: Add duration formatter utility (AC: #2)
-  - [ ] 5.1 Add to `src/lib/utils.ts`:
+- [x] Task 5: Add duration formatter utility (AC: #2)
+  - [x] 5.1 Add to `src/lib/utils.ts`:
     ```typescript
     /**
      * Format duration in milliseconds to mm:ss
@@ -181,8 +181,8 @@ so that **I can grab specific songs I want**.
     }
     ```
 
-- [ ] Task 6: Update DownloadSection to handle tracks (AC: #1, #2, #3)
-  - [ ] 6.1 Update `DownloadSection.tsx`:
+- [x] Task 6: Update DownloadSection to handle tracks (AC: #1, #2, #3)
+  - [x] 6.1 Update `DownloadSection.tsx`:
     ```typescript
     import { TrackPreview } from './TrackPreview';
     import { fetchTrackInfo } from '@/lib/playlist';
@@ -251,8 +251,8 @@ so that **I can grab specific songs I want**.
     }
     ```
 
-- [ ] Task 7: Handle track unavailability errors (AC: #4)
-  - [ ] 7.1 Add error types to `src-tauri/src/models/error.rs`:
+- [x] Task 7: Handle track unavailability errors (AC: #4)
+  - [x] 7.1 Add error types to `src-tauri/src/models/error.rs`:
     ```rust
     #[derive(Debug, thiserror::Error)]
     pub enum PlaylistError {
@@ -265,7 +265,7 @@ so that **I can grab specific songs I want**.
         // ... other errors
     }
     ```
-  - [ ] 7.2 Handle errors in frontend:
+  - [x] 7.2 Handle errors in frontend:
     ```typescript
     const handleFetchError = (error: Error) => {
       const message = error.message;
@@ -290,8 +290,8 @@ so that **I can grab specific songs I want**.
     };
     ```
 
-- [ ] Task 8: Add translation keys (AC: #2, #4)
-  - [ ] 8.1 Add to `en.json`:
+- [x] Task 8: Add translation keys (AC: #2, #4)
+  - [x] 8.1 Add to `en.json`:
     ```json
     "download": {
       "singleTrack": "1 track"
@@ -301,7 +301,7 @@ so that **I can grab specific songs I want**.
       "trackNotFoundHint": "This track may have been removed or made private"
     }
     ```
-  - [ ] 8.2 Add to `fr.json`:
+  - [x] 8.2 Add to `fr.json`:
     ```json
     "download": {
       "singleTrack": "1 piste"
@@ -427,11 +427,43 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+N/A
+
 ### Completion Notes List
 
+- ✅ Implemented `fetch_track_info` service in Rust with error handling for 404 (TrackNotFound) and 403 (GeoBlocked)
+- ✅ Added `get_track_info` Tauri command and registered in lib.rs
+- ✅ Created `fetchTrackInfo` TypeScript function in playlist.ts
+- ✅ Created `TrackPreview` component displaying artwork, title, artist, duration, "1 track" indicator, and quality badge
+- ✅ Added `formatDuration` utility to convert milliseconds to mm:ss format
+- ✅ Updated `DownloadSection` to fetch track metadata when URL type is 'track' and display TrackPreview
+- ✅ Added error handling for track not found and geo-blocked errors with user-friendly messages
+- ✅ Added translation keys for English and French
+- ✅ All 268 frontend tests pass
+- ✅ All 82 Rust tests pass
+- ✅ TypeScript type check passes
+- ✅ Frontend and Rust builds successful
+
 ### File List
+
+**New Files:**
+- src/components/features/download/TrackPreview.tsx
+- src/components/features/download/TrackPreview.test.tsx
+- src/lib/utils.test.ts
+
+**Modified Files:**
+- src-tauri/src/services/playlist.rs (added TrackNotFound, GeoBlocked errors + fetch_track_info)
+- src-tauri/src/commands/playlist.rs (added get_track_info command)
+- src-tauri/src/commands/mod.rs (export get_track_info)
+- src-tauri/src/lib.rs (register get_track_info command)
+- src/lib/playlist.ts (added fetchTrackInfo function)
+- src/lib/utils.ts (added formatDuration function)
+- src/components/features/download/DownloadSection.tsx (handle track URLs, show TrackPreview)
+- src/components/features/download/DownloadSection.test.tsx (updated mocks, added track tests)
+- src/locales/en.json (added singleTrack, trackNotFound, trackNotFoundHint)
+- src/locales/fr.json (added singleTrack, trackNotFound, trackNotFoundHint)
 

@@ -22,7 +22,8 @@
     "validating": "Vérification de l'URL...",
     "fetchingPlaylist": "Chargement de la playlist...",
     "trackCount_one": "{{count}} piste",
-    "trackCount_other": "{{count}} pistes"
+    "trackCount_other": "{{count}} pistes",
+    "singleTrack": "1 piste"
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",
@@ -30,7 +31,9 @@
     "rateLimited": "Petite pause — SoundCloud limite les requêtes",
     "networkError": "Pas de connexion internet",
     "downloadFailed": "Échec du téléchargement",
-    "conversionFailed": "Échec de la conversion"
+    "conversionFailed": "Échec de la conversion",
+    "trackNotFound": "Piste non trouvée",
+    "trackNotFoundHint": "Cette piste a peut-être été supprimée ou rendue privée"
   },
   "settings": {
     "title": "Paramètres",

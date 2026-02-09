@@ -5,13 +5,14 @@ import { useAuthStore } from '@/stores/authStore';
 import { useQueueStore } from '@/stores/queueStore';
 import { useDebounce } from '@/hooks';
 import { validateUrl } from '@/lib/validation';
-import { fetchPlaylistInfo } from '@/lib/playlist';
+import { fetchPlaylistInfo, fetchTrackInfo } from '@/lib/playlist';
 import type { ValidationResult } from '@/types/url';
-import type { PlaylistInfo } from '@/types/playlist';
+import type { PlaylistInfo, TrackInfo } from '@/types/playlist';
 import { UrlInput } from './UrlInput';
 import { AuthPrompt } from './AuthPrompt';
 import { ValidationFeedback } from './ValidationFeedback';
 import { PlaylistPreview } from './PlaylistPreview';
+import { TrackPreview } from './TrackPreview';
 
 export function DownloadSection() {
   const { t } = useTranslation();
@@ -22,6 +23,7 @@ export function DownloadSection() {
   const [isValidating, setIsValidating] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [playlistInfo, setPlaylistInfo] = useState<PlaylistInfo | null>(null);
+  const [trackInfo, setTrackInfo] = useState<TrackInfo | null>(null);
   const [isFetchingPlaylist, setIsFetchingPlaylist] = useState(false);
 
   const debouncedUrl = useDebounce(url, 300);
@@ -38,13 +40,49 @@ export function DownloadSection() {
       .finally(() => setIsValidating(false));
   }, [debouncedUrl]);
 
-  // Fetch playlist when validation succeeds for playlist URLs
+  // Handle fetch errors with user-friendly messages
+  const handleFetchError = useCallback(
+    (error: Error) => {
+      const message = error.message;
+      if (message.includes('not found') || message.includes('Track not found')) {
+        setValidationResult({
+          valid: false,
+          error: {
+            code: 'INVALID_URL',
+            message: t('errors.trackNotFound'),
+            hint: t('errors.trackNotFoundHint'),
+          },
+        });
+      } else if (message.includes('region') || message.includes('GeoBlocked')) {
+        setValidationResult({
+          valid: false,
+          error: {
+            code: 'GEO_BLOCKED',
+            message: t('errors.geoBlocked'),
+          },
+        });
+      } else {
+        console.error('Failed to fetch:', error);
+      }
+    },
+    [t]
+  );
+
+  // Fetch metadata when validation succeeds
   useEffect(() => {
-    if (validationResult?.valid && validationResult.urlType === 'playlist') {
-      setIsFetchingPlaylist(true);
+    if (!validationResult?.valid) {
+      setPlaylistInfo(null);
+      setTrackInfo(null);
+      return;
+    }
+
+    setIsFetchingPlaylist(true);
+
+    if (validationResult.urlType === 'playlist') {
       fetchPlaylistInfo(url)
         .then((info) => {
           setPlaylistInfo(info);
+          setTrackInfo(null);
           // Store tracks in queue
           setTracks(
             info.tracks.map((track) => ({
@@ -56,15 +94,28 @@ export function DownloadSection() {
             }))
           );
         })
-        .catch((error) => {
-          console.error('Failed to fetch playlist:', error);
-          setPlaylistInfo(null);
-        })
+        .catch(handleFetchError)
         .finally(() => setIsFetchingPlaylist(false));
-    } else {
-      setPlaylistInfo(null);
+    } else if (validationResult.urlType === 'track') {
+      fetchTrackInfo(url)
+        .then((info) => {
+          setTrackInfo(info);
+          setPlaylistInfo(null);
+          // Single track in queue
+          setTracks([
+            {
+              id: String(info.id),
+              title: info.title,
+              artist: info.user.username,
+              artworkUrl: info.artwork_url,
+              status: 'pending' as const,
+            },
+          ]);
+        })
+        .catch(handleFetchError)
+        .finally(() => setIsFetchingPlaylist(false));
     }
-  }, [validationResult, url, setTracks]);
+  }, [validationResult, url, setTracks, handleFetchError]);
 
   // Auto-dismiss success border after 2 seconds
   useEffect(() => {
@@ -79,6 +130,7 @@ export function DownloadSection() {
   const handleUrlChange = useCallback((newUrl: string) => {
     setUrl(newUrl);
     setPlaylistInfo(null); // Clear preview immediately on URL change
+    setTrackInfo(null);
     if (!newUrl) {
       setValidationResult(null);
     }
@@ -122,6 +174,10 @@ export function DownloadSection() {
       {/* Playlist preview */}
       {playlistInfo && !isFetchingPlaylist && (
         <PlaylistPreview playlist={playlistInfo} onDownload={handleDownload} />
+      )}
+      {/* Track preview */}
+      {trackInfo && !isFetchingPlaylist && (
+        <TrackPreview track={trackInfo} onDownload={handleDownload} />
       )}
     </section>
   );

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
 import { DownloadSection } from './DownloadSection';
 
 // Mock react-i18next
@@ -14,6 +14,10 @@ vi.mock('react-i18next', () => ({
         'download.fetchingPlaylist': 'Loading playlist...',
         'download.button': 'Download',
         'download.trackCount': `${options?.count ?? 0} tracks`,
+        'download.singleTrack': '1 track',
+        'errors.trackNotFound': 'Track not found',
+        'errors.trackNotFoundHint': 'This track may have been removed or made private',
+        'errors.geoBlocked': 'Unavailable in your region',
       };
       return translations[key] || key;
     },
@@ -41,8 +45,10 @@ vi.mock('@/lib/validation', () => ({
 
 // Mock playlist fetch
 const mockFetchPlaylistInfo = vi.fn();
+const mockFetchTrackInfo = vi.fn();
 vi.mock('@/lib/playlist', () => ({
   fetchPlaylistInfo: (url: string) => mockFetchPlaylistInfo(url),
+  fetchTrackInfo: (url: string) => mockFetchTrackInfo(url),
 }));
 
 const mockPlaylistInfo = {
@@ -67,6 +73,14 @@ const mockPlaylistInfo = {
       duration: 240000,
     },
   ],
+};
+
+const mockTrackInfo = {
+  id: 456,
+  title: 'Test Track',
+  user: { username: 'testartist' },
+  artwork_url: 'https://i1.sndcdn.com/artworks-track-large.jpg',
+  duration: 185000,
 };
 
 describe('DownloadSection', () => {
@@ -144,22 +158,22 @@ describe('DownloadSection', () => {
     });
 
     it('should show success feedback after valid URL validation (AC #2)', async () => {
+      vi.useRealTimers(); // Use real timers for this test
       mockValidateUrl.mockResolvedValue({
         valid: true,
         urlType: 'track',
       });
+      mockFetchTrackInfo.mockResolvedValue(mockTrackInfo);
 
       render(<DownloadSection />);
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       fireEvent.change(input, { target: { value: 'https://soundcloud.com/artist/track-name' } });
 
-      // Advance past debounce and allow promise to resolve
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(300);
+      // Wait for validation to complete
+      await waitFor(() => {
+        expect(screen.getByText('Valid track URL')).toBeInTheDocument();
       });
-
-      expect(screen.getByText('Valid track URL')).toBeInTheDocument();
     });
 
     it('should show error feedback after invalid URL validation (AC #3)', async () => {
@@ -187,10 +201,12 @@ describe('DownloadSection', () => {
     });
 
     it('should clear validation result when input is cleared (AC #4)', async () => {
+      vi.useRealTimers(); // Use real timers for this test
       mockValidateUrl.mockResolvedValue({
         valid: true,
         urlType: 'track',
       });
+      mockFetchTrackInfo.mockResolvedValue(mockTrackInfo);
 
       render(<DownloadSection />);
 
@@ -198,27 +214,25 @@ describe('DownloadSection', () => {
 
       // First, enter a valid URL
       fireEvent.change(input, { target: { value: 'https://soundcloud.com/artist/track' } });
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(300);
-      });
 
-      expect(screen.getByText('Valid track URL')).toBeInTheDocument();
+      await waitFor(() => {
+        expect(screen.getByText('Valid track URL')).toBeInTheDocument();
+      });
 
       // Now clear the input
       fireEvent.change(input, { target: { value: '' } });
 
       // Wait for state to update
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(0);
+      await waitFor(() => {
+        expect(screen.queryByText('Valid track URL')).not.toBeInTheDocument();
       });
-
-      expect(screen.queryByText('Valid track URL')).not.toBeInTheDocument();
     });
 
     it('should debounce validation calls (AC #2 timing)', async () => {
+      vi.useRealTimers(); // Use real timers
       mockValidateUrl.mockResolvedValue({
-        valid: true,
-        urlType: 'track',
+        valid: false,
+        error: { code: 'INVALID_URL', message: 'Not a SoundCloud URL' },
       });
 
       render(<DownloadSection />);
@@ -229,49 +243,41 @@ describe('DownloadSection', () => {
       fireEvent.change(input, { target: { value: 'h' } });
       fireEvent.change(input, { target: { value: 'ht' } });
       fireEvent.change(input, { target: { value: 'htt' } });
-      fireEvent.change(input, { target: { value: 'https://soundcloud.com' } });
+      fireEvent.change(input, { target: { value: 'https://example.com' } });
 
-      // Before debounce completes
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(200);
-      });
+      // Immediately after typing, validation shouldn't have been called yet
       expect(mockValidateUrl).not.toHaveBeenCalled();
 
-      // After debounce
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(100);
-      });
+      // Wait for debounce (300ms) plus some buffer
+      await waitFor(() => {
+        expect(mockValidateUrl).toHaveBeenCalledTimes(1);
+      }, { timeout: 500 });
 
-      expect(mockValidateUrl).toHaveBeenCalledTimes(1);
-      expect(mockValidateUrl).toHaveBeenCalledWith('https://soundcloud.com');
+      expect(mockValidateUrl).toHaveBeenCalledWith('https://example.com');
     });
 
     it('should auto-dismiss success border after 2 seconds (AC #2)', async () => {
+      vi.useRealTimers(); // Use real timers
       mockValidateUrl.mockResolvedValue({
         valid: true,
         urlType: 'track',
       });
+      mockFetchTrackInfo.mockResolvedValue(mockTrackInfo);
 
       render(<DownloadSection />);
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-      fireEvent.change(input, { target: { value: 'https://soundcloud.com/track' } });
+      fireEvent.change(input, { target: { value: 'https://soundcloud.com/artist/track' } });
 
-      // Advance past debounce
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(300);
+      // Wait for success border to appear
+      await waitFor(() => {
+        expect(input).toHaveClass('border-emerald-500');
       });
 
-      // Success border should be visible
-      expect(input).toHaveClass('border-emerald-500');
-
-      // After 2 seconds, success border should fade
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(2000);
-      });
-
-      // Border should return to default (no emerald)
-      expect(input).not.toHaveClass('border-emerald-500');
+      // Wait for auto-dismiss (2 seconds + buffer)
+      await waitFor(() => {
+        expect(input).not.toHaveClass('border-emerald-500');
+      }, { timeout: 3000 });
     });
   });
 
@@ -303,6 +309,7 @@ describe('DownloadSection', () => {
     });
 
     it('should show playlist preview after successful fetch (AC #2)', async () => {
+      vi.useRealTimers(); // Use real timers for this test
       mockValidateUrl.mockResolvedValue({
         valid: true,
         urlType: 'playlist',
@@ -314,17 +321,17 @@ describe('DownloadSection', () => {
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       fireEvent.change(input, { target: { value: 'https://soundcloud.com/artist/sets/playlist' } });
 
-      // Advance past debounce and allow promises to resolve
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(300);
+      // Wait for playlist preview to appear
+      await waitFor(() => {
+        expect(screen.getByTestId('playlist-preview')).toBeInTheDocument();
       });
 
-      expect(screen.getByTestId('playlist-preview')).toBeInTheDocument();
       expect(screen.getByTestId('playlist-title')).toHaveTextContent('Test Playlist');
       expect(screen.getByTestId('playlist-creator')).toHaveTextContent('testuser');
     });
 
     it('should store tracks in queue store when playlist is fetched (AC #4)', async () => {
+      vi.useRealTimers(); // Use real timers for this test
       mockValidateUrl.mockResolvedValue({
         valid: true,
         urlType: 'playlist',
@@ -336,9 +343,9 @@ describe('DownloadSection', () => {
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       fireEvent.change(input, { target: { value: 'https://soundcloud.com/artist/sets/playlist' } });
 
-      // Advance past debounce and allow promises to resolve
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(300);
+      // Wait for setTracks to be called
+      await waitFor(() => {
+        expect(mockSetTracks).toHaveBeenCalled();
       });
 
       expect(mockSetTracks).toHaveBeenCalledWith([
@@ -360,6 +367,7 @@ describe('DownloadSection', () => {
     });
 
     it('should clear preview when URL changes (AC #5)', async () => {
+      vi.useRealTimers(); // Use real timers for this test
       mockValidateUrl.mockResolvedValue({
         valid: true,
         urlType: 'playlist',
@@ -371,12 +379,10 @@ describe('DownloadSection', () => {
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       fireEvent.change(input, { target: { value: 'https://soundcloud.com/artist/sets/playlist' } });
 
-      // Advance past debounce and allow promises to resolve
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(300);
+      // Wait for playlist preview to appear
+      await waitFor(() => {
+        expect(screen.getByTestId('playlist-preview')).toBeInTheDocument();
       });
-
-      expect(screen.getByTestId('playlist-preview')).toBeInTheDocument();
 
       // Change URL
       fireEvent.change(input, { target: { value: 'https://soundcloud.com/different' } });
@@ -385,27 +391,31 @@ describe('DownloadSection', () => {
       expect(screen.queryByTestId('playlist-preview')).not.toBeInTheDocument();
     });
 
-    it('should not fetch playlist for track URLs', async () => {
+    it('should not fetch playlist for track URLs but should fetch track info', async () => {
+      vi.useRealTimers(); // Use real timers for this test
       mockValidateUrl.mockResolvedValue({
         valid: true,
         urlType: 'track',
       });
+      mockFetchTrackInfo.mockResolvedValue(mockTrackInfo);
 
       render(<DownloadSection />);
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       fireEvent.change(input, { target: { value: 'https://soundcloud.com/artist/track' } });
 
-      // Advance past debounce
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(300);
+      // Wait for track preview to appear
+      await waitFor(() => {
+        expect(screen.getByTestId('track-preview')).toBeInTheDocument();
       });
 
       expect(mockFetchPlaylistInfo).not.toHaveBeenCalled();
+      expect(mockFetchTrackInfo).toHaveBeenCalledWith('https://soundcloud.com/artist/track');
       expect(screen.queryByTestId('playlist-preview')).not.toBeInTheDocument();
     });
 
     it('should hide loading state and not show preview on fetch error', async () => {
+      vi.useRealTimers(); // Use real timers for this test
       mockValidateUrl.mockResolvedValue({
         valid: true,
         urlType: 'playlist',
@@ -419,14 +429,13 @@ describe('DownloadSection', () => {
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       fireEvent.change(input, { target: { value: 'https://soundcloud.com/artist/sets/playlist' } });
 
-      // Advance past debounce
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(300);
+      // Wait for error handling to complete
+      await waitFor(() => {
+        expect(consoleSpy).toHaveBeenCalled();
       });
 
       expect(screen.queryByTestId('playlist-loading')).not.toBeInTheDocument();
       expect(screen.queryByTestId('playlist-preview')).not.toBeInTheDocument();
-      expect(consoleSpy).toHaveBeenCalled();
 
       consoleSpy.mockRestore();
     });

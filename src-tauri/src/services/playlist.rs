@@ -26,6 +26,12 @@ pub enum PlaylistError {
 
     #[error("Invalid response format")]
     InvalidResponse,
+
+    #[error("Track not found")]
+    TrackNotFound,
+
+    #[error("Track unavailable in your region")]
+    GeoBlocked,
 }
 
 /// User information from SoundCloud API.
@@ -115,6 +121,57 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
         .map_err(|_| PlaylistError::InvalidResponse)?;
 
     Ok(playlist)
+}
+
+/// Fetches track information from SoundCloud using the resolve endpoint.
+///
+/// The resolve endpoint converts a URL to API data, returning the track object.
+///
+/// # Arguments
+/// * `url` - The SoundCloud track URL
+///
+/// # Returns
+/// * `Ok(TrackInfo)` - The track metadata
+/// * `Err(PlaylistError)` - If fetch fails (track not found, geo-blocked, etc.)
+pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
+    let access_token = get_valid_access_token()?;
+
+    let client = reqwest::Client::new();
+    let resolve_url = format!(
+        "https://api.soundcloud.com/resolve?url={}&client_id={}",
+        urlencoding::encode(url),
+        CLIENT_ID
+    );
+
+    let response = client
+        .get(&resolve_url)
+        .header("Authorization", format!("OAuth {}", access_token))
+        .send()
+        .await?;
+
+    if response.status() == reqwest::StatusCode::NOT_FOUND {
+        return Err(PlaylistError::TrackNotFound);
+    }
+
+    if response.status() == reqwest::StatusCode::FORBIDDEN {
+        return Err(PlaylistError::GeoBlocked);
+    }
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        return Err(PlaylistError::FetchFailed(format!(
+            "HTTP {}: {}",
+            status, body
+        )));
+    }
+
+    let track: TrackInfo = response
+        .json()
+        .await
+        .map_err(|_| PlaylistError::InvalidResponse)?;
+
+    Ok(track)
 }
 
 #[cfg(test)]
@@ -289,5 +346,17 @@ mod tests {
     fn test_playlist_error_invalid_response_message() {
         let err = PlaylistError::InvalidResponse;
         assert_eq!(err.to_string(), "Invalid response format");
+    }
+
+    #[test]
+    fn test_playlist_error_track_not_found_message() {
+        let err = PlaylistError::TrackNotFound;
+        assert_eq!(err.to_string(), "Track not found");
+    }
+
+    #[test]
+    fn test_playlist_error_geo_blocked_message() {
+        let err = PlaylistError::GeoBlocked;
+        assert_eq!(err.to_string(), "Track unavailable in your region");
     }
 }
