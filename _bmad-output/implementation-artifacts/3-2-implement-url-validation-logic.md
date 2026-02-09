@@ -1,6 +1,6 @@
 # Story 3.2: Implement URL Validation Logic
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -41,8 +41,8 @@ so that **only valid track and playlist URLs are accepted**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create URL validation types (AC: #1, #2, #3)
-  - [ ] 1.1 Create `src-tauri/src/models/url.rs`:
+- [x] Task 1: Create URL validation types (AC: #1, #2, #3)
+  - [x] 1.1 Create `src-tauri/src/models/url.rs`:
     ```rust
     use serde::{Deserialize, Serialize};
 
@@ -67,10 +67,10 @@ so that **only valid track and playlist URLs are accepted**.
         pub hint: Option<String>,
     }
     ```
-  - [ ] 1.2 Add to `src-tauri/src/models/mod.rs`
+  - [x] 1.2 Add to `src-tauri/src/models/mod.rs`
 
-- [ ] Task 2: Implement URL pattern matching (AC: #2, #3, #4, #5, #6)
-  - [ ] 2.1 Create `src-tauri/src/services/url_validator.rs`:
+- [x] Task 2: Implement URL pattern matching (AC: #2, #3, #4, #5, #6)
+  - [x] 2.1 Create `src-tauri/src/services/url_validator.rs`:
     ```rust
     use regex::Regex;
     use url::Url;
@@ -163,10 +163,10 @@ so that **only valid track and playlist URLs are accepted**.
         }
     }
     ```
-  - [ ] 2.2 Add `regex` crate to Cargo.toml: `regex = "1"`
+  - [x] 2.2 Add `regex` crate to Cargo.toml: `regex = "1"`
 
-- [ ] Task 3: Create Tauri validate command (AC: #1)
-  - [ ] 3.1 Create `src-tauri/src/commands/playlist.rs`:
+- [x] Task 3: Create Tauri validate command (AC: #1)
+  - [x] 3.1 Create `src-tauri/src/commands/playlist.rs`:
     ```rust
     use tauri::command;
     use crate::services::url_validator::validate_url;
@@ -177,10 +177,10 @@ so that **only valid track and playlist URLs are accepted**.
         validate_url(&url)
     }
     ```
-  - [ ] 3.2 Register command in `lib.rs`
+  - [x] 3.2 Register command in `lib.rs`
 
-- [ ] Task 4: Create TypeScript types and function (AC: #1)
-  - [ ] 4.1 Create `src/types/url.ts`:
+- [x] Task 4: Create TypeScript types and function (AC: #1)
+  - [x] 4.1 Create `src/types/url.ts`:
     ```typescript
     export type UrlType = 'playlist' | 'track';
 
@@ -196,7 +196,7 @@ so that **only valid track and playlist URLs are accepted**.
       error?: ValidationError;
     }
     ```
-  - [ ] 4.2 Create `src/lib/validation.ts`:
+  - [x] 4.2 Create `src/lib/validation.ts`:
     ```typescript
     import { invoke } from '@tauri-apps/api/core';
     import type { ValidationResult } from '@/types/url';
@@ -206,8 +206,8 @@ so that **only valid track and playlist URLs are accepted**.
     }
     ```
 
-- [ ] Task 5: Implement debounced validation in DownloadSection (AC: #1)
-  - [ ] 5.1 Create `src/hooks/useDebounce.ts`:
+- [x] Task 5: Implement debounced validation in DownloadSection (AC: #1)
+  - [x] 5.1 Create `src/hooks/useDebounce.ts`:
     ```typescript
     import { useState, useEffect } from 'react';
 
@@ -225,7 +225,7 @@ so that **only valid track and playlist URLs are accepted**.
       return debouncedValue;
     }
     ```
-  - [ ] 5.2 Update `DownloadSection.tsx` to use debounced validation:
+  - [x] 5.2 Update `DownloadSection.tsx` to use debounced validation:
     ```typescript
     const [url, setUrl] = useState('');
     const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
@@ -246,8 +246,8 @@ so that **only valid track and playlist URLs are accepted**.
     }, [debouncedUrl]);
     ```
 
-- [ ] Task 6: Add unit tests for URL validation (AC: #2-#6)
-  - [ ] 6.1 Create `src-tauri/src/services/url_validator.test.rs`:
+- [x] Task 6: Add unit tests for URL validation (AC: #2-#6)
+  - [x] 6.1 Create `src-tauri/src/services/url_validator.test.rs`:
     ```rust
     #[cfg(test)]
     mod tests {
@@ -393,11 +393,53 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5
 
 ### Debug Log References
 
+None required - implementation completed without issues.
+
 ### Completion Notes List
 
+- **Task 1:** Created Rust types for URL validation (`UrlType`, `ValidationResult`, `ValidationError`) with proper serde derives for IPC serialization. Added `#[serde(rename_all = "camelCase")]` to match TypeScript naming conventions.
+- **Task 2:** Implemented URL pattern matching in `url_validator.rs`. Handles:
+  - Playlist URLs (`/user/sets/playlist-name`)
+  - Track URLs (`/user/track-name`)
+  - Profile URL rejection with helpful hint
+  - Non-SoundCloud URL rejection
+  - Empty/malformed input handling
+  - URL normalization (missing protocol, www prefix, query strings, trailing slashes)
+- **Task 3:** Created Tauri command `validate_soundcloud_url` and registered in `lib.rs` invoke handler.
+- **Task 4:** Created TypeScript types mirroring Rust structs and `validateUrl()` function using Tauri invoke.
+- **Task 5:** Implemented `useDebounce` hook (300ms delay) and integrated validation into `DownloadSection.tsx`. Updated `UrlInput` props interface to accept validation state (visual feedback deferred to Story 3.3).
+- **Task 6:** Added comprehensive unit tests:
+  - 13 Rust unit tests in `url_validator.rs` (all edge cases covered)
+  - 6 frontend tests for `validation.ts` (invoke mocking)
+  - 5 frontend tests for `useDebounce.ts` (timing verification)
+
 ### File List
+
+**New Files:**
+- `src-tauri/src/models/url.rs` - URL validation types
+- `src-tauri/src/services/url_validator.rs` - URL pattern matching + 13 tests
+- `src-tauri/src/commands/playlist.rs` - Tauri validate command
+- `src/types/url.ts` - TypeScript URL types
+- `src/lib/validation.ts` - validateUrl function
+- `src/lib/validation.test.ts` - 6 validation tests
+- `src/hooks/useDebounce.ts` - Debounce hook
+- `src/hooks/useDebounce.test.ts` - 5 debounce tests
+
+**Modified Files:**
+- `src-tauri/Cargo.toml` - Added regex crate
+- `src-tauri/src/models/mod.rs` - Export url module
+- `src-tauri/src/services/mod.rs` - Export url_validator module
+- `src-tauri/src/commands/mod.rs` - Export playlist command
+- `src-tauri/src/lib.rs` - Register validate_soundcloud_url command
+- `src/hooks/index.ts` - Export useDebounce
+- `src/components/features/download/DownloadSection.tsx` - Add debounced validation
+- `src/components/features/download/UrlInput.tsx` - Accept validation props
+
+### Change Log
+
+- 2026-02-09: Story 3.2 implemented - URL validation logic with 24 total tests (13 Rust + 11 TS)
 

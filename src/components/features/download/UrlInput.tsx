@@ -2,14 +2,17 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import type { ValidationResult } from '@/types/url';
 
 interface UrlInputProps {
   onUrlChange: (url: string) => void;
   disabled?: boolean;
   className?: string;
+  isValidating?: boolean;
+  validationResult?: ValidationResult | null;
 }
 
-export function UrlInput({ onUrlChange, disabled, className }: UrlInputProps) {
+export function UrlInput({ onUrlChange, disabled, className, isValidating: _isValidating, validationResult: _validationResult }: UrlInputProps) {
   const { t } = useTranslation();
   const [value, setValue] = useState('');
 
