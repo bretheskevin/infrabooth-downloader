@@ -4,3 +4,4 @@ pub mod oauth;
 pub mod playlist;
 pub mod storage;
 pub mod url_validator;
+pub mod ytdlp;

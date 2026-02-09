@@ -1,6 +1,42 @@
 use serde::Serialize;
 use thiserror::Error;
 
+/// Errors that can occur during yt-dlp operations.
+#[derive(Debug, Error, Serialize)]
+pub enum YtDlpError {
+    #[error("Download failed: {0}")]
+    DownloadFailed(String),
+
+    #[error("yt-dlp binary not found")]
+    BinaryNotFound,
+
+    #[error("Rate limited by SoundCloud")]
+    RateLimited,
+
+    #[error("Content is geo-blocked")]
+    GeoBlocked,
+
+    #[error("Invalid URL")]
+    InvalidUrl,
+}
+
+impl From<YtDlpError> for ErrorResponse {
+    fn from(err: YtDlpError) -> Self {
+        let code = match &err {
+            YtDlpError::DownloadFailed(_) => "DOWNLOAD_FAILED",
+            YtDlpError::BinaryNotFound => "BINARY_NOT_FOUND",
+            YtDlpError::RateLimited => "RATE_LIMITED",
+            YtDlpError::GeoBlocked => "GEO_BLOCKED",
+            YtDlpError::InvalidUrl => "INVALID_URL",
+        };
+
+        ErrorResponse {
+            code: code.to_string(),
+            message: err.to_string(),
+        }
+    }
+}
+
 /// Authentication errors that can occur during the OAuth flow.
 #[derive(Debug, Error)]
 pub enum AuthError {
@@ -121,5 +157,73 @@ mod tests {
         let err = AuthError::RefreshFailed("test".to_string());
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "REFRESH_FAILED");
+    }
+
+    // YtDlpError tests
+
+    #[test]
+    fn test_ytdlp_download_failed_error_message() {
+        let err = YtDlpError::DownloadFailed("Connection timeout".to_string());
+        assert_eq!(err.to_string(), "Download failed: Connection timeout");
+    }
+
+    #[test]
+    fn test_ytdlp_binary_not_found_error_message() {
+        let err = YtDlpError::BinaryNotFound;
+        assert_eq!(err.to_string(), "yt-dlp binary not found");
+    }
+
+    #[test]
+    fn test_ytdlp_rate_limited_error_message() {
+        let err = YtDlpError::RateLimited;
+        assert_eq!(err.to_string(), "Rate limited by SoundCloud");
+    }
+
+    #[test]
+    fn test_ytdlp_geo_blocked_error_message() {
+        let err = YtDlpError::GeoBlocked;
+        assert_eq!(err.to_string(), "Content is geo-blocked");
+    }
+
+    #[test]
+    fn test_ytdlp_invalid_url_error_message() {
+        let err = YtDlpError::InvalidUrl;
+        assert_eq!(err.to_string(), "Invalid URL");
+    }
+
+    #[test]
+    fn test_error_response_from_ytdlp_download_failed() {
+        let err = YtDlpError::DownloadFailed("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "DOWNLOAD_FAILED");
+        assert!(response.message.contains("Download failed"));
+    }
+
+    #[test]
+    fn test_error_response_from_ytdlp_binary_not_found() {
+        let err = YtDlpError::BinaryNotFound;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "BINARY_NOT_FOUND");
+    }
+
+    #[test]
+    fn test_error_response_from_ytdlp_rate_limited() {
+        let err = YtDlpError::RateLimited;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "RATE_LIMITED");
+    }
+
+    #[test]
+    fn test_error_response_from_ytdlp_geo_blocked() {
+        let err = YtDlpError::GeoBlocked;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "GEO_BLOCKED");
+    }
+
+    #[test]
+    fn test_error_response_from_ytdlp_invalid_url() {
+        let err = YtDlpError::InvalidUrl;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "INVALID_URL");
     }
 }
