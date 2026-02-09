@@ -146,6 +146,20 @@ so that **I know why it couldn't be downloaded**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story primarily adds **backend error detection** and updates **existing presentation components**:
+- Error detection and categorization happens in Rust backend
+- Frontend receives errors via existing `download-progress` events (Story 5.5)
+- Existing `TrackStatusBadge` handles error display from Story 5.2
+- This story adds specific unavailable track messaging to error handling
+
+**No new hooks needed** — existing architecture handles error propagation.
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### DOWNLOAD_FAILED Error Handling for Unavailable Tracks
 
 The `DOWNLOAD_FAILED` error code from `project-context.md` covers multiple failure scenarios. For unavailable tracks specifically, the error message must be parsed to determine the sub-reason:

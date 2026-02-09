@@ -126,6 +126,20 @@ so that **I know exactly what's being downloaded**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates **presentation-only components**. Following the custom hooks architecture:
+- Components consume state from `useQueueStore` via selectors
+- No direct `invoke()` calls in components
+- No loading state management in components
+- Transform logic lives in `src/lib/transforms.ts`
+
+**Component responsibility:** Render UI based on store state. That's it.
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Dependencies from Previous Stories
 
 **Story 4.6 (Download Queue Processing)** provides:

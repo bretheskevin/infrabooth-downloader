@@ -33,7 +33,11 @@
     "downloadFailed": "Échec du téléchargement",
     "conversionFailed": "Échec de la conversion",
     "trackNotFound": "Piste non trouvée",
-    "trackNotFoundHint": "Cette piste a peut-être été supprimée ou rendue privée"
+    "trackNotFoundHint": "Cette piste a peut-être été supprimée ou rendue privée",
+    "fetchFailed": "Impossible de charger le contenu",
+    "authExpired": "Session expirée",
+    "authExpiredHint": "Déconnecte-toi puis reconnecte-toi",
+    "notSignedIn": "Connecte-toi pour continuer"
   },
   "settings": {
     "title": "Paramètres",
