@@ -2,7 +2,7 @@ mod commands;
 mod models;
 mod services;
 
-use commands::{check_auth_state, complete_oauth, get_playlist_info, get_track_info, sign_out, start_oauth, test_ytdlp, validate_soundcloud_url, OAuthState};
+use commands::{check_auth_state, complete_oauth, get_playlist_info, get_track_info, sign_out, start_oauth, test_ffmpeg, test_ytdlp, validate_soundcloud_url, OAuthState};
 use services::deep_link::handle_deep_link;
 use tauri_plugin_deep_link::DeepLinkExt;
 
@@ -12,7 +12,7 @@ pub fn run() {
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_shell::init())
         .manage(OAuthState::default())
-        .invoke_handler(tauri::generate_handler![start_oauth, complete_oauth, check_auth_state, sign_out, validate_soundcloud_url, get_playlist_info, get_track_info, test_ytdlp])
+        .invoke_handler(tauri::generate_handler![start_oauth, complete_oauth, check_auth_state, sign_out, validate_soundcloud_url, get_playlist_info, get_track_info, test_ytdlp, test_ffmpeg])
         .setup(|app| {
             app.handle().plugin(
                 tauri_plugin_log::Builder::default()

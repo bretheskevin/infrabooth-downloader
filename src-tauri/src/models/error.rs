@@ -1,6 +1,38 @@
 use serde::Serialize;
 use thiserror::Error;
 
+/// Errors that can occur during FFmpeg operations.
+#[derive(Debug, Error, Serialize)]
+pub enum FfmpegError {
+    #[error("Conversion failed: {0}")]
+    ConversionFailed(String),
+
+    #[error("FFmpeg binary not found")]
+    BinaryNotFound,
+
+    #[error("Invalid input file: {0}")]
+    InvalidInput(String),
+
+    #[error("Output path error: {0}")]
+    OutputError(String),
+}
+
+impl From<FfmpegError> for ErrorResponse {
+    fn from(err: FfmpegError) -> Self {
+        let code = match &err {
+            FfmpegError::ConversionFailed(_) => "CONVERSION_FAILED",
+            FfmpegError::BinaryNotFound => "BINARY_NOT_FOUND",
+            FfmpegError::InvalidInput(_) => "INVALID_INPUT",
+            FfmpegError::OutputError(_) => "OUTPUT_ERROR",
+        };
+
+        ErrorResponse {
+            code: code.to_string(),
+            message: err.to_string(),
+        }
+    }
+}
+
 /// Errors that can occur during yt-dlp operations.
 #[derive(Debug, Error, Serialize)]
 pub enum YtDlpError {
@@ -225,5 +257,60 @@ mod tests {
         let err = YtDlpError::InvalidUrl;
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "INVALID_URL");
+    }
+
+    // FfmpegError tests
+
+    #[test]
+    fn test_ffmpeg_conversion_failed_error_message() {
+        let err = FfmpegError::ConversionFailed("Codec not supported".to_string());
+        assert_eq!(err.to_string(), "Conversion failed: Codec not supported");
+    }
+
+    #[test]
+    fn test_ffmpeg_binary_not_found_error_message() {
+        let err = FfmpegError::BinaryNotFound;
+        assert_eq!(err.to_string(), "FFmpeg binary not found");
+    }
+
+    #[test]
+    fn test_ffmpeg_invalid_input_error_message() {
+        let err = FfmpegError::InvalidInput("File not found".to_string());
+        assert_eq!(err.to_string(), "Invalid input file: File not found");
+    }
+
+    #[test]
+    fn test_ffmpeg_output_error_message() {
+        let err = FfmpegError::OutputError("Permission denied".to_string());
+        assert_eq!(err.to_string(), "Output path error: Permission denied");
+    }
+
+    #[test]
+    fn test_error_response_from_ffmpeg_conversion_failed() {
+        let err = FfmpegError::ConversionFailed("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "CONVERSION_FAILED");
+        assert!(response.message.contains("Conversion failed"));
+    }
+
+    #[test]
+    fn test_error_response_from_ffmpeg_binary_not_found() {
+        let err = FfmpegError::BinaryNotFound;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "BINARY_NOT_FOUND");
+    }
+
+    #[test]
+    fn test_error_response_from_ffmpeg_invalid_input() {
+        let err = FfmpegError::InvalidInput("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "INVALID_INPUT");
+    }
+
+    #[test]
+    fn test_error_response_from_ffmpeg_output_error() {
+        let err = FfmpegError::OutputError("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "OUTPUT_ERROR");
     }
 }

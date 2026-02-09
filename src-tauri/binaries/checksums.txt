@@ -1,3 +1,6 @@
 e833b5aa657b2f2b8608442e9afac91374f147cb641301e8fb39a339e2fe3f71  yt-dlp-aarch64-apple-darwin
 e833b5aa657b2f2b8608442e9afac91374f147cb641301e8fb39a339e2fe3f71  yt-dlp-x86_64-apple-darwin
 78a3ac4cd1eeb681d65e55fc1761ee14c87de8d8699afb09140d1049c15ae006  yt-dlp-x86_64-pc-windows-msvc.exe
+a5eef678f4316bba5a8ebfe5db5700fb4421262357f49563497b39785ab22aa2  ffmpeg-aarch64-apple-darwin
+4e94f53803cad262fe628e8228f580b9aa92eec6bf9612273070f76892a6c5a8  ffmpeg-x86_64-apple-darwin
+5af82a0d4fe2b9eae211b967332ea97edfc51c6b328ca35b827e73eac560dc0d  ffmpeg-x86_64-pc-windows-msvc.exe
