@@ -15,7 +15,8 @@
     "button": "Télécharger",
     "progress": "{{current}} sur {{total}} pistes",
     "complete": "Téléchargement terminé !",
-    "pasteUrl": "Collez une URL de playlist ou de piste SoundCloud"
+    "pasteUrl": "Collez une URL de playlist ou de piste SoundCloud",
+    "signInRequired": "Connectez-vous pour télécharger"
   },
   "errors": {
     "invalidUrl": "Ce n'est pas une URL SoundCloud",
