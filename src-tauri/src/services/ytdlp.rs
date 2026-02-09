@@ -1,17 +1,16 @@
 use std::path::PathBuf;
-use tauri::ipc::Channel;
 use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::{process::CommandEvent, ShellExt};
 
 use crate::models::error::YtDlpError;
 use crate::services::storage::load_tokens;
 
-/// Configuration for a yt-dlp download operation.
-pub struct YtDlpConfig {
-    pub url: String,
-    pub output_path: PathBuf,
-    pub cookies: Option<String>,
-    pub format: Option<String>,
+/// Configuration for downloading a track directly to final MP3 output.
+pub struct TrackDownloadToMp3Config {
+    pub track_url: String,
+    pub track_id: String,
+    pub output_dir: PathBuf,
+    pub filename: String,
 }
 
 /// Progress update from yt-dlp.
@@ -20,13 +19,6 @@ pub struct DownloadProgress {
     pub percent: f32,
     pub speed: Option<String>,
     pub eta: Option<String>,
-}
-
-/// Configuration for a track download operation with OAuth authentication.
-pub struct TrackDownloadConfig {
-    pub track_url: String,
-    pub track_id: String,
-    pub temp_dir: PathBuf,
 }
 
 /// Download progress event payload for frontend communication.
@@ -48,48 +40,37 @@ pub struct DownloadErrorPayload {
     pub message: String,
 }
 
-/// Download a track using yt-dlp with OAuth authentication.
+/// Download a track directly to MP3 format using yt-dlp with OAuth authentication.
 ///
-/// This function downloads audio using the user's OAuth token for Go+ quality access.
-/// Progress events are emitted via Tauri events to the frontend.
-///
-/// # Arguments
-/// * `app` - Tauri app handle for sidecar access and event emission
-/// * `config` - Track download configuration
-///
-/// # Returns
-/// The path to the downloaded file on success.
-pub async fn download_track<R: tauri::Runtime>(
+/// This function downloads and converts to MP3 in a single step using yt-dlp's
+/// built-in conversion with 320kbps bitrate. Progress events are emitted via
+/// Tauri events to the frontend.
+pub async fn download_track_to_mp3<R: tauri::Runtime>(
     app: &AppHandle<R>,
-    config: TrackDownloadConfig,
+    config: TrackDownloadToMp3Config,
 ) -> Result<PathBuf, YtDlpError> {
-    // Get OAuth token for authentication
     let tokens = load_tokens()
         .map_err(|_| YtDlpError::AuthRequired)?
         .ok_or(YtDlpError::AuthRequired)?;
 
-    // Prepare output path template
-    let output_template = config
-        .temp_dir
-        .join(format!("{}.%(ext)s", config.track_id));
+    let output_path = config.output_dir.join(format!("{}.mp3", config.filename));
 
-    let output_template_str = output_template
+    let output_str = output_path
         .to_str()
         .ok_or(YtDlpError::DownloadFailed("Invalid output path".to_string()))?;
 
-    // Build yt-dlp arguments with OAuth authentication
     let args = vec![
         "--no-playlist".to_string(),
-        "-x".to_string(),                    // Extract audio
+        "-x".to_string(),
         "--audio-format".to_string(),
-        "best".to_string(),
+        "mp3".to_string(),
         "--audio-quality".to_string(),
-        "0".to_string(),                     // Best quality
+        "320K".to_string(),
         "--add-header".to_string(),
         format!("Authorization: OAuth {}", tokens.access_token),
         "-o".to_string(),
-        output_template_str.to_string(),
-        "--newline".to_string(),             // Progress on new lines
+        output_str.to_string(),
+        "--newline".to_string(),
         config.track_url.clone(),
     ];
 
@@ -101,7 +82,6 @@ pub async fn download_track<R: tauri::Runtime>(
         .spawn()
         .map_err(|_| YtDlpError::BinaryNotFound)?;
 
-    let mut output_path: Option<PathBuf> = None;
     let mut last_error: Option<String> = None;
 
     while let Some(event) = rx.recv().await {
@@ -109,7 +89,6 @@ pub async fn download_track<R: tauri::Runtime>(
             CommandEvent::Stdout(line_bytes) => {
                 let line = bytes_to_string(&line_bytes);
 
-                // Parse and emit progress
                 if let Some(progress) = parse_progress(&line) {
                     let _ = app.emit(
                         "download-progress",
@@ -121,19 +100,12 @@ pub async fn download_track<R: tauri::Runtime>(
                         },
                     );
                 }
-
-                // Capture output filename
-                if line.contains("[download] Destination:") {
-                    let path = line.replace("[download] Destination:", "").trim().to_string();
-                    output_path = Some(PathBuf::from(path));
-                }
             }
             CommandEvent::Stderr(line_bytes) => {
                 let line = bytes_to_string(&line_bytes);
-                log::warn!("yt-dlp stderr: {}", line);
+                log::debug!("yt-dlp stderr: {}", line);
                 last_error = Some(line.clone());
 
-                // Check for specific error conditions
                 if line.contains("HTTP Error 403") {
                     return Err(YtDlpError::GeoBlocked);
                 }
@@ -163,134 +135,16 @@ pub async fn download_track<R: tauri::Runtime>(
         }
     }
 
-    // Find the actual output file (extension determined by yt-dlp)
-    let downloaded_file = find_downloaded_file(&config.temp_dir, &config.track_id)?;
-    Ok(output_path.unwrap_or(downloaded_file))
-}
-
-/// Find the downloaded file in the temp directory by track ID prefix.
-fn find_downloaded_file(dir: &PathBuf, track_id: &str) -> Result<PathBuf, YtDlpError> {
-    for entry in std::fs::read_dir(dir).map_err(|e| {
-        YtDlpError::DownloadFailed(format!("Failed to read temp directory: {}", e))
-    })? {
-        if let Ok(entry) = entry {
-            let name = entry.file_name().to_string_lossy().to_string();
-            if name.starts_with(track_id) {
-                return Ok(entry.path());
-            }
-        }
-    }
-    Err(YtDlpError::DownloadFailed(format!(
-        "Downloaded file not found for track {}",
-        track_id
-    )))
-}
-
-/// Convert bytes to string, handling UTF-8 encoding.
-fn bytes_to_string(bytes: &[u8]) -> String {
-    String::from_utf8_lossy(bytes).to_string()
-}
-
-/// Download audio from a URL using yt-dlp.
-///
-/// # Arguments
-/// * `app` - Tauri app handle for sidecar access
-/// * `config` - Download configuration
-/// * `progress_channel` - Optional channel for progress updates
-///
-/// # Returns
-/// The path to the downloaded file on success.
-pub async fn download_audio<R: tauri::Runtime>(
-    app: &tauri::AppHandle<R>,
-    config: YtDlpConfig,
-    progress_channel: Option<Channel<DownloadProgress>>,
-) -> Result<PathBuf, YtDlpError> {
-    let output_template = config
-        .output_path
-        .to_str()
-        .ok_or(YtDlpError::InvalidUrl)?;
-
-    let mut args = vec![
-        "--no-playlist".to_string(),
-        "-x".to_string(), // Extract audio
-        "--audio-format".to_string(),
-        "best".to_string(),
-        "--audio-quality".to_string(),
-        "0".to_string(), // Best quality
-        "-o".to_string(),
-        output_template.to_string(),
-    ];
-
-    // Add cookies if provided (for authenticated downloads)
-    if let Some(ref cookies) = config.cookies {
-        args.push("--cookies".to_string());
-        args.push(cookies.clone());
+    if !output_path.exists() {
+        return Err(YtDlpError::DownloadFailed(
+            "Output file was not created".to_string(),
+        ));
     }
 
-    // Add format selection if provided
-    if let Some(ref format) = config.format {
-        args.push("-f".to_string());
-        args.push(format.clone());
-    }
-
-    args.push(config.url.clone());
-
-    let shell = app.shell();
-    let (mut rx, _child) = shell
-        .sidecar("yt-dlp")
-        .map_err(|_| YtDlpError::BinaryNotFound)?
-        .args(&args)
-        .spawn()
-        .map_err(|_| YtDlpError::BinaryNotFound)?;
-
-    let mut last_error: Option<String> = None;
-
-    while let Some(event) = rx.recv().await {
-        match event {
-            CommandEvent::Stdout(line_bytes) => {
-                let line = bytes_to_string(&line_bytes);
-                if let Some(progress) = parse_progress(&line) {
-                    if let Some(ref channel) = progress_channel {
-                        let _ = channel.send(progress);
-                    }
-                }
-            }
-            CommandEvent::Stderr(line_bytes) => {
-                let line = bytes_to_string(&line_bytes);
-                log::warn!("yt-dlp stderr: {}", line);
-                last_error = Some(line.clone());
-
-                // Check for specific error conditions
-                if line.contains("429") || line.contains("rate limit") {
-                    return Err(YtDlpError::RateLimited);
-                }
-                if line.contains("geo") || line.contains("not available in your country") {
-                    return Err(YtDlpError::GeoBlocked);
-                }
-            }
-            CommandEvent::Terminated(payload) => {
-                if payload.code != Some(0) {
-                    log::error!(
-                        "yt-dlp terminated with code {:?}: {:?}",
-                        payload.code,
-                        last_error
-                    );
-                    return Err(YtDlpError::DownloadFailed(
-                        last_error.unwrap_or_else(|| "Unknown error".to_string()),
-                    ));
-                }
-            }
-            _ => {}
-        }
-    }
-
-    Ok(config.output_path)
+    Ok(output_path)
 }
 
 /// Get the yt-dlp version.
-///
-/// # Returns
-/// The version string from yt-dlp.
 pub async fn get_version<R: tauri::Runtime>(
     app: &tauri::AppHandle<R>,
 ) -> Result<String, YtDlpError> {
@@ -326,10 +180,10 @@ pub async fn get_version<R: tauri::Runtime>(
     Ok(version)
 }
 
-/// Parse yt-dlp progress output.
-///
-/// yt-dlp outputs progress like:
-/// `[download]  50.0% of 5.00MiB at 1.00MiB/s ETA 00:02`
+fn bytes_to_string(bytes: &[u8]) -> String {
+    String::from_utf8_lossy(bytes).to_string()
+}
+
 fn parse_progress(line: &str) -> Option<DownloadProgress> {
     if !line.contains("[download]") || !line.contains('%') {
         return None;
@@ -337,7 +191,6 @@ fn parse_progress(line: &str) -> Option<DownloadProgress> {
 
     let parts: Vec<&str> = line.split_whitespace().collect();
 
-    // Find the percentage
     let percent = parts.iter().find_map(|part| {
         if part.ends_with('%') {
             part.trim_end_matches('%').parse::<f32>().ok()
@@ -346,14 +199,12 @@ fn parse_progress(line: &str) -> Option<DownloadProgress> {
         }
     })?;
 
-    // Find speed (usually after "at")
     let speed = parts
         .iter()
         .position(|&p| p == "at")
         .and_then(|i| parts.get(i + 1))
         .map(|s| s.to_string());
 
-    // Find ETA (usually after "ETA")
     let eta = parts
         .iter()
         .position(|&p| p == "ETA")
