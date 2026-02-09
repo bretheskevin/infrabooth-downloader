@@ -19,7 +19,10 @@
     "signInRequired": "Sign in to download",
     "validPlaylist": "Valid playlist URL",
     "validTrack": "Valid track URL",
-    "validating": "Checking URL..."
+    "validating": "Checking URL...",
+    "fetchingPlaylist": "Loading playlist...",
+    "trackCount_one": "{{count}} track",
+    "trackCount_other": "{{count}} tracks"
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",

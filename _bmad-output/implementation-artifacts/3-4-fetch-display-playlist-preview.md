@@ -1,6 +1,6 @@
 # Story 3.4: Fetch and Display Playlist Preview
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -41,8 +41,8 @@ so that **I can confirm it's the right content before starting**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create playlist fetch service in Rust (AC: #1, #4)
-  - [ ] 1.1 Add to `src-tauri/src/services/playlist.rs`:
+- [x] Task 1: Create playlist fetch service in Rust (AC: #1, #4)
+  - [x] 1.1 Add to `src-tauri/src/services/playlist.rs`:
     ```rust
     use crate::services::oauth::get_valid_access_token;
     use serde::{Deserialize, Serialize};
@@ -96,10 +96,10 @@ so that **I can confirm it's the right content before starting**.
         Ok(playlist)
     }
     ```
-  - [ ] 1.2 Add `urlencoding` crate: `urlencoding = "2"`
+  - [x] 1.2 Add `urlencoding` crate: `urlencoding = "2"`
 
-- [ ] Task 2: Create Tauri command for playlist info (AC: #1)
-  - [ ] 2.1 Add to `src-tauri/src/commands/playlist.rs`:
+- [x] Task 2: Create Tauri command for playlist info (AC: #1)
+  - [x] 2.1 Add to `src-tauri/src/commands/playlist.rs`:
     ```rust
     #[command]
     pub async fn get_playlist_info(url: String) -> Result<PlaylistInfo, String> {
@@ -108,10 +108,10 @@ so that **I can confirm it's the right content before starting**.
             .map_err(|e| e.to_string())
     }
     ```
-  - [ ] 2.2 Register command in `lib.rs`
+  - [x] 2.2 Register command in `lib.rs`
 
-- [ ] Task 3: Create TypeScript types and fetch function (AC: #1)
-  - [ ] 3.1 Add to `src/types/playlist.ts`:
+- [x] Task 3: Create TypeScript types and fetch function (AC: #1)
+  - [x] 3.1 Add to `src/types/playlist.ts`:
     ```typescript
     export interface PlaylistInfo {
       id: string;
@@ -134,7 +134,7 @@ so that **I can confirm it's the right content before starting**.
       duration: number;
     }
     ```
-  - [ ] 3.2 Create `src/lib/playlist.ts`:
+  - [x] 3.2 Create `src/lib/playlist.ts`:
     ```typescript
     import { invoke } from '@tauri-apps/api/core';
     import type { PlaylistInfo } from '@/types/playlist';
@@ -144,8 +144,8 @@ so that **I can confirm it's the right content before starting**.
     }
     ```
 
-- [ ] Task 4: Create PlaylistPreview component (AC: #2, #3)
-  - [ ] 4.1 Create `src/components/features/download/PlaylistPreview.tsx`:
+- [x] Task 4: Create PlaylistPreview component (AC: #2, #3)
+  - [x] 4.1 Create `src/components/features/download/PlaylistPreview.tsx`:
     ```typescript
     import { useTranslation } from 'react-i18next';
     import { Card, CardContent } from '@/components/ui/card';
@@ -215,10 +215,10 @@ so that **I can confirm it's the right content before starting**.
       );
     }
     ```
-  - [ ] 4.2 Add Shadcn Card: `npx shadcn@latest add card`
+  - [x] 4.2 Add Shadcn Card: `npx shadcn@latest add card`
 
-- [ ] Task 5: Integrate preview into DownloadSection (AC: #1, #2, #5)
-  - [ ] 5.1 Update `DownloadSection.tsx`:
+- [x] Task 5: Integrate preview into DownloadSection (AC: #1, #2, #5)
+  - [x] 5.1 Update `DownloadSection.tsx`:
     ```typescript
     import { PlaylistPreview } from './PlaylistPreview';
     import { fetchPlaylistInfo } from '@/lib/playlist';
@@ -281,8 +281,8 @@ so that **I can confirm it's the right content before starting**.
     }
     ```
 
-- [ ] Task 6: Handle URL change clearing preview (AC: #5)
-  - [ ] 6.1 Clear playlist info when URL changes:
+- [x] Task 6: Handle URL change clearing preview (AC: #5)
+  - [x] 6.1 Clear playlist info when URL changes:
     ```typescript
     const handleUrlChange = useCallback((newUrl: string) => {
       setUrl(newUrl);
@@ -293,8 +293,8 @@ so that **I can confirm it's the right content before starting**.
     }, []);
     ```
 
-- [ ] Task 7: Add translation keys (AC: #2, #3)
-  - [ ] 7.1 Add to `en.json`:
+- [x] Task 7: Add translation keys (AC: #2, #3)
+  - [x] 7.1 Add to `en.json`:
     ```json
     "download": {
       "trackCount": "{{count}} track",
@@ -303,7 +303,7 @@ so that **I can confirm it's the right content before starting**.
       "button": "Download"
     }
     ```
-  - [ ] 7.2 Add to `fr.json`:
+  - [x] 7.2 Add to `fr.json`:
     ```json
     "download": {
       "trackCount": "{{count}} piste",
@@ -439,11 +439,50 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5
 
 ### Debug Log References
 
+None
+
 ### Completion Notes List
 
+- ✅ Task 1: Created `src-tauri/src/services/playlist.rs` with PlaylistInfo, TrackInfo, UserInfo structs and fetch_playlist_info async function. Added PlaylistError enum for error handling. 12 unit tests pass.
+- ✅ Task 2: Added `get_playlist_info` Tauri command to `src-tauri/src/commands/playlist.rs`. Registered in `lib.rs`.
+- ✅ Task 3: Created `src/types/playlist.ts` with TypeScript interfaces. Created `src/lib/playlist.ts` with fetchPlaylistInfo function. 5 unit tests pass.
+- ✅ Task 4: Created `PlaylistPreview.tsx` component with artwork display, title, creator, track count, quality badge, and download button. Added shadcn Card component. 15 unit tests pass.
+- ✅ Task 5: Integrated playlist preview into DownloadSection. Added loading state, playlist fetch on valid URL, queue store integration. 18 tests pass.
+- ✅ Task 6: URL change clearing implemented in handleUrlChange callback.
+- ✅ Task 7: Added i18n keys `download.fetchingPlaylist`, `download.trackCount_one`, `download.trackCount_other` to both en.json and fr.json.
+
+**Test Summary:**
+- Frontend: 243 tests pass
+- Backend: 80 tests pass
+- Full build: ✅ Success (frontend + backend)
+
 ### File List
+
+**New Files:**
+- src-tauri/src/services/playlist.rs
+- src/types/playlist.ts
+- src/lib/playlist.ts
+- src/lib/playlist.test.ts
+- src/components/features/download/PlaylistPreview.tsx
+- src/components/features/download/PlaylistPreview.test.tsx
+- src/components/ui/card.tsx (via shadcn)
+
+**Modified Files:**
+- src-tauri/src/services/mod.rs (added playlist module)
+- src-tauri/src/commands/mod.rs (exported get_playlist_info)
+- src-tauri/src/commands/playlist.rs (added get_playlist_info command)
+- src-tauri/src/lib.rs (registered get_playlist_info command)
+- src-tauri/Cargo.toml (added urlencoding dependency)
+- src/components/features/download/DownloadSection.tsx (integrated preview)
+- src/components/features/download/DownloadSection.test.tsx (added preview tests)
+- src/locales/en.json (added translation keys)
+- src/locales/fr.json (added translation keys)
+
+## Change Log
+
+- 2026-02-09: Story 3.4 implemented - Playlist preview with fetch, display, and queue integration
 
