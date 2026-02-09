@@ -48,13 +48,25 @@ pub fn validate_url(input: &str) -> ValidationResult {
     let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
 
     match segments.as_slice() {
-        // Playlist: /user/sets/playlist-name
+        // Private playlist: /user/sets/playlist-name/s-secrettoken
+        [_user, "sets", _playlist, secret] if secret.starts_with("s-") => ValidationResult {
+            valid: true,
+            url_type: Some(UrlType::Playlist),
+            error: None,
+        },
+        // Regular playlist: /user/sets/playlist-name
         [_user, "sets", _playlist] => ValidationResult {
             valid: true,
             url_type: Some(UrlType::Playlist),
             error: None,
         },
-        // Track: /user/track-name (2 segments, not "sets")
+        // Private track: /user/track-name/s-secrettoken
+        [_user, track, secret] if *track != "sets" && secret.starts_with("s-") => ValidationResult {
+            valid: true,
+            url_type: Some(UrlType::Track),
+            error: None,
+        },
+        // Regular track: /user/track-name (2 segments, not "sets")
         [_user, track] if *track != "sets" => ValidationResult {
             valid: true,
             url_type: Some(UrlType::Track),
@@ -193,5 +205,37 @@ mod tests {
     fn test_sets_without_playlist_name_rejected() {
         let result = validate_url("https://soundcloud.com/user/sets");
         assert!(!result.valid);
+    }
+
+    #[test]
+    fn test_private_playlist_url() {
+        let result = validate_url(
+            "https://soundcloud.com/kandid_rl/sets/set-acidcore-4/s-rW47Pe4rQWc",
+        );
+        assert!(result.valid);
+        assert_eq!(result.url_type, Some(UrlType::Playlist));
+    }
+
+    #[test]
+    fn test_private_playlist_url_with_query_params() {
+        let result = validate_url(
+            "https://soundcloud.com/user/sets/playlist/s-abc123?si=xyz&utm_source=clipboard",
+        );
+        assert!(result.valid);
+        assert_eq!(result.url_type, Some(UrlType::Playlist));
+    }
+
+    #[test]
+    fn test_private_track_url() {
+        let result = validate_url("https://soundcloud.com/artist/track-name/s-secrettoken");
+        assert!(result.valid);
+        assert_eq!(result.url_type, Some(UrlType::Track));
+    }
+
+    #[test]
+    fn test_private_track_url_with_query_params() {
+        let result = validate_url("https://soundcloud.com/artist/track/s-abc123?ref=clipboard");
+        assert!(result.valid);
+        assert_eq!(result.url_type, Some(UrlType::Track));
     }
 }
