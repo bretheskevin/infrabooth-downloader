@@ -31,7 +31,32 @@ const mockPlaylistNoArtwork: PlaylistInfo = {
   user: { username: 'anotheruser' },
   artwork_url: null,
   track_count: 12,
-  tracks: [],
+  tracks: [
+    {
+      id: 1,
+      title: 'Track 1',
+      user: { username: 'anotheruser' },
+      artwork_url: null,
+      duration: 180000,
+    },
+  ],
+};
+
+const mockPlaylistWithTrackArtwork: PlaylistInfo = {
+  id: 789,
+  title: 'Playlist With Track Art',
+  user: { username: 'someuser' },
+  artwork_url: null,
+  track_count: 3,
+  tracks: [
+    {
+      id: 1,
+      title: 'Track 1',
+      user: { username: 'someuser' },
+      artwork_url: 'https://i1.sndcdn.com/artworks-track1-large.jpg',
+      duration: 180000,
+    },
+  ],
 };
 
 describe('PlaylistPreview', () => {
@@ -96,6 +121,16 @@ describe('PlaylistPreview', () => {
 
       expect(screen.getByTestId('playlist-artwork-placeholder')).toBeInTheDocument();
       expect(screen.queryByTestId('playlist-artwork')).not.toBeInTheDocument();
+    });
+
+    it('should fallback to first track artwork when playlist has no artwork', () => {
+      render(
+        <PlaylistPreview playlist={mockPlaylistWithTrackArtwork} onDownload={vi.fn()} />
+      );
+
+      const artwork = screen.getByTestId('playlist-artwork') as HTMLImageElement;
+      expect(artwork).toBeInTheDocument();
+      expect(artwork.src).toBe('https://i1.sndcdn.com/artworks-track1-t67x67.jpg');
     });
   });
 
