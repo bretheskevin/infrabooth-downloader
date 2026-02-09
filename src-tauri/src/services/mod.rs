@@ -1,6 +1,7 @@
 pub mod deep_link;
 pub mod dev_server;
 pub mod ffmpeg;
+pub mod metadata;
 pub mod oauth;
 pub mod pipeline;
 pub mod playlist;

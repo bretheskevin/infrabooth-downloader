@@ -8,6 +8,34 @@ pub enum FfmpegError {
     BinaryNotFound,
 }
 
+/// Errors that can occur during metadata embedding.
+#[derive(Debug, Error)]
+pub enum MetadataError {
+    #[error("Failed to write metadata: {0}")]
+    WriteFailed(String),
+
+    #[error("Failed to download artwork: {0}")]
+    ArtworkFailed(String),
+}
+
+impl MetadataError {
+    pub fn code(&self) -> &'static str {
+        match self {
+            MetadataError::WriteFailed(_) => "METADATA_WRITE_FAILED",
+            MetadataError::ArtworkFailed(_) => "ARTWORK_DOWNLOAD_FAILED",
+        }
+    }
+}
+
+impl From<MetadataError> for ErrorResponse {
+    fn from(err: MetadataError) -> Self {
+        ErrorResponse {
+            code: err.code().to_string(),
+            message: err.to_string(),
+        }
+    }
+}
+
 impl From<FfmpegError> for ErrorResponse {
     fn from(err: FfmpegError) -> Self {
         let code = match &err {
@@ -330,5 +358,48 @@ mod tests {
         let err = PipelineError::Download(YtDlpError::RateLimited);
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "RATE_LIMITED");
+    }
+
+    #[test]
+    fn test_metadata_write_failed_error_message() {
+        let err = MetadataError::WriteFailed("Permission denied".to_string());
+        assert_eq!(
+            err.to_string(),
+            "Failed to write metadata: Permission denied"
+        );
+    }
+
+    #[test]
+    fn test_metadata_artwork_failed_error_message() {
+        let err = MetadataError::ArtworkFailed("HTTP 404".to_string());
+        assert_eq!(err.to_string(), "Failed to download artwork: HTTP 404");
+    }
+
+    #[test]
+    fn test_metadata_error_code_method() {
+        assert_eq!(
+            MetadataError::WriteFailed("test".to_string()).code(),
+            "METADATA_WRITE_FAILED"
+        );
+        assert_eq!(
+            MetadataError::ArtworkFailed("test".to_string()).code(),
+            "ARTWORK_DOWNLOAD_FAILED"
+        );
+    }
+
+    #[test]
+    fn test_error_response_from_metadata_write_failed() {
+        let err = MetadataError::WriteFailed("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "METADATA_WRITE_FAILED");
+        assert!(response.message.contains("Failed to write metadata"));
+    }
+
+    #[test]
+    fn test_error_response_from_metadata_artwork_failed() {
+        let err = MetadataError::ArtworkFailed("test".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "ARTWORK_DOWNLOAD_FAILED");
+        assert!(response.message.contains("Failed to download artwork"));
     }
 }
