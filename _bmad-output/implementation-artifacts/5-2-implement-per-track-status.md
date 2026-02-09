@@ -131,6 +131,18 @@ so that **I know which tracks are done and which are still processing**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates **presentation-only components**. Following the custom hooks architecture:
+- `TrackStatusIcon`, `TrackStatusLabel`, `TrackStatusBadge` are pure presentation components
+- They receive `status` and `error` as props — no store access needed in these components
+- Parent component (`TrackCard`) gets status from store via selectors
+- No loading state management in these components
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Track Status Values
 
 Must match exactly with Rust backend event payloads and queueStore:

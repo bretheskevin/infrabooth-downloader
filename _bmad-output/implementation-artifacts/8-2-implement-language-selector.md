@@ -223,6 +223,29 @@ so that **I can use the app in my preferred language**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates a **presentation-only component**:
+- `LanguageSelector` receives current language and onChange handler as props
+- Parent component (SettingsPanel) connects to store and passes data down
+- No direct i18n calls in the selector — just renders UI and calls onChange
+
+**Component pattern:**
+```typescript
+interface LanguageSelectorProps {
+  value: string;
+  onChange: (language: string) => void;
+}
+
+function LanguageSelector({ value, onChange }: LanguageSelectorProps) {
+  return <Select value={value} onValueChange={onChange}>...</Select>;
+}
+```
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### LanguageSelector Component Architecture
 
 The `LanguageSelector` component follows the project's component organization pattern:

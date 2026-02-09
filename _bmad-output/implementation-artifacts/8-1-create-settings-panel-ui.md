@@ -141,6 +141,26 @@ so that **I can customize my experience**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates a **presentation-only component**:
+- `SettingsPanel` is a container component that receives open/close state as props
+- Settings state comes from `settingsStore` via selectors
+- Consider creating `useSettings` hook to encapsulate settings access if needed
+
+**Component pattern:**
+```typescript
+// SettingsPanel is a presentation container
+function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
+  const { language, downloadPath } = useSettings();
+  return <Sheet>...</Sheet>;
+}
+```
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### Shadcn Sheet Component (Recommended Approach)
 
 The Shadcn Sheet component is the recommended choice for settings panels in desktop apps. It slides in from the side, maintains context with the main UI, and provides built-in accessibility features.

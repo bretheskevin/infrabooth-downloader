@@ -152,6 +152,33 @@ so that **I can choose when to update on my own terms**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates a **presentation-only component**:
+- `UpdateBanner` receives update info as props from `useUpdateChecker` hook (Story 9.4)
+- Component renders UI based on props — no direct update logic
+- Parent component calls hook and passes data down
+
+**Integration pattern:**
+```typescript
+function App() {
+  const { updateAvailable, updateInfo, installUpdate } = useUpdateChecker();
+
+  return (
+    <>
+      {updateAvailable && (
+        <UpdateBanner updateInfo={updateInfo} onInstall={installUpdate} />
+      )}
+      {/* rest of app */}
+    </>
+  );
+}
+```
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### UpdateBanner Component Design
 
 **From UX Specification:**

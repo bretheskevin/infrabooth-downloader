@@ -203,6 +203,33 @@ so that **I can understand what didn't download and why**.
 
 ## Dev Notes
 
+### Frontend Architecture (Post-Refactor)
+
+**Prerequisite:** Story 0.1 (Refactor Download Hooks) must be completed first.
+
+This story creates **presentation components** with a thin hook:
+- `ErrorPanel`, `FailureGroup`, `FailedTrackItem` are presentation components
+- Create `useFailedTracks` hook to derive failed tracks from queueStore
+- Place hook in `src/hooks/download/useFailedTracks.ts`
+
+**Hook pattern:**
+```typescript
+// src/hooks/download/useFailedTracks.ts
+export function useFailedTracks() {
+  const tracks = useQueueStore(state => state.tracks);
+  const failedTracks = useMemo(
+    () => tracks.filter(t => t.status === 'failed'),
+    [tracks]
+  );
+  const groupedByReason = useMemo(() => groupByErrorCode(failedTracks), [failedTracks]);
+  return { failedTracks, groupedByReason, count: failedTracks.length };
+}
+```
+
+**Component receives data from hook** — no store access in ErrorPanel itself.
+
+[Source: _bmad-output/planning-artifacts/architecture/implementation-patterns-consistency-rules.md#Custom Hook Patterns]
+
 ### ErrorPanel Component Design
 
 The ErrorPanel provides a consolidated view of all download failures, enabling users to understand what didn't download and why without cluttering the main progress view.
