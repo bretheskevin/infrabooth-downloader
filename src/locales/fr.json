@@ -3,25 +3,25 @@
     "title": "InfraBooth Downloader"
   },
   "auth": {
-    "signIn": "Se connecter avec SoundCloud",
-    "signOut": "Se déconnecter",
-    "signedInAs": "Connecté en tant que {{username}}",
-    "accessibilityStatus": "Connecté en tant que {{username}}, qualité Go+ activée",
+    "signIn": "Connexion avec SoundCloud",
+    "signOut": "Déconnexion",
+    "signedInAs": "{{username}}",
+    "accessibilityStatus": "Connecté en tant que {{username}}, qualité Go+ active",
     "qualityBadge": "Go+ 256kbps",
     "loading": "Chargement...",
     "openingBrowser": "Ouverture du navigateur..."
   },
   "download": {
     "button": "Télécharger",
-    "progress": "{{current}} sur {{total}} pistes",
+    "progress": "{{current}} / {{total}} pistes",
     "complete": "Téléchargement terminé !",
-    "pasteUrl": "Collez une URL de playlist ou de piste SoundCloud",
-    "signInRequired": "Connectez-vous pour télécharger"
+    "pasteUrl": "Colle un lien SoundCloud ici",
+    "signInRequired": "Connecte-toi pour télécharger"
   },
   "errors": {
-    "invalidUrl": "Ce n'est pas une URL SoundCloud",
-    "geoBlocked": "Indisponible dans votre région",
-    "rateLimited": "Courte pause — limite SoundCloud (c'est normal)",
+    "invalidUrl": "Lien SoundCloud invalide",
+    "geoBlocked": "Indisponible dans ta région",
+    "rateLimited": "Petite pause — SoundCloud limite les requêtes",
     "networkError": "Pas de connexion internet",
     "downloadFailed": "Échec du téléchargement",
     "conversionFailed": "Échec de la conversion"
@@ -29,10 +29,10 @@
   "settings": {
     "title": "Paramètres",
     "language": "Langue",
-    "downloadPath": "Emplacement de téléchargement"
+    "downloadPath": "Dossier de destination"
   },
   "completion": {
     "openFolder": "Ouvrir le dossier",
-    "downloadAnother": "Télécharger autre chose"
+    "downloadAnother": "Nouveau téléchargement"
   }
 }

@@ -43,7 +43,7 @@ describe('i18n configuration', () => {
 
   it('should handle interpolation in French', async () => {
     await i18n.changeLanguage('fr');
-    expect(i18n.t('auth.signedInAs', { username: 'TestUser' })).toBe('Connecté en tant que TestUser');
+    expect(i18n.t('auth.signedInAs', { username: 'TestUser' })).toBe('TestUser');
   });
 
   it('should return key name for missing translations in development', () => {

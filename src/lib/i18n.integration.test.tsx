@@ -63,7 +63,7 @@ describe('i18n integration tests', () => {
 
       rerender(<TestComponent translationKey="auth.signIn" />);
 
-      expect(screen.getByTestId('translation')).toHaveTextContent('Se connecter avec SoundCloud');
+      expect(screen.getByTestId('translation')).toHaveTextContent('Connexion avec SoundCloud');
     });
 
     it('should handle interpolation in French', async () => {
@@ -73,7 +73,7 @@ describe('i18n integration tests', () => {
 
       render(<TestComponent translationKey="download.progress" options={{ current: 10, total: 25 }} />);
 
-      expect(screen.getByTestId('translation')).toHaveTextContent('10 sur 25 pistes');
+      expect(screen.getByTestId('translation')).toHaveTextContent('10 / 25 pistes');
     });
   });
 
