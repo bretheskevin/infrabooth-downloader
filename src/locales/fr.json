@@ -19,7 +19,10 @@
     "signInRequired": "Connecte-toi pour télécharger",
     "validPlaylist": "URL de playlist valide",
     "validTrack": "URL de piste valide",
-    "validating": "Vérification de l'URL..."
+    "validating": "Vérification de l'URL...",
+    "fetchingPlaylist": "Chargement de la playlist...",
+    "trackCount_one": "{{count}} piste",
+    "trackCount_other": "{{count}} pistes"
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",
