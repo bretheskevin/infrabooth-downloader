@@ -14,6 +14,8 @@ export function useUrlValidation(url: string): UseUrlValidationReturn {
   const debouncedUrl = useDebounce(url, 300);
 
   useEffect(() => {
+    let isCancelled = false;
+
     if (!debouncedUrl) {
       setResult(null);
       return;
@@ -21,8 +23,18 @@ export function useUrlValidation(url: string): UseUrlValidationReturn {
 
     setIsValidating(true);
     validateUrl(debouncedUrl)
-      .then(setResult)
-      .finally(() => setIsValidating(false));
+      .then((res) => {
+        if (isCancelled) return;
+        setResult(res);
+      })
+      .finally(() => {
+        if (isCancelled) return;
+        setIsValidating(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [debouncedUrl]);
 
   return { result, isValidating };

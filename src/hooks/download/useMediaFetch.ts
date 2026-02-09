@@ -30,32 +30,29 @@ export function useMediaFetch(
   tRef.current = t;
 
   useEffect(() => {
-    console.log('[useMediaFetch] Effect triggered', { url, validation });
+    let isCancelled = false;
 
     if (!validation?.valid) {
-      console.log('[useMediaFetch] Validation not valid, clearing state');
       setData(null);
       setError(null);
       return;
     }
 
-    console.log('[useMediaFetch] Starting fetch for', validation.urlType);
     setIsLoading(true);
     setError(null);
 
     const fetchFn =
       validation.urlType === 'playlist' ? fetchPlaylistInfo : fetchTrackInfo;
 
-    console.log('[useMediaFetch] Calling fetchFn with url:', url);
     fetchFn(url)
       .then((result) => {
-        console.log('[useMediaFetch] Fetch success:', result);
+        if (isCancelled) return;
         setData(result);
       })
       .catch((err: unknown) => {
-        console.log('[useMediaFetch] Fetch error (raw):', err);
+        if (isCancelled) return;
+
         const message = typeof err === 'string' ? err : (err as Error)?.message ?? '';
-        console.log('[useMediaFetch] Parsed error message:', message);
         const translate = tRef.current;
 
         if (message.includes('401') || message.includes('Unauthorized')) {
@@ -94,7 +91,14 @@ export function useMediaFetch(
         }
         setData(null);
       })
-      .finally(() => setIsLoading(false));
+      .finally(() => {
+        if (isCancelled) return;
+        setIsLoading(false);
+      });
+
+    return () => {
+      isCancelled = true;
+    };
   }, [url, validation]);
 
   return { data, isLoading, error };
