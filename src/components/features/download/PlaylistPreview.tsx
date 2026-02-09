@@ -31,7 +31,9 @@ export function PlaylistPreview({
 }: PlaylistPreviewProps) {
   const { t } = useTranslation();
 
-  const artworkUrl = getArtworkUrl(playlist.artwork_url);
+  const artworkUrl = getArtworkUrl(
+    playlist.artwork_url ?? playlist.tracks[0]?.artwork_url ?? null
+  );
 
   return (
     <Card className="mt-4" data-testid="playlist-preview">
