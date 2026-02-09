@@ -16,7 +16,10 @@
     "progress": "{{current}} / {{total}} pistes",
     "complete": "Téléchargement terminé !",
     "pasteUrl": "Colle un lien SoundCloud ici",
-    "signInRequired": "Connecte-toi pour télécharger"
+    "signInRequired": "Connecte-toi pour télécharger",
+    "validPlaylist": "URL de playlist valide",
+    "validTrack": "URL de piste valide",
+    "validating": "Vérification de l'URL..."
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",

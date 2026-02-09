@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { UrlInput } from './UrlInput';
+import type { ValidationResult } from '@/types/url';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -104,5 +105,99 @@ describe('UrlInput', () => {
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     input.focus();
     expect(document.activeElement).toBe(input);
+  });
+
+  describe('validation state borders (Story 3.3)', () => {
+    it('should show indigo border when validating (AC #1)', () => {
+      render(
+        <UrlInput
+          onUrlChange={mockOnUrlChange}
+          isValidating={true}
+          validationResult={null}
+        />
+      );
+
+      const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
+      expect(input).toHaveClass('border-indigo-400');
+      expect(input).toHaveClass('ring-1');
+      expect(input).toHaveClass('ring-indigo-400');
+    });
+
+    it('should show loading spinner when validating (AC #1)', () => {
+      render(
+        <UrlInput
+          onUrlChange={mockOnUrlChange}
+          isValidating={true}
+          validationResult={null}
+        />
+      );
+
+      const spinner = document.querySelector('.animate-spin');
+      expect(spinner).toBeInTheDocument();
+    });
+
+    it('should show emerald border on success (AC #2)', () => {
+      const successResult: ValidationResult = {
+        valid: true,
+        urlType: 'playlist',
+      };
+
+      render(
+        <UrlInput
+          onUrlChange={mockOnUrlChange}
+          isValidating={false}
+          validationResult={successResult}
+        />
+      );
+
+      const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
+      expect(input).toHaveClass('border-emerald-500');
+      expect(input).toHaveClass('ring-1');
+      expect(input).toHaveClass('ring-emerald-500');
+    });
+
+    it('should show red border on error (AC #3)', () => {
+      const errorResult: ValidationResult = {
+        valid: false,
+        error: {
+          code: 'INVALID_URL',
+          message: 'Not a SoundCloud URL',
+        },
+      };
+
+      render(
+        <UrlInput
+          onUrlChange={mockOnUrlChange}
+          isValidating={false}
+          validationResult={errorResult}
+        />
+      );
+
+      const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
+      expect(input).toHaveClass('border-red-500');
+      expect(input).toHaveClass('ring-1');
+      expect(input).toHaveClass('ring-red-500');
+    });
+
+    it('should not show spinner when not validating', () => {
+      render(
+        <UrlInput
+          onUrlChange={mockOnUrlChange}
+          isValidating={false}
+          validationResult={null}
+        />
+      );
+
+      const spinner = document.querySelector('.animate-spin');
+      expect(spinner).not.toBeInTheDocument();
+    });
+
+    it('should have transition styling for smooth border changes', () => {
+      render(<UrlInput onUrlChange={mockOnUrlChange} />);
+
+      const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
+      expect(input).toHaveClass('transition-colors');
+      expect(input).toHaveClass('duration-200');
+    });
   });
 });
