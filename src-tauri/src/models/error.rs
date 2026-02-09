@@ -50,20 +50,33 @@ pub enum YtDlpError {
 
     #[error("Invalid URL")]
     InvalidUrl,
+
+    #[error("Track not found")]
+    NotFound,
+
+    #[error("Authentication required")]
+    AuthRequired,
+}
+
+impl YtDlpError {
+    /// Returns the error code for IPC communication.
+    pub fn code(&self) -> &'static str {
+        match self {
+            YtDlpError::DownloadFailed(_) => "DOWNLOAD_FAILED",
+            YtDlpError::BinaryNotFound => "DOWNLOAD_FAILED",
+            YtDlpError::RateLimited => "RATE_LIMITED",
+            YtDlpError::GeoBlocked => "GEO_BLOCKED",
+            YtDlpError::InvalidUrl => "INVALID_URL",
+            YtDlpError::NotFound => "INVALID_URL",
+            YtDlpError::AuthRequired => "AUTH_REQUIRED",
+        }
+    }
 }
 
 impl From<YtDlpError> for ErrorResponse {
     fn from(err: YtDlpError) -> Self {
-        let code = match &err {
-            YtDlpError::DownloadFailed(_) => "DOWNLOAD_FAILED",
-            YtDlpError::BinaryNotFound => "BINARY_NOT_FOUND",
-            YtDlpError::RateLimited => "RATE_LIMITED",
-            YtDlpError::GeoBlocked => "GEO_BLOCKED",
-            YtDlpError::InvalidUrl => "INVALID_URL",
-        };
-
         ErrorResponse {
-            code: code.to_string(),
+            code: err.code().to_string(),
             message: err.to_string(),
         }
     }
@@ -235,7 +248,7 @@ mod tests {
     fn test_error_response_from_ytdlp_binary_not_found() {
         let err = YtDlpError::BinaryNotFound;
         let response: ErrorResponse = err.into();
-        assert_eq!(response.code, "BINARY_NOT_FOUND");
+        assert_eq!(response.code, "DOWNLOAD_FAILED");
     }
 
     #[test]
@@ -257,6 +270,43 @@ mod tests {
         let err = YtDlpError::InvalidUrl;
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "INVALID_URL");
+    }
+
+    #[test]
+    fn test_ytdlp_not_found_error_message() {
+        let err = YtDlpError::NotFound;
+        assert_eq!(err.to_string(), "Track not found");
+    }
+
+    #[test]
+    fn test_error_response_from_ytdlp_not_found() {
+        let err = YtDlpError::NotFound;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "INVALID_URL");
+    }
+
+    #[test]
+    fn test_ytdlp_auth_required_error_message() {
+        let err = YtDlpError::AuthRequired;
+        assert_eq!(err.to_string(), "Authentication required");
+    }
+
+    #[test]
+    fn test_error_response_from_ytdlp_auth_required() {
+        let err = YtDlpError::AuthRequired;
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "AUTH_REQUIRED");
+    }
+
+    #[test]
+    fn test_ytdlp_error_code_method() {
+        assert_eq!(YtDlpError::DownloadFailed("test".to_string()).code(), "DOWNLOAD_FAILED");
+        assert_eq!(YtDlpError::BinaryNotFound.code(), "DOWNLOAD_FAILED");
+        assert_eq!(YtDlpError::RateLimited.code(), "RATE_LIMITED");
+        assert_eq!(YtDlpError::GeoBlocked.code(), "GEO_BLOCKED");
+        assert_eq!(YtDlpError::InvalidUrl.code(), "INVALID_URL");
+        assert_eq!(YtDlpError::NotFound.code(), "INVALID_URL");
+        assert_eq!(YtDlpError::AuthRequired.code(), "AUTH_REQUIRED");
     }
 
     // FfmpegError tests

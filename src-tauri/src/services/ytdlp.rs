@@ -1,8 +1,10 @@
 use std::path::PathBuf;
 use tauri::ipc::Channel;
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::{process::CommandEvent, ShellExt};
 
 use crate::models::error::YtDlpError;
+use crate::services::storage::load_tokens;
 
 /// Configuration for a yt-dlp download operation.
 pub struct YtDlpConfig {
@@ -18,6 +20,170 @@ pub struct DownloadProgress {
     pub percent: f32,
     pub speed: Option<String>,
     pub eta: Option<String>,
+}
+
+/// Configuration for a track download operation with OAuth authentication.
+pub struct TrackDownloadConfig {
+    pub track_url: String,
+    pub track_id: String,
+    pub temp_dir: PathBuf,
+}
+
+/// Download progress event payload for frontend communication.
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DownloadProgressEvent {
+    pub track_id: String,
+    pub status: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub percent: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub error: Option<DownloadErrorPayload>,
+}
+
+/// Error payload for download progress events.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct DownloadErrorPayload {
+    pub code: String,
+    pub message: String,
+}
+
+/// Download a track using yt-dlp with OAuth authentication.
+///
+/// This function downloads audio using the user's OAuth token for Go+ quality access.
+/// Progress events are emitted via Tauri events to the frontend.
+///
+/// # Arguments
+/// * `app` - Tauri app handle for sidecar access and event emission
+/// * `config` - Track download configuration
+///
+/// # Returns
+/// The path to the downloaded file on success.
+pub async fn download_track<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    config: TrackDownloadConfig,
+) -> Result<PathBuf, YtDlpError> {
+    // Get OAuth token for authentication
+    let tokens = load_tokens()
+        .map_err(|_| YtDlpError::AuthRequired)?
+        .ok_or(YtDlpError::AuthRequired)?;
+
+    // Prepare output path template
+    let output_template = config
+        .temp_dir
+        .join(format!("{}.%(ext)s", config.track_id));
+
+    let output_template_str = output_template
+        .to_str()
+        .ok_or(YtDlpError::DownloadFailed("Invalid output path".to_string()))?;
+
+    // Build yt-dlp arguments with OAuth authentication
+    let args = vec![
+        "--no-playlist".to_string(),
+        "-x".to_string(),                    // Extract audio
+        "--audio-format".to_string(),
+        "best".to_string(),
+        "--audio-quality".to_string(),
+        "0".to_string(),                     // Best quality
+        "--add-header".to_string(),
+        format!("Authorization: OAuth {}", tokens.access_token),
+        "-o".to_string(),
+        output_template_str.to_string(),
+        "--newline".to_string(),             // Progress on new lines
+        config.track_url.clone(),
+    ];
+
+    let shell = app.shell();
+    let (mut rx, _child) = shell
+        .sidecar("yt-dlp")
+        .map_err(|_| YtDlpError::BinaryNotFound)?
+        .args(&args)
+        .spawn()
+        .map_err(|_| YtDlpError::BinaryNotFound)?;
+
+    let mut output_path: Option<PathBuf> = None;
+    let mut last_error: Option<String> = None;
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Stdout(line_bytes) => {
+                let line = bytes_to_string(&line_bytes);
+
+                // Parse and emit progress
+                if let Some(progress) = parse_progress(&line) {
+                    let _ = app.emit(
+                        "download-progress",
+                        DownloadProgressEvent {
+                            track_id: config.track_id.clone(),
+                            status: "downloading".to_string(),
+                            percent: Some(progress.percent),
+                            error: None,
+                        },
+                    );
+                }
+
+                // Capture output filename
+                if line.contains("[download] Destination:") {
+                    let path = line.replace("[download] Destination:", "").trim().to_string();
+                    output_path = Some(PathBuf::from(path));
+                }
+            }
+            CommandEvent::Stderr(line_bytes) => {
+                let line = bytes_to_string(&line_bytes);
+                log::warn!("yt-dlp stderr: {}", line);
+                last_error = Some(line.clone());
+
+                // Check for specific error conditions
+                if line.contains("HTTP Error 403") {
+                    return Err(YtDlpError::GeoBlocked);
+                }
+                if line.contains("HTTP Error 429") || line.contains("rate limit") {
+                    return Err(YtDlpError::RateLimited);
+                }
+                if line.contains("HTTP Error 404") {
+                    return Err(YtDlpError::NotFound);
+                }
+                if line.contains("geo") || line.contains("not available in your country") {
+                    return Err(YtDlpError::GeoBlocked);
+                }
+            }
+            CommandEvent::Terminated(payload) => {
+                if payload.code != Some(0) {
+                    log::error!(
+                        "yt-dlp terminated with code {:?}: {:?}",
+                        payload.code,
+                        last_error
+                    );
+                    return Err(YtDlpError::DownloadFailed(
+                        last_error.unwrap_or_else(|| "Unknown error".to_string()),
+                    ));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Find the actual output file (extension determined by yt-dlp)
+    let downloaded_file = find_downloaded_file(&config.temp_dir, &config.track_id)?;
+    Ok(output_path.unwrap_or(downloaded_file))
+}
+
+/// Find the downloaded file in the temp directory by track ID prefix.
+fn find_downloaded_file(dir: &PathBuf, track_id: &str) -> Result<PathBuf, YtDlpError> {
+    for entry in std::fs::read_dir(dir).map_err(|e| {
+        YtDlpError::DownloadFailed(format!("Failed to read temp directory: {}", e))
+    })? {
+        if let Ok(entry) = entry {
+            let name = entry.file_name().to_string_lossy().to_string();
+            if name.starts_with(track_id) {
+                return Ok(entry.path());
+            }
+        }
+    }
+    Err(YtDlpError::DownloadFailed(format!(
+        "Downloaded file not found for track {}",
+        track_id
+    )))
 }
 
 /// Convert bytes to string, handling UTF-8 encoding.
