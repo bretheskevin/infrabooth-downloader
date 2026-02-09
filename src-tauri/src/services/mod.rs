@@ -5,6 +5,7 @@ pub mod metadata;
 pub mod oauth;
 pub mod pipeline;
 pub mod playlist;
+pub mod queue;
 pub mod storage;
 pub mod url_validator;
 pub mod ytdlp;

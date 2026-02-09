@@ -3,28 +3,68 @@ import { renderHook, act } from '@testing-library/react';
 import { useDownloadFlow } from './useDownloadFlow';
 import type { ValidationResult } from '@/types/url';
 import type { PlaylistInfo, TrackInfo } from '@/types/playlist';
+import type { Track } from '@/types/track';
 
 // Mock the composed hooks
-const mockValidationResult = { result: null as ValidationResult | null, isValidating: false };
+const mockValidationResult = {
+  result: null as ValidationResult | null,
+  isValidating: false,
+};
 vi.mock('./useUrlValidation', () => ({
   useUrlValidation: vi.fn(() => mockValidationResult),
 }));
 
-const mockMediaFetchResult = { data: null as PlaylistInfo | TrackInfo | null, isLoading: false, error: null };
+const mockMediaFetchResult = {
+  data: null as PlaylistInfo | TrackInfo | null,
+  isLoading: false,
+  error: null,
+};
 vi.mock('./useMediaFetch', () => ({
   useMediaFetch: vi.fn(() => mockMediaFetchResult),
 }));
 
 const mockSyncToQueue = vi.fn();
 vi.mock('./useSyncToQueue', () => ({
-  useSyncToQueue: (media: PlaylistInfo | TrackInfo | null) => mockSyncToQueue(media),
+  useSyncToQueue: (media: PlaylistInfo | TrackInfo | null) =>
+    mockSyncToQueue(media),
+}));
+
+// Mock startDownloadQueue
+vi.mock('@/lib/download', () => ({
+  startDownloadQueue: vi.fn(),
+}));
+
+// Mock useQueueStore - we only use getState().tracks in the hook
+const createMockQueueState = (tracks: Track[] = []) => ({
+  tracks,
+  currentIndex: 0,
+  totalTracks: tracks.length,
+  isProcessing: false,
+  isComplete: false,
+  completedCount: 0,
+  failedCount: 0,
+  enqueueTracks: vi.fn(),
+  updateTrackStatus: vi.fn(),
+  setQueueProgress: vi.fn(),
+  setQueueComplete: vi.fn(),
+  clearQueue: vi.fn(),
+});
+
+vi.mock('@/stores/queueStore', () => ({
+  useQueueStore: {
+    getState: vi.fn(() => createMockQueueState()),
+  },
 }));
 
 import { useUrlValidation } from './useUrlValidation';
 import { useMediaFetch } from './useMediaFetch';
+import { startDownloadQueue } from '@/lib/download';
+import { useQueueStore } from '@/stores/queueStore';
 
 const mockUseUrlValidation = vi.mocked(useUrlValidation);
 const mockUseMediaFetch = vi.mocked(useMediaFetch);
+const mockStartDownloadQueue = vi.mocked(startDownloadQueue);
+const mockUseQueueStoreGetState = vi.mocked(useQueueStore.getState);
 
 const mockPlaylist: PlaylistInfo = {
   id: 123,
@@ -33,15 +73,52 @@ const mockPlaylist: PlaylistInfo = {
   artwork_url: 'https://example.com/art.jpg',
   track_count: 2,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'Artist1' }, artwork_url: null, duration: 180000 },
+    {
+      id: 1,
+      title: 'Track 1',
+      user: { username: 'Artist1' },
+      artwork_url: null,
+      duration: 180000,
+    },
   ],
 };
+
+const mockTrack: TrackInfo = {
+  id: 456,
+  title: 'Single Track',
+  user: { username: 'Artist2' },
+  artwork_url: 'https://example.com/single.jpg',
+  duration: 240000,
+};
+
+const mockQueueTracksData: Track[] = [
+  {
+    id: '1',
+    title: 'Track 1',
+    artist: 'Artist1',
+    artworkUrl: 'https://example.com/art1.jpg',
+    status: 'pending',
+  },
+  {
+    id: '2',
+    title: 'Track 2',
+    artist: 'Artist2',
+    artworkUrl: null,
+    status: 'pending',
+  },
+];
 
 describe('useDownloadFlow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseUrlValidation.mockReturnValue({ result: null, isValidating: false });
-    mockUseMediaFetch.mockReturnValue({ data: null, isLoading: false, error: null });
+    mockUseMediaFetch.mockReturnValue({
+      data: null,
+      isLoading: false,
+      error: null,
+    });
+    mockUseQueueStoreGetState.mockReturnValue(createMockQueueState());
+    mockStartDownloadQueue.mockResolvedValue(undefined);
   });
 
   it('should initialize with empty URL', () => {
@@ -67,12 +144,17 @@ describe('useDownloadFlow', () => {
       result.current.setUrl('https://soundcloud.com/artist/track');
     });
 
-    expect(mockUseUrlValidation).toHaveBeenCalledWith('https://soundcloud.com/artist/track');
+    expect(mockUseUrlValidation).toHaveBeenCalledWith(
+      'https://soundcloud.com/artist/track'
+    );
   });
 
   it('should pass URL and validation to useMediaFetch', () => {
     const validationResult: ValidationResult = { valid: true, urlType: 'track' };
-    mockUseUrlValidation.mockReturnValue({ result: validationResult, isValidating: false });
+    mockUseUrlValidation.mockReturnValue({
+      result: validationResult,
+      isValidating: false,
+    });
 
     const { result } = renderHook(() => useDownloadFlow());
 
@@ -87,8 +169,14 @@ describe('useDownloadFlow', () => {
   });
 
   it('should expose validation result from useUrlValidation', () => {
-    const validationResult: ValidationResult = { valid: true, urlType: 'playlist' };
-    mockUseUrlValidation.mockReturnValue({ result: validationResult, isValidating: true });
+    const validationResult: ValidationResult = {
+      valid: true,
+      urlType: 'playlist',
+    };
+    mockUseUrlValidation.mockReturnValue({
+      result: validationResult,
+      isValidating: true,
+    });
 
     const { result } = renderHook(() => useDownloadFlow());
 
@@ -97,7 +185,11 @@ describe('useDownloadFlow', () => {
   });
 
   it('should expose media data from useMediaFetch', () => {
-    mockUseMediaFetch.mockReturnValue({ data: mockPlaylist, isLoading: false, error: null });
+    mockUseMediaFetch.mockReturnValue({
+      data: mockPlaylist,
+      isLoading: false,
+      error: null,
+    });
 
     const { result } = renderHook(() => useDownloadFlow());
 
@@ -107,7 +199,11 @@ describe('useDownloadFlow', () => {
   });
 
   it('should expose loading state from useMediaFetch', () => {
-    mockUseMediaFetch.mockReturnValue({ data: null, isLoading: true, error: null });
+    mockUseMediaFetch.mockReturnValue({
+      data: null,
+      isLoading: true,
+      error: null,
+    });
 
     const { result } = renderHook(() => useDownloadFlow());
 
@@ -116,7 +212,11 @@ describe('useDownloadFlow', () => {
 
   it('should expose error from useMediaFetch', () => {
     const fetchError = { code: 'FETCH_FAILED', message: 'Failed to fetch' };
-    mockUseMediaFetch.mockReturnValue({ data: null, isLoading: false, error: fetchError });
+    mockUseMediaFetch.mockReturnValue({
+      data: null,
+      isLoading: false,
+      error: fetchError,
+    });
 
     const { result } = renderHook(() => useDownloadFlow());
 
@@ -124,7 +224,11 @@ describe('useDownloadFlow', () => {
   });
 
   it('should pass media to useSyncToQueue', () => {
-    mockUseMediaFetch.mockReturnValue({ data: mockPlaylist, isLoading: false, error: null });
+    mockUseMediaFetch.mockReturnValue({
+      data: mockPlaylist,
+      isLoading: false,
+      error: null,
+    });
 
     renderHook(() => useDownloadFlow());
 
@@ -137,16 +241,125 @@ describe('useDownloadFlow', () => {
     expect(typeof result.current.handleDownload).toBe('function');
   });
 
-  it('should call console.log when handleDownload is called', () => {
-    const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+  describe('handleDownload', () => {
+    it('should not call startDownloadQueue when queue is empty', async () => {
+      mockUseQueueStoreGetState.mockReturnValue(createMockQueueState());
 
-    const { result } = renderHook(() => useDownloadFlow());
+      const { result } = renderHook(() => useDownloadFlow());
 
-    act(() => {
-      result.current.handleDownload();
+      await act(async () => {
+        await result.current.handleDownload();
+      });
+
+      expect(mockStartDownloadQueue).not.toHaveBeenCalled();
     });
 
-    expect(consoleSpy).toHaveBeenCalledWith('Starting download...');
-    consoleSpy.mockRestore();
+    it('should call startDownloadQueue with tracks from queue', async () => {
+      mockUseQueueStoreGetState.mockReturnValue(
+        createMockQueueState(mockQueueTracksData)
+      );
+
+      const { result } = renderHook(() => useDownloadFlow());
+
+      await act(async () => {
+        await result.current.handleDownload();
+      });
+
+      expect(mockStartDownloadQueue).toHaveBeenCalledWith({
+        tracks: [
+          {
+            trackUrl: 'https://api.soundcloud.com/tracks/1',
+            trackId: '1',
+            title: 'Track 1',
+            artist: 'Artist1',
+            artworkUrl: 'https://example.com/art1.jpg',
+          },
+          {
+            trackUrl: 'https://api.soundcloud.com/tracks/2',
+            trackId: '2',
+            title: 'Track 2',
+            artist: 'Artist2',
+            artworkUrl: undefined,
+          },
+        ],
+        albumName: undefined,
+      });
+    });
+
+    it('should include album name when media is a playlist', async () => {
+      mockUseMediaFetch.mockReturnValue({
+        data: mockPlaylist,
+        isLoading: false,
+        error: null,
+      });
+      mockUseQueueStoreGetState.mockReturnValue(
+        createMockQueueState(mockQueueTracksData)
+      );
+
+      const { result } = renderHook(() => useDownloadFlow());
+
+      await act(async () => {
+        await result.current.handleDownload();
+      });
+
+      expect(mockStartDownloadQueue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          albumName: 'Test Playlist',
+        })
+      );
+    });
+
+    it('should not include album name when media is a single track', async () => {
+      mockUseMediaFetch.mockReturnValue({
+        data: mockTrack,
+        isLoading: false,
+        error: null,
+      });
+      mockUseQueueStoreGetState.mockReturnValue(
+        createMockQueueState(mockQueueTracksData)
+      );
+
+      const { result } = renderHook(() => useDownloadFlow());
+
+      await act(async () => {
+        await result.current.handleDownload();
+      });
+
+      expect(mockStartDownloadQueue).toHaveBeenCalledWith(
+        expect.objectContaining({
+          albumName: undefined,
+        })
+      );
+    });
+
+    it('should convert null artworkUrl to undefined', async () => {
+      const tracksWithNullArtwork: Track[] = [
+        {
+          id: '1',
+          title: 'Track 1',
+          artist: 'Artist1',
+          artworkUrl: null,
+          status: 'pending',
+        },
+      ];
+      mockUseQueueStoreGetState.mockReturnValue(
+        createMockQueueState(tracksWithNullArtwork)
+      );
+
+      const { result } = renderHook(() => useDownloadFlow());
+
+      await act(async () => {
+        await result.current.handleDownload();
+      });
+
+      expect(mockStartDownloadQueue).toHaveBeenCalledWith({
+        tracks: [
+          expect.objectContaining({
+            artworkUrl: undefined,
+          }),
+        ],
+        albumName: undefined,
+      });
+    });
   });
 });

@@ -1,6 +1,6 @@
 # Story 4.6: Implement Download Queue Processing
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -41,8 +41,8 @@ so that **I can start the download and walk away**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create queue manager in Rust (AC: #1, #2, #3, #5)
-  - [ ] 1.1 Create `src-tauri/src/services/queue.rs`:
+- [x] Task 1: Create queue manager in Rust (AC: #1, #2, #3, #5)
+  - [x] 1.1 Create `src-tauri/src/services/queue.rs`:
     ```rust
     use crate::services::pipeline::{download_and_convert, PipelineConfig};
     use crate::models::error::PipelineError;
@@ -174,8 +174,8 @@ so that **I can start the download and walk away**.
     }
     ```
 
-- [ ] Task 2: Create Tauri command for queue processing (AC: #1)
-  - [ ] 2.1 Add to `src-tauri/src/commands/download.rs`:
+- [x] Task 2: Create Tauri command for queue processing (AC: #1)
+  - [x] 2.1 Add to `src-tauri/src/commands/download.rs`:
     ```rust
     use crate::services::queue::{DownloadQueue, QueueItem};
 
@@ -225,8 +225,8 @@ so that **I can start the download and walk away**.
     }
     ```
 
-- [ ] Task 3: Create TypeScript queue interface (AC: #1, #5)
-  - [ ] 3.1 Update `src/lib/download.ts`:
+- [x] Task 3: Create TypeScript queue interface (AC: #1, #5)
+  - [x] 3.1 Update `src/lib/download.ts`:
     ```typescript
     export interface QueueItem {
       trackUrl: string;
@@ -248,8 +248,8 @@ so that **I can start the download and walk away**.
     }
     ```
 
-- [ ] Task 4: Create queue event types (AC: #2, #5)
-  - [ ] 4.1 Update `src/types/events.ts`:
+- [x] Task 4: Create queue event types (AC: #2, #5)
+  - [x] 4.1 Update `src/types/events.ts`:
     ```typescript
     export interface QueueProgressEvent {
       current: number;
@@ -265,8 +265,8 @@ so that **I can start the download and walk away**.
     }
     ```
 
-- [ ] Task 5: Create queue progress hook (AC: #2, #5)
-  - [ ] 5.1 Update `src/hooks/useDownloadProgress.ts`:
+- [x] Task 5: Create queue progress hook (AC: #2, #5)
+  - [x] 5.1 Create `src/hooks/download/useDownloadProgress.ts`:
     ```typescript
     import { useEffect } from 'react';
     import { listen } from '@tauri-apps/api/event';
@@ -315,8 +315,8 @@ so that **I can start the download and walk away**.
     }
     ```
 
-- [ ] Task 6: Update queue store with progress tracking (AC: #2, #5)
-  - [ ] 6.1 Update `src/stores/queueStore.ts`:
+- [x] Task 6: Update queue store with progress tracking (AC: #2, #5)
+  - [x] 6.1 Update `src/stores/queueStore.ts`:
     ```typescript
     interface QueueState {
       tracks: Track[];
@@ -382,8 +382,8 @@ so that **I can start the download and walk away**.
     }));
     ```
 
-- [ ] Task 7: Wire up download button to queue (AC: #1)
-  - [ ] 7.1 Update `DownloadSection.tsx`:
+- [x] Task 7: Wire up download button to queue (AC: #1)
+  - [x] 7.1 Update `src/hooks/download/useDownloadFlow.ts` (preferred over DownloadSection.tsx per custom hooks architecture):
     ```typescript
     import { startDownloadQueue } from '@/lib/download';
 
@@ -546,11 +546,82 @@ After completing all tasks:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.5 (claude-opus-4-5)
 
 ### Debug Log References
 
+N/A - No significant debugging sessions required.
+
 ### Completion Notes List
 
+1. **Task 1 (Queue Manager)**: Created `src-tauri/src/services/queue.rs` with:
+   - `QueueItem` struct with track metadata including track_number
+   - `DownloadQueue` struct with sequential processing logic
+   - `QueueProgressEvent` and `QueueCompleteEvent` for Tauri event serialization
+   - `calculate_backoff()` implementing Fibonacci backoff (1,1,2,3,5,8,13,21,34,55,89s)
+   - Rate limit detection via `YtDlpError::RateLimited` - retries same track
+   - Continue-on-failure pattern for other errors
+   - Generic `<R: Runtime>` for testability
+
+2. **Task 2 (Tauri Command)**: Added to `src-tauri/src/commands/download.rs`:
+   - `StartQueueRequest` and `QueueItemRequest` with `#[serde(rename_all = "camelCase")]`
+   - `start_download_queue` command spawning background task
+   - Registered command in `src-tauri/src/lib.rs`
+
+3. **Task 3 (TypeScript Interface)**: Updated `src/lib/download.ts`:
+   - `QueueItem` and `StartQueueRequest` interfaces
+   - `startDownloadQueue()` function invoking Tauri command
+
+4. **Task 4 (Event Types)**: Updated `src/types/events.ts`:
+   - `QueueProgressEvent` with current/total/trackId
+   - `QueueCompleteEvent` with completed/failed/total/failedTracks
+   - Updated `DownloadProgressEvent` to include 'rate_limited' status and use `AppError` type
+
+5. **Task 5 (Progress Hook)**: Created `src/hooks/download/useDownloadProgress.ts`:
+   - Subscribes to `download-progress`, `queue-progress`, `queue-complete` events
+   - Updates queue store via actions
+   - Proper cleanup on unmount
+   - Exported from `src/hooks/download/index.ts`
+
+6. **Task 6 (Queue Store)**: Updated `src/stores/queueStore.ts`:
+   - Added `totalTracks`, `isProcessing`, `isComplete`, `completedCount`, `failedCount` state
+   - Added `setQueueProgress()` and `setQueueComplete()` actions
+   - Updated `enqueueTracks()` to reset progress state
+
+7. **Task 7 (Wire Up)**: Updated `src/hooks/download/useDownloadFlow.ts`:
+   - `handleDownload` calls `startDownloadQueue` with tracks from queue store
+   - Uses `isPlaylist()` type guard for album name detection
+   - Converts track URLs to API format: `https://api.soundcloud.com/tracks/{id}`
+
+8. **Supporting Changes**:
+   - Added 'rate_limited' to `TrackStatus` union in `src/types/track.ts`
+   - Updated `src-tauri/src/services/mod.rs` to export queue module
+   - Updated `src-tauri/src/commands/mod.rs` to export new command
+
+9. **Test Results**:
+   - 157 Rust tests passing
+   - 359 frontend tests passing (includes new tests for useDownloadProgress and useDownloadFlow)
+   - TypeScript check passing
+   - Frontend build successful
+   - Rust release build successful
+
 ### File List
+
+**Created:**
+- `src-tauri/src/services/queue.rs` - Queue manager with sequential processing and rate limit backoff
+- `src/hooks/download/useDownloadProgress.ts` - Hook for subscribing to queue events
+- `src/hooks/download/useDownloadProgress.test.ts` - Tests for useDownloadProgress hook
+
+**Modified:**
+- `src-tauri/src/commands/download.rs` - Added StartQueueRequest, QueueItemRequest, start_download_queue command
+- `src-tauri/src/commands/mod.rs` - Export start_download_queue
+- `src-tauri/src/services/mod.rs` - Export queue module
+- `src-tauri/src/lib.rs` - Register start_download_queue command
+- `src/lib/download.ts` - Added QueueItem, StartQueueRequest, startDownloadQueue function
+- `src/types/events.ts` - Added QueueProgressEvent, QueueCompleteEvent, updated DownloadProgressEvent
+- `src/types/track.ts` - Added 'rate_limited' to TrackStatus
+- `src/stores/queueStore.ts` - Added progress tracking state and actions
+- `src/hooks/download/useDownloadFlow.ts` - Updated handleDownload to call startDownloadQueue
+- `src/hooks/download/useDownloadFlow.test.ts` - Added tests for handleDownload with queue
+- `src/hooks/download/index.ts` - Export useDownloadProgress
 
