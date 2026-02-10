@@ -18,6 +18,8 @@ vi.mock('react-i18next', () => ({
         'errors.networkError': 'Network error',
         'errors.downloadFailed': 'Download failed',
         'errors.conversionFailed': 'Conversion failed',
+        'errors.trackUnavailable': 'Track unavailable',
+        'errors.trackUnavailableDetail': 'This track may have been removed or made private',
       };
       return translations[key] || key;
     },
@@ -136,6 +138,70 @@ describe('TrackStatusLabel', () => {
       );
       const label = screen.getByText('Download failed');
       expect(label).toHaveClass('text-rose-600');
+    });
+
+    it('should apply amber color for unavailable error', () => {
+      render(
+        <TrackStatusLabel
+          status="failed"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable - may have been removed' }}
+        />
+      );
+      const label = screen.getByText('Track unavailable');
+      expect(label).toHaveClass('text-amber-600');
+    });
+  });
+
+  describe('unavailable track errors', () => {
+    it('should render "Track unavailable" for unavailable error', () => {
+      render(
+        <TrackStatusLabel
+          status="failed"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable - may have been removed or made private' }}
+        />
+      );
+      expect(screen.getByText('Track unavailable')).toBeInTheDocument();
+    });
+
+    it('should render "Track unavailable" for private video error', () => {
+      render(
+        <TrackStatusLabel
+          status="failed"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'Private video. Sign in if you have access' }}
+        />
+      );
+      expect(screen.getByText('Track unavailable')).toBeInTheDocument();
+    });
+
+    it('should render "Track unavailable" for removed track error', () => {
+      render(
+        <TrackStatusLabel
+          status="failed"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'This track was removed by the uploader' }}
+        />
+      );
+      expect(screen.getByText('Track unavailable')).toBeInTheDocument();
+    });
+
+    it('should render "Track unavailable" for 404 error', () => {
+      render(
+        <TrackStatusLabel
+          status="failed"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'HTTP Error 404' }}
+        />
+      );
+      expect(screen.getByText('Track unavailable')).toBeInTheDocument();
+    });
+
+    it('should use amber color for unavailable errors', () => {
+      render(
+        <TrackStatusLabel
+          status="failed"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'Video unavailable' }}
+        />
+      );
+      const label = screen.getByText('Track unavailable');
+      expect(label).toHaveClass('text-amber-600');
     });
   });
 });
