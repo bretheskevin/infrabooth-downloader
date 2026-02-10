@@ -22,7 +22,7 @@
         "title": "InfraBooth Downloader",
         "width": 600,
         "height": 700,
-        "minWidth": 400,
+        "minWidth": 480,
         "minHeight": 500,
         "resizable": true,
         "center": true,

@@ -33,6 +33,12 @@ vi.mock('@/stores/authStore', () => ({
   useAuthStore: (selector: (state: { isSignedIn: boolean }) => boolean) => mockAuthStore(selector),
 }));
 
+// Mock queueStore
+const mockQueueStore = vi.fn();
+vi.mock('@/stores/queueStore', () => ({
+  useQueueStore: (selector: (state: { isProcessing: boolean; isRateLimited: boolean }) => unknown) => mockQueueStore(selector),
+}));
+
 // Mock useDownloadFlow hook
 interface MockDownloadFlowReturn {
   url: string;
@@ -61,8 +67,21 @@ const defaultMockReturn: MockDownloadFlowReturn = {
 
 let mockDownloadFlowReturn = { ...defaultMockReturn };
 
+const mockResetQueue = vi.fn();
+const mockDownloadCompletionReturn = {
+  isComplete: false,
+  completedCount: 0,
+  failedCount: 0,
+  totalCount: 0,
+  resetQueue: mockResetQueue,
+  hasFailures: false,
+  isFullSuccess: false,
+};
+
 vi.mock('@/hooks/download', () => ({
   useDownloadFlow: () => mockDownloadFlowReturn,
+  useDownloadProgress: () => {},
+  useDownloadCompletion: () => mockDownloadCompletionReturn,
 }));
 
 const mockPlaylistInfo: PlaylistInfo = {
@@ -101,6 +120,8 @@ describe('DownloadSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDownloadFlowReturn = { ...defaultMockReturn, setUrl: mockSetUrl, handleDownload: mockHandleDownload };
+    // Default queue state: not processing, not rate limited
+    mockQueueStore.mockImplementation((selector) => selector({ isProcessing: false, isRateLimited: false }));
   });
 
   describe('when user is signed in', () => {

@@ -125,8 +125,16 @@ impl DownloadQueue {
 
             match download_and_convert(&app, config).await {
                 Ok(_) => {
+                    let _ = app.emit(
+                        "download-progress",
+                        serde_json::json!({
+                            "trackId": item.track_id,
+                            "status": "complete",
+                            "percent": 1.0
+                        }),
+                    );
                     completed += 1;
-                    retry_count = 0; // Reset on success
+                    retry_count = 0;
                 }
                 Err(PipelineError::Download(YtDlpError::RateLimited)) => {
                     // Rate limited - pause and retry same track

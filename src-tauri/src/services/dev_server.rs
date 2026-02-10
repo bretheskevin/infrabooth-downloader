@@ -29,6 +29,7 @@ const ERROR_HTML: &str = r#"<!DOCTYPE html>
 </html>"#;
 
 pub async fn start_dev_callback_server(app: AppHandle) -> Result<u16, String> {
+    // Bind to 127.0.0.1 but use localhost in redirect URI (some OAuth providers require localhost)
     let listener = TcpListener::bind(format!("127.0.0.1:{}", DEV_SERVER_PORT))
         .await
         .map_err(|e| format!("Failed to bind dev callback server on port {}: {}", DEV_SERVER_PORT, e))?;
