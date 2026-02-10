@@ -2,7 +2,7 @@ mod commands;
 mod models;
 mod services;
 
-use commands::{check_auth_state, complete_oauth, download_track_full, get_playlist_info, get_track_info, sign_out, start_download_queue, start_oauth, test_ffmpeg, test_ytdlp, validate_soundcloud_url, OAuthState};
+use commands::{check_auth_state, check_write_permission, complete_oauth, download_track_full, get_default_download_path, get_playlist_info, get_track_info, sign_out, start_download_queue, start_oauth, test_ffmpeg, test_ytdlp, validate_soundcloud_url, OAuthState};
 use services::deep_link::handle_deep_link;
 use tauri_plugin_deep_link::DeepLinkExt;
 
@@ -11,8 +11,9 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .manage(OAuthState::default())
-        .invoke_handler(tauri::generate_handler![start_oauth, complete_oauth, check_auth_state, sign_out, validate_soundcloud_url, get_playlist_info, get_track_info, test_ytdlp, test_ffmpeg, download_track_full, start_download_queue])
+        .invoke_handler(tauri::generate_handler![start_oauth, complete_oauth, check_auth_state, sign_out, validate_soundcloud_url, get_playlist_info, get_track_info, test_ytdlp, test_ffmpeg, download_track_full, start_download_queue, check_write_permission, get_default_download_path])
         .setup(|app| {
             app.handle().plugin(
                 tauri_plugin_log::Builder::default()
