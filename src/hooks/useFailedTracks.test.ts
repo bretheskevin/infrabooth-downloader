@@ -44,12 +44,14 @@ describe('useFailedTracks', () => {
         failedCount: 0,
         isRateLimited: false,
         rateLimitedAt: null,
+        isInitializing: false,
         enqueueTracks: vi.fn(),
         updateTrackStatus: vi.fn(),
         setQueueProgress: vi.fn(),
         setQueueComplete: vi.fn(),
         clearQueue: vi.fn(),
         setRateLimited: vi.fn(),
+        setInitializing: vi.fn(),
       })
     );
 
@@ -78,12 +80,14 @@ describe('useFailedTracks', () => {
         failedCount: 1,
         isRateLimited: false,
         rateLimitedAt: null,
+        isInitializing: false,
         enqueueTracks: vi.fn(),
         updateTrackStatus: vi.fn(),
         setQueueProgress: vi.fn(),
         setQueueComplete: vi.fn(),
         clearQueue: vi.fn(),
         setRateLimited: vi.fn(),
+        setInitializing: vi.fn(),
       })
     );
 
@@ -120,12 +124,14 @@ describe('useFailedTracks', () => {
         failedCount: 2,
         isRateLimited: false,
         rateLimitedAt: null,
+        isInitializing: false,
         enqueueTracks: vi.fn(),
         updateTrackStatus: vi.fn(),
         setQueueProgress: vi.fn(),
         setQueueComplete: vi.fn(),
         clearQueue: vi.fn(),
         setRateLimited: vi.fn(),
+        setInitializing: vi.fn(),
       })
     );
 
@@ -152,12 +158,14 @@ describe('useFailedTracks', () => {
         failedCount: 1,
         isRateLimited: false,
         rateLimitedAt: null,
+        isInitializing: false,
         enqueueTracks: vi.fn(),
         updateTrackStatus: vi.fn(),
         setQueueProgress: vi.fn(),
         setQueueComplete: vi.fn(),
         clearQueue: vi.fn(),
         setRateLimited: vi.fn(),
+        setInitializing: vi.fn(),
       })
     );
 

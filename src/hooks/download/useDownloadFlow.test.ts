@@ -40,6 +40,7 @@ const createMockQueueState = (tracks: Track[] = []) => ({
   currentIndex: 0,
   totalTracks: tracks.length,
   isProcessing: false,
+  isInitializing: false,
   isComplete: false,
   completedCount: 0,
   failedCount: 0,
@@ -51,6 +52,7 @@ const createMockQueueState = (tracks: Track[] = []) => ({
   setQueueComplete: vi.fn(),
   clearQueue: vi.fn(),
   setRateLimited: vi.fn(),
+  setInitializing: vi.fn(),
 });
 
 vi.mock('@/stores/queueStore', () => ({

@@ -13,6 +13,7 @@ vi.mock('react-i18next', () => ({
         'download.status.complete': 'Complete',
         'download.status.failed': 'Failed',
         'download.status.rateLimited': 'Rate limited',
+        'download.startingDownload': 'Starting download...',
         'errors.geoBlocked': 'Unavailable in your region',
         'errors.geoBlockedDetail': 'Geographic restriction by rights holder',
         'errors.geoBlockedNoRetry': 'This track will not retry automatically',

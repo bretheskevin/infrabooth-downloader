@@ -198,10 +198,12 @@ describe('queueStore', () => {
   describe('setQueueProgress', () => {
     it('should update currentIndex and totalTracks', () => {
       const { setQueueProgress } = useQueueStore.getState();
+      // Simulate backend sending 1-indexed current (5 of 10)
       setQueueProgress(5, 10);
 
       const { currentIndex, totalTracks } = useQueueStore.getState();
-      expect(currentIndex).toBe(5);
+      // currentIndex should be 0-indexed (4) for array access
+      expect(currentIndex).toBe(4);
       expect(totalTracks).toBe(10);
     });
 

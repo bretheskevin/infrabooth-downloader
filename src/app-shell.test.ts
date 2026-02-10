@@ -24,9 +24,9 @@ describe('Story 1.3: App Shell Layout', () => {
       expect(config.app.windows[0].height).toBe(700);
     });
 
-    it('should have minimum window width of 400 pixels (UX-6)', () => {
+    it('should have minimum window width of 480 pixels (UX-6)', () => {
       const config = getTauriConfig();
-      expect(config.app.windows[0].minWidth).toBe(400);
+      expect(config.app.windows[0].minWidth).toBe(480);
     });
 
     it('should have minimum window height of 500 pixels (UX-6)', () => {

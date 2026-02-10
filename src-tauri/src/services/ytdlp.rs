@@ -139,7 +139,8 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     let mut args = vec![
         "-v".to_string(),
         "-f".to_string(),
-        "bestaudio".to_string(),
+        // Prefer MP3 format to skip conversion when available, fall back to best audio
+        "bestaudio[ext=mp3]/bestaudio".to_string(),
         "--no-playlist".to_string(),
         "-x".to_string(),
         "--audio-format".to_string(),
