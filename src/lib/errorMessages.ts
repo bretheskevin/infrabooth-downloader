@@ -1,4 +1,4 @@
-import type { ErrorCode } from '@/types/errors';
+import type { ErrorCode, AppError } from '@/types/errors';
 import type { TFunction } from 'i18next';
 
 export const ERROR_CODE_TO_I18N_KEY: Record<ErrorCode, string> = {
@@ -28,4 +28,32 @@ export function getErrorSeverity(code?: ErrorCode): 'warning' | 'error' {
     default:
       return 'error';
   }
+}
+
+/**
+ * Check if an error is a geo-blocked error.
+ */
+export function isGeoBlockedError(error?: AppError): boolean {
+  return error?.code === 'GEO_BLOCKED';
+}
+
+/**
+ * Get the user-friendly message for geo-blocked errors.
+ */
+export function getGeoBlockMessage(t: TFunction): string {
+  return t('errors.geoBlocked');
+}
+
+/**
+ * Get the detail message for geo-blocked errors.
+ */
+export function getGeoBlockDetail(t: TFunction): string {
+  return t('errors.geoBlockedDetail');
+}
+
+/**
+ * Get the no-retry message for geo-blocked errors.
+ */
+export function getGeoBlockNoRetry(t: TFunction): string {
+  return t('errors.geoBlockedNoRetry');
 }
