@@ -112,6 +112,7 @@ pub async fn download_track_full(
 pub struct StartQueueRequest {
     pub tracks: Vec<QueueItemRequest>,
     pub album_name: Option<String>,
+    pub output_dir: Option<String>,
 }
 
 /// A track item in the queue request.
@@ -144,7 +145,10 @@ pub async fn start_download_queue(
     request: StartQueueRequest,
     app: tauri::AppHandle,
 ) -> Result<(), String> {
-    let output_dir = get_download_path(&app).map_err(|e| e.message)?;
+    let output_dir = match request.output_dir {
+        Some(dir) => PathBuf::from(dir),
+        None => get_download_path(&app).map_err(|e| e.message)?,
+    };
 
     let items: Vec<QueueItem> = request
         .tracks
