@@ -5,6 +5,7 @@ use tauri::{AppHandle, Emitter, Runtime};
 use crate::models::error::{PipelineError, YtDlpError};
 use crate::services::metadata::TrackMetadata;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
+use crate::services::ytdlp::PlaylistContext;
 
 /// An item in the download queue.
 #[derive(Clone, Debug)]
@@ -97,11 +98,20 @@ impl DownloadQueue {
                 },
             );
 
+            // Build playlist context if this is a playlist (more than 1 track)
+            let playlist_context = if self.total_tracks > 1 {
+                Some(PlaylistContext {
+                    track_position: item.track_number.unwrap_or((self.current_index + 1) as u32),
+                    total_tracks: self.total_tracks,
+                })
+            } else {
+                None
+            };
+
             let config = PipelineConfig {
                 track_url: item.track_url.clone(),
                 track_id: item.track_id.clone(),
                 output_dir: output_dir.clone(),
-                filename: sanitize_filename(&item.artist, &item.title),
                 metadata: TrackMetadata {
                     title: item.title.clone(),
                     artist: item.artist.clone(),
@@ -110,6 +120,7 @@ impl DownloadQueue {
                     total_tracks: Some(self.total_tracks),
                     artwork_url: item.artwork_url.clone(),
                 },
+                playlist_context,
             };
 
             match download_and_convert(&app, config).await {
@@ -182,17 +193,6 @@ fn calculate_backoff(retry_count: u32) -> u64 {
         a
     };
     fib(retry_count.min(10)) // Cap at ~89 seconds
-}
-
-/// Sanitize a filename by removing invalid filesystem characters.
-fn sanitize_filename(artist: &str, title: &str) -> String {
-    let raw = format!("{} - {}", artist, title);
-    raw.chars()
-        .map(|c| match c {
-            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
-            _ => c,
-        })
-        .collect()
 }
 
 #[cfg(test)]
@@ -301,30 +301,6 @@ mod tests {
         // Should be capped at retry_count=10
         assert_eq!(calculate_backoff(11), 89);
         assert_eq!(calculate_backoff(100), 89);
-    }
-
-    #[test]
-    fn test_sanitize_filename_basic() {
-        let result = sanitize_filename("Artist", "Track Name");
-        assert_eq!(result, "Artist - Track Name");
-    }
-
-    #[test]
-    fn test_sanitize_filename_with_slash() {
-        let result = sanitize_filename("Artist/DJ", "Track Name");
-        assert_eq!(result, "Artist_DJ - Track Name");
-    }
-
-    #[test]
-    fn test_sanitize_filename_with_colon() {
-        let result = sanitize_filename("Artist", "Track: Remix");
-        assert_eq!(result, "Artist - Track_ Remix");
-    }
-
-    #[test]
-    fn test_sanitize_filename_all_invalid() {
-        let result = sanitize_filename("A/B\\C", "D:E*F?G\"H<I>J|K");
-        assert_eq!(result, "A_B_C - D_E_F_G_H_I_J_K");
     }
 
     #[test]
