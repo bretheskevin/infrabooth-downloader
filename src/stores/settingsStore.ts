@@ -1,12 +1,14 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 interface SettingsState {
   downloadPath: string;
   language: 'en' | 'fr';
+  _hasHydrated: boolean;
   // Actions
   setDownloadPath: (path: string) => void;
   setLanguage: (lang: 'en' | 'fr') => void;
+  _setHasHydrated: (state: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -14,11 +16,29 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       downloadPath: '',
       language: 'en',
+      _hasHydrated: false,
       setDownloadPath: (path) => set({ downloadPath: path }),
       setLanguage: (lang) => set({ language: lang }),
+      _setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
-      name: 'settings-storage',
+      name: 'sc-downloader-settings',
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        downloadPath: state.downloadPath,
+        language: state.language,
+      }),
+      onRehydrateStorage: () => (state, error) => {
+        if (error) {
+          console.error('Settings hydration error:', error);
+        }
+        // Mark as hydrated regardless of error
+        state?._setHasHydrated(true);
+      },
     }
   )
 );
+
+// Selector for hydration status
+export const useSettingsHydrated = () =>
+  useSettingsStore((state) => state._hasHydrated);
