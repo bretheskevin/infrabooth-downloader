@@ -33,7 +33,7 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
       converting: 'download.status.converting',
       complete: 'download.status.complete',
       failed: 'download.status.failed',
-      rate_limited: 'download.status.rateLimited',
+      rate_limited: 'download.rateLimitStatus',
     };
 
     return t(statusKeys[status]);

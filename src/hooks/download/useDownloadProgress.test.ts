@@ -43,6 +43,8 @@ describe('useDownloadProgress', () => {
       isComplete: false,
       completedCount: 0,
       failedCount: 0,
+      isRateLimited: false,
+      rateLimitedAt: null,
     });
 
     // Capture event handlers when listen is called
@@ -194,6 +196,103 @@ describe('useDownloadProgress', () => {
         expect(mockUnlisten).toHaveBeenCalledTimes(3);
         resolve();
       }, 0);
+    });
+  });
+
+  describe('rate limit handling', () => {
+    it('should set rate limited state when status is rate_limited', () => {
+      renderHook(() => useDownloadProgress());
+
+      const handler = eventHandlers['download-progress']?.[0];
+      expect(handler).toBeDefined();
+
+      handler!({
+        payload: {
+          trackId: 'track-1',
+          status: 'rate_limited',
+        },
+      });
+
+      const { isRateLimited } = useQueueStore.getState();
+      expect(isRateLimited).toBe(true);
+    });
+
+    it('should set rateLimitedAt timestamp when rate limited', () => {
+      const beforeTime = Date.now();
+      renderHook(() => useDownloadProgress());
+
+      const handler = eventHandlers['download-progress']?.[0];
+      expect(handler).toBeDefined();
+
+      handler!({
+        payload: {
+          trackId: 'track-1',
+          status: 'rate_limited',
+        },
+      });
+      const afterTime = Date.now();
+
+      const { rateLimitedAt } = useQueueStore.getState();
+      expect(rateLimitedAt).toBeGreaterThanOrEqual(beforeTime);
+      expect(rateLimitedAt).toBeLessThanOrEqual(afterTime);
+    });
+
+    it('should clear rate limited state when downloading resumes', () => {
+      useQueueStore.setState({ isRateLimited: true, rateLimitedAt: Date.now() });
+      renderHook(() => useDownloadProgress());
+
+      const handler = eventHandlers['download-progress']?.[0];
+      expect(handler).toBeDefined();
+
+      handler!({
+        payload: {
+          trackId: 'track-1',
+          status: 'downloading',
+        },
+      });
+
+      const { isRateLimited, rateLimitedAt } = useQueueStore.getState();
+      expect(isRateLimited).toBe(false);
+      expect(rateLimitedAt).toBeNull();
+    });
+
+    it('should clear rate limited state when converting starts', () => {
+      useQueueStore.setState({ isRateLimited: true, rateLimitedAt: Date.now() });
+      renderHook(() => useDownloadProgress());
+
+      const handler = eventHandlers['download-progress']?.[0];
+      expect(handler).toBeDefined();
+
+      handler!({
+        payload: {
+          trackId: 'track-1',
+          status: 'converting',
+        },
+      });
+
+      const { isRateLimited } = useQueueStore.getState();
+      expect(isRateLimited).toBe(false);
+    });
+
+    it('should set rate limited state when error code is RATE_LIMITED', () => {
+      renderHook(() => useDownloadProgress());
+
+      const handler = eventHandlers['download-progress']?.[0];
+      expect(handler).toBeDefined();
+
+      handler!({
+        payload: {
+          trackId: 'track-1',
+          status: 'failed',
+          error: {
+            code: 'RATE_LIMITED',
+            message: 'Rate limit exceeded',
+          },
+        },
+      });
+
+      const { isRateLimited } = useQueueStore.getState();
+      expect(isRateLimited).toBe(true);
     });
   });
 });

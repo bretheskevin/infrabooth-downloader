@@ -1,6 +1,6 @@
 # Story 5.4: Display Rate Limit Status
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -35,22 +35,22 @@ so that **I don't think the app is broken**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Extend queue store for rate limit state (AC: #1)
-  - [ ] 1.1 Add `isRateLimited: boolean` to `QueueState` interface
-  - [ ] 1.2 Add `rateLimitedAt: number | null` timestamp for optional timer display
-  - [ ] 1.3 Add `setRateLimited: (isLimited: boolean) => void` action
-  - [ ] 1.4 Export rate limit selectors from store
+- [x] Task 1: Extend queue store for rate limit state (AC: #1)
+  - [x] 1.1 Add `isRateLimited: boolean` to `QueueState` interface
+  - [x] 1.2 Add `rateLimitedAt: number | null` timestamp for optional timer display
+  - [x] 1.3 Add `setRateLimited: (isLimited: boolean) => void` action
+  - [x] 1.4 Export rate limit selectors from store
 
-- [ ] Task 2: Create RateLimitBanner component (AC: #1, #2)
-  - [ ] 2.1 Create `src/components/features/progress/RateLimitBanner.tsx`
-  - [ ] 2.2 Use Shadcn Alert component as base (search registry first)
-  - [ ] 2.3 Style with warning color (#F59E0B) and amber background
-  - [ ] 2.4 Display message: "Brief pause -- SoundCloud rate limit (this is normal)"
-  - [ ] 2.5 Add Clock or Pause icon from lucide-react
-  - [ ] 2.6 Ensure message uses i18n key: `download.rateLimitMessage`
+- [x] Task 2: Create RateLimitBanner component (AC: #1, #2)
+  - [x] 2.1 Create `src/components/features/progress/RateLimitBanner.tsx`
+  - [x] 2.2 Use Shadcn Alert component as base (search registry first)
+  - [x] 2.3 Style with warning color (#F59E0B) and amber background
+  - [x] 2.4 Display message: "Brief pause -- SoundCloud rate limit (this is normal)"
+  - [x] 2.5 Add Clock or Pause icon from lucide-react
+  - [x] 2.6 Ensure message uses i18n key: `download.rateLimitMessage`
 
-- [ ] Task 3: Add i18n translations for rate limit (AC: #1, #2)
-  - [ ] 3.1 Add to `src/locales/en.json`:
+- [x] Task 3: Add i18n translations for rate limit (AC: #1, #2)
+  - [x] 3.1 Add to `src/locales/en.json`:
     ```json
     "download": {
       "rateLimitMessage": "Brief pause -- SoundCloud rate limit (this is normal)",
@@ -58,7 +58,7 @@ so that **I don't think the app is broken**.
       "resumingSoon": "Resuming soon..."
     }
     ```
-  - [ ] 3.2 Add to `src/locales/fr.json`:
+  - [x] 3.2 Add to `src/locales/fr.json`:
     ```json
     "download": {
       "rateLimitMessage": "Courte pause -- limite SoundCloud (c'est normal)",
@@ -67,40 +67,40 @@ so that **I don't think the app is broken**.
     }
     ```
 
-- [ ] Task 4: Subscribe to rate limit events (AC: #1, #3)
-  - [ ] 4.1 Listen for `download-progress` events with `status: 'rate_limited'` or error code `RATE_LIMITED`
-  - [ ] 4.2 Update queue store when rate limit detected
-  - [ ] 4.3 Update queue store when rate limit clears (next progress event)
-  - [ ] 4.4 Handle rate limit state in `useDownloadProgress` hook
+- [x] Task 4: Subscribe to rate limit events (AC: #1, #3)
+  - [x] 4.1 Listen for `download-progress` events with `status: 'rate_limited'` or error code `RATE_LIMITED`
+  - [x] 4.2 Update queue store when rate limit detected
+  - [x] 4.3 Update queue store when rate limit clears (next progress event)
+  - [x] 4.4 Handle rate limit state in `useDownloadProgress` hook
 
-- [ ] Task 5: Update TrackCard for "Waiting..." status (AC: #1)
-  - [ ] 5.1 Add conditional rendering for rate-limited state
-  - [ ] 5.2 Show "Waiting..." text with amber/warning styling
-  - [ ] 5.3 Use pause or clock icon instead of spinner during rate limit
-  - [ ] 5.4 Ensure text uses i18n key: `download.rateLimitStatus`
+- [x] Task 5: Update TrackCard for "Waiting..." status (AC: #1)
+  - [x] 5.1 Add conditional rendering for rate-limited state
+  - [x] 5.2 Show "Waiting..." text with amber/warning styling
+  - [x] 5.3 Use pause or clock icon instead of spinner during rate limit
+  - [x] 5.4 Ensure text uses i18n key: `download.rateLimitStatus`
 
-- [ ] Task 6: Implement banner auto-dismiss behavior (AC: #3)
-  - [ ] 6.1 Banner shows only when `isRateLimited === true`
-  - [ ] 6.2 Banner auto-hides when rate limit clears (no manual dismiss needed)
-  - [ ] 6.3 Add CSS transition for smooth appear/disappear (fade or slide)
-  - [ ] 6.4 Ensure no layout shift when banner appears/disappears
+- [x] Task 6: Implement banner auto-dismiss behavior (AC: #3)
+  - [x] 6.1 Banner shows only when `isRateLimited === true`
+  - [x] 6.2 Banner auto-hides when rate limit clears (no manual dismiss needed)
+  - [x] 6.3 Add CSS transition for smooth appear/disappear (fade or slide)
+  - [x] 6.4 Ensure no layout shift when banner appears/disappears
 
-- [ ] Task 7: Handle multiple rate limit occurrences (AC: #4)
-  - [ ] 7.1 Banner reappears on each new rate limit event
-  - [ ] 7.2 No "don't show again" option -- always show for transparency
-  - [ ] 7.3 Counter state resets between rate limits
+- [x] Task 7: Handle multiple rate limit occurrences (AC: #4)
+  - [x] 7.1 Banner reappears on each new rate limit event
+  - [x] 7.2 No "don't show again" option -- always show for transparency
+  - [x] 7.3 Counter state resets between rate limits
 
-- [ ] Task 8: Accessibility compliance (AC: #1, #2, #3)
-  - [ ] 8.1 Add `role="status"` and `aria-live="polite"` to banner
-  - [ ] 8.2 Ensure screen reader announces rate limit message
-  - [ ] 8.3 Announce when downloads resume
-  - [ ] 8.4 Warning icon paired with text (not color-only)
+- [x] Task 8: Accessibility compliance (AC: #1, #2, #3)
+  - [x] 8.1 Add `role="status"` and `aria-live="polite"` to banner
+  - [x] 8.2 Ensure screen reader announces rate limit message
+  - [x] 8.3 Announce when downloads resume
+  - [x] 8.4 Warning icon paired with text (not color-only)
 
-- [ ] Task 9: Test rate limit display (AC: #1, #2, #3, #4)
-  - [ ] 9.1 Write unit test for RateLimitBanner visibility toggle
-  - [ ] 9.2 Write unit test for banner content and styling
-  - [ ] 9.3 Write unit test for TrackCard "Waiting..." state
-  - [ ] 9.4 Write integration test for event subscription flow
+- [x] Task 9: Test rate limit display (AC: #1, #2, #3, #4)
+  - [x] 9.1 Write unit test for RateLimitBanner visibility toggle
+  - [x] 9.2 Write unit test for banner content and styling
+  - [x] 9.3 Write unit test for TrackCard "Waiting..." state
+  - [x] 9.4 Write integration test for event subscription flow
 
 ## Dev Notes
 
@@ -436,11 +436,45 @@ src/
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6
 
 ### Debug Log References
 
+N/A - No debug issues encountered
+
 ### Completion Notes List
 
+- Extended QueueState interface with `isRateLimited`, `rateLimitedAt`, and `setRateLimited` action
+- Created RateLimitBanner component using Shadcn Alert with amber styling
+- Created RateLimitBannerWithTransition wrapper for smooth CSS transitions
+- Added useRateLimitStatus hook for consuming rate limit state
+- Updated useDownloadProgress hook to detect rate limit events and update store
+- Modified TrackStatusIcon to show Clock icon (not spinner) for rate_limited status
+- Modified TrackStatusLabel to use `download.rateLimitStatus` key for "Waiting..." text
+- Added i18n translations for English and French
+- All 493 tests pass with no regressions
+- Frontend build passes
+- TypeScript type checking passes
+
 ### File List
+
+**New Files:**
+- `src/components/features/progress/RateLimitBanner.tsx`
+- `src/components/features/progress/RateLimitBanner.test.tsx`
+- `src/hooks/download/useRateLimitStatus.ts`
+- `src/hooks/download/useRateLimitStatus.test.ts`
+- `src/components/ui/alert.tsx` (Shadcn component)
+
+**Modified Files:**
+- `src/stores/queueStore.ts` - Added rate limit state and action
+- `src/stores/queueStore.test.ts` - Added rate limit tests
+- `src/hooks/download/useDownloadProgress.ts` - Added rate limit event detection
+- `src/hooks/download/useDownloadProgress.test.ts` - Added rate limit tests
+- `src/hooks/download/useDownloadFlow.test.ts` - Updated mock for new QueueState shape
+- `src/components/features/progress/TrackStatusIcon.tsx` - Changed rate_limited to Clock icon
+- `src/components/features/progress/TrackStatusIcon.test.tsx` - Updated test for Clock icon
+- `src/components/features/progress/TrackStatusLabel.tsx` - Changed rate_limited i18n key
+- `src/components/features/progress/TrackStatusLabel.test.tsx` - Updated tests for "Waiting..." text
+- `src/locales/en.json` - Added rate limit translations
+- `src/locales/fr.json` - Added rate limit translations
 

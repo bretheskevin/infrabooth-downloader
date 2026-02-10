@@ -54,10 +54,10 @@ export function TrackStatusIcon({ status, errorCode, className }: TrackStatusIco
 
     case 'rate_limited':
       return (
-        <Loader2
+        <Clock
           role="img"
           aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-amber-500 animate-spin', className)}
+          className={cn(baseClasses, 'text-amber-500', className)}
         />
       );
 
