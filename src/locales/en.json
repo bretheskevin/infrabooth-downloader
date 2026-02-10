@@ -43,6 +43,8 @@
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",
     "geoBlocked": "Unavailable in your region",
+    "geoBlockedDetail": "Geographic restriction by rights holder",
+    "geoBlockedNoRetry": "This track will not retry automatically",
     "rateLimited": "Brief pause — SoundCloud rate limit (this is normal)",
     "networkError": "No internet connection",
     "downloadFailed": "Download failed",
@@ -52,7 +54,8 @@
     "fetchFailed": "Failed to load content",
     "authExpired": "Session expired",
     "authExpiredHint": "Please sign out and sign in again",
-    "notSignedIn": "Please sign in to continue"
+    "notSignedIn": "Please sign in to continue",
+    "showDetails": "Show details"
   },
   "settings": {
     "title": "Settings",

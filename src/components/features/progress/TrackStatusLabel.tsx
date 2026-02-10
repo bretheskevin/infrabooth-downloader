@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { ERROR_CODE_TO_I18N_KEY } from '@/lib/errorMessages';
+import { ERROR_CODE_TO_I18N_KEY, getErrorSeverity } from '@/lib/errorMessages';
 import type { TrackStatus } from '@/types/track';
 import type { AppError } from '@/types/errors';
 
@@ -39,11 +39,19 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
     return t(statusKeys[status]);
   };
 
+  // Use amber color for warning-severity errors (geo-blocked, rate-limited)
+  const getColorClass = (): string => {
+    if (status === 'failed' && error && getErrorSeverity(error.code) === 'warning') {
+      return 'text-amber-600';
+    }
+    return statusColorClasses[status];
+  };
+
   return (
     <span
       className={cn(
         'text-xs font-medium',
-        statusColorClasses[status],
+        getColorClass(),
         className
       )}
     >

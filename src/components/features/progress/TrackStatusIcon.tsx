@@ -64,10 +64,15 @@ export function TrackStatusIcon({ status, errorCode, className }: TrackStatusIco
     case 'failed': {
       const severity = getErrorSeverity(errorCode);
       if (severity === 'warning') {
+        // Use specific aria-label for geo-blocked
+        const warningLabel =
+          errorCode === 'GEO_BLOCKED'
+            ? 'Geographic restriction warning'
+            : ariaLabel;
         return (
           <AlertTriangle
             role="img"
-            aria-label={ariaLabel}
+            aria-label={warningLabel}
             className={cn(baseClasses, 'text-amber-500', className)}
           />
         );

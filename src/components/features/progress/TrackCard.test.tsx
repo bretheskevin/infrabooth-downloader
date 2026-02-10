@@ -14,6 +14,9 @@ vi.mock('react-i18next', () => ({
         'download.status.failed': 'Failed',
         'download.status.rateLimited': 'Rate limited',
         'errors.geoBlocked': 'Unavailable in your region',
+        'errors.geoBlockedDetail': 'Geographic restriction by rights holder',
+        'errors.geoBlockedNoRetry': 'This track will not retry automatically',
+        'errors.showDetails': 'Show details',
       };
       return translations[key] || key;
     },
@@ -197,6 +200,34 @@ describe('TrackCard', () => {
       render(<TrackCard track={mockTrackWithLongTitle} isCurrentTrack={false} />);
       const artist = screen.getByText(mockTrackWithLongTitle.artist);
       expect(artist).toHaveClass('truncate');
+    });
+  });
+
+  describe('geo-blocked error handling', () => {
+    it('should render geo-blocked error message', () => {
+      render(<TrackCard track={mockFailedTrack} isCurrentTrack={false} />);
+      expect(screen.getByText('Unavailable in your region')).toBeInTheDocument();
+    });
+
+    it('should not show details by default for non-geo-blocked errors', () => {
+      const downloadFailedTrack: Track = {
+        ...mockTrack,
+        id: 'track-download-fail',
+        status: 'failed',
+        error: { code: 'DOWNLOAD_FAILED', message: 'Download failed' },
+      };
+      render(<TrackCard track={downloadFailedTrack} isCurrentTrack={false} />);
+      // Should not have GeoBlockDetails trigger
+      expect(screen.queryByText('Show details')).not.toBeInTheDocument();
+    });
+
+    it('should render failed track with correct accessibility', () => {
+      render(<TrackCard track={mockFailedTrack} isCurrentTrack={false} />);
+      const card = screen.getByRole('listitem');
+      expect(card).toHaveAttribute(
+        'aria-label',
+        `${mockFailedTrack.title} by ${mockFailedTrack.artist}`
+      );
     });
   });
 });

@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { getErrorMessage, getErrorSeverity } from './errorMessages';
+import {
+  getErrorMessage,
+  getErrorSeverity,
+  isGeoBlockedError,
+  getGeoBlockMessage,
+  getGeoBlockDetail,
+  getGeoBlockNoRetry,
+} from './errorMessages';
 import type { TFunction } from 'i18next';
+import type { AppError } from '@/types/errors';
 
 describe('errorMessages', () => {
   describe('getErrorMessage', () => {
@@ -73,6 +81,75 @@ describe('errorMessages', () => {
 
     it('should return error for AUTH_REQUIRED', () => {
       expect(getErrorSeverity('AUTH_REQUIRED')).toBe('error');
+    });
+
+    it('should return error for undefined', () => {
+      expect(getErrorSeverity(undefined)).toBe('error');
+    });
+  });
+
+  describe('isGeoBlockedError', () => {
+    it('should return true for GEO_BLOCKED error', () => {
+      const error: AppError = { code: 'GEO_BLOCKED', message: 'Geo blocked' };
+      expect(isGeoBlockedError(error)).toBe(true);
+    });
+
+    it('should return false for DOWNLOAD_FAILED error', () => {
+      const error: AppError = { code: 'DOWNLOAD_FAILED', message: 'Download failed' };
+      expect(isGeoBlockedError(error)).toBe(false);
+    });
+
+    it('should return false for NETWORK_ERROR error', () => {
+      const error: AppError = { code: 'NETWORK_ERROR', message: 'Network error' };
+      expect(isGeoBlockedError(error)).toBe(false);
+    });
+
+    it('should return false for RATE_LIMITED error', () => {
+      const error: AppError = { code: 'RATE_LIMITED', message: 'Rate limited' };
+      expect(isGeoBlockedError(error)).toBe(false);
+    });
+
+    it('should return false for undefined error', () => {
+      expect(isGeoBlockedError(undefined)).toBe(false);
+    });
+  });
+
+  describe('getGeoBlockMessage', () => {
+    const mockT = ((key: string) => {
+      const translations: Record<string, string> = {
+        'errors.geoBlocked': 'Unavailable in your region',
+      };
+      return translations[key] || key;
+    }) as TFunction;
+
+    it('should return the geo block message', () => {
+      expect(getGeoBlockMessage(mockT)).toBe('Unavailable in your region');
+    });
+  });
+
+  describe('getGeoBlockDetail', () => {
+    const mockT = ((key: string) => {
+      const translations: Record<string, string> = {
+        'errors.geoBlockedDetail': 'Geographic restriction by rights holder',
+      };
+      return translations[key] || key;
+    }) as TFunction;
+
+    it('should return the geo block detail message', () => {
+      expect(getGeoBlockDetail(mockT)).toBe('Geographic restriction by rights holder');
+    });
+  });
+
+  describe('getGeoBlockNoRetry', () => {
+    const mockT = ((key: string) => {
+      const translations: Record<string, string> = {
+        'errors.geoBlockedNoRetry': 'This track will not retry automatically',
+      };
+      return translations[key] || key;
+    }) as TFunction;
+
+    it('should return the no retry message', () => {
+      expect(getGeoBlockNoRetry(mockT)).toBe('This track will not retry automatically');
     });
   });
 });

@@ -115,5 +115,27 @@ describe('TrackStatusLabel', () => {
       const label = screen.getByText('Waiting...');
       expect(label).toHaveClass('text-amber-600');
     });
+
+    it('should apply amber color for geo-blocked error', () => {
+      render(
+        <TrackStatusLabel
+          status="failed"
+          error={{ code: 'GEO_BLOCKED', message: 'Geo blocked' }}
+        />
+      );
+      const label = screen.getByText('Unavailable in your region');
+      expect(label).toHaveClass('text-amber-600');
+    });
+
+    it('should apply rose color for download failed error', () => {
+      render(
+        <TrackStatusLabel
+          status="failed"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'Download failed' }}
+        />
+      );
+      const label = screen.getByText('Download failed');
+      expect(label).toHaveClass('text-rose-600');
+    });
   });
 });
