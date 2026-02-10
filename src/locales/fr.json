@@ -27,6 +27,7 @@
     "validating": "Vérification de l'URL...",
     "fetchingPlaylist": "Chargement de la playlist...",
     "startingDownload": "Démarrage du téléchargement...",
+    "preparingTracks": "Préparation de vos pistes",
     "trackCount_one": "{{count}} piste",
     "trackCount_other": "{{count}} pistes",
     "singleTrack": "1 piste",

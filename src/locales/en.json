@@ -27,6 +27,7 @@
     "validating": "Checking URL...",
     "fetchingPlaylist": "Loading playlist...",
     "startingDownload": "Starting download...",
+    "preparingTracks": "Preparing your tracks for download",
     "trackCount_one": "{{count}} track",
     "trackCount_other": "{{count}} tracks",
     "singleTrack": "1 track",
