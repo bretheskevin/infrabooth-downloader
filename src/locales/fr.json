@@ -63,7 +63,10 @@
     "currentPath": "Actuel: {{path}}",
     "permissionDenied": "Impossible d'écrire dans ce dossier. Veuillez sélectionner un autre emplacement.",
     "selectFolder": "Sélectionner le dossier de téléchargement",
-    "notSet": "Non défini"
+    "notSet": "Non défini",
+    "pathInvalid": "Votre dossier de téléchargement enregistré n'est plus disponible.",
+    "pathReset": "L'emplacement de téléchargement a été réinitialisé au dossier par défaut.",
+    "defaultFolder": "Téléchargements"
   },
   "completion": {
     "openFolder": "Ouvrir le dossier",

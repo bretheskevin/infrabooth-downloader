@@ -63,7 +63,10 @@
     "currentPath": "Current: {{path}}",
     "permissionDenied": "Cannot write to this folder. Please select a different location.",
     "selectFolder": "Select download folder",
-    "notSet": "Not set"
+    "notSet": "Not set",
+    "pathInvalid": "Your saved download folder is no longer available.",
+    "pathReset": "Download location has been reset to the default folder.",
+    "defaultFolder": "Downloads"
   },
   "completion": {
     "openFolder": "Open Folder",

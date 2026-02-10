@@ -18,3 +18,18 @@ export async function checkWritePermission(path: string): Promise<boolean> {
 export async function getDefaultDownloadPath(): Promise<string> {
   return invoke<string>('get_default_download_path');
 }
+
+/**
+ * Validates if a path exists and is a directory.
+ * Unlike checkWritePermission, this only checks existence, not write access.
+ * @param path The directory path to validate
+ * @returns true if path exists and is a directory, false otherwise
+ */
+export async function validateDownloadPath(path: string): Promise<boolean> {
+  try {
+    return await invoke<boolean>('validate_download_path', { path });
+  } catch (error) {
+    console.error('Failed to validate download path:', error);
+    return false;
+  }
+}

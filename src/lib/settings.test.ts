@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { checkWritePermission, getDefaultDownloadPath } from './settings';
+import { checkWritePermission, getDefaultDownloadPath, validateDownloadPath } from './settings';
 
 vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
@@ -61,6 +61,48 @@ describe('settings', () => {
       const result = await getDefaultDownloadPath();
 
       expect(result).toBe('/Users/test/Downloads');
+    });
+  });
+
+  describe('validateDownloadPath', () => {
+    it('invokes validate_download_path with path', async () => {
+      vi.mocked(invoke).mockResolvedValue(true);
+
+      await validateDownloadPath('/Users/test/Downloads');
+
+      expect(invoke).toHaveBeenCalledWith('validate_download_path', {
+        path: '/Users/test/Downloads',
+      });
+    });
+
+    it('returns true for valid directory', async () => {
+      vi.mocked(invoke).mockResolvedValue(true);
+
+      const result = await validateDownloadPath('/valid/path');
+
+      expect(result).toBe(true);
+    });
+
+    it('returns false for invalid path', async () => {
+      vi.mocked(invoke).mockResolvedValue(false);
+
+      const result = await validateDownloadPath('/nonexistent/path');
+
+      expect(result).toBe(false);
+    });
+
+    it('returns false and logs error when invoke fails', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(invoke).mockRejectedValue(new Error('Command failed'));
+
+      const result = await validateDownloadPath('/some/path');
+
+      expect(result).toBe(false);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Failed to validate download path:',
+        expect.any(Error)
+      );
+      consoleSpy.mockRestore();
     });
   });
 });
