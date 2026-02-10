@@ -57,7 +57,15 @@
     "authExpired": "Session expirée",
     "authExpiredHint": "Déconnecte-toi puis reconnecte-toi",
     "notSignedIn": "Connecte-toi pour continuer",
-    "showDetails": "Afficher les détails"
+    "showDetails": "Afficher les détails",
+    "panelTitle": "Pistes en erreur",
+    "tracksFailed_one": "{{count}} erreur",
+    "tracksFailed_other": "{{count}} erreurs",
+    "closePanel": "Fermer",
+    "groupGeoBlocked": "Bloquées dans ta région",
+    "groupUnavailable": "Supprimées ou privées",
+    "groupNetwork": "Problème de connexion",
+    "groupOther": "Autres problèmes"
   },
   "settings": {
     "title": "Paramètres",

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { CompletionPanel } from './CompletionPanel';
 
 // Mock react-i18next
@@ -16,6 +17,13 @@ vi.mock('react-i18next', () => ({
         'completion.failedTracks': `${options?.count} tracks couldn't be downloaded`,
         'completion.failedTracksSingular': "1 track couldn't be downloaded",
         'completion.viewFailed': 'View details',
+        'errors.tracksFailed': options?.count === 1 ? '1 track failed' : `${options?.count} tracks failed`,
+        'errors.panelTitle': 'Failed Downloads',
+        'errors.closePanel': 'Close error panel',
+        'errors.groupGeoBlocked': 'Unavailable in your region',
+        'errors.groupUnavailable': 'Track removed or private',
+        'errors.groupNetwork': 'Network errors',
+        'errors.groupOther': 'Other errors',
       };
       return translations[key] || key;
     },
@@ -33,7 +41,13 @@ vi.mock('@/stores/settingsStore', () => ({
     selector({ downloadPath: '/Users/test/Downloads' }),
 }));
 
+// Mock useFailedTracks hook
+vi.mock('@/hooks/useFailedTracks', () => ({
+  useFailedTracks: vi.fn(() => []),
+}));
+
 import { openDownloadFolder } from '@/lib/shellCommands';
+import { useFailedTracks } from '@/hooks/useFailedTracks';
 
 describe('CompletionPanel', () => {
   const defaultProps = {
@@ -41,11 +55,11 @@ describe('CompletionPanel', () => {
     totalCount: 10,
     failedCount: 0,
     onDownloadAnother: vi.fn(),
-    onViewFailedTracks: vi.fn(),
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(useFailedTracks).mockReturnValue([]);
   });
 
   it('should render full success state correctly', () => {
@@ -57,7 +71,12 @@ describe('CompletionPanel', () => {
     expect(screen.getByRole('button', { name: /download another/i })).toBeInTheDocument();
   });
 
-  it('should render partial success state with failed tracks link', () => {
+  it('should render partial success state with error panel trigger', () => {
+    vi.mocked(useFailedTracks).mockReturnValue([
+      { id: '1', title: 'Track 1', artist: 'Artist 1', error: { code: 'GEO_BLOCKED', message: 'Not available' } },
+      { id: '2', title: 'Track 2', artist: 'Artist 2', error: { code: 'NETWORK_ERROR', message: 'Network failed' } },
+    ]);
+
     render(
       <CompletionPanel
         {...defaultProps}
@@ -68,17 +87,13 @@ describe('CompletionPanel', () => {
 
     expect(screen.getByText('Download finished')).toBeInTheDocument();
     expect(screen.getByText('8 of 10 tracks downloaded')).toBeInTheDocument();
-    expect(
-      screen.getByText("2 tracks couldn't be downloaded")
-    ).toBeInTheDocument();
+    expect(screen.getByText('2 tracks failed')).toBeInTheDocument();
   });
 
-  it('should not show failed tracks link when all succeed', () => {
+  it('should not show error panel trigger when all succeed', () => {
     render(<CompletionPanel {...defaultProps} />);
 
-    expect(
-      screen.queryByText(/couldn't be downloaded/)
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText(/tracks failed/)).not.toBeInTheDocument();
   });
 
   it('should call openDownloadFolder when Open Folder is clicked', async () => {
@@ -101,20 +116,27 @@ describe('CompletionPanel', () => {
     expect(onDownloadAnother).toHaveBeenCalledTimes(1);
   });
 
-  it('should call onViewFailedTracks when failed tracks link is clicked', () => {
-    const onViewFailedTracks = vi.fn();
+  it('should expand error panel when trigger is clicked', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useFailedTracks).mockReturnValue([
+      { id: '1', title: 'Failed Track', artist: 'Artist', error: { code: 'GEO_BLOCKED', message: 'Not available' } },
+    ]);
+
     render(
       <CompletionPanel
         {...defaultProps}
-        completedCount={8}
-        failedCount={2}
-        onViewFailedTracks={onViewFailedTracks}
+        completedCount={9}
+        failedCount={1}
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /couldn't be downloaded/i }));
+    // Click the trigger to expand
+    const trigger = screen.getByText('1 track failed');
+    await user.click(trigger);
 
-    expect(onViewFailedTracks).toHaveBeenCalledTimes(1);
+    // Panel should now be visible
+    expect(screen.getByText('Failed Downloads')).toBeInTheDocument();
+    expect(screen.getByText('Failed Track')).toBeInTheDocument();
   });
 
   it('should have role="status" for accessibility', () => {
