@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Music } from 'lucide-react';
+import { TrackStatusBadge } from './TrackStatusBadge';
 import type { Track } from '@/types/track';
 
 export interface TrackCardProps {
@@ -9,15 +10,19 @@ export interface TrackCardProps {
 }
 
 export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
+  const isActive = track.status === 'downloading' || track.status === 'converting';
+
   return (
     <div
       role="listitem"
       aria-current={isCurrentTrack ? 'true' : undefined}
+      aria-label={`${track.title} by ${track.artist}`}
       className={cn(
         'flex items-center gap-3 p-3 rounded-md',
         'border-b border-border last:border-b-0',
         'transition-colors duration-150',
-        isCurrentTrack && 'bg-primary/10 border-l-2 border-l-primary'
+        isActive && 'bg-indigo-50 border border-indigo-200',
+        !isActive && isCurrentTrack && 'bg-primary/10 border-l-2 border-l-primary'
       )}
     >
       {/* Artwork - 48x48px */}
@@ -43,10 +48,12 @@ export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
         <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
       </div>
 
-      {/* Status indicator placeholder - implemented in Story 5.2 */}
-      <div className="flex-shrink-0 w-6">
-        {/* Status icon will go here */}
-      </div>
+      {/* Status Badge */}
+      <TrackStatusBadge
+        status={track.status}
+        error={track.error}
+        className="flex-shrink-0"
+      />
     </div>
   );
 }

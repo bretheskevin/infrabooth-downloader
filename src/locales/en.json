@@ -23,7 +23,15 @@
     "fetchingPlaylist": "Loading playlist...",
     "trackCount_one": "{{count}} track",
     "trackCount_other": "{{count}} tracks",
-    "singleTrack": "1 track"
+    "singleTrack": "1 track",
+    "status": {
+      "pending": "Pending",
+      "downloading": "Downloading...",
+      "converting": "Converting...",
+      "complete": "Complete",
+      "failed": "Failed",
+      "rateLimited": "Rate limited"
+    }
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",
