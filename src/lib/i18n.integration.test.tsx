@@ -73,7 +73,7 @@ describe('i18n integration tests', () => {
 
       render(<TestComponent translationKey="download.progress" options={{ current: 10, total: 25 }} />);
 
-      expect(screen.getByTestId('translation')).toHaveTextContent('10 / 25 pistes');
+      expect(screen.getByTestId('translation')).toHaveTextContent('10 sur 25 pistes');
     });
   });
 
