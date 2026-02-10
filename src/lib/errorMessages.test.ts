@@ -6,6 +6,9 @@ import {
   getGeoBlockMessage,
   getGeoBlockDetail,
   getGeoBlockNoRetry,
+  isUnavailableError,
+  getUnavailableMessage,
+  getUnavailableDetail,
 } from './errorMessages';
 import type { TFunction } from 'i18next';
 import type { AppError } from '@/types/errors';
@@ -150,6 +153,158 @@ describe('errorMessages', () => {
 
     it('should return the no retry message', () => {
       expect(getGeoBlockNoRetry(mockT)).toBe('This track will not retry automatically');
+    });
+  });
+
+  describe('isUnavailableError', () => {
+    it('should return true for DOWNLOAD_FAILED with "unavailable" in message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'Track unavailable - may have been removed',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return true for DOWNLOAD_FAILED with "private" in message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'Private video. Sign in if you have access',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return true for DOWNLOAD_FAILED with "removed" in message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'This track was removed by the uploader',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return true for DOWNLOAD_FAILED with "deleted" in message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'Content has been deleted',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return true for DOWNLOAD_FAILED with "404" in message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'HTTP Error 404: Page not found',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return true for DOWNLOAD_FAILED with "not found" in message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'Track not found',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return true for DOWNLOAD_FAILED with "does not exist" in message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'This page does not exist',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return true for DOWNLOAD_FAILED with "no longer available" in message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'This track is no longer available',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return true for case-insensitive pattern matching', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'VIDEO UNAVAILABLE',
+      };
+      expect(isUnavailableError(error)).toBe(true);
+    });
+
+    it('should return false for GEO_BLOCKED error', () => {
+      const error: AppError = {
+        code: 'GEO_BLOCKED',
+        message: 'Not available in your region',
+      };
+      expect(isUnavailableError(error)).toBe(false);
+    });
+
+    it('should return false for NETWORK_ERROR', () => {
+      const error: AppError = {
+        code: 'NETWORK_ERROR',
+        message: 'Connection timeout',
+      };
+      expect(isUnavailableError(error)).toBe(false);
+    });
+
+    it('should return false for CONVERSION_FAILED', () => {
+      const error: AppError = {
+        code: 'CONVERSION_FAILED',
+        message: 'FFmpeg error',
+      };
+      expect(isUnavailableError(error)).toBe(false);
+    });
+
+    it('should return false for DOWNLOAD_FAILED without unavailability patterns', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: 'Connection timed out',
+      };
+      expect(isUnavailableError(error)).toBe(false);
+    });
+
+    it('should return false for undefined error', () => {
+      expect(isUnavailableError(undefined)).toBe(false);
+    });
+
+    it('should return false for error with undefined message', () => {
+      const error = {
+        code: 'DOWNLOAD_FAILED',
+        message: undefined,
+      } as unknown as AppError;
+      expect(isUnavailableError(error)).toBe(false);
+    });
+
+    it('should return false for error with empty message', () => {
+      const error: AppError = {
+        code: 'DOWNLOAD_FAILED',
+        message: '',
+      };
+      expect(isUnavailableError(error)).toBe(false);
+    });
+  });
+
+  describe('getUnavailableMessage', () => {
+    const mockT = ((key: string) => {
+      const translations: Record<string, string> = {
+        'errors.trackUnavailable': 'Track unavailable',
+      };
+      return translations[key] || key;
+    }) as TFunction;
+
+    it('should return the unavailable message', () => {
+      expect(getUnavailableMessage(mockT)).toBe('Track unavailable');
+    });
+  });
+
+  describe('getUnavailableDetail', () => {
+    const mockT = ((key: string) => {
+      const translations: Record<string, string> = {
+        'errors.trackUnavailableDetail': 'This track may have been removed or made private',
+      };
+      return translations[key] || key;
+    }) as TFunction;
+
+    it('should return the unavailable detail message', () => {
+      expect(getUnavailableDetail(mockT)).toBe('This track may have been removed or made private');
     });
   });
 });

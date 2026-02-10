@@ -52,6 +52,30 @@ describe('TrackStatusIcon', () => {
       expect(icon).toHaveClass('text-rose-500');
     });
 
+    it('should render warning icon with amber color for unavailable error', () => {
+      render(
+        <TrackStatusIcon
+          status="failed"
+          errorCode="DOWNLOAD_FAILED"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable - may have been removed' }}
+        />
+      );
+      const icon = screen.getByRole('img', { hidden: true });
+      expect(icon).toHaveClass('text-amber-500');
+    });
+
+    it('should render warning icon for private video error', () => {
+      render(
+        <TrackStatusIcon
+          status="failed"
+          errorCode="DOWNLOAD_FAILED"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'Private video' }}
+        />
+      );
+      const icon = screen.getByRole('img', { hidden: true });
+      expect(icon).toHaveClass('text-amber-500');
+    });
+
     it('should render clock icon (not spinner) for rate_limited status', () => {
       render(<TrackStatusIcon status="rate_limited" />);
       const icon = screen.getByRole('img', { hidden: true });
@@ -107,6 +131,18 @@ describe('TrackStatusIcon', () => {
       render(<TrackStatusIcon status="failed" errorCode="RATE_LIMITED" />);
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveAttribute('aria-label', 'Failed');
+    });
+
+    it('should have specific aria-label for unavailable errors', () => {
+      render(
+        <TrackStatusIcon
+          status="failed"
+          errorCode="DOWNLOAD_FAILED"
+          error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable' }}
+        />
+      );
+      const icon = screen.getByRole('img', { hidden: true });
+      expect(icon).toHaveAttribute('aria-label', 'Track unavailable - external restriction');
     });
   });
 });
