@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Music, Download, Clock } from 'lucide-react';
+import { Music, Download, Clock, Loader2 } from 'lucide-react';
 import type { TrackInfo } from '@/types/playlist';
 import { formatDuration } from '@/lib/utils';
 
@@ -80,8 +80,12 @@ export function TrackPreview({
           className="flex-shrink-0"
           data-testid="download-button"
         >
-          <Download className="mr-2 h-4 w-4" />
-          {t('download.button')}
+          {isDownloading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="mr-2 h-4 w-4" />
+          )}
+          {isDownloading ? t('download.downloading') : t('download.button')}
         </Button>
       </CardContent>
     </Card>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CompletionPanel } from './CompletionPanel';
 
@@ -33,6 +33,11 @@ vi.mock('react-i18next', () => ({
 // Mock shell commands
 vi.mock('@/lib/shellCommands', () => ({
   openDownloadFolder: vi.fn(),
+}));
+
+// Mock settings lib
+vi.mock('@/lib/settings', () => ({
+  getDefaultDownloadPath: vi.fn().mockResolvedValue('/Users/default/Downloads'),
 }));
 
 // Mock settings store
@@ -102,7 +107,9 @@ describe('CompletionPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /open folder/i }));
 
-    expect(mockOpen).toHaveBeenCalledWith('/Users/test/Downloads');
+    await waitFor(() => {
+      expect(mockOpen).toHaveBeenCalledWith('/Users/test/Downloads');
+    });
   });
 
   it('should call onDownloadAnother when Download Another is clicked', () => {

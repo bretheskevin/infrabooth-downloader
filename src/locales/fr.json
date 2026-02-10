@@ -13,6 +13,7 @@
   },
   "download": {
     "button": "Télécharger",
+    "downloading": "Téléchargement...",
     "progress": "{{current}} sur {{total}} pistes",
     "progressSingle": "{{current}} sur {{total}} piste",
     "progressAriaLabel": "Progression : {{current}} sur {{total}} pistes téléchargées, {{percentage}}%",
@@ -25,6 +26,7 @@
     "validTrack": "URL de piste valide",
     "validating": "Vérification de l'URL...",
     "fetchingPlaylist": "Chargement de la playlist...",
+    "startingDownload": "Démarrage du téléchargement...",
     "trackCount_one": "{{count}} piste",
     "trackCount_other": "{{count}} pistes",
     "singleTrack": "1 piste",
