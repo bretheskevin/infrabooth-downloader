@@ -12,6 +12,8 @@ interface QueueState {
   isComplete: boolean;
   completedCount: number;
   failedCount: number;
+  isRateLimited: boolean;
+  rateLimitedAt: number | null;
   // Actions
   enqueueTracks: (tracks: Track[]) => void;
   updateTrackStatus: (
@@ -22,6 +24,7 @@ interface QueueState {
   setQueueProgress: (current: number, total: number) => void;
   setQueueComplete: (result: QueueCompleteEvent) => void;
   clearQueue: () => void;
+  setRateLimited: (isLimited: boolean) => void;
 }
 
 export const useQueueStore = create<QueueState>((set) => ({
@@ -32,6 +35,8 @@ export const useQueueStore = create<QueueState>((set) => ({
   isComplete: false,
   completedCount: 0,
   failedCount: 0,
+  isRateLimited: false,
+  rateLimitedAt: null,
 
   enqueueTracks: (tracks) =>
     set({
@@ -42,6 +47,8 @@ export const useQueueStore = create<QueueState>((set) => ({
       isComplete: false,
       completedCount: 0,
       failedCount: 0,
+      isRateLimited: false,
+      rateLimitedAt: null,
     }),
 
   updateTrackStatus: (id, status, error) =>
@@ -75,5 +82,13 @@ export const useQueueStore = create<QueueState>((set) => ({
       isComplete: false,
       completedCount: 0,
       failedCount: 0,
+      isRateLimited: false,
+      rateLimitedAt: null,
+    }),
+
+  setRateLimited: (isLimited) =>
+    set({
+      isRateLimited: isLimited,
+      rateLimitedAt: isLimited ? Date.now() : null,
     }),
 }));

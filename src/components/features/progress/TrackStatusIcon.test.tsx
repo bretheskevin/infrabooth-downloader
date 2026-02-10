@@ -52,10 +52,11 @@ describe('TrackStatusIcon', () => {
       expect(icon).toHaveClass('text-rose-500');
     });
 
-    it('should render spinner icon for rate_limited status', () => {
+    it('should render clock icon (not spinner) for rate_limited status', () => {
       render(<TrackStatusIcon status="rate_limited" />);
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveClass('text-amber-500');
+      expect(icon).not.toHaveClass('animate-spin');
     });
   });
 

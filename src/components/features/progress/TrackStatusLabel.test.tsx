@@ -12,6 +12,7 @@ vi.mock('react-i18next', () => ({
         'download.status.complete': 'Complete',
         'download.status.failed': 'Failed',
         'download.status.rateLimited': 'Rate limited',
+        'download.rateLimitStatus': 'Waiting...',
         'errors.geoBlocked': 'Unavailable in your region',
         'errors.rateLimited': 'Rate limited - will retry',
         'errors.networkError': 'Network error',
@@ -50,9 +51,9 @@ describe('TrackStatusLabel', () => {
       expect(screen.getByText('Failed')).toBeInTheDocument();
     });
 
-    it('should render "Rate limited" for rate_limited status', () => {
+    it('should render "Waiting..." for rate_limited status', () => {
       render(<TrackStatusLabel status="rate_limited" />);
-      expect(screen.getByText('Rate limited')).toBeInTheDocument();
+      expect(screen.getByText('Waiting...')).toBeInTheDocument();
     });
   });
 
@@ -111,7 +112,7 @@ describe('TrackStatusLabel', () => {
 
     it('should apply amber color for rate_limited status', () => {
       render(<TrackStatusLabel status="rate_limited" />);
-      const label = screen.getByText('Rate limited');
+      const label = screen.getByText('Waiting...');
       expect(label).toHaveClass('text-amber-600');
     });
   });

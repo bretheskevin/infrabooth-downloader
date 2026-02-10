@@ -21,11 +21,22 @@ export function useDownloadProgress(): void {
   const updateTrackStatus = useQueueStore((state) => state.updateTrackStatus);
   const setQueueProgress = useQueueStore((state) => state.setQueueProgress);
   const setQueueComplete = useQueueStore((state) => state.setQueueComplete);
+  const setRateLimited = useQueueStore((state) => state.setRateLimited);
 
   useEffect(() => {
     const unlistenProgress = listen<DownloadProgressEvent>(
       'download-progress',
       (event) => {
+        const { status, error } = event.payload;
+
+        // Handle rate limit detection
+        if (status === 'rate_limited' || error?.code === 'RATE_LIMITED') {
+          setRateLimited(true);
+        } else if (status === 'downloading' || status === 'converting') {
+          // Clear rate limit when processing resumes
+          setRateLimited(false);
+        }
+
         updateTrackStatus(
           event.payload.trackId,
           event.payload.status,
@@ -53,5 +64,5 @@ export function useDownloadProgress(): void {
       unlistenQueueProgress.then((fn) => fn());
       unlistenComplete.then((fn) => fn());
     };
-  }, [updateTrackStatus, setQueueProgress, setQueueComplete]);
+  }, [updateTrackStatus, setQueueProgress, setQueueComplete, setRateLimited]);
 }

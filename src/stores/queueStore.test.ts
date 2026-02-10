@@ -30,6 +30,8 @@ describe('queueStore', () => {
       isComplete: false,
       completedCount: 0,
       failedCount: 0,
+      isRateLimited: false,
+      rateLimitedAt: null,
     });
   });
 
@@ -67,6 +69,16 @@ describe('queueStore', () => {
     it('should have failedCount as 0', () => {
       const { failedCount } = useQueueStore.getState();
       expect(failedCount).toBe(0);
+    });
+
+    it('should have isRateLimited as false', () => {
+      const { isRateLimited } = useQueueStore.getState();
+      expect(isRateLimited).toBe(false);
+    });
+
+    it('should have rateLimitedAt as null', () => {
+      const { rateLimitedAt } = useQueueStore.getState();
+      expect(rateLimitedAt).toBeNull();
     });
   });
 
@@ -292,6 +304,116 @@ describe('queueStore', () => {
       expect(state.isComplete).toBe(false);
       expect(state.completedCount).toBe(0);
       expect(state.failedCount).toBe(0);
+    });
+
+    it('should reset rate limit state', () => {
+      useQueueStore.setState({
+        isRateLimited: true,
+        rateLimitedAt: Date.now(),
+      });
+
+      const { clearQueue } = useQueueStore.getState();
+      clearQueue();
+
+      const state = useQueueStore.getState();
+      expect(state.isRateLimited).toBe(false);
+      expect(state.rateLimitedAt).toBeNull();
+    });
+  });
+
+  describe('setRateLimited', () => {
+    it('should set isRateLimited to true when called with true', () => {
+      const { setRateLimited } = useQueueStore.getState();
+      setRateLimited(true);
+
+      const { isRateLimited } = useQueueStore.getState();
+      expect(isRateLimited).toBe(true);
+    });
+
+    it('should set rateLimitedAt timestamp when rate limited', () => {
+      const beforeTime = Date.now();
+      const { setRateLimited } = useQueueStore.getState();
+      setRateLimited(true);
+      const afterTime = Date.now();
+
+      const { rateLimitedAt } = useQueueStore.getState();
+      expect(rateLimitedAt).toBeGreaterThanOrEqual(beforeTime);
+      expect(rateLimitedAt).toBeLessThanOrEqual(afterTime);
+    });
+
+    it('should set isRateLimited to false when called with false', () => {
+      useQueueStore.setState({ isRateLimited: true, rateLimitedAt: Date.now() });
+      const { setRateLimited } = useQueueStore.getState();
+      setRateLimited(false);
+
+      const { isRateLimited } = useQueueStore.getState();
+      expect(isRateLimited).toBe(false);
+    });
+
+    it('should clear rateLimitedAt when rate limit cleared', () => {
+      useQueueStore.setState({ isRateLimited: true, rateLimitedAt: Date.now() });
+      const { setRateLimited } = useQueueStore.getState();
+      setRateLimited(false);
+
+      const { rateLimitedAt } = useQueueStore.getState();
+      expect(rateLimitedAt).toBeNull();
+    });
+  });
+
+  describe('enqueueTracks rate limit reset', () => {
+    it('should reset rate limit state when enqueueing new tracks', () => {
+      useQueueStore.setState({
+        isRateLimited: true,
+        rateLimitedAt: Date.now(),
+      });
+
+      const { enqueueTracks } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
+
+      const state = useQueueStore.getState();
+      expect(state.isRateLimited).toBe(false);
+      expect(state.rateLimitedAt).toBeNull();
+    });
+  });
+
+  describe('multiple rate limit occurrences', () => {
+    it('should allow rate limit to be set multiple times', () => {
+      const { setRateLimited } = useQueueStore.getState();
+
+      // First rate limit
+      setRateLimited(true);
+      expect(useQueueStore.getState().isRateLimited).toBe(true);
+      const firstTimestamp = useQueueStore.getState().rateLimitedAt;
+
+      // Clear rate limit
+      setRateLimited(false);
+      expect(useQueueStore.getState().isRateLimited).toBe(false);
+
+      // Second rate limit - should work again
+      setRateLimited(true);
+      expect(useQueueStore.getState().isRateLimited).toBe(true);
+      const secondTimestamp = useQueueStore.getState().rateLimitedAt;
+
+      // Timestamps should be different (or at least present)
+      expect(secondTimestamp).not.toBeNull();
+      expect(secondTimestamp).toBeGreaterThanOrEqual(firstTimestamp!);
+    });
+
+    it('should reset timestamp on each new rate limit', () => {
+      const { setRateLimited } = useQueueStore.getState();
+
+      setRateLimited(true);
+      const firstTimestamp = useQueueStore.getState().rateLimitedAt;
+
+      setRateLimited(false);
+      expect(useQueueStore.getState().rateLimitedAt).toBeNull();
+
+      // Small delay to ensure different timestamp
+      setRateLimited(true);
+      const secondTimestamp = useQueueStore.getState().rateLimitedAt;
+
+      expect(secondTimestamp).not.toBeNull();
+      expect(secondTimestamp).toBeGreaterThanOrEqual(firstTimestamp!);
     });
   });
 });

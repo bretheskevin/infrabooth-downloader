@@ -43,11 +43,14 @@ const createMockQueueState = (tracks: Track[] = []) => ({
   isComplete: false,
   completedCount: 0,
   failedCount: 0,
+  isRateLimited: false,
+  rateLimitedAt: null,
   enqueueTracks: vi.fn(),
   updateTrackStatus: vi.fn(),
   setQueueProgress: vi.fn(),
   setQueueComplete: vi.fn(),
   clearQueue: vi.fn(),
+  setRateLimited: vi.fn(),
 });
 
 vi.mock('@/stores/queueStore', () => ({

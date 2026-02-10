@@ -35,7 +35,10 @@
       "complete": "Complete",
       "failed": "Failed",
       "rateLimited": "Rate limited"
-    }
+    },
+    "rateLimitMessage": "Brief pause -- SoundCloud rate limit (this is normal)",
+    "rateLimitStatus": "Waiting...",
+    "resumingSoon": "Resuming soon..."
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",
