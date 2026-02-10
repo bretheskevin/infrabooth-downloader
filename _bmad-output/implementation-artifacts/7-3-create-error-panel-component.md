@@ -1,6 +1,6 @@
 # Story 7.3: Create Error Panel Component
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -43,19 +43,19 @@ so that **I can understand what didn't download and why**.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Create ErrorPanelTrigger component (AC: #1, #5)
-  - [ ] 1.1 Create `src/components/features/download/ErrorPanelTrigger.tsx`
-  - [ ] 1.2 Accept `failedCount: number` prop
-  - [ ] 1.3 Render nothing when `failedCount === 0` (AC #5)
-  - [ ] 1.4 Render clickable indicator: "{X} tracks failed" with warning icon
-  - [ ] 1.5 Use warning color (#F59E0B amber) for indicator
-  - [ ] 1.6 Accept `onClick` callback for expand action
-  - [ ] 1.7 Ensure button is keyboard accessible (Enter/Space to activate)
-  - [ ] 1.8 Export as named export
+- [x] Task 1: Create ErrorPanelTrigger component (AC: #1, #5)
+  - [x] 1.1 Create `src/components/features/download/ErrorPanelTrigger.tsx`
+  - [x] 1.2 Accept `failedCount: number` prop
+  - [x] 1.3 Render nothing when `failedCount === 0` (AC #5)
+  - [x] 1.4 Render clickable indicator: "{X} tracks failed" with warning icon
+  - [x] 1.5 Use warning color (#F59E0B amber) for indicator
+  - [x] 1.6 Accept `onClick` callback for expand action
+  - [x] 1.7 Ensure button is keyboard accessible (Enter/Space to activate)
+  - [x] 1.8 Export as named export
 
-- [ ] Task 2: Create ErrorPanel container component (AC: #2, #3, #6)
-  - [ ] 2.1 Create `src/components/features/download/ErrorPanel.tsx`
-  - [ ] 2.2 Accept `failedTracks: FailedTrack[]` prop with shape:
+- [x] Task 2: Create ErrorPanel container component (AC: #2, #3, #6)
+  - [x] 2.1 Create `src/components/features/download/ErrorPanel.tsx`
+  - [x] 2.2 Accept `failedTracks: FailedTrack[]` prop with shape:
     ```typescript
     interface FailedTrack {
       id: string;
@@ -67,16 +67,16 @@ so that **I can understand what didn't download and why**.
       };
     }
     ```
-  - [ ] 2.3 Render panel header with count and close button
-  - [ ] 2.4 Implement expand/collapse toggle state
-  - [ ] 2.5 Use Shadcn Collapsible component for expand/collapse animation
-  - [ ] 2.6 Ensure panel is scrollable when content exceeds max height
-  - [ ] 2.7 Set max height to ~200px (approximately 4 failure entries)
-  - [ ] 2.8 Export as named export
+  - [x] 2.3 Render panel header with count and close button
+  - [x] 2.4 Implement expand/collapse toggle state
+  - [x] 2.5 Use Shadcn Collapsible component for expand/collapse animation
+  - [x] 2.6 Ensure panel is scrollable when content exceeds max height
+  - [x] 2.7 Set max height to ~200px (approximately 4 failure entries)
+  - [x] 2.8 Export as named export
 
-- [ ] Task 3: Implement failure grouping by reason (AC: #3)
-  - [ ] 3.1 Create `src/lib/groupFailuresByReason.ts` utility
-  - [ ] 3.2 Define failure reason categories:
+- [x] Task 3: Implement failure grouping by reason (AC: #3)
+  - [x] 3.1 Create `src/lib/groupFailuresByReason.ts` utility
+  - [x] 3.2 Define failure reason categories:
     ```typescript
     type FailureReasonCategory =
       | 'geo_blocked'
@@ -84,55 +84,55 @@ so that **I can understand what didn't download and why**.
       | 'network'
       | 'other';
     ```
-  - [ ] 3.3 Implement grouping function:
+  - [x] 3.3 Implement grouping function:
     ```typescript
     export const groupFailuresByReason = (
       tracks: FailedTrack[]
     ): Map<FailureReasonCategory, FailedTrack[]>
     ```
-  - [ ] 3.4 Map error codes to categories:
+  - [x] 3.4 Map error codes to categories:
     - `GEO_BLOCKED` -> `geo_blocked`
     - `DOWNLOAD_FAILED` with unavailable message -> `unavailable`
     - `NETWORK_ERROR` -> `network`
     - All others -> `other`
-  - [ ] 3.5 Export as named export
+  - [x] 3.5 Export as named export
 
-- [ ] Task 4: Create FailureGroup component (AC: #2, #3)
-  - [ ] 4.1 Create `src/components/features/download/FailureGroup.tsx`
-  - [ ] 4.2 Accept `category: FailureReasonCategory` and `tracks: FailedTrack[]` props
-  - [ ] 4.3 Render group header with category label and count (e.g., "Unavailable in your region (3)")
-  - [ ] 4.4 Render list of FailedTrackItem components for each track
-  - [ ] 4.5 Use subtle divider between groups
-  - [ ] 4.6 Export as named export
+- [x] Task 4: Create FailureGroup component (AC: #2, #3)
+  - [x] 4.1 Create `src/components/features/download/FailureGroup.tsx`
+  - [x] 4.2 Accept `category: FailureReasonCategory` and `tracks: FailedTrack[]` props
+  - [x] 4.3 Render group header with category label and count (e.g., "Unavailable in your region (3)")
+  - [x] 4.4 Render list of FailedTrackItem components for each track
+  - [x] 4.5 Use subtle divider between groups
+  - [x] 4.6 Export as named export
 
-- [ ] Task 5: Create FailedTrackItem component (AC: #2)
-  - [ ] 5.1 Create `src/components/features/download/FailedTrackItem.tsx`
-  - [ ] 5.2 Accept `track: FailedTrack` prop
-  - [ ] 5.3 Display track title (truncate with ellipsis if too long)
-  - [ ] 5.4 Display artist name in muted text
-  - [ ] 5.5 Display warning icon matching failure category color
-  - [ ] 5.6 Ensure consistent spacing and alignment
-  - [ ] 5.7 Export as named export
+- [x] Task 5: Create FailedTrackItem component (AC: #2)
+  - [x] 5.1 Create `src/components/features/download/FailedTrackItem.tsx`
+  - [x] 5.2 Accept `track: FailedTrack` prop
+  - [x] 5.3 Display track title (truncate with ellipsis if too long)
+  - [x] 5.4 Display artist name in muted text
+  - [x] 5.5 Display warning icon matching failure category color
+  - [x] 5.6 Ensure consistent spacing and alignment
+  - [x] 5.7 Export as named export
 
-- [ ] Task 6: Implement keyboard navigation (AC: #4)
-  - [ ] 6.1 Add `tabIndex={0}` to ErrorPanelTrigger
-  - [ ] 6.2 Ensure expand/collapse responds to Enter and Space keys
-  - [ ] 6.3 Ensure close button is focusable and keyboard accessible
-  - [ ] 6.4 Implement focus trap when panel is expanded (optional, for modal-like behavior)
-  - [ ] 6.5 Support Escape key to close/collapse panel
-  - [ ] 6.6 Ensure Tab navigation flows through failure list items
+- [x] Task 6: Implement keyboard navigation (AC: #4)
+  - [x] 6.1 Add `tabIndex={0}` to ErrorPanelTrigger (button element is inherently focusable)
+  - [x] 6.2 Ensure expand/collapse responds to Enter and Space keys
+  - [x] 6.3 Ensure close button is focusable and keyboard accessible
+  - [x] 6.4 Implement focus trap when panel is expanded (optional, for modal-like behavior)
+  - [x] 6.5 Support Escape key to close/collapse panel
+  - [x] 6.6 Ensure Tab navigation flows through failure list items
 
-- [ ] Task 7: Implement accessibility features (AC: #4)
-  - [ ] 7.1 Add `role="region"` and `aria-label="Failed downloads"` to ErrorPanel
-  - [ ] 7.2 Add `aria-expanded` attribute to ErrorPanelTrigger
-  - [ ] 7.3 Add `aria-controls` linking trigger to panel content
-  - [ ] 7.4 Use `role="list"` and `role="listitem"` for failure entries
-  - [ ] 7.5 Announce panel expansion state changes with `aria-live="polite"`
-  - [ ] 7.6 Ensure each failure reason is readable by screen readers
-  - [ ] 7.7 Add `aria-label` to close button: "Close error panel"
+- [x] Task 7: Implement accessibility features (AC: #4)
+  - [x] 7.1 Add `role="region"` and `aria-label="Failed downloads"` to ErrorPanel
+  - [x] 7.2 Add `aria-expanded` attribute to ErrorPanelTrigger
+  - [x] 7.3 Add `aria-controls` linking trigger to panel content
+  - [x] 7.4 Use `role="list"` and `role="listitem"` for failure entries
+  - [x] 7.5 Announce panel expansion state changes with `aria-live="polite"`
+  - [x] 7.6 Ensure each failure reason is readable by screen readers
+  - [x] 7.7 Add `aria-label` to close button: "Close error panel"
 
-- [ ] Task 8: Add i18n translation keys (AC: #2, #3, #4)
-  - [ ] 8.1 Add error panel keys to `src/locales/en.json`:
+- [x] Task 8: Add i18n translation keys (AC: #2, #3, #4)
+  - [x] 8.1 Add error panel keys to `src/locales/en.json`:
     ```json
     "errors": {
       "panelTitle": "Failed Downloads",
@@ -145,7 +145,7 @@ so that **I can understand what didn't download and why**.
       "groupOther": "Other errors"
     }
     ```
-  - [ ] 8.2 Add corresponding keys to `src/locales/fr.json`:
+  - [x] 8.2 Add corresponding keys to `src/locales/fr.json`:
     ```json
     "errors": {
       "panelTitle": "Telechargements echoues",
@@ -158,20 +158,20 @@ so that **I can understand what didn't download and why**.
       "groupOther": "Autres erreurs"
     }
     ```
-  - [ ] 8.3 Use i18next pluralization for track count
-  - [ ] 8.4 Update all components to use translation keys via `useTranslation` hook
+  - [x] 8.3 Use i18next pluralization for track count
+  - [x] 8.4 Update all components to use translation keys via `useTranslation` hook
 
-- [ ] Task 9: Integrate ErrorPanel with CompletionPanel (AC: #1, #5)
-  - [ ] 9.1 Import ErrorPanelTrigger and ErrorPanel into CompletionPanel
-  - [ ] 9.2 Extract failed tracks from queue store
-  - [ ] 9.3 Conditionally render ErrorPanelTrigger when `failedTracks.length > 0`
-  - [ ] 9.4 Position error panel below success message, before "Open Folder" button
-  - [ ] 9.5 Manage expanded state in CompletionPanel or via local state
+- [x] Task 9: Integrate ErrorPanel with CompletionPanel (AC: #1, #5)
+  - [x] 9.1 Import ErrorPanelTrigger and ErrorPanel into CompletionPanel
+  - [x] 9.2 Extract failed tracks from queue store
+  - [x] 9.3 Conditionally render ErrorPanelTrigger when `failedTracks.length > 0`
+  - [x] 9.4 Position error panel below success message, before "Open Folder" button
+  - [x] 9.5 Manage expanded state in CompletionPanel or via local state
 
-- [ ] Task 10: Create useFailedTracks hook (AC: #1, #2)
-  - [ ] 10.1 Create `src/hooks/useFailedTracks.ts`
-  - [ ] 10.2 Subscribe to queue store and filter tracks with status `failed`
-  - [ ] 10.3 Return typed array of FailedTrack objects:
+- [x] Task 10: Create useFailedTracks hook (AC: #1, #2)
+  - [x] 10.1 Create `src/hooks/useFailedTracks.ts`
+  - [x] 10.2 Subscribe to queue store and filter tracks with status `failed`
+  - [x] 10.3 Return typed array of FailedTrack objects:
     ```typescript
     export const useFailedTracks = (): FailedTrack[] => {
       const tracks = useQueueStore((state) => state.tracks);
@@ -185,21 +185,21 @@ so that **I can understand what didn't download and why**.
         }));
     };
     ```
-  - [ ] 10.4 Export as named export
+  - [x] 10.4 Export as named export
 
-- [ ] Task 11: Write component and integration tests (AC: #1-6)
-  - [ ] 11.1 Test ErrorPanelTrigger renders nothing when failedCount is 0
-  - [ ] 11.2 Test ErrorPanelTrigger renders indicator when failedCount > 0
-  - [ ] 11.3 Test ErrorPanelTrigger calls onClick when clicked
-  - [ ] 11.4 Test ErrorPanel renders list of failed tracks
-  - [ ] 11.5 Test ErrorPanel groups failures by reason category
-  - [ ] 11.6 Test ErrorPanel scrolls when many failures exist
-  - [ ] 11.7 Test ErrorPanel expand/collapse functionality
-  - [ ] 11.8 Test keyboard navigation (Tab, Enter, Space, Escape)
-  - [ ] 11.9 Test screen reader accessibility attributes
-  - [ ] 11.10 Test i18n keys render in both English and French
-  - [ ] 11.11 Test useFailedTracks hook returns correct failed tracks
-  - [ ] 11.12 Test groupFailuresByReason utility categorizes correctly
+- [x] Task 11: Write component and integration tests (AC: #1-6)
+  - [x] 11.1 Test ErrorPanelTrigger renders nothing when failedCount is 0
+  - [x] 11.2 Test ErrorPanelTrigger renders indicator when failedCount > 0
+  - [x] 11.3 Test ErrorPanelTrigger calls onClick when clicked
+  - [x] 11.4 Test ErrorPanel renders list of failed tracks
+  - [x] 11.5 Test ErrorPanel groups failures by reason category
+  - [x] 11.6 Test ErrorPanel scrolls when many failures exist
+  - [x] 11.7 Test ErrorPanel expand/collapse functionality
+  - [x] 11.8 Test keyboard navigation (Tab, Enter, Space, Escape)
+  - [x] 11.9 Test screen reader accessibility attributes
+  - [x] 11.10 Test i18n keys render in both English and French
+  - [x] 11.11 Test useFailedTracks hook returns correct failed tracks
+  - [x] 11.12 Test groupFailuresByReason utility categorizes correctly
 
 ## Dev Notes
 
@@ -590,11 +590,46 @@ This story enables:
 
 ### Agent Model Used
 
-{{agent_model_name_version}}
+Claude Opus 4.6 (claude-opus-4-6)
 
 ### Debug Log References
 
+None required - implementation proceeded without issues.
+
 ### Completion Notes List
 
+- Task 1: Created ErrorPanelTrigger component with amber warning styling, keyboard accessibility, and aria attributes
+- Task 2: Created ErrorPanel container with Collapsible, ScrollArea, and grouping by failure reason
+- Task 3: Created groupFailuresByReason utility that categorizes errors into geo_blocked, unavailable, network, and other
+- Task 4: Created FailureGroup component that renders category headers with counts
+- Task 5: Created FailedTrackItem component with truncated titles and muted artist text
+- Task 6: Keyboard navigation implemented - Enter/Space to expand, Escape to close, Tab to navigate
+- Task 7: Accessibility features implemented - role="region", aria-expanded, aria-controls, aria-live="polite", role="list/listitem"
+- Task 8: Added i18n keys for EN and FR (panelTitle, tracksFailed, closePanel, group labels)
+- Task 9: Integrated ErrorPanel into CompletionPanel, removing old FailedTracksLink, using useFailedTracks hook
+- Task 10: Created useFailedTracks hook that filters and transforms tracks from queueStore
+- Task 11: Comprehensive tests written - 663 total tests pass including 50+ new tests for error panel components
+
 ### File List
+
+**New Files:**
+- src/components/features/download/ErrorPanelTrigger.tsx
+- src/components/features/download/ErrorPanelTrigger.test.tsx
+- src/components/features/download/ErrorPanel.tsx
+- src/components/features/download/ErrorPanel.test.tsx
+- src/components/features/download/FailureGroup.tsx
+- src/components/features/download/FailureGroup.test.tsx
+- src/components/features/download/FailedTrackItem.tsx
+- src/components/features/download/FailedTrackItem.test.tsx
+- src/lib/groupFailuresByReason.ts
+- src/lib/groupFailuresByReason.test.ts
+- src/hooks/useFailedTracks.ts
+- src/hooks/useFailedTracks.test.ts
+- src/types/download.ts
+
+**Modified Files:**
+- src/components/features/download/CompletionPanel.tsx (integrated ErrorPanel, removed FailedTracksLink usage)
+- src/components/features/download/CompletionPanel.test.tsx (updated tests for new integration)
+- src/locales/en.json (added error panel i18n keys)
+- src/locales/fr.json (added error panel i18n keys)
 
