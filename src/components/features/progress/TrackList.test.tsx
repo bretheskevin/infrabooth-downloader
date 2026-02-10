@@ -34,6 +34,7 @@ describe('TrackList', () => {
       currentIndex: 0,
       totalTracks: 0,
       isProcessing: false,
+      isInitializing: false,
       isComplete: false,
       completedCount: 0,
       failedCount: 0,

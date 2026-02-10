@@ -1,17 +1,19 @@
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Music } from 'lucide-react';
+import { Music, Loader2 } from 'lucide-react';
 import { TrackStatusBadge } from './TrackStatusBadge';
 import { GeoBlockTooltip } from './GeoBlockTooltip';
 import { GeoBlockDetails } from './GeoBlockDetails';
 import { UnavailableTrackTooltip } from './UnavailableTrackTooltip';
 import { UnavailableTrackDetails } from './UnavailableTrackDetails';
 import { isGeoBlockedError, isUnavailableError } from '@/lib/errorMessages';
+import { useTranslation } from 'react-i18next';
 import type { Track } from '@/types/track';
 
 export interface TrackCardProps {
   track: Track;
   isCurrentTrack: boolean;
+  isInitializing?: boolean;
 }
 
 // Detect touch device - check once at module load for performance
@@ -19,10 +21,14 @@ const isTouchDevice =
   typeof window !== 'undefined' &&
   ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
+export function TrackCard({ track, isCurrentTrack, isInitializing = false }: TrackCardProps) {
+  const { t } = useTranslation();
   const isActive = track.status === 'downloading' || track.status === 'converting';
   const isGeoBlocked = isGeoBlockedError(track.error);
   const isUnavailable = isUnavailableError(track.error);
+
+  // Show initializing state only for first track when starting download
+  const showInitializing = isInitializing && track.status === 'pending';
 
   const statusBadge = (
     <TrackStatusBadge
@@ -32,8 +38,30 @@ export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
     />
   );
 
+  // Initializing badge with spinner
+  const initializingBadge = (
+    <div
+      role="status"
+      aria-live="polite"
+      className="flex items-center gap-1.5 flex-shrink-0"
+    >
+      <Loader2
+        role="img"
+        aria-label={t('download.startingDownload')}
+        className="h-4 w-4 flex-shrink-0 text-indigo-500 animate-spin"
+      />
+      <span className="text-xs font-medium text-indigo-600">
+        {t('download.startingDownload')}
+      </span>
+    </div>
+  );
+
   // Determine which tooltip/details to show
   const renderStatusBadge = () => {
+    // Show initializing badge when starting
+    if (showInitializing) {
+      return initializingBadge;
+    }
     // Geo-blocked takes priority if both would match
     if (isGeoBlocked && !isTouchDevice) {
       return <GeoBlockTooltip>{statusBadge}</GeoBlockTooltip>;
@@ -53,8 +81,8 @@ export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
         'flex items-center gap-3 p-3 rounded-md',
         'border-b border-border last:border-b-0',
         'transition-colors duration-150',
-        isActive && 'bg-indigo-50 border border-indigo-200',
-        !isActive && isCurrentTrack && 'bg-primary/10 border-l-2 border-l-primary'
+        (isActive || showInitializing) && 'bg-indigo-50 border border-indigo-200',
+        !isActive && !showInitializing && isCurrentTrack && 'bg-primary/10 border-l-2 border-l-primary'
       )}
     >
       {/* Artwork - 48x48px */}
