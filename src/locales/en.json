@@ -47,5 +47,13 @@
   "completion": {
     "openFolder": "Open Folder",
     "downloadAnother": "Download Another"
+  },
+  "progress": {
+    "trackList": {
+      "emptyState": "No tracks in queue",
+      "singleTrack": "1 track",
+      "multipleTracks": "{{count}} tracks",
+      "ariaLabel": "Download queue"
+    }
   }
 }
