@@ -14,6 +14,10 @@
   "download": {
     "button": "Download",
     "progress": "{{current}} of {{total}} tracks",
+    "progressSingle": "{{current}} of {{total}} track",
+    "progressAriaLabel": "Download progress: {{current}} of {{total}} tracks complete, {{percentage}}%",
+    "progressComplete": "Download complete",
+    "progressPartial": "{{current}} of {{total}} tracks downloaded",
     "complete": "Download complete!",
     "pasteUrl": "Paste a SoundCloud playlist or track URL",
     "signInRequired": "Sign in to download",

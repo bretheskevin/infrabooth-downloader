@@ -13,7 +13,11 @@
   },
   "download": {
     "button": "Télécharger",
-    "progress": "{{current}} / {{total}} pistes",
+    "progress": "{{current}} sur {{total}} pistes",
+    "progressSingle": "{{current}} sur {{total}} piste",
+    "progressAriaLabel": "Progression : {{current}} sur {{total}} pistes téléchargées, {{percentage}}%",
+    "progressComplete": "Téléchargement terminé",
+    "progressPartial": "{{current}} sur {{total}} pistes téléchargées",
     "complete": "Téléchargement terminé !",
     "pasteUrl": "Colle un lien SoundCloud ici",
     "signInRequired": "Connecte-toi pour télécharger",
