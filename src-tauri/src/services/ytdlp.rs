@@ -5,6 +5,39 @@ use tauri_plugin_shell::{process::CommandEvent, ShellExt};
 use crate::models::error::YtDlpError;
 use crate::services::storage::load_tokens;
 
+/// Get the path to the ffmpeg sidecar binary.
+///
+/// Checks multiple naming conventions:
+/// - Dev mode: `ffmpeg` (no suffix)
+/// - Production: `ffmpeg-{arch}-{os}` (with platform suffix)
+fn get_ffmpeg_path() -> Option<PathBuf> {
+    let exe_path = std::env::current_exe().ok()?;
+    let exe_dir = exe_path.parent()?;
+
+    // Build list of names to check (dev mode first, then platform-specific)
+    #[cfg(target_os = "macos")]
+    let names: &[&str] = if cfg!(target_arch = "aarch64") {
+        &["ffmpeg", "ffmpeg-aarch64-apple-darwin"]
+    } else {
+        &["ffmpeg", "ffmpeg-x86_64-apple-darwin"]
+    };
+
+    #[cfg(target_os = "windows")]
+    let names: &[&str] = &["ffmpeg.exe", "ffmpeg-x86_64-pc-windows-msvc.exe"];
+
+    #[cfg(target_os = "linux")]
+    let names: &[&str] = &["ffmpeg", "ffmpeg-x86_64-unknown-linux-gnu"];
+
+    for name in names {
+        let path = exe_dir.join(name);
+        if path.exists() {
+            return Some(path);
+        }
+    }
+
+    None
+}
+
 /// Playlist context for track numbering.
 #[derive(Debug, Clone)]
 pub struct PlaylistContext {
@@ -21,6 +54,10 @@ pub struct TrackDownloadToMp3Config {
     pub output_dir: PathBuf,
     /// Playlist context for track numbering (None for single tracks)
     pub playlist_context: Option<PlaylistContext>,
+    /// Artist name from SoundCloud API (used for filename)
+    pub artist: String,
+    /// Track title from SoundCloud API (used for filename)
+    pub title: String,
 }
 
 /// Progress update from yt-dlp.
@@ -68,14 +105,16 @@ fn build_output_template(output_dir: &PathBuf, playlist_context: &Option<Playlis
                 3
             };
             // Use yt-dlp's playlist_index with zero-padding
+            // Artist/title are injected via --replace-in-metadata from SoundCloud API data
             format!(
-                "{}/%(playlist_index)0{}d - %(artist,uploader)s - %(title)s.%(ext)s",
+                "{}/%(playlist_index)0{}d - %(artist)s - %(title)s.%(ext)s",
                 dir_str, width
             )
         }
         None => {
             // Single track: Artist - Title.mp3
-            format!("{}/%(artist,uploader)s - %(title)s.%(ext)s", dir_str)
+            // Artist/title are injected via --replace-in-metadata from SoundCloud API data
+            format!("{}/%(artist)s - %(title)s.%(ext)s", dir_str)
         }
     }
 }
@@ -98,14 +137,26 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     let output_template = build_output_template(&config.output_dir, &config.playlist_context);
 
     let mut args = vec![
+        "-v".to_string(),
+        "-f".to_string(),
+        "bestaudio".to_string(),
         "--no-playlist".to_string(),
         "-x".to_string(),
         "--audio-format".to_string(),
         "mp3".to_string(),
         "--audio-quality".to_string(),
         "320K".to_string(),
-        "--add-header".to_string(),
-        format!("Authorization: OAuth {}", tokens.access_token),
+        "--extractor-args".to_string(),
+        format!("soundcloud:oauth_token={}", tokens.access_token),
+        // Inject our metadata to override yt-dlp's extracted values for filename
+        "--replace-in-metadata".to_string(),
+        "artist".to_string(),
+        ".*".to_string(),
+        config.artist.clone(),
+        "--replace-in-metadata".to_string(),
+        "title".to_string(),
+        ".*".to_string(),
+        config.title.clone(),
         "-o".to_string(),
         output_template,
         // Cross-platform filename sanitization (removes :, *, ?, etc.)
@@ -115,6 +166,12 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         "--newline".to_string(),
         config.track_url.clone(),
     ];
+
+    // Add ffmpeg location if available
+    if let Some(ffmpeg_path) = get_ffmpeg_path() {
+        args.insert(0, "--ffmpeg-location".to_string());
+        args.insert(1, ffmpeg_path.to_string_lossy().to_string());
+    }
 
     // Add playlist index if in playlist context
     if let Some(ctx) = &config.playlist_context {
@@ -137,6 +194,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         match event {
             CommandEvent::Stdout(line_bytes) => {
                 let line = bytes_to_string(&line_bytes);
+                log::info!("yt-dlp stdout: {}", line);
 
                 // Parse the destination path from yt-dlp output
                 if let Some(path) = parse_destination(&line) {
@@ -157,7 +215,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
             }
             CommandEvent::Stderr(line_bytes) => {
                 let line = bytes_to_string(&line_bytes);
-                log::debug!("yt-dlp stderr: {}", line);
+                log::info!("yt-dlp stderr: {}", line);
                 last_error = Some(line.clone());
 
                 // Check for geo-block patterns first (most specific)
@@ -366,7 +424,7 @@ mod tests {
         let template = build_output_template(&output_dir, &None);
         assert_eq!(
             template,
-            "/downloads/%(artist,uploader)s - %(title)s.%(ext)s"
+            "/downloads/%(artist)s - %(title)s.%(ext)s"
         );
     }
 
@@ -380,7 +438,7 @@ mod tests {
         let template = build_output_template(&output_dir, &ctx);
         assert_eq!(
             template,
-            "/downloads/%(playlist_index)01d - %(artist,uploader)s - %(title)s.%(ext)s"
+            "/downloads/%(playlist_index)01d - %(artist)s - %(title)s.%(ext)s"
         );
     }
 
@@ -394,7 +452,7 @@ mod tests {
         let template = build_output_template(&output_dir, &ctx);
         assert_eq!(
             template,
-            "/downloads/%(playlist_index)02d - %(artist,uploader)s - %(title)s.%(ext)s"
+            "/downloads/%(playlist_index)02d - %(artist)s - %(title)s.%(ext)s"
         );
     }
 
@@ -408,7 +466,7 @@ mod tests {
         let template = build_output_template(&output_dir, &ctx);
         assert_eq!(
             template,
-            "/downloads/%(playlist_index)03d - %(artist,uploader)s - %(title)s.%(ext)s"
+            "/downloads/%(playlist_index)03d - %(artist)s - %(title)s.%(ext)s"
         );
     }
 

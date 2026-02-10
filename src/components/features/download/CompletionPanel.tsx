@@ -5,6 +5,7 @@ import { CheckCircle, FolderOpen, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { openDownloadFolder } from '@/lib/shellCommands';
+import { getDefaultDownloadPath } from '@/lib/settings';
 import { SuccessMessage } from './SuccessMessage';
 import { ErrorPanelTrigger } from './ErrorPanelTrigger';
 import { ErrorPanel } from './ErrorPanel';
@@ -32,8 +33,14 @@ export function CompletionPanel({
   const isFullSuccess = failedCount === 0;
 
   const handleOpenFolder = async () => {
-    if (downloadPath) {
-      await openDownloadFolder(downloadPath);
+    let pathToOpen = downloadPath;
+
+    if (!pathToOpen) {
+      pathToOpen = await getDefaultDownloadPath();
+    }
+
+    if (pathToOpen) {
+      await openDownloadFolder(pathToOpen);
     }
   };
 

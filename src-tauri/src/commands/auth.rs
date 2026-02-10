@@ -59,15 +59,18 @@ pub async fn start_oauth(
 
     #[cfg(debug_assertions)]
     {
+        // Dev mode: use localhost callback server
         let port = start_dev_callback_server(app).await?;
-        redirect_uri = format!("http://127.0.0.1:{}/callback", port);
+        redirect_uri = format!("http://localhost:{}/callback", port);
         log::info!("[start_oauth] Dev mode: using localhost callback at {}", redirect_uri);
     }
 
     #[cfg(not(debug_assertions))]
     {
+        // Production: use deep link scheme
         let _ = &app;
         redirect_uri = REDIRECT_URI.to_string();
+        log::info!("[start_oauth] Production mode: using deep link {}", redirect_uri);
     }
 
     *state.redirect_uri.lock().map_err(|e| e.to_string())? = Some(redirect_uri.clone());

@@ -38,6 +38,8 @@ pub async fn download_and_convert<R: tauri::Runtime>(
         track_id: config.track_id,
         output_dir: config.output_dir,
         playlist_context: config.playlist_context,
+        artist: config.metadata.artist.clone(),
+        title: config.metadata.title.clone(),
     };
 
     let output_path = download_track_to_mp3(app, download_config)
