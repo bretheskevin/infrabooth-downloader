@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { Header } from './Header';
 import i18n from '@/lib/i18n';
 import { useAuthStore } from '@/stores/authStore';
@@ -8,6 +8,16 @@ import { useAuthStore } from '@/stores/authStore';
 vi.mock('@/lib/auth', () => ({
   startOAuth: vi.fn(),
   signOut: vi.fn(),
+}));
+
+// Mock Tauri dialog plugin for SettingsPanel
+vi.mock('@tauri-apps/plugin-dialog', () => ({
+  open: vi.fn(),
+}));
+
+// Mock Tauri core invoke for SettingsPanel
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: vi.fn(),
 }));
 
 describe('Header', () => {
@@ -57,5 +67,57 @@ describe('Header', () => {
     expect(screen.getByText('testuser')).toBeInTheDocument();
     expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
+  });
+
+  it('should render settings button', () => {
+    render(<Header />);
+
+    const settingsButton = screen.getByRole('button', { name: /open settings/i });
+    expect(settingsButton).toBeInTheDocument();
+  });
+
+  it('should open settings panel when settings button is clicked', async () => {
+    render(<Header />);
+
+    const settingsButton = screen.getByRole('button', { name: /open settings/i });
+    fireEvent.click(settingsButton);
+
+    await act(async () => {
+      // Wait for dialog to open
+    });
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('Settings')).toBeInTheDocument();
+  });
+
+  it('should close settings panel when close button is clicked', async () => {
+    render(<Header />);
+
+    // Open settings
+    const settingsButton = screen.getByRole('button', { name: /open settings/i });
+    fireEvent.click(settingsButton);
+
+    await act(async () => {
+      // Wait for dialog to open
+    });
+
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+
+    // Close settings
+    const closeButton = screen.getByRole('button', { name: /close/i });
+    fireEvent.click(closeButton);
+
+    await act(async () => {
+      // Wait for dialog to close
+    });
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('should have accessible settings button with aria-label', () => {
+    render(<Header />);
+
+    const settingsButton = screen.getByRole('button', { name: /open settings/i });
+    expect(settingsButton).toHaveAttribute('aria-label', 'Open settings');
   });
 });
