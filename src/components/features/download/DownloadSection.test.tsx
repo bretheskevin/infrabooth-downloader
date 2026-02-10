@@ -15,6 +15,8 @@ vi.mock('react-i18next', () => ({
         'download.validPlaylist': 'Valid playlist URL',
         'download.validTrack': 'Valid track URL',
         'download.fetchingPlaylist': 'Loading playlist...',
+        'download.startingDownload': 'Starting download...',
+        'download.preparingTracks': 'Preparing your tracks for download',
         'download.button': 'Download',
         'download.trackCount': `${options?.count ?? 0} tracks`,
         'download.singleTrack': '1 track',

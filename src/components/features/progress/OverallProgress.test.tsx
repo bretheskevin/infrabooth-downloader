@@ -12,6 +12,7 @@ vi.mock('react-i18next', () => ({
         'download.progress': `${params?.current} of ${params?.total} tracks`,
         'download.progressSingle': `${params?.current} of ${params?.total} track`,
         'download.progressAriaLabel': `Download progress: ${params?.current} of ${params?.total} tracks complete, ${params?.percentage}%`,
+        'download.preparingTracks': 'Preparing your tracks for download',
       };
       return translations[key] || key;
     },
@@ -65,6 +66,28 @@ describe('OverallProgress', () => {
       render(<OverallProgress />);
 
       expect(screen.getByText('2 of 3 tracks')).toBeInTheDocument();
+    });
+
+    it('should show preparing message with spinner when all tracks are pending', () => {
+      const mockTracks = createMockTracks(['pending', 'pending', 'pending']);
+      useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
+
+      render(<OverallProgress />);
+
+      expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
+      // Spinner should be present (Loader2 renders as svg)
+      const spinner = document.querySelector('svg.animate-spin');
+      expect(spinner).toBeInTheDocument();
+    });
+
+    it('should hide preparing message once a track starts downloading', () => {
+      const mockTracks = createMockTracks(['downloading', 'pending', 'pending']);
+      useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
+
+      render(<OverallProgress />);
+
+      expect(screen.queryByText('Preparing your tracks for download')).not.toBeInTheDocument();
+      expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
     });
   });
 
@@ -158,25 +181,36 @@ describe('OverallProgress', () => {
     });
 
     it('should have aria-live="polite" on counter text', () => {
-      const mockTracks = createMockTracks(['pending', 'pending']);
+      // Use tracks with at least one non-pending to show progress text
+      const mockTracks = createMockTracks(['complete', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 2 });
 
       render(<OverallProgress />);
 
-      const liveRegion = screen.getByText('0 of 2 tracks');
+      const liveRegion = screen.getByText('1 of 2 tracks');
       expect(liveRegion).toHaveAttribute('aria-live', 'polite');
     });
   });
 
   describe('edge cases', () => {
     it('should handle single track correctly', () => {
-      const mockTracks = createMockTracks(['pending']);
+      // Use a downloading track to test singular form (pending shows preparing message)
+      const mockTracks = createMockTracks(['downloading']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 1 });
 
       render(<OverallProgress />);
 
       // Should use singular "track" form
       expect(screen.getByText('0 of 1 track')).toBeInTheDocument();
+    });
+
+    it('should show preparing message when single track is pending', () => {
+      const mockTracks = createMockTracks(['pending']);
+      useQueueStore.setState({ tracks: mockTracks, totalTracks: 1 });
+
+      render(<OverallProgress />);
+
+      expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
     });
 
     it('should handle all failed tracks', () => {
@@ -210,8 +244,8 @@ describe('OverallProgress', () => {
 
       const { rerender } = render(<OverallProgress />);
 
-      // Initial state - 0 complete
-      expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
+      // Initial state - all pending, shows preparing message
+      expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
       expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
 
       // Update first track to complete
