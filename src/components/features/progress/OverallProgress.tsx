@@ -15,10 +15,12 @@ export function OverallProgress({ className }: OverallProgressProps) {
   const totalCount = tracks.length;
   const completedCount = tracks.filter((track) => track.status === 'complete').length;
 
-  // Check if any track has started (downloading, converting, complete, or failed)
-  const hasAnyTrackStarted = tracks.some(
-    (track) => track.status !== 'pending'
+  // Check if any track is currently being processed (downloading or converting)
+  const hasActiveTrack = tracks.some(
+    (track) => track.status === 'downloading' || track.status === 'converting'
   );
+  // Check if there are still tracks waiting to be processed
+  const hasPendingTrack = tracks.some((track) => track.status === 'pending');
 
   // Don't render if no tracks in queue
   if (totalCount === 0) {
@@ -27,8 +29,8 @@ export function OverallProgress({ className }: OverallProgressProps) {
 
   const percentage = Math.round((completedCount / totalCount) * 100);
 
-  // Show initializing state when no track has started yet
-  const isInitializing = !hasAnyTrackStarted;
+  // Show preparing state when no track is actively downloading/converting but some are still pending
+  const showPreparing = !hasActiveTrack && hasPendingTrack;
 
   // Use singular form for single track
   const translationKey =
@@ -49,17 +51,17 @@ export function OverallProgress({ className }: OverallProgressProps) {
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          {isInitializing && (
+          {showPreparing && (
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
           )}
           <span
             aria-live="polite"
             className="text-sm text-gray-700 dark:text-gray-300"
           >
-            {isInitializing ? t('download.preparingTracks') : progressText}
+            {showPreparing ? t('download.preparingTracks') : progressText}
           </span>
         </div>
-        {!isInitializing && (
+        {!showPreparing && (
           <span className="text-sm text-gray-500 dark:text-gray-400">
             {percentage}%
           </span>
@@ -71,7 +73,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percentage}
-        className={cn('h-2', isInitializing && 'animate-pulse')}
+        className={cn('h-2', showPreparing && 'animate-pulse')}
       />
     </div>
   );

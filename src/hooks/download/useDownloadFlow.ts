@@ -3,6 +3,7 @@ import { useUrlValidation } from './useUrlValidation';
 import { useMediaFetch, type FetchError } from './useMediaFetch';
 import { useSyncToQueue } from './useSyncToQueue';
 import { useQueueStore } from '@/stores/queueStore';
+import { useSettingsStore } from '@/stores/settingsStore';
 import { startDownloadQueue } from '@/lib/download';
 import { logger } from '@/lib/logger';
 import type { ValidationResult } from '@/types/url';
@@ -36,8 +37,10 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
 
   const handleDownload = useCallback(async () => {
     const { tracks: queueTracks, setInitializing } = useQueueStore.getState();
+    const { downloadPath } = useSettingsStore.getState();
 
     logger.info(`[useDownloadFlow] handleDownload called with ${queueTracks.length} tracks`);
+    logger.debug(`[useDownloadFlow] Download path: ${downloadPath || 'default'}`);
 
     if (queueTracks.length === 0) {
       logger.warn('[useDownloadFlow] No tracks in queue, aborting download');
@@ -62,6 +65,7 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
           artworkUrl: t.artworkUrl ?? undefined,
         })),
         albumName,
+        outputDir: downloadPath || undefined,
       });
     } catch (error) {
       logger.error(`[useDownloadFlow] Download failed: ${error}`);

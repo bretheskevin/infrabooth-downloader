@@ -14,9 +14,9 @@ describe('Story 1.3: App Shell Layout', () => {
       );
     };
 
-    it('should have default window width of 600 pixels (UX-7)', () => {
+    it('should have default window width of 700 pixels (UX-7)', () => {
       const config = getTauriConfig();
-      expect(config.app.windows[0].width).toBe(600);
+      expect(config.app.windows[0].width).toBe(700);
     });
 
     it('should have default window height of 700 pixels (UX-7)', () => {
@@ -24,9 +24,9 @@ describe('Story 1.3: App Shell Layout', () => {
       expect(config.app.windows[0].height).toBe(700);
     });
 
-    it('should have minimum window width of 480 pixels (UX-6)', () => {
+    it('should have minimum window width of 520 pixels (UX-6)', () => {
       const config = getTauriConfig();
-      expect(config.app.windows[0].minWidth).toBe(480);
+      expect(config.app.windows[0].minWidth).toBe(520);
     });
 
     it('should have minimum window height of 500 pixels (UX-6)', () => {

@@ -60,7 +60,7 @@ describe('OverallProgress', () => {
     });
 
     it('should render counter text with correct format', () => {
-      const mockTracks = createMockTracks(['complete', 'complete', 'pending']);
+      const mockTracks = createMockTracks(['complete', 'complete', 'downloading']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
       render(<OverallProgress />);
@@ -82,6 +82,27 @@ describe('OverallProgress', () => {
 
     it('should hide preparing message once a track starts downloading', () => {
       const mockTracks = createMockTracks(['downloading', 'pending', 'pending']);
+      useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
+
+      render(<OverallProgress />);
+
+      expect(screen.queryByText('Preparing your tracks for download')).not.toBeInTheDocument();
+      expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
+    });
+
+    it('should show preparing message between tracks when one is complete and next is pending', () => {
+      const mockTracks = createMockTracks(['complete', 'pending', 'pending']);
+      useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
+
+      render(<OverallProgress />);
+
+      expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
+      const spinner = document.querySelector('svg.animate-spin');
+      expect(spinner).toBeInTheDocument();
+    });
+
+    it('should hide preparing message when a track is converting', () => {
+      const mockTracks = createMockTracks(['converting', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
       render(<OverallProgress />);
@@ -123,7 +144,7 @@ describe('OverallProgress', () => {
     });
 
     it('should NOT count failed tracks as completed', () => {
-      const mockTracks = createMockTracks(['complete', 'complete', 'failed', 'pending']);
+      const mockTracks = createMockTracks(['complete', 'complete', 'failed', 'downloading']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 4 });
 
       render(<OverallProgress />);
@@ -181,8 +202,8 @@ describe('OverallProgress', () => {
     });
 
     it('should have aria-live="polite" on counter text', () => {
-      // Use tracks with at least one non-pending to show progress text
-      const mockTracks = createMockTracks(['complete', 'pending']);
+      // Use tracks with at least one active to show progress text
+      const mockTracks = createMockTracks(['complete', 'downloading']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 2 });
 
       render(<OverallProgress />);
@@ -238,7 +259,7 @@ describe('OverallProgress', () => {
   });
 
   describe('performance', () => {
-    it('should update when track status changes from pending to complete', () => {
+    it('should update when track status changes from pending to downloading to complete', () => {
       const mockTracks = createMockTracks(['pending', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
@@ -248,13 +269,23 @@ describe('OverallProgress', () => {
       expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
       expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
 
-      // Update first track to complete
-      const updatedTracks: Track[] = mockTracks.map((track, idx) =>
-        idx === 0 ? { ...track, status: 'complete' as const } : track
+      // Update first track to downloading - should hide preparing
+      const downloadingTracks: Track[] = mockTracks.map((track, idx) =>
+        idx === 0 ? { ...track, status: 'downloading' as const } : track
       );
-      useQueueStore.setState({ tracks: updatedTracks });
+      useQueueStore.setState({ tracks: downloadingTracks });
+      rerender(<OverallProgress />);
 
-      // Rerender to reflect state change
+      expect(screen.queryByText('Preparing your tracks for download')).not.toBeInTheDocument();
+      expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
+
+      // Update first track to complete, second to downloading
+      const progressTracks: Track[] = mockTracks.map((track, idx) => {
+        if (idx === 0) return { ...track, status: 'complete' as const };
+        if (idx === 1) return { ...track, status: 'downloading' as const };
+        return track;
+      });
+      useQueueStore.setState({ tracks: progressTracks });
       rerender(<OverallProgress />);
 
       // Should now show 1 complete
@@ -268,15 +299,23 @@ describe('OverallProgress', () => {
 
       const { rerender } = render(<OverallProgress />);
 
-      // Simulate rapid status updates
+      // Simulate rapid status updates - always keep one track downloading until all complete
       for (let i = 0; i < 5; i++) {
         const updatedTracks = mockTracks.map((track, idx) => ({
           ...track,
-          status: idx <= i ? 'complete' as const : 'pending' as const,
+          status: idx < i ? 'complete' as const : idx === i ? 'downloading' as const : 'pending' as const,
         }));
         useQueueStore.setState({ tracks: updatedTracks });
         rerender(<OverallProgress />);
       }
+
+      // Final update: all complete
+      const finalTracks = mockTracks.map((track) => ({
+        ...track,
+        status: 'complete' as const,
+      }));
+      useQueueStore.setState({ tracks: finalTracks });
+      rerender(<OverallProgress />);
 
       // Final state should show all complete
       expect(screen.getByText('5 of 5 tracks')).toBeInTheDocument();

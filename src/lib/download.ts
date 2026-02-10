@@ -101,6 +101,8 @@ export interface StartQueueRequest {
   tracks: QueueItem[];
   /** Album name - typically playlist title */
   albumName?: string;
+  /** Optional output directory (defaults to system Downloads folder) */
+  outputDir?: string;
 }
 
 /**
