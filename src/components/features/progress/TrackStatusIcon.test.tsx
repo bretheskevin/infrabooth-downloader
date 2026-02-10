@@ -96,5 +96,17 @@ describe('TrackStatusIcon', () => {
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveAttribute('aria-label', 'Rate limited');
     });
+
+    it('should have specific aria-label for geo-blocked errors', () => {
+      render(<TrackStatusIcon status="failed" errorCode="GEO_BLOCKED" />);
+      const icon = screen.getByRole('img', { hidden: true });
+      expect(icon).toHaveAttribute('aria-label', 'Geographic restriction warning');
+    });
+
+    it('should use generic aria-label for rate-limited warning errors', () => {
+      render(<TrackStatusIcon status="failed" errorCode="RATE_LIMITED" />);
+      const icon = screen.getByRole('img', { hidden: true });
+      expect(icon).toHaveAttribute('aria-label', 'Failed');
+    });
   });
 });

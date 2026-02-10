@@ -160,7 +160,14 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                 log::debug!("yt-dlp stderr: {}", line);
                 last_error = Some(line.clone());
 
+                // Check for geo-block patterns first (most specific)
+                if detect_geo_block(&line).is_some() {
+                    log::info!("Track {} geo-blocked in region", config.track_id);
+                    return Err(YtDlpError::GeoBlocked);
+                }
+                // HTTP 403 can also indicate geo-block
                 if line.contains("HTTP Error 403") {
+                    log::info!("Track {} geo-blocked (HTTP 403)", config.track_id);
                     return Err(YtDlpError::GeoBlocked);
                 }
                 if line.contains("HTTP Error 429") || line.contains("rate limit") {
@@ -168,9 +175,6 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                 }
                 if line.contains("HTTP Error 404") {
                     return Err(YtDlpError::NotFound);
-                }
-                if line.contains("geo") || line.contains("not available in your country") {
-                    return Err(YtDlpError::GeoBlocked);
                 }
             }
             CommandEvent::Terminated(payload) => {
@@ -255,6 +259,30 @@ fn parse_destination(line: &str) -> Option<String> {
     } else {
         None
     }
+}
+
+/// Detect geographic restriction from yt-dlp stderr output.
+///
+/// Returns Some with a user-friendly message if geo-block patterns are found.
+fn detect_geo_block(stderr: &str) -> Option<String> {
+    let patterns = [
+        "not available in your country",
+        "geo restricted",
+        "geo-restricted",
+        "not available in your region",
+        "blocked in your country",
+        "not available in your location",
+        "is not available for playback",
+        "not available in this country",
+    ];
+
+    let stderr_lower = stderr.to_lowercase();
+    for pattern in patterns {
+        if stderr_lower.contains(pattern) {
+            return Some("Geographic restriction by rights holder".to_string());
+        }
+    }
+    None
 }
 
 fn parse_progress(line: &str) -> Option<DownloadProgress> {
@@ -416,5 +444,77 @@ mod tests {
     fn test_bytes_to_string_with_newline() {
         let bytes = b"2026.02.04\n";
         assert_eq!(bytes_to_string(bytes), "2026.02.04\n");
+    }
+
+    #[test]
+    fn test_detect_geo_block_not_available_country() {
+        let stderr = "ERROR: This track is not available in your country";
+        assert!(detect_geo_block(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_geo_block_geo_restricted() {
+        let stderr = "ERROR: Video geo restricted";
+        assert!(detect_geo_block(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_geo_block_geo_restricted_hyphen() {
+        let stderr = "ERROR: This content is geo-restricted";
+        assert!(detect_geo_block(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_geo_block_not_available_region() {
+        let stderr = "ERROR: Content not available in your region";
+        assert!(detect_geo_block(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_geo_block_blocked_country() {
+        let stderr = "This track is blocked in your country";
+        assert!(detect_geo_block(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_geo_block_not_available_location() {
+        let stderr = "ERROR: This content is not available in your location";
+        assert!(detect_geo_block(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_geo_block_not_available_playback() {
+        let stderr = "ERROR: Track is not available for playback";
+        assert!(detect_geo_block(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_geo_block_case_insensitive() {
+        let stderr = "ERROR: This track is NOT AVAILABLE IN YOUR COUNTRY";
+        assert!(detect_geo_block(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_geo_block_returns_message() {
+        let stderr = "ERROR: This track is not available in your country";
+        let result = detect_geo_block(stderr);
+        assert_eq!(result, Some("Geographic restriction by rights holder".to_string()));
+    }
+
+    #[test]
+    fn test_detect_geo_block_no_match() {
+        let stderr = "ERROR: Network timeout";
+        assert!(detect_geo_block(stderr).is_none());
+    }
+
+    #[test]
+    fn test_detect_geo_block_empty_string() {
+        assert!(detect_geo_block("").is_none());
+    }
+
+    #[test]
+    fn test_detect_geo_block_unrelated_error() {
+        let stderr = "ERROR: Unable to download webpage: HTTP Error 500";
+        assert!(detect_geo_block(stderr).is_none());
     }
 }

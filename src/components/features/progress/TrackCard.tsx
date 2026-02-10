@@ -2,6 +2,9 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Music } from 'lucide-react';
 import { TrackStatusBadge } from './TrackStatusBadge';
+import { GeoBlockTooltip } from './GeoBlockTooltip';
+import { GeoBlockDetails } from './GeoBlockDetails';
+import { isGeoBlockedError } from '@/lib/errorMessages';
 import type { Track } from '@/types/track';
 
 export interface TrackCardProps {
@@ -9,8 +12,22 @@ export interface TrackCardProps {
   isCurrentTrack: boolean;
 }
 
+// Detect touch device - check once at module load for performance
+const isTouchDevice =
+  typeof window !== 'undefined' &&
+  ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
 export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
   const isActive = track.status === 'downloading' || track.status === 'converting';
+  const isGeoBlocked = isGeoBlockedError(track.error);
+
+  const statusBadge = (
+    <TrackStatusBadge
+      status={track.status}
+      error={track.error}
+      className="flex-shrink-0"
+    />
+  );
 
   return (
     <div
@@ -46,14 +63,20 @@ export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{track.title}</p>
         <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+        {/* Expandable details for touch devices */}
+        {isGeoBlocked && isTouchDevice && (
+          <div className="mt-1">
+            <GeoBlockDetails />
+          </div>
+        )}
       </div>
 
-      {/* Status Badge */}
-      <TrackStatusBadge
-        status={track.status}
-        error={track.error}
-        className="flex-shrink-0"
-      />
+      {/* Status Badge - with tooltip for desktop geo-blocked */}
+      {isGeoBlocked && !isTouchDevice ? (
+        <GeoBlockTooltip>{statusBadge}</GeoBlockTooltip>
+      ) : (
+        statusBadge
+      )}
     </div>
   );
 }
