@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useQueueStore } from '@/stores/queueStore';
+import { logger } from '@/lib/logger';
 import type {
   DownloadProgressEvent,
   QueueProgressEvent,
@@ -24,17 +25,25 @@ export function useDownloadProgress(): void {
   const setRateLimited = useQueueStore((state) => state.setRateLimited);
 
   useEffect(() => {
+    logger.debug('[useDownloadProgress] Setting up event listeners');
+
     const unlistenProgress = listen<DownloadProgressEvent>(
       'download-progress',
       (event) => {
-        const { status, error } = event.payload;
+        const { status, error, trackId } = event.payload;
+        logger.debug(`[useDownloadProgress] download-progress: trackId=${trackId}, status=${status}`);
 
         // Handle rate limit detection
         if (status === 'rate_limited' || error?.code === 'RATE_LIMITED') {
+          logger.warn(`[useDownloadProgress] Rate limit detected for track ${trackId}`);
           setRateLimited(true);
         } else if (status === 'downloading' || status === 'converting') {
           // Clear rate limit when processing resumes
           setRateLimited(false);
+        }
+
+        if (error) {
+          logger.error(`[useDownloadProgress] Track error: ${error.code} - ${error.message}`);
         }
 
         updateTrackStatus(
@@ -48,6 +57,7 @@ export function useDownloadProgress(): void {
     const unlistenQueueProgress = listen<QueueProgressEvent>(
       'queue-progress',
       (event) => {
+        logger.info(`[useDownloadProgress] queue-progress: ${event.payload.current}/${event.payload.total}`);
         setQueueProgress(event.payload.current, event.payload.total);
       }
     );
@@ -55,6 +65,7 @@ export function useDownloadProgress(): void {
     const unlistenComplete = listen<QueueCompleteEvent>(
       'queue-complete',
       (event) => {
+        logger.info(`[useDownloadProgress] queue-complete: completed=${event.payload.completed}, failed=${event.payload.failed}`);
         setQueueComplete(event.payload);
       }
     );

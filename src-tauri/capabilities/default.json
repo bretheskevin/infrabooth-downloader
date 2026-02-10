@@ -9,6 +9,8 @@
     "core:default",
     "deep-link:default",
     "shell:allow-open",
-    "dialog:allow-open"
+    "dialog:allow-open",
+    "opener:allow-reveal-item-in-dir",
+    "log:default"
   ]
 }

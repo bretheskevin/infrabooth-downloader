@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { openDownloadFolder } from '@/lib/shellCommands';
 import { getDefaultDownloadPath } from '@/lib/settings';
+import { logger } from '@/lib/logger';
 import { SuccessMessage } from './SuccessMessage';
 import { ErrorPanelTrigger } from './ErrorPanelTrigger';
 import { ErrorPanel } from './ErrorPanel';
@@ -33,14 +34,30 @@ export function CompletionPanel({
   const isFullSuccess = failedCount === 0;
 
   const handleOpenFolder = async () => {
+    logger.info('[CompletionPanel] Open folder clicked');
+    logger.debug(`[CompletionPanel] Current downloadPath from store: "${downloadPath}"`);
+
     let pathToOpen = downloadPath;
 
     if (!pathToOpen) {
-      pathToOpen = await getDefaultDownloadPath();
+      logger.debug('[CompletionPanel] No download path in store, fetching default');
+      try {
+        pathToOpen = await getDefaultDownloadPath();
+        logger.debug(`[CompletionPanel] Got default path: "${pathToOpen}"`);
+      } catch (error) {
+        logger.error(`[CompletionPanel] Failed to get default path: ${error}`);
+        return;
+      }
     }
 
     if (pathToOpen) {
-      await openDownloadFolder(pathToOpen);
+      try {
+        await openDownloadFolder(pathToOpen);
+      } catch (error) {
+        logger.error(`[CompletionPanel] Failed to open folder: ${error}`);
+      }
+    } else {
+      logger.warn('[CompletionPanel] No path available to open');
     }
   };
 

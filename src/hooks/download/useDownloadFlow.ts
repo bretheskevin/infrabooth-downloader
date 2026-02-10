@@ -4,6 +4,7 @@ import { useMediaFetch, type FetchError } from './useMediaFetch';
 import { useSyncToQueue } from './useSyncToQueue';
 import { useQueueStore } from '@/stores/queueStore';
 import { startDownloadQueue } from '@/lib/download';
+import { logger } from '@/lib/logger';
 import type { ValidationResult } from '@/types/url';
 import type { PlaylistInfo, TrackInfo } from '@/types/playlist';
 
@@ -34,26 +35,37 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
   useSyncToQueue(media);
 
   const handleDownload = useCallback(async () => {
-    const queueTracks = useQueueStore.getState().tracks;
+    const { tracks: queueTracks, setInitializing } = useQueueStore.getState();
+
+    logger.info(`[useDownloadFlow] handleDownload called with ${queueTracks.length} tracks`);
 
     if (queueTracks.length === 0) {
+      logger.warn('[useDownloadFlow] No tracks in queue, aborting download');
       return;
     }
 
+    // Show initializing state before first download starts
+    setInitializing(true);
+
     // Determine album name from media (playlist title or undefined for single track)
     const albumName = isPlaylist(media) ? media.title : undefined;
+    logger.debug(`[useDownloadFlow] Album name: ${albumName ?? 'none (single track)'}`);
 
-    await startDownloadQueue({
-      tracks: queueTracks.map((t) => ({
-        // Use SoundCloud API URL format which yt-dlp can resolve
-        trackUrl: `https://api.soundcloud.com/tracks/${t.id}`,
-        trackId: t.id,
-        title: t.title,
-        artist: t.artist,
-        artworkUrl: t.artworkUrl ?? undefined,
-      })),
-      albumName,
-    });
+    try {
+      await startDownloadQueue({
+        tracks: queueTracks.map((t) => ({
+          // Use SoundCloud API URL format which yt-dlp can resolve
+          trackUrl: `https://api.soundcloud.com/tracks/${t.id}`,
+          trackId: t.id,
+          title: t.title,
+          artist: t.artist,
+          artworkUrl: t.artworkUrl ?? undefined,
+        })),
+        albumName,
+      });
+    } catch (error) {
+      logger.error(`[useDownloadFlow] Download failed: ${error}`);
+    }
   }, [media]);
 
   return {

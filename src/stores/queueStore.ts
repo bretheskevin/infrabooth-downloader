@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { logger } from '@/lib/logger';
 import type { Track, TrackStatus } from '@/types/track';
 import type { QueueCompleteEvent } from '@/types/events';
 
@@ -9,6 +10,7 @@ interface QueueState {
   currentIndex: number;
   totalTracks: number;
   isProcessing: boolean;
+  isInitializing: boolean;
   isComplete: boolean;
   completedCount: number;
   failedCount: number;
@@ -25,6 +27,7 @@ interface QueueState {
   setQueueComplete: (result: QueueCompleteEvent) => void;
   clearQueue: () => void;
   setRateLimited: (isLimited: boolean) => void;
+  setInitializing: (isInitializing: boolean) => void;
 }
 
 export const useQueueStore = create<QueueState>((set) => ({
@@ -32,63 +35,89 @@ export const useQueueStore = create<QueueState>((set) => ({
   currentIndex: 0,
   totalTracks: 0,
   isProcessing: false,
+  isInitializing: false,
   isComplete: false,
   completedCount: 0,
   failedCount: 0,
   isRateLimited: false,
   rateLimitedAt: null,
 
-  enqueueTracks: (tracks) =>
+  enqueueTracks: (tracks) => {
+    logger.info(`[queueStore] Enqueueing ${tracks.length} tracks`);
     set({
       tracks,
       totalTracks: tracks.length,
       currentIndex: 0,
       isProcessing: false,
+      isInitializing: false,
       isComplete: false,
       completedCount: 0,
       failedCount: 0,
       isRateLimited: false,
       rateLimitedAt: null,
-    }),
+    });
+  },
 
-  updateTrackStatus: (id, status, error) =>
+  updateTrackStatus: (id, status, error) => {
+    logger.debug(`[queueStore] Track ${id} status: ${status}${error ? ` (error: ${error.code})` : ''}`);
     set((state) => ({
       tracks: state.tracks.map((track) =>
         track.id === id ? { ...track, status, error } : track
       ),
-    })),
+    }));
+  },
 
-  setQueueProgress: (current, total) =>
+  setQueueProgress: (current, total) => {
+    logger.debug(`[queueStore] Queue progress: ${current}/${total}`);
     set({
-      currentIndex: current,
+      // current is 1-indexed from backend (e.g., "1 of 12"), convert to 0-indexed for array access
+      currentIndex: current - 1,
       totalTracks: total,
       isProcessing: true,
-    }),
+      isInitializing: false,
+    });
+  },
 
-  setQueueComplete: (result) =>
+  setQueueComplete: (result) => {
+    logger.info(`[queueStore] Queue complete: ${result.completed} completed, ${result.failed} failed`);
     set({
       isProcessing: false,
       isComplete: true,
       completedCount: result.completed,
       failedCount: result.failed,
-    }),
+    });
+  },
 
-  clearQueue: () =>
+  clearQueue: () => {
+    logger.info('[queueStore] Clearing queue');
     set({
       tracks: [],
       currentIndex: 0,
       totalTracks: 0,
       isProcessing: false,
+      isInitializing: false,
       isComplete: false,
       completedCount: 0,
       failedCount: 0,
       isRateLimited: false,
       rateLimitedAt: null,
-    }),
+    });
+  },
 
-  setRateLimited: (isLimited) =>
+  setRateLimited: (isLimited) => {
+    if (isLimited) {
+      logger.warn('[queueStore] Rate limited!');
+    }
     set({
       isRateLimited: isLimited,
       rateLimitedAt: isLimited ? Date.now() : null,
-    }),
+    });
+  },
+
+  setInitializing: (isInitializing) => {
+    logger.debug(`[queueStore] Initializing: ${isInitializing}`);
+    set({
+      isInitializing,
+    });
+  },
 }));

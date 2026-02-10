@@ -1,4 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
+import { logger } from './logger';
 
 /**
  * Request payload for downloading a track with metadata.
@@ -41,7 +42,16 @@ export interface DownloadRequest {
  * @returns The path to the downloaded MP3 file on success
  */
 export async function downloadTrack(request: DownloadRequest): Promise<string> {
-  return invoke<string>('download_track_full', { request });
+  logger.info(`[download] Starting track download: ${request.title} by ${request.artist}`);
+  logger.debug(`[download] Track URL: ${request.trackUrl}`);
+  try {
+    const result = await invoke<string>('download_track_full', { request });
+    logger.info(`[download] Track download complete: ${result}`);
+    return result;
+  } catch (error) {
+    logger.error(`[download] Track download failed: ${error}`);
+    throw error;
+  }
 }
 
 /**
@@ -107,5 +117,15 @@ export interface StartQueueRequest {
 export async function startDownloadQueue(
   request: StartQueueRequest
 ): Promise<void> {
-  await invoke('start_download_queue', { request });
+  logger.info(`[download] Starting download queue with ${request.tracks.length} tracks`);
+  if (request.albumName) {
+    logger.debug(`[download] Album name: ${request.albumName}`);
+  }
+  try {
+    await invoke('start_download_queue', { request });
+    logger.info(`[download] Queue started successfully`);
+  } catch (error) {
+    logger.error(`[download] Failed to start queue: ${error}`);
+    throw error;
+  }
 }

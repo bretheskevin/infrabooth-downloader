@@ -1,20 +1,23 @@
-import { open } from '@tauri-apps/plugin-shell';
+import { revealItemInDir } from '@tauri-apps/plugin-opener';
+import { logger } from './logger';
 
 /**
  * Opens the download folder in the system file browser.
- * Uses the Tauri shell plugin which handles cross-platform opening:
- * - macOS: Uses 'open' command -> opens Finder
- * - Windows: Uses 'start' command -> opens Explorer
- * - Linux: Uses 'xdg-open' -> opens file manager
+ * Uses the Tauri opener plugin's revealItemInDir which handles cross-platform revealing:
+ * - macOS: Opens Finder with the folder selected
+ * - Windows: Opens Explorer with the folder selected
+ * - Linux: Opens file manager with the folder selected
  *
- * @param path - The folder path to open
- * @throws Error if the folder cannot be opened
+ * @param path - The folder path to reveal
+ * @throws Error if the folder cannot be revealed
  */
 export async function openDownloadFolder(path: string): Promise<void> {
+  logger.info(`[shellCommands] Opening folder: ${path}`);
   try {
-    await open(path);
+    await revealItemInDir(path);
+    logger.info(`[shellCommands] Folder opened successfully`);
   } catch (error) {
-    console.error('Failed to open folder:', error);
+    logger.error(`[shellCommands] Failed to open folder: ${error}`);
     throw new Error('Could not open folder');
   }
 }

@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { openDownloadFolder } from './shellCommands';
 
-// Mock the Tauri shell plugin
-vi.mock('@tauri-apps/plugin-shell', () => ({
-  open: vi.fn(),
+// Mock the Tauri opener plugin
+vi.mock('@tauri-apps/plugin-opener', () => ({
+  revealItemInDir: vi.fn(),
 }));
 
-import { open } from '@tauri-apps/plugin-shell';
+import { revealItemInDir } from '@tauri-apps/plugin-opener';
 
 describe('shellCommands', () => {
   beforeEach(() => {
@@ -14,18 +14,18 @@ describe('shellCommands', () => {
   });
 
   describe('openDownloadFolder', () => {
-    it('should call open with the provided path', async () => {
-      const mockOpen = vi.mocked(open);
-      mockOpen.mockResolvedValueOnce(undefined);
+    it('should call revealItemInDir with the provided path', async () => {
+      const mockReveal = vi.mocked(revealItemInDir);
+      mockReveal.mockResolvedValueOnce(undefined);
 
       await openDownloadFolder('/Users/test/Downloads');
 
-      expect(mockOpen).toHaveBeenCalledWith('/Users/test/Downloads');
+      expect(mockReveal).toHaveBeenCalledWith('/Users/test/Downloads');
     });
 
-    it('should throw error when open fails', async () => {
-      const mockOpen = vi.mocked(open);
-      mockOpen.mockRejectedValueOnce(new Error('Permission denied'));
+    it('should throw error when revealItemInDir fails', async () => {
+      const mockReveal = vi.mocked(revealItemInDir);
+      mockReveal.mockRejectedValueOnce(new Error('Permission denied'));
 
       await expect(openDownloadFolder('/Users/test/Downloads')).rejects.toThrow(
         'Could not open folder'
@@ -33,21 +33,21 @@ describe('shellCommands', () => {
     });
 
     it('should handle empty path gracefully', async () => {
-      const mockOpen = vi.mocked(open);
-      mockOpen.mockResolvedValueOnce(undefined);
+      const mockReveal = vi.mocked(revealItemInDir);
+      mockReveal.mockResolvedValueOnce(undefined);
 
       await openDownloadFolder('');
 
-      expect(mockOpen).toHaveBeenCalledWith('');
+      expect(mockReveal).toHaveBeenCalledWith('');
     });
 
     it('should handle paths with spaces', async () => {
-      const mockOpen = vi.mocked(open);
-      mockOpen.mockResolvedValueOnce(undefined);
+      const mockReveal = vi.mocked(revealItemInDir);
+      mockReveal.mockResolvedValueOnce(undefined);
 
       await openDownloadFolder('/Users/test/My Downloads/Music');
 
-      expect(mockOpen).toHaveBeenCalledWith('/Users/test/My Downloads/Music');
+      expect(mockReveal).toHaveBeenCalledWith('/Users/test/My Downloads/Music');
     });
   });
 });
