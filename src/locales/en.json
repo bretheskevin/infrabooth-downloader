@@ -69,8 +69,15 @@
     "defaultFolder": "Downloads"
   },
   "completion": {
+    "title": "Download complete!",
+    "titlePartial": "Download finished",
+    "tracksDownloaded": "{{completed}} of {{total}} tracks downloaded",
+    "allTracksDownloaded": "All {{total}} tracks downloaded",
     "openFolder": "Open Folder",
-    "downloadAnother": "Download Another"
+    "downloadAnother": "Download Another",
+    "failedTracks": "{{count}} tracks couldn't be downloaded",
+    "failedTracksSingular": "1 track couldn't be downloaded",
+    "viewFailed": "View details"
   },
   "progress": {
     "trackList": {
