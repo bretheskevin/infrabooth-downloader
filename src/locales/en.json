@@ -104,5 +104,27 @@
       "multipleTracks": "{{count}} tracks",
       "ariaLabel": "Download queue"
     }
+  },
+  "quality": {
+    "badge": "Go+ 256kbps",
+    "description": "Downloading at Go+ quality (256kbps AAC)"
+  },
+  "update": {
+    "available": "Update available: v{{version}}",
+    "download": "Download",
+    "learnMore": "Learn more",
+    "later": "Later",
+    "whatsNew": "What's new"
+  },
+  "accessibility": {
+    "signInButton": "Sign in with SoundCloud to enable downloads",
+    "urlInput": "Enter SoundCloud playlist or track URL",
+    "downloadButton": "Start download",
+    "trackStatus": "Track status: {{status}}",
+    "progressAnnouncement": "Downloaded {{current}} of {{total}} tracks",
+    "completionAnnouncement": "Download complete, {{completed}} of {{total}} tracks",
+    "rateLimitAnnouncement": "Download paused due to rate limit, will resume shortly",
+    "errorAnnouncement": "Error: {{message}}",
+    "languageChanged": "Language changed to {{language}}"
   }
 }
