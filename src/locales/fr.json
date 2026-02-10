@@ -47,5 +47,13 @@
   "completion": {
     "openFolder": "Ouvrir le dossier",
     "downloadAnother": "Nouveau téléchargement"
+  },
+  "progress": {
+    "trackList": {
+      "emptyState": "Aucune piste dans la file",
+      "singleTrack": "1 piste",
+      "multipleTracks": "{{count}} pistes",
+      "ariaLabel": "File d'attente de téléchargement"
+    }
   }
 }
