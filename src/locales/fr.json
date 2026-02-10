@@ -23,7 +23,15 @@
     "fetchingPlaylist": "Chargement de la playlist...",
     "trackCount_one": "{{count}} piste",
     "trackCount_other": "{{count}} pistes",
-    "singleTrack": "1 piste"
+    "singleTrack": "1 piste",
+    "status": {
+      "pending": "En attente",
+      "downloading": "Téléchargement...",
+      "converting": "Conversion...",
+      "complete": "Terminé",
+      "failed": "Échec",
+      "rateLimited": "Limite atteinte"
+    }
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",

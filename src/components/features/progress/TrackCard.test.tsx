@@ -1,7 +1,24 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { TrackCard } from './TrackCard';
 import type { Track } from '@/types/track';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'download.status.pending': 'Pending',
+        'download.status.downloading': 'Downloading...',
+        'download.status.converting': 'Converting...',
+        'download.status.complete': 'Complete',
+        'download.status.failed': 'Failed',
+        'download.status.rateLimited': 'Rate limited',
+        'errors.geoBlocked': 'Unavailable in your region',
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
 
 const mockTrack: Track = {
   id: 'track-1',
@@ -22,6 +39,31 @@ const mockTrackWithLongTitle: Track = {
   id: 'track-3',
   title: 'This Is A Very Long Track Title That Should Be Truncated With Ellipsis',
   artist: 'Artist With A Very Long Name That Should Also Be Truncated',
+};
+
+const mockDownloadingTrack: Track = {
+  ...mockTrack,
+  id: 'track-4',
+  status: 'downloading',
+};
+
+const mockConvertingTrack: Track = {
+  ...mockTrack,
+  id: 'track-5',
+  status: 'converting',
+};
+
+const mockCompleteTrack: Track = {
+  ...mockTrack,
+  id: 'track-6',
+  status: 'complete',
+};
+
+const mockFailedTrack: Track = {
+  ...mockTrack,
+  id: 'track-7',
+  status: 'failed',
+  error: { code: 'GEO_BLOCKED', message: 'Not available' },
 };
 
 describe('TrackCard', () => {
@@ -53,7 +95,7 @@ describe('TrackCard', () => {
   });
 
   describe('current track highlight', () => {
-    it('should apply highlight styles when isCurrentTrack is true', () => {
+    it('should apply primary highlight styles when isCurrentTrack is true and not active', () => {
       render(<TrackCard track={mockTrack} isCurrentTrack={true} />);
       const card = screen.getByRole('listitem');
       expect(card).toHaveClass('bg-primary/10');
@@ -65,6 +107,63 @@ describe('TrackCard', () => {
       render(<TrackCard track={mockTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
       expect(card).not.toHaveClass('bg-primary/10');
+    });
+  });
+
+  describe('active track highlight (downloading/converting)', () => {
+    it('should apply indigo highlight when status is downloading', () => {
+      render(<TrackCard track={mockDownloadingTrack} isCurrentTrack={false} />);
+      const card = screen.getByRole('listitem');
+      expect(card).toHaveClass('bg-indigo-50');
+      expect(card).toHaveClass('border-indigo-200');
+    });
+
+    it('should apply indigo highlight when status is converting', () => {
+      render(<TrackCard track={mockConvertingTrack} isCurrentTrack={false} />);
+      const card = screen.getByRole('listitem');
+      expect(card).toHaveClass('bg-indigo-50');
+      expect(card).toHaveClass('border-indigo-200');
+    });
+
+    it('should not apply indigo highlight when status is complete', () => {
+      render(<TrackCard track={mockCompleteTrack} isCurrentTrack={false} />);
+      const card = screen.getByRole('listitem');
+      expect(card).not.toHaveClass('bg-indigo-50');
+    });
+
+    it('should not apply indigo highlight when status is pending', () => {
+      render(<TrackCard track={mockTrack} isCurrentTrack={false} />);
+      const card = screen.getByRole('listitem');
+      expect(card).not.toHaveClass('bg-indigo-50');
+    });
+
+    it('should prefer indigo highlight over primary highlight when active', () => {
+      render(<TrackCard track={mockDownloadingTrack} isCurrentTrack={true} />);
+      const card = screen.getByRole('listitem');
+      expect(card).toHaveClass('bg-indigo-50');
+      expect(card).not.toHaveClass('bg-primary/10');
+    });
+  });
+
+  describe('status badge integration', () => {
+    it('should render status badge for pending track', () => {
+      render(<TrackCard track={mockTrack} isCurrentTrack={false} />);
+      expect(screen.getByText('Pending')).toBeInTheDocument();
+    });
+
+    it('should render status badge for downloading track', () => {
+      render(<TrackCard track={mockDownloadingTrack} isCurrentTrack={false} />);
+      expect(screen.getByText('Downloading...')).toBeInTheDocument();
+    });
+
+    it('should render status badge for complete track', () => {
+      render(<TrackCard track={mockCompleteTrack} isCurrentTrack={false} />);
+      expect(screen.getByText('Complete')).toBeInTheDocument();
+    });
+
+    it('should render error message for failed track', () => {
+      render(<TrackCard track={mockFailedTrack} isCurrentTrack={false} />);
+      expect(screen.getByText('Unavailable in your region')).toBeInTheDocument();
     });
   });
 
