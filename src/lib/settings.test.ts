@@ -5,7 +5,18 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
+vi.mock('./logger', () => ({
+  logger: {
+    trace: vi.fn(),
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
 import { invoke } from '@tauri-apps/api/core';
+import { logger } from './logger';
 
 describe('settings', () => {
   beforeEach(() => {
@@ -92,17 +103,12 @@ describe('settings', () => {
     });
 
     it('returns false and logs error when invoke fails', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
       vi.mocked(invoke).mockRejectedValue(new Error('Command failed'));
 
       const result = await validateDownloadPath('/some/path');
 
       expect(result).toBe(false);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to validate download path:',
-        expect.any(Error)
-      );
-      consoleSpy.mockRestore();
+      expect(logger.error).toHaveBeenCalled();
     });
   });
 });
