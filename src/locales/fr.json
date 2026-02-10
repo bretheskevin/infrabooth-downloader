@@ -57,7 +57,13 @@
   "settings": {
     "title": "Paramètres",
     "language": "Langue",
-    "downloadPath": "Dossier de destination"
+    "downloadPath": "Dossier de destination",
+    "downloadLocation": "Emplacement de téléchargement",
+    "browse": "Parcourir",
+    "currentPath": "Actuel: {{path}}",
+    "permissionDenied": "Impossible d'écrire dans ce dossier. Veuillez sélectionner un autre emplacement.",
+    "selectFolder": "Sélectionner le dossier de téléchargement",
+    "notSet": "Non défini"
   },
   "completion": {
     "openFolder": "Ouvrir le dossier",
