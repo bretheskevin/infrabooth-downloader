@@ -16,3 +16,11 @@ export interface Track {
   status: TrackStatus;
   error?: AppError;
 }
+
+/** Context for playlist track numbering (used by yt-dlp) */
+export interface PlaylistContext {
+  /** 1-indexed position in playlist */
+  trackPosition: number;
+  /** Total number of tracks in playlist */
+  totalTracks: number;
+}
