@@ -38,3 +38,5 @@ regex = "1"
 urlencoding = "2"
 tempfile = "3"
 id3 = "1"
+tauri-plugin-dialog = "2"
+uuid = { version = "1", features = ["v4"] }

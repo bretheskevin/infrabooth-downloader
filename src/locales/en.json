@@ -57,7 +57,13 @@
   "settings": {
     "title": "Settings",
     "language": "Language",
-    "downloadPath": "Download location"
+    "downloadPath": "Download location",
+    "downloadLocation": "Download Location",
+    "browse": "Browse",
+    "currentPath": "Current: {{path}}",
+    "permissionDenied": "Cannot write to this folder. Please select a different location.",
+    "selectFolder": "Select download folder",
+    "notSet": "Not set"
   },
   "completion": {
     "openFolder": "Open Folder",
