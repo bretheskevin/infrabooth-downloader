@@ -2,6 +2,7 @@ import { Progress } from '@/components/ui/progress';
 import { useQueueStore } from '@/stores/queueStore';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
+import { Loader2 } from 'lucide-react';
 
 interface OverallProgressProps {
   className?: string;
@@ -10,10 +11,14 @@ interface OverallProgressProps {
 export function OverallProgress({ className }: OverallProgressProps) {
   const { t } = useTranslation();
 
-  const completedCount = useQueueStore(
-    (state) => state.tracks.filter((track) => track.status === 'complete').length
+  const tracks = useQueueStore((state) => state.tracks);
+  const totalCount = tracks.length;
+  const completedCount = tracks.filter((track) => track.status === 'complete').length;
+
+  // Check if any track has started (downloading, converting, complete, or failed)
+  const hasAnyTrackStarted = tracks.some(
+    (track) => track.status !== 'pending'
   );
-  const totalCount = useQueueStore((state) => state.tracks.length);
 
   // Don't render if no tracks in queue
   if (totalCount === 0) {
@@ -21,6 +26,9 @@ export function OverallProgress({ className }: OverallProgressProps) {
   }
 
   const percentage = Math.round((completedCount / totalCount) * 100);
+
+  // Show initializing state when no track has started yet
+  const isInitializing = !hasAnyTrackStarted;
 
   // Use singular form for single track
   const translationKey =
@@ -40,15 +48,22 @@ export function OverallProgress({ className }: OverallProgressProps) {
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
-        <span
-          aria-live="polite"
-          className="text-sm text-gray-700 dark:text-gray-300"
-        >
-          {progressText}
-        </span>
-        <span className="text-sm text-gray-500 dark:text-gray-400">
-          {percentage}%
-        </span>
+        <div className="flex items-center gap-2">
+          {isInitializing && (
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+          )}
+          <span
+            aria-live="polite"
+            className="text-sm text-gray-700 dark:text-gray-300"
+          >
+            {isInitializing ? t('download.preparingTracks') : progressText}
+          </span>
+        </div>
+        {!isInitializing && (
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            {percentage}%
+          </span>
+        )}
       </div>
       <Progress
         value={percentage}
@@ -56,7 +71,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percentage}
-        className="h-2"
+        className={cn('h-2', isInitializing && 'animate-pulse')}
       />
     </div>
   );
