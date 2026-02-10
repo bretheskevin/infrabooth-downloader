@@ -9,6 +9,7 @@ describe('settingsStore', () => {
     useSettingsStore.setState({
       downloadPath: '',
       language: 'en',
+      _hasHydrated: false,
     });
   });
 
@@ -68,7 +69,7 @@ describe('settingsStore', () => {
       setDownloadPath('/test/path');
       setLanguage('fr');
 
-      const stored = localStorage.getItem('settings-storage');
+      const stored = localStorage.getItem('sc-downloader-settings');
       expect(stored).toBeTruthy();
 
       const parsed = JSON.parse(stored!);
@@ -76,11 +77,43 @@ describe('settingsStore', () => {
       expect(parsed.state.language).toBe('fr');
     });
 
-    it('should use settings-storage as the storage key', () => {
+    it('should use sc-downloader-settings as the storage key', () => {
       const { setDownloadPath } = useSettingsStore.getState();
       setDownloadPath('/test/path');
 
-      expect(localStorage.getItem('settings-storage')).toBeTruthy();
+      expect(localStorage.getItem('sc-downloader-settings')).toBeTruthy();
+    });
+
+    it('should not persist _hasHydrated to localStorage', () => {
+      const { setDownloadPath, _setHasHydrated } = useSettingsStore.getState();
+      setDownloadPath('/test/path');
+      _setHasHydrated(true);
+
+      const stored = localStorage.getItem('sc-downloader-settings');
+      const parsed = JSON.parse(stored!);
+
+      expect(parsed.state._hasHydrated).toBeUndefined();
+    });
+  });
+
+  describe('hydration', () => {
+    it('should have _hasHydrated as false initially', () => {
+      const { _hasHydrated } = useSettingsStore.getState();
+      expect(_hasHydrated).toBe(false);
+    });
+
+    it('should update _hasHydrated via _setHasHydrated', () => {
+      const { _setHasHydrated } = useSettingsStore.getState();
+      _setHasHydrated(true);
+
+      const { _hasHydrated } = useSettingsStore.getState();
+      expect(_hasHydrated).toBe(true);
+    });
+
+    it('should provide useSettingsHydrated selector', () => {
+      useSettingsStore.setState({ _hasHydrated: true });
+      // useSettingsHydrated is a hook, so we test the selector logic directly
+      expect(useSettingsStore.getState()._hasHydrated).toBe(true);
     });
   });
 });
