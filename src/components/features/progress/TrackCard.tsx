@@ -4,7 +4,9 @@ import { Music } from 'lucide-react';
 import { TrackStatusBadge } from './TrackStatusBadge';
 import { GeoBlockTooltip } from './GeoBlockTooltip';
 import { GeoBlockDetails } from './GeoBlockDetails';
-import { isGeoBlockedError } from '@/lib/errorMessages';
+import { UnavailableTrackTooltip } from './UnavailableTrackTooltip';
+import { UnavailableTrackDetails } from './UnavailableTrackDetails';
+import { isGeoBlockedError, isUnavailableError } from '@/lib/errorMessages';
 import type { Track } from '@/types/track';
 
 export interface TrackCardProps {
@@ -20,6 +22,7 @@ const isTouchDevice =
 export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
   const isActive = track.status === 'downloading' || track.status === 'converting';
   const isGeoBlocked = isGeoBlockedError(track.error);
+  const isUnavailable = isUnavailableError(track.error);
 
   const statusBadge = (
     <TrackStatusBadge
@@ -28,6 +31,18 @@ export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
       className="flex-shrink-0"
     />
   );
+
+  // Determine which tooltip/details to show
+  const renderStatusBadge = () => {
+    // Geo-blocked takes priority if both would match
+    if (isGeoBlocked && !isTouchDevice) {
+      return <GeoBlockTooltip>{statusBadge}</GeoBlockTooltip>;
+    }
+    if (isUnavailable && !isTouchDevice) {
+      return <UnavailableTrackTooltip>{statusBadge}</UnavailableTrackTooltip>;
+    }
+    return statusBadge;
+  };
 
   return (
     <div
@@ -69,14 +84,15 @@ export function TrackCard({ track, isCurrentTrack }: TrackCardProps) {
             <GeoBlockDetails />
           </div>
         )}
+        {isUnavailable && isTouchDevice && (
+          <div className="mt-1">
+            <UnavailableTrackDetails />
+          </div>
+        )}
       </div>
 
-      {/* Status Badge - with tooltip for desktop geo-blocked */}
-      {isGeoBlocked && !isTouchDevice ? (
-        <GeoBlockTooltip>{statusBadge}</GeoBlockTooltip>
-      ) : (
-        statusBadge
-      )}
+      {/* Status Badge - with tooltip for desktop errors */}
+      {renderStatusBadge()}
     </div>
   );
 }

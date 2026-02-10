@@ -1,12 +1,13 @@
 import { Clock, Loader2, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { getErrorSeverity } from '@/lib/errorMessages';
+import { getErrorSeverity, isUnavailableError } from '@/lib/errorMessages';
 import type { TrackStatus } from '@/types/track';
-import type { ErrorCode } from '@/types/errors';
+import type { ErrorCode, AppError } from '@/types/errors';
 
 export interface TrackStatusIconProps {
   status: TrackStatus;
   errorCode?: ErrorCode;
+  error?: AppError;
   className?: string;
 }
 
@@ -19,7 +20,7 @@ const ariaLabels: Record<TrackStatus, string> = {
   rate_limited: 'Rate limited',
 };
 
-export function TrackStatusIcon({ status, errorCode, className }: TrackStatusIconProps) {
+export function TrackStatusIcon({ status, errorCode, error, className }: TrackStatusIconProps) {
   const baseClasses = 'h-4 w-4 flex-shrink-0';
   const ariaLabel = ariaLabels[status];
 
@@ -62,6 +63,17 @@ export function TrackStatusIcon({ status, errorCode, className }: TrackStatusIco
       );
 
     case 'failed': {
+      // Check for unavailable error (uses warning icon/color)
+      if (isUnavailableError(error)) {
+        return (
+          <AlertTriangle
+            role="img"
+            aria-label="Track unavailable - external restriction"
+            className={cn(baseClasses, 'text-amber-500', className)}
+          />
+        );
+      }
+
       const severity = getErrorSeverity(errorCode);
       if (severity === 'warning') {
         // Use specific aria-label for geo-blocked

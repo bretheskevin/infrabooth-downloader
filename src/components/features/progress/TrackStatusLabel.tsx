@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { ERROR_CODE_TO_I18N_KEY, getErrorSeverity } from '@/lib/errorMessages';
+import { ERROR_CODE_TO_I18N_KEY, getErrorSeverity, isUnavailableError } from '@/lib/errorMessages';
 import type { TrackStatus } from '@/types/track';
 import type { AppError } from '@/types/errors';
 
@@ -24,6 +24,10 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
 
   const getStatusText = (): string => {
     if (status === 'failed' && error) {
+      // Check for unavailable error first (DOWNLOAD_FAILED with unavailability patterns)
+      if (isUnavailableError(error)) {
+        return t('errors.trackUnavailable');
+      }
       return t(ERROR_CODE_TO_I18N_KEY[error.code] || 'download.status.failed');
     }
 
@@ -39,10 +43,17 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
     return t(statusKeys[status]);
   };
 
-  // Use amber color for warning-severity errors (geo-blocked, rate-limited)
+  // Use amber color for warning-severity errors (geo-blocked, unavailable, rate-limited)
   const getColorClass = (): string => {
-    if (status === 'failed' && error && getErrorSeverity(error.code) === 'warning') {
-      return 'text-amber-600';
+    if (status === 'failed' && error) {
+      // Unavailable tracks use warning color (amber) - external failure, not app error
+      if (isUnavailableError(error)) {
+        return 'text-amber-600';
+      }
+      // Other warning-severity errors (geo-blocked)
+      if (getErrorSeverity(error.code) === 'warning') {
+        return 'text-amber-600';
+      }
     }
     return statusColorClasses[status];
   };

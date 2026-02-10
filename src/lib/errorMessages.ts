@@ -57,3 +57,43 @@ export function getGeoBlockDetail(t: TFunction): string {
 export function getGeoBlockNoRetry(t: TFunction): string {
   return t('errors.geoBlockedNoRetry');
 }
+
+/**
+ * Patterns that indicate a track is unavailable (removed/private/deleted).
+ */
+const UNAVAILABILITY_PATTERNS = [
+  'unavailable',
+  'private',
+  'removed',
+  'deleted',
+  '404',
+  'not found',
+  'does not exist',
+  'no longer available',
+] as const;
+
+/**
+ * Check if an error indicates the track is unavailable (removed/private/deleted).
+ * This is detected by checking the DOWNLOAD_FAILED error code with specific message patterns.
+ */
+export function isUnavailableError(error?: AppError): boolean {
+  if (!error) return false;
+  if (error.code !== 'DOWNLOAD_FAILED') return false;
+
+  const message = error.message?.toLowerCase() || '';
+  return UNAVAILABILITY_PATTERNS.some((pattern) => message.includes(pattern));
+}
+
+/**
+ * Get the user-friendly message for unavailable track errors.
+ */
+export function getUnavailableMessage(t: TFunction): string {
+  return t('errors.trackUnavailable');
+}
+
+/**
+ * Get the detail message for unavailable track errors.
+ */
+export function getUnavailableDetail(t: TFunction): string {
+  return t('errors.trackUnavailableDetail');
+}

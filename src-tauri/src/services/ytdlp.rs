@@ -173,8 +173,17 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                 if line.contains("HTTP Error 429") || line.contains("rate limit") {
                     return Err(YtDlpError::RateLimited);
                 }
+                // Check for unavailability patterns before generic 404
+                if let Some(unavailable_reason) = detect_unavailability(&line) {
+                    log::info!("Track {} unavailable: {}", config.track_id, unavailable_reason);
+                    return Err(YtDlpError::DownloadFailed(unavailable_reason));
+                }
+                // HTTP 404 indicates track not found / unavailable
                 if line.contains("HTTP Error 404") {
-                    return Err(YtDlpError::NotFound);
+                    log::info!("Track {} not found (HTTP 404)", config.track_id);
+                    return Err(YtDlpError::DownloadFailed(
+                        "Track unavailable - may have been removed or made private".to_string(),
+                    ));
                 }
             }
             CommandEvent::Terminated(payload) => {
@@ -280,6 +289,34 @@ fn detect_geo_block(stderr: &str) -> Option<String> {
     for pattern in patterns {
         if stderr_lower.contains(pattern) {
             return Some("Geographic restriction by rights holder".to_string());
+        }
+    }
+    None
+}
+
+/// Detect unavailable/removed/private track from yt-dlp stderr output.
+///
+/// Returns Some with a user-friendly message if unavailability patterns are found.
+/// Note: Geo-block detection should be checked first as it's more specific.
+fn detect_unavailability(stderr: &str) -> Option<String> {
+    let patterns = [
+        "video unavailable",
+        "this video is not available",
+        "private video",
+        "this track was removed",
+        "does not exist",
+        "video is unavailable",
+        "content is not available",
+        "has been removed",
+        "no longer available",
+        "track is private",
+        "is private",
+    ];
+
+    let stderr_lower = stderr.to_lowercase();
+    for pattern in patterns {
+        if stderr_lower.contains(pattern) {
+            return Some("Track unavailable - may have been removed or made private".to_string());
         }
     }
     None
@@ -516,5 +553,113 @@ mod tests {
     fn test_detect_geo_block_unrelated_error() {
         let stderr = "ERROR: Unable to download webpage: HTTP Error 500";
         assert!(detect_geo_block(stderr).is_none());
+    }
+
+    // Unavailability detection tests
+
+    #[test]
+    fn test_detect_unavailability_video_unavailable() {
+        let stderr = "ERROR: Video unavailable";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_this_video_not_available() {
+        let stderr = "ERROR: This video is not available";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_private_video() {
+        let stderr = "ERROR: Private video. Sign in if you've been granted access to this video";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_track_removed() {
+        let stderr = "ERROR: This track was removed by the uploader";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_does_not_exist() {
+        let stderr = "ERROR: This page does not exist";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_video_is_unavailable() {
+        let stderr = "ERROR: Video is unavailable";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_content_not_available() {
+        let stderr = "ERROR: Content is not available";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_has_been_removed() {
+        let stderr = "ERROR: This content has been removed";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_no_longer_available() {
+        let stderr = "ERROR: This track is no longer available";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_track_is_private() {
+        let stderr = "ERROR: Track is private";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_is_private() {
+        let stderr = "ERROR: This content is private";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_case_insensitive() {
+        let stderr = "ERROR: VIDEO UNAVAILABLE";
+        assert!(detect_unavailability(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_unavailability_returns_message() {
+        let stderr = "ERROR: Video unavailable";
+        let result = detect_unavailability(stderr);
+        assert_eq!(
+            result,
+            Some("Track unavailable - may have been removed or made private".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_unavailability_no_match() {
+        let stderr = "ERROR: Network timeout";
+        assert!(detect_unavailability(stderr).is_none());
+    }
+
+    #[test]
+    fn test_detect_unavailability_empty_string() {
+        assert!(detect_unavailability("").is_none());
+    }
+
+    #[test]
+    fn test_detect_unavailability_unrelated_error() {
+        let stderr = "ERROR: Unable to download webpage: HTTP Error 500";
+        assert!(detect_unavailability(stderr).is_none());
+    }
+
+    #[test]
+    fn test_detect_unavailability_does_not_match_geo_block() {
+        // Geo-block patterns should NOT trigger unavailability detection
+        let stderr = "ERROR: This track is not available in your country";
+        assert!(detect_unavailability(stderr).is_none());
     }
 }

@@ -17,7 +17,7 @@ export function TrackStatusBadge({ status, error, className }: TrackStatusBadgeP
       aria-live="polite"
       className={cn('flex items-center gap-1.5', className)}
     >
-      <TrackStatusIcon status={status} errorCode={error?.code} />
+      <TrackStatusIcon status={status} errorCode={error?.code} error={error} />
       <TrackStatusLabel status={status} error={error} />
     </div>
   );

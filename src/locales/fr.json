@@ -45,6 +45,8 @@
     "geoBlocked": "Indisponible dans ta région",
     "geoBlockedDetail": "Restriction géographique par le détenteur des droits",
     "geoBlockedNoRetry": "Cette piste ne sera pas réessayée automatiquement",
+    "trackUnavailable": "Piste indisponible",
+    "trackUnavailableDetail": "Cette piste a peut-être été supprimée ou rendue privée",
     "rateLimited": "Petite pause — SoundCloud limite les requêtes",
     "networkError": "Pas de connexion internet",
     "downloadFailed": "Échec du téléchargement",
