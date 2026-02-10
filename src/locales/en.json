@@ -57,7 +57,15 @@
     "authExpired": "Session expired",
     "authExpiredHint": "Please sign out and sign in again",
     "notSignedIn": "Please sign in to continue",
-    "showDetails": "Show details"
+    "showDetails": "Show details",
+    "panelTitle": "Failed Downloads",
+    "tracksFailed_one": "{{count}} track failed",
+    "tracksFailed_other": "{{count}} tracks failed",
+    "closePanel": "Close error panel",
+    "groupGeoBlocked": "Unavailable in your region",
+    "groupUnavailable": "Track removed or private",
+    "groupNetwork": "Network errors",
+    "groupOther": "Other errors"
   },
   "settings": {
     "title": "Settings",
