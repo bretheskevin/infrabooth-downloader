@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { CheckCircle, FolderOpen, RefreshCw } from 'lucide-react';
@@ -6,14 +6,15 @@ import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { openDownloadFolder } from '@/lib/shellCommands';
 import { SuccessMessage } from './SuccessMessage';
-import { FailedTracksLink } from './FailedTracksLink';
+import { ErrorPanelTrigger } from './ErrorPanelTrigger';
+import { ErrorPanel } from './ErrorPanel';
+import { useFailedTracks } from '@/hooks/useFailedTracks';
 
 interface CompletionPanelProps {
   completedCount: number;
   totalCount: number;
   failedCount: number;
   onDownloadAnother: () => void;
-  onViewFailedTracks: () => void;
 }
 
 export function CompletionPanel({
@@ -21,11 +22,12 @@ export function CompletionPanel({
   totalCount,
   failedCount,
   onDownloadAnother,
-  onViewFailedTracks,
 }: CompletionPanelProps) {
   const { t } = useTranslation();
   const downloadPath = useSettingsStore((state) => state.downloadPath);
   const panelRef = useRef<HTMLDivElement>(null);
+  const [isErrorPanelOpen, setIsErrorPanelOpen] = useState(false);
+  const failedTracks = useFailedTracks();
 
   const isFullSuccess = failedCount === 0;
 
@@ -33,6 +35,10 @@ export function CompletionPanel({
     if (downloadPath) {
       await openDownloadFolder(downloadPath);
     }
+  };
+
+  const handleToggleErrorPanel = () => {
+    setIsErrorPanelOpen((prev) => !prev);
   };
 
   // Focus panel when it mounts for accessibility
@@ -71,10 +77,18 @@ export function CompletionPanel({
           />
 
           {failedCount > 0 && (
-            <FailedTracksLink
-              failedCount={failedCount}
-              onClick={onViewFailedTracks}
-            />
+            <div className="w-full">
+              <ErrorPanelTrigger
+                failedCount={failedCount}
+                onClick={handleToggleErrorPanel}
+                isExpanded={isErrorPanelOpen}
+              />
+              <ErrorPanel
+                failedTracks={failedTracks}
+                isOpen={isErrorPanelOpen}
+                onOpenChange={setIsErrorPanelOpen}
+              />
+            </div>
           )}
         </div>
       </CardContent>
