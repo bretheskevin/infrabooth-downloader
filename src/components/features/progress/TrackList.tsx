@@ -7,6 +7,7 @@ export function TrackList() {
   const { t } = useTranslation();
   const tracks = useQueueStore((state) => state.tracks);
   const currentIndex = useQueueStore((state) => state.currentIndex);
+  const isInitializing = useQueueStore((state) => state.isInitializing);
 
   if (tracks.length === 0) {
     return (
@@ -27,6 +28,7 @@ export function TrackList() {
             key={track.id}
             track={track}
             isCurrentTrack={index === currentIndex}
+            isInitializing={isInitializing && index === 0}
           />
         ))}
       </div>

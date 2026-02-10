@@ -150,7 +150,8 @@ describe('useDownloadProgress', () => {
 
     const { currentIndex, totalTracks, isProcessing } =
       useQueueStore.getState();
-    expect(currentIndex).toBe(5);
+    // current is 1-indexed from backend (5), stored as 0-indexed (4)
+    expect(currentIndex).toBe(4);
     expect(totalTracks).toBe(10);
     expect(isProcessing).toBe(true);
   });
