@@ -7,7 +7,7 @@
     "signOut": "Déconnexion",
     "signedInAs": "{{username}}",
     "accessibilityStatus": "Connecté en tant que {{username}}, qualité Go+ active",
-    "qualityBadge": "Go+ 256kbps",
+    "qualityBadge": "Go+",
     "loading": "Chargement...",
     "openingBrowser": "Ouverture du navigateur..."
   },

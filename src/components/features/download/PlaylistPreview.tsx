@@ -1,9 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Music, Download, Loader2 } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
 import type { PlaylistInfo } from '@/types/playlist';
 
 /**
@@ -31,7 +29,6 @@ export function PlaylistPreview({
   isDownloading = false,
 }: PlaylistPreviewProps) {
   const { t } = useTranslation();
-  const isSignedIn = useAuthStore((state) => state.isSignedIn);
 
   const artworkUrl = getArtworkUrl(
     playlist.artwork_url ?? playlist.tracks[0]?.artwork_url ?? null
@@ -74,11 +71,6 @@ export function PlaylistPreview({
             <span className="text-sm" data-testid="playlist-track-count">
               {t('download.trackCount', { count: playlist.track_count })}
             </span>
-            {isSignedIn && (
-              <Badge variant="secondary" className="text-xs">
-                256kbps AAC → MP3
-              </Badge>
-            )}
           </div>
         </div>
 
