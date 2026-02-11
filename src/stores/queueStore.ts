@@ -30,31 +30,28 @@ interface QueueState {
   setInitializing: (isInitializing: boolean) => void;
 }
 
-export const useQueueStore = create<QueueState>((set) => ({
-  tracks: [],
+const INITIAL_QUEUE_STATE = {
   currentIndex: 0,
-  totalTracks: 0,
   isProcessing: false,
   isInitializing: false,
   isComplete: false,
   completedCount: 0,
   failedCount: 0,
   isRateLimited: false,
-  rateLimitedAt: null,
+  rateLimitedAt: null as number | null,
+};
+
+export const useQueueStore = create<QueueState>((set) => ({
+  tracks: [],
+  totalTracks: 0,
+  ...INITIAL_QUEUE_STATE,
 
   enqueueTracks: (tracks) => {
     logger.info(`[queueStore] Enqueueing ${tracks.length} tracks`);
     set({
+      ...INITIAL_QUEUE_STATE,
       tracks,
       totalTracks: tracks.length,
-      currentIndex: 0,
-      isProcessing: false,
-      isInitializing: false,
-      isComplete: false,
-      completedCount: 0,
-      failedCount: 0,
-      isRateLimited: false,
-      rateLimitedAt: null,
     });
   },
 
@@ -92,15 +89,8 @@ export const useQueueStore = create<QueueState>((set) => ({
     logger.info('[queueStore] Clearing queue');
     set({
       tracks: [],
-      currentIndex: 0,
       totalTracks: 0,
-      isProcessing: false,
-      isInitializing: false,
-      isComplete: false,
-      completedCount: 0,
-      failedCount: 0,
-      isRateLimited: false,
-      rateLimitedAt: null,
+      ...INITIAL_QUEUE_STATE,
     });
   },
 

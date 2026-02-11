@@ -1,4 +1,5 @@
 import type { AppError } from './errors';
+import type { TrackStatus } from './track';
 
 /**
  * Download progress event payload received from the Rust backend.
@@ -7,7 +8,7 @@ import type { AppError } from './errors';
  */
 export interface DownloadProgressEvent {
   trackId: string;
-  status: 'pending' | 'downloading' | 'converting' | 'complete' | 'failed' | 'rate_limited';
+  status: TrackStatus;
   percent?: number;
   error?: AppError;
 }

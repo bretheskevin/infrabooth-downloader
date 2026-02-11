@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Music, Download, Loader2 } from 'lucide-react';
 import type { PlaylistInfo } from '@/types/playlist';
+import { ArtworkThumbnail } from './ArtworkThumbnail';
+import { DownloadButton } from './DownloadButton';
 
 /**
  * Transforms SoundCloud artwork URL to a specific size.
@@ -37,24 +37,11 @@ export function PlaylistPreview({
   return (
     <Card className="mt-4" data-testid="playlist-preview">
       <CardContent className="flex items-center gap-4 p-4">
-        {/* Artwork */}
-        <div className="flex-shrink-0">
-          {artworkUrl ? (
-            <img
-              src={artworkUrl}
-              alt={playlist.title}
-              className="w-16 h-16 rounded-md object-cover"
-              data-testid="playlist-artwork"
-            />
-          ) : (
-            <div
-              className="w-16 h-16 rounded-md bg-muted flex items-center justify-center"
-              data-testid="playlist-artwork-placeholder"
-            >
-              <Music className="h-8 w-8 text-muted-foreground" />
-            </div>
-          )}
-        </div>
+        <ArtworkThumbnail
+          src={artworkUrl}
+          alt={playlist.title}
+          testIdPrefix="playlist"
+        />
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -74,20 +61,7 @@ export function PlaylistPreview({
           </div>
         </div>
 
-        {/* Download Button */}
-        <Button
-          onClick={onDownload}
-          disabled={isDownloading}
-          className="flex-shrink-0"
-          data-testid="download-button"
-        >
-          {isDownloading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-4 w-4" />
-          )}
-          {isDownloading ? t('download.downloading') : t('download.button')}
-        </Button>
+        <DownloadButton onDownload={onDownload} isDownloading={isDownloading} />
       </CardContent>
     </Card>
   );
