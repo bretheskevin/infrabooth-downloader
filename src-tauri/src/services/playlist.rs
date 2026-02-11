@@ -45,6 +45,28 @@ pub struct UserInfo {
     pub username: String,
 }
 
+/// Publisher metadata from SoundCloud API.
+/// Contains the actual artist name for label-distributed content.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PublisherMetadata {
+    /// The actual artist name (different from uploader username for label content)
+    pub artist: Option<String>,
+}
+
+/// Raw track information from SoundCloud API.
+/// Used for deserializing the API response before transforming to TrackInfo.
+#[derive(Debug, Clone, Deserialize)]
+struct RawTrackInfo {
+    pub id: u64,
+    pub title: String,
+    pub user: UserInfo,
+    pub artwork_url: Option<String>,
+    /// Duration in milliseconds.
+    pub duration: u64,
+    /// Publisher metadata containing the actual artist name for label content.
+    pub publisher_metadata: Option<PublisherMetadata>,
+}
+
 /// Track information from SoundCloud API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TrackInfo {
@@ -56,6 +78,39 @@ pub struct TrackInfo {
     pub duration: u64,
 }
 
+impl From<RawTrackInfo> for TrackInfo {
+    fn from(raw: RawTrackInfo) -> Self {
+        // Use publisher_metadata.artist if available, otherwise fall back to user.username
+        let artist_name = raw
+            .publisher_metadata
+            .and_then(|pm| pm.artist)
+            .filter(|a| !a.is_empty())
+            .unwrap_or_else(|| raw.user.username.clone());
+
+        TrackInfo {
+            id: raw.id,
+            title: raw.title,
+            user: UserInfo {
+                username: artist_name,
+            },
+            artwork_url: raw.artwork_url,
+            duration: raw.duration,
+        }
+    }
+}
+
+/// Raw playlist information from SoundCloud API.
+/// Used for deserializing the API response before transforming to PlaylistInfo.
+#[derive(Debug, Clone, Deserialize)]
+struct RawPlaylistInfo {
+    pub id: u64,
+    pub title: String,
+    pub user: UserInfo,
+    pub artwork_url: Option<String>,
+    pub track_count: u32,
+    pub tracks: Vec<RawTrackInfo>,
+}
+
 /// Playlist information from SoundCloud API.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlaylistInfo {
@@ -65,6 +120,19 @@ pub struct PlaylistInfo {
     pub artwork_url: Option<String>,
     pub track_count: u32,
     pub tracks: Vec<TrackInfo>,
+}
+
+impl From<RawPlaylistInfo> for PlaylistInfo {
+    fn from(raw: RawPlaylistInfo) -> Self {
+        PlaylistInfo {
+            id: raw.id,
+            title: raw.title,
+            user: raw.user,
+            artwork_url: raw.artwork_url,
+            track_count: raw.track_count,
+            tracks: raw.tracks.into_iter().map(TrackInfo::from).collect(),
+        }
+    }
 }
 
 /// Gets a valid access token from storage.
@@ -153,14 +221,17 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
                 )));
             }
 
-            return playlist_response
+            let raw: RawPlaylistInfo = playlist_response
                 .json()
                 .await
-                .map_err(|_| PlaylistError::InvalidResponse);
+                .map_err(|_| PlaylistError::InvalidResponse)?;
+            return Ok(PlaylistInfo::from(raw));
         }
     }
 
-    serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)
+    let raw: RawPlaylistInfo =
+        serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)?;
+    Ok(PlaylistInfo::from(raw))
 }
 
 /// Fetches track information from SoundCloud using the resolve endpoint.
@@ -225,14 +296,17 @@ pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
                 )));
             }
 
-            return track_response
+            let raw: RawTrackInfo = track_response
                 .json()
                 .await
-                .map_err(|_| PlaylistError::InvalidResponse);
+                .map_err(|_| PlaylistError::InvalidResponse)?;
+            return Ok(TrackInfo::from(raw));
         }
     }
 
-    serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)
+    let raw: RawTrackInfo =
+        serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)?;
+    Ok(TrackInfo::from(raw))
 }
 
 #[cfg(test)]
@@ -256,9 +330,9 @@ mod tests {
         assert!(json.contains("\"username\":\"test_artist\""));
     }
 
-    // TrackInfo tests
+    // RawTrackInfo and TrackInfo tests
     #[test]
-    fn test_track_info_deserializes_with_all_fields() {
+    fn test_raw_track_info_deserializes_with_all_fields() {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
@@ -266,9 +340,11 @@ mod tests {
             "artwork_url": "https://i1.sndcdn.com/artworks-xxx-large.jpg",
             "duration": 180000
         }"#;
-        let track: TrackInfo = serde_json::from_str(json).unwrap();
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
         assert_eq!(track.id, 123456);
         assert_eq!(track.title, "Test Track");
+        // Without publisher_metadata, falls back to user.username
         assert_eq!(track.user.username, "test_artist");
         assert_eq!(
             track.artwork_url,
@@ -278,7 +354,7 @@ mod tests {
     }
 
     #[test]
-    fn test_track_info_deserializes_with_null_artwork() {
+    fn test_raw_track_info_deserializes_with_null_artwork() {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
@@ -286,8 +362,71 @@ mod tests {
             "artwork_url": null,
             "duration": 180000
         }"#;
-        let track: TrackInfo = serde_json::from_str(json).unwrap();
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
         assert!(track.artwork_url.is_none());
+    }
+
+    #[test]
+    fn test_track_info_uses_publisher_metadata_artist_when_available() {
+        // Simulates a label-distributed track where user is the label but
+        // publisher_metadata contains the actual artist
+        let json = r#"{
+            "id": 123456,
+            "title": "FreakFreak",
+            "user": {"username": "NA"},
+            "artwork_url": null,
+            "duration": 180000,
+            "publisher_metadata": {"artist": "PioUPioU"}
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        // Should use publisher_metadata.artist instead of user.username
+        assert_eq!(track.user.username, "PioUPioU");
+    }
+
+    #[test]
+    fn test_track_info_falls_back_to_username_when_publisher_metadata_missing() {
+        let json = r#"{
+            "id": 123456,
+            "title": "Test Track",
+            "user": {"username": "regular_artist"},
+            "artwork_url": null,
+            "duration": 180000
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert_eq!(track.user.username, "regular_artist");
+    }
+
+    #[test]
+    fn test_track_info_falls_back_to_username_when_publisher_metadata_artist_null() {
+        let json = r#"{
+            "id": 123456,
+            "title": "Test Track",
+            "user": {"username": "uploader"},
+            "artwork_url": null,
+            "duration": 180000,
+            "publisher_metadata": {"artist": null}
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert_eq!(track.user.username, "uploader");
+    }
+
+    #[test]
+    fn test_track_info_falls_back_to_username_when_publisher_metadata_artist_empty() {
+        let json = r#"{
+            "id": 123456,
+            "title": "Test Track",
+            "user": {"username": "uploader"},
+            "artwork_url": null,
+            "duration": 180000,
+            "publisher_metadata": {"artist": ""}
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert_eq!(track.user.username, "uploader");
     }
 
     #[test]
@@ -307,9 +446,9 @@ mod tests {
         assert!(json.contains("\"duration\":180000"));
     }
 
-    // PlaylistInfo tests
+    // RawPlaylistInfo and PlaylistInfo tests
     #[test]
-    fn test_playlist_info_deserializes_with_all_fields() {
+    fn test_raw_playlist_info_deserializes_with_all_fields() {
         let json = r#"{
             "id": 999,
             "title": "My Playlist",
@@ -333,7 +472,8 @@ mod tests {
                 }
             ]
         }"#;
-        let playlist: PlaylistInfo = serde_json::from_str(json).unwrap();
+        let raw: RawPlaylistInfo = serde_json::from_str(json).unwrap();
+        let playlist = PlaylistInfo::from(raw);
         assert_eq!(playlist.id, 999);
         assert_eq!(playlist.title, "My Playlist");
         assert_eq!(playlist.user.username, "playlist_owner");
@@ -344,7 +484,7 @@ mod tests {
     }
 
     #[test]
-    fn test_playlist_info_deserializes_with_empty_tracks() {
+    fn test_raw_playlist_info_deserializes_with_empty_tracks() {
         let json = r#"{
             "id": 999,
             "title": "Empty Playlist",
@@ -353,9 +493,45 @@ mod tests {
             "track_count": 0,
             "tracks": []
         }"#;
-        let playlist: PlaylistInfo = serde_json::from_str(json).unwrap();
+        let raw: RawPlaylistInfo = serde_json::from_str(json).unwrap();
+        let playlist = PlaylistInfo::from(raw);
         assert_eq!(playlist.track_count, 0);
         assert!(playlist.tracks.is_empty());
+    }
+
+    #[test]
+    fn test_playlist_tracks_use_publisher_metadata_artist() {
+        // Playlist with label-distributed tracks
+        let json = r#"{
+            "id": 999,
+            "title": "Label Compilation",
+            "user": {"username": "record_label"},
+            "artwork_url": null,
+            "track_count": 2,
+            "tracks": [
+                {
+                    "id": 1,
+                    "title": "Track A",
+                    "user": {"username": "NA"},
+                    "artwork_url": null,
+                    "duration": 120000,
+                    "publisher_metadata": {"artist": "Artist One"}
+                },
+                {
+                    "id": 2,
+                    "title": "Track B",
+                    "user": {"username": "regular_uploader"},
+                    "artwork_url": null,
+                    "duration": 180000
+                }
+            ]
+        }"#;
+        let raw: RawPlaylistInfo = serde_json::from_str(json).unwrap();
+        let playlist = PlaylistInfo::from(raw);
+        // First track should use publisher_metadata.artist
+        assert_eq!(playlist.tracks[0].user.username, "Artist One");
+        // Second track should fall back to user.username
+        assert_eq!(playlist.tracks[1].user.username, "regular_uploader");
     }
 
     #[test]
