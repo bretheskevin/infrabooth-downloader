@@ -1,7 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ClipboardPaste } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { ValidationResult } from '@/types/url';
 
@@ -35,6 +36,18 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
     // Validation will be triggered by onChange
   }, []);
 
+  const handlePasteFromClipboard = useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setValue(text);
+        onUrlChange(text);
+      }
+    } catch {
+      // Clipboard access denied or not supported
+    }
+  }, [onUrlChange]);
+
   return (
     <div className="relative">
       <Input
@@ -56,6 +69,18 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />
         </div>
+      )}
+      {!isValidating && !value && !disabled && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={handlePasteFromClipboard}
+          className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground hover:text-foreground"
+          aria-label={t('download.pasteButton')}
+        >
+          <ClipboardPaste className="h-5 w-5" aria-hidden="true" />
+        </Button>
       )}
     </div>
   );

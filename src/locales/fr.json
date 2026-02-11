@@ -21,6 +21,7 @@
     "progressPartial": "{{current}} sur {{total}} pistes téléchargées",
     "complete": "Téléchargement terminé !",
     "pasteUrl": "Collez un lien SoundCloud ici",
+    "pasteButton": "Coller",
     "signInRequired": "Connectez-vous pour télécharger",
     "validPlaylist": "URL de playlist valide",
     "validTrack": "URL de piste valide",
