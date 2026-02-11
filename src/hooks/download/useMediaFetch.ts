@@ -32,9 +32,10 @@ export function useMediaFetch(
   useEffect(() => {
     let isCancelled = false;
 
-    if (!validation?.valid) {
+    if (!url || !validation?.valid) {
       setData(null);
       setError(null);
+      setIsLoading(false);
       return;
     }
 
