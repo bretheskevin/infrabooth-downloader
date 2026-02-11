@@ -21,6 +21,14 @@ pub struct TokenResponse {
     pub token_type: String,
 }
 
+/// Token response from Client Credentials flow (no refresh token).
+#[derive(Debug, Deserialize)]
+pub struct AppTokenResponse {
+    pub access_token: String,
+    pub expires_in: u64,
+    pub token_type: String,
+}
+
 /// Generates PKCE code verifier and challenge pair.
 ///
 /// The verifier is a random 64-character alphanumeric string.
@@ -159,6 +167,32 @@ pub async fn refresh_tokens(
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
         Err(AuthError::RefreshFailed(format!(
+            "HTTP {}: {}",
+            status, body
+        )))
+    }
+}
+
+/// Gets an app-level access token using Client Credentials flow.
+/// This token can be used for public API requests without user sign-in.
+pub async fn get_app_token(client_secret: &str) -> Result<AppTokenResponse, AuthError> {
+    let client = reqwest::Client::new();
+    let response = client
+        .post(TOKEN_URL)
+        .form(&[
+            ("grant_type", "client_credentials"),
+            ("client_id", CLIENT_ID),
+            ("client_secret", client_secret),
+        ])
+        .send()
+        .await?;
+
+    if response.status().is_success() {
+        Ok(response.json().await?)
+    } else {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        Err(AuthError::TokenExchangeFailed(format!(
             "HTTP {}: {}",
             status, body
         )))

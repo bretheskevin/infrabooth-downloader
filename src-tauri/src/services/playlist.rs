@@ -1,11 +1,16 @@
-//! Playlist metadata fetching service.
+//! SoundCloud API client for fetching track and playlist metadata.
 //!
-//! This module provides functionality to fetch playlist and track information
-//! from SoundCloud using the authenticated user's token.
+//! This module fetches metadata using the SoundCloud API:
+//! - Authenticated users: Uses OAuth token for private content access
+//! - Unauthenticated users: Uses app token (client credentials) for public content
 
+use std::sync::Mutex;
+
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
+use crate::services::oauth::{get_app_token, get_client_secret};
 use crate::services::storage::{is_token_expired_or_expiring, load_tokens};
 
 #[derive(Debug, Deserialize)]
@@ -17,9 +22,6 @@ struct ResolveResponse {
 /// Errors that can occur during playlist operations.
 #[derive(Debug, Error)]
 pub enum PlaylistError {
-    #[error("No authentication token available")]
-    NoToken,
-
     #[error("Token expired and refresh required")]
     TokenExpired,
 
@@ -37,6 +39,9 @@ pub enum PlaylistError {
 
     #[error("Track unavailable in your region")]
     GeoBlocked,
+
+    #[error("Private content requires sign-in")]
+    AuthRequired,
 }
 
 /// User information from SoundCloud API.
@@ -135,21 +140,86 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
     }
 }
 
-/// Gets a valid access token from storage.
-///
-/// # Returns
-/// * `Ok(String)` - The access token if available and not expired
-/// * `Err(PlaylistError)` - If no token or token is expired
-fn get_valid_access_token() -> Result<String, PlaylistError> {
-    let tokens = load_tokens()
-        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?
-        .ok_or(PlaylistError::NoToken)?;
+/// Cached app token for unauthenticated API requests.
+struct CachedAppToken {
+    token: String,
+    expires_at: u64,
+}
 
-    if is_token_expired_or_expiring(tokens.expires_at) {
-        return Err(PlaylistError::TokenExpired);
+static APP_TOKEN_CACHE: Lazy<Mutex<Option<CachedAppToken>>> = Lazy::new(|| Mutex::new(None));
+
+fn current_timestamp() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs()
+}
+
+/// Gets a valid app token, fetching a new one if needed.
+async fn get_cached_app_token() -> Result<String, PlaylistError> {
+    // Check if we have a valid cached token
+    {
+        let cache = APP_TOKEN_CACHE.lock().unwrap();
+        if let Some(ref cached) = *cache {
+            // Use 5-minute buffer before expiration
+            if cached.expires_at > current_timestamp() + 300 {
+                return Ok(cached.token.clone());
+            }
+        }
     }
 
-    Ok(tokens.access_token)
+    // Need to fetch a new token
+    log::info!("[soundcloud] Fetching new app token via client credentials");
+    let secret = get_client_secret().map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
+    let response = get_app_token(secret)
+        .await
+        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
+
+    let expires_at = current_timestamp() + response.expires_in;
+
+    // Cache the new token
+    {
+        let mut cache = APP_TOKEN_CACHE.lock().unwrap();
+        *cache = Some(CachedAppToken {
+            token: response.access_token.clone(),
+            expires_at,
+        });
+    }
+
+    log::info!(
+        "[soundcloud] App token cached, expires in {} seconds",
+        response.expires_in
+    );
+    Ok(response.access_token)
+}
+
+/// Gets the authentication mode - user OAuth token if available, otherwise app token.
+///
+/// # Returns
+/// * `Ok(token)` - Access token (user or app level)
+/// * `Err(PlaylistError::TokenExpired)` - If user token exists but is expired
+async fn get_access_token() -> Result<String, PlaylistError> {
+    match load_tokens() {
+        Ok(Some(tokens)) => {
+            if is_token_expired_or_expiring(tokens.expires_at) {
+                Err(PlaylistError::TokenExpired)
+            } else {
+                log::debug!("[soundcloud] Using user OAuth token");
+                Ok(tokens.access_token)
+            }
+        }
+        Ok(None) => {
+            log::debug!("[soundcloud] No user token, using app token");
+            get_cached_app_token().await
+        }
+        Err(e) => {
+            log::warn!(
+                "[soundcloud] Failed to load user tokens: {}, using app token",
+                e
+            );
+            get_cached_app_token().await
+        }
+    }
 }
 
 async fn resolve_url<T: serde::de::DeserializeOwned>(
@@ -177,6 +247,10 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
         return Err(PlaylistError::GeoBlocked);
     }
 
+    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
+        return Err(PlaylistError::AuthRequired);
+    }
+
     if !response.status().is_success() && response.status() != reqwest::StatusCode::FOUND {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
@@ -191,11 +265,16 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
     if let Ok(redirect) = serde_json::from_str::<ResolveResponse>(&body) {
         if let Some(location) = redirect.location {
             log::info!("[soundcloud] Following redirect to: {}", location);
+
             let redirect_response = client
                 .get(&location)
                 .header("Authorization", &auth_header)
                 .send()
                 .await?;
+
+            if redirect_response.status() == reqwest::StatusCode::UNAUTHORIZED {
+                return Err(PlaylistError::AuthRequired);
+            }
 
             if !redirect_response.status().is_success() {
                 let status = redirect_response.status();
@@ -217,15 +296,16 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
 }
 
 pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistError> {
-    let access_token = get_valid_access_token()?;
-    log::info!("[playlist] Fetching playlist info for URL: {}", url);
-    let raw: RawPlaylistInfo = resolve_url(url, &access_token).await?;
+    let token = get_access_token().await?;
+    log::info!("[soundcloud] Fetching playlist info for URL: {}", url);
+    let raw: RawPlaylistInfo = resolve_url(url, &token).await?;
     Ok(PlaylistInfo::from(raw))
 }
 
 pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
-    let access_token = get_valid_access_token()?;
-    let raw: RawTrackInfo = resolve_url(url, &access_token).await?;
+    let token = get_access_token().await?;
+    log::info!("[soundcloud] Fetching track info for URL: {}", url);
+    let raw: RawTrackInfo = resolve_url(url, &token).await?;
     Ok(TrackInfo::from(raw))
 }
 
@@ -482,15 +562,15 @@ mod tests {
 
     // PlaylistError tests
     #[test]
-    fn test_playlist_error_no_token_message() {
-        let err = PlaylistError::NoToken;
-        assert_eq!(err.to_string(), "No authentication token available");
-    }
-
-    #[test]
     fn test_playlist_error_token_expired_message() {
         let err = PlaylistError::TokenExpired;
         assert_eq!(err.to_string(), "Token expired and refresh required");
+    }
+
+    #[test]
+    fn test_playlist_error_auth_required_message() {
+        let err = PlaylistError::AuthRequired;
+        assert_eq!(err.to_string(), "Private content requires sign-in");
     }
 
     #[test]
