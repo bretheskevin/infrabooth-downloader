@@ -107,14 +107,13 @@ describe('SignInButton', () => {
     expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeDisabled();
   });
 
-  it('should have indigo styling', () => {
+  it('should have primary styling', () => {
     render(<SignInButton />);
 
     const button = screen.getByRole('button', { name: 'Sign in with SoundCloud' });
 
-    expect(button).toHaveClass('bg-indigo-600');
-    expect(button).toHaveClass('hover:bg-indigo-700');
-    expect(button).toHaveClass('text-white');
+    expect(button).toHaveClass('bg-primary');
+    expect(button).toHaveClass('text-primary-foreground');
   });
 
   it('should be keyboard accessible', () => {

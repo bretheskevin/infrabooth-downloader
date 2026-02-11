@@ -53,18 +53,18 @@ describe('RateLimitBanner', () => {
   });
 
   describe('styling', () => {
-    it('should have amber background styling', () => {
+    it('should have warning background styling', () => {
       render(<RateLimitBanner />);
 
       const banner = screen.getByRole('status');
-      expect(banner).toHaveClass('bg-amber-50');
+      expect(banner).toHaveClass('bg-warning/20');
     });
 
-    it('should have amber border styling', () => {
+    it('should have warning border styling', () => {
       render(<RateLimitBanner />);
 
       const banner = screen.getByRole('status');
-      expect(banner).toHaveClass('border-amber-200');
+      expect(banner).toHaveClass('border-warning/30');
     });
   });
 });
@@ -148,15 +148,15 @@ describe('RateLimitBanner accessibility', () => {
     ).toBeInTheDocument();
   });
 
-  it('should have sufficient color contrast (amber-800 text on amber-50 bg)', () => {
+  it('should have sufficient color contrast (warning text on warning bg)', () => {
     render(<RateLimitBanner />);
     const banner = screen.getByRole('status');
 
-    // amber-50 background
-    expect(banner).toHaveClass('bg-amber-50');
+    // warning/20 background
+    expect(banner).toHaveClass('bg-warning/20');
 
-    // amber-800 text in AlertDescription
-    const description = banner.querySelector('[class*="text-amber-800"]');
+    // warning text in AlertDescription
+    const description = banner.querySelector('[class*="text-warning"]');
     expect(description).toBeInTheDocument();
   });
 });

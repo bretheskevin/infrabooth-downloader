@@ -21,7 +21,7 @@ export function ValidationFeedback({ result, isValidating }: ValidationFeedbackP
   if (result.valid) {
     return (
       <div
-        className="flex items-center gap-2 text-sm text-emerald-600 mt-2"
+        className="flex items-center gap-2 text-sm text-success mt-2"
         role="status"
         aria-live="polite"
       >
@@ -42,7 +42,7 @@ export function ValidationFeedback({ result, isValidating }: ValidationFeedbackP
       role="alert"
       aria-live="assertive"
     >
-      <div className="flex items-center gap-2 text-sm text-red-600">
+      <div className="flex items-center gap-2 text-sm text-destructive">
         <AlertCircle className="h-4 w-4" />
         <span>{result.error?.message}</span>
       </div>

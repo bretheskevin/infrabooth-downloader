@@ -22,10 +22,10 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
   const [value, setValue] = useState('');
 
   const borderClass = useMemo(() => {
-    if (isValidating) return 'border-indigo-400 ring-1 ring-indigo-400';
+    if (isValidating) return 'border-primary ring-1 ring-primary';
     if (!validationResult) return '';
-    if (validationResult.valid) return 'border-emerald-500 ring-1 ring-emerald-500';
-    return 'border-red-500 ring-1 ring-red-500';
+    if (validationResult.valid) return 'border-success ring-1 ring-success';
+    return 'border-destructive ring-1 ring-destructive';
   }, [isValidating, validationResult]);
 
   const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,7 +62,7 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
         disabled={disabled}
         className={cn(
           'h-12 text-base transition-colors duration-200 pr-12',
-          'focus-visible:ring-2 focus-visible:ring-indigo-500',
+          'focus-visible:ring-2 focus-visible:ring-primary',
           borderClass,
           className
         )}
@@ -70,7 +70,7 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
       />
       {isValidating && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <Spinner className="h-5 w-5 text-indigo-500" />
+          <Spinner className="h-5 w-5 text-primary" />
         </div>
       )}
       {!isValidating && !disabled && (

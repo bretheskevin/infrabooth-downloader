@@ -82,43 +82,43 @@ describe('TrackStatusLabel', () => {
   });
 
   describe('text color classes', () => {
-    it('should apply gray color for pending status', () => {
+    it('should apply muted color for pending status', () => {
       render(<TrackStatusLabel status="pending" />);
       const label = screen.getByText('Pending');
       expect(label).toHaveClass('text-muted-foreground');
     });
 
-    it('should apply indigo color for downloading status', () => {
+    it('should apply primary color for downloading status', () => {
       render(<TrackStatusLabel status="downloading" />);
       const label = screen.getByText('Downloading...');
-      expect(label).toHaveClass('text-indigo-600');
+      expect(label).toHaveClass('text-primary');
     });
 
-    it('should apply indigo color for converting status', () => {
+    it('should apply primary color for converting status', () => {
       render(<TrackStatusLabel status="converting" />);
       const label = screen.getByText('Converting...');
-      expect(label).toHaveClass('text-indigo-600');
+      expect(label).toHaveClass('text-primary');
     });
 
-    it('should apply emerald color for complete status', () => {
+    it('should apply success color for complete status', () => {
       render(<TrackStatusLabel status="complete" />);
       const label = screen.getByText('Complete');
-      expect(label).toHaveClass('text-emerald-600');
+      expect(label).toHaveClass('text-success');
     });
 
-    it('should apply rose color for failed status', () => {
+    it('should apply destructive color for failed status', () => {
       render(<TrackStatusLabel status="failed" />);
       const label = screen.getByText('Failed');
-      expect(label).toHaveClass('text-rose-600');
+      expect(label).toHaveClass('text-destructive');
     });
 
-    it('should apply amber color for rate_limited status', () => {
+    it('should apply warning color for rate_limited status', () => {
       render(<TrackStatusLabel status="rate_limited" />);
       const label = screen.getByText('Waiting...');
-      expect(label).toHaveClass('text-amber-600');
+      expect(label).toHaveClass('text-warning');
     });
 
-    it('should apply amber color for geo-blocked error', () => {
+    it('should apply warning color for geo-blocked error', () => {
       render(
         <TrackStatusLabel
           status="failed"
@@ -126,10 +126,10 @@ describe('TrackStatusLabel', () => {
         />
       );
       const label = screen.getByText('Unavailable in your region');
-      expect(label).toHaveClass('text-amber-600');
+      expect(label).toHaveClass('text-warning');
     });
 
-    it('should apply rose color for download failed error', () => {
+    it('should apply destructive color for download failed error', () => {
       render(
         <TrackStatusLabel
           status="failed"
@@ -137,10 +137,10 @@ describe('TrackStatusLabel', () => {
         />
       );
       const label = screen.getByText('Download failed');
-      expect(label).toHaveClass('text-rose-600');
+      expect(label).toHaveClass('text-destructive');
     });
 
-    it('should apply amber color for unavailable error', () => {
+    it('should apply warning color for unavailable error', () => {
       render(
         <TrackStatusLabel
           status="failed"
@@ -148,7 +148,7 @@ describe('TrackStatusLabel', () => {
         />
       );
       const label = screen.getByText('Track unavailable');
-      expect(label).toHaveClass('text-amber-600');
+      expect(label).toHaveClass('text-warning');
     });
   });
 
@@ -193,7 +193,7 @@ describe('TrackStatusLabel', () => {
       expect(screen.getByText('Track unavailable')).toBeInTheDocument();
     });
 
-    it('should use amber color for unavailable errors', () => {
+    it('should use warning color for unavailable errors', () => {
       render(
         <TrackStatusLabel
           status="failed"
@@ -201,7 +201,7 @@ describe('TrackStatusLabel', () => {
         />
       );
       const label = screen.getByText('Track unavailable');
-      expect(label).toHaveClass('text-amber-600');
+      expect(label).toHaveClass('text-warning');
     });
   });
 });

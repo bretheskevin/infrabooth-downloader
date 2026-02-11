@@ -87,9 +87,9 @@ export function CompletionPanel({
     >
       <CardContent className="pt-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="rounded-full bg-emerald-100 p-3 dark:bg-emerald-900/30">
+          <div className="rounded-full bg-success/20 p-3">
             <CheckCircle
-              className="h-8 w-8 text-emerald-500 motion-safe:animate-[checkmark-draw_0.3s_ease-out_forwards]"
+              className="h-8 w-8 text-success motion-safe:animate-[checkmark-draw_0.3s_ease-out_forwards]"
               aria-hidden="true"
             />
           </div>
