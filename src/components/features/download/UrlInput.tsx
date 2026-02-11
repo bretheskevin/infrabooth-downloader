@@ -1,8 +1,10 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, ClipboardPaste } from 'lucide-react';
+import { readText } from '@tauri-apps/plugin-clipboard-manager';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ValidationResult } from '@/types/url';
 
@@ -38,7 +40,7 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
 
   const handlePasteFromClipboard = useCallback(async () => {
     try {
-      const text = await navigator.clipboard.readText();
+      const text = await readText();
       if (text) {
         setValue(text);
         onUrlChange(text);
@@ -71,16 +73,25 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
         </div>
       )}
       {!isValidating && !value && !disabled && (
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon"
-          onClick={handlePasteFromClipboard}
-          className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground hover:text-foreground"
-          aria-label={t('download.pasteButton')}
-        >
-          <ClipboardPaste className="h-5 w-5" aria-hidden="true" />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={handlePasteFromClipboard}
+                className="absolute right-1 top-1/2 -translate-y-1/2 h-10 w-10 text-muted-foreground hover:text-foreground"
+                aria-label={t('download.pasteButton')}
+              >
+                <ClipboardPaste className="h-5 w-5" aria-hidden="true" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{t('download.pasteButton')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
     </div>
   );
