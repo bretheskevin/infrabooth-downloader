@@ -85,13 +85,6 @@ describe('PlaylistPreview', () => {
       expect(screen.getByTestId('playlist-track-count')).toHaveTextContent('47 tracks');
     });
 
-    it('should render quality badge (AC #3)', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
-
-      expect(screen.getByText('256kbps AAC → MP3')).toBeInTheDocument();
-    });
   });
 
   describe('artwork', () => {

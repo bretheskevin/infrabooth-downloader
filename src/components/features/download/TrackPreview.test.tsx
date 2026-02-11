@@ -58,13 +58,6 @@ describe('TrackPreview', () => {
       expect(screen.getByTestId('track-count')).toHaveTextContent('1 track');
     });
 
-    it('should render quality badge (AC #3)', () => {
-      render(<TrackPreview track={mockTrack} onDownload={mockOnDownload} />);
-
-      expect(screen.getByTestId('quality-badge')).toHaveTextContent(
-        '256kbps AAC → MP3'
-      );
-    });
   });
 
   describe('artwork', () => {

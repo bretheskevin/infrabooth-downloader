@@ -7,7 +7,7 @@
     "signOut": "Sign out",
     "signedInAs": "Signed in as {{username}}",
     "accessibilityStatus": "Signed in as {{username}}, Go+ quality enabled",
-    "qualityBadge": "Go+ 256kbps",
+    "qualityBadge": "Go+",
     "loading": "Loading...",
     "openingBrowser": "Opening browser..."
   },
@@ -110,8 +110,8 @@
     }
   },
   "quality": {
-    "badge": "Go+ 256kbps",
-    "description": "Downloading at Go+ quality (256kbps AAC)"
+    "badge": "Go+ (High quality)",
+    "description": "Downloading at Go+ quality"
   },
   "update": {
     "available": "Update available: v{{version}}",
