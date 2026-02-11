@@ -31,7 +31,7 @@ export function DownloadSection() {
   useDownloadProgress();
 
   // Get completion state
-  const { isComplete, completedCount, failedCount, totalCount, resetQueue } =
+  const { isComplete, completedCount, failedCount, cancelledCount, totalCount, isCancelled, resetQueue } =
     useDownloadCompletion();
 
   // Track when download is starting (between click and processing)
@@ -81,6 +81,8 @@ export function DownloadSection() {
           completedCount={completedCount}
           totalCount={totalCount}
           failedCount={failedCount}
+          cancelledCount={cancelledCount}
+          isCancelled={isCancelled}
           onDownloadAnother={handleDownloadAnother}
         />
       </section>
