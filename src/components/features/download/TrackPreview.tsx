@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Music, Download, Clock, Loader2 } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import type { TrackInfo } from '@/types/playlist';
 import { formatDuration } from '@/lib/utils';
+import { ArtworkThumbnail } from './ArtworkThumbnail';
+import { DownloadButton } from './DownloadButton';
 
 interface TrackPreviewProps {
   track: TrackInfo;
@@ -21,24 +22,11 @@ export function TrackPreview({
   return (
     <Card className="mt-4" data-testid="track-preview">
       <CardContent className="flex items-center gap-4 p-4">
-        {/* Artwork */}
-        <div className="flex-shrink-0">
-          {track.artwork_url ? (
-            <img
-              src={track.artwork_url}
-              alt={track.title}
-              className="w-16 h-16 rounded-md object-cover"
-              data-testid="track-artwork"
-            />
-          ) : (
-            <div
-              className="w-16 h-16 rounded-md bg-muted flex items-center justify-center"
-              data-testid="track-artwork-placeholder"
-            >
-              <Music className="h-8 w-8 text-muted-foreground" />
-            </div>
-          )}
-        </div>
+        <ArtworkThumbnail
+          src={track.artwork_url}
+          alt={track.title}
+          testIdPrefix="track"
+        />
 
         {/* Info */}
         <div className="flex-1 min-w-0">
@@ -65,20 +53,7 @@ export function TrackPreview({
           </div>
         </div>
 
-        {/* Download Button */}
-        <Button
-          onClick={onDownload}
-          disabled={isDownloading}
-          className="flex-shrink-0"
-          data-testid="download-button"
-        >
-          {isDownloading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="mr-2 h-4 w-4" />
-          )}
-          {isDownloading ? t('download.downloading') : t('download.button')}
-        </Button>
+        <DownloadButton onDownload={onDownload} isDownloading={isDownloading} />
       </CardContent>
     </Card>
   );

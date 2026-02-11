@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { useQueueStore } from '@/stores/queueStore';
 import { useDownloadFlow, useDownloadProgress, useDownloadCompletion } from '@/hooks/download';
-import type { PlaylistInfo, TrackInfo } from '@/types/playlist';
+import { isPlaylist } from '@/types/playlist';
 import { UrlInput } from './UrlInput';
 import { ValidationFeedback } from './ValidationFeedback';
 import { PlaylistPreview } from './PlaylistPreview';
@@ -11,10 +11,6 @@ import { TrackPreview } from './TrackPreview';
 import { CompletionPanel } from './CompletionPanel';
 import { ProgressPanel } from '../progress/ProgressPanel';
 import { RateLimitBanner } from '../progress/RateLimitBanner';
-
-function isPlaylist(media: PlaylistInfo | TrackInfo): media is PlaylistInfo {
-  return 'tracks' in media;
-}
 
 export function DownloadSection() {
   const { t } = useTranslation();
@@ -108,7 +104,7 @@ export function DownloadSection() {
           className="flex flex-col items-center justify-center gap-4 py-16"
           data-testid="download-starting"
         >
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+          <Spinner className="h-12 w-12 text-primary" />
           <div className="text-center space-y-1">
             <p className="text-lg font-medium">{t('download.startingDownload')}</p>
             <p className="text-sm text-muted-foreground">{t('download.preparingTracks')}</p>
@@ -136,7 +132,7 @@ export function DownloadSection() {
           className="flex items-center gap-2 text-sm text-muted-foreground mt-4"
           data-testid="playlist-loading"
         >
-          <Loader2 className="h-4 w-4 animate-spin" />
+          <Spinner className="h-4 w-4" />
           {t('download.fetchingPlaylist')}
         </div>
       )}

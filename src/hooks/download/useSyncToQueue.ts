@@ -1,11 +1,8 @@
 import { useEffect } from 'react';
 import { useQueueStore } from '@/stores/queueStore';
 import { trackInfoToQueueTrack, playlistTracksToQueueTracks } from '@/lib/transforms';
+import { isPlaylist } from '@/types/playlist';
 import type { PlaylistInfo, TrackInfo } from '@/types/playlist';
-
-function isPlaylist(media: PlaylistInfo | TrackInfo): media is PlaylistInfo {
-  return 'tracks' in media;
-}
 
 /**
  * Domain reaction: "media loaded → feed queue"

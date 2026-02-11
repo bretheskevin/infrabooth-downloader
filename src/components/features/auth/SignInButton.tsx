@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { startOAuth } from '@/lib/auth';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 const OAUTH_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -53,7 +53,7 @@ export function SignInButton() {
     >
       {isLoading ? (
         <>
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          <Spinner className="mr-2 h-4 w-4" />
           {t('auth.openingBrowser')}
         </>
       ) : (

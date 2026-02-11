@@ -1,21 +1,11 @@
 import type { FailedTrack, FailureReasonCategory } from '@/types/download';
+import type { AppError } from '@/types/errors';
+import { isGeoBlockedError, isUnavailableError } from '@/lib/errorMessages';
 
-const categorizeError = (error: {
-  code: string;
-  message: string;
-}): FailureReasonCategory => {
-  if (error.code === 'GEO_BLOCKED') return 'geo_blocked';
+const categorizeError = (error: AppError): FailureReasonCategory => {
+  if (isGeoBlockedError(error)) return 'geo_blocked';
   if (error.code === 'NETWORK_ERROR') return 'network';
-  if (error.code === 'DOWNLOAD_FAILED') {
-    const msg = error.message.toLowerCase();
-    if (
-      msg.includes('unavailable') ||
-      msg.includes('private') ||
-      msg.includes('removed')
-    ) {
-      return 'unavailable';
-    }
-  }
+  if (isUnavailableError(error)) return 'unavailable';
   return 'other';
 };
 

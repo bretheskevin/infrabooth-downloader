@@ -18,3 +18,9 @@ export interface PlaylistInfo {
   track_count: number;
   tracks: TrackInfo[];
 }
+
+export function isPlaylist(
+  media: PlaylistInfo | TrackInfo | null
+): media is PlaylistInfo {
+  return media !== null && 'tracks' in media;
+}

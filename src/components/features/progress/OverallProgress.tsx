@@ -2,7 +2,7 @@ import { Progress } from '@/components/ui/progress';
 import { useQueueStore } from '@/stores/queueStore';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 
 interface OverallProgressProps {
   className?: string;
@@ -52,7 +52,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           {showPreparing && (
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <Spinner className="h-4 w-4 text-primary" />
           )}
           <span
             aria-live="polite"
