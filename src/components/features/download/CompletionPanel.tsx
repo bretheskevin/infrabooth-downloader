@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { CheckCircle, FolderOpen, RefreshCw } from 'lucide-react';
+import { CheckCircle, FolderOpen, RefreshCw, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/stores/settingsStore';
 import { openDownloadFolder } from '@/lib/shellCommands';
@@ -16,6 +16,8 @@ interface CompletionPanelProps {
   completedCount: number;
   totalCount: number;
   failedCount: number;
+  cancelledCount: number;
+  isCancelled: boolean;
   onDownloadAnother: () => void;
 }
 
@@ -23,6 +25,8 @@ export function CompletionPanel({
   completedCount,
   totalCount,
   failedCount,
+  cancelledCount,
+  isCancelled,
   onDownloadAnother,
 }: CompletionPanelProps) {
   const { t } = useTranslation();
@@ -31,7 +35,7 @@ export function CompletionPanel({
   const [isErrorPanelOpen, setIsErrorPanelOpen] = useState(false);
   const failedTracks = useFailedTracks();
 
-  const isFullSuccess = failedCount === 0;
+  const isFullSuccess = failedCount === 0 && !isCancelled;
 
   const handleOpenFolder = async () => {
     logger.info('[CompletionPanel] Open folder clicked');
@@ -87,17 +91,26 @@ export function CompletionPanel({
     >
       <CardContent className="pt-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="rounded-full bg-success/20 p-3">
-            <CheckCircle
-              className="h-8 w-8 text-success motion-safe:animate-[checkmark-draw_0.3s_ease-out_forwards]"
-              aria-hidden="true"
-            />
+          <div className={`rounded-full p-3 ${isCancelled ? 'bg-muted' : 'bg-success/20'}`}>
+            {isCancelled ? (
+              <XCircle
+                className="h-8 w-8 text-muted-foreground"
+                aria-hidden="true"
+              />
+            ) : (
+              <CheckCircle
+                className="h-8 w-8 text-success motion-safe:animate-[checkmark-draw_0.3s_ease-out_forwards]"
+                aria-hidden="true"
+              />
+            )}
           </div>
 
           <SuccessMessage
             completedCount={completedCount}
             totalCount={totalCount}
+            cancelledCount={cancelledCount}
             isFullSuccess={isFullSuccess}
+            isCancelled={isCancelled}
           />
 
           {failedCount > 0 && (

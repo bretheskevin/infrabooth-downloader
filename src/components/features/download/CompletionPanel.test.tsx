@@ -10,8 +10,11 @@ vi.mock('react-i18next', () => ({
       const translations: Record<string, string> = {
         'completion.title': 'Download complete!',
         'completion.titlePartial': 'Download finished',
+        'completion.titleCancelled': 'Download cancelled',
         'completion.allTracksDownloaded': `All ${options?.total} tracks downloaded`,
         'completion.tracksDownloaded': `${options?.completed} of ${options?.total} tracks downloaded`,
+        'completion.tracksCancelled': `${options?.completed} tracks downloaded before cancellation`,
+        'completion.allCancelled': 'No tracks were downloaded',
         'completion.openFolder': 'Open Folder',
         'completion.downloadAnother': 'Download Another',
         'completion.failedTracks': `${options?.count} tracks couldn't be downloaded`,
@@ -59,6 +62,8 @@ describe('CompletionPanel', () => {
     completedCount: 10,
     totalCount: 10,
     failedCount: 0,
+    cancelledCount: 0,
+    isCancelled: false,
     onDownloadAnother: vi.fn(),
   };
 
@@ -165,5 +170,33 @@ describe('CompletionPanel', () => {
     const panel = screen.getByRole('status');
     expect(panel).toHaveClass('animate-in');
     expect(panel).toHaveClass('fade-in');
+  });
+
+  it('should render cancelled state correctly', () => {
+    render(
+      <CompletionPanel
+        {...defaultProps}
+        completedCount={3}
+        cancelledCount={7}
+        isCancelled={true}
+      />
+    );
+
+    expect(screen.getByText('Download cancelled')).toBeInTheDocument();
+    expect(screen.getByText('3 tracks downloaded before cancellation')).toBeInTheDocument();
+  });
+
+  it('should render cancelled state with no tracks downloaded', () => {
+    render(
+      <CompletionPanel
+        {...defaultProps}
+        completedCount={0}
+        cancelledCount={10}
+        isCancelled={true}
+      />
+    );
+
+    expect(screen.getByText('Download cancelled')).toBeInTheDocument();
+    expect(screen.getByText('No tracks were downloaded')).toBeInTheDocument();
   });
 });
