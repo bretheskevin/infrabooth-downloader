@@ -2,15 +2,15 @@ use serde::Serialize;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 
-use crate::services::oauth::{
-    build_auth_url, exchange_code, fetch_user_profile, generate_pkce, get_client_secret,
-    refresh_tokens, REDIRECT_URI,
-};
 #[cfg(debug_assertions)]
 use crate::services::dev_server::start_dev_callback_server;
+use crate::services::oauth::{
+    build_auth_url, exchange_code, fetch_user_profile, generate_pkce, get_client_secret,
+    REDIRECT_URI,
+};
 use crate::services::storage::{
-    calculate_expires_at, delete_tokens, is_token_expired_or_expiring, load_tokens, store_tokens,
-    StoredTokens,
+    calculate_expires_at, delete_tokens, is_token_expired_or_expiring, load_tokens,
+    refresh_and_store_tokens, store_tokens, StoredTokens,
 };
 
 pub struct OAuthState {
@@ -47,10 +47,7 @@ pub const AUTH_STATE_CHANGED_EVENT: &str = "auth-state-changed";
 /// * `Ok(String)` - The authorization URL to open in the browser
 /// * `Err(String)` - Error message if generation fails
 #[tauri::command]
-pub async fn start_oauth(
-    state: State<'_, OAuthState>,
-    app: AppHandle,
-) -> Result<String, String> {
+pub async fn start_oauth(state: State<'_, OAuthState>, app: AppHandle) -> Result<String, String> {
     let (verifier, challenge) = generate_pkce();
 
     *state.verifier.lock().map_err(|e| e.to_string())? = Some(verifier);
@@ -62,7 +59,10 @@ pub async fn start_oauth(
         // Dev mode: use localhost callback server
         let port = start_dev_callback_server(app).await?;
         redirect_uri = format!("http://localhost:{}/callback", port);
-        log::info!("[start_oauth] Dev mode: using localhost callback at {}", redirect_uri);
+        log::info!(
+            "[start_oauth] Dev mode: using localhost callback at {}",
+            redirect_uri
+        );
     }
 
     #[cfg(not(debug_assertions))]
@@ -70,7 +70,10 @@ pub async fn start_oauth(
         // Production: use deep link scheme
         let _ = &app;
         redirect_uri = REDIRECT_URI.to_string();
-        log::info!("[start_oauth] Production mode: using deep link {}", redirect_uri);
+        log::info!(
+            "[start_oauth] Production mode: using deep link {}",
+            redirect_uri
+        );
     }
 
     *state.redirect_uri.lock().map_err(|e| e.to_string())? = Some(redirect_uri.clone());
@@ -95,7 +98,10 @@ pub async fn complete_oauth(
     state: State<'_, OAuthState>,
     app: AppHandle,
 ) -> Result<(), String> {
-    log::info!("[complete_oauth] Called with code: {}...", &code[..code.len().min(10)]);
+    log::info!(
+        "[complete_oauth] Called with code: {}...",
+        &code[..code.len().min(10)]
+    );
 
     let verifier = state
         .verifier
@@ -113,7 +119,7 @@ pub async fn complete_oauth(
 
     log::info!("[complete_oauth] Using redirect_uri: {}", redirect_uri);
 
-    let client_secret = get_client_secret().map_err(|e| {
+    let client_secret = get_client_secret().map_err(|e: crate::models::AuthError| {
         log::error!("[complete_oauth] Failed to get client secret: {}", e);
         e.to_string()
     })?;
@@ -135,7 +141,10 @@ pub async fn complete_oauth(
             e.to_string()
         })?;
 
-    log::info!("[complete_oauth] Got profile for user: {}", profile.username);
+    log::info!(
+        "[complete_oauth] Got profile for user: {}",
+        profile.username
+    );
 
     // Calculate expiry timestamp and store tokens
     let expires_at = calculate_expires_at(tokens.expires_in);
@@ -195,7 +204,7 @@ pub async fn check_auth_state(app: AppHandle) -> Result<bool, String> {
     // Check if token is expired or expiring soon
     if is_token_expired_or_expiring(tokens.expires_at) {
         // Need to refresh
-        match refresh_and_store(&tokens, &app).await {
+        match refresh_and_store_tokens(&tokens).await {
             Ok(refreshed) => {
                 emit_signed_in(&app, &refreshed.username, &refreshed.plan)?;
                 Ok(true)
@@ -215,26 +224,6 @@ pub async fn check_auth_state(app: AppHandle) -> Result<bool, String> {
         emit_signed_in(&app, &tokens.username, &tokens.plan)?;
         Ok(true)
     }
-}
-
-/// Refreshes tokens and stores the new ones.
-async fn refresh_and_store(tokens: &StoredTokens, _app: &AppHandle) -> Result<StoredTokens, String> {
-    let client_secret = get_client_secret().map_err(|e| e.to_string())?;
-    let new_tokens = refresh_tokens(&tokens.refresh_token, &client_secret)
-        .await
-        .map_err(|e| e.to_string())?;
-
-    let expires_at = calculate_expires_at(new_tokens.expires_in);
-    let stored = StoredTokens {
-        access_token: new_tokens.access_token,
-        refresh_token: new_tokens.refresh_token,
-        expires_at,
-        username: tokens.username.clone(),
-        plan: tokens.plan.clone(),
-    };
-    store_tokens(&stored).map_err(|e| e.to_string())?;
-
-    Ok(stored)
 }
 
 /// Emits signed-in auth state to the frontend.

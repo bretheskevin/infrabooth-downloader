@@ -1,5 +1,5 @@
-use std::path::PathBuf;
 use serde::Serialize;
+use std::path::PathBuf;
 use tauri::{AppHandle, Emitter, Runtime};
 
 use crate::models::error::{PipelineError, YtDlpError};
@@ -161,7 +161,7 @@ impl DownloadQueue {
                     failed += 1;
                     failed_tracks.push((item.track_id.clone(), e.to_string()));
                     retry_count = 0; // Reset on move to next track
-                    // Continue to next track
+                                     // Continue to next track
                 }
             }
 
@@ -222,7 +222,10 @@ mod tests {
         assert_eq!(item.track_id, "123456");
         assert_eq!(item.title, "Track Name");
         assert_eq!(item.artist, "Artist");
-        assert_eq!(item.artwork_url, Some("https://example.com/art.jpg".to_string()));
+        assert_eq!(
+            item.artwork_url,
+            Some("https://example.com/art.jpg".to_string())
+        );
         assert_eq!(item.track_number, Some(1));
     }
 

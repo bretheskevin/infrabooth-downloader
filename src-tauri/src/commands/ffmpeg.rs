@@ -7,9 +7,7 @@ use crate::services::ffmpeg;
 /// and can be executed as a Tauri sidecar.
 #[tauri::command]
 pub async fn test_ffmpeg(app: tauri::AppHandle) -> Result<String, ErrorResponse> {
-    ffmpeg::get_version(&app)
-        .await
-        .map_err(|e| e.into())
+    ffmpeg::get_version(&app).await.map_err(|e| e.into())
 }
 
 #[cfg(test)]

@@ -1,12 +1,12 @@
-use std::path::PathBuf;
 use serde::Deserialize;
+use std::path::PathBuf;
 use tauri::{Emitter, Manager};
 
-use crate::models::ErrorResponse;
+use crate::models::{ErrorResponse, HasErrorCode};
 use crate::services::metadata::TrackMetadata;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem};
-use crate::services::ytdlp::{DownloadErrorPayload, DownloadProgressEvent};
+use crate::services::ytdlp::DownloadProgressEvent;
 
 /// Request payload for downloading a track with full metadata.
 #[derive(Debug, Deserialize)]
@@ -83,7 +83,7 @@ pub async fn download_track_full(
                 track_id: track_id.clone(),
                 status: "failed".to_string(),
                 percent: None,
-                error: Some(DownloadErrorPayload {
+                error: Some(ErrorResponse {
                     code: e.code().to_string(),
                     message: e.to_string(),
                 }),
@@ -176,12 +176,10 @@ pub async fn start_download_queue(
 
 /// Get the default download path.
 fn get_download_path(app: &tauri::AppHandle) -> Result<PathBuf, ErrorResponse> {
-    app.path()
-        .download_dir()
-        .map_err(|e| ErrorResponse {
-            code: "DOWNLOAD_FAILED".to_string(),
-            message: format!("Failed to get downloads directory: {}", e),
-        })
+    app.path().download_dir().map_err(|e| ErrorResponse {
+        code: "DOWNLOAD_FAILED".to_string(),
+        message: format!("Failed to get downloads directory: {}", e),
+    })
 }
 
 #[cfg(test)]
@@ -247,7 +245,10 @@ mod tests {
         assert_eq!(item.track_id, "123456");
         assert_eq!(item.title, "Test Track");
         assert_eq!(item.artist, "Test Artist");
-        assert_eq!(item.artwork_url, Some("https://example.com/art.jpg".to_string()));
+        assert_eq!(
+            item.artwork_url,
+            Some("https://example.com/art.jpg".to_string())
+        );
     }
 
     #[test]
