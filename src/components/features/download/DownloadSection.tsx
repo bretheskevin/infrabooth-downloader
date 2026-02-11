@@ -52,6 +52,7 @@ export function DownloadSection() {
 
   // Handle "Download Another" - reset state and clear URL
   const handleDownloadAnother = useCallback(() => {
+    setIsStartingDownload(false);
     resetQueue();
     setUrl('');
   }, [resetQueue, setUrl]);
