@@ -13,6 +13,14 @@ export function useUrlValidation(url: string): UseUrlValidationReturn {
   const [isValidating, setIsValidating] = useState(false);
   const debouncedUrl = useDebounce(url, 300);
 
+  // Immediately clear when URL becomes empty (bypass debounce)
+  useEffect(() => {
+    if (!url) {
+      setResult(null);
+      setIsValidating(false);
+    }
+  }, [url]);
+
   useEffect(() => {
     let isCancelled = false;
 
