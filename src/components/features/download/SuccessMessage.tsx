@@ -15,12 +15,12 @@ export function SuccessMessage({
 
   return (
     <div className="space-y-1 text-center">
-      <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+      <h2 className="text-xl font-semibold text-foreground">
         {isFullSuccess
           ? t('completion.title')
           : t('completion.titlePartial')}
       </h2>
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-sm text-muted-foreground">
         {isFullSuccess
           ? t('completion.allTracksDownloaded', { total: totalCount })
           : t('completion.tracksDownloaded', {

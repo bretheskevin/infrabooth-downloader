@@ -45,6 +45,6 @@ describe('FailedTrackItem', () => {
   it('should display artist in muted styling', () => {
     render(<FailedTrackItem track={mockTrack} />);
     const artistElement = screen.getByText('Test Artist Name');
-    expect(artistElement.className).toMatch(/text-gray-500|text-gray-400/);
+    expect(artistElement).toHaveClass('text-muted-foreground');
   });
 });

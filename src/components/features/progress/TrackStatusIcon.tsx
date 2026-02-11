@@ -30,7 +30,7 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
         <Clock
           role="img"
           aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-gray-400', className)}
+          className={cn(baseClasses, 'text-muted-foreground', className)}
         />
       );
 
@@ -40,7 +40,7 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
         <Loader2
           role="img"
           aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-indigo-500 animate-spin', className)}
+          className={cn(baseClasses, 'text-primary animate-spin', className)}
         />
       );
 
@@ -49,7 +49,7 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
         <CheckCircle2
           role="img"
           aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-emerald-500', className)}
+          className={cn(baseClasses, 'text-success', className)}
         />
       );
 
@@ -58,7 +58,7 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
         <Clock
           role="img"
           aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-amber-500', className)}
+          className={cn(baseClasses, 'text-warning', className)}
         />
       );
 
@@ -69,7 +69,7 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
           <AlertTriangle
             role="img"
             aria-label="Track unavailable - external restriction"
-            className={cn(baseClasses, 'text-amber-500', className)}
+            className={cn(baseClasses, 'text-warning', className)}
           />
         );
       }
@@ -85,7 +85,7 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
           <AlertTriangle
             role="img"
             aria-label={warningLabel}
-            className={cn(baseClasses, 'text-amber-500', className)}
+            className={cn(baseClasses, 'text-warning', className)}
           />
         );
       }
@@ -93,7 +93,7 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
         <XCircle
           role="img"
           aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-rose-500', className)}
+          className={cn(baseClasses, 'text-destructive', className)}
         />
       );
     }

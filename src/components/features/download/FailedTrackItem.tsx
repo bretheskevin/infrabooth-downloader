@@ -12,14 +12,14 @@ export function FailedTrackItem({ track }: FailedTrackItemProps) {
       className="flex items-start gap-2 py-1.5"
     >
       <AlertTriangle
-        className="mt-0.5 h-4 w-4 flex-shrink-0 text-amber-500"
+        className="mt-0.5 h-4 w-4 flex-shrink-0 text-warning"
         aria-hidden="true"
       />
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+        <p className="truncate text-sm font-medium text-foreground">
           {track.title}
         </p>
-        <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+        <p className="truncate text-xs text-muted-foreground">
           {track.artist}
         </p>
       </div>

@@ -18,12 +18,12 @@ export function StatusTooltip({ children, descriptionId, mainText, subText }: St
       <Tooltip>
         <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent
-          className="max-w-xs bg-slate-800 text-slate-100"
+          className="max-w-xs"
           aria-describedby={descriptionId}
         >
           <p id={descriptionId}>{mainText}</p>
           {subText && (
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-primary-foreground/70 mt-1">
               {subText}
             </p>
           )}

@@ -89,7 +89,7 @@ describe('UrlInput', () => {
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toHaveClass('focus-visible:ring-2');
-    expect(input).toHaveClass('focus-visible:ring-indigo-500');
+    expect(input).toHaveClass('focus-visible:ring-primary');
   });
 
   it('should accept custom className', () => {
@@ -108,7 +108,7 @@ describe('UrlInput', () => {
   });
 
   describe('validation state borders (Story 3.3)', () => {
-    it('should show indigo border when validating (AC #1)', () => {
+    it('should show primary border when validating (AC #1)', () => {
       render(
         <UrlInput
           onUrlChange={mockOnUrlChange}
@@ -118,9 +118,9 @@ describe('UrlInput', () => {
       );
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-      expect(input).toHaveClass('border-indigo-400');
+      expect(input).toHaveClass('border-primary');
       expect(input).toHaveClass('ring-1');
-      expect(input).toHaveClass('ring-indigo-400');
+      expect(input).toHaveClass('ring-primary');
     });
 
     it('should show loading spinner when validating (AC #1)', () => {
@@ -136,7 +136,7 @@ describe('UrlInput', () => {
       expect(spinner).toBeInTheDocument();
     });
 
-    it('should show emerald border on success (AC #2)', () => {
+    it('should show success border on success (AC #2)', () => {
       const successResult: ValidationResult = {
         valid: true,
         urlType: 'playlist',
@@ -151,12 +151,12 @@ describe('UrlInput', () => {
       );
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-      expect(input).toHaveClass('border-emerald-500');
+      expect(input).toHaveClass('border-success');
       expect(input).toHaveClass('ring-1');
-      expect(input).toHaveClass('ring-emerald-500');
+      expect(input).toHaveClass('ring-success');
     });
 
-    it('should show red border on error (AC #3)', () => {
+    it('should show destructive border on error (AC #3)', () => {
       const errorResult: ValidationResult = {
         valid: false,
         error: {
@@ -174,9 +174,9 @@ describe('UrlInput', () => {
       );
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-      expect(input).toHaveClass('border-red-500');
+      expect(input).toHaveClass('border-destructive');
       expect(input).toHaveClass('ring-1');
-      expect(input).toHaveClass('ring-red-500');
+      expect(input).toHaveClass('ring-destructive');
     });
 
     it('should not show spinner when not validating', () => {

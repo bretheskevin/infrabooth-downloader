@@ -115,37 +115,36 @@ describe('TrackCard', () => {
   });
 
   describe('active track highlight (downloading/converting)', () => {
-    it('should apply indigo highlight when status is downloading', () => {
+    it('should apply primary highlight when status is downloading', () => {
       render(<TrackCard track={mockDownloadingTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
-      expect(card).toHaveClass('bg-indigo-50');
-      expect(card).toHaveClass('border-indigo-200');
+      expect(card).toHaveClass('bg-primary/10');
+      expect(card).toHaveClass('border-primary/30');
     });
 
-    it('should apply indigo highlight when status is converting', () => {
+    it('should apply primary highlight when status is converting', () => {
       render(<TrackCard track={mockConvertingTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
-      expect(card).toHaveClass('bg-indigo-50');
-      expect(card).toHaveClass('border-indigo-200');
+      expect(card).toHaveClass('bg-primary/10');
+      expect(card).toHaveClass('border-primary/30');
     });
 
-    it('should not apply indigo highlight when status is complete', () => {
+    it('should not apply primary highlight when status is complete', () => {
       render(<TrackCard track={mockCompleteTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
-      expect(card).not.toHaveClass('bg-indigo-50');
+      expect(card).not.toHaveClass('border-primary/30');
     });
 
-    it('should not apply indigo highlight when status is pending', () => {
+    it('should not apply primary highlight border when status is pending', () => {
       render(<TrackCard track={mockTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
-      expect(card).not.toHaveClass('bg-indigo-50');
+      expect(card).not.toHaveClass('border-primary/30');
     });
 
-    it('should prefer indigo highlight over primary highlight when active', () => {
+    it('should apply active primary highlight when active', () => {
       render(<TrackCard track={mockDownloadingTrack} isCurrentTrack={true} />);
       const card = screen.getByRole('listitem');
-      expect(card).toHaveClass('bg-indigo-50');
-      expect(card).not.toHaveClass('bg-primary/10');
+      expect(card).toHaveClass('bg-primary/10');
     });
   });
 

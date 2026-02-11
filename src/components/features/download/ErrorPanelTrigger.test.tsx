@@ -108,11 +108,11 @@ describe('ErrorPanelTrigger', () => {
     expect(button).toHaveAttribute('aria-controls', 'error-panel-content');
   });
 
-  it('should use amber/warning color styling', () => {
+  it('should use warning color styling', () => {
     const onClick = vi.fn();
     render(<ErrorPanelTrigger failedCount={2} onClick={onClick} />);
 
     const button = screen.getByRole('button');
-    expect(button.className).toMatch(/amber/);
+    expect(button.className).toMatch(/warning/);
   });
 });

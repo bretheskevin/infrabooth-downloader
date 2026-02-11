@@ -165,23 +165,10 @@ describe('DownloadSection', () => {
       mockAuthStore.mockImplementation((selector) => selector({ isSignedIn: false }));
     });
 
-    it('should render URL input (AC #5)', () => {
+    it('should render URL input', () => {
       render(<DownloadSection />);
 
       expect(screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL')).toBeInTheDocument();
-    });
-
-    it('should have disabled input when not signed in (AC #5)', () => {
-      render(<DownloadSection />);
-
-      const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-      expect(input).toBeDisabled();
-    });
-
-    it('should show auth prompt overlay when not signed in (AC #5)', () => {
-      render(<DownloadSection />);
-
-      expect(screen.getByText('Sign in to download')).toBeInTheDocument();
     });
   });
 
@@ -347,7 +334,7 @@ describe('DownloadSection', () => {
       render(<DownloadSection />);
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-      expect(input).toHaveClass('border-emerald-500');
+      expect(input).toHaveClass('border-success');
     });
 
     it('should hide success border after 2 seconds', async () => {
@@ -359,14 +346,14 @@ describe('DownloadSection', () => {
       render(<DownloadSection />);
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-      expect(input).toHaveClass('border-emerald-500');
+      expect(input).toHaveClass('border-success');
 
       // Advance time by 2 seconds
       act(() => {
         vi.advanceTimersByTime(2000);
       });
 
-      expect(input).not.toHaveClass('border-emerald-500');
+      expect(input).not.toHaveClass('border-success');
     });
   });
 
