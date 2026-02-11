@@ -60,7 +60,7 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
         placeholder={t('download.pasteUrl')}
         disabled={disabled}
         className={cn(
-          'h-12 text-base transition-colors duration-200',
+          'h-12 text-base transition-colors duration-200 pr-12',
           'focus-visible:ring-2 focus-visible:ring-indigo-500',
           borderClass,
           className
@@ -72,7 +72,7 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
           <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />
         </div>
       )}
-      {!isValidating && !value && !disabled && (
+      {!isValidating && !disabled && (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
