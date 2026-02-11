@@ -78,7 +78,7 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
       aria-current={isCurrentTrack ? 'true' : undefined}
       aria-label={`${track.title} by ${track.artist}`}
       className={cn(
-        'flex items-center gap-3 p-3 rounded-md',
+        'flex items-center gap-3 p-3 rounded-md overflow-hidden',
         'border-b border-border last:border-b-0',
         'transition-colors duration-150',
         (isActive || showInitializing) && 'bg-primary/10 border border-primary/30',
@@ -103,7 +103,7 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
       </Avatar>
 
       {/* Track Info */}
-      <div className="flex-1 min-w-0">
+      <div className="flex-1 w-0">
         <p className="text-sm font-medium truncate">{track.title}</p>
         <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
         {/* Expandable details for touch devices */}
@@ -120,7 +120,9 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
       </div>
 
       {/* Status Badge - with tooltip for desktop errors */}
-      {renderStatusBadge()}
+      <div className="flex-shrink-0">
+        {renderStatusBadge()}
+      </div>
     </div>
   );
 }
