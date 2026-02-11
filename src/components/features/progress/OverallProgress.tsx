@@ -56,13 +56,13 @@ export function OverallProgress({ className }: OverallProgressProps) {
           )}
           <span
             aria-live="polite"
-            className="text-sm text-gray-700 dark:text-gray-300"
+            className="text-sm text-foreground"
           >
             {showPreparing ? t('download.preparingTracks') : progressText}
           </span>
         </div>
         {!showPreparing && (
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className="text-sm text-muted-foreground">
             {percentage}%
           </span>
         )}

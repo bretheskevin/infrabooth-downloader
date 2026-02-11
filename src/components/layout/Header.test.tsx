@@ -65,7 +65,7 @@ describe('Header', () => {
 
     // UserMenu displays username and quality badge in a dropdown trigger
     expect(screen.getByText('testuser')).toBeInTheDocument();
-    expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
+    expect(screen.getByText('Go+')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
   });
 

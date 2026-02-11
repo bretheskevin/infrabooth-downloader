@@ -73,10 +73,10 @@ describe('UnavailableTrackDetails', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
   });
 
-  it('should use amber color for the trigger', () => {
+  it('should use warning color for the trigger', () => {
     render(<UnavailableTrackDetails />);
 
     const trigger = screen.getByText('Show details');
-    expect(trigger).toHaveClass('text-amber-600');
+    expect(trigger).toHaveClass('text-warning');
   });
 });

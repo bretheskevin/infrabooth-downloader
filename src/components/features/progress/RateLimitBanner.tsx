@@ -8,12 +8,12 @@ export function RateLimitBanner() {
 
   return (
     <Alert
-      className="bg-amber-50 border-amber-200"
+      className="bg-warning/20 border-warning/30"
       role="status"
       aria-live="polite"
     >
-      <Clock className="h-4 w-4 text-amber-600" />
-      <AlertDescription className="text-amber-800">
+      <Clock className="h-4 w-4 text-warning" />
+      <AlertDescription className="text-warning-foreground dark:text-warning">
         {t('download.rateLimitMessage')}
       </AlertDescription>
     </Alert>

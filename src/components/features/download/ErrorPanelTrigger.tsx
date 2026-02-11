@@ -21,9 +21,9 @@ export function ErrorPanelTrigger({
     <button
       onClick={onClick}
       className={cn(
-        'flex items-center gap-2 text-sm text-amber-600 hover:text-amber-700',
+        'flex items-center gap-2 text-sm text-warning hover:text-warning/80',
         'transition-colors focus-visible:outline-none focus-visible:ring-2',
-        'focus-visible:ring-amber-500 focus-visible:ring-offset-2 rounded-md px-2 py-1'
+        'focus-visible:ring-warning focus-visible:ring-offset-2 rounded-md px-2 py-1'
       )}
       aria-expanded={isExpanded}
       aria-controls="error-panel-content"

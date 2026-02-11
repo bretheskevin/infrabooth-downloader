@@ -23,7 +23,7 @@ export function FailureGroup({ category, tracks }: FailureGroupProps) {
 
   return (
     <div className="mb-3 last:mb-0" role="group">
-      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-400">
+      <h4 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
         {t(labelKey)} ({tracks.length})
       </h4>
       <div className="space-y-0.5">

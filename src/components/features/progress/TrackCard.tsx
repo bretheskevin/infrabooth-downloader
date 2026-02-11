@@ -48,9 +48,9 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
       <Loader2
         role="img"
         aria-label={t('download.startingDownload')}
-        className="h-4 w-4 flex-shrink-0 text-indigo-500 animate-spin"
+        className="h-4 w-4 flex-shrink-0 text-primary animate-spin"
       />
-      <span className="text-xs font-medium text-indigo-600">
+      <span className="text-xs font-medium text-primary">
         {t('download.startingDownload')}
       </span>
     </div>
@@ -81,7 +81,7 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
         'flex items-center gap-3 p-3 rounded-md',
         'border-b border-border last:border-b-0',
         'transition-colors duration-150',
-        (isActive || showInitializing) && 'bg-indigo-50 border border-indigo-200',
+        (isActive || showInitializing) && 'bg-primary/10 border border-primary/30',
         !isActive && !showInitializing && isCurrentTrack && 'bg-primary/10 border-l-2 border-l-primary'
       )}
     >

@@ -12,11 +12,11 @@ export interface TrackStatusLabelProps {
 
 const statusColorClasses: Record<TrackStatus, string> = {
   pending: 'text-muted-foreground',
-  downloading: 'text-indigo-600',
-  converting: 'text-indigo-600',
-  complete: 'text-emerald-600',
-  failed: 'text-rose-600',
-  rate_limited: 'text-amber-600',
+  downloading: 'text-primary',
+  converting: 'text-primary',
+  complete: 'text-success',
+  failed: 'text-destructive',
+  rate_limited: 'text-warning',
 };
 
 export function TrackStatusLabel({ status, error, className }: TrackStatusLabelProps) {
@@ -43,16 +43,16 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
     return t(statusKeys[status]);
   };
 
-  // Use amber color for warning-severity errors (geo-blocked, unavailable, rate-limited)
+  // Use warning color for warning-severity errors (geo-blocked, unavailable, rate-limited)
   const getColorClass = (): string => {
     if (status === 'failed' && error) {
-      // Unavailable tracks use warning color (amber) - external failure, not app error
+      // Unavailable tracks use warning color - external failure, not app error
       if (isUnavailableError(error)) {
-        return 'text-amber-600';
+        return 'text-warning';
       }
       // Other warning-severity errors (geo-blocked)
       if (getErrorSeverity(error.code) === 'warning') {
-        return 'text-amber-600';
+        return 'text-warning';
       }
     }
     return statusColorClasses[status];

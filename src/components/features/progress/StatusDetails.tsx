@@ -19,7 +19,7 @@ export function StatusDetails({ content }: StatusDetailsProps) {
   return (
     <Collapsible open={isOpen} onOpenChange={setIsOpen}>
       <CollapsibleTrigger
-        className="text-xs text-amber-600 hover:text-amber-700 hover:underline inline-flex items-center gap-0.5 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1 rounded"
+        className="text-xs text-warning hover:text-warning/80 hover:underline inline-flex items-center gap-0.5 focus:outline-none focus:ring-2 focus:ring-warning focus:ring-offset-1 rounded"
         aria-expanded={isOpen}
       >
         {t('errors.showDetails')}

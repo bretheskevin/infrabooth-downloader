@@ -59,13 +59,13 @@ export function ErrorPanel({
           aria-label={t('errors.panelTitle')}
           aria-live="polite"
           className={cn(
-            'mt-3 rounded-lg border border-gray-200 bg-white',
-            'dark:border-gray-700 dark:bg-gray-800'
+            'mt-3 rounded-lg border border-border bg-card',
+            'dark:border-border dark:bg-card'
           )}
         >
           {/* Panel Header */}
-          <div className="flex items-center justify-between border-b border-gray-200 px-4 py-2 dark:border-gray-700">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          <div className="flex items-center justify-between border-b border-border px-4 py-2">
+            <h3 className="text-sm font-semibold text-foreground">
               {t('errors.panelTitle')}
             </h3>
             <Button

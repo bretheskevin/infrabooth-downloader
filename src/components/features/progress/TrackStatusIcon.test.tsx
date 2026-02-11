@@ -7,27 +7,27 @@ describe('TrackStatusIcon', () => {
     it('should render clock icon for pending status', () => {
       render(<TrackStatusIcon status="pending" />);
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-gray-400');
+      expect(icon).toHaveClass('text-muted-foreground');
     });
 
     it('should render spinner icon for downloading status', () => {
       render(<TrackStatusIcon status="downloading" />);
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-indigo-500');
+      expect(icon).toHaveClass('text-primary');
       expect(icon).toHaveClass('animate-spin');
     });
 
     it('should render spinner icon for converting status', () => {
       render(<TrackStatusIcon status="converting" />);
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-indigo-500');
+      expect(icon).toHaveClass('text-primary');
       expect(icon).toHaveClass('animate-spin');
     });
 
     it('should render checkmark icon for complete status', () => {
       render(<TrackStatusIcon status="complete" />);
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-emerald-500');
+      expect(icon).toHaveClass('text-success');
     });
 
     it('should render warning icon for failed status with warning error', () => {
@@ -38,7 +38,7 @@ describe('TrackStatusIcon', () => {
         />
       );
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-amber-500');
+      expect(icon).toHaveClass('text-warning');
     });
 
     it('should render error icon for failed status with error code', () => {
@@ -49,10 +49,10 @@ describe('TrackStatusIcon', () => {
         />
       );
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-rose-500');
+      expect(icon).toHaveClass('text-destructive');
     });
 
-    it('should render warning icon with amber color for unavailable error', () => {
+    it('should render warning icon with warning color for unavailable error', () => {
       render(
         <TrackStatusIcon
           status="failed"
@@ -61,7 +61,7 @@ describe('TrackStatusIcon', () => {
         />
       );
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-amber-500');
+      expect(icon).toHaveClass('text-warning');
     });
 
     it('should render warning icon for private video error', () => {
@@ -73,13 +73,13 @@ describe('TrackStatusIcon', () => {
         />
       );
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-amber-500');
+      expect(icon).toHaveClass('text-warning');
     });
 
     it('should render clock icon (not spinner) for rate_limited status', () => {
       render(<TrackStatusIcon status="rate_limited" />);
       const icon = screen.getByRole('img', { hidden: true });
-      expect(icon).toHaveClass('text-amber-500');
+      expect(icon).toHaveClass('text-warning');
       expect(icon).not.toHaveClass('animate-spin');
     });
   });
