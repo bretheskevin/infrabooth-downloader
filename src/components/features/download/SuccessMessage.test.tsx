@@ -9,8 +9,11 @@ vi.mock('react-i18next', () => ({
       const translations: Record<string, string> = {
         'completion.title': 'Download complete!',
         'completion.titlePartial': 'Download finished',
+        'completion.titleCancelled': 'Download cancelled',
         'completion.allTracksDownloaded': `All ${options?.total} tracks downloaded`,
         'completion.tracksDownloaded': `${options?.completed} of ${options?.total} tracks downloaded`,
+        'completion.tracksCancelled': `${options?.completed} tracks downloaded before cancellation`,
+        'completion.allCancelled': 'No tracks were downloaded',
       };
       return translations[key] || key;
     },
@@ -18,10 +21,16 @@ vi.mock('react-i18next', () => ({
 }));
 
 describe('SuccessMessage', () => {
+  const defaultProps = {
+    completedCount: 10,
+    totalCount: 10,
+    cancelledCount: 0,
+    isFullSuccess: true,
+    isCancelled: false,
+  };
+
   it('should render full success message when all tracks completed', () => {
-    render(
-      <SuccessMessage completedCount={10} totalCount={10} isFullSuccess={true} />
-    );
+    render(<SuccessMessage {...defaultProps} />);
 
     expect(screen.getByText('Download complete!')).toBeInTheDocument();
     expect(screen.getByText('All 10 tracks downloaded')).toBeInTheDocument();
@@ -29,7 +38,11 @@ describe('SuccessMessage', () => {
 
   it('should render partial success message when some tracks failed', () => {
     render(
-      <SuccessMessage completedCount={8} totalCount={10} isFullSuccess={false} />
+      <SuccessMessage
+        {...defaultProps}
+        completedCount={8}
+        isFullSuccess={false}
+      />
     );
 
     expect(screen.getByText('Download finished')).toBeInTheDocument();
@@ -38,7 +51,11 @@ describe('SuccessMessage', () => {
 
   it('should render single track success', () => {
     render(
-      <SuccessMessage completedCount={1} totalCount={1} isFullSuccess={true} />
+      <SuccessMessage
+        {...defaultProps}
+        completedCount={1}
+        totalCount={1}
+      />
     );
 
     expect(screen.getByText('Download complete!')).toBeInTheDocument();
@@ -46,11 +63,39 @@ describe('SuccessMessage', () => {
   });
 
   it('should have correct heading structure', () => {
-    render(
-      <SuccessMessage completedCount={10} totalCount={10} isFullSuccess={true} />
-    );
+    render(<SuccessMessage {...defaultProps} />);
 
     const heading = screen.getByRole('heading', { level: 2 });
     expect(heading).toHaveTextContent('Download complete!');
+  });
+
+  it('should render cancelled message when download was cancelled with some tracks downloaded', () => {
+    render(
+      <SuccessMessage
+        {...defaultProps}
+        completedCount={3}
+        cancelledCount={7}
+        isFullSuccess={false}
+        isCancelled={true}
+      />
+    );
+
+    expect(screen.getByText('Download cancelled')).toBeInTheDocument();
+    expect(screen.getByText('3 tracks downloaded before cancellation')).toBeInTheDocument();
+  });
+
+  it('should render cancelled message when download was cancelled with no tracks downloaded', () => {
+    render(
+      <SuccessMessage
+        {...defaultProps}
+        completedCount={0}
+        cancelledCount={10}
+        isFullSuccess={false}
+        isCancelled={true}
+      />
+    );
+
+    expect(screen.getByText('Download cancelled')).toBeInTheDocument();
+    expect(screen.getByText('No tracks were downloaded')).toBeInTheDocument();
   });
 });

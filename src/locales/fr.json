@@ -96,8 +96,11 @@
   "completion": {
     "title": "Téléchargement terminé !",
     "titlePartial": "Téléchargement terminé",
+    "titleCancelled": "Téléchargement annulé",
     "tracksDownloaded": "{{completed}} sur {{total}} pistes téléchargées",
     "allTracksDownloaded": "Les {{total}} pistes ont été téléchargées",
+    "tracksCancelled": "{{completed}} pistes téléchargées avant annulation",
+    "allCancelled": "Aucune piste téléchargée",
     "openFolder": "Ouvrir le dossier",
     "downloadAnother": "Nouveau téléchargement",
     "failedTracks": "{{count}} pistes n'ont pas pu être téléchargées",

@@ -96,8 +96,11 @@
   "completion": {
     "title": "Download complete!",
     "titlePartial": "Download finished",
+    "titleCancelled": "Download cancelled",
     "tracksDownloaded": "{{completed}} of {{total}} tracks downloaded",
     "allTracksDownloaded": "All {{total}} tracks downloaded",
+    "tracksCancelled": "{{completed}} tracks downloaded before cancellation",
+    "allCancelled": "No tracks were downloaded",
     "openFolder": "Open Folder",
     "downloadAnother": "Download Another",
     "failedTracks": "{{count}} tracks couldn't be downloaded",
