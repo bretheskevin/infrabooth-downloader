@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
-import { useAuthStore } from '@/stores/authStore';
 import { useQueueStore } from '@/stores/queueStore';
 import { useDownloadFlow, useDownloadProgress, useDownloadCompletion } from '@/hooks/download';
 import type { PlaylistInfo, TrackInfo } from '@/types/playlist';
 import { UrlInput } from './UrlInput';
-import { AuthPrompt } from './AuthPrompt';
 import { ValidationFeedback } from './ValidationFeedback';
 import { PlaylistPreview } from './PlaylistPreview';
 import { TrackPreview } from './TrackPreview';
@@ -20,7 +18,6 @@ function isPlaylist(media: PlaylistInfo | TrackInfo): media is PlaylistInfo {
 
 export function DownloadSection() {
   const { t } = useTranslation();
-  const isSignedIn = useAuthStore((state) => state.isSignedIn);
   const isProcessing = useQueueStore((state) => state.isProcessing);
   const isRateLimited = useQueueStore((state) => state.isRateLimited);
 
@@ -124,15 +121,12 @@ export function DownloadSection() {
   // Default: show URL input and preview
   return (
     <section className="space-y-4">
-      <div className="relative">
-        <UrlInput
-          onUrlChange={setUrl}
-          disabled={!isSignedIn || isProcessing}
-          isValidating={isValidating}
-          validationResult={displayResult}
-        />
-        {!isSignedIn && <AuthPrompt />}
-      </div>
+      <UrlInput
+        onUrlChange={setUrl}
+        disabled={isProcessing}
+        isValidating={isValidating}
+        validationResult={displayResult}
+      />
       <ValidationFeedback
         result={error ? { valid: false as const, error } : validation}
         isValidating={isValidating}
