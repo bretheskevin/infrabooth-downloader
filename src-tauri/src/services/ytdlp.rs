@@ -3,6 +3,7 @@ use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::{process::CommandEvent, ShellExt};
 
 use crate::models::error::YtDlpError;
+use crate::services::playlist::{PlaylistInfo, TrackInfo, UserInfo};
 use crate::services::storage::load_tokens;
 
 /// Get the path to the ffmpeg sidecar binary.
@@ -133,16 +134,37 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     app: &AppHandle<R>,
     config: TrackDownloadToMp3Config,
 ) -> Result<PathBuf, YtDlpError> {
+    use crate::services::storage::is_token_expired_or_expiring;
+
     // Try to load tokens - authentication is optional for public content
     let tokens = load_tokens().ok().flatten();
+
+    // Log token status for debugging
+    match &tokens {
+        Some(t) => {
+            if is_token_expired_or_expiring(t.expires_at) {
+                log::warn!(
+                    "[ytdlp] Token is expired or expiring soon - downloading without auth (128kbps)"
+                );
+            } else {
+                log::info!("[ytdlp] Using OAuth token for high quality download");
+            }
+        }
+        None => {
+            log::info!("[ytdlp] No OAuth token available - downloading without auth (128kbps)");
+        }
+    }
+
+    // Only use token if it's not expired
+    let valid_tokens = tokens.filter(|t| !is_token_expired_or_expiring(t.expires_at));
 
     let output_template = build_output_template(&config.output_dir, &config.playlist_context);
 
     let mut args = vec![
         "-v".to_string(),
         "-f".to_string(),
-        // Prefer MP3 format to skip conversion when available, fall back to best audio
-        "bestaudio[ext=mp3]/bestaudio".to_string(),
+        // Select best audio quality (highest bitrate), will be converted to MP3
+        "bestaudio".to_string(),
         "--no-playlist".to_string(),
         "-x".to_string(),
         "--audio-format".to_string(),
@@ -150,13 +172,14 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         "--audio-quality".to_string(),
         "320K".to_string(),
         // Inject our metadata to override yt-dlp's extracted values for filename
+        // Use .+ instead of .* to avoid double replacement (.*  matches empty string too)
         "--replace-in-metadata".to_string(),
         "artist".to_string(),
-        ".*".to_string(),
+        ".+".to_string(),
         config.artist.clone(),
         "--replace-in-metadata".to_string(),
         "title".to_string(),
-        ".*".to_string(),
+        ".+".to_string(),
         config.title.clone(),
         "-o".to_string(),
         output_template,
@@ -168,10 +191,11 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         config.track_url.clone(),
     ];
 
-    // Add OAuth token if available (enables higher quality downloads for authenticated users)
-    if let Some(ref t) = tokens {
+    // Add OAuth token if available and valid (enables higher quality downloads)
+    if let Some(ref t) = valid_tokens {
         args.insert(0, "--extractor-args".to_string());
         args.insert(1, format!("soundcloud:oauth_token={}", t.access_token));
+        log::debug!("[ytdlp] Added OAuth token to yt-dlp args");
     }
 
     // Add ffmpeg location if available
@@ -315,6 +339,229 @@ pub async fn get_version<R: tauri::Runtime>(
     }
 
     Ok(version)
+}
+
+/// Raw track metadata from yt-dlp JSON output.
+#[derive(Debug, Clone, serde::Deserialize)]
+struct YtDlpTrackMeta {
+    id: Option<String>,
+    title: Option<String>,
+    /// Track name (sometimes different from title)
+    track: Option<String>,
+    /// The account that uploaded the track (often a label for distributed content)
+    uploader: Option<String>,
+    /// The actual artist name (preferred over uploader for artist display)
+    artist: Option<String>,
+    /// Alternative artist field used by some extractors
+    creator: Option<String>,
+    thumbnail: Option<String>,
+    duration: Option<f64>,
+}
+
+/// Raw playlist metadata from yt-dlp JSON output.
+#[derive(Debug, Clone, serde::Deserialize)]
+struct YtDlpPlaylistMeta {
+    id: Option<String>,
+    title: Option<String>,
+    uploader: Option<String>,
+    thumbnail: Option<String>,
+    entries: Option<Vec<YtDlpTrackMeta>>,
+    playlist_count: Option<u32>,
+}
+
+impl From<YtDlpTrackMeta> for TrackInfo {
+    fn from(meta: YtDlpTrackMeta) -> Self {
+        // Prefer artist > creator > uploader for the artist name
+        // Filter out empty strings and "NA" placeholder values
+        let artist = meta
+            .artist
+            .filter(|s| !s.is_empty() && s != "NA")
+            .or_else(|| meta.creator.filter(|s| !s.is_empty() && s != "NA"))
+            .or_else(|| meta.uploader.filter(|s| !s.is_empty() && s != "NA"))
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        // Prefer track over title if available (track is usually cleaner)
+        let title = meta
+            .track
+            .filter(|s| !s.is_empty())
+            .or(meta.title)
+            .unwrap_or_else(|| "Unknown".to_string());
+
+        log::debug!(
+            "[ytdlp] Parsed track metadata - artist: {}, title: {}",
+            artist,
+            title
+        );
+
+        TrackInfo {
+            id: meta.id.and_then(|s| s.parse().ok()).unwrap_or(0),
+            title,
+            user: UserInfo { username: artist },
+            artwork_url: meta.thumbnail,
+            duration: meta.duration.map(|d| (d * 1000.0) as u64).unwrap_or(0),
+        }
+    }
+}
+
+impl From<YtDlpPlaylistMeta> for PlaylistInfo {
+    fn from(meta: YtDlpPlaylistMeta) -> Self {
+        let tracks: Vec<TrackInfo> = meta
+            .entries
+            .unwrap_or_default()
+            .into_iter()
+            .map(TrackInfo::from)
+            .collect();
+        let track_count = meta.playlist_count.unwrap_or(tracks.len() as u32);
+
+        PlaylistInfo {
+            id: meta.id.and_then(|s| s.parse().ok()).unwrap_or(0),
+            title: meta.title.unwrap_or_else(|| "Unknown".to_string()),
+            user: UserInfo {
+                username: meta.uploader.unwrap_or_else(|| "Unknown".to_string()),
+            },
+            artwork_url: meta.thumbnail,
+            track_count,
+            tracks,
+        }
+    }
+}
+
+/// Extract playlist metadata using yt-dlp without downloading.
+///
+/// This function uses yt-dlp's `--dump-single-json` feature to get playlist metadata
+/// without requiring authentication. Useful as a fallback when no OAuth token
+/// is available.
+pub async fn extract_playlist_info<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    url: &str,
+) -> Result<PlaylistInfo, YtDlpError> {
+    log::info!("[ytdlp] Extracting playlist info for URL: {}", url);
+
+    let shell = app.shell();
+    let (mut rx, _child) = shell
+        .sidecar("yt-dlp")
+        .map_err(|_| YtDlpError::BinaryNotFound)?
+        .args([
+            "--dump-single-json",
+            "--flat-playlist",
+            "--no-warnings",
+            url,
+        ])
+        .spawn()
+        .map_err(|_| YtDlpError::BinaryNotFound)?;
+
+    let mut json_output = String::new();
+    let mut last_error: Option<String> = None;
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Stdout(line_bytes) => {
+                let line = bytes_to_string(&line_bytes);
+                json_output.push_str(&line);
+            }
+            CommandEvent::Stderr(line_bytes) => {
+                let line = bytes_to_string(&line_bytes);
+                log::debug!("yt-dlp stderr: {}", line);
+                last_error = Some(line.clone());
+
+                if detect_geo_block(&line).is_some() {
+                    return Err(YtDlpError::GeoBlocked);
+                }
+                if line.contains("HTTP Error 403") {
+                    return Err(YtDlpError::GeoBlocked);
+                }
+                if line.contains("HTTP Error 404") {
+                    return Err(YtDlpError::DownloadFailed(
+                        "Playlist not found".to_string(),
+                    ));
+                }
+            }
+            CommandEvent::Terminated(payload) => {
+                if payload.code != Some(0) {
+                    return Err(YtDlpError::DownloadFailed(
+                        last_error.unwrap_or_else(|| "Unknown error".to_string()),
+                    ));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Parse the JSON output - yt-dlp outputs one JSON object per line for playlists
+    let meta: YtDlpPlaylistMeta = serde_json::from_str(&json_output)
+        .map_err(|e| YtDlpError::DownloadFailed(format!("Failed to parse metadata: {}", e)))?;
+
+    Ok(PlaylistInfo::from(meta))
+}
+
+/// Extract track metadata using yt-dlp without downloading.
+///
+/// This function uses yt-dlp's `--dump-json` feature to get track metadata
+/// without requiring authentication. Useful as a fallback when no OAuth token
+/// is available.
+pub async fn extract_track_info<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    url: &str,
+) -> Result<TrackInfo, YtDlpError> {
+    log::info!("[ytdlp] Extracting track info for URL: {}", url);
+
+    let shell = app.shell();
+    let (mut rx, _child) = shell
+        .sidecar("yt-dlp")
+        .map_err(|_| YtDlpError::BinaryNotFound)?
+        .args([
+            "--dump-json",
+            "--no-warnings",
+            url,
+        ])
+        .spawn()
+        .map_err(|_| YtDlpError::BinaryNotFound)?;
+
+    let mut json_output = String::new();
+    let mut last_error: Option<String> = None;
+
+    while let Some(event) = rx.recv().await {
+        match event {
+            CommandEvent::Stdout(line_bytes) => {
+                let line = bytes_to_string(&line_bytes);
+                json_output.push_str(&line);
+            }
+            CommandEvent::Stderr(line_bytes) => {
+                let line = bytes_to_string(&line_bytes);
+                log::debug!("yt-dlp stderr: {}", line);
+                last_error = Some(line.clone());
+
+                if detect_geo_block(&line).is_some() {
+                    return Err(YtDlpError::GeoBlocked);
+                }
+                if line.contains("HTTP Error 403") {
+                    return Err(YtDlpError::GeoBlocked);
+                }
+                if line.contains("HTTP Error 404") {
+                    return Err(YtDlpError::DownloadFailed(
+                        "Track not found".to_string(),
+                    ));
+                }
+            }
+            CommandEvent::Terminated(payload) => {
+                if payload.code != Some(0) {
+                    return Err(YtDlpError::DownloadFailed(
+                        last_error.unwrap_or_else(|| "Unknown error".to_string()),
+                    ));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    log::debug!("[ytdlp] Raw JSON output: {}", json_output);
+
+    let meta: YtDlpTrackMeta = serde_json::from_str(&json_output)
+        .map_err(|e| YtDlpError::DownloadFailed(format!("Failed to parse metadata: {}", e)))?;
+
+    log::debug!("[ytdlp] Parsed metadata: {:?}", meta);
+
+    Ok(TrackInfo::from(meta))
 }
 
 fn bytes_to_string(bytes: &[u8]) -> String {
