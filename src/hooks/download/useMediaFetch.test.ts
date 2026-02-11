@@ -248,8 +248,8 @@ describe('useMediaFetch', () => {
       });
     });
 
-    it('should map NoToken error to NOT_SIGNED_IN', async () => {
-      mockFetchTrackInfo.mockRejectedValue('NoToken');
+    it('should map AuthRequired error to AUTH_REQUIRED', async () => {
+      mockFetchTrackInfo.mockRejectedValue('Private content requires sign-in');
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
@@ -261,7 +261,7 @@ describe('useMediaFetch', () => {
       });
 
       expect(result.current.error).toEqual({
-        code: 'NOT_SIGNED_IN',
+        code: 'AUTH_REQUIRED',
         message: 'errors.notSignedIn',
       });
     });

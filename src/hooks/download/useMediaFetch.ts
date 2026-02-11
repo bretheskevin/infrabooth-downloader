@@ -73,9 +73,9 @@ export function useMediaFetch(
             code: 'GEO_BLOCKED',
             message: translate('errors.geoBlocked'),
           });
-        } else if (message.includes('NoToken')) {
+        } else if (message.includes('AuthRequired') || message.includes('Private content requires sign-in')) {
           setError({
-            code: 'NOT_SIGNED_IN',
+            code: 'AUTH_REQUIRED',
             message: translate('errors.notSignedIn'),
           });
         } else if (message.includes('TokenExpired')) {
