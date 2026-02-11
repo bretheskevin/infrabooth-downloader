@@ -1,6 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2, ClipboardPaste } from 'lucide-react';
+import { ClipboardPaste } from 'lucide-react';
+import { Spinner } from '@/components/ui/spinner';
 import { readText } from '@tauri-apps/plugin-clipboard-manager';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -69,7 +70,7 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
       />
       {isValidating && (
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
-          <Loader2 className="h-5 w-5 animate-spin text-indigo-500" />
+          <Spinner className="h-5 w-5 text-indigo-500" />
         </div>
       )}
       {!isValidating && !disabled && (

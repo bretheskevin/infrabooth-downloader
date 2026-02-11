@@ -1,10 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { groupFailuresByReason } from './groupFailuresByReason';
 import type { FailedTrack } from '@/types/download';
+import type { ErrorCode } from '@/types/errors';
 
 const createMockTrack = (
   id: string,
-  errorCode: string,
+  errorCode: ErrorCode,
   errorMessage: string
 ): FailedTrack => ({
   id,
@@ -83,9 +84,9 @@ describe('groupFailuresByReason', () => {
     expect(result.get('other')).toHaveLength(1);
   });
 
-  it('should categorize unknown error codes as other', () => {
+  it('should categorize unmatched error codes as other', () => {
     const tracks = [
-      createMockTrack('1', 'UNKNOWN_CODE', 'Something went wrong'),
+      createMockTrack('1', 'CONVERSION_FAILED', 'Something went wrong'),
     ];
 
     const result = groupFailuresByReason(tracks);

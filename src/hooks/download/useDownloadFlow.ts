@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/stores/settingsStore';
 import { startDownloadQueue } from '@/lib/download';
 import { logger } from '@/lib/logger';
 import type { ValidationResult } from '@/types/url';
+import { isPlaylist } from '@/types/playlist';
 import type { PlaylistInfo, TrackInfo } from '@/types/playlist';
 
 interface UseDownloadFlowReturn {
@@ -18,12 +19,6 @@ interface UseDownloadFlowReturn {
   isLoading: boolean;
   error: FetchError | null;
   handleDownload: () => void;
-}
-
-function isPlaylist(
-  media: PlaylistInfo | TrackInfo | null
-): media is PlaylistInfo {
-  return media !== null && 'tracks' in media;
 }
 
 export function useDownloadFlow(): UseDownloadFlowReturn {

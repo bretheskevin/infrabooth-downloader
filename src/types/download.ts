@@ -1,11 +1,10 @@
+import type { AppError } from './errors';
+
 export interface FailedTrack {
   id: string;
   title: string;
   artist: string;
-  error: {
-    code: string;
-    message: string;
-  };
+  error: AppError;
 }
 
 export type FailureReasonCategory =
