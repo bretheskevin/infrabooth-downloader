@@ -4,7 +4,6 @@ use crate::services::playlist::{
 };
 use crate::services::storage::{load_tokens, refresh_and_store_tokens};
 use crate::services::url_validator::validate_url;
-use crate::services::ytdlp::{extract_playlist_info, extract_track_info};
 
 #[tauri::command]
 pub fn validate_soundcloud_url(url: String) -> ValidationResult {
@@ -20,7 +19,7 @@ async fn try_refresh_token() -> Result<(), String> {
 }
 
 #[tauri::command]
-pub async fn get_playlist_info(app: tauri::AppHandle, url: String) -> Result<PlaylistInfo, String> {
+pub async fn get_playlist_info(url: String) -> Result<PlaylistInfo, String> {
     log::info!("[get_playlist_info] Called with URL: {}", url);
 
     match fetch_playlist_info(&url).await {
@@ -37,13 +36,6 @@ pub async fn get_playlist_info(app: tauri::AppHandle, url: String) -> Result<Pla
                 e.to_string()
             })
         }
-        Err(PlaylistError::NoToken) => {
-            log::info!("[get_playlist_info] No token available, using yt-dlp fallback...");
-            extract_playlist_info(&app, &url).await.map_err(|e| {
-                log::error!("[get_playlist_info] yt-dlp fallback failed: {}", e);
-                e.to_string()
-            })
-        }
         Err(e) => {
             log::error!("[get_playlist_info] Error: {}", e);
             Err(e.to_string())
@@ -52,20 +44,26 @@ pub async fn get_playlist_info(app: tauri::AppHandle, url: String) -> Result<Pla
 }
 
 #[tauri::command]
-pub async fn get_track_info(app: tauri::AppHandle, url: String) -> Result<TrackInfo, String> {
+pub async fn get_track_info(url: String) -> Result<TrackInfo, String> {
+    log::info!("[get_track_info] Called with URL: {}", url);
+
     match fetch_track_info(&url).await {
-        Ok(info) => Ok(info),
-        Err(PlaylistError::TokenExpired) => {
-            try_refresh_token().await?;
-            fetch_track_info(&url).await.map_err(|e| e.to_string())
+        Ok(info) => {
+            log::info!("[get_track_info] Success: got track '{}'", info.title);
+            Ok(info)
         }
-        Err(PlaylistError::NoToken) => {
-            log::info!("[get_track_info] No token available, using yt-dlp fallback...");
-            extract_track_info(&app, &url).await.map_err(|e| {
-                log::error!("[get_track_info] yt-dlp fallback failed: {}", e);
+        Err(PlaylistError::TokenExpired) => {
+            log::info!("[get_track_info] Token expired, attempting refresh...");
+            try_refresh_token().await?;
+            log::info!("[get_track_info] Token refreshed, retrying fetch...");
+            fetch_track_info(&url).await.map_err(|e| {
+                log::error!("[get_track_info] Retry failed: {}", e);
                 e.to_string()
             })
         }
-        Err(e) => Err(e.to_string()),
+        Err(e) => {
+            log::error!("[get_track_info] Error: {}", e);
+            Err(e.to_string())
+        }
     }
 }

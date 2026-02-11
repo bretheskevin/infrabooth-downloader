@@ -86,10 +86,10 @@ describe('fetchPlaylistInfo', () => {
   });
 
   it('should propagate errors from invoke', async () => {
-    vi.mocked(invoke).mockRejectedValueOnce(new Error('No authentication token available'));
+    vi.mocked(invoke).mockRejectedValueOnce(new Error('Private content requires sign-in'));
 
     await expect(fetchPlaylistInfo('https://soundcloud.com/user/sets/playlist')).rejects.toThrow(
-      'No authentication token available'
+      'Private content requires sign-in'
     );
   });
 
