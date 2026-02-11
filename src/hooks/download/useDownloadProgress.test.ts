@@ -194,7 +194,7 @@ describe('useDownloadProgress', () => {
     // Wait for promises to resolve
     return new Promise<void>((resolve) => {
       setTimeout(() => {
-        expect(mockUnlisten).toHaveBeenCalledTimes(3);
+        expect(mockUnlisten).toHaveBeenCalledTimes(4); // download-progress, queue-progress, queue-complete, queue-cancelled
         resolve();
       }, 0);
     });

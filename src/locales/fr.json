@@ -42,7 +42,10 @@
     },
     "rateLimitMessage": "Courte pause — limite SoundCloud (c'est normal)",
     "rateLimitStatus": "En attente...",
-    "resumingSoon": "Reprise imminente..."
+    "resumingSoon": "Reprise imminente...",
+    "cancel": "Annuler le téléchargement",
+    "cancelling": "Annulation...",
+    "cancelled": "Téléchargement annulé"
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",

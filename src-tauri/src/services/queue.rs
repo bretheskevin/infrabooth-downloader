@@ -1,6 +1,9 @@
 use serde::Serialize;
 use std::path::PathBuf;
+use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Runtime};
+use tauri_plugin_shell::process::CommandChild;
+use tokio::sync::{watch, Mutex};
 
 use crate::models::error::{PipelineError, YtDlpError};
 use crate::services::metadata::TrackMetadata;
@@ -37,6 +40,15 @@ pub struct QueueCompleteEvent {
     pub failed_tracks: Vec<(String, String)>, // (trackId, errorMessage)
 }
 
+/// Event payload for queue cancellation.
+#[derive(Clone, Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QueueCancelledEvent {
+    pub completed: u32,
+    pub cancelled: u32,
+    pub total: u32,
+}
+
 /// Result of queue processing.
 pub struct QueueResult {
     pub completed: u32,
@@ -71,6 +83,7 @@ impl DownloadQueue {
     /// - `queue-progress`: After each track starts
     /// - `download-progress`: Per-track status (from pipeline)
     /// - `queue-complete`: When all tracks are processed
+    /// - `queue-cancelled`: When queue is cancelled by user
     ///
     /// On rate limit errors, the queue pauses with backoff and retries.
     /// On other errors, the queue records the failure and continues.
@@ -78,6 +91,9 @@ impl DownloadQueue {
         &mut self,
         app: AppHandle<R>,
         output_dir: PathBuf,
+        cancel_rx: watch::Receiver<bool>,
+        active_child: Arc<Mutex<Option<CommandChild>>>,
+        active_pid: Arc<Mutex<Option<u32>>>,
     ) -> QueueResult {
         self.is_processing = true;
         let mut completed = 0u32;
@@ -86,6 +102,22 @@ impl DownloadQueue {
         let mut retry_count = 0u32;
 
         while self.current_index < self.items.len() {
+            // Check for cancellation before starting next track
+            if *cancel_rx.borrow() {
+                log::info!("[queue] Cancellation requested, stopping queue");
+                let cancelled = (self.total_tracks - completed - failed) as u32;
+                let _ = app.emit(
+                    "queue-cancelled",
+                    QueueCancelledEvent {
+                        completed,
+                        cancelled,
+                        total: self.total_tracks,
+                    },
+                );
+                self.is_processing = false;
+                return QueueResult { completed, failed };
+            }
+
             let item = &self.items[self.current_index];
 
             // Emit queue progress
@@ -123,7 +155,7 @@ impl DownloadQueue {
                 playlist_context,
             };
 
-            match download_and_convert(&app, config).await {
+            match download_and_convert(&app, config, Some(active_child.clone()), Some(cancel_rx.clone()), Some(active_pid.clone())).await {
                 Ok(_) => {
                     let _ = app.emit(
                         "download-progress",
@@ -135,6 +167,20 @@ impl DownloadQueue {
                     );
                     completed += 1;
                     retry_count = 0;
+                }
+                Err(PipelineError::Download(YtDlpError::Cancelled)) => {
+                    log::info!("[queue] Track {} download was cancelled", item.track_id);
+                    let cancelled = (self.total_tracks - completed - failed) as u32;
+                    let _ = app.emit(
+                        "queue-cancelled",
+                        QueueCancelledEvent {
+                            completed,
+                            cancelled,
+                            total: self.total_tracks,
+                        },
+                    );
+                    self.is_processing = false;
+                    return QueueResult { completed, failed };
                 }
                 Err(PipelineError::Download(YtDlpError::RateLimited)) => {
                     // Rate limited - pause and retry same track
@@ -169,6 +215,12 @@ impl DownloadQueue {
         }
 
         self.is_processing = false;
+
+        // Clear active child on completion
+        {
+            let mut guard = active_child.lock().await;
+            *guard = None;
+        }
 
         // Emit completion
         let _ = app.emit(

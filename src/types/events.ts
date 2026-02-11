@@ -42,3 +42,17 @@ export interface QueueCompleteEvent {
   /** Array of [trackId, errorMessage] tuples for failed tracks */
   failedTracks: Array<[string, string]>;
 }
+
+/**
+ * Queue cancelled event payload received from the Rust backend.
+ *
+ * Emitted via the `queue-cancelled` event channel when the queue is cancelled by user.
+ */
+export interface QueueCancelledEvent {
+  /** Number of successfully downloaded tracks before cancellation */
+  completed: number;
+  /** Number of tracks that were cancelled */
+  cancelled: number;
+  /** Total number of tracks that were queued */
+  total: number;
+}

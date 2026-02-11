@@ -1,8 +1,9 @@
 use serde::Deserialize;
 use std::path::PathBuf;
-use tauri::{Emitter, Manager};
+use tauri::{Emitter, Manager, State};
 
 use crate::models::{ErrorResponse, HasErrorCode};
+use crate::services::cancellation::CancellationState;
 use crate::services::metadata::TrackMetadata;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem};
@@ -75,7 +76,7 @@ pub async fn download_track_full(
         playlist_context: None, // Single track download
     };
 
-    let result_path = download_and_convert(&app, config).await.map_err(|e| {
+    let result_path = download_and_convert(&app, config, None, None, None).await.map_err(|e| {
         // Emit error status
         let _ = app.emit(
             "download-progress",
@@ -133,10 +134,12 @@ pub struct QueueItemRequest {
 /// - `queue-progress`: Overall queue progress (X of Y)
 /// - `download-progress`: Per-track status
 /// - `queue-complete`: Final results when queue finishes
+/// - `queue-cancelled`: When queue is cancelled by user
 ///
 /// # Arguments
 /// * `request` - Queue request containing tracks and optional album name
 /// * `app` - Tauri app handle
+/// * `cancel_state` - Managed cancellation state
 ///
 /// # Returns
 /// Ok(()) immediately - actual processing happens in background
@@ -144,7 +147,11 @@ pub struct QueueItemRequest {
 pub async fn start_download_queue(
     request: StartQueueRequest,
     app: tauri::AppHandle,
+    cancel_state: State<'_, CancellationState>,
 ) -> Result<(), String> {
+    // Reset cancellation state for new queue
+    cancel_state.reset();
+
     let output_dir = match request.output_dir {
         Some(dir) => PathBuf::from(dir),
         None => get_download_path(&app).map_err(|e| e.message)?,
@@ -165,12 +172,38 @@ pub async fn start_download_queue(
         .collect();
 
     let mut queue = DownloadQueue::new(items, request.album_name);
+    let cancel_rx = cancel_state.subscribe();
+    let active_child = cancel_state.active_child();
+    let active_pid = cancel_state.active_pid();
 
     // Run queue processing in background
     tokio::spawn(async move {
-        queue.process(app, output_dir).await;
+        queue.process(app, output_dir, cancel_rx, active_child, active_pid).await;
     });
 
+    Ok(())
+}
+
+/// Cancel the current download queue.
+///
+/// This command cancels the currently running download queue.
+/// It will:
+/// 1. Set the cancellation flag
+/// 2. Kill the currently running yt-dlp process
+/// 3. The queue will stop after the current track
+///
+/// # Arguments
+/// * `cancel_state` - Managed cancellation state
+///
+/// # Returns
+/// Ok(()) on success
+#[tauri::command]
+pub async fn cancel_download_queue(
+    cancel_state: State<'_, CancellationState>,
+) -> Result<(), String> {
+    log::info!("[download] Cancelling download queue");
+    cancel_state.cancel();
+    cancel_state.kill_active_process().await;
     Ok(())
 }
 

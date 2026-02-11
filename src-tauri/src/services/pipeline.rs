@@ -1,5 +1,8 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 use tauri::AppHandle;
+use tauri_plugin_shell::process::CommandChild;
+use tokio::sync::{watch, Mutex};
 
 use crate::models::error::PipelineError;
 use crate::services::metadata::{embed_metadata, TrackMetadata};
@@ -32,6 +35,9 @@ pub struct PipelineConfig {
 pub async fn download_and_convert<R: tauri::Runtime>(
     app: &AppHandle<R>,
     config: PipelineConfig,
+    active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
+    cancel_rx: Option<watch::Receiver<bool>>,
+    active_pid: Option<Arc<Mutex<Option<u32>>>>,
 ) -> Result<PathBuf, PipelineError> {
     let download_config = TrackDownloadToMp3Config {
         track_url: config.track_url,
@@ -42,7 +48,7 @@ pub async fn download_and_convert<R: tauri::Runtime>(
         title: config.metadata.title.clone(),
     };
 
-    let output_path = download_track_to_mp3(app, download_config)
+    let output_path = download_track_to_mp3(app, download_config, active_child, cancel_rx, active_pid)
         .await
         .map_err(PipelineError::Download)?;
 
