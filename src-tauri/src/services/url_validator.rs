@@ -61,11 +61,13 @@ pub fn validate_url(input: &str) -> ValidationResult {
             error: None,
         },
         // Private track: /user/track-name/s-secrettoken
-        [_user, track, secret] if *track != "sets" && secret.starts_with("s-") => ValidationResult {
-            valid: true,
-            url_type: Some(UrlType::Track),
-            error: None,
-        },
+        [_user, track, secret] if *track != "sets" && secret.starts_with("s-") => {
+            ValidationResult {
+                valid: true,
+                url_type: Some(UrlType::Track),
+                error: None,
+            }
+        }
         // Regular track: /user/track-name (2 segments, not "sets")
         [_user, track] if *track != "sets" => ValidationResult {
             valid: true,
@@ -209,9 +211,8 @@ mod tests {
 
     #[test]
     fn test_private_playlist_url() {
-        let result = validate_url(
-            "https://soundcloud.com/kandid_rl/sets/set-acidcore-4/s-rW47Pe4rQWc",
-        );
+        let result =
+            validate_url("https://soundcloud.com/kandid_rl/sets/set-acidcore-4/s-rW47Pe4rQWc");
         assert!(result.valid);
         assert_eq!(result.url_type, Some(UrlType::Playlist));
     }

@@ -1,14 +1,11 @@
 use tauri::{AppHandle, Emitter, Manager};
 use url::Url;
 
-/// Protocol scheme for OAuth callbacks
+use super::AUTH_CALLBACK_EVENT;
+
 const SCHEME: &str = "ib-downloader";
-/// Host for OAuth callback endpoint (URL parses ib-downloader://auth/callback as host=auth, path=/callback)
 const AUTH_HOST: &str = "auth";
-/// Path for OAuth callback endpoint
 const CALLBACK_PATH: &str = "/callback";
-/// Event name emitted to frontend
-const AUTH_CALLBACK_EVENT: &str = "auth-callback";
 
 /// Handles incoming deep link URLs.
 /// Parses the URL and emits an event to the frontend if it's a valid auth callback.
@@ -17,7 +14,11 @@ const AUTH_CALLBACK_EVENT: &str = "auth-callback";
 /// * `app` - The Tauri app handle for emitting events
 /// * `urls` - Vector of URL strings received from the deep link plugin
 pub fn handle_deep_link(app: &AppHandle, urls: Vec<String>) {
-    log::info!("[deep-link] handle_deep_link called with {} URLs: {:?}", urls.len(), urls);
+    log::info!(
+        "[deep-link] handle_deep_link called with {} URLs: {:?}",
+        urls.len(),
+        urls
+    );
     for url_str in urls {
         if let Some(code) = extract_auth_code(&url_str) {
             log::info!("[deep-link] Extracted auth code, emitting auth-callback event");
@@ -30,7 +31,10 @@ pub fn handle_deep_link(app: &AppHandle, urls: Vec<String>) {
                 let _ = window.set_focus();
             }
         } else {
-            log::warn!("[deep-link] Could not extract auth code from URL: {}", url_str);
+            log::warn!(
+                "[deep-link] Could not extract auth code from URL: {}",
+                url_str
+            );
         }
     }
 }

@@ -3,7 +3,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
 use url::Url;
 
-const AUTH_CALLBACK_EVENT: &str = "auth-callback";
+use super::AUTH_CALLBACK_EVENT;
 const DEV_SERVER_PORT: u16 = 19878;
 
 const SUCCESS_HTML: &str = r#"<!DOCTYPE html>
@@ -32,11 +32,19 @@ pub async fn start_dev_callback_server(app: AppHandle) -> Result<u16, String> {
     // Bind to 127.0.0.1 but use localhost in redirect URI (some OAuth providers require localhost)
     let listener = TcpListener::bind(format!("127.0.0.1:{}", DEV_SERVER_PORT))
         .await
-        .map_err(|e| format!("Failed to bind dev callback server on port {}: {}", DEV_SERVER_PORT, e))?;
+        .map_err(|e| {
+            format!(
+                "Failed to bind dev callback server on port {}: {}",
+                DEV_SERVER_PORT, e
+            )
+        })?;
 
     let port = DEV_SERVER_PORT;
 
-    log::info!("[dev-server] Started OAuth callback server on port {}", port);
+    log::info!(
+        "[dev-server] Started OAuth callback server on port {}",
+        port
+    );
 
     tokio::spawn(async move {
         match listener.accept().await {
