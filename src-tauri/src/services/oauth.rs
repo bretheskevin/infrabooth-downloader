@@ -56,7 +56,9 @@ pub fn build_auth_url(code_challenge: &str, redirect_uri: &str) -> String {
         .append_pair("redirect_uri", redirect_uri)
         .append_pair("response_type", "code")
         .append_pair("code_challenge", code_challenge)
-        .append_pair("code_challenge_method", "S256");
+        .append_pair("code_challenge_method", "S256")
+        // Request all available scopes including premium streaming access
+        .append_pair("scope", "*");
     url.to_string()
 }
 
