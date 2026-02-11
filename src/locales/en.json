@@ -21,6 +21,7 @@
     "progressPartial": "{{current}} of {{total}} tracks downloaded",
     "complete": "Download complete!",
     "pasteUrl": "Paste a SoundCloud playlist or track URL",
+    "pasteButton": "Paste",
     "signInRequired": "Sign in to download",
     "validPlaylist": "Valid playlist URL",
     "validTrack": "Valid track URL",
