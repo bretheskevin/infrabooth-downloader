@@ -1,8 +1,11 @@
+import { X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Spinner } from '@/components/ui/spinner';
+import { cancelDownloadQueue } from '@/lib/download';
+import { cn } from '@/lib/utils';
 import { useQueueStore } from '@/stores/queueStore';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
-import { Spinner } from '@/components/ui/spinner';
 
 interface OverallProgressProps {
   className?: string;
@@ -12,6 +15,8 @@ export function OverallProgress({ className }: OverallProgressProps) {
   const { t } = useTranslation();
 
   const tracks = useQueueStore((state) => state.tracks);
+  const isCancelling = useQueueStore((state) => state.isCancelling);
+  const setCancelling = useQueueStore((state) => state.setCancelling);
   const totalCount = tracks.length;
   const completedCount = tracks.filter((track) => track.status === 'complete').length;
 
@@ -47,6 +52,18 @@ export function OverallProgress({ className }: OverallProgressProps) {
     percentage,
   });
 
+  const handleCancel = async () => {
+    setCancelling(true);
+    try {
+      await cancelDownloadQueue();
+    } catch {
+      setCancelling(false);
+    }
+  };
+
+  // Show cancel button when there's work in progress or pending
+  const showCancelButton = hasActiveTrack || hasPendingTrack;
+
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
@@ -58,14 +75,36 @@ export function OverallProgress({ className }: OverallProgressProps) {
             aria-live="polite"
             className="text-sm text-foreground"
           >
-            {showPreparing ? t('download.preparingTracks') : progressText}
+            {isCancelling
+              ? t('download.cancelling')
+              : showPreparing
+                ? t('download.preparingTracks')
+                : progressText}
           </span>
         </div>
-        {!showPreparing && (
-          <span className="text-sm text-muted-foreground">
-            {percentage}%
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          {!showPreparing && !isCancelling && (
+            <span className="text-sm text-muted-foreground">
+              {percentage}%
+            </span>
+          )}
+          {showCancelButton && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleCancel}
+              disabled={isCancelling}
+              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              aria-label={t('download.cancel')}
+            >
+              {isCancelling ? (
+                <Spinner className="h-4 w-4" />
+              ) : (
+                <X className="h-4 w-4" aria-hidden="true" />
+              )}
+            </Button>
+          )}
+        </div>
       </div>
       <Progress
         value={percentage}

@@ -3,11 +3,12 @@ mod models;
 mod services;
 
 use commands::{
-    check_auth_state, check_write_permission, complete_oauth, download_track_full,
-    get_default_download_path, get_playlist_info, get_track_info, sign_out, start_download_queue,
-    start_oauth, test_ffmpeg, test_ytdlp, validate_download_path, validate_soundcloud_url,
-    OAuthState,
+    cancel_download_queue, check_auth_state, check_write_permission, complete_oauth,
+    download_track_full, get_default_download_path, get_playlist_info, get_track_info, sign_out,
+    start_download_queue, start_oauth, test_ffmpeg, test_ytdlp, validate_download_path,
+    validate_soundcloud_url, OAuthState,
 };
+use services::cancellation::CancellationState;
 use services::deep_link::handle_deep_link;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri_plugin_deep_link::DeepLinkExt;
@@ -21,6 +22,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(OAuthState::default())
+        .manage(CancellationState::default())
         .invoke_handler(tauri::generate_handler![
             start_oauth,
             complete_oauth,
@@ -33,6 +35,7 @@ pub fn run() {
             test_ffmpeg,
             download_track_full,
             start_download_queue,
+            cancel_download_queue,
             check_write_permission,
             get_default_download_path,
             validate_download_path

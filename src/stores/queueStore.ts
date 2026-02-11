@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { logger } from '@/lib/logger';
 import type { Track, TrackStatus } from '@/types/track';
-import type { QueueCompleteEvent } from '@/types/events';
+import type { QueueCancelledEvent, QueueCompleteEvent } from '@/types/events';
 
 export type { Track, TrackStatus };
 
@@ -12,8 +12,11 @@ interface QueueState {
   isProcessing: boolean;
   isInitializing: boolean;
   isComplete: boolean;
+  isCancelling: boolean;
+  isCancelled: boolean;
   completedCount: number;
   failedCount: number;
+  cancelledCount: number;
   isRateLimited: boolean;
   rateLimitedAt: number | null;
   // Actions
@@ -25,6 +28,8 @@ interface QueueState {
   ) => void;
   setQueueProgress: (current: number, total: number) => void;
   setQueueComplete: (result: QueueCompleteEvent) => void;
+  setQueueCancelled: (result: QueueCancelledEvent) => void;
+  setCancelling: (isCancelling: boolean) => void;
   clearQueue: () => void;
   setRateLimited: (isLimited: boolean) => void;
   setInitializing: (isInitializing: boolean) => void;
@@ -35,8 +40,11 @@ const INITIAL_QUEUE_STATE = {
   isProcessing: false,
   isInitializing: false,
   isComplete: false,
+  isCancelling: false,
+  isCancelled: false,
   completedCount: 0,
   failedCount: 0,
+  cancelledCount: 0,
   isRateLimited: false,
   rateLimitedAt: null as number | null,
 };
@@ -80,9 +88,27 @@ export const useQueueStore = create<QueueState>((set) => ({
     set({
       isProcessing: false,
       isComplete: true,
+      isCancelling: false,
       completedCount: result.completed,
       failedCount: result.failed,
     });
+  },
+
+  setQueueCancelled: (result) => {
+    logger.info(`[queueStore] Queue cancelled: ${result.completed} completed, ${result.cancelled} cancelled`);
+    set({
+      isProcessing: false,
+      isComplete: true,
+      isCancelling: false,
+      isCancelled: true,
+      completedCount: result.completed,
+      cancelledCount: result.cancelled,
+    });
+  },
+
+  setCancelling: (isCancelling) => {
+    logger.info(`[queueStore] Cancelling: ${isCancelling}`);
+    set({ isCancelling });
   },
 
   clearQueue: () => {
