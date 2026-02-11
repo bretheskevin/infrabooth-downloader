@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Music, Download, Clock, Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/stores/authStore';
 import type { TrackInfo } from '@/types/playlist';
 import { formatDuration } from '@/lib/utils';
 
@@ -18,6 +19,7 @@ export function TrackPreview({
   isDownloading,
 }: TrackPreviewProps) {
   const { t } = useTranslation();
+  const isSignedIn = useAuthStore((state) => state.isSignedIn);
 
   return (
     <Card className="mt-4" data-testid="track-preview">
@@ -63,13 +65,15 @@ export function TrackPreview({
             <span className="text-sm" data-testid="track-count">
               {t('download.singleTrack')}
             </span>
-            <Badge
-              variant="secondary"
-              className="text-xs"
-              data-testid="quality-badge"
-            >
-              256kbps AAC → MP3
-            </Badge>
+            {isSignedIn && (
+              <Badge
+                variant="secondary"
+                className="text-xs"
+                data-testid="quality-badge"
+              >
+                256kbps AAC → MP3
+              </Badge>
+            )}
           </div>
         </div>
 
