@@ -152,37 +152,22 @@ fn get_valid_access_token() -> Result<String, PlaylistError> {
     Ok(tokens.access_token)
 }
 
-/// Fetches playlist information from SoundCloud using the resolve endpoint.
-///
-/// The resolve endpoint converts a URL to API data, returning the full
-/// playlist object including track list.
-///
-/// # Arguments
-/// * `url` - The SoundCloud playlist URL
-///
-/// # Returns
-/// * `Ok(PlaylistInfo)` - The playlist metadata and tracks
-/// * `Err(PlaylistError)` - If fetch fails
-pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistError> {
-    let access_token = get_valid_access_token()?;
-
-    log::info!("[playlist] Fetching playlist info for URL: {}", url);
-
+async fn resolve_url<T: serde::de::DeserializeOwned>(
+    url: &str,
+    access_token: &str,
+) -> Result<T, PlaylistError> {
     let client = reqwest::Client::new();
     let resolve_url = format!(
         "https://api.soundcloud.com/resolve?url={}",
         urlencoding::encode(url),
     );
-
-    log::info!("[playlist] Resolve URL: {}", resolve_url);
+    let auth_header = format!("OAuth {}", access_token);
 
     let response = client
         .get(&resolve_url)
-        .header("Authorization", format!("OAuth {}", access_token))
+        .header("Authorization", &auth_header)
         .send()
         .await?;
-
-    log::info!("[playlist] Response status: {}", response.status());
 
     if response.status() == reqwest::StatusCode::NOT_FOUND {
         return Err(PlaylistError::TrackNotFound);
@@ -205,107 +190,42 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
 
     if let Ok(redirect) = serde_json::from_str::<ResolveResponse>(&body) {
         if let Some(location) = redirect.location {
-            log::info!("[playlist] Following redirect to: {}", location);
-            let playlist_response = client
+            log::info!("[soundcloud] Following redirect to: {}", location);
+            let redirect_response = client
                 .get(&location)
-                .header("Authorization", format!("OAuth {}", access_token))
+                .header("Authorization", &auth_header)
                 .send()
                 .await?;
 
-            if !playlist_response.status().is_success() {
-                let status = playlist_response.status();
-                let body = playlist_response.text().await.unwrap_or_default();
+            if !redirect_response.status().is_success() {
+                let status = redirect_response.status();
+                let body = redirect_response.text().await.unwrap_or_default();
                 return Err(PlaylistError::FetchFailed(format!(
                     "HTTP {}: {}",
                     status, body
                 )));
             }
 
-            let raw: RawPlaylistInfo = playlist_response
+            return redirect_response
                 .json()
                 .await
-                .map_err(|_| PlaylistError::InvalidResponse)?;
-            return Ok(PlaylistInfo::from(raw));
+                .map_err(|_| PlaylistError::InvalidResponse);
         }
     }
 
-    let raw: RawPlaylistInfo =
-        serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)?;
+    serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)
+}
+
+pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistError> {
+    let access_token = get_valid_access_token()?;
+    log::info!("[playlist] Fetching playlist info for URL: {}", url);
+    let raw: RawPlaylistInfo = resolve_url(url, &access_token).await?;
     Ok(PlaylistInfo::from(raw))
 }
 
-/// Fetches track information from SoundCloud using the resolve endpoint.
-///
-/// The resolve endpoint converts a URL to API data, returning the track object.
-///
-/// # Arguments
-/// * `url` - The SoundCloud track URL
-///
-/// # Returns
-/// * `Ok(TrackInfo)` - The track metadata
-/// * `Err(PlaylistError)` - If fetch fails (track not found, geo-blocked, etc.)
 pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
     let access_token = get_valid_access_token()?;
-
-    let client = reqwest::Client::new();
-    let resolve_url = format!(
-        "https://api.soundcloud.com/resolve?url={}",
-        urlencoding::encode(url),
-    );
-
-    let response = client
-        .get(&resolve_url)
-        .header("Authorization", format!("OAuth {}", access_token))
-        .send()
-        .await?;
-
-    if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Err(PlaylistError::TrackNotFound);
-    }
-
-    if response.status() == reqwest::StatusCode::FORBIDDEN {
-        return Err(PlaylistError::GeoBlocked);
-    }
-
-    if !response.status().is_success() && response.status() != reqwest::StatusCode::FOUND {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(PlaylistError::FetchFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )));
-    }
-
-    let body = response.text().await?;
-
-    if let Ok(redirect) = serde_json::from_str::<ResolveResponse>(&body) {
-        if let Some(location) = redirect.location {
-            log::info!("[track] Following redirect to: {}", location);
-            let track_response = client
-                .get(&location)
-                .header("Authorization", format!("OAuth {}", access_token))
-                .send()
-                .await?;
-
-            if !track_response.status().is_success() {
-                let status = track_response.status();
-                let body = track_response.text().await.unwrap_or_default();
-                return Err(PlaylistError::FetchFailed(format!(
-                    "HTTP {}: {}",
-                    status, body
-                )));
-            }
-
-            let raw: RawTrackInfo = track_response
-                .json()
-                .await
-                .map_err(|_| PlaylistError::InvalidResponse)?;
-            return Ok(TrackInfo::from(raw));
-        }
-    }
-
-    let raw: RawTrackInfo =
-        serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)?;
+    let raw: RawTrackInfo = resolve_url(url, &access_token).await?;
     Ok(TrackInfo::from(raw))
 }
 
@@ -576,7 +496,10 @@ mod tests {
     #[test]
     fn test_playlist_error_fetch_failed_message() {
         let err = PlaylistError::FetchFailed("HTTP 404: Not found".to_string());
-        assert_eq!(err.to_string(), "Failed to fetch playlist: HTTP 404: Not found");
+        assert_eq!(
+            err.to_string(),
+            "Failed to fetch playlist: HTTP 404: Not found"
+        );
     }
 
     #[test]

@@ -1,14 +1,39 @@
 use serde::Serialize;
 use thiserror::Error;
 
-/// Errors that can occur during FFmpeg operations.
+pub trait HasErrorCode {
+    fn code(&self) -> &'static str;
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ErrorResponse {
+    pub code: String,
+    pub message: String,
+}
+
+impl<T: HasErrorCode + std::fmt::Display> From<T> for ErrorResponse {
+    fn from(err: T) -> Self {
+        ErrorResponse {
+            code: err.code().to_string(),
+            message: err.to_string(),
+        }
+    }
+}
+
 #[derive(Debug, Error, Serialize)]
 pub enum FfmpegError {
     #[error("FFmpeg binary not found")]
     BinaryNotFound,
 }
 
-/// Errors that can occur during metadata embedding.
+impl HasErrorCode for FfmpegError {
+    fn code(&self) -> &'static str {
+        match self {
+            FfmpegError::BinaryNotFound => "BINARY_NOT_FOUND",
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 pub enum MetadataError {
     #[error("Failed to write metadata: {0}")]
@@ -18,8 +43,8 @@ pub enum MetadataError {
     ArtworkFailed(String),
 }
 
-impl MetadataError {
-    pub fn code(&self) -> &'static str {
+impl HasErrorCode for MetadataError {
+    fn code(&self) -> &'static str {
         match self {
             MetadataError::WriteFailed(_) => "METADATA_WRITE_FAILED",
             MetadataError::ArtworkFailed(_) => "ARTWORK_DOWNLOAD_FAILED",
@@ -27,29 +52,6 @@ impl MetadataError {
     }
 }
 
-impl From<MetadataError> for ErrorResponse {
-    fn from(err: MetadataError) -> Self {
-        ErrorResponse {
-            code: err.code().to_string(),
-            message: err.to_string(),
-        }
-    }
-}
-
-impl From<FfmpegError> for ErrorResponse {
-    fn from(err: FfmpegError) -> Self {
-        let code = match &err {
-            FfmpegError::BinaryNotFound => "BINARY_NOT_FOUND",
-        };
-
-        ErrorResponse {
-            code: code.to_string(),
-            message: err.to_string(),
-        }
-    }
-}
-
-/// Errors that can occur during yt-dlp operations.
 #[derive(Debug, Error, Serialize)]
 pub enum YtDlpError {
     #[error("Download failed: {0}")]
@@ -71,8 +73,8 @@ pub enum YtDlpError {
     AuthRequired,
 }
 
-impl YtDlpError {
-    pub fn code(&self) -> &'static str {
+impl HasErrorCode for YtDlpError {
+    fn code(&self) -> &'static str {
         match self {
             YtDlpError::DownloadFailed(_) => "DOWNLOAD_FAILED",
             YtDlpError::BinaryNotFound => "DOWNLOAD_FAILED",
@@ -84,16 +86,6 @@ impl YtDlpError {
     }
 }
 
-impl From<YtDlpError> for ErrorResponse {
-    fn from(err: YtDlpError) -> Self {
-        ErrorResponse {
-            code: err.code().to_string(),
-            message: err.to_string(),
-        }
-    }
-}
-
-/// Authentication errors that can occur during the OAuth flow.
 #[derive(Debug, Error)]
 pub enum AuthError {
     #[error("Missing client secret configuration")]
@@ -115,51 +107,15 @@ pub enum AuthError {
     RefreshFailed(String),
 }
 
-/// Errors that can occur during the download pipeline.
-#[derive(Debug, Error)]
-pub enum PipelineError {
-    #[error("Download failed: {0}")]
-    Download(#[from] YtDlpError),
-}
-
-impl PipelineError {
-    pub fn code(&self) -> &'static str {
+impl HasErrorCode for AuthError {
+    fn code(&self) -> &'static str {
         match self {
-            PipelineError::Download(e) => e.code(),
-        }
-    }
-}
-
-impl From<PipelineError> for ErrorResponse {
-    fn from(err: PipelineError) -> Self {
-        ErrorResponse {
-            code: err.code().to_string(),
-            message: err.to_string(),
-        }
-    }
-}
-
-/// Serializable error response for IPC.
-#[derive(Debug, Serialize)]
-pub struct ErrorResponse {
-    pub code: String,
-    pub message: String,
-}
-
-impl From<AuthError> for ErrorResponse {
-    fn from(err: AuthError) -> Self {
-        let code = match &err {
             AuthError::MissingClientSecret => "MISSING_CLIENT_SECRET",
             AuthError::TokenExchangeFailed(_) => "TOKEN_EXCHANGE_FAILED",
             AuthError::NetworkError(_) => "NETWORK_ERROR",
             AuthError::NoFlowInProgress => "NO_FLOW_IN_PROGRESS",
             AuthError::ProfileFetchFailed(_) => "PROFILE_FETCH_FAILED",
             AuthError::RefreshFailed(_) => "REFRESH_FAILED",
-        };
-
-        ErrorResponse {
-            code: code.to_string(),
-            message: err.to_string(),
         }
     }
 }
@@ -167,6 +123,20 @@ impl From<AuthError> for ErrorResponse {
 impl From<AuthError> for String {
     fn from(err: AuthError) -> Self {
         err.to_string()
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum PipelineError {
+    #[error("Download failed: {0}")]
+    Download(#[from] YtDlpError),
+}
+
+impl HasErrorCode for PipelineError {
+    fn code(&self) -> &'static str {
+        match self {
+            PipelineError::Download(e) => e.code(),
+        }
     }
 }
 
@@ -229,7 +199,10 @@ mod tests {
     #[test]
     fn test_refresh_failed_error_message() {
         let err = AuthError::RefreshFailed("Invalid refresh token".to_string());
-        assert_eq!(err.to_string(), "Token refresh failed: Invalid refresh token");
+        assert_eq!(
+            err.to_string(),
+            "Token refresh failed: Invalid refresh token"
+        );
     }
 
     #[test]
@@ -320,7 +293,10 @@ mod tests {
 
     #[test]
     fn test_ytdlp_error_code_method() {
-        assert_eq!(YtDlpError::DownloadFailed("test".to_string()).code(), "DOWNLOAD_FAILED");
+        assert_eq!(
+            YtDlpError::DownloadFailed("test".to_string()).code(),
+            "DOWNLOAD_FAILED"
+        );
         assert_eq!(YtDlpError::BinaryNotFound.code(), "DOWNLOAD_FAILED");
         assert_eq!(YtDlpError::RateLimited.code(), "RATE_LIMITED");
         assert_eq!(YtDlpError::GeoBlocked.code(), "GEO_BLOCKED");

@@ -2,9 +2,14 @@ mod commands;
 mod models;
 mod services;
 
-use commands::{check_auth_state, check_write_permission, complete_oauth, download_track_full, get_default_download_path, get_playlist_info, get_track_info, sign_out, start_download_queue, start_oauth, test_ffmpeg, test_ytdlp, validate_download_path, validate_soundcloud_url, OAuthState};
+use commands::{
+    check_auth_state, check_write_permission, complete_oauth, download_track_full,
+    get_default_download_path, get_playlist_info, get_track_info, sign_out, start_download_queue,
+    start_oauth, test_ffmpeg, test_ytdlp, validate_download_path, validate_soundcloud_url,
+    OAuthState,
+};
 use services::deep_link::handle_deep_link;
-use tauri::menu::{Menu, Submenu, MenuItem, PredefinedMenuItem};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri_plugin_deep_link::DeepLinkExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -16,7 +21,22 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(OAuthState::default())
-        .invoke_handler(tauri::generate_handler![start_oauth, complete_oauth, check_auth_state, sign_out, validate_soundcloud_url, get_playlist_info, get_track_info, test_ytdlp, test_ffmpeg, download_track_full, start_download_queue, check_write_permission, get_default_download_path, validate_download_path])
+        .invoke_handler(tauri::generate_handler![
+            start_oauth,
+            complete_oauth,
+            check_auth_state,
+            sign_out,
+            validate_soundcloud_url,
+            get_playlist_info,
+            get_track_info,
+            test_ytdlp,
+            test_ffmpeg,
+            download_track_full,
+            start_download_queue,
+            check_write_permission,
+            get_default_download_path,
+            validate_download_path
+        ])
         .setup(|app| {
             // Create minimal app menu (required for macOS keyboard shortcuts)
             let app_menu = Submenu::with_items(
@@ -63,7 +83,11 @@ pub fn run() {
             let handle = app.handle().clone();
             app.deep_link().on_open_url(move |event| {
                 let urls: Vec<String> = event.urls().iter().map(|u| u.to_string()).collect();
-                log::info!("[deep-link] on_open_url triggered with {} URLs: {:?}", urls.len(), urls);
+                log::info!(
+                    "[deep-link] on_open_url triggered with {} URLs: {:?}",
+                    urls.len(),
+                    urls
+                );
                 handle_deep_link(&handle, urls);
             });
 

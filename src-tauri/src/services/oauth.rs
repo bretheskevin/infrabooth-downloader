@@ -158,7 +158,10 @@ pub async fn refresh_tokens(
     } else {
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
-        Err(AuthError::RefreshFailed(format!("HTTP {}: {}", status, body)))
+        Err(AuthError::RefreshFailed(format!(
+            "HTTP {}: {}",
+            status, body
+        )))
     }
 }
 
@@ -211,7 +214,9 @@ mod tests {
     fn test_generate_pkce_challenge_is_base64url() {
         let (_, challenge) = generate_pkce();
         // base64url uses A-Z, a-z, 0-9, -, _ (no padding)
-        assert!(challenge.chars().all(|c| c.is_alphanumeric() || c == '-' || c == '_'));
+        assert!(challenge
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_'));
     }
 
     #[test]
@@ -303,7 +308,10 @@ mod tests {
         }"#;
         let profile: UserProfile = serde_json::from_str(json).unwrap();
         assert_eq!(profile.username, "test_user");
-        assert_eq!(profile.avatar_url, Some("https://example.com/avatar.jpg".to_string()));
+        assert_eq!(
+            profile.avatar_url,
+            Some("https://example.com/avatar.jpg".to_string())
+        );
         assert_eq!(profile.plan, Some("Pro Unlimited".to_string()));
     }
 

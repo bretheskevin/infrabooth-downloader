@@ -153,6 +153,27 @@ pub fn is_token_expired_or_expiring(expires_at: u64) -> bool {
     expires_at <= now + REFRESH_BUFFER_SECONDS
 }
 
+pub async fn refresh_and_store_tokens(tokens: &StoredTokens) -> Result<StoredTokens, String> {
+    use crate::services::oauth::{get_client_secret, refresh_tokens};
+
+    let client_secret = get_client_secret().map_err(|e| e.to_string())?;
+    let new_tokens = refresh_tokens(&tokens.refresh_token, client_secret)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let expires_at = calculate_expires_at(new_tokens.expires_in);
+    let stored = StoredTokens {
+        access_token: new_tokens.access_token,
+        refresh_token: new_tokens.refresh_token,
+        expires_at,
+        username: tokens.username.clone(),
+        plan: tokens.plan.clone(),
+    };
+    store_tokens(&stored).map_err(|e| e.to_string())?;
+
+    Ok(stored)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

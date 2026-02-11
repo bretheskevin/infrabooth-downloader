@@ -19,7 +19,8 @@ fn main() {
     if let Ok(entries) = std::fs::read_dir(exe_dir) {
         for entry in entries.flatten() {
             let name = entry.file_name();
-            if name.to_string_lossy().contains("ffmpeg") || name.to_string_lossy().contains("yt-dlp")
+            if name.to_string_lossy().contains("ffmpeg")
+                || name.to_string_lossy().contains("yt-dlp")
             {
                 println!("  [SIDECAR] {:?}", name);
             }
@@ -128,7 +129,10 @@ fn main() {
     println!("\n--- Testing yt-dlp with --ffmpeg-location ---");
     if let (Some(ytdlp), Some(ffmpeg)) = (&ytdlp_path, &ffmpeg_path) {
         // Just test that the command can be constructed - don't actually download
-        println!("  Would run: {:?} --ffmpeg-location {:?} ...", ytdlp, ffmpeg);
+        println!(
+            "  Would run: {:?} --ffmpeg-location {:?} ...",
+            ytdlp, ffmpeg
+        );
 
         // Test with a simple extraction (no download)
         let test_url = "https://soundcloud.com/majorlazer/lean-on-feat-mo-dj-snake";
