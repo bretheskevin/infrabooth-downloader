@@ -1,6 +1,9 @@
 use std::path::PathBuf;
+use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
+use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::{process::CommandEvent, ShellExt};
+use tokio::sync::{watch, Mutex};
 
 use crate::models::error::YtDlpError;
 use crate::models::ErrorResponse;
@@ -76,6 +79,7 @@ fn build_output_template(
 
     match playlist_context {
         Some(ctx) => {
+            // Format track position manually since --no-playlist disables %(playlist_index)
             let width = if ctx.total_tracks < 10 {
                 1
             } else if ctx.total_tracks < 100 {
@@ -83,9 +87,10 @@ fn build_output_template(
             } else {
                 3
             };
+            let track_num = format!("{:0width$}", ctx.track_position, width = width);
             format!(
-                "{}/%(playlist_index)0{}d - %(artist)s - %(title)s.%(ext)s",
-                dir_str, width
+                "{}/{} - %(artist)s - %(title)s.%(ext)s",
+                dir_str, track_num
             )
         }
         None => {
@@ -161,6 +166,9 @@ async fn run_ytdlp_json<R: tauri::Runtime, T: serde::de::DeserializeOwned>(
 pub async fn download_track_to_mp3<R: tauri::Runtime>(
     app: &AppHandle<R>,
     config: TrackDownloadToMp3Config,
+    active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
+    cancel_rx: Option<watch::Receiver<bool>>,
+    active_pid: Option<Arc<Mutex<Option<u32>>>>,
 ) -> Result<PathBuf, YtDlpError> {
     use crate::services::storage::is_token_expired_or_expiring;
 
@@ -228,20 +236,54 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     }
 
     let shell = app.shell();
-    let (mut rx, _child) = shell
+    let (mut rx, child) = shell
         .sidecar("yt-dlp")
         .map_err(|_| YtDlpError::BinaryNotFound)?
         .args(&args)
         .spawn()
         .map_err(|_| YtDlpError::BinaryNotFound)?;
 
+    // Store the PID for process tree killing before moving child
+    let pid = child.pid();
+    if let Some(ref active_pid_mutex) = active_pid {
+        let mut guard = active_pid_mutex.lock().await;
+        *guard = Some(pid);
+        log::debug!("[ytdlp] Stored PID {} for process tree killing", pid);
+    }
+
+    if let Some(ref active_child_mutex) = active_child {
+        let mut guard = active_child_mutex.lock().await;
+        *guard = Some(child);
+    }
+
     let mut last_error: Option<String> = None;
     let mut output_path: Option<PathBuf> = None;
     let not_found_msg = "Track unavailable - may have been removed or made private";
 
-    while let Some(event) = rx.recv().await {
+    loop {
+        // Check for cancellation at each iteration
+        if let Some(ref crx) = cancel_rx {
+            if *crx.borrow() {
+                log::info!("[ytdlp] Cancellation detected, aborting download");
+                // Kill the process if we still have access to it
+                if let Some(ref active_child_mutex) = active_child {
+                    let mut guard = active_child_mutex.lock().await;
+                    if let Some(child) = guard.take() {
+                        let _ = child.kill();
+                    }
+                }
+                return Err(YtDlpError::Cancelled);
+            }
+        }
+
+        // Use select to either receive an event or timeout (to check cancellation)
+        let event = tokio::select! {
+            event = rx.recv() => event,
+            _ = tokio::time::sleep(std::time::Duration::from_millis(100)) => continue,
+        };
+
         match event {
-            CommandEvent::Stdout(line_bytes) => {
+            Some(CommandEvent::Stdout(line_bytes)) => {
                 let line = bytes_to_string(&line_bytes);
                 log::info!("yt-dlp stdout: {}", line);
 
@@ -261,7 +303,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                     );
                 }
             }
-            CommandEvent::Stderr(line_bytes) => {
+            Some(CommandEvent::Stderr(line_bytes)) => {
                 let line = bytes_to_string(&line_bytes);
                 log::info!("yt-dlp stderr: {}", line);
                 last_error = Some(line.clone());
@@ -271,8 +313,15 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                     return Err(err);
                 }
             }
-            CommandEvent::Terminated(payload) => {
+            Some(CommandEvent::Terminated(payload)) => {
                 if payload.code != Some(0) {
+                    // Check if this was a cancellation
+                    if let Some(ref crx) = cancel_rx {
+                        if *crx.borrow() {
+                            log::info!("[ytdlp] Download was cancelled (terminated)");
+                            return Err(YtDlpError::Cancelled);
+                        }
+                    }
                     log::error!(
                         "yt-dlp terminated with code {:?}: {:?}",
                         payload.code,
@@ -282,8 +331,10 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                         last_error.unwrap_or_else(|| "Unknown error".to_string()),
                     ));
                 }
+                break; // Process completed successfully
             }
-            _ => {}
+            Some(_) => {}
+            None => break, // Channel closed
         }
     }
 
@@ -387,11 +438,13 @@ pub async fn extract_playlist_info<R: tauri::Runtime>(
     url: &str,
 ) -> Result<PlaylistInfo, YtDlpError> {
     log::info!("[ytdlp] Extracting playlist info for URL: {}", url);
+    // Note: We intentionally do NOT use --flat-playlist here because it returns
+    // minimal metadata (just id/url) without title/artist/thumbnail information.
+    // This makes fetching slower but gives us complete track metadata.
     let meta: YtDlpPlaylistMeta = run_ytdlp_json(
         app,
         &[
             "--dump-single-json",
-            "--flat-playlist",
             "--no-warnings",
             url,
         ],
@@ -526,7 +579,7 @@ mod tests {
         let template = build_output_template(&output_dir, &ctx);
         assert_eq!(
             template,
-            "/downloads/%(playlist_index)01d - %(artist)s - %(title)s.%(ext)s"
+            "/downloads/1 - %(artist)s - %(title)s.%(ext)s"
         );
     }
 
@@ -540,7 +593,7 @@ mod tests {
         let template = build_output_template(&output_dir, &ctx);
         assert_eq!(
             template,
-            "/downloads/%(playlist_index)02d - %(artist)s - %(title)s.%(ext)s"
+            "/downloads/05 - %(artist)s - %(title)s.%(ext)s"
         );
     }
 
@@ -554,7 +607,7 @@ mod tests {
         let template = build_output_template(&output_dir, &ctx);
         assert_eq!(
             template,
-            "/downloads/%(playlist_index)03d - %(artist)s - %(title)s.%(ext)s"
+            "/downloads/001 - %(artist)s - %(title)s.%(ext)s"
         );
     }
 
@@ -847,5 +900,146 @@ mod tests {
     fn test_detect_unavailability_does_not_match_geo_block() {
         let stderr = "ERROR: This track is not available in your country";
         assert!(detect_unavailability(stderr).is_none());
+    }
+
+    #[test]
+    fn test_parse_destination_with_unicode_characters() {
+        let line = "[ExtractAudio] Destination: /path/to/Bartholomé - Bartholomé - Anya.mp3";
+        assert_eq!(
+            parse_destination(line),
+            Some("/path/to/Bartholomé - Bartholomé - Anya.mp3".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_destination_with_japanese_characters() {
+        let line = "[download] Destination: /downloads/アーティスト - タイトル.mp3";
+        assert_eq!(
+            parse_destination(line),
+            Some("/downloads/アーティスト - タイトル.mp3".to_string())
+        );
+    }
+
+    #[test]
+    fn test_parse_destination_with_emoji() {
+        let line = "[download] Destination: /downloads/Artist - Track 🔥.mp3";
+        assert_eq!(
+            parse_destination(line),
+            Some("/downloads/Artist - Track 🔥.mp3".to_string())
+        );
+    }
+
+    #[test]
+    fn test_track_info_from_ytdlp_meta_uses_artist_field() {
+        let meta = YtDlpTrackMeta {
+            id: Some("12345".to_string()),
+            title: Some("My Title".to_string()),
+            track: None,
+            uploader: Some("Uploader Name".to_string()),
+            artist: Some("Artist Name".to_string()),
+            creator: Some("Creator Name".to_string()),
+            thumbnail: None,
+            duration: Some(180.0),
+        };
+        let track_info = TrackInfo::from(meta);
+        assert_eq!(track_info.user.username, "Artist Name");
+        assert_eq!(track_info.title, "My Title");
+    }
+
+    #[test]
+    fn test_track_info_from_ytdlp_meta_fallback_to_creator() {
+        let meta = YtDlpTrackMeta {
+            id: Some("12345".to_string()),
+            title: Some("My Title".to_string()),
+            track: None,
+            uploader: Some("Uploader Name".to_string()),
+            artist: None,
+            creator: Some("Creator Name".to_string()),
+            thumbnail: None,
+            duration: Some(180.0),
+        };
+        let track_info = TrackInfo::from(meta);
+        assert_eq!(track_info.user.username, "Creator Name");
+    }
+
+    #[test]
+    fn test_track_info_from_ytdlp_meta_fallback_to_uploader() {
+        let meta = YtDlpTrackMeta {
+            id: Some("12345".to_string()),
+            title: Some("My Title".to_string()),
+            track: None,
+            uploader: Some("Uploader Name".to_string()),
+            artist: None,
+            creator: None,
+            thumbnail: None,
+            duration: Some(180.0),
+        };
+        let track_info = TrackInfo::from(meta);
+        assert_eq!(track_info.user.username, "Uploader Name");
+    }
+
+    #[test]
+    fn test_track_info_from_ytdlp_meta_skips_na_values() {
+        let meta = YtDlpTrackMeta {
+            id: Some("12345".to_string()),
+            title: Some("My Title".to_string()),
+            track: None,
+            uploader: Some("Uploader Name".to_string()),
+            artist: Some("NA".to_string()),
+            creator: Some("NA".to_string()),
+            thumbnail: None,
+            duration: Some(180.0),
+        };
+        let track_info = TrackInfo::from(meta);
+        assert_eq!(track_info.user.username, "Uploader Name");
+    }
+
+    #[test]
+    fn test_track_info_from_ytdlp_meta_prefers_track_over_title() {
+        let meta = YtDlpTrackMeta {
+            id: Some("12345".to_string()),
+            title: Some("Full Title".to_string()),
+            track: Some("Track Name".to_string()),
+            uploader: Some("Artist".to_string()),
+            artist: None,
+            creator: None,
+            thumbnail: None,
+            duration: Some(180.0),
+        };
+        let track_info = TrackInfo::from(meta);
+        assert_eq!(track_info.title, "Track Name");
+    }
+
+    #[test]
+    fn test_track_info_duration_conversion() {
+        let meta = YtDlpTrackMeta {
+            id: Some("12345".to_string()),
+            title: Some("Title".to_string()),
+            track: None,
+            uploader: Some("Artist".to_string()),
+            artist: None,
+            creator: None,
+            thumbnail: None,
+            duration: Some(125.5),
+        };
+        let track_info = TrackInfo::from(meta);
+        // 125.5 seconds * 1000 = 125500 milliseconds
+        assert_eq!(track_info.duration, 125500);
+    }
+
+    #[test]
+    fn test_track_info_id_parsing() {
+        let meta = YtDlpTrackMeta {
+            id: Some("2231381306".to_string()),
+            title: Some("Title".to_string()),
+            track: None,
+            uploader: Some("Artist".to_string()),
+            artist: None,
+            creator: None,
+            thumbnail: None,
+            duration: Some(180.0),
+        };
+        let track_info = TrackInfo::from(meta);
+        assert_eq!(track_info.id, 2231381306);
     }
 }

@@ -131,3 +131,21 @@ export async function startDownloadQueue(
     throw error;
   }
 }
+
+/**
+ * Cancel the current download queue.
+ *
+ * This function cancels the currently running download queue.
+ * It will stop the queue after the current track finishes or immediately
+ * if a track is actively downloading.
+ */
+export async function cancelDownloadQueue(): Promise<void> {
+  logger.info('[download] Cancelling download queue');
+  try {
+    await invoke('cancel_download_queue');
+    logger.info('[download] Queue cancellation requested');
+  } catch (error) {
+    logger.error(`[download] Failed to cancel queue: ${error}`);
+    throw error;
+  }
+}

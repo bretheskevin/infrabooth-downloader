@@ -4,6 +4,7 @@ import { useQueueStore } from '@/stores/queueStore';
 import { logger } from '@/lib/logger';
 import type {
   DownloadProgressEvent,
+  QueueCancelledEvent,
   QueueProgressEvent,
   QueueCompleteEvent,
 } from '@/types/events';
@@ -11,10 +12,11 @@ import type {
 /**
  * Hook that subscribes to download and queue progress events from the Rust backend.
  *
- * This hook listens to three event channels:
+ * This hook listens to four event channels:
  * - `download-progress`: Per-track status updates
  * - `queue-progress`: Overall queue progress (X of Y)
  * - `queue-complete`: Final results when queue finishes
+ * - `queue-cancelled`: When queue is cancelled by user
  *
  * All events update the queue store automatically.
  */
@@ -22,6 +24,7 @@ export function useDownloadProgress(): void {
   const updateTrackStatus = useQueueStore((state) => state.updateTrackStatus);
   const setQueueProgress = useQueueStore((state) => state.setQueueProgress);
   const setQueueComplete = useQueueStore((state) => state.setQueueComplete);
+  const setQueueCancelled = useQueueStore((state) => state.setQueueCancelled);
   const setRateLimited = useQueueStore((state) => state.setRateLimited);
 
   useEffect(() => {
@@ -70,10 +73,19 @@ export function useDownloadProgress(): void {
       }
     );
 
+    const unlistenCancelled = listen<QueueCancelledEvent>(
+      'queue-cancelled',
+      (event) => {
+        logger.info(`[useDownloadProgress] queue-cancelled: completed=${event.payload.completed}, cancelled=${event.payload.cancelled}`);
+        setQueueCancelled(event.payload);
+      }
+    );
+
     return () => {
       unlistenProgress.then((fn) => fn());
       unlistenQueueProgress.then((fn) => fn());
       unlistenComplete.then((fn) => fn());
+      unlistenCancelled.then((fn) => fn());
     };
-  }, [updateTrackStatus, setQueueProgress, setQueueComplete, setRateLimited]);
+  }, [updateTrackStatus, setQueueProgress, setQueueComplete, setQueueCancelled, setRateLimited]);
 }

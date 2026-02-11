@@ -71,6 +71,9 @@ pub enum YtDlpError {
 
     #[error("Authentication required")]
     AuthRequired,
+
+    #[error("Download cancelled")]
+    Cancelled,
 }
 
 impl HasErrorCode for YtDlpError {
@@ -82,6 +85,7 @@ impl HasErrorCode for YtDlpError {
             YtDlpError::GeoBlocked => "GEO_BLOCKED",
             YtDlpError::NotFound => "INVALID_URL",
             YtDlpError::AuthRequired => "AUTH_REQUIRED",
+            YtDlpError::Cancelled => "CANCELLED",
         }
     }
 }
