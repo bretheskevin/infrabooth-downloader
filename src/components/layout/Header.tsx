@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AuthContainer } from '@/components/features/auth/AuthContainer';
-import { SettingsPanel } from '@/components/features/settings/SettingsPanel';
+import { AuthContainer } from '@/features/auth/components/AuthContainer';
+import { SettingsPanel } from '@/features/settings/components/SettingsPanel';
 
 export function Header() {
   const { t } = useTranslation();

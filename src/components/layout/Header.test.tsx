@@ -2,10 +2,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import { Header } from './Header';
 import i18n from '@/lib/i18n';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/features/auth/store';
 
 // Mock auth module
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/features/auth/api', () => ({
   startOAuth: vi.fn(),
   signOut: vi.fn(),
 }));
