@@ -1,4 +1,4 @@
-import type { ErrorCode, AppError } from '@/types/errors';
+import type { ErrorCode, AppError } from '@/features/download/types/errors';
 import type { TFunction } from 'i18next';
 
 export const ERROR_CODE_TO_I18N_KEY: Record<ErrorCode, string> = {
