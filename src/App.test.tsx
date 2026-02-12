@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@/lib/i18n';
 import { App } from './App';
-import { useAuthStore } from '@/stores/authStore';
+import { useAuthStore } from '@/features/auth/store';
 
 // Mock Tauri event API
 vi.mock('@tauri-apps/api/event', () => ({
@@ -10,9 +10,11 @@ vi.mock('@tauri-apps/api/event', () => ({
 }));
 
 // Mock auth module
-vi.mock('@/lib/auth', () => ({
+vi.mock('@/features/auth/api', () => ({
   startOAuth: vi.fn(),
   completeOAuth: vi.fn(),
+  checkAuthState: vi.fn().mockResolvedValue(false),
+  signOut: vi.fn(),
 }));
 
 describe('App', () => {
