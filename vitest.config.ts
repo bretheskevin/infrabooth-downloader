@@ -12,7 +12,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true,
-    include: ['src/**/*.test.{ts,tsx}'],
+    include: ['src/**/__test__/*.test.{ts,tsx}'],
     setupFiles: ['./src/test/setup-localStorage.ts', './src/test/setup-tauri.ts'],
   },
 });
