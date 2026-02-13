@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useUrlValidation, useMediaFetch, type FetchError } from '@/features/url-input';
 import { useSyncToQueue } from './useSyncToQueue';
 import { useQueueStore } from '@/features/queue/store';
@@ -16,17 +16,28 @@ interface UseDownloadFlowReturn {
   media: PlaylistInfo | TrackInfo | null;
   isLoading: boolean;
   error: FetchError | null;
+  isPending: boolean;
   handleDownload: () => void;
 }
 
 export function useDownloadFlow(): UseDownloadFlowReturn {
   const [url, setUrl] = useState('');
+  const [isPending, setIsPending] = useState(false);
+
+  const isProcessing = useQueueStore((state) => state.isProcessing);
 
   const { result: validation, isValidating } = useUrlValidation(url);
   const { data: media, isLoading, error } = useMediaFetch(url, validation);
 
   // Sync to queue whenever media changes
   useSyncToQueue(media);
+
+  // Reset pending state when processing starts
+  useEffect(() => {
+    if (isProcessing) {
+      setIsPending(false);
+    }
+  }, [isProcessing]);
 
   const handleDownload = useCallback(async () => {
     const { tracks: queueTracks, setInitializing } = useQueueStore.getState();
@@ -39,6 +50,9 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
       logger.warn('[useDownloadFlow] No tracks in queue, aborting download');
       return;
     }
+
+    // Set pending state while waiting for backend to start processing
+    setIsPending(true);
 
     // Show initializing state before first download starts
     setInitializing(true);
@@ -73,6 +87,7 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
     media,
     isLoading,
     error,
+    isPending,
     handleDownload,
   };
 }
