@@ -19,6 +19,7 @@ export function DownloadPage() {
     media,
     isLoading,
     error,
+    isPending,
     handleDownload,
   } = useDownloadFlow();
 
@@ -27,21 +28,7 @@ export function DownloadPage() {
   const { isComplete, completedCount, failedCount, cancelledCount, totalCount, isCancelled, resetQueue } =
     useDownloadCompletion();
 
-  const [isStartingDownload, setIsStartingDownload] = useState(false);
-
-  useEffect(() => {
-    if (isProcessing) {
-      setIsStartingDownload(false);
-    }
-  }, [isProcessing]);
-
-  const handleDownloadWithLoading = useCallback(() => {
-    setIsStartingDownload(true);
-    handleDownload();
-  }, [handleDownload]);
-
   const handleDownloadAnother = useCallback(() => {
-    setIsStartingDownload(false);
     resetQueue();
     setUrl('');
   }, [resetQueue, setUrl]);
@@ -84,7 +71,7 @@ export function DownloadPage() {
     );
   }
 
-  if (isStartingDownload) {
+  if (isPending) {
     return (
       <section className="space-y-4">
         <div
@@ -125,14 +112,14 @@ export function DownloadPage() {
       {media && !isLoading && isPlaylist(media) && (
         <PlaylistPreview
           playlist={media}
-          onDownload={handleDownloadWithLoading}
+          onDownload={handleDownload}
           isDownloading={isProcessing}
         />
       )}
       {media && !isLoading && !isPlaylist(media) && (
         <TrackPreview
           track={media}
-          onDownload={handleDownloadWithLoading}
+          onDownload={handleDownload}
           isDownloading={isProcessing}
         />
       )}
