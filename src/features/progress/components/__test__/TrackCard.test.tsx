@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { TrackCard } from '../TrackCard';
-import type { Track } from '@/features/download/types/track';
+import type { Track } from '@/features/queue/types/track';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

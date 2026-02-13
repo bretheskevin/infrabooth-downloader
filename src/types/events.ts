@@ -1,5 +1,5 @@
-import type { AppError } from '@/features/download/types/errors';
-import type { TrackStatus } from '@/features/download/types/track';
+import type { AppError } from '@/features/queue/types/errors';
+import type { TrackStatus } from '@/features/queue/types/track';
 
 /**
  * Download progress event payload received from the Rust backend.

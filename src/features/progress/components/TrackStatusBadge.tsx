@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
 import { TrackStatusIcon } from './TrackStatusIcon';
 import { TrackStatusLabel } from './TrackStatusLabel';
-import type { TrackStatus } from '@/features/download/types/track';
-import type { AppError } from '@/features/download/types/errors';
+import type { TrackStatus } from '@/features/queue/types/track';
+import type { AppError } from '@/features/queue/types/errors';
 
 export interface TrackStatusBadgeProps {
   status: TrackStatus;

@@ -2,9 +2,9 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
-import { cancelDownloadQueue } from '@/features/download/api/download';
+import { cancelDownloadQueue } from '@/features/queue/api/download';
 import { cn } from '@/lib/utils';
-import { useQueueStore } from '@/features/download/store';
+import { useQueueStore } from '@/features/queue/store';
 import { useTranslation } from 'react-i18next';
 
 interface OverallProgressProps {

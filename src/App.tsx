@@ -1,5 +1,5 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { DownloadSection } from '@/features/download/components/DownloadSection';
+import { DownloadPage } from '@/pages/DownloadPage';
 import { useLanguageSync, useAuthStateListener, useOAuthFlow, useStartupAuth, useInitializeSettings } from '@/hooks';
 
 export function App() {
@@ -11,7 +11,7 @@ export function App() {
 
   return (
     <AppLayout>
-      <DownloadSection />
+      <DownloadPage />
     </AppLayout>
   );
 }

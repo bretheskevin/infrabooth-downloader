@@ -8,7 +8,7 @@ import { UnavailableTrackTooltip } from './UnavailableTrackTooltip';
 import { UnavailableTrackDetails } from './UnavailableTrackDetails';
 import { isGeoBlockedError, isUnavailableError } from '@/lib/errorMessages';
 import { useTranslation } from 'react-i18next';
-import type { Track } from '@/features/download/types/track';
+import type { Track } from '@/features/queue/types/track';
 
 export interface TrackCardProps {
   track: Track;

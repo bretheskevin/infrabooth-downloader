@@ -11,7 +11,7 @@ import {
   getUnavailableDetail,
 } from '../errorMessages';
 import type { TFunction } from 'i18next';
-import type { AppError } from '@/features/download/types/errors';
+import type { AppError } from '@/features/queue/types/errors';
 
 describe('errorMessages', () => {
   describe('getErrorMessage', () => {

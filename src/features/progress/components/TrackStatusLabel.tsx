@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { ERROR_CODE_TO_I18N_KEY, getErrorSeverity, isUnavailableError } from '@/lib/errorMessages';
-import type { TrackStatus } from '@/features/download/types/track';
-import type { AppError } from '@/features/download/types/errors';
+import type { TrackStatus } from '@/features/queue/types/track';
+import type { AppError } from '@/features/queue/types/errors';
 
 export interface TrackStatusLabelProps {
   status: TrackStatus;

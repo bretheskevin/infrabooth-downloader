@@ -1,8 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { OverallProgress } from '../OverallProgress';
-import { useQueueStore } from '@/features/download/store';
-import type { Track } from '@/features/download/types/track';
+import { useQueueStore } from '@/features/queue/store';
+import type { Track } from '@/features/queue/types/track';
 
 // Mock the i18n hook
 vi.mock('react-i18next', () => ({
