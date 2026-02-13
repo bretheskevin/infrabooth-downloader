@@ -5,4 +5,4 @@ export { useOAuthFlow } from '@/features/auth/hooks/useOAuthFlow';
 export { useStartupAuth } from '@/features/auth/hooks/useStartupAuth';
 export { useDebounce } from './useDebounce';
 export { useInitializeSettings } from '@/features/settings/hooks/useInitializeSettings';
-export * from '@/features/download/hooks';
+export * from '@/features/queue/hooks';

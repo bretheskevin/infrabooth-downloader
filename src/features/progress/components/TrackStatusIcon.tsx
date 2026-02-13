@@ -1,8 +1,8 @@
 import { Clock, Loader2, CheckCircle2, AlertTriangle, XCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getErrorSeverity, isUnavailableError } from '@/lib/errorMessages';
-import type { TrackStatus } from '@/features/download/types/track';
-import type { ErrorCode, AppError } from '@/features/download/types/errors';
+import type { TrackStatus } from '@/features/queue/types/track';
+import type { ErrorCode, AppError } from '@/features/queue/types/errors';
 
 export interface TrackStatusIconProps {
   status: TrackStatus;

@@ -1,5 +1,5 @@
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useQueueStore } from '@/features/download/store';
+import { useQueueStore } from '@/features/queue/store';
 import { useTranslation } from 'react-i18next';
 import { TrackCard } from './TrackCard';
 
