@@ -33,12 +33,12 @@ vi.mock('@/features/queue/api/download', () => ({
   startDownloadQueue: vi.fn(),
 }));
 
-// Mock useQueueStore - we only use getState().tracks in the hook
-const createMockQueueState = (tracks: Track[] = []) => ({
+// Mock useQueueStore - we use getState().tracks and subscribe to isProcessing
+const createMockQueueState = (tracks: Track[] = [], isProcessing = false) => ({
   tracks,
   currentIndex: 0,
   totalTracks: tracks.length,
-  isProcessing: false,
+  isProcessing,
   isInitializing: false,
   isComplete: false,
   isCancelling: false,
@@ -59,11 +59,18 @@ const createMockQueueState = (tracks: Track[] = []) => ({
   setInitializing: vi.fn(),
 });
 
-vi.mock('@/features/queue/store', () => ({
-  useQueueStore: {
-    getState: vi.fn(() => createMockQueueState()),
-  },
-}));
+const mockQueueStoreState = { isProcessing: false };
+
+vi.mock('@/features/queue/store', () => {
+  const mockSelector = vi.fn((selector: (state: { isProcessing: boolean }) => unknown) => {
+    return selector(mockQueueStoreState);
+  });
+  return {
+    useQueueStore: Object.assign(mockSelector, {
+      getState: vi.fn(() => createMockQueueState()),
+    }),
+  };
+});
 
 import { useUrlValidation, useMediaFetch } from '@/features/url-input';
 import { startDownloadQueue } from '@/features/queue/api/download';
@@ -119,6 +126,7 @@ const mockQueueTracksData: Track[] = [
 describe('useDownloadFlow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockQueueStoreState.isProcessing = false;
     mockUseUrlValidation.mockReturnValue({ result: null, isValidating: false });
     mockUseMediaFetch.mockReturnValue({
       data: null,
@@ -133,6 +141,12 @@ describe('useDownloadFlow', () => {
     const { result } = renderHook(() => useDownloadFlow());
 
     expect(result.current.url).toBe('');
+  });
+
+  it('should initialize with isPending as false', () => {
+    const { result } = renderHook(() => useDownloadFlow());
+
+    expect(result.current.isPending).toBe(false);
   });
 
   it('should update URL when setUrl is called', () => {
@@ -368,6 +382,56 @@ describe('useDownloadFlow', () => {
         ],
         albumName: undefined,
       });
+    });
+
+    it('should set isPending to true when download starts', async () => {
+      mockUseQueueStoreGetState.mockReturnValue(
+        createMockQueueState(mockQueueTracksData)
+      );
+
+      const { result } = renderHook(() => useDownloadFlow());
+
+      expect(result.current.isPending).toBe(false);
+
+      await act(async () => {
+        await result.current.handleDownload();
+      });
+
+      expect(result.current.isPending).toBe(true);
+    });
+
+    it('should not set isPending when queue is empty', async () => {
+      mockUseQueueStoreGetState.mockReturnValue(createMockQueueState());
+
+      const { result } = renderHook(() => useDownloadFlow());
+
+      await act(async () => {
+        await result.current.handleDownload();
+      });
+
+      expect(result.current.isPending).toBe(false);
+    });
+  });
+
+  describe('isPending state', () => {
+    it('should reset isPending to false when isProcessing becomes true', async () => {
+      mockUseQueueStoreGetState.mockReturnValue(
+        createMockQueueState(mockQueueTracksData)
+      );
+
+      const { result, rerender } = renderHook(() => useDownloadFlow());
+
+      await act(async () => {
+        await result.current.handleDownload();
+      });
+
+      expect(result.current.isPending).toBe(true);
+
+      mockQueueStoreState.isProcessing = true;
+
+      rerender();
+
+      expect(result.current.isPending).toBe(false);
     });
   });
 });
