@@ -19,6 +19,7 @@ interface QueueState {
   cancelledCount: number;
   isRateLimited: boolean;
   rateLimitedAt: number | null;
+  outputDir: string | null;
   // Actions
   enqueueTracks: (tracks: Track[]) => void;
   updateTrackStatus: (
@@ -33,6 +34,7 @@ interface QueueState {
   clearQueue: () => void;
   setRateLimited: (isLimited: boolean) => void;
   setInitializing: (isInitializing: boolean) => void;
+  setOutputDir: (path: string | null) => void;
 }
 
 const INITIAL_QUEUE_STATE = {
@@ -47,6 +49,7 @@ const INITIAL_QUEUE_STATE = {
   cancelledCount: 0,
   isRateLimited: false,
   rateLimitedAt: null as number | null,
+  outputDir: null as string | null,
 };
 
 export const useQueueStore = create<QueueState>((set) => ({
@@ -135,5 +138,10 @@ export const useQueueStore = create<QueueState>((set) => ({
     set({
       isInitializing,
     });
+  },
+
+  setOutputDir: (path) => {
+    logger.debug(`[queueStore] Output dir: ${path || 'default'}`);
+    set({ outputDir: path });
   },
 }));

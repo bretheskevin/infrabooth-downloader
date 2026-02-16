@@ -17,7 +17,7 @@ interface UseDownloadFlowReturn {
   isLoading: boolean;
   error: FetchError | null;
   isPending: boolean;
-  handleDownload: () => void;
+  handleDownload: (overrideOutputDir?: string) => void;
 }
 
 export function useDownloadFlow(): UseDownloadFlowReturn {
@@ -39,12 +39,18 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
     }
   }, [isProcessing]);
 
-  const handleDownload = useCallback(async () => {
-    const { tracks: queueTracks, setInitializing } = useQueueStore.getState();
+  const handleDownload = useCallback(async (overrideOutputDir?: string) => {
+    const { tracks: queueTracks, setInitializing, setOutputDir } = useQueueStore.getState();
     const { downloadPath } = useSettingsStore.getState();
 
+    // Use override if provided, otherwise fall back to settings default
+    const outputDir = overrideOutputDir || downloadPath || undefined;
+
+    // Store the actual output dir used for this download (for "Open Folder" button)
+    setOutputDir(outputDir || null);
+
     logger.info(`[useDownloadFlow] handleDownload called with ${queueTracks.length} tracks`);
-    logger.debug(`[useDownloadFlow] Download path: ${downloadPath || 'default'}`);
+    logger.debug(`[useDownloadFlow] Download path: ${outputDir || 'default'}`);
 
     if (queueTracks.length === 0) {
       logger.warn('[useDownloadFlow] No tracks in queue, aborting download');
@@ -72,7 +78,7 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
           artworkUrl: t.artworkUrl ?? undefined,
         })),
         albumName,
-        outputDir: downloadPath || undefined,
+        outputDir,
       });
     } catch (error) {
       logger.error(`[useDownloadFlow] Download failed: ${error}`);

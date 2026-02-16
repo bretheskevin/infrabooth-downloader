@@ -43,10 +43,10 @@ vi.mock('@/features/settings/api/settings', () => ({
   getDefaultDownloadPath: vi.fn().mockResolvedValue('/Users/default/Downloads'),
 }));
 
-// Mock settings store
-vi.mock('@/features/settings/store', () => ({
-  useSettingsStore: (selector: (state: { downloadPath: string }) => string) =>
-    selector({ downloadPath: '/Users/test/Downloads' }),
+// Mock queue store
+vi.mock('@/features/queue/store', () => ({
+  useQueueStore: (selector: (state: { outputDir: string | null }) => string | null) =>
+    selector({ outputDir: '/Users/test/Downloads' }),
 }));
 
 // Mock useFailedTracks hook

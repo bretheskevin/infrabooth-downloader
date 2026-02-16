@@ -136,5 +136,9 @@
     "rateLimitAnnouncement": "Download paused due to rate limit, will resume shortly",
     "errorAnnouncement": "Error: {{message}}",
     "languageChanged": "Language changed to {{language}}"
+  },
+  "downloadBar": {
+    "clickToChange": "Click to change download folder",
+    "customLocation": "custom"
   }
 }

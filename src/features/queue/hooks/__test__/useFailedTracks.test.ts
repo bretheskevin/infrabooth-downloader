@@ -57,6 +57,8 @@ describe('useFailedTracks', () => {
         clearQueue: vi.fn(),
         setRateLimited: vi.fn(),
         setInitializing: vi.fn(),
+        outputDir: null,
+        setOutputDir: vi.fn(),
       })
     );
 
@@ -98,6 +100,8 @@ describe('useFailedTracks', () => {
         clearQueue: vi.fn(),
         setRateLimited: vi.fn(),
         setInitializing: vi.fn(),
+        outputDir: null,
+        setOutputDir: vi.fn(),
       })
     );
 
@@ -147,6 +151,8 @@ describe('useFailedTracks', () => {
         clearQueue: vi.fn(),
         setRateLimited: vi.fn(),
         setInitializing: vi.fn(),
+        outputDir: null,
+        setOutputDir: vi.fn(),
       })
     );
 
@@ -186,6 +192,8 @@ describe('useFailedTracks', () => {
         clearQueue: vi.fn(),
         setRateLimited: vi.fn(),
         setInitializing: vi.fn(),
+        outputDir: null,
+        setOutputDir: vi.fn(),
       })
     );
 

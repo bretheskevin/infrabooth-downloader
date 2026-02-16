@@ -136,5 +136,9 @@
     "rateLimitAnnouncement": "Téléchargement en pause à cause de la limite de débit, reprise imminente",
     "errorAnnouncement": "Erreur : {{message}}",
     "languageChanged": "Langue changée en {{language}}"
+  },
+  "downloadBar": {
+    "clickToChange": "Cliquez pour changer le dossier",
+    "customLocation": "personnalisé"
   }
 }
