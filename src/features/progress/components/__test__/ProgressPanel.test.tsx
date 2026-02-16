@@ -4,7 +4,6 @@ import { ProgressPanel } from '../ProgressPanel';
 import { useQueueStore } from '@/features/queue/store';
 import type { Track } from '@/features/queue/types/track';
 
-// Mock the i18n hook
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, params?: Record<string, unknown>) => {
@@ -18,6 +17,19 @@ vi.mock('react-i18next', () => ({
       return translations[key] || key;
     },
   }),
+}));
+
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: vi.fn(({ count }: { count: number }) => ({
+    getVirtualItems: () =>
+      Array.from({ length: count }, (_, i) => ({
+        index: i,
+        start: i * 72,
+        size: 72,
+        key: i,
+      })),
+    getTotalSize: () => count * 72,
+  })),
 }));
 
 const createMockTracks = (count: number): Track[] =>

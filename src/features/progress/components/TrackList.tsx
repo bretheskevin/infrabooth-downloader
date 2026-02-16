@@ -1,13 +1,27 @@
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { useQueueStore } from '@/features/queue/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useTranslation } from 'react-i18next';
+import { useVirtualizedList } from '@/hooks/useVirtualizedList';
+import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { TrackCard } from './TrackCard';
+
+const TRACK_CARD_HEIGHT = 72;
 
 export function TrackList() {
   const { t } = useTranslation();
-  const tracks = useQueueStore((state) => state.tracks);
-  const currentIndex = useQueueStore((state) => state.currentIndex);
-  const isInitializing = useQueueStore((state) => state.isInitializing);
+
+  const { tracks, currentIndex, isInitializing } = useQueueStore(
+    useShallow((state) => ({
+      tracks: state.tracks,
+      currentIndex: state.currentIndex,
+      isInitializing: state.isInitializing,
+    }))
+  );
+
+  const { parentRef, virtualItems, totalSize } = useVirtualizedList({
+    count: tracks.length,
+    itemHeight: TRACK_CARD_HEIGHT,
+  });
 
   if (tracks.length === 0) {
     return (
@@ -18,20 +32,24 @@ export function TrackList() {
   }
 
   return (
-    <ScrollArea
-      className="h-full"
-      aria-label={t('progress.trackList.ariaLabel', 'Download queue')}
+    <VirtualListContainer
+      parentRef={parentRef}
+      totalSize={totalSize}
+      ariaLabel={t('progress.trackList.ariaLabel', 'Download queue')}
     >
-      <div role="list" className="space-y-2 p-2">
-        {tracks.map((track, index) => (
-          <TrackCard
-            key={track.id}
-            track={track}
-            isCurrentTrack={index === currentIndex}
-            isInitializing={isInitializing && index === 0}
-          />
-        ))}
-      </div>
-    </ScrollArea>
+      {virtualItems.map((virtualItem) => {
+        const track = tracks[virtualItem.index];
+        if (!track) return null;
+        return (
+          <VirtualRow key={track.id} virtualItem={virtualItem} className="px-2">
+            <TrackCard
+              track={track}
+              isCurrentTrack={virtualItem.index === currentIndex}
+              isInitializing={isInitializing && virtualItem.index === 0}
+            />
+          </VirtualRow>
+        );
+      })}
+    </VirtualListContainer>
   );
 }

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Music, Loader2 } from 'lucide-react';
@@ -16,18 +17,20 @@ export interface TrackCardProps {
   isInitializing?: boolean;
 }
 
-// Detect touch device - check once at module load for performance
 const isTouchDevice =
   typeof window !== 'undefined' &&
   ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
-export function TrackCard({ track, isCurrentTrack, isInitializing = false }: TrackCardProps) {
+export const TrackCard = memo(function TrackCard({
+  track,
+  isCurrentTrack,
+  isInitializing = false,
+}: TrackCardProps) {
   const { t } = useTranslation();
   const isActive = track.status === 'downloading' || track.status === 'converting';
   const isGeoBlocked = isGeoBlockedError(track.error);
   const isUnavailable = isUnavailableError(track.error);
 
-  // Show initializing state only for first track when starting download
   const showInitializing = isInitializing && track.status === 'pending';
 
   const statusBadge = (
@@ -38,7 +41,6 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
     />
   );
 
-  // Initializing badge with spinner
   const initializingBadge = (
     <div
       role="status"
@@ -56,13 +58,10 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
     </div>
   );
 
-  // Determine which tooltip/details to show
   const renderStatusBadge = () => {
-    // Show initializing badge when starting
     if (showInitializing) {
       return initializingBadge;
     }
-    // Geo-blocked takes priority if both would match
     if (isGeoBlocked && !isTouchDevice) {
       return <GeoBlockTooltip>{statusBadge}</GeoBlockTooltip>;
     }
@@ -85,13 +84,13 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
         !isActive && !showInitializing && isCurrentTrack && 'bg-primary/10 border-l-2 border-l-primary'
       )}
     >
-      {/* Artwork - 48x48px */}
       <Avatar className="h-12 w-12 rounded-md flex-shrink-0">
         {track.artworkUrl ? (
           <AvatarImage
             src={track.artworkUrl}
             alt={track.title}
             className="rounded-md object-cover"
+            loading="lazy"
           />
         ) : null}
         <AvatarFallback
@@ -102,11 +101,9 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
         </AvatarFallback>
       </Avatar>
 
-      {/* Track Info */}
       <div className="flex-1 w-0">
         <p className="text-sm font-medium truncate">{track.title}</p>
         <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
-        {/* Expandable details for touch devices */}
         {isGeoBlocked && isTouchDevice && (
           <div className="mt-1">
             <GeoBlockDetails />
@@ -119,10 +116,9 @@ export function TrackCard({ track, isCurrentTrack, isInitializing = false }: Tra
         )}
       </div>
 
-      {/* Status Badge - with tooltip for desktop errors */}
       <div className="flex-shrink-0">
         {renderStatusBadge()}
       </div>
     </div>
   );
-}
+});
