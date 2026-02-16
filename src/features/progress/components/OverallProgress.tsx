@@ -83,7 +83,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {!showPreparing && !isCancelling && (
+          {!isCancelling && (
             <span className="text-sm text-muted-foreground">
               {percentage}%
             </span>
