@@ -16,6 +16,19 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+// Mock DownloadBar to test TrackPreview in isolation
+vi.mock('../DownloadBar', () => ({
+  DownloadBar: ({ onDownload, isDownloading }: { onDownload: () => void; isDownloading?: boolean }) => (
+    <button
+      data-testid="download-button"
+      onClick={onDownload}
+      disabled={isDownloading}
+    >
+      Download
+    </button>
+  ),
+}));
+
 describe('TrackPreview', () => {
   const mockTrack: TrackInfo = {
     id: 123456,
