@@ -1,15 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useMediaFetch } from '../useMediaFetch';
+import { createQueryWrapper } from '@/test/queryWrapper';
 import type { ValidationResult } from '@/features/url-input/types/url';
 
-// Mock playlist module
 vi.mock('@/features/url-input/api/playlist', () => ({
   fetchPlaylistInfo: vi.fn(),
   fetchTrackInfo: vi.fn(),
 }));
 
-// Mock i18n
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
@@ -40,10 +39,9 @@ const mockTrack = {
   duration: 240000,
 };
 
-// Stable validation objects to avoid infinite loops from object reference changes
-const validTrackValidation: ValidationResult = { valid: true, urlType: 'track' };
-const validPlaylistValidation: ValidationResult = { valid: true, urlType: 'playlist' };
-const invalidValidation: ValidationResult = { valid: false, error: { code: 'INVALID', message: 'Invalid' } };
+const validTrackValidation: ValidationResult = { valid: true, urlType: 'track', error: null };
+const validPlaylistValidation: ValidationResult = { valid: true, urlType: 'playlist', error: null };
+const invalidValidation: ValidationResult = { valid: false, urlType: null, error: { code: 'INVALID', message: 'Invalid', hint: null } };
 
 describe('useMediaFetch', () => {
   beforeEach(() => {
@@ -57,7 +55,10 @@ describe('useMediaFetch', () => {
     it('should return null data and no loading', () => {
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: null } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: null },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       expect(result.current.data).toBeNull();
@@ -68,7 +69,10 @@ describe('useMediaFetch', () => {
     it('should not call fetch functions', () => {
       renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: null } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: null },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       expect(mockFetchPlaylistInfo).not.toHaveBeenCalled();
@@ -80,7 +84,10 @@ describe('useMediaFetch', () => {
     it('should return null data and no loading', () => {
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://example.com', validation: invalidValidation } }
+        {
+          initialProps: { url: 'https://example.com', validation: invalidValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       expect(result.current.data).toBeNull();
@@ -93,10 +100,11 @@ describe('useMediaFetch', () => {
     it('should fetch playlist info', async () => {
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/sets/playlist', validation: validPlaylistValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/sets/playlist', validation: validPlaylistValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
-
-      expect(result.current.isLoading).toBe(true);
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -115,10 +123,11 @@ describe('useMediaFetch', () => {
     it('should fetch track info', async () => {
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track-name', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track-name', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
-
-      expect(result.current.isLoading).toBe(true);
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -139,7 +148,10 @@ describe('useMediaFetch', () => {
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {
@@ -161,7 +173,10 @@ describe('useMediaFetch', () => {
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {
@@ -179,7 +194,10 @@ describe('useMediaFetch', () => {
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {
@@ -197,7 +215,10 @@ describe('useMediaFetch', () => {
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {
@@ -215,7 +236,10 @@ describe('useMediaFetch', () => {
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {
@@ -234,7 +258,10 @@ describe('useMediaFetch', () => {
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {
@@ -253,7 +280,10 @@ describe('useMediaFetch', () => {
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {
@@ -271,7 +301,10 @@ describe('useMediaFetch', () => {
     it('should clear data when validation becomes invalid', async () => {
       const { result, rerender } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {
@@ -291,7 +324,10 @@ describe('useMediaFetch', () => {
 
       const { result, rerender } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
-        { initialProps: { url: 'https://soundcloud.com/artist/bad-track', validation: validTrackValidation } }
+        {
+          initialProps: { url: 'https://soundcloud.com/artist/bad-track', validation: validTrackValidation },
+          wrapper: createQueryWrapper(),
+        }
       );
 
       await waitFor(() => {

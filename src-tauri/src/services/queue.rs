@@ -1,4 +1,5 @@
 use serde::Serialize;
+use specta::Type;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Runtime};
@@ -11,7 +12,7 @@ use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::ytdlp::PlaylistContext;
 
 /// An item in the download queue.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Type)]
 pub struct QueueItem {
     pub track_url: String,
     pub track_id: String,
@@ -22,7 +23,7 @@ pub struct QueueItem {
 }
 
 /// Event payload for queue progress updates.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueProgressEvent {
     pub current: u32,
@@ -31,7 +32,7 @@ pub struct QueueProgressEvent {
 }
 
 /// Event payload for queue completion.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueCompleteEvent {
     pub completed: u32,
@@ -41,7 +42,7 @@ pub struct QueueCompleteEvent {
 }
 
 /// Event payload for queue cancellation.
-#[derive(Clone, Debug, Serialize)]
+#[derive(Clone, Debug, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueCancelledEvent {
     pub completed: u32,

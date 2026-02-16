@@ -174,7 +174,7 @@ describe('useDownloadFlow', () => {
   });
 
   it('should pass URL and validation to useMediaFetch', () => {
-    const validationResult: ValidationResult = { valid: true, urlType: 'track' };
+    const validationResult: ValidationResult = { valid: true, urlType: 'track', error: null };
     mockUseUrlValidation.mockReturnValue({
       result: validationResult,
       isValidating: false,
@@ -196,6 +196,7 @@ describe('useDownloadFlow', () => {
     const validationResult: ValidationResult = {
       valid: true,
       urlType: 'playlist',
+      error: null,
     };
     mockUseUrlValidation.mockReturnValue({
       result: validationResult,
@@ -303,10 +304,11 @@ describe('useDownloadFlow', () => {
             trackId: '2',
             title: 'Track 2',
             artist: 'Artist2',
-            artworkUrl: undefined,
+            artworkUrl: null,
           },
         ],
-        albumName: undefined,
+        albumName: null,
+        outputDir: null,
       });
     });
 
@@ -351,12 +353,12 @@ describe('useDownloadFlow', () => {
 
       expect(mockStartDownloadQueue).toHaveBeenCalledWith(
         expect.objectContaining({
-          albumName: undefined,
+          albumName: null,
         })
       );
     });
 
-    it('should convert null artworkUrl to undefined', async () => {
+    it('should pass null artworkUrl as null', async () => {
       const tracksWithNullArtwork: Track[] = [
         {
           id: '1',
@@ -379,10 +381,11 @@ describe('useDownloadFlow', () => {
       expect(mockStartDownloadQueue).toHaveBeenCalledWith({
         tracks: [
           expect.objectContaining({
-            artworkUrl: undefined,
+            artworkUrl: null,
           }),
         ],
-        albumName: undefined,
+        albumName: null,
+        outputDir: null,
       });
     });
 

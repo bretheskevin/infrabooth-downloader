@@ -1,6 +1,7 @@
-import { invoke } from '@tauri-apps/api/core';
-import type { ValidationResult } from '@/features/url-input/types/url';
+import { api } from '@/lib/tauri';
 
-export async function validateUrl(url: string): Promise<ValidationResult> {
-  return invoke<ValidationResult>('validate_soundcloud_url', { url });
+export type { ValidationResult } from '@/bindings';
+
+export async function validateUrl(url: string) {
+  return api.validateSoundcloudUrl(url);
 }

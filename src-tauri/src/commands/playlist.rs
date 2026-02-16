@@ -6,6 +6,7 @@ use crate::services::storage::{load_tokens, refresh_and_store_tokens};
 use crate::services::url_validator::validate_url;
 
 #[tauri::command]
+#[specta::specta]
 pub fn validate_soundcloud_url(url: String) -> ValidationResult {
     validate_url(&url)
 }
@@ -19,6 +20,7 @@ async fn try_refresh_token() -> Result<(), String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_playlist_info(url: String) -> Result<PlaylistInfo, String> {
     log::info!("[get_playlist_info] Called with URL: {}", url);
 
@@ -44,6 +46,7 @@ pub async fn get_playlist_info(url: String) -> Result<PlaylistInfo, String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub async fn get_track_info(url: String) -> Result<TrackInfo, String> {
     log::info!("[get_track_info] Called with URL: {}", url);
 

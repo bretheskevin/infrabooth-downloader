@@ -52,14 +52,14 @@ pub struct TrackDownloadToMp3Config {
     pub title: String,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct DownloadProgress {
     pub percent: f32,
     pub speed: Option<String>,
     pub eta: Option<String>,
 }
 
-#[derive(Debug, Clone, serde::Serialize)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadProgressEvent {
     pub track_id: String,

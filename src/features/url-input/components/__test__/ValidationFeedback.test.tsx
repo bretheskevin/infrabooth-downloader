@@ -42,6 +42,7 @@ describe('ValidationFeedback', () => {
     const validPlaylistResult: ValidationResult = {
       valid: true,
       urlType: 'playlist',
+      error: null,
     };
 
     it('should show success message for playlist (AC #2)', () => {
@@ -83,6 +84,7 @@ describe('ValidationFeedback', () => {
     const validTrackResult: ValidationResult = {
       valid: true,
       urlType: 'track',
+      error: null,
     };
 
     it('should show success message for track (AC #2)', () => {
@@ -97,6 +99,7 @@ describe('ValidationFeedback', () => {
   describe('when validation fails', () => {
     const errorResult: ValidationResult = {
       valid: false,
+      urlType: null,
       error: {
         code: 'INVALID_URL',
         message: 'Not a SoundCloud URL',
@@ -150,9 +153,11 @@ describe('ValidationFeedback', () => {
   describe('when validation fails without hint', () => {
     const errorResultNoHint: ValidationResult = {
       valid: false,
+      urlType: null,
       error: {
         code: 'NETWORK_ERROR',
         message: 'No internet connection',
+        hint: null,
       },
     };
 

@@ -75,10 +75,10 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
           trackId: t.id,
           title: t.title,
           artist: t.artist,
-          artworkUrl: t.artworkUrl ?? undefined,
+          artworkUrl: t.artworkUrl ?? null,
         })),
-        albumName,
-        outputDir,
+        albumName: albumName ?? null,
+        outputDir: outputDir ?? null,
       });
     } catch (error) {
       logger.error(`[useDownloadFlow] Download failed: ${error}`);

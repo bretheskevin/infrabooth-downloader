@@ -8,5 +8,4 @@ export { ValidationFeedback } from './components/ValidationFeedback';
 export { PlaylistPreview } from './components/PlaylistPreview';
 export { TrackPreview } from './components/TrackPreview';
 export { ArtworkThumbnail } from './components/ArtworkThumbnail';
-export { DownloadButton } from './components/DownloadButton';
 export { DownloadBar } from './components/DownloadBar';

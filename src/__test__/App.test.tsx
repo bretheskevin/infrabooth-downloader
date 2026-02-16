@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import '@/lib/i18n';
 import { App } from '../App';
 import { useAuthStore } from '@/features/auth/store';
+import { createQueryWrapper } from '@/test/queryWrapper';
 
 // Mock Tauri event API
 vi.mock('@tauri-apps/api/event', () => ({
@@ -23,17 +24,17 @@ describe('App', () => {
   });
 
   it('should render the app title', () => {
-    render(<App />);
+    render(<App />, { wrapper: createQueryWrapper() });
     expect(screen.getByText('InfraBooth Downloader')).toBeDefined();
   });
 
   it('should render the URL input section', () => {
-    render(<App />);
+    render(<App />, { wrapper: createQueryWrapper() });
     expect(screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL')).toBeInTheDocument();
   });
 
   it('should render sign-in button when not authenticated', () => {
-    render(<App />);
+    render(<App />, { wrapper: createQueryWrapper() });
     expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
   });
 });

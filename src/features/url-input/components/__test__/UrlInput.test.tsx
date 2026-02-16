@@ -140,6 +140,7 @@ describe('UrlInput', () => {
       const successResult: ValidationResult = {
         valid: true,
         urlType: 'playlist',
+        error: null,
       };
 
       render(
@@ -159,9 +160,11 @@ describe('UrlInput', () => {
     it('should show destructive border on error (AC #3)', () => {
       const errorResult: ValidationResult = {
         valid: false,
+        urlType: null,
         error: {
           code: 'INVALID_URL',
           message: 'Not a SoundCloud URL',
+          hint: null,
         },
       };
 

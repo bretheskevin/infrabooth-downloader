@@ -45,7 +45,7 @@ export function DownloadPage() {
 
   const displayResult = validation?.valid
     ? (showSuccess ? validation : null)
-    : (error ? { valid: false as const, error } : validation);
+    : (error ? { valid: false as const, urlType: null, error: { ...error, hint: error.hint ?? null } } : validation);
 
   if (isComplete) {
     return (
@@ -97,7 +97,7 @@ export function DownloadPage() {
         validationResult={displayResult}
       />
       <ValidationFeedback
-        result={error ? { valid: false as const, error } : validation}
+        result={error ? { valid: false as const, urlType: null, error: { ...error, hint: error.hint ?? null } } : validation}
         isValidating={isValidating}
       />
       {isLoading && (

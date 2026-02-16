@@ -1,23 +1,7 @@
-export interface UserInfo {
-  username: string;
-}
+// Re-export types from generated bindings
+export type { UserInfo, TrackInfo, PlaylistInfo } from '@/bindings';
 
-export interface TrackInfo {
-  id: number;
-  title: string;
-  user: UserInfo;
-  artwork_url: string | null;
-  duration: number;
-}
-
-export interface PlaylistInfo {
-  id: number;
-  title: string;
-  user: UserInfo;
-  artwork_url: string | null;
-  track_count: number;
-  tracks: TrackInfo[];
-}
+import type { PlaylistInfo, TrackInfo } from '@/bindings';
 
 export function isPlaylist(
   media: PlaylistInfo | TrackInfo | null

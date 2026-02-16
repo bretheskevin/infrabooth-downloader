@@ -1,4 +1,5 @@
 use serde::Serialize;
+use specta::Type;
 use std::sync::Mutex;
 use tauri::{AppHandle, Emitter, State};
 
@@ -28,7 +29,7 @@ impl Default for OAuthState {
 }
 
 /// Auth state payload emitted to the frontend.
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthStatePayload {
     pub is_signed_in: bool,
@@ -47,6 +48,7 @@ pub const AUTH_STATE_CHANGED_EVENT: &str = "auth-state-changed";
 /// * `Ok(String)` - The authorization URL to open in the browser
 /// * `Err(String)` - Error message if generation fails
 #[tauri::command]
+#[specta::specta]
 pub async fn start_oauth(state: State<'_, OAuthState>, app: AppHandle) -> Result<String, String> {
     let (verifier, challenge) = generate_pkce();
 
@@ -93,6 +95,7 @@ pub async fn start_oauth(state: State<'_, OAuthState>, app: AppHandle) -> Result
 /// * `Ok(())` - If token exchange succeeds
 /// * `Err(String)` - Error message if exchange fails
 #[tauri::command]
+#[specta::specta]
 pub async fn complete_oauth(
     code: String,
     state: State<'_, OAuthState>,
@@ -184,6 +187,7 @@ pub const AUTH_REAUTH_NEEDED_EVENT: &str = "auth-reauth-needed";
 /// * `Ok(false)` - User is not authenticated (no tokens or refresh failed)
 /// * `Err(String)` - Error during the check
 #[tauri::command]
+#[specta::specta]
 pub async fn check_auth_state(app: AppHandle) -> Result<bool, String> {
     // Try to load stored tokens
     let tokens = match load_tokens() {
@@ -262,6 +266,7 @@ fn emit_signed_out(app: &AppHandle) -> Result<(), String> {
 /// * `Ok(())` - If sign-out succeeds
 /// * `Err(String)` - Error message if sign-out fails
 #[tauri::command]
+#[specta::specta]
 pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     // Delete stored tokens from OS keychain
     delete_tokens().map_err(|e| e.to_string())?;

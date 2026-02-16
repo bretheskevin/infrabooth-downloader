@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { api } from '@/lib/tauri';
 import { open } from '@tauri-apps/plugin-shell';
 
 /**
@@ -14,7 +14,7 @@ import { open } from '@tauri-apps/plugin-shell';
  * @throws Error if the backend fails or browser cannot be opened
  */
 export async function startOAuth(): Promise<void> {
-  const authUrl = await invoke<string>('start_oauth');
+  const authUrl = await api.startOauth();
   await open(authUrl);
 }
 
@@ -31,7 +31,7 @@ export async function startOAuth(): Promise<void> {
  * @throws Error if token exchange fails
  */
 export async function completeOAuth(code: string): Promise<void> {
-  await invoke('complete_oauth', { code });
+  await api.completeOauth(code);
 }
 
 /**
@@ -45,7 +45,7 @@ export async function completeOAuth(code: string): Promise<void> {
  * @throws Error if the check fails
  */
 export async function checkAuthState(): Promise<boolean> {
-  return await invoke<boolean>('check_auth_state');
+  return api.checkAuthState();
 }
 
 /**
@@ -58,5 +58,5 @@ export async function checkAuthState(): Promise<boolean> {
  * @throws Error if sign-out fails
  */
 export async function signOut(): Promise<void> {
-  await invoke('sign_out');
+  await api.signOut();
 }

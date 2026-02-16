@@ -4,6 +4,7 @@ use tauri::Manager;
 use uuid::Uuid;
 
 #[tauri::command]
+#[specta::specta]
 pub async fn check_write_permission(path: String) -> Result<bool, String> {
     let dir_path = Path::new(&path);
 
@@ -28,6 +29,7 @@ pub async fn check_write_permission(path: String) -> Result<bool, String> {
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn get_default_download_path(app: tauri::AppHandle) -> Result<String, String> {
     app.path()
         .download_dir()
@@ -36,6 +38,7 @@ pub fn get_default_download_path(app: tauri::AppHandle) -> Result<String, String
 }
 
 #[tauri::command]
+#[specta::specta]
 pub fn validate_download_path(path: String) -> Result<bool, String> {
     let dir_path = Path::new(&path);
 
