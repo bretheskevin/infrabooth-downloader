@@ -16,6 +16,19 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+// Mock DownloadBar to test PlaylistPreview in isolation
+vi.mock('../DownloadBar', () => ({
+  DownloadBar: ({ onDownload, isDownloading }: { onDownload: () => void; isDownloading?: boolean }) => (
+    <button
+      data-testid="download-button"
+      onClick={onDownload}
+      disabled={isDownloading}
+    >
+      Download
+    </button>
+  ),
+}));
+
 const mockPlaylist: PlaylistInfo = {
   id: 123,
   title: 'Test Playlist',

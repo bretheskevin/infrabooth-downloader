@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { CheckCircle, FolderOpen, RefreshCw, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useSettingsStore } from '@/features/settings/store';
+import { useQueueStore } from '@/features/queue/store';
 import { openDownloadFolder } from '@/lib/shellCommands';
 import { getDefaultDownloadPath } from '@/features/settings/api/settings';
 import { logger } from '@/lib/logger';
@@ -30,7 +30,7 @@ export function CompletionPanel({
   onDownloadAnother,
 }: CompletionPanelProps) {
   const { t } = useTranslation();
-  const downloadPath = useSettingsStore((state) => state.downloadPath);
+  const outputDir = useQueueStore((state) => state.outputDir);
   const panelRef = useRef<HTMLDivElement>(null);
   const [isErrorPanelOpen, setIsErrorPanelOpen] = useState(false);
   const failedTracks = useFailedTracks();
@@ -39,12 +39,12 @@ export function CompletionPanel({
 
   const handleOpenFolder = async () => {
     logger.info('[CompletionPanel] Open folder clicked');
-    logger.debug(`[CompletionPanel] Current downloadPath from store: "${downloadPath}"`);
+    logger.debug(`[CompletionPanel] Output dir from queue store: "${outputDir}"`);
 
-    let pathToOpen = downloadPath;
+    let pathToOpen = outputDir;
 
     if (!pathToOpen) {
-      logger.debug('[CompletionPanel] No download path in store, fetching default');
+      logger.debug('[CompletionPanel] No output dir in queue store, fetching default');
       try {
         pathToOpen = await getDefaultDownloadPath();
         logger.debug(`[CompletionPanel] Got default path: "${pathToOpen}"`);
