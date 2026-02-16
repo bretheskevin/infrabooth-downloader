@@ -56,3 +56,25 @@ shasum -a 256 -c checksums.txt
 3. Update checksums.txt with new SHA256 hashes
 4. Update this file with the new version
 5. Test sidecar execution in dev mode
+
+## FFprobe
+
+- **Version:** 8.0
+- **Source:** https://osxexperts.net/
+- **Checksums:** See `src-tauri/binaries/checksums.txt`
+
+### Platform Binaries
+
+| Platform | Binary Name | Source |
+|----------|-------------|--------|
+| Windows x64 | `ffprobe-x86_64-pc-windows-msvc.exe` | gyan.dev essentials |
+| macOS Intel | `ffprobe-x86_64-apple-darwin` | osxexperts.net |
+| macOS ARM | `ffprobe-aarch64-apple-darwin` | osxexperts.net |
+
+### Updating FFprobe
+
+1. Download new binaries from the source URLs above
+2. Rename with Tauri target triple suffixes
+3. Update checksums.txt with new SHA256 hashes
+4. Update this file with the new version
+5. Test sidecar execution in dev mode
