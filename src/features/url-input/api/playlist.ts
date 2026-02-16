@@ -1,6 +1,7 @@
-import { invoke } from '@tauri-apps/api/core';
+import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
-import type { PlaylistInfo, TrackInfo } from '@/features/url-input/types/playlist';
+
+export type { PlaylistInfo, TrackInfo, UserInfo } from '@/bindings';
 
 /**
  * Fetches playlist information from SoundCloud.
@@ -9,9 +10,9 @@ import type { PlaylistInfo, TrackInfo } from '@/features/url-input/types/playlis
  * @returns The playlist metadata and tracks
  * @throws Error if the fetch fails
  */
-export async function fetchPlaylistInfo(url: string): Promise<PlaylistInfo> {
+export async function fetchPlaylistInfo(url: string) {
   logger.info(`[playlist.ts] Invoking get_playlist_info with url: ${url}`);
-  return invoke<PlaylistInfo>('get_playlist_info', { url });
+  return api.getPlaylistInfo(url);
 }
 
 /**
@@ -21,7 +22,7 @@ export async function fetchPlaylistInfo(url: string): Promise<PlaylistInfo> {
  * @returns The track metadata
  * @throws Error if the fetch fails (track not found, geo-blocked, etc.)
  */
-export async function fetchTrackInfo(url: string): Promise<TrackInfo> {
+export async function fetchTrackInfo(url: string) {
   logger.info(`[playlist.ts] Invoking get_track_info with url: ${url}`);
-  return invoke<TrackInfo>('get_track_info', { url });
+  return api.getTrackInfo(url);
 }

@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 
 /**
@@ -10,7 +10,7 @@ import { logger } from '@/lib/logger';
  */
 export async function checkWritePermission(path: string): Promise<boolean> {
   logger.debug(`[settings] Checking write permission for: ${path}`);
-  const result = await invoke<boolean>('check_write_permission', { path });
+  const result = await api.checkWritePermission(path);
   logger.debug(`[settings] Write permission: ${result}`);
   return result;
 }
@@ -21,9 +21,9 @@ export async function checkWritePermission(path: string): Promise<boolean> {
  */
 export async function getDefaultDownloadPath(): Promise<string> {
   logger.debug(`[settings] Getting default download path`);
-  const path = await invoke<string>('get_default_download_path');
-  logger.debug(`[settings] Default download path: ${path}`);
-  return path;
+  const result = await api.getDefaultDownloadPath();
+  logger.debug(`[settings] Default download path: ${result}`);
+  return result;
 }
 
 /**
@@ -35,7 +35,7 @@ export async function getDefaultDownloadPath(): Promise<string> {
 export async function validateDownloadPath(path: string): Promise<boolean> {
   logger.debug(`[settings] Validating download path: ${path}`);
   try {
-    const result = await invoke<boolean>('validate_download_path', { path });
+    const result = await api.validateDownloadPath(path);
     logger.debug(`[settings] Path validation result: ${result}`);
     return result;
   } catch (error) {

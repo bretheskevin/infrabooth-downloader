@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use specta::Type;
 use std::path::PathBuf;
 use tauri::{Emitter, Manager, State};
 
@@ -10,7 +11,7 @@ use crate::services::queue::{DownloadQueue, QueueItem};
 use crate::services::ytdlp::DownloadProgressEvent;
 
 /// Request payload for downloading a track with full metadata.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadRequest {
     pub track_url: String,
@@ -45,6 +46,7 @@ pub struct DownloadRequest {
 /// # Returns
 /// The path to the downloaded MP3 file on success.
 #[tauri::command]
+#[specta::specta]
 pub async fn download_track_full(
     request: DownloadRequest,
     app: tauri::AppHandle,
@@ -108,7 +110,7 @@ pub async fn download_track_full(
 }
 
 /// Request payload for starting a download queue.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct StartQueueRequest {
     pub tracks: Vec<QueueItemRequest>,
@@ -117,7 +119,7 @@ pub struct StartQueueRequest {
 }
 
 /// A track item in the queue request.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueItemRequest {
     pub track_url: String,
@@ -144,6 +146,7 @@ pub struct QueueItemRequest {
 /// # Returns
 /// Ok(()) immediately - actual processing happens in background
 #[tauri::command]
+#[specta::specta]
 pub async fn start_download_queue(
     request: StartQueueRequest,
     app: tauri::AppHandle,
@@ -198,6 +201,7 @@ pub async fn start_download_queue(
 /// # Returns
 /// Ok(()) on success
 #[tauri::command]
+#[specta::specta]
 pub async fn cancel_download_queue(
     cancel_state: State<'_, CancellationState>,
 ) -> Result<(), String> {

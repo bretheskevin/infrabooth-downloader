@@ -1,29 +1,12 @@
-import { invoke } from '@tauri-apps/api/core';
+import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 
-/**
- * Request payload for downloading a track with metadata.
- */
-export interface DownloadRequest {
-  /** The SoundCloud track URL to download */
-  trackUrl: string;
-  /** Unique identifier for the track (used in progress events) */
-  trackId: string;
-  /** Track title (used for ID3 tag and filename) */
-  title: string;
-  /** Artist/creator name (used for ID3 tag and filename) */
-  artist: string;
-  /** Album name - typically playlist title if from playlist */
-  album?: string;
-  /** Track number in playlist (1-indexed) */
-  trackNumber?: number;
-  /** Total tracks in playlist */
-  totalTracks?: number;
-  /** URL to artwork image for embedding */
-  artworkUrl?: string;
-  /** Optional output directory (defaults to system Downloads folder) */
-  outputDir?: string;
-}
+export type {
+  DownloadRequest,
+  StartQueueRequest,
+  QueueItemRequest,
+  ErrorResponse,
+} from '@/bindings';
 
 /**
  * Download a track and convert it to MP3 with metadata.
@@ -41,68 +24,14 @@ export interface DownloadRequest {
  * @param request - The download request containing track URL, metadata, and options
  * @returns The path to the downloaded MP3 file on success
  */
-export async function downloadTrack(request: DownloadRequest): Promise<string> {
+export async function downloadTrack(request: Parameters<typeof api.downloadTrackFull>[0]): Promise<string> {
   logger.info(`[download] Starting track download: ${request.title} by ${request.artist}`);
   logger.debug(`[download] Track URL: ${request.trackUrl}`);
-  try {
-    const result = await invoke<string>('download_track_full', { request });
-    logger.info(`[download] Track download complete: ${result}`);
-    return result;
-  } catch (error) {
-    logger.error(`[download] Track download failed: ${error}`);
-    throw error;
-  }
-}
 
-/**
- * @deprecated Use downloadTrack instead. This function is kept for backwards compatibility.
- */
-export async function downloadAndConvertTrack(
-  trackUrl: string,
-  trackId: string,
-  filename: string,
-  outputDir?: string
-): Promise<string> {
-  // Extract artist and title from filename (format: "Artist - Title")
-  const parts = filename.split(' - ');
-  const artist = parts[0] || 'Unknown Artist';
-  const title = parts.slice(1).join(' - ') || filename;
+  const result = await api.downloadTrackFull(request);
 
-  return downloadTrack({
-    trackUrl,
-    trackId,
-    title,
-    artist,
-    outputDir,
-  });
-}
-
-/**
- * An item in the download queue.
- */
-export interface QueueItem {
-  /** The SoundCloud track URL to download */
-  trackUrl: string;
-  /** Unique identifier for the track (used in progress events) */
-  trackId: string;
-  /** Track title */
-  title: string;
-  /** Artist/creator name */
-  artist: string;
-  /** URL to artwork image for embedding */
-  artworkUrl?: string;
-}
-
-/**
- * Request payload for starting a download queue.
- */
-export interface StartQueueRequest {
-  /** Array of tracks to download */
-  tracks: QueueItem[];
-  /** Album name - typically playlist title */
-  albumName?: string;
-  /** Optional output directory (defaults to system Downloads folder) */
-  outputDir?: string;
+  logger.info(`[download] Track download complete: ${result}`);
+  return result;
 }
 
 /**
@@ -117,19 +46,16 @@ export interface StartQueueRequest {
  * @param request - Queue request containing tracks and optional album name
  */
 export async function startDownloadQueue(
-  request: StartQueueRequest
+  request: Parameters<typeof api.startDownloadQueue>[0]
 ): Promise<void> {
   logger.info(`[download] Starting download queue with ${request.tracks.length} tracks`);
   if (request.albumName) {
     logger.debug(`[download] Album name: ${request.albumName}`);
   }
-  try {
-    await invoke('start_download_queue', { request });
-    logger.info(`[download] Queue started successfully`);
-  } catch (error) {
-    logger.error(`[download] Failed to start queue: ${error}`);
-    throw error;
-  }
+
+  await api.startDownloadQueue(request);
+
+  logger.info(`[download] Queue started successfully`);
 }
 
 /**
@@ -141,11 +67,8 @@ export async function startDownloadQueue(
  */
 export async function cancelDownloadQueue(): Promise<void> {
   logger.info('[download] Cancelling download queue');
-  try {
-    await invoke('cancel_download_queue');
-    logger.info('[download] Queue cancellation requested');
-  } catch (error) {
-    logger.error(`[download] Failed to cancel queue: ${error}`);
-    throw error;
-  }
+
+  await api.cancelDownloadQueue();
+
+  logger.info('[download] Queue cancellation requested');
 }

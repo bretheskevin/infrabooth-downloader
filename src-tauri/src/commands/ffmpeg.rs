@@ -6,6 +6,7 @@ use crate::services::ffmpeg;
 /// This command verifies that the FFmpeg binary is properly bundled
 /// and can be executed as a Tauri sidecar.
 #[tauri::command]
+#[specta::specta]
 pub async fn test_ffmpeg(app: tauri::AppHandle) -> Result<String, ErrorResponse> {
     ffmpeg::get_version(&app).await.map_err(|e| e.into())
 }
