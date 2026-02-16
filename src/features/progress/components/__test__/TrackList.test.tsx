@@ -4,7 +4,6 @@ import { TrackList } from '../TrackList';
 import { useQueueStore } from '@/features/queue/store';
 import type { Track } from '@/features/queue/types/track';
 
-// Mock the i18n hook
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
@@ -15,6 +14,19 @@ vi.mock('react-i18next', () => ({
       return translations[key] || key;
     },
   }),
+}));
+
+vi.mock('@tanstack/react-virtual', () => ({
+  useVirtualizer: vi.fn(({ count }: { count: number }) => ({
+    getVirtualItems: () =>
+      Array.from({ length: count }, (_, i) => ({
+        index: i,
+        start: i * 72,
+        size: 72,
+        key: i,
+      })),
+    getTotalSize: () => count * 72,
+  })),
 }));
 
 const createMockTracks = (count: number): Track[] =>
@@ -28,7 +40,6 @@ const createMockTracks = (count: number): Track[] =>
 
 describe('TrackList', () => {
   beforeEach(() => {
-    // Reset store before each test
     useQueueStore.setState({
       tracks: [],
       currentIndex: 0,
@@ -80,21 +91,16 @@ describe('TrackList', () => {
       useQueueStore.setState({
         tracks: mockTracks,
         totalTracks: 3,
-        currentIndex: 1, // Second track is current
+        currentIndex: 1,
       });
 
       render(<TrackList />);
 
       const listItems = screen.getAllByRole('listitem');
 
-      // First track should not be highlighted
       expect(listItems[0]).not.toHaveClass('bg-primary/10');
-
-      // Second track (currentIndex = 1) should be highlighted
       expect(listItems[1]).toHaveClass('bg-primary/10');
       expect(listItems[1]).toHaveAttribute('aria-current', 'true');
-
-      // Third track should not be highlighted
       expect(listItems[2]).not.toHaveClass('bg-primary/10');
     });
   });
@@ -109,17 +115,14 @@ describe('TrackList', () => {
       expect(screen.getByRole('list')).toBeInTheDocument();
     });
 
-    it('should have aria-label on scroll area', () => {
+    it('should have aria-label on scroll container', () => {
       const mockTracks = createMockTracks(2);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 2 });
 
       render(<TrackList />);
 
-      const scrollArea = document.querySelector('[data-radix-scroll-area-viewport]');
-      expect(scrollArea?.closest('[aria-label]')).toHaveAttribute(
-        'aria-label',
-        'Download queue'
-      );
+      const scrollContainer = screen.getByRole('list').parentElement;
+      expect(scrollContainer).toHaveAttribute('aria-label', 'Download queue');
     });
   });
 
