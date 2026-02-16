@@ -8,6 +8,7 @@ use std::sync::Mutex;
 
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
+use specta::Type;
 use thiserror::Error;
 
 use crate::services::oauth::{get_app_token, get_client_secret};
@@ -45,7 +46,7 @@ pub enum PlaylistError {
 }
 
 /// User information from SoundCloud API.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct UserInfo {
     pub username: String,
 }
@@ -73,7 +74,7 @@ struct RawTrackInfo {
 }
 
 /// Track information from SoundCloud API.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct TrackInfo {
     pub id: u64,
     pub title: String,
@@ -117,7 +118,7 @@ struct RawPlaylistInfo {
 }
 
 /// Playlist information from SoundCloud API.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct PlaylistInfo {
     pub id: u64,
     pub title: String,

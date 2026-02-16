@@ -1,11 +1,12 @@
 use serde::Serialize;
+use specta::Type;
 use thiserror::Error;
 
 pub trait HasErrorCode {
     fn code(&self) -> &'static str;
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Serialize, Type)]
 pub struct ErrorResponse {
     pub code: String,
     pub message: String,
