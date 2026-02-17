@@ -7,6 +7,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, LogOut, ChevronDown } from 'lucide-react';
@@ -15,6 +16,7 @@ export function UserMenu() {
   const { t } = useTranslation();
   const username = useAuthStore((state) => state.username);
   const plan = useAuthStore((state) => state.plan);
+  const avatarUrl = useAuthStore((state) => state.avatarUrl);
   const isGoPlus = plan != null && plan !== '' && plan !== 'Free';
 
   const handleSignOut = async () => {
@@ -25,7 +27,12 @@ export function UserMenu() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="flex items-center gap-2">
-          <User className="h-4 w-4" aria-hidden="true" />
+          <Avatar className="h-6 w-6">
+            {avatarUrl ? <AvatarImage src={avatarUrl} alt={username ?? ''} /> : null}
+            <AvatarFallback className="bg-muted">
+              <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+            </AvatarFallback>
+          </Avatar>
           <span className="text-sm">{username}</span>
           {isGoPlus && (
             <Badge

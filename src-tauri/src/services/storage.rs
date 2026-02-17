@@ -23,6 +23,7 @@ pub enum StorageError {
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
 
+    #[allow(dead_code)]
     #[error("No tokens stored")]
     NoTokensStored,
 }
@@ -55,6 +56,10 @@ pub struct StoredTokens {
     /// None for free users. Used to determine download quality.
     #[serde(default)]
     pub plan: Option<String>,
+
+    /// User's avatar URL from SoundCloud profile.
+    #[serde(default)]
+    pub avatar_url: Option<String>,
 }
 
 /// Stores OAuth tokens securely in the OS keychain.
@@ -168,6 +173,7 @@ pub async fn refresh_and_store_tokens(tokens: &StoredTokens) -> Result<StoredTok
         expires_at,
         username: tokens.username.clone(),
         plan: tokens.plan.clone(),
+        avatar_url: tokens.avatar_url.clone(),
     };
     store_tokens(&stored).map_err(|e| e.to_string())?;
 
@@ -186,6 +192,7 @@ mod tests {
             expires_at: 1234567890,
             username: "testuser".to_string(),
             plan: Some("Pro Unlimited".to_string()),
+            avatar_url: Some("https://i1.sndcdn.com/avatars-xxx.jpg".to_string()),
         };
 
         let json = serde_json::to_string(&tokens).unwrap();
@@ -194,6 +201,7 @@ mod tests {
         assert!(json.contains("\"expires_at\":1234567890"));
         assert!(json.contains("\"username\":\"testuser\""));
         assert!(json.contains("\"plan\":\"Pro Unlimited\""));
+        assert!(json.contains("\"avatar_url\":\"https://i1.sndcdn.com/avatars-xxx.jpg\""));
     }
 
     #[test]
@@ -203,7 +211,8 @@ mod tests {
             "refresh_token": "refresh_456",
             "expires_at": 1234567890,
             "username": "testuser",
-            "plan": "Pro Unlimited"
+            "plan": "Pro Unlimited",
+            "avatar_url": "https://i1.sndcdn.com/avatars-xxx.jpg"
         }"#;
 
         let tokens: StoredTokens = serde_json::from_str(json).unwrap();
@@ -212,11 +221,15 @@ mod tests {
         assert_eq!(tokens.expires_at, 1234567890);
         assert_eq!(tokens.username, "testuser");
         assert_eq!(tokens.plan, Some("Pro Unlimited".to_string()));
+        assert_eq!(
+            tokens.avatar_url,
+            Some("https://i1.sndcdn.com/avatars-xxx.jpg".to_string())
+        );
     }
 
     #[test]
-    fn test_stored_tokens_deserializes_without_plan() {
-        // Backwards compatibility: existing keychain entries without plan field
+    fn test_stored_tokens_deserializes_without_optional_fields() {
+        // Backwards compatibility: existing keychain entries without optional fields
         let json = r#"{
             "access_token": "access_123",
             "refresh_token": "refresh_456",
@@ -226,6 +239,7 @@ mod tests {
 
         let tokens: StoredTokens = serde_json::from_str(json).unwrap();
         assert_eq!(tokens.plan, None);
+        assert_eq!(tokens.avatar_url, None);
     }
 
     #[test]
