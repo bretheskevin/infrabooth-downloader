@@ -1,6 +1,25 @@
 import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { TrackStatusIcon } from '../TrackStatusIcon';
+
+// Mock react-i18next
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => {
+      const translations: Record<string, string> = {
+        'accessibility.statusPending': 'Pending',
+        'accessibility.statusDownloading': 'Downloading',
+        'accessibility.statusConverting': 'Converting',
+        'accessibility.statusComplete': 'Complete',
+        'accessibility.statusFailed': 'Failed',
+        'accessibility.statusRateLimited': 'Rate limited',
+        'accessibility.trackUnavailableRestriction': 'Track unavailable - external restriction',
+        'accessibility.geoRestrictionWarning': 'Geographic restriction warning',
+      };
+      return translations[key] || key;
+    },
+  }),
+}));
 
 describe('TrackStatusIcon', () => {
   describe('rendering status icons', () => {

@@ -1,13 +1,17 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuthContainer } from '@/features/auth/components/AuthContainer';
 import { SettingsPanel } from '@/features/settings/components/SettingsPanel';
+import { useMenuSettingsListener } from '@/features/settings/hooks/useMenuSettingsListener';
 
 export function Header() {
   const { t } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const openSettings = useCallback(() => setSettingsOpen(true), []);
+  useMenuSettingsListener(openSettings);
 
   return (
     <header className="flex items-center justify-between px-4 py-3 border-b">
@@ -26,10 +30,7 @@ export function Header() {
         </Button>
       </div>
 
-      <SettingsPanel
-        open={settingsOpen}
-        onOpenChange={setSettingsOpen}
-      />
+      <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
     </header>
   );
 }

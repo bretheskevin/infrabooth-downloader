@@ -2,6 +2,9 @@
   "app": {
     "title": "InfraBooth Downloader"
   },
+  "common": {
+    "done": "Done"
+  },
   "auth": {
     "signIn": "Sign in with SoundCloud",
     "signOut": "Sign out",
@@ -29,6 +32,7 @@
     "signInRequired": "Sign in to download",
     "validPlaylist": "Valid playlist URL",
     "validTrack": "Valid track URL",
+    "validShortLink": "Valid SoundCloud link",
     "validating": "Checking URL...",
     "fetchingPlaylist": "Loading playlist...",
     "startingDownload": "Starting download...",
@@ -53,6 +57,10 @@
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",
+    "invalidUrlFormat": "Invalid URL format",
+    "invalidUrlHint": "Paste a link from soundcloud.com",
+    "profileNotSupported": "This is a profile, not a playlist or track",
+    "profileNotSupportedHint": "Try pasting a playlist or track link",
     "geoBlocked": "Unavailable in your region",
     "geoBlockedDetail": "Geographic restriction by rights holder",
     "geoBlockedNoRetry": "This track will not retry automatically",
@@ -84,6 +92,9 @@
     "description": "Customize your app preferences",
     "language": "Language",
     "languageDescription": "Choose your preferred language",
+    "languageEnglish": "English",
+    "languageFrench": "Français",
+    "couldNotOpenFolder": "Could not open folder",
     "downloadPath": "Download location",
     "downloadLocation": "Download location",
     "downloadLocationDescription": "Where your files will be saved",
@@ -139,7 +150,16 @@
     "completionAnnouncement": "Download complete, {{completed}} of {{total}} tracks",
     "rateLimitAnnouncement": "Download paused due to rate limit, will resume shortly",
     "errorAnnouncement": "Error: {{message}}",
-    "languageChanged": "Language changed to {{language}}"
+    "languageChanged": "Language changed to {{language}}",
+    "loading": "Loading",
+    "statusPending": "Pending",
+    "statusDownloading": "Downloading",
+    "statusConverting": "Converting",
+    "statusComplete": "Complete",
+    "statusFailed": "Failed",
+    "statusRateLimited": "Rate limited",
+    "trackUnavailableRestriction": "Track unavailable - external restriction",
+    "geoRestrictionWarning": "Geographic restriction warning"
   },
   "downloadBar": {
     "clickToChange": "Click to change download folder",

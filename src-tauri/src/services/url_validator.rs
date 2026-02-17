@@ -1,7 +1,7 @@
 use crate::models::url::{UrlType, ValidationError, ValidationResult};
 use url::Url;
 
-const SOUNDCLOUD_HOSTS: [&str; 2] = ["soundcloud.com", "www.soundcloud.com"];
+const SOUNDCLOUD_HOSTS: [&str; 3] = ["soundcloud.com", "www.soundcloud.com", "on.soundcloud.com"];
 
 pub fn validate_url(input: &str) -> ValidationResult {
     // Check if input is empty
@@ -10,7 +10,7 @@ pub fn validate_url(input: &str) -> ValidationResult {
             valid: false,
             url_type: None,
             error: Some(ValidationError {
-                code: "INVALID_URL".to_string(),
+                code: "INVALID_FORMAT".to_string(),
                 message: "Invalid URL format".to_string(),
                 hint: None,
             }),
@@ -43,7 +43,25 @@ pub fn validate_url(input: &str) -> ValidationResult {
         };
     }
 
-    // Parse path segments
+    // Handle on.soundcloud.com short links (e.g., https://on.soundcloud.com/rtg5VHcWCnHLN2fxYl)
+    // These are sharing links that redirect to actual content - we can't know if it's a track
+    // or playlist without resolving, so we mark it as valid and let the backend determine the type
+    if host == "on.soundcloud.com" {
+        let path = url.path();
+        let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+
+        // Short links have a single segment with a code
+        if segments.len() == 1 && !segments[0].is_empty() {
+            return ValidationResult {
+                valid: true,
+                url_type: None, // Type will be determined when fetching metadata
+                error: None,
+            };
+        }
+        return invalid_format_error();
+    }
+
+    // Parse path segments for regular soundcloud.com URLs
     let path = url.path();
     let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
 
@@ -79,7 +97,7 @@ pub fn validate_url(input: &str) -> ValidationResult {
             valid: false,
             url_type: None,
             error: Some(ValidationError {
-                code: "INVALID_URL".to_string(),
+                code: "PROFILE_URL".to_string(),
                 message: "This is a profile, not a playlist or track".to_string(),
                 hint: Some("Try pasting a playlist or track link".to_string()),
             }),
@@ -94,7 +112,7 @@ fn invalid_format_error() -> ValidationResult {
         valid: false,
         url_type: None,
         error: Some(ValidationError {
-            code: "INVALID_URL".to_string(),
+            code: "INVALID_FORMAT".to_string(),
             message: "Invalid URL format".to_string(),
             hint: None,
         }),
@@ -162,7 +180,7 @@ mod tests {
         assert!(!result.valid);
         assert!(result.url_type.is_none());
         let error = result.error.unwrap();
-        assert_eq!(error.code, "INVALID_URL");
+        assert_eq!(error.code, "INVALID_FORMAT");
         assert!(error.message.contains("Invalid URL format"));
     }
 
@@ -238,5 +256,37 @@ mod tests {
         let result = validate_url("https://soundcloud.com/artist/track/s-abc123?ref=clipboard");
         assert!(result.valid);
         assert_eq!(result.url_type, Some(UrlType::Track));
+    }
+
+    #[test]
+    fn test_short_link_url() {
+        let result = validate_url("https://on.soundcloud.com/rtg5VHcWCnHLN2fxYl");
+        assert!(result.valid);
+        // Short links don't have a known type until resolved
+        assert_eq!(result.url_type, None);
+        assert!(result.error.is_none());
+    }
+
+    #[test]
+    fn test_short_link_url_with_query_params() {
+        let result =
+            validate_url("https://on.soundcloud.com/abc123XYZ?si=123&utm_source=clipboard");
+        assert!(result.valid);
+        assert_eq!(result.url_type, None);
+    }
+
+    #[test]
+    fn test_short_link_url_without_protocol() {
+        let result = validate_url("on.soundcloud.com/rtg5VHcWCnHLN2fxYl");
+        assert!(result.valid);
+        assert_eq!(result.url_type, None);
+    }
+
+    #[test]
+    fn test_short_link_empty_path_rejected() {
+        let result = validate_url("https://on.soundcloud.com/");
+        assert!(!result.valid);
+        let error = result.error.unwrap();
+        assert_eq!(error.code, "INVALID_FORMAT");
     }
 }

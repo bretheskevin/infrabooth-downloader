@@ -13,7 +13,8 @@ use commands::{
 use services::auth_choice::AuthChoiceState;
 use services::cancellation::CancellationState;
 use services::deep_link::handle_deep_link;
-use tauri::menu::{Menu, PredefinedMenuItem, Submenu};
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+use tauri::Emitter;
 use tauri_plugin_deep_link::DeepLinkExt;
 
 use specta_typescript::{BigIntExportBehavior, Typescript};
@@ -44,7 +45,9 @@ pub fn run() {
     #[cfg(debug_assertions)]
     builder
         .export(
-            Typescript::default().bigint(BigIntExportBehavior::Number),
+            Typescript::default()
+                .bigint(BigIntExportBehavior::Number)
+                .header("// @ts-nocheck"),
             "../src/bindings.ts",
         )
         .expect("Failed to export typescript bindings");
@@ -62,6 +65,10 @@ pub fn run() {
         .setup(move |app| {
             builder.mount_events(app);
 
+            // Create settings menu item with Cmd+, shortcut
+            let settings_item =
+                MenuItem::with_id(app, "settings", "Settings...", true, Some("CmdOrCtrl+,"))?;
+
             // Create minimal app menu (required for macOS keyboard shortcuts)
             let app_menu = Submenu::with_items(
                 app,
@@ -69,6 +76,8 @@ pub fn run() {
                 true,
                 &[
                     &PredefinedMenuItem::about(app, Some("About InfraBooth Downloader"), None)?,
+                    &PredefinedMenuItem::separator(app)?,
+                    &settings_item,
                     &PredefinedMenuItem::separator(app)?,
                     &PredefinedMenuItem::hide(app, Some("Hide"))?,
                     &PredefinedMenuItem::hide_others(app, Some("Hide Others"))?,
@@ -95,6 +104,14 @@ pub fn run() {
 
             let menu = Menu::with_items(app, &[&app_menu, &edit_menu])?;
             app.set_menu(menu)?;
+
+            // Handle custom menu events
+            app.on_menu_event(move |app_handle, event| {
+                if event.id() == settings_item.id() {
+                    let _ = app_handle.emit("open-settings", ());
+                }
+            });
+
             app.handle().plugin(
                 tauri_plugin_log::Builder::default()
                     .level(log::LevelFilter::Info)
