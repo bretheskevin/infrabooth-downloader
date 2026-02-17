@@ -18,7 +18,8 @@ pub struct TokenResponse {
     pub access_token: String,
     pub refresh_token: String,
     pub expires_in: u64,
-    pub token_type: String,
+    #[allow(dead_code)]
+    token_type: String,
 }
 
 /// Token response from Client Credentials flow (no refresh token).
@@ -26,7 +27,8 @@ pub struct TokenResponse {
 pub struct AppTokenResponse {
     pub access_token: String,
     pub expires_in: u64,
-    pub token_type: String,
+    #[allow(dead_code)]
+    token_type: String,
 }
 
 /// Generates PKCE code verifier and challenge pair.

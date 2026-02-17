@@ -35,6 +35,7 @@ pub struct AuthStatePayload {
     pub is_signed_in: bool,
     pub username: Option<String>,
     pub plan: Option<String>,
+    pub avatar_url: Option<String>,
 }
 
 /// Event name for auth state changes.
@@ -127,7 +128,7 @@ pub async fn complete_oauth(
         e.to_string()
     })?;
 
-    let tokens = exchange_code(&code, &verifier, &client_secret, &redirect_uri)
+    let tokens = exchange_code(&code, &verifier, client_secret, &redirect_uri)
         .await
         .map_err(|e| {
             log::error!("[complete_oauth] Token exchange failed: {}", e);
@@ -157,16 +158,18 @@ pub async fn complete_oauth(
         expires_at,
         username: profile.username.clone(),
         plan: profile.plan.clone(),
+        avatar_url: profile.avatar_url.clone(),
     };
     store_tokens(&stored).map_err(|e| e.to_string())?;
 
-    // Emit success event to frontend with username and plan
+    // Emit success event to frontend with username, plan, and avatar
     app.emit(
         AUTH_STATE_CHANGED_EVENT,
         AuthStatePayload {
             is_signed_in: true,
             username: Some(profile.username),
             plan: profile.plan,
+            avatar_url: profile.avatar_url,
         },
     )
     .map_err(|e| e.to_string())?;
@@ -210,7 +213,12 @@ pub async fn check_auth_state(app: AppHandle) -> Result<bool, String> {
         // Need to refresh
         match refresh_and_store_tokens(&tokens).await {
             Ok(refreshed) => {
-                emit_signed_in(&app, &refreshed.username, &refreshed.plan)?;
+                emit_signed_in(
+                    &app,
+                    &refreshed.username,
+                    &refreshed.plan,
+                    &refreshed.avatar_url,
+                )?;
                 Ok(true)
             }
             Err(e) => {
@@ -225,19 +233,25 @@ pub async fn check_auth_state(app: AppHandle) -> Result<bool, String> {
         }
     } else {
         // Token still valid
-        emit_signed_in(&app, &tokens.username, &tokens.plan)?;
+        emit_signed_in(&app, &tokens.username, &tokens.plan, &tokens.avatar_url)?;
         Ok(true)
     }
 }
 
 /// Emits signed-in auth state to the frontend.
-fn emit_signed_in(app: &AppHandle, username: &str, plan: &Option<String>) -> Result<(), String> {
+fn emit_signed_in(
+    app: &AppHandle,
+    username: &str,
+    plan: &Option<String>,
+    avatar_url: &Option<String>,
+) -> Result<(), String> {
     app.emit(
         AUTH_STATE_CHANGED_EVENT,
         AuthStatePayload {
             is_signed_in: true,
             username: Some(username.to_string()),
             plan: plan.clone(),
+            avatar_url: avatar_url.clone(),
         },
     )
     .map_err(|e| e.to_string())
@@ -251,6 +265,7 @@ fn emit_signed_out(app: &AppHandle) -> Result<(), String> {
             is_signed_in: false,
             username: None,
             plan: None,
+            avatar_url: None,
         },
     )
     .map_err(|e| e.to_string())
@@ -321,23 +336,27 @@ mod tests {
             is_signed_in: true,
             username: Some("testuser".to_string()),
             plan: Some("Pro Unlimited".to_string()),
+            avatar_url: Some("https://i1.sndcdn.com/avatars-xxx.jpg".to_string()),
         };
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":true"));
         assert!(json.contains("\"username\":\"testuser\""));
         assert!(json.contains("\"plan\":\"Pro Unlimited\""));
+        assert!(json.contains("\"avatarUrl\":\"https://i1.sndcdn.com/avatars-xxx.jpg\""));
     }
 
     #[test]
-    fn test_auth_state_payload_serializes_without_plan() {
+    fn test_auth_state_payload_serializes_without_optional_fields() {
         let payload = AuthStatePayload {
             is_signed_in: true,
             username: Some("testuser".to_string()),
             plan: None,
+            avatar_url: None,
         };
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":true"));
         assert!(json.contains("\"plan\":null"));
+        assert!(json.contains("\"avatarUrl\":null"));
     }
 
     #[test]
@@ -346,10 +365,12 @@ mod tests {
             is_signed_in: false,
             username: None,
             plan: None,
+            avatar_url: None,
         };
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":false"));
         assert!(json.contains("\"username\":null"));
         assert!(json.contains("\"plan\":null"));
+        assert!(json.contains("\"avatarUrl\":null"));
     }
 }

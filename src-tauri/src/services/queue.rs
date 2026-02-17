@@ -51,6 +51,7 @@ pub struct QueueCancelledEvent {
 }
 
 /// Result of queue processing.
+#[allow(dead_code)]
 pub struct QueueResult {
     pub completed: u32,
     pub failed: u32,
@@ -106,7 +107,7 @@ impl DownloadQueue {
             // Check for cancellation before starting next track
             if *cancel_rx.borrow() {
                 log::info!("[queue] Cancellation requested, stopping queue");
-                let cancelled = (self.total_tracks - completed - failed) as u32;
+                let cancelled = self.total_tracks - completed - failed;
                 let _ = app.emit(
                     "queue-cancelled",
                     QueueCancelledEvent {
@@ -171,7 +172,7 @@ impl DownloadQueue {
                 }
                 Err(PipelineError::Download(YtDlpError::Cancelled)) => {
                     log::info!("[queue] Track {} download was cancelled", item.track_id);
-                    let cancelled = (self.total_tracks - completed - failed) as u32;
+                    let cancelled = self.total_tracks - completed - failed;
                     let _ = app.emit(
                         "queue-cancelled",
                         QueueCancelledEvent {

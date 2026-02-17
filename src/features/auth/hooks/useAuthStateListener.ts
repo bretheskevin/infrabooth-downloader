@@ -6,6 +6,7 @@ interface AuthStatePayload {
   isSignedIn: boolean;
   username: string | null;
   plan: string | null;
+  avatarUrl: string | null;
 }
 
 /**
@@ -39,7 +40,12 @@ export function useAuthStateListener(): void {
         unlistenAuthState = await listen<AuthStatePayload>('auth-state-changed', (event) => {
           console.log('[useAuthStateListener] Received auth-state-changed:', event.payload);
           if (mounted && event.payload) {
-            setAuth(event.payload.isSignedIn, event.payload.username, event.payload.plan);
+            setAuth(
+              event.payload.isSignedIn,
+              event.payload.username,
+              event.payload.plan,
+              event.payload.avatarUrl
+            );
           }
         });
 
