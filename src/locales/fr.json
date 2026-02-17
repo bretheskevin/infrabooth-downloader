@@ -9,7 +9,11 @@
     "accessibilityStatus": "Connecté en tant que {{username}}, qualité Go+ active",
     "qualityBadge": "Go+",
     "loading": "Chargement...",
-    "openingBrowser": "Ouverture du navigateur..."
+    "openingBrowser": "Ouverture du navigateur...",
+    "sessionExpired": "Session expirée",
+    "sessionExpiredDescription": "Votre session a expiré pendant le téléchargement. Reconnectez-vous pour continuer en haute qualité (320kbps), ou continuez en qualité standard (128kbps).",
+    "signInAgain": "Se reconnecter",
+    "continueStandard": "Continuer en qualité standard"
   },
   "download": {
     "button": "Télécharger",
