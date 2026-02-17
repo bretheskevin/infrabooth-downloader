@@ -70,15 +70,32 @@ pub struct DownloadProgressEvent {
     pub error: Option<ErrorResponse>,
 }
 
+fn sanitize_filename(s: &str) -> String {
+    s.chars()
+        .map(|c| match c {
+            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            _ => c,
+        })
+        .collect()
+}
+
+struct OutputTemplateResult {
+    template: String,
+    display_title: String,
+}
+
 fn build_output_template(
     output_dir: &Path,
     playlist_context: &Option<PlaylistContext>,
-) -> String {
+    artist: &str,
+    title: &str,
+) -> OutputTemplateResult {
     let dir_str = output_dir.to_string_lossy();
+    let safe_artist = sanitize_filename(artist);
+    let safe_title = sanitize_filename(title);
 
     match playlist_context {
         Some(ctx) => {
-            // Format track position manually since --no-playlist disables %(playlist_index)
             let width = if ctx.total_tracks < 10 {
                 1
             } else if ctx.total_tracks < 100 {
@@ -87,14 +104,19 @@ fn build_output_template(
                 3
             };
             let track_num = format!("{:0width$}", ctx.track_position, width = width);
-            format!(
-                "{}/{} - %(artist)s - %(title)s.%(ext)s",
-                dir_str, track_num
-            )
+            let display_title = format!("{} - {}", track_num, title);
+            OutputTemplateResult {
+                template: format!(
+                    "{}/{} - {} - {}.%(ext)s",
+                    dir_str, track_num, safe_artist, safe_title
+                ),
+                display_title,
+            }
         }
-        None => {
-            format!("{}/%(artist)s - %(title)s.%(ext)s", dir_str)
-        }
+        None => OutputTemplateResult {
+            template: format!("{}/{} - {}.%(ext)s", dir_str, safe_artist, safe_title),
+            display_title: title.to_string(),
+        },
     }
 }
 
@@ -158,7 +180,12 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         }
     };
 
-    let output_template = build_output_template(&config.output_dir, &config.playlist_context);
+    let output_result = build_output_template(
+        &config.output_dir,
+        &config.playlist_context,
+        &config.artist,
+        &config.title,
+    );
 
     let mut args = vec![
         "-v".to_string(),
@@ -177,9 +204,9 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         "--replace-in-metadata".to_string(),
         "title".to_string(),
         ".+".to_string(),
-        config.title.clone(),
+        output_result.display_title,
         "-o".to_string(),
-        output_template,
+        output_result.template,
         "--windows-filenames".to_string(),
         "--no-overwrites".to_string(),
         "--newline".to_string(),
@@ -420,8 +447,9 @@ mod tests {
     #[test]
     fn test_build_output_template_single_track() {
         let output_dir = PathBuf::from("/downloads");
-        let template = build_output_template(&output_dir, &None);
-        assert_eq!(template, "/downloads/%(artist)s - %(title)s.%(ext)s");
+        let result = build_output_template(&output_dir, &None, "Artist", "Title");
+        assert_eq!(result.template, "/downloads/Artist - Title.%(ext)s");
+        assert_eq!(result.display_title, "Title");
     }
 
     #[test]
@@ -431,11 +459,9 @@ mod tests {
             track_position: 1,
             total_tracks: 5,
         });
-        let template = build_output_template(&output_dir, &ctx);
-        assert_eq!(
-            template,
-            "/downloads/1 - %(artist)s - %(title)s.%(ext)s"
-        );
+        let result = build_output_template(&output_dir, &ctx, "Artist", "Title");
+        assert_eq!(result.template, "/downloads/1 - Artist - Title.%(ext)s");
+        assert_eq!(result.display_title, "1 - Title");
     }
 
     #[test]
@@ -445,11 +471,9 @@ mod tests {
             track_position: 5,
             total_tracks: 47,
         });
-        let template = build_output_template(&output_dir, &ctx);
-        assert_eq!(
-            template,
-            "/downloads/05 - %(artist)s - %(title)s.%(ext)s"
-        );
+        let result = build_output_template(&output_dir, &ctx, "Artist", "Title");
+        assert_eq!(result.template, "/downloads/05 - Artist - Title.%(ext)s");
+        assert_eq!(result.display_title, "05 - Title");
     }
 
     #[test]
@@ -459,10 +483,18 @@ mod tests {
             track_position: 1,
             total_tracks: 150,
         });
-        let template = build_output_template(&output_dir, &ctx);
+        let result = build_output_template(&output_dir, &ctx, "Artist", "Title");
+        assert_eq!(result.template, "/downloads/001 - Artist - Title.%(ext)s");
+        assert_eq!(result.display_title, "001 - Title");
+    }
+
+    #[test]
+    fn test_build_output_template_sanitizes_special_chars() {
+        let output_dir = PathBuf::from("/downloads");
+        let result = build_output_template(&output_dir, &None, "Artist/Name", "Title:Test?");
         assert_eq!(
-            template,
-            "/downloads/001 - %(artist)s - %(title)s.%(ext)s"
+            result.template,
+            "/downloads/Artist_Name - Title_Test_.%(ext)s"
         );
     }
 
