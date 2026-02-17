@@ -20,6 +20,7 @@ interface QueueState {
   isRateLimited: boolean;
   rateLimitedAt: number | null;
   outputDir: string | null;
+  isRetrying: boolean;
   // Actions
   enqueueTracks: (tracks: Track[]) => void;
   updateTrackStatus: (
@@ -35,6 +36,9 @@ interface QueueState {
   setRateLimited: (isLimited: boolean) => void;
   setInitializing: (isInitializing: boolean) => void;
   setOutputDir: (path: string | null) => void;
+  prepareRetryFailed: () => Track[];
+  prepareRetrySingle: (trackId: string) => Track | null;
+  setRetrying: (isRetrying: boolean) => void;
 }
 
 const INITIAL_QUEUE_STATE = {
@@ -50,9 +54,10 @@ const INITIAL_QUEUE_STATE = {
   isRateLimited: false,
   rateLimitedAt: null as number | null,
   outputDir: null as string | null,
+  isRetrying: false,
 };
 
-export const useQueueStore = create<QueueState>((set) => ({
+export const useQueueStore = create<QueueState>((set, get) => ({
   tracks: [],
   totalTracks: 0,
   ...INITIAL_QUEUE_STATE,
@@ -92,6 +97,7 @@ export const useQueueStore = create<QueueState>((set) => ({
       isProcessing: false,
       isComplete: true,
       isCancelling: false,
+      isRetrying: false,
       completedCount: result.completed,
       failedCount: result.failed,
     });
@@ -104,6 +110,7 @@ export const useQueueStore = create<QueueState>((set) => ({
       isComplete: true,
       isCancelling: false,
       isCancelled: true,
+      isRetrying: false,
       completedCount: result.completed,
       cancelledCount: result.cancelled,
     });
@@ -143,5 +150,62 @@ export const useQueueStore = create<QueueState>((set) => ({
   setOutputDir: (path) => {
     logger.debug(`[queueStore] Output dir: ${path || 'default'}`);
     set({ outputDir: path });
+  },
+
+  prepareRetryFailed: () => {
+    const { tracks } = get();
+    const failedTracks = tracks.filter((t) => t.status === 'failed');
+
+    if (failedTracks.length === 0) {
+      logger.warn('[queueStore] No failed tracks to retry');
+      return [];
+    }
+
+    logger.info(`[queueStore] Preparing retry for ${failedTracks.length} failed tracks`);
+
+    set((s) => ({
+      tracks: s.tracks.map((track) =>
+        track.status === 'failed'
+          ? { ...track, status: 'pending' as const, error: undefined }
+          : track
+      ),
+      isComplete: false,
+      isCancelled: false,
+      failedCount: 0,
+      isRetrying: false,
+    }));
+
+    return failedTracks;
+  },
+
+  prepareRetrySingle: (trackId) => {
+    const { tracks } = get();
+    const track = tracks.find((t) => t.id === trackId && t.status === 'failed');
+
+    if (!track) {
+      logger.warn(`[queueStore] Track ${trackId} not found or not failed`);
+      return null;
+    }
+
+    logger.info(`[queueStore] Preparing retry for track: ${track.title}`);
+
+    set((s) => ({
+      tracks: s.tracks.map((t) =>
+        t.id === trackId
+          ? { ...t, status: 'pending' as const, error: undefined }
+          : t
+      ),
+      isComplete: false,
+      isCancelled: false,
+      failedCount: Math.max(0, s.failedCount - 1),
+      isRetrying: false,
+    }));
+
+    return track;
+  },
+
+  setRetrying: (isRetrying) => {
+    logger.debug(`[queueStore] Retrying: ${isRetrying}`);
+    set({ isRetrying });
   },
 }));

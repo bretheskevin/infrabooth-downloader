@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { CheckCircle, FolderOpen, RefreshCw, XCircle } from 'lucide-react';
+import { FolderOpen, RefreshCw, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueueStore } from '@/features/queue/store';
 import { openDownloadFolder } from '@/lib/shellCommands';
@@ -10,7 +10,10 @@ import { logger } from '@/lib/logger';
 import { SuccessMessage } from './SuccessMessage';
 import { ErrorPanelTrigger } from './ErrorPanelTrigger';
 import { ErrorPanel } from './ErrorPanel';
+import { AnimatedCheckmark } from './AnimatedCheckmark';
 import { useFailedTracks } from '@/features/queue/hooks/useFailedTracks';
+import { useRetryTracks } from '@/features/queue/hooks/useRetryTracks';
+import { cn } from '@/lib/utils';
 
 interface CompletionPanelProps {
   completedCount: number;
@@ -34,17 +37,23 @@ export function CompletionPanel({
   const panelRef = useRef<HTMLDivElement>(null);
   const [isErrorPanelOpen, setIsErrorPanelOpen] = useState(false);
   const failedTracks = useFailedTracks();
+  const { retryAllFailed, retrySingleTrack, isRetrying, canRetry } =
+    useRetryTracks();
 
   const isFullSuccess = failedCount === 0 && !isCancelled;
 
   const handleOpenFolder = async () => {
     logger.info('[CompletionPanel] Open folder clicked');
-    logger.debug(`[CompletionPanel] Output dir from queue store: "${outputDir}"`);
+    logger.debug(
+      `[CompletionPanel] Output dir from queue store: "${outputDir}"`
+    );
 
     let pathToOpen = outputDir;
 
     if (!pathToOpen) {
-      logger.debug('[CompletionPanel] No output dir in queue store, fetching default');
+      logger.debug(
+        '[CompletionPanel] No output dir in queue store, fetching default'
+      );
       try {
         pathToOpen = await getDefaultDownloadPath();
         logger.debug(`[CompletionPanel] Got default path: "${pathToOpen}"`);
@@ -69,7 +78,15 @@ export function CompletionPanel({
     setIsErrorPanelOpen((prev) => !prev);
   };
 
-  // Focus panel when it mounts for accessibility
+  const handleRetryAll = async () => {
+    setIsErrorPanelOpen(false);
+    await retryAllFailed();
+  };
+
+  const handleRetrySingle = async (trackId: string) => {
+    await retrySingleTrack(trackId);
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       panelRef.current?.focus();
@@ -91,17 +108,19 @@ export function CompletionPanel({
     >
       <CardContent className="pt-6 text-center">
         <div className="flex flex-col items-center gap-4">
-          <div className={`rounded-full p-3 ${isCancelled ? 'bg-muted' : 'bg-success/20'}`}>
+          <div
+            className={cn(
+              'flex items-center justify-center rounded-full',
+              isCancelled ? 'bg-muted p-3' : 'bg-success/10'
+            )}
+          >
             {isCancelled ? (
               <XCircle
                 className="h-8 w-8 text-muted-foreground"
                 aria-hidden="true"
               />
             ) : (
-              <CheckCircle
-                className="h-8 w-8 text-success motion-safe:animate-[checkmark-draw_0.3s_ease-out_forwards]"
-                aria-hidden="true"
-              />
+              <AnimatedCheckmark size={48} />
             )}
           </div>
 
@@ -118,19 +137,23 @@ export function CompletionPanel({
               <ErrorPanelTrigger
                 failedCount={failedCount}
                 onClick={handleToggleErrorPanel}
+                onRetryAll={canRetry ? handleRetryAll : undefined}
                 isExpanded={isErrorPanelOpen}
+                isRetrying={isRetrying}
               />
               <ErrorPanel
                 failedTracks={failedTracks}
                 isOpen={isErrorPanelOpen}
                 onOpenChange={setIsErrorPanelOpen}
+                onRetryTrack={handleRetrySingle}
+                isRetrying={isRetrying}
               />
             </div>
           )}
         </div>
       </CardContent>
 
-      <CardFooter className="flex justify-center gap-3 pb-6">
+      <CardFooter className="flex flex-wrap justify-center gap-3 pb-6">
         <Button
           variant="outline"
           onClick={handleOpenFolder}
@@ -140,6 +163,22 @@ export function CompletionPanel({
           <FolderOpen className="h-4 w-4" aria-hidden="true" />
           {t('completion.openFolder')}
         </Button>
+
+        {failedCount > 0 && canRetry && (
+          <Button
+            variant="default"
+            onClick={handleRetryAll}
+            disabled={isRetrying}
+            aria-label={t('completion.retryFailed', { count: failedCount })}
+            className="gap-2"
+          >
+            <RefreshCw
+              className={cn('h-4 w-4', isRetrying && 'animate-spin')}
+              aria-hidden="true"
+            />
+            {t('completion.retryFailed', { count: failedCount })}
+          </Button>
+        )}
 
         <Button
           variant="ghost"

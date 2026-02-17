@@ -4,3 +4,4 @@ export { useDownloadProgress } from './useDownloadProgress';
 export { useDownloadCompletion } from './useDownloadCompletion';
 export { useRateLimitStatus } from './useRateLimitStatus';
 export { useFailedTracks } from './useFailedTracks';
+export { useRetryTracks } from './useRetryTracks';

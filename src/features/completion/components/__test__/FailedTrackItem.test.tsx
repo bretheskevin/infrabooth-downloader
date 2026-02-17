@@ -1,7 +1,13 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi } from 'vitest';
 import { FailedTrackItem } from '../FailedTrackItem';
 import type { FailedTrack } from '@/features/queue/types/download';
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+  }),
+}));
 
 describe('FailedTrackItem', () => {
   const mockTrack: FailedTrack = {
@@ -19,12 +25,6 @@ describe('FailedTrackItem', () => {
   it('should display artist name', () => {
     render(<FailedTrackItem track={mockTrack} />);
     expect(screen.getByText('Test Artist Name')).toBeInTheDocument();
-  });
-
-  it('should render warning icon', () => {
-    render(<FailedTrackItem track={mockTrack} />);
-    const icon = document.querySelector('[aria-hidden="true"]');
-    expect(icon).toBeInTheDocument();
   });
 
   it('should have role="listitem"', () => {
@@ -46,5 +46,31 @@ describe('FailedTrackItem', () => {
     render(<FailedTrackItem track={mockTrack} />);
     const artistElement = screen.getByText('Test Artist Name');
     expect(artistElement).toHaveClass('text-muted-foreground');
+  });
+
+  it('should have warning border accent', () => {
+    render(<FailedTrackItem track={mockTrack} />);
+    const listItem = screen.getByRole('listitem');
+    expect(listItem.className).toMatch(/border-warning/);
+  });
+
+  it('should render retry button when onRetry is provided', () => {
+    const onRetry = vi.fn();
+    render(<FailedTrackItem track={mockTrack} onRetry={onRetry} />);
+    const retryButton = screen.getByRole('button', { name: 'errors.retryTrack' });
+    expect(retryButton).toBeInTheDocument();
+  });
+
+  it('should call onRetry with track id when retry button is clicked', () => {
+    const onRetry = vi.fn();
+    render(<FailedTrackItem track={mockTrack} onRetry={onRetry} />);
+    const retryButton = screen.getByRole('button', { name: 'errors.retryTrack' });
+    fireEvent.click(retryButton);
+    expect(onRetry).toHaveBeenCalledWith('1');
+  });
+
+  it('should not render retry button when onRetry is not provided', () => {
+    render(<FailedTrackItem track={mockTrack} />);
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
   });
 });

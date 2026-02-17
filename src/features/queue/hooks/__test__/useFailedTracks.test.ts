@@ -48,6 +48,7 @@ describe('useFailedTracks', () => {
         isCancelling: false,
         isCancelled: false,
         cancelledCount: 0,
+        isRetrying: false,
         enqueueTracks: vi.fn(),
         updateTrackStatus: vi.fn(),
         setQueueProgress: vi.fn(),
@@ -59,6 +60,9 @@ describe('useFailedTracks', () => {
         setInitializing: vi.fn(),
         outputDir: null,
         setOutputDir: vi.fn(),
+        prepareRetryFailed: vi.fn(),
+        prepareRetrySingle: vi.fn(),
+        setRetrying: vi.fn(),
       })
     );
 
@@ -91,6 +95,7 @@ describe('useFailedTracks', () => {
         isCancelling: false,
         isCancelled: false,
         cancelledCount: 0,
+        isRetrying: false,
         enqueueTracks: vi.fn(),
         updateTrackStatus: vi.fn(),
         setQueueProgress: vi.fn(),
@@ -102,6 +107,9 @@ describe('useFailedTracks', () => {
         setInitializing: vi.fn(),
         outputDir: null,
         setOutputDir: vi.fn(),
+        prepareRetryFailed: vi.fn(),
+        prepareRetrySingle: vi.fn(),
+        setRetrying: vi.fn(),
       })
     );
 
@@ -142,6 +150,7 @@ describe('useFailedTracks', () => {
         isCancelling: false,
         isCancelled: false,
         cancelledCount: 0,
+        isRetrying: false,
         enqueueTracks: vi.fn(),
         updateTrackStatus: vi.fn(),
         setQueueProgress: vi.fn(),
@@ -153,6 +162,9 @@ describe('useFailedTracks', () => {
         setInitializing: vi.fn(),
         outputDir: null,
         setOutputDir: vi.fn(),
+        prepareRetryFailed: vi.fn(),
+        prepareRetrySingle: vi.fn(),
+        setRetrying: vi.fn(),
       })
     );
 
@@ -183,6 +195,7 @@ describe('useFailedTracks', () => {
         isCancelling: false,
         isCancelled: false,
         cancelledCount: 0,
+        isRetrying: false,
         enqueueTracks: vi.fn(),
         updateTrackStatus: vi.fn(),
         setQueueProgress: vi.fn(),
@@ -194,6 +207,9 @@ describe('useFailedTracks', () => {
         setInitializing: vi.fn(),
         outputDir: null,
         setOutputDir: vi.fn(),
+        prepareRetryFailed: vi.fn(),
+        prepareRetrySingle: vi.fn(),
+        setRetrying: vi.fn(),
       })
     );
 

@@ -3,7 +3,6 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CompletionPanel } from '../CompletionPanel';
 
-// Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) => {
@@ -17,45 +16,63 @@ vi.mock('react-i18next', () => ({
         'completion.allCancelled': 'No tracks were downloaded',
         'completion.openFolder': 'Open Folder',
         'completion.downloadAnother': 'Download Another',
-        'completion.failedTracks': `${options?.count} tracks couldn't be downloaded`,
-        'completion.failedTracksSingular': "1 track couldn't be downloaded",
+        'completion.retryFailed': `Retry Failed (${options?.count})`,
+        'completion.retryAll': 'Retry All',
+        'completion.tracksNeedAttention':
+          options?.count === 1
+            ? '1 track needs attention'
+            : `${options?.count} tracks need attention`,
         'completion.viewFailed': 'View details',
-        'errors.tracksFailed': options?.count === 1 ? '1 track failed' : `${options?.count} tracks failed`,
         'errors.panelTitle': 'Failed Downloads',
         'errors.closePanel': 'Close error panel',
         'errors.groupGeoBlocked': 'Unavailable in your region',
         'errors.groupUnavailable': 'Track removed or private',
         'errors.groupNetwork': 'Network errors',
         'errors.groupOther': 'Other errors',
+        'errors.retryTrack': 'Retry this track',
       };
       return translations[key] || key;
     },
   }),
 }));
 
-// Mock shell commands
 vi.mock('@/lib/shellCommands', () => ({
   openDownloadFolder: vi.fn(),
 }));
 
-// Mock settings lib
 vi.mock('@/features/settings/api/settings', () => ({
   getDefaultDownloadPath: vi.fn().mockResolvedValue('/Users/default/Downloads'),
 }));
 
-// Mock queue store
+const mockQueueState = {
+  outputDir: '/Users/test/Downloads',
+  isRetrying: false,
+  failedCount: 0,
+  isProcessing: false,
+};
+
 vi.mock('@/features/queue/store', () => ({
-  useQueueStore: (selector: (state: { outputDir: string | null }) => string | null) =>
-    selector({ outputDir: '/Users/test/Downloads' }),
+  useQueueStore: vi.fn((selector: (state: typeof mockQueueState) => unknown) =>
+    selector(mockQueueState)
+  ),
 }));
 
-// Mock useFailedTracks hook
 vi.mock('@/features/queue/hooks/useFailedTracks', () => ({
   useFailedTracks: vi.fn(() => []),
 }));
 
+vi.mock('@/features/queue/hooks/useRetryTracks', () => ({
+  useRetryTracks: vi.fn(() => ({
+    isRetrying: false,
+    retryAllFailed: vi.fn(),
+    retrySingleTrack: vi.fn(),
+    canRetry: true,
+  })),
+}));
+
 import { openDownloadFolder } from '@/lib/shellCommands';
 import { useFailedTracks } from '@/features/queue/hooks/useFailedTracks';
+import { useRetryTracks } from '@/features/queue/hooks/useRetryTracks';
 
 describe('CompletionPanel', () => {
   const defaultProps = {
@@ -70,6 +87,12 @@ describe('CompletionPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(useFailedTracks).mockReturnValue([]);
+    vi.mocked(useRetryTracks).mockReturnValue({
+      isRetrying: false,
+      retryAllFailed: vi.fn(),
+      retrySingleTrack: vi.fn(),
+      canRetry: true,
+    });
   });
 
   it('should render full success state correctly', () => {
@@ -77,33 +100,43 @@ describe('CompletionPanel', () => {
 
     expect(screen.getByText('Download complete!')).toBeInTheDocument();
     expect(screen.getByText('All 10 tracks downloaded')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /open folder/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /download another/i })).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /open folder/i })
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /download another/i })
+    ).toBeInTheDocument();
   });
 
   it('should render partial success state with error panel trigger', () => {
     vi.mocked(useFailedTracks).mockReturnValue([
-      { id: '1', title: 'Track 1', artist: 'Artist 1', error: { code: 'GEO_BLOCKED', message: 'Not available' } },
-      { id: '2', title: 'Track 2', artist: 'Artist 2', error: { code: 'NETWORK_ERROR', message: 'Network failed' } },
+      {
+        id: '1',
+        title: 'Track 1',
+        artist: 'Artist 1',
+        error: { code: 'GEO_BLOCKED', message: 'Not available' },
+      },
+      {
+        id: '2',
+        title: 'Track 2',
+        artist: 'Artist 2',
+        error: { code: 'NETWORK_ERROR', message: 'Network failed' },
+      },
     ]);
 
     render(
-      <CompletionPanel
-        {...defaultProps}
-        completedCount={8}
-        failedCount={2}
-      />
+      <CompletionPanel {...defaultProps} completedCount={8} failedCount={2} />
     );
 
     expect(screen.getByText('Download finished')).toBeInTheDocument();
     expect(screen.getByText('8 of 10 tracks downloaded')).toBeInTheDocument();
-    expect(screen.getByText('2 tracks failed')).toBeInTheDocument();
+    expect(screen.getByText('2 tracks need attention')).toBeInTheDocument();
   });
 
   it('should not show error panel trigger when all succeed', () => {
     render(<CompletionPanel {...defaultProps} />);
 
-    expect(screen.queryByText(/tracks failed/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/tracks need attention/)).not.toBeInTheDocument();
   });
 
   it('should call openDownloadFolder when Open Folder is clicked', async () => {
@@ -128,25 +161,26 @@ describe('CompletionPanel', () => {
     expect(onDownloadAnother).toHaveBeenCalledTimes(1);
   });
 
-  it('should expand error panel when trigger is clicked', async () => {
+  it('should expand error panel when view details is clicked', async () => {
     const user = userEvent.setup();
     vi.mocked(useFailedTracks).mockReturnValue([
-      { id: '1', title: 'Failed Track', artist: 'Artist', error: { code: 'GEO_BLOCKED', message: 'Not available' } },
+      {
+        id: '1',
+        title: 'Failed Track',
+        artist: 'Artist',
+        error: { code: 'GEO_BLOCKED', message: 'Not available' },
+      },
     ]);
 
     render(
-      <CompletionPanel
-        {...defaultProps}
-        completedCount={9}
-        failedCount={1}
-      />
+      <CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />
     );
 
-    // Click the trigger to expand
-    const trigger = screen.getByText('1 track failed');
-    await user.click(trigger);
+    const viewDetailsButton = screen.getByRole('button', {
+      name: /view details/i,
+    });
+    await user.click(viewDetailsButton);
 
-    // Panel should now be visible
     expect(screen.getByText('Failed Downloads')).toBeInTheDocument();
     expect(screen.getByText('Failed Track')).toBeInTheDocument();
   });
@@ -183,7 +217,9 @@ describe('CompletionPanel', () => {
     );
 
     expect(screen.getByText('Download cancelled')).toBeInTheDocument();
-    expect(screen.getByText('3 tracks downloaded before cancellation')).toBeInTheDocument();
+    expect(
+      screen.getByText('3 tracks downloaded before cancellation')
+    ).toBeInTheDocument();
   });
 
   it('should render cancelled state with no tracks downloaded', () => {
@@ -198,5 +234,52 @@ describe('CompletionPanel', () => {
 
     expect(screen.getByText('Download cancelled')).toBeInTheDocument();
     expect(screen.getByText('No tracks were downloaded')).toBeInTheDocument();
+  });
+
+  it('should render retry failed button when there are failures', () => {
+    vi.mocked(useFailedTracks).mockReturnValue([
+      {
+        id: '1',
+        title: 'Failed Track',
+        artist: 'Artist',
+        error: { code: 'NETWORK_ERROR', message: 'Network failed' },
+      },
+    ]);
+
+    render(
+      <CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />
+    );
+
+    expect(
+      screen.getByRole('button', { name: /retry failed/i })
+    ).toBeInTheDocument();
+  });
+
+  it('should call retryAllFailed when retry button is clicked', async () => {
+    const user = userEvent.setup();
+    const mockRetryAll = vi.fn();
+    vi.mocked(useRetryTracks).mockReturnValue({
+      isRetrying: false,
+      retryAllFailed: mockRetryAll,
+      retrySingleTrack: vi.fn(),
+      canRetry: true,
+    });
+    vi.mocked(useFailedTracks).mockReturnValue([
+      {
+        id: '1',
+        title: 'Failed Track',
+        artist: 'Artist',
+        error: { code: 'NETWORK_ERROR', message: 'Network failed' },
+      },
+    ]);
+
+    render(
+      <CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />
+    );
+
+    const retryButton = screen.getByRole('button', { name: /retry failed/i });
+    await user.click(retryButton);
+
+    expect(mockRetryAll).toHaveBeenCalledTimes(1);
   });
 });
