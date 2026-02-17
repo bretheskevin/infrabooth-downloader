@@ -84,7 +84,8 @@
     "groupGeoBlocked": "Unavailable in your region",
     "groupUnavailable": "Track removed or private",
     "groupNetwork": "Network errors",
-    "groupOther": "Other errors"
+    "groupOther": "Other errors",
+    "retryTrack": "Retry this track"
   },
   "settings": {
     "title": "Settings",
@@ -120,7 +121,11 @@
     "downloadAnother": "Download Another",
     "failedTracks": "{{count}} tracks couldn't be downloaded",
     "failedTracksSingular": "1 track couldn't be downloaded",
-    "viewFailed": "View details"
+    "viewFailed": "View details",
+    "retryFailed": "Retry Failed ({{count}})",
+    "retryAll": "Retry All",
+    "tracksNeedAttention_one": "{{count}} track needs attention",
+    "tracksNeedAttention_other": "{{count}} tracks need attention"
   },
   "progress": {
     "trackList": {

@@ -49,6 +49,7 @@ const createMockQueueState = (tracks: Track[] = [], isProcessing = false) => ({
   isRateLimited: false,
   rateLimitedAt: null,
   outputDir: null,
+  isRetrying: false,
   enqueueTracks: vi.fn(),
   updateTrackStatus: vi.fn(),
   setQueueProgress: vi.fn(),
@@ -59,6 +60,9 @@ const createMockQueueState = (tracks: Track[] = [], isProcessing = false) => ({
   setRateLimited: vi.fn(),
   setInitializing: vi.fn(),
   setOutputDir: vi.fn(),
+  prepareRetryFailed: vi.fn(() => []),
+  prepareRetrySingle: vi.fn(() => null),
+  setRetrying: vi.fn(),
 });
 
 const mockQueueStoreState = { isProcessing: false };
