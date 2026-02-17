@@ -97,11 +97,11 @@ describe('ProgressPanel', () => {
 
       const children = container?.children;
       expect(children).toBeDefined();
-      expect(children?.length).toBeGreaterThanOrEqual(2);
+      expect(children?.length).toBeGreaterThanOrEqual(3);
 
-      // First child should contain progress bar, second should contain track list
-      const progressSection = children?.[0];
-      const trackSection = children?.[1];
+      // First child is sentinel, second contains progress bar, third contains track list
+      const progressSection = children?.[1];
+      const trackSection = children?.[2];
       expect(progressSection?.querySelector('[role="progressbar"]')).toBeTruthy();
       expect(trackSection?.querySelector('[role="list"]')).toBeTruthy();
     });

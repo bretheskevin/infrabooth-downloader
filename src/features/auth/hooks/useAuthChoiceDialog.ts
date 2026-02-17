@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { commands, type DownloadAuthNeededEvent } from '@/bindings';
+import { commands } from '@/bindings';
 import { startOAuth } from '../api';
 import { useAuthStore } from '../store';
+
+interface DownloadAuthNeededEvent {
+  trackTitle: string;
+}
 
 interface AuthChoiceDialogState {
   isOpen: boolean;
