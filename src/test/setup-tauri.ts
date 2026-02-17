@@ -1,5 +1,60 @@
 import { vi } from 'vitest';
 
+// Mock IntersectionObserver with callback support for testing
+type MockIntersectionObserverInstance = {
+  trigger: (isIntersecting: boolean) => void;
+};
+
+const mockObserverInstances = new Map<Element, MockIntersectionObserverInstance>();
+
+class MockIntersectionObserver implements IntersectionObserver {
+  readonly root: Element | null = null;
+  readonly rootMargin: string = '';
+  readonly thresholds: ReadonlyArray<number> = [];
+  private callback: IntersectionObserverCallback;
+  private elements: Set<Element> = new Set();
+
+  constructor(callback: IntersectionObserverCallback) {
+    this.callback = callback;
+  }
+
+  observe(target: Element) {
+    this.elements.add(target);
+    mockObserverInstances.set(target, {
+      trigger: (isIntersecting: boolean) => {
+        const entry = {
+          isIntersecting,
+          target,
+          boundingClientRect: {} as DOMRectReadOnly,
+          intersectionRatio: isIntersecting ? 1 : 0,
+          intersectionRect: {} as DOMRectReadOnly,
+          rootBounds: null,
+          time: Date.now(),
+        };
+        this.callback([entry], this);
+      },
+    });
+  }
+
+  unobserve(target: Element) {
+    this.elements.delete(target);
+    mockObserverInstances.delete(target);
+  }
+
+  disconnect() {
+    this.elements.forEach((el) => mockObserverInstances.delete(el));
+    this.elements.clear();
+  }
+
+  takeRecords(): IntersectionObserverEntry[] {
+    return [];
+  }
+}
+
+global.IntersectionObserver = MockIntersectionObserver;
+
+export { mockObserverInstances };
+
 // Mock @tauri-apps/api/event
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn().mockResolvedValue(vi.fn()),
