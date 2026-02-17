@@ -74,6 +74,7 @@ fn sanitize_filename(s: &str) -> String {
     s.chars()
         .map(|c| match c {
             '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+            c if c.is_control() => '_',
             _ => c,
         })
         .collect()
@@ -495,6 +496,16 @@ mod tests {
         assert_eq!(
             result.template,
             "/downloads/Artist_Name - Title_Test_.%(ext)s"
+        );
+    }
+
+    #[test]
+    fn test_build_output_template_sanitizes_control_chars() {
+        let output_dir = PathBuf::from("/downloads");
+        let result = build_output_template(&output_dir, &None, "Artist\x00Name", "Title\nTest");
+        assert_eq!(
+            result.template,
+            "/downloads/Artist_Name - Title_Test.%(ext)s"
         );
     }
 
