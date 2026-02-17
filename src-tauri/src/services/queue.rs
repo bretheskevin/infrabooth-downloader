@@ -1,12 +1,14 @@
 use serde::Serialize;
 use specta::Type;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Runtime};
 use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::{watch, Mutex};
 
-use crate::models::error::{PipelineError, YtDlpError};
+use crate::models::error::{HasErrorCode, PipelineError, YtDlpError};
+use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeededEvent};
 use crate::services::metadata::TrackMetadata;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::ytdlp::PlaylistContext;
@@ -86,8 +88,10 @@ impl DownloadQueue {
     /// - `download-progress`: Per-track status (from pipeline)
     /// - `queue-complete`: When all tracks are processed
     /// - `queue-cancelled`: When queue is cancelled by user
+    /// - `download-auth-needed`: When auth refresh fails and user input is needed
     ///
     /// On rate limit errors, the queue pauses with backoff and retries.
+    /// On auth refresh errors, the queue pauses for user input.
     /// On other errors, the queue records the failure and continues.
     pub async fn process<R: Runtime>(
         &mut self,
@@ -96,6 +100,8 @@ impl DownloadQueue {
         cancel_rx: watch::Receiver<bool>,
         active_child: Arc<Mutex<Option<CommandChild>>>,
         active_pid: Arc<Mutex<Option<u32>>>,
+        auth_choice_state: Arc<AuthChoiceState>,
+        skip_auth: Arc<AtomicBool>,
     ) -> QueueResult {
         self.is_processing = true;
         let mut completed = 0u32;
@@ -157,7 +163,7 @@ impl DownloadQueue {
                 playlist_context,
             };
 
-            match download_and_convert(&app, config, Some(active_child.clone()), Some(cancel_rx.clone()), Some(active_pid.clone())).await {
+            match download_and_convert(&app, config, Some(active_child.clone()), Some(cancel_rx.clone()), Some(active_pid.clone()), skip_auth.load(Ordering::SeqCst)).await {
                 Ok(_) => {
                     let _ = app.emit(
                         "download-progress",
@@ -205,11 +211,72 @@ impl DownloadQueue {
                     retry_count += 1;
                     continue; // Retry same track, don't increment index
                 }
+                Err(PipelineError::Download(YtDlpError::AuthRefreshFailed)) => {
+                    log::info!("[queue] Auth refresh failed for track {}, waiting for user choice", item.track_id);
+
+                    auth_choice_state.set_pending(true).await;
+                    let _ = app.emit(
+                        "download-auth-needed",
+                        DownloadAuthNeededEvent {
+                            track_id: item.track_id.clone(),
+                            track_title: item.title.clone(),
+                        },
+                    );
+
+                    let mut choice_rx = auth_choice_state.subscribe();
+                    loop {
+                        if *cancel_rx.borrow() {
+                            log::info!("[queue] Cancellation during auth wait");
+                            auth_choice_state.set_pending(false).await;
+                            let cancelled = self.total_tracks - completed - failed;
+                            let _ = app.emit(
+                                "queue-cancelled",
+                                QueueCancelledEvent {
+                                    completed,
+                                    cancelled,
+                                    total: self.total_tracks,
+                                },
+                            );
+                            self.is_processing = false;
+                            return QueueResult { completed, failed };
+                        }
+
+                        if choice_rx.changed().await.is_ok() {
+                            let choice = { *choice_rx.borrow() };
+                            if let Some(choice) = choice {
+                                auth_choice_state.set_pending(false).await;
+                                match choice {
+                                    AuthChoice::ReAuthenticated => {
+                                        log::info!("[queue] User re-authenticated, retrying track");
+                                        break;
+                                    }
+                                    AuthChoice::ContinueStandard => {
+                                        log::info!("[queue] User chose standard quality, setting skip_auth flag");
+                                        skip_auth.store(true, Ordering::SeqCst);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    continue;
+                }
                 Err(e) => {
+                    log::error!("[queue] Track {} failed: {}", item.track_id, e);
+                    let _ = app.emit(
+                        "download-progress",
+                        serde_json::json!({
+                            "trackId": item.track_id,
+                            "status": "failed",
+                            "error": {
+                                "code": e.code(),
+                                "message": e.to_string()
+                            }
+                        }),
+                    );
                     failed += 1;
                     failed_tracks.push((item.track_id.clone(), e.to_string()));
-                    retry_count = 0; // Reset on move to next track
-                                     // Continue to next track
+                    retry_count = 0;
                 }
             }
 

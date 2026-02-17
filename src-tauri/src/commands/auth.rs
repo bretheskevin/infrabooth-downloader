@@ -151,6 +151,11 @@ pub async fn complete_oauth(
     );
 
     // Calculate expiry timestamp and store tokens
+    log::info!(
+        "[complete_oauth] Token expires_in from SoundCloud: {} seconds ({:.1} hours)",
+        tokens.expires_in,
+        tokens.expires_in as f64 / 3600.0
+    );
     let expires_at = calculate_expires_at(tokens.expires_in);
     let stored = StoredTokens {
         access_token: tokens.access_token,

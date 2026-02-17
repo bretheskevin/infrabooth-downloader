@@ -1,9 +1,12 @@
 use serde::Deserialize;
 use specta::Type;
 use std::path::PathBuf;
+use std::sync::atomic::AtomicBool;
+use std::sync::Arc;
 use tauri::{Emitter, Manager, State};
 
 use crate::models::{ErrorResponse, HasErrorCode};
+use crate::services::auth_choice::{AuthChoice, AuthChoiceState};
 use crate::services::cancellation::CancellationState;
 use crate::services::metadata::TrackMetadata;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
@@ -78,7 +81,7 @@ pub async fn download_track_full(
         playlist_context: None, // Single track download
     };
 
-    let result_path = download_and_convert(&app, config, None, None, None).await.map_err(|e| {
+    let result_path = download_and_convert(&app, config, None, None, None, false).await.map_err(|e| {
         // Emit error status
         let _ = app.emit(
             "download-progress",
@@ -151,9 +154,11 @@ pub async fn start_download_queue(
     request: StartQueueRequest,
     app: tauri::AppHandle,
     cancel_state: State<'_, CancellationState>,
+    auth_choice_state: State<'_, Arc<AuthChoiceState>>,
 ) -> Result<(), String> {
     // Reset cancellation state for new queue
     cancel_state.reset();
+    auth_choice_state.reset();
 
     let output_dir = match request.output_dir {
         Some(dir) => PathBuf::from(dir),
@@ -178,10 +183,12 @@ pub async fn start_download_queue(
     let cancel_rx = cancel_state.subscribe();
     let active_child = cancel_state.active_child();
     let active_pid = cancel_state.active_pid();
+    let auth_choice = Arc::clone(&auth_choice_state);
+    let skip_auth = Arc::new(AtomicBool::new(false));
 
     // Run queue processing in background
     tokio::spawn(async move {
-        queue.process(app, output_dir, cancel_rx, active_child, active_pid).await;
+        queue.process(app, output_dir, cancel_rx, active_child, active_pid, auth_choice, skip_auth).await;
     });
 
     Ok(())
@@ -208,6 +215,29 @@ pub async fn cancel_download_queue(
     log::info!("[download] Cancelling download queue");
     cancel_state.cancel();
     cancel_state.kill_active_process().await;
+    Ok(())
+}
+
+/// Respond to an auth choice prompt during download.
+///
+/// When a token refresh fails during download, the queue pauses and emits
+/// a `download-auth-needed` event. The frontend should show a dialog and
+/// call this command with the user's choice.
+///
+/// # Arguments
+/// * `choice` - Either "re_authenticated" (after OAuth completes) or "continue_standard"
+/// * `auth_choice_state` - Managed auth choice state
+///
+/// # Returns
+/// Ok(()) on success
+#[tauri::command]
+#[specta::specta]
+pub async fn respond_to_auth_choice(
+    choice: AuthChoice,
+    auth_choice_state: State<'_, Arc<AuthChoiceState>>,
+) -> Result<(), String> {
+    log::info!("[download] Auth choice received: {:?}", choice);
+    auth_choice_state.send_choice(choice);
     Ok(())
 }
 
