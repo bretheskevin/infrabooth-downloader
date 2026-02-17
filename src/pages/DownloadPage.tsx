@@ -99,6 +99,7 @@ export function DownloadPage() {
       <ValidationFeedback
         result={error ? { valid: false as const, urlType: null, error: { ...error, hint: error.hint ?? null } } : validation}
         isValidating={isValidating}
+        hideWhenMediaLoaded={media !== null || isLoading}
       />
       {isLoading && (
         <div

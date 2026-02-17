@@ -10,7 +10,14 @@ vi.mock('react-i18next', () => ({
       const translations: Record<string, string> = {
         'download.validPlaylist': 'Valid playlist URL',
         'download.validTrack': 'Valid track URL',
+        'download.validShortLink': 'Valid SoundCloud link',
         'download.validating': 'Checking URL...',
+        'errors.invalidUrl': 'Not a SoundCloud URL',
+        'errors.invalidUrlFormat': 'Invalid URL format',
+        'errors.invalidUrlHint': 'Paste a link from soundcloud.com',
+        'errors.profileNotSupported': 'This is a profile, not a playlist or track',
+        'errors.profileNotSupportedHint': 'Try pasting a playlist or track link',
+        'errors.networkError': 'No internet connection',
       };
       return translations[key] || key;
     },
@@ -96,30 +103,72 @@ describe('ValidationFeedback', () => {
     });
   });
 
+  describe('when validation succeeds with short link', () => {
+    const validShortLinkResult: ValidationResult = {
+      valid: true,
+      urlType: null, // Short links have no type until resolved
+      error: null,
+    };
+
+    it('should show success message for short link', () => {
+      render(
+        <ValidationFeedback result={validShortLinkResult} isValidating={false} />
+      );
+
+      expect(screen.getByText('Valid SoundCloud link')).toBeInTheDocument();
+    });
+
+    it('should hide short link message when media is loaded', () => {
+      const { container } = render(
+        <ValidationFeedback
+          result={validShortLinkResult}
+          isValidating={false}
+          hideWhenMediaLoaded={true}
+        />
+      );
+
+      expect(container.firstChild).toBeNull();
+    });
+
+    it('should show short link message when media is not loaded', () => {
+      render(
+        <ValidationFeedback
+          result={validShortLinkResult}
+          isValidating={false}
+          hideWhenMediaLoaded={false}
+        />
+      );
+
+      expect(screen.getByText('Valid SoundCloud link')).toBeInTheDocument();
+    });
+  });
+
   describe('when validation fails', () => {
     const errorResult: ValidationResult = {
       valid: false,
       urlType: null,
       error: {
         code: 'INVALID_URL',
-        message: 'Not a SoundCloud URL',
-        hint: 'Paste a link from soundcloud.com',
+        message: 'Not a SoundCloud URL', // This is ignored; translation is used
+        hint: 'Paste a link from soundcloud.com', // This is ignored; translation is used
       },
     };
 
-    it('should show error message (AC #3)', () => {
+    it('should show translated error message based on error code (AC #3)', () => {
       render(
         <ValidationFeedback result={errorResult} isValidating={false} />
       );
 
+      // The component now translates based on error code, not the raw message
       expect(screen.getByText('Not a SoundCloud URL')).toBeInTheDocument();
     });
 
-    it('should show hint text below error (AC #3)', () => {
+    it('should show translated hint text below error (AC #3)', () => {
       render(
         <ValidationFeedback result={errorResult} isValidating={false} />
       );
 
+      // The component now translates based on error code, not the raw hint
       expect(screen.getByText('Paste a link from soundcloud.com')).toBeInTheDocument();
     });
 
@@ -151,25 +200,27 @@ describe('ValidationFeedback', () => {
   });
 
   describe('when validation fails without hint', () => {
+    // Use INVALID_FORMAT code which has no hint mapping
     const errorResultNoHint: ValidationResult = {
       valid: false,
       urlType: null,
       error: {
-        code: 'NETWORK_ERROR',
-        message: 'No internet connection',
+        code: 'UNKNOWN_ERROR', // Unknown code falls back to invalidUrlFormat with no hint
+        message: 'Some error',
         hint: null,
       },
     };
 
-    it('should show error message without hint (AC #3)', () => {
+    it('should show fallback error message for unknown error codes (AC #3)', () => {
       render(
         <ValidationFeedback result={errorResultNoHint} isValidating={false} />
       );
 
-      expect(screen.getByText('No internet connection')).toBeInTheDocument();
+      // Unknown error codes fall back to invalidUrlFormat translation
+      expect(screen.getByText('Invalid URL format')).toBeInTheDocument();
     });
 
-    it('should not render hint paragraph when no hint provided', () => {
+    it('should not render hint paragraph when error code has no hint mapping', () => {
       render(
         <ValidationFeedback result={errorResultNoHint} isValidating={false} />
       );

@@ -20,6 +20,11 @@ vi.mock('@tauri-apps/api/core', () => ({
   invoke: vi.fn(),
 }));
 
+// Mock Tauri event listener for useMenuSettingsListener
+vi.mock('@tauri-apps/api/event', () => ({
+  listen: vi.fn(() => Promise.resolve(() => {})),
+}));
+
 describe('Header', () => {
   beforeEach(async () => {
     useAuthStore.setState({ isSignedIn: false, username: null, plan: null });

@@ -2,6 +2,9 @@
   "app": {
     "title": "InfraBooth Downloader"
   },
+  "common": {
+    "done": "Terminé"
+  },
   "auth": {
     "signIn": "Connexion avec SoundCloud",
     "signOut": "Déconnexion",
@@ -29,6 +32,7 @@
     "signInRequired": "Connectez-vous pour télécharger",
     "validPlaylist": "URL de playlist valide",
     "validTrack": "URL de piste valide",
+    "validShortLink": "Lien SoundCloud valide",
     "validating": "Vérification de l'URL...",
     "fetchingPlaylist": "Chargement de la playlist...",
     "startingDownload": "Démarrage du téléchargement...",
@@ -53,6 +57,10 @@
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",
+    "invalidUrlFormat": "Format d'URL invalide",
+    "invalidUrlHint": "Collez un lien depuis soundcloud.com",
+    "profileNotSupported": "Ceci est un profil, pas une playlist ou une piste",
+    "profileNotSupportedHint": "Essayez de coller un lien de playlist ou de piste",
     "geoBlocked": "Indisponible dans votre région",
     "geoBlockedDetail": "Restriction géographique par le détenteur des droits",
     "geoBlockedNoRetry": "Cette piste ne sera pas réessayée automatiquement",
@@ -84,6 +92,9 @@
     "description": "Personnalisez votre expérience",
     "language": "Langue",
     "languageDescription": "Choisissez votre langue",
+    "languageEnglish": "English",
+    "languageFrench": "Français",
+    "couldNotOpenFolder": "Impossible d'ouvrir le dossier",
     "downloadPath": "Dossier de destination",
     "downloadLocation": "Destination des fichiers",
     "downloadLocationDescription": "Où vos fichiers seront enregistrés",
@@ -139,7 +150,16 @@
     "completionAnnouncement": "Téléchargement terminé, {{completed}} sur {{total}} pistes",
     "rateLimitAnnouncement": "Téléchargement en pause à cause de la limite de débit, reprise imminente",
     "errorAnnouncement": "Erreur : {{message}}",
-    "languageChanged": "Langue changée en {{language}}"
+    "languageChanged": "Langue changée en {{language}}",
+    "loading": "Chargement",
+    "statusPending": "En attente",
+    "statusDownloading": "Téléchargement",
+    "statusConverting": "Conversion",
+    "statusComplete": "Terminé",
+    "statusFailed": "Échec",
+    "statusRateLimited": "Limite atteinte",
+    "trackUnavailableRestriction": "Piste indisponible - restriction externe",
+    "geoRestrictionWarning": "Avertissement de restriction géographique"
   },
   "downloadBar": {
     "clickToChange": "Cliquez pour changer le dossier",

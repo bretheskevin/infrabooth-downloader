@@ -16,10 +16,13 @@ vi.mock('@/features/settings/store', () => ({
 // Mock i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => {
+    t: (key: string, options?: { language?: string }) => {
       const translations: Record<string, string> = {
         'settings.language': 'Language',
         'settings.languageDescription': 'Choose your preferred language',
+        'settings.languageEnglish': 'English',
+        'settings.languageFrench': 'Français',
+        'accessibility.languageChanged': `Language changed to ${options?.language ?? ''}`,
       };
       return translations[key] || key;
     },
@@ -144,7 +147,7 @@ describe('LanguageSection', () => {
 
     const announcement = document.querySelector('[role="status"][aria-live="polite"]');
     expect(announcement).toBeInTheDocument();
-    expect(announcement).toHaveTextContent('Langue changée en français');
+    expect(announcement).toHaveTextContent('Language changed to Français');
   });
 
   it('creates screen reader announcement on language change to English', async () => {
@@ -189,11 +192,11 @@ describe('LanguageSection with French selected', () => {
     mockLanguage = 'fr';
   });
 
-  it('displays Francais when French is selected', () => {
+  it('displays Français when French is selected', () => {
     render(<LanguageSection />);
 
     const selectValue = screen.getByTestId('select-value');
-    expect(selectValue).toHaveTextContent('Francais');
+    expect(selectValue).toHaveTextContent('Français');
   });
 });
 
