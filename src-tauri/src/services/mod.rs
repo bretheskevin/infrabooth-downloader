@@ -1,3 +1,4 @@
+pub mod auth_choice;
 pub mod cancellation;
 pub mod deep_link;
 pub mod dev_server;

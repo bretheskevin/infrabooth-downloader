@@ -29,6 +29,7 @@ pub struct PipelineConfig {
 /// # Arguments
 /// * `app` - Tauri app handle for sidecar access and event emission
 /// * `config` - Pipeline configuration
+/// * `skip_auth` - If true, skip OAuth authentication (download at 128kbps)
 ///
 /// # Returns
 /// The path to the final MP3 file on success.
@@ -38,6 +39,7 @@ pub async fn download_and_convert<R: tauri::Runtime>(
     active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
     cancel_rx: Option<watch::Receiver<bool>>,
     active_pid: Option<Arc<Mutex<Option<u32>>>>,
+    skip_auth: bool,
 ) -> Result<PathBuf, PipelineError> {
     let download_config = TrackDownloadToMp3Config {
         track_url: config.track_url,
@@ -48,7 +50,7 @@ pub async fn download_and_convert<R: tauri::Runtime>(
         title: config.metadata.title.clone(),
     };
 
-    let output_path = download_track_to_mp3(app, download_config, active_child, cancel_rx, active_pid)
+    let output_path = download_track_to_mp3(app, download_config, active_child, cancel_rx, active_pid, skip_auth)
         .await
         .map_err(PipelineError::Download)?;
 

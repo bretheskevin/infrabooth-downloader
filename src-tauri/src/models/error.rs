@@ -77,6 +77,9 @@ pub enum YtDlpError {
 
     #[error("Download cancelled")]
     Cancelled,
+
+    #[error("Authentication refresh failed")]
+    AuthRefreshFailed,
 }
 
 impl HasErrorCode for YtDlpError {
@@ -89,6 +92,7 @@ impl HasErrorCode for YtDlpError {
             YtDlpError::NotFound => "INVALID_URL",
             YtDlpError::AuthRequired => "AUTH_REQUIRED",
             YtDlpError::Cancelled => "CANCELLED",
+            YtDlpError::AuthRefreshFailed => "AUTH_REFRESH_FAILED",
         }
     }
 }

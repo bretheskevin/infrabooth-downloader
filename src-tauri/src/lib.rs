@@ -2,12 +2,15 @@ mod commands;
 mod models;
 mod services;
 
+use std::sync::Arc;
+
 use commands::{
     cancel_download_queue, check_auth_state, check_write_permission, complete_oauth,
-    download_track_full, get_default_download_path, get_playlist_info, get_track_info, sign_out,
-    start_download_queue, start_oauth, test_ffmpeg, test_ytdlp, validate_download_path,
-    validate_soundcloud_url, OAuthState,
+    download_track_full, get_default_download_path, get_playlist_info, get_track_info,
+    respond_to_auth_choice, sign_out, start_download_queue, start_oauth, test_ffmpeg, test_ytdlp,
+    validate_download_path, validate_soundcloud_url, OAuthState,
 };
+use services::auth_choice::AuthChoiceState;
 use services::cancellation::CancellationState;
 use services::deep_link::handle_deep_link;
 use tauri::menu::{Menu, PredefinedMenuItem, Submenu};
@@ -31,6 +34,7 @@ pub fn run() {
         download_track_full,
         start_download_queue,
         cancel_download_queue,
+        respond_to_auth_choice,
         check_write_permission,
         get_default_download_path,
         validate_download_path
@@ -53,6 +57,7 @@ pub fn run() {
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(OAuthState::default())
         .manage(CancellationState::default())
+        .manage(Arc::new(AuthChoiceState::default()))
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);

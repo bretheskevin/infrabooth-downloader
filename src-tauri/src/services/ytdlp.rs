@@ -8,7 +8,7 @@ use tokio::sync::{watch, Mutex};
 use crate::models::error::YtDlpError;
 use crate::models::ErrorResponse;
 use crate::services::sidecar::{bytes_to_string, get_sidecar_version};
-use crate::services::storage::load_tokens;
+use crate::services::storage::{load_tokens, refresh_and_store_tokens};
 
 fn get_ffmpeg_path() -> Option<PathBuf> {
     let exe_path = std::env::current_exe().ok()?;
@@ -123,27 +123,40 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
     cancel_rx: Option<watch::Receiver<bool>>,
     active_pid: Option<Arc<Mutex<Option<u32>>>>,
+    skip_auth: bool,
 ) -> Result<PathBuf, YtDlpError> {
     use crate::services::storage::is_token_expired_or_expiring;
 
-    let tokens = load_tokens().ok().flatten();
+    let valid_tokens = if skip_auth {
+        log::info!("[ytdlp] Skipping auth (user chose standard quality)");
+        None
+    } else {
+        let tokens = load_tokens().ok().flatten();
 
-    match &tokens {
-        Some(t) => {
-            if is_token_expired_or_expiring(t.expires_at) {
-                log::warn!(
-                    "[ytdlp] Token is expired or expiring soon - downloading without auth (128kbps)"
-                );
-            } else {
+        match tokens {
+            Some(t) if is_token_expired_or_expiring(t.expires_at) => {
+                log::info!("[ytdlp] Token expired, attempting refresh...");
+                match refresh_and_store_tokens(&t).await {
+                    Ok(refreshed) => {
+                        log::info!("[ytdlp] Token refreshed successfully");
+                        Some(refreshed)
+                    }
+                    Err(e) => {
+                        log::warn!("[ytdlp] Token refresh failed: {}", e);
+                        return Err(YtDlpError::AuthRefreshFailed);
+                    }
+                }
+            }
+            Some(t) => {
                 log::info!("[ytdlp] Using OAuth token for high quality download");
+                Some(t)
+            }
+            None => {
+                log::info!("[ytdlp] No OAuth token available - downloading without auth (128kbps)");
+                None
             }
         }
-        None => {
-            log::info!("[ytdlp] No OAuth token available - downloading without auth (128kbps)");
-        }
-    }
-
-    let valid_tokens = tokens.filter(|t| !is_token_expired_or_expiring(t.expires_at));
+    };
 
     let output_template = build_output_template(&config.output_dir, &config.playlist_context);
 

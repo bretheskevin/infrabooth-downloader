@@ -183,22 +183,43 @@ async startDownloadQueue(request: StartQueueRequest) : Promise<Result<null, stri
 },
 /**
  * Cancel the current download queue.
- * 
+ *
  * This command cancels the currently running download queue.
  * It will:
  * 1. Set the cancellation flag
  * 2. Kill the currently running yt-dlp process
  * 3. The queue will stop after the current track
- * 
+ *
  * # Arguments
  * * `cancel_state` - Managed cancellation state
- * 
+ *
  * # Returns
  * Ok(()) on success
  */
 async cancelDownloadQueue() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("cancel_download_queue") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Respond to an auth choice prompt during download.
+ *
+ * When a token refresh fails during download, the queue pauses and emits
+ * a `download-auth-needed` event. The frontend should show a dialog and
+ * call this command with the user's choice.
+ *
+ * # Arguments
+ * * `choice` - Either "re_authenticated" (after OAuth completes) or "continue_standard"
+ *
+ * # Returns
+ * Ok(()) on success
+ */
+async respondToAuthChoice(choice: AuthChoice) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("respond_to_auth_choice", { choice }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -240,6 +261,8 @@ async validateDownloadPath(path: string) : Promise<Result<boolean, string>> {
 
 /** user-defined types **/
 
+export type AuthChoice = "re_authenticated" | "continue_standard"
+export type DownloadAuthNeededEvent = { trackId: string; trackTitle: string }
 /**
  * Request payload for downloading a track with full metadata.
  */
