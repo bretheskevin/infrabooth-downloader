@@ -84,7 +84,8 @@
     "groupGeoBlocked": "Bloquées dans votre région",
     "groupUnavailable": "Supprimées ou privées",
     "groupNetwork": "Problème de connexion",
-    "groupOther": "Autres problèmes"
+    "groupOther": "Autres problèmes",
+    "retryTrack": "Réessayer cette piste"
   },
   "settings": {
     "title": "Paramètres",
@@ -120,7 +121,11 @@
     "downloadAnother": "Nouveau téléchargement",
     "failedTracks": "{{count}} pistes n'ont pas pu être téléchargées",
     "failedTracksSingular": "1 piste n'a pas pu être téléchargée",
-    "viewFailed": "Voir les détails"
+    "viewFailed": "Voir les détails",
+    "retryFailed": "Réessayer ({{count}})",
+    "retryAll": "Tout réessayer",
+    "tracksNeedAttention_one": "{{count}} piste en échec",
+    "tracksNeedAttention_other": "{{count}} pistes en échec"
   },
   "progress": {
     "trackList": {
