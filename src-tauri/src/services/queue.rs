@@ -163,7 +163,16 @@ impl DownloadQueue {
                 playlist_context,
             };
 
-            match download_and_convert(&app, config, Some(active_child.clone()), Some(cancel_rx.clone()), Some(active_pid.clone()), skip_auth.load(Ordering::SeqCst)).await {
+            match download_and_convert(
+                &app,
+                config,
+                Some(active_child.clone()),
+                Some(cancel_rx.clone()),
+                Some(active_pid.clone()),
+                skip_auth.load(Ordering::SeqCst),
+            )
+            .await
+            {
                 Ok(_) => {
                     let _ = app.emit(
                         "download-progress",
@@ -212,7 +221,10 @@ impl DownloadQueue {
                     continue; // Retry same track, don't increment index
                 }
                 Err(PipelineError::Download(YtDlpError::AuthRefreshFailed)) => {
-                    log::info!("[queue] Auth refresh failed for track {}, waiting for user choice", item.track_id);
+                    log::info!(
+                        "[queue] Auth refresh failed for track {}, waiting for user choice",
+                        item.track_id
+                    );
 
                     auth_choice_state.set_pending(true).await;
                     let _ = app.emit(

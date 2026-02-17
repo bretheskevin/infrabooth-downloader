@@ -28,5 +28,6 @@
     "noUncheckedIndexedAccess": true
   },
   "include": ["src"],
+  "exclude": ["src/bindings.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

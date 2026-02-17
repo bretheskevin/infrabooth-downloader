@@ -50,9 +50,16 @@ pub async fn download_and_convert<R: tauri::Runtime>(
         title: config.metadata.title.clone(),
     };
 
-    let output_path = download_track_to_mp3(app, download_config, active_child, cancel_rx, active_pid, skip_auth)
-        .await
-        .map_err(PipelineError::Download)?;
+    let output_path = download_track_to_mp3(
+        app,
+        download_config,
+        active_child,
+        cancel_rx,
+        active_pid,
+        skip_auth,
+    )
+    .await
+    .map_err(PipelineError::Download)?;
 
     // Embed metadata (graceful degradation - log errors but don't fail)
     if let Err(e) = embed_metadata(&output_path, config.metadata).await {
