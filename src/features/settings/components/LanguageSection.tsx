@@ -10,8 +10,8 @@ import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/features/settings/store';
 
 const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English' },
-  { code: 'fr', label: 'Francais' },
+  { code: 'en', labelKey: 'settings.languageEnglish' },
+  { code: 'fr', labelKey: 'settings.languageFrench' },
 ] as const;
 
 export function LanguageSection() {
@@ -19,24 +19,22 @@ export function LanguageSection() {
   const language = useSettingsStore((state) => state.language);
   const setLanguage = useSettingsStore((state) => state.setLanguage);
 
-  const currentLabel =
-    SUPPORTED_LANGUAGES.find((lang) => lang.code === language)?.label ?? 'English';
+  const currentLabelKey =
+    SUPPORTED_LANGUAGES.find((lang) => lang.code === language)?.labelKey ?? 'settings.languageEnglish';
 
   const handleLanguageChange = (newLanguage: string) => {
     setLanguage(newLanguage as 'en' | 'fr');
     i18n.changeLanguage(newLanguage);
     document.documentElement.lang = newLanguage;
 
-    // Announce to screen readers
+    // Announce to screen readers using translation
     const announcement = document.createElement('div');
     announcement.setAttribute('role', 'status');
     announcement.setAttribute('aria-live', 'polite');
     announcement.setAttribute('aria-atomic', 'true');
     announcement.className = 'sr-only';
-    announcement.textContent =
-      newLanguage === 'en'
-        ? 'Language changed to English'
-        : 'Langue changée en français';
+    const languageName = newLanguage === 'en' ? 'English' : 'Français';
+    announcement.textContent = t('accessibility.languageChanged', { language: languageName });
     document.body.appendChild(announcement);
     setTimeout(() => announcement.remove(), 1000);
   };
@@ -54,12 +52,12 @@ export function LanguageSection() {
 
       <Select value={language} onValueChange={handleLanguageChange}>
         <SelectTrigger id="language-select" className="w-[180px]">
-          <SelectValue>{currentLabel}</SelectValue>
+          <SelectValue>{t(currentLabelKey)}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {SUPPORTED_LANGUAGES.map((lang) => (
             <SelectItem key={lang.code} value={lang.code}>
-              {lang.label}
+              {t(lang.labelKey)}
             </SelectItem>
           ))}
         </SelectContent>
