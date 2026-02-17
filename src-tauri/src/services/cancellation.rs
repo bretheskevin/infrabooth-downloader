@@ -84,11 +84,12 @@ fn kill_process_tree(pid: u32) {
             .output();
 
         // Then kill the main process
-        let _ = Command::new("kill")
-            .args(["-9", &pid.to_string()])
-            .output();
+        let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
 
-        log::info!("[cancellation] Sent SIGKILL to process {} and children", pid);
+        log::info!(
+            "[cancellation] Sent SIGKILL to process {} and children",
+            pid
+        );
     }
 
     #[cfg(windows)]
@@ -100,6 +101,9 @@ fn kill_process_tree(pid: u32) {
             .args(["/F", "/T", "/PID", &pid.to_string()])
             .output();
 
-        log::info!("[cancellation] Sent taskkill to process {} and children", pid);
+        log::info!(
+            "[cancellation] Sent taskkill to process {} and children",
+            pid
+        );
     }
 }

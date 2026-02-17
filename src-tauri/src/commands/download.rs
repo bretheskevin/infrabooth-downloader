@@ -81,22 +81,24 @@ pub async fn download_track_full(
         playlist_context: None, // Single track download
     };
 
-    let result_path = download_and_convert(&app, config, None, None, None, false).await.map_err(|e| {
-        // Emit error status
-        let _ = app.emit(
-            "download-progress",
-            DownloadProgressEvent {
-                track_id: track_id.clone(),
-                status: "failed".to_string(),
-                percent: None,
-                error: Some(ErrorResponse {
-                    code: e.code().to_string(),
-                    message: e.to_string(),
-                }),
-            },
-        );
-        ErrorResponse::from(e)
-    })?;
+    let result_path = download_and_convert(&app, config, None, None, None, false)
+        .await
+        .map_err(|e| {
+            // Emit error status
+            let _ = app.emit(
+                "download-progress",
+                DownloadProgressEvent {
+                    track_id: track_id.clone(),
+                    status: "failed".to_string(),
+                    percent: None,
+                    error: Some(ErrorResponse {
+                        code: e.code().to_string(),
+                        message: e.to_string(),
+                    }),
+                },
+            );
+            ErrorResponse::from(e)
+        })?;
 
     // Emit complete status
     let _ = app.emit(
@@ -188,7 +190,17 @@ pub async fn start_download_queue(
 
     // Run queue processing in background
     tokio::spawn(async move {
-        queue.process(app, output_dir, cancel_rx, active_child, active_pid, auth_choice, skip_auth).await;
+        queue
+            .process(
+                app,
+                output_dir,
+                cancel_rx,
+                active_child,
+                active_pid,
+                auth_choice,
+                skip_auth,
+            )
+            .await;
     });
 
     Ok(())
