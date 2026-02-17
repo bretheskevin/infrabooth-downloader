@@ -46,10 +46,18 @@ pub enum PlaylistError {
     AuthRequired,
 }
 
-/// User information from SoundCloud API.
+/// User information from SoundCloud API (public).
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct UserInfo {
     pub username: String,
+}
+
+/// Raw user information from SoundCloud API.
+/// Used for deserializing the API response with avatar_url.
+#[derive(Debug, Clone, Deserialize)]
+struct RawUserInfo {
+    pub username: String,
+    pub avatar_url: Option<String>,
 }
 
 /// Publisher metadata from SoundCloud API.
@@ -66,7 +74,7 @@ pub struct PublisherMetadata {
 struct RawTrackInfo {
     pub id: u64,
     pub title: String,
-    pub user: UserInfo,
+    pub user: RawUserInfo,
     pub artwork_url: Option<String>,
     /// Duration in milliseconds.
     pub duration: u64,
@@ -94,13 +102,16 @@ impl From<RawTrackInfo> for TrackInfo {
             .filter(|a| !a.is_empty())
             .unwrap_or_else(|| raw.user.username.clone());
 
+        // Use track artwork if available, otherwise fall back to user avatar
+        let artwork = raw.artwork_url.or(raw.user.avatar_url);
+
         TrackInfo {
             id: raw.id,
             title: raw.title,
             user: UserInfo {
                 username: artist_name,
             },
-            artwork_url: raw.artwork_url,
+            artwork_url: artwork,
             duration: raw.duration,
         }
     }
@@ -112,7 +123,7 @@ impl From<RawTrackInfo> for TrackInfo {
 struct RawPlaylistInfo {
     pub id: u64,
     pub title: String,
-    pub user: UserInfo,
+    pub user: RawUserInfo,
     pub artwork_url: Option<String>,
     pub track_count: u32,
     pub tracks: Vec<RawTrackInfo>,
@@ -134,7 +145,9 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
         PlaylistInfo {
             id: raw.id,
             title: raw.title,
-            user: raw.user,
+            user: UserInfo {
+                username: raw.user.username,
+            },
             artwork_url: raw.artwork_url,
             track_count: raw.track_count,
             tracks: raw.tracks.into_iter().map(TrackInfo::from).collect(),
@@ -360,6 +373,40 @@ mod tests {
         let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
         let track = TrackInfo::from(raw);
         assert!(track.artwork_url.is_none());
+    }
+
+    #[test]
+    fn test_track_artwork_falls_back_to_user_avatar() {
+        let json = r#"{
+            "id": 123456,
+            "title": "Test Track",
+            "user": {"username": "test_artist", "avatar_url": "https://i1.sndcdn.com/avatars-xxx.jpg"},
+            "artwork_url": null,
+            "duration": 180000
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert_eq!(
+            track.artwork_url,
+            Some("https://i1.sndcdn.com/avatars-xxx.jpg".to_string())
+        );
+    }
+
+    #[test]
+    fn test_track_artwork_prefers_track_artwork_over_avatar() {
+        let json = r#"{
+            "id": 123456,
+            "title": "Test Track",
+            "user": {"username": "test_artist", "avatar_url": "https://i1.sndcdn.com/avatars-xxx.jpg"},
+            "artwork_url": "https://i1.sndcdn.com/artworks-yyy.jpg",
+            "duration": 180000
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert_eq!(
+            track.artwork_url,
+            Some("https://i1.sndcdn.com/artworks-yyy.jpg".to_string())
+        );
     }
 
     #[test]
