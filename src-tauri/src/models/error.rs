@@ -67,9 +67,11 @@ pub enum YtDlpError {
     #[error("Content is geo-blocked")]
     GeoBlocked,
 
+    #[allow(dead_code)]
     #[error("Track not found")]
     NotFound,
 
+    #[allow(dead_code)]
     #[error("Authentication required")]
     AuthRequired,
 

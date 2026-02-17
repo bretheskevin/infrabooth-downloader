@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::process::CommandChild;
@@ -71,7 +71,7 @@ pub struct DownloadProgressEvent {
 }
 
 fn build_output_template(
-    output_dir: &PathBuf,
+    output_dir: &Path,
     playlist_context: &Option<PlaylistContext>,
 ) -> String {
     let dir_str = output_dir.to_string_lossy();

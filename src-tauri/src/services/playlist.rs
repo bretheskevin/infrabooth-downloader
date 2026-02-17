@@ -12,10 +12,11 @@ use specta::Type;
 use thiserror::Error;
 
 use crate::services::oauth::{get_app_token, get_client_secret};
-use crate::services::storage::{is_token_expired_or_expiring, load_tokens};
+use crate::services::storage::{current_timestamp, is_token_expired_or_expiring, load_tokens};
 
 #[derive(Debug, Deserialize)]
 struct ResolveResponse {
+    #[allow(dead_code)]
     status: Option<String>,
     location: Option<String>,
 }
@@ -148,13 +149,6 @@ struct CachedAppToken {
 }
 
 static APP_TOKEN_CACHE: Lazy<Mutex<Option<CachedAppToken>>> = Lazy::new(|| Mutex::new(None));
-
-fn current_timestamp() -> u64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs()
-}
 
 /// Gets a valid app token, fetching a new one if needed.
 async fn get_cached_app_token() -> Result<String, PlaylistError> {

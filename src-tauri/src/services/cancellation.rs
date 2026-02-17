@@ -20,10 +20,6 @@ impl CancellationState {
         }
     }
 
-    pub fn is_cancelled(&self) -> bool {
-        *self.receiver.borrow()
-    }
-
     pub fn subscribe(&self) -> watch::Receiver<bool> {
         self.receiver.clone()
     }
