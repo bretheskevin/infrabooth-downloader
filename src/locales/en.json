@@ -14,7 +14,7 @@
     "loading": "Loading...",
     "openingBrowser": "Opening browser...",
     "sessionExpired": "Session Expired",
-    "sessionExpiredDescription": "Your session has expired during download. Sign in again to continue with high quality (320kbps), or continue with standard quality (128kbps).",
+    "sessionExpiredDescription": "Your session has expired during download. Sign in again to continue with high quality, or continue with standard quality.",
     "signInAgain": "Sign In Again",
     "continueStandard": "Continue Standard Quality"
   },
