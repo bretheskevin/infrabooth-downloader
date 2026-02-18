@@ -17,9 +17,6 @@ export function Header() {
     <header className="bg-background border-b border-border/50">
       <div className="flex items-center justify-between px-6 py-4 max-w-3xl mx-auto">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-            <div className="h-4 w-4 rounded-sm bg-primary" />
-          </div>
           <h1 className="text-lg font-semibold tracking-tight">{t('app.title')}</h1>
         </div>
 
