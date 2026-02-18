@@ -11,8 +11,27 @@ export const ERROR_CODE_TO_I18N_KEY: Record<ErrorCode, string> = {
   AUTH_REQUIRED: 'errors.notSignedIn',
 };
 
+export const ERROR_CODE_TO_DETAIL_KEY: Partial<Record<ErrorCode, string>> = {
+  GEO_BLOCKED: 'errors.geoBlockedDetail',
+  DOWNLOAD_FAILED: 'errors.trackUnavailableDetail',
+};
+
 export function getErrorMessage(code: ErrorCode, t: TFunction): string {
   return t(ERROR_CODE_TO_I18N_KEY[code]);
+}
+
+export function getErrorDisplayMessage(error: AppError | undefined, t: TFunction): string | null {
+  if (!error) return null;
+  return t(ERROR_CODE_TO_I18N_KEY[error.code] || 'errors.downloadFailed');
+}
+
+export function getErrorDetailMessage(error: AppError | undefined, t: TFunction): string | null {
+  if (!error) return null;
+  const detailKey = ERROR_CODE_TO_DETAIL_KEY[error.code];
+  if (detailKey) {
+    return t(detailKey);
+  }
+  return null;
 }
 
 export function getErrorSeverity(code?: ErrorCode): 'warning' | 'error' {
