@@ -8,6 +8,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { useTranslation } from 'react-i18next';
 import { LanguageSection } from './LanguageSection';
+import { ThemeSection } from './ThemeSection';
 import { DownloadLocationSection } from './DownloadLocationSection';
 
 interface SettingsPanelProps {
@@ -34,6 +35,8 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
 
         <div className="mt-6 space-y-6">
           <LanguageSection />
+          <Separator />
+          <ThemeSection />
           <Separator />
           <DownloadLocationSection />
         </div>
