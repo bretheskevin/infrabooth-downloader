@@ -1,4 +1,5 @@
 export { useLanguageSync } from '@/features/settings/hooks/useLanguageSync';
+export { useThemeSync } from '@/features/settings/hooks/useThemeSync';
 export { useAuthCallback } from '@/features/auth/hooks/useAuthCallback';
 export { useAuthStateListener } from '@/features/auth/hooks/useAuthStateListener';
 export { useOAuthFlow } from '@/features/auth/hooks/useOAuthFlow';
