@@ -78,9 +78,9 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
     <div className="space-y-2" data-testid="download-bar">
       <div
         className={cn(
-          'flex items-center gap-2 p-3 rounded-lg',
-          'bg-muted/50 border border-border/50',
-          'transition-colors'
+          'flex items-center gap-3 p-3 rounded-xl',
+          'bg-secondary/50 border border-border/30',
+          'transition-all duration-200'
         )}
       >
         <TooltipProvider>
@@ -91,22 +91,26 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
                 onClick={handleChangeFolder}
                 disabled={isDownloading}
                 className={cn(
-                  'flex items-center gap-2 flex-1 min-w-0 text-left',
-                  'hover:text-primary transition-colors',
+                  'flex items-center gap-2.5 flex-1 min-w-0 text-left px-2 py-1.5 -ml-2 rounded-lg',
+                  'hover:bg-secondary transition-colors',
                   'disabled:opacity-50 disabled:cursor-not-allowed',
-                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm'
+                  'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                 )}
                 aria-label={t('settings.selectFolder')}
                 data-testid="folder-selector"
               >
-                <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="truncate text-sm font-medium">{folderName}</span>
-                {isOverridden && (
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    ({t('downloadBar.customLocation')})
-                  </span>
-                )}
-                <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Folder className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="block truncate text-sm font-medium">{folderName}</span>
+                  {isOverridden && (
+                    <span className="block text-xs text-muted-foreground">
+                      {t('downloadBar.customLocation')}
+                    </span>
+                  )}
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs">
@@ -116,13 +120,13 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
           </Tooltip>
         </TooltipProvider>
 
-        <div className="h-6 w-px bg-border shrink-0" />
+        <div className="h-8 w-px bg-border/50 shrink-0" />
 
         <Button
           onClick={handleDownloadClick}
           disabled={isDownloading || !currentPath}
-          size="sm"
-          className="shrink-0 gap-2"
+          size="lg"
+          className="shrink-0 gap-2 rounded-xl px-6 shadow-sm hover:shadow-md transition-all"
           data-testid="download-button"
         >
           {isDownloading ? (

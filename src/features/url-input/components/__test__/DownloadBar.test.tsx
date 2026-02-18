@@ -137,7 +137,7 @@ describe('DownloadBar', () => {
       fireEvent.click(screen.getByTestId('folder-selector'));
 
       await waitFor(() => {
-        expect(screen.getByText('(custom)')).toBeInTheDocument();
+        expect(screen.getByText('custom')).toBeInTheDocument();
       });
     });
 

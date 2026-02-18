@@ -70,11 +70,11 @@ describe('UrlInput', () => {
     expect(input).toBeDisabled();
   });
 
-  it('should have prominent height styling h-12 (AC #1)', () => {
+  it('should have prominent height styling h-14 (AC #1)', () => {
     render(<UrlInput onUrlChange={mockOnUrlChange} />);
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-    expect(input).toHaveClass('h-12');
+    expect(input).toHaveClass('h-14');
   });
 
   it('should have readable text size text-base (AC #1)', () => {
@@ -89,7 +89,7 @@ describe('UrlInput', () => {
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toHaveClass('focus-visible:ring-2');
-    expect(input).toHaveClass('focus-visible:ring-primary');
+    expect(input).toHaveClass('focus-visible:ring-primary/30');
   });
 
   it('should accept custom className', () => {
@@ -119,8 +119,8 @@ describe('UrlInput', () => {
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       expect(input).toHaveClass('border-primary');
-      expect(input).toHaveClass('ring-1');
-      expect(input).toHaveClass('ring-primary');
+      expect(input).toHaveClass('ring-2');
+      expect(input).toHaveClass('ring-primary/30');
     });
 
     it('should show loading spinner when validating (AC #1)', () => {
@@ -153,8 +153,8 @@ describe('UrlInput', () => {
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       expect(input).toHaveClass('border-success');
-      expect(input).toHaveClass('ring-1');
-      expect(input).toHaveClass('ring-success');
+      expect(input).toHaveClass('ring-2');
+      expect(input).toHaveClass('ring-success/30');
     });
 
     it('should show destructive border on error (AC #3)', () => {
@@ -178,8 +178,8 @@ describe('UrlInput', () => {
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       expect(input).toHaveClass('border-destructive');
-      expect(input).toHaveClass('ring-1');
-      expect(input).toHaveClass('ring-destructive');
+      expect(input).toHaveClass('ring-2');
+      expect(input).toHaveClass('ring-destructive/30');
     });
 
     it('should not show spinner when not validating', () => {
@@ -199,8 +199,8 @@ describe('UrlInput', () => {
       render(<UrlInput onUrlChange={mockOnUrlChange} />);
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
-      expect(input).toHaveClass('transition-colors');
-      expect(input).toHaveClass('duration-200');
+      expect(input).toHaveClass('transition-all');
+      expect(input).toHaveClass('duration-300');
     });
   });
 });
