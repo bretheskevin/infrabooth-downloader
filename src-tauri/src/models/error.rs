@@ -55,7 +55,7 @@ impl HasErrorCode for MetadataError {
 
 #[derive(Debug, Error, Serialize)]
 pub enum YtDlpError {
-    #[error("Download failed: {0}")]
+    #[error("{0}")]
     DownloadFailed(String),
 
     #[error("yt-dlp binary not found")]
@@ -64,16 +64,24 @@ pub enum YtDlpError {
     #[error("Rate limited by SoundCloud")]
     RateLimited,
 
-    #[error("Content is geo-blocked")]
-    GeoBlocked,
+    #[error("{0}")]
+    GeoBlocked(String),
+
+    #[error("{0}")]
+    TrackUnavailable(String),
+
+    #[error("{0}")]
+    NetworkError(String),
+
+    #[error("{0}")]
+    ConversionFailed(String),
 
     #[allow(dead_code)]
     #[error("Track not found")]
     NotFound,
 
-    #[allow(dead_code)]
-    #[error("Authentication required")]
-    AuthRequired,
+    #[error("{0}")]
+    AuthRequired(String),
 
     #[error("Download cancelled")]
     Cancelled,
@@ -88,9 +96,12 @@ impl HasErrorCode for YtDlpError {
             YtDlpError::DownloadFailed(_) => "DOWNLOAD_FAILED",
             YtDlpError::BinaryNotFound => "DOWNLOAD_FAILED",
             YtDlpError::RateLimited => "RATE_LIMITED",
-            YtDlpError::GeoBlocked => "GEO_BLOCKED",
+            YtDlpError::GeoBlocked(_) => "GEO_BLOCKED",
+            YtDlpError::TrackUnavailable(_) => "DOWNLOAD_FAILED",
+            YtDlpError::NetworkError(_) => "NETWORK_ERROR",
+            YtDlpError::ConversionFailed(_) => "CONVERSION_FAILED",
             YtDlpError::NotFound => "INVALID_URL",
-            YtDlpError::AuthRequired => "AUTH_REQUIRED",
+            YtDlpError::AuthRequired(_) => "AUTH_REQUIRED",
             YtDlpError::Cancelled => "CANCELLED",
             YtDlpError::AuthRefreshFailed => "AUTH_REFRESH_FAILED",
         }
@@ -226,7 +237,7 @@ mod tests {
     #[test]
     fn test_ytdlp_download_failed_error_message() {
         let err = YtDlpError::DownloadFailed("Connection timeout".to_string());
-        assert_eq!(err.to_string(), "Download failed: Connection timeout");
+        assert_eq!(err.to_string(), "Connection timeout");
     }
 
     #[test]
@@ -243,16 +254,16 @@ mod tests {
 
     #[test]
     fn test_ytdlp_geo_blocked_error_message() {
-        let err = YtDlpError::GeoBlocked;
-        assert_eq!(err.to_string(), "Content is geo-blocked");
+        let err = YtDlpError::GeoBlocked("Not available in your region".to_string());
+        assert_eq!(err.to_string(), "Not available in your region");
     }
 
     #[test]
     fn test_error_response_from_ytdlp_download_failed() {
-        let err = YtDlpError::DownloadFailed("test".to_string());
+        let err = YtDlpError::DownloadFailed("test error".to_string());
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "DOWNLOAD_FAILED");
-        assert!(response.message.contains("Download failed"));
+        assert_eq!(response.message, "test error");
     }
 
     #[test]
@@ -271,7 +282,7 @@ mod tests {
 
     #[test]
     fn test_error_response_from_ytdlp_geo_blocked() {
-        let err = YtDlpError::GeoBlocked;
+        let err = YtDlpError::GeoBlocked("Geographic restriction".to_string());
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "GEO_BLOCKED");
     }
@@ -291,13 +302,13 @@ mod tests {
 
     #[test]
     fn test_ytdlp_auth_required_error_message() {
-        let err = YtDlpError::AuthRequired;
-        assert_eq!(err.to_string(), "Authentication required");
+        let err = YtDlpError::AuthRequired("Sign in required to access this content".to_string());
+        assert_eq!(err.to_string(), "Sign in required to access this content");
     }
 
     #[test]
     fn test_error_response_from_ytdlp_auth_required() {
-        let err = YtDlpError::AuthRequired;
+        let err = YtDlpError::AuthRequired("Sign in required".to_string());
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "AUTH_REQUIRED");
     }
@@ -310,9 +321,27 @@ mod tests {
         );
         assert_eq!(YtDlpError::BinaryNotFound.code(), "DOWNLOAD_FAILED");
         assert_eq!(YtDlpError::RateLimited.code(), "RATE_LIMITED");
-        assert_eq!(YtDlpError::GeoBlocked.code(), "GEO_BLOCKED");
+        assert_eq!(
+            YtDlpError::GeoBlocked("test".to_string()).code(),
+            "GEO_BLOCKED"
+        );
+        assert_eq!(
+            YtDlpError::TrackUnavailable("test".to_string()).code(),
+            "DOWNLOAD_FAILED"
+        );
+        assert_eq!(
+            YtDlpError::NetworkError("test".to_string()).code(),
+            "NETWORK_ERROR"
+        );
+        assert_eq!(
+            YtDlpError::ConversionFailed("test".to_string()).code(),
+            "CONVERSION_FAILED"
+        );
         assert_eq!(YtDlpError::NotFound.code(), "INVALID_URL");
-        assert_eq!(YtDlpError::AuthRequired.code(), "AUTH_REQUIRED");
+        assert_eq!(
+            YtDlpError::AuthRequired("test".to_string()).code(),
+            "AUTH_REQUIRED"
+        );
     }
 
     #[test]
@@ -330,13 +359,13 @@ mod tests {
 
     #[test]
     fn test_pipeline_download_error_message() {
-        let err = PipelineError::Download(YtDlpError::DownloadFailed("test".to_string()));
-        assert!(err.to_string().contains("Download failed"));
+        let err = PipelineError::Download(YtDlpError::DownloadFailed("test error".to_string()));
+        assert_eq!(err.to_string(), "Download failed: test error");
     }
 
     #[test]
     fn test_pipeline_error_code_download() {
-        let err = PipelineError::Download(YtDlpError::GeoBlocked);
+        let err = PipelineError::Download(YtDlpError::GeoBlocked("test".to_string()));
         assert_eq!(err.code(), "GEO_BLOCKED");
     }
 

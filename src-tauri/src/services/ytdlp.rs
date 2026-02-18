@@ -121,21 +121,30 @@ fn build_output_template(
     }
 }
 
-fn classify_stderr_error(line: &str, not_found_msg: &str) -> Option<YtDlpError> {
-    if detect_geo_block(line).is_some() {
-        return Some(YtDlpError::GeoBlocked);
+fn classify_stderr_error(line: &str) -> Option<YtDlpError> {
+    if let Some(msg) = detect_geo_block(line) {
+        return Some(YtDlpError::GeoBlocked(msg));
     }
     if line.contains("HTTP Error 403") {
-        return Some(YtDlpError::GeoBlocked);
+        return Some(YtDlpError::GeoBlocked("HTTP 403 Forbidden".to_string()));
     }
     if line.contains("HTTP Error 429") || line.contains("rate limit") {
         return Some(YtDlpError::RateLimited);
     }
-    if let Some(reason) = detect_unavailability(line) {
-        return Some(YtDlpError::DownloadFailed(reason));
+    if let Some(msg) = detect_auth_required(line) {
+        return Some(YtDlpError::AuthRequired(msg));
+    }
+    if let Some(msg) = detect_network_error(line) {
+        return Some(YtDlpError::NetworkError(msg));
+    }
+    if let Some(msg) = detect_conversion_error(line) {
+        return Some(YtDlpError::ConversionFailed(msg));
+    }
+    if let Some(msg) = detect_unavailability(line) {
+        return Some(YtDlpError::TrackUnavailable(msg));
     }
     if line.contains("HTTP Error 404") {
-        return Some(YtDlpError::DownloadFailed(not_found_msg.to_string()));
+        return Some(YtDlpError::TrackUnavailable("HTTP 404 Not Found".to_string()));
     }
     None
 }
@@ -253,7 +262,6 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
 
     let mut last_error: Option<String> = None;
     let mut output_path: Option<PathBuf> = None;
-    let not_found_msg = "Track unavailable - may have been removed or made private";
 
     loop {
         // Check for cancellation at each iteration
@@ -303,7 +311,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                 log::info!("yt-dlp stderr: {}", line);
                 last_error = Some(line.clone());
 
-                if let Some(err) = classify_stderr_error(&line, not_found_msg) {
+                if let Some(err) = classify_stderr_error(&line) {
                     log::info!("Track {} error: {}", config.track_id, err);
                     return Err(err);
                 }
@@ -357,6 +365,17 @@ fn parse_destination(line: &str) -> Option<String> {
         line.split("Destination:")
             .nth(1)
             .map(|s| s.trim().to_string())
+    } else if line.contains("has already been downloaded") {
+        let path = line
+            .trim_start_matches("[download]")
+            .trim()
+            .trim_end_matches("has already been downloaded")
+            .trim();
+        if !path.is_empty() {
+            Some(path.to_string())
+        } else {
+            None
+        }
     } else {
         None
     }
@@ -384,26 +403,126 @@ fn detect_geo_block(stderr: &str) -> Option<String> {
 }
 
 fn detect_unavailability(stderr: &str) -> Option<String> {
-    let patterns = [
-        "video unavailable",
-        "this video is not available",
-        "private video",
-        "this track was removed",
-        "does not exist",
-        "video is unavailable",
-        "content is not available",
-        "has been removed",
-        "no longer available",
-        "track is private",
-        "is private",
-    ];
-
     let stderr_lower = stderr.to_lowercase();
-    for pattern in patterns {
+
+    let removed_patterns = [
+        "this track was removed",
+        "has been removed",
+        "was removed by",
+        "been deleted",
+    ];
+    for pattern in removed_patterns {
         if stderr_lower.contains(pattern) {
-            return Some("Track unavailable - may have been removed or made private".to_string());
+            return Some("Track was removed by the uploader".to_string());
         }
     }
+
+    let private_patterns = ["private video", "track is private", "is private", "private track"];
+    for pattern in private_patterns {
+        if stderr_lower.contains(pattern) {
+            return Some("Track is private".to_string());
+        }
+    }
+
+    let not_exist_patterns = [
+        "does not exist",
+        "no longer available",
+        "video unavailable",
+        "this video is not available",
+        "video is unavailable",
+        "content is not available",
+    ];
+    for pattern in not_exist_patterns {
+        if stderr_lower.contains(pattern) {
+            return Some("Track no longer exists".to_string());
+        }
+    }
+
+    None
+}
+
+fn detect_auth_required(stderr: &str) -> Option<String> {
+    let stderr_lower = stderr.to_lowercase();
+    let patterns = [
+        "sign in",
+        "login required",
+        "authentication required",
+        "age verification",
+        "confirm your age",
+        "age-restricted",
+        "age restricted",
+        "must be logged in",
+    ];
+
+    for pattern in patterns {
+        if stderr_lower.contains(pattern) {
+            return Some("Authentication or age verification required".to_string());
+        }
+    }
+    None
+}
+
+fn detect_network_error(stderr: &str) -> Option<String> {
+    let stderr_lower = stderr.to_lowercase();
+
+    if !stderr_lower.contains("error") {
+        return None;
+    }
+
+    if stderr_lower.contains("timed out") || stderr_lower.contains("timeout") {
+        return Some("Connection timed out".to_string());
+    }
+    if stderr_lower.contains("connection reset") {
+        return Some("Connection was reset".to_string());
+    }
+    if stderr_lower.contains("connection refused") {
+        return Some("Connection refused".to_string());
+    }
+    if stderr_lower.contains("no route to host") || stderr_lower.contains("network is unreachable")
+    {
+        return Some("Network is unreachable".to_string());
+    }
+    if stderr_lower.contains("name or service not known")
+        || stderr_lower.contains("could not resolve")
+    {
+        return Some("DNS resolution failed".to_string());
+    }
+    if stderr_lower.contains("ssl error")
+        || stderr_lower.contains("ssl_error")
+        || stderr_lower.contains("certificate verify failed")
+        || stderr_lower.contains("certificate has expired")
+    {
+        return Some("SSL/TLS error".to_string());
+    }
+    if stderr_lower.contains("http error 5") {
+        return Some("Server error".to_string());
+    }
+
+    None
+}
+
+fn detect_conversion_error(stderr: &str) -> Option<String> {
+    let stderr_lower = stderr.to_lowercase();
+
+    if stderr_lower.contains("invalid data found") {
+        return Some("Invalid or corrupted audio data".to_string());
+    }
+    if stderr_lower.contains("conversion failed") {
+        return Some("Audio conversion failed".to_string());
+    }
+    if stderr_lower.contains("encoder") && stderr_lower.contains("not found") {
+        return Some("Audio encoder not found".to_string());
+    }
+    if stderr_lower.contains("unsupported codec") || stderr_lower.contains("unknown codec") {
+        return Some("Unsupported audio format".to_string());
+    }
+    if stderr_lower.contains("no space left") || stderr_lower.contains("disk full") {
+        return Some("Disk is full".to_string());
+    }
+    if stderr_lower.contains("permission denied") && stderr_lower.contains("ffmpeg") {
+        return Some("Cannot write output file".to_string());
+    }
+
     None
 }
 
@@ -534,6 +653,15 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_destination_already_downloaded() {
+        let line = "[download] /Users/test/Music/Artist - Track.mp3 has already been downloaded";
+        assert_eq!(
+            parse_destination(line),
+            Some("/Users/test/Music/Artist - Track.mp3".to_string())
+        );
+    }
+
+    #[test]
     fn test_parse_progress_valid_line() {
         let line = "[download]  50.0% of 5.00MiB at 1.00MiB/s ETA 00:02";
         let progress = parse_progress(line).expect("Should parse valid progress");
@@ -572,8 +700,8 @@ mod tests {
     fn test_classify_stderr_error_geo_block() {
         let line = "ERROR: This track is not available in your country";
         assert!(matches!(
-            classify_stderr_error(line, "Not found"),
-            Some(YtDlpError::GeoBlocked)
+            classify_stderr_error(line),
+            Some(YtDlpError::GeoBlocked(_))
         ));
     }
 
@@ -581,8 +709,8 @@ mod tests {
     fn test_classify_stderr_error_403() {
         let line = "ERROR: HTTP Error 403: Forbidden";
         assert!(matches!(
-            classify_stderr_error(line, "Not found"),
-            Some(YtDlpError::GeoBlocked)
+            classify_stderr_error(line),
+            Some(YtDlpError::GeoBlocked(_))
         ));
     }
 
@@ -590,7 +718,7 @@ mod tests {
     fn test_classify_stderr_error_rate_limit() {
         let line = "ERROR: HTTP Error 429: rate limit exceeded";
         assert!(matches!(
-            classify_stderr_error(line, "Not found"),
+            classify_stderr_error(line),
             Some(YtDlpError::RateLimited)
         ));
     }
@@ -599,25 +727,51 @@ mod tests {
     fn test_classify_stderr_error_unavailable() {
         let line = "ERROR: Video unavailable";
         assert!(matches!(
-            classify_stderr_error(line, "Not found"),
-            Some(YtDlpError::DownloadFailed(_))
+            classify_stderr_error(line),
+            Some(YtDlpError::TrackUnavailable(_))
         ));
     }
 
     #[test]
-    fn test_classify_stderr_error_404_uses_custom_msg() {
+    fn test_classify_stderr_error_404() {
         let line = "ERROR: HTTP Error 404: Not Found";
-        let err = classify_stderr_error(line, "Playlist not found");
-        match err {
-            Some(YtDlpError::DownloadFailed(msg)) => assert_eq!(msg, "Playlist not found"),
-            _ => panic!("Expected DownloadFailed with custom message"),
-        }
+        assert!(matches!(
+            classify_stderr_error(line),
+            Some(YtDlpError::TrackUnavailable(_))
+        ));
     }
 
     #[test]
     fn test_classify_stderr_error_no_match() {
         let line = "WARNING: [soundcloud] Extracting URL";
-        assert!(classify_stderr_error(line, "Not found").is_none());
+        assert!(classify_stderr_error(line).is_none());
+    }
+
+    #[test]
+    fn test_classify_stderr_error_auth_required() {
+        let line = "ERROR: Sign in to confirm your age";
+        assert!(matches!(
+            classify_stderr_error(line),
+            Some(YtDlpError::AuthRequired(_))
+        ));
+    }
+
+    #[test]
+    fn test_classify_stderr_error_network_timeout() {
+        let line = "ERROR: Connection timed out";
+        assert!(matches!(
+            classify_stderr_error(line),
+            Some(YtDlpError::NetworkError(_))
+        ));
+    }
+
+    #[test]
+    fn test_classify_stderr_error_conversion() {
+        let line = "ERROR: Conversion failed";
+        assert!(matches!(
+            classify_stderr_error(line),
+            Some(YtDlpError::ConversionFailed(_))
+        ));
     }
 
     #[test]
@@ -771,10 +925,7 @@ mod tests {
     fn test_detect_unavailability_returns_message() {
         let stderr = "ERROR: Video unavailable";
         let result = detect_unavailability(stderr);
-        assert_eq!(
-            result,
-            Some("Track unavailable - may have been removed or made private".to_string())
-        );
+        assert_eq!(result, Some("Track no longer exists".to_string()));
     }
 
     #[test]
@@ -825,5 +976,137 @@ mod tests {
             parse_destination(line),
             Some("/downloads/Artist - Track 🔥.mp3".to_string())
         );
+    }
+
+    #[test]
+    fn test_detect_unavailability_removed_returns_specific_message() {
+        let stderr = "ERROR: This track was removed by the uploader";
+        assert_eq!(
+            detect_unavailability(stderr),
+            Some("Track was removed by the uploader".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_unavailability_private_returns_specific_message() {
+        let stderr = "ERROR: Track is private";
+        assert_eq!(
+            detect_unavailability(stderr),
+            Some("Track is private".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_auth_required_sign_in() {
+        let stderr = "ERROR: Sign in to confirm your age";
+        assert!(detect_auth_required(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_auth_required_age_verification() {
+        let stderr = "ERROR: Age verification required";
+        assert!(detect_auth_required(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_auth_required_login() {
+        let stderr = "ERROR: Login required to view this content";
+        assert!(detect_auth_required(stderr).is_some());
+    }
+
+    #[test]
+    fn test_detect_auth_required_no_match() {
+        let stderr = "ERROR: Video unavailable";
+        assert!(detect_auth_required(stderr).is_none());
+    }
+
+    #[test]
+    fn test_detect_network_error_timeout() {
+        let stderr = "ERROR: Connection timed out";
+        assert_eq!(
+            detect_network_error(stderr),
+            Some("Connection timed out".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_network_error_connection_reset() {
+        let stderr = "ERROR: Connection reset by peer";
+        assert_eq!(
+            detect_network_error(stderr),
+            Some("Connection was reset".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_network_error_dns() {
+        let stderr = "ERROR: Name or service not known";
+        assert_eq!(
+            detect_network_error(stderr),
+            Some("DNS resolution failed".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_network_error_ignores_debug_lines() {
+        let stderr = "[debug] Python 3.14.2 (CPython arm64 64bit) - macOS (OpenSSL 3.0.18)";
+        assert!(detect_network_error(stderr).is_none());
+    }
+
+    #[test]
+    fn test_detect_network_error_ssl_error() {
+        let stderr = "ERROR: SSL error: certificate verify failed";
+        assert_eq!(
+            detect_network_error(stderr),
+            Some("SSL/TLS error".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_network_error_server_error() {
+        let stderr = "ERROR: HTTP Error 503: Service Unavailable";
+        assert_eq!(
+            detect_network_error(stderr),
+            Some("Server error".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_network_error_no_match() {
+        let stderr = "ERROR: Video unavailable";
+        assert!(detect_network_error(stderr).is_none());
+    }
+
+    #[test]
+    fn test_detect_conversion_error_invalid_data() {
+        let stderr = "ERROR: Invalid data found when processing input";
+        assert_eq!(
+            detect_conversion_error(stderr),
+            Some("Invalid or corrupted audio data".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_conversion_error_conversion_failed() {
+        let stderr = "ERROR: Conversion failed";
+        assert_eq!(
+            detect_conversion_error(stderr),
+            Some("Audio conversion failed".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_conversion_error_disk_full() {
+        let stderr = "ERROR: No space left on device";
+        assert_eq!(
+            detect_conversion_error(stderr),
+            Some("Disk is full".to_string())
+        );
+    }
+
+    #[test]
+    fn test_detect_conversion_error_no_match() {
+        let stderr = "ERROR: Video unavailable";
+        assert!(detect_conversion_error(stderr).is_none());
     }
 }
