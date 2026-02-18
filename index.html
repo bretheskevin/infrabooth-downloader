@@ -7,6 +7,16 @@
     <title>InfraBooth Downloader</title>
   </head>
   <body>
+    <script>
+      (function() {
+        try {
+          var settings = JSON.parse(localStorage.getItem('sc-downloader-settings') || '{}');
+          var theme = settings.state?.theme || 'system';
+          var isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+          if (isDark) document.documentElement.classList.add('dark');
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

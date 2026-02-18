@@ -40,28 +40,28 @@
   }
 
   .dark {
-    --background: 240 6% 7%;
-    --foreground: 0 0% 98%;
-    --card: 240 5% 10%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 5% 10%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 258 90% 66%;
+    --background: 240 4% 16%;
+    --foreground: 0 0% 93%;
+    --card: 240 4% 20%;
+    --card-foreground: 0 0% 93%;
+    --popover: 240 4% 20%;
+    --popover-foreground: 0 0% 93%;
+    --primary: 258 85% 75%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 240 4% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 4% 16%;
-    --muted-foreground: 240 5% 65%;
-    --accent: 240 4% 16%;
-    --accent-foreground: 0 0% 98%;
+    --secondary: 240 4% 26%;
+    --secondary-foreground: 0 0% 93%;
+    --muted: 240 4% 24%;
+    --muted-foreground: 240 5% 70%;
+    --accent: 240 4% 26%;
+    --accent-foreground: 0 0% 93%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 0%;
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
+    --border: 240 4% 28%;
+    --input: 240 4% 26%;
     --ring: 258 90% 66%;
     --chart-1: 258 90% 66%;
     --chart-2: 160 60% 45%;
@@ -69,9 +69,9 @@
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
 
-    --surface-elevated: 240 5% 12%;
-    --surface-hover: 240 5% 18%;
-    --glow-primary: 258 90% 66% / 0.35;
+    --surface-elevated: 240 4% 22%;
+    --surface-hover: 240 4% 28%;
+    --glow-primary: 258 90% 66% / 0.25;
   }
 }
 
@@ -87,6 +87,7 @@
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
+
 
 @layer components {
   .glass {
@@ -108,7 +109,6 @@
 
   .card-hover:hover {
     @apply shadow-lg;
-    transform: translateY(-2px);
   }
 
   .dark .card-hover:hover {
@@ -152,7 +152,7 @@
     background: linear-gradient(
       180deg,
       hsl(var(--background)) 0%,
-      hsl(240 6% 5%) 100%
+      hsl(240 4% 14%) 100%
     );
   }
 }

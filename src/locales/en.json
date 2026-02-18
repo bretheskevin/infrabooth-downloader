@@ -107,7 +107,12 @@
     "notSet": "Not set",
     "pathInvalid": "Your saved download folder is no longer available.",
     "pathReset": "Download location has been reset to the default folder.",
-    "defaultFolder": "Downloads"
+    "defaultFolder": "Downloads",
+    "theme": "Theme",
+    "themeDescription": "Choose your preferred appearance",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark"
   },
   "completion": {
     "title": "Download complete!",
@@ -156,6 +161,7 @@
     "rateLimitAnnouncement": "Download paused due to rate limit, will resume shortly",
     "errorAnnouncement": "Error: {{message}}",
     "languageChanged": "Language changed to {{language}}",
+    "themeChanged": "Theme changed to {{theme}}",
     "loading": "Loading",
     "statusPending": "Pending",
     "statusDownloading": "Downloading",

@@ -9,6 +9,7 @@ describe('settingsStore', () => {
     useSettingsStore.setState({
       downloadPath: '',
       language: 'en',
+      theme: 'system',
       _hasHydrated: false,
     });
   });
@@ -22,6 +23,11 @@ describe('settingsStore', () => {
     it('should have language as en by default', () => {
       const { language } = useSettingsStore.getState();
       expect(language).toBe('en');
+    });
+
+    it('should have theme as system by default', () => {
+      const { theme } = useSettingsStore.getState();
+      expect(theme).toBe('system');
     });
   });
 
@@ -63,11 +69,39 @@ describe('settingsStore', () => {
     });
   });
 
+  describe('setTheme', () => {
+    it('should set theme to dark', () => {
+      const { setTheme } = useSettingsStore.getState();
+      setTheme('dark');
+
+      const { theme } = useSettingsStore.getState();
+      expect(theme).toBe('dark');
+    });
+
+    it('should set theme to light', () => {
+      const { setTheme } = useSettingsStore.getState();
+      setTheme('light');
+
+      const { theme } = useSettingsStore.getState();
+      expect(theme).toBe('light');
+    });
+
+    it('should set theme back to system', () => {
+      const { setTheme } = useSettingsStore.getState();
+      setTheme('dark');
+      setTheme('system');
+
+      const { theme } = useSettingsStore.getState();
+      expect(theme).toBe('system');
+    });
+  });
+
   describe('persistence', () => {
     it('should persist settings to localStorage', () => {
-      const { setDownloadPath, setLanguage } = useSettingsStore.getState();
+      const { setDownloadPath, setLanguage, setTheme } = useSettingsStore.getState();
       setDownloadPath('/test/path');
       setLanguage('fr');
+      setTheme('dark');
 
       const stored = localStorage.getItem('sc-downloader-settings');
       expect(stored).toBeTruthy();
@@ -75,6 +109,7 @@ describe('settingsStore', () => {
       const parsed = JSON.parse(stored!);
       expect(parsed.state.downloadPath).toBe('/test/path');
       expect(parsed.state.language).toBe('fr');
+      expect(parsed.state.theme).toBe('dark');
     });
 
     it('should use sc-downloader-settings as the storage key', () => {

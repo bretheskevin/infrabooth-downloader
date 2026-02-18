@@ -2,10 +2,11 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { DownloadPage } from '@/pages/DownloadPage';
 import { AuthChoiceDialog } from '@/features/auth/components/AuthChoiceDialog';
 import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
-import { useLanguageSync, useAuthStateListener, useOAuthFlow, useStartupAuth, useInitializeSettings } from '@/hooks';
+import { useLanguageSync, useThemeSync, useAuthStateListener, useOAuthFlow, useStartupAuth, useInitializeSettings } from '@/hooks';
 
 export function App() {
   useLanguageSync();
+  useThemeSync();
   useAuthStateListener();
   useOAuthFlow();
   useStartupAuth();

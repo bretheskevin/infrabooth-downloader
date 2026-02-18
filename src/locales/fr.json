@@ -107,7 +107,12 @@
     "notSet": "Non défini",
     "pathInvalid": "Votre dossier de téléchargement n'est plus disponible.",
     "pathReset": "Le dossier de téléchargement a été réinitialisé par défaut.",
-    "defaultFolder": "Téléchargements"
+    "defaultFolder": "Téléchargements",
+    "theme": "Thème",
+    "themeDescription": "Choisissez votre apparence préférée",
+    "themeSystem": "Système",
+    "themeLight": "Clair",
+    "themeDark": "Sombre"
   },
   "completion": {
     "title": "Téléchargement terminé !",
@@ -156,6 +161,7 @@
     "rateLimitAnnouncement": "Téléchargement en pause à cause de la limite de débit, reprise imminente",
     "errorAnnouncement": "Erreur : {{message}}",
     "languageChanged": "Langue changée en {{language}}",
+    "themeChanged": "Thème changé en {{theme}}",
     "loading": "Chargement",
     "statusPending": "En attente",
     "statusDownloading": "Téléchargement",
