@@ -26,27 +26,27 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex items-center gap-2">
-          <Avatar className="h-6 w-6">
+        <Button variant="ghost" size="sm" className="flex items-center gap-2 rounded-xl h-9 px-3">
+          <Avatar className="h-6 w-6 ring-2 ring-border/50">
             {avatarUrl ? <AvatarImage src={avatarUrl} alt={username ?? ''} /> : null}
-            <AvatarFallback className="bg-muted">
+            <AvatarFallback className="bg-secondary">
               <User className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
             </AvatarFallback>
           </Avatar>
-          <span className="text-sm">{username}</span>
+          <span className="text-sm font-medium">{username}</span>
           {isGoPlus && (
             <Badge
               variant="secondary"
-              className="bg-sky-100 text-sky-700 dark:bg-sky-900 dark:text-sky-300"
+              className="bg-primary/10 text-primary border-0 font-semibold"
             >
               {t('auth.qualityBadge', 'Go+ 256kbps')}
             </Badge>
           )}
-          <ChevronDown className="h-4 w-4" aria-hidden="true" />
+          <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={handleSignOut}>
+      <DropdownMenuContent align="end" className="min-w-[160px]">
+        <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
           <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
           {t('auth.signOut')}
         </DropdownMenuItem>

@@ -65,15 +65,15 @@ export function OverallProgress({ className }: OverallProgressProps) {
   const showCancelButton = hasActiveTrack || hasPendingTrack;
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn('space-y-3', className)}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {showPreparing && (
             <Spinner className="h-4 w-4 text-primary" />
           )}
           <span
             aria-live="polite"
-            className="text-sm text-foreground"
+            className="text-sm font-medium text-foreground"
           >
             {isCancelling
               ? t('download.cancelling')
@@ -82,9 +82,9 @@ export function OverallProgress({ className }: OverallProgressProps) {
                 : progressText}
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           {!isCancelling && (
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm font-semibold tabular-nums text-primary">
               {percentage}%
             </span>
           )}
@@ -94,7 +94,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
               size="icon"
               onClick={handleCancel}
               disabled={isCancelling}
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
               aria-label={t('download.cancel')}
             >
               {isCancelling ? (
@@ -112,7 +112,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percentage}
-        className={cn('h-2', showPreparing && 'animate-pulse')}
+        className={cn('h-2.5 rounded-full', showPreparing && 'animate-pulse')}
       />
     </div>
   );

@@ -10,7 +10,9 @@ export default {
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+  			xl: 'calc(var(--radius) + 4px)',
+  			'2xl': 'calc(var(--radius) + 8px)'
   		},
   		colors: {
   			background: 'hsl(var(--background))',
@@ -60,7 +62,20 @@ export default {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
+  			},
+  			surface: {
+  				elevated: 'hsl(var(--surface-elevated))',
+  				hover: 'hsl(var(--surface-hover))'
   			}
+  		},
+  		boxShadow: {
+  			'glow': '0 0 20px hsl(var(--glow-primary))',
+  			'glow-lg': '0 0 40px hsl(var(--glow-primary))',
+  			'elevated': '0 8px 30px -10px hsl(var(--foreground) / 0.1)',
+  			'elevated-lg': '0 20px 40px -15px hsl(var(--foreground) / 0.15)'
+  		},
+  		animation: {
+  			'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
   		}
   	}
   },
