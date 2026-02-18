@@ -87,7 +87,7 @@ describe('TrackCard', () => {
       // Radix Avatar shows fallback until image loads - just verify the avatar wrapper exists
       const avatar = document.querySelector('span[class*="overflow-hidden"]');
       expect(avatar).toBeInTheDocument();
-      expect(avatar).toHaveClass('h-12', 'w-12', 'rounded-md');
+      expect(avatar).toHaveClass('h-12', 'w-12', 'rounded-lg');
     });
 
     it('should render fallback when artworkUrl is null', () => {
@@ -102,15 +102,13 @@ describe('TrackCard', () => {
     it('should apply primary highlight styles when isCurrentTrack is true and not active', () => {
       render(<TrackCard track={mockTrack} isCurrentTrack={true} />);
       const card = screen.getByRole('listitem');
-      expect(card).toHaveClass('bg-primary/10');
-      expect(card).toHaveClass('border-l-2');
-      expect(card).toHaveClass('border-l-primary');
+      expect(card).toHaveClass('bg-primary/5');
     });
 
     it('should not apply highlight styles when isCurrentTrack is false', () => {
       render(<TrackCard track={mockTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
-      expect(card).not.toHaveClass('bg-primary/10');
+      expect(card).not.toHaveClass('bg-primary/5');
     });
   });
 
@@ -119,26 +117,26 @@ describe('TrackCard', () => {
       render(<TrackCard track={mockDownloadingTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
       expect(card).toHaveClass('bg-primary/10');
-      expect(card).toHaveClass('border-primary/30');
+      expect(card).toHaveClass('ring-primary/30');
     });
 
     it('should apply primary highlight when status is converting', () => {
       render(<TrackCard track={mockConvertingTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
       expect(card).toHaveClass('bg-primary/10');
-      expect(card).toHaveClass('border-primary/30');
+      expect(card).toHaveClass('ring-primary/30');
     });
 
     it('should not apply primary highlight when status is complete', () => {
       render(<TrackCard track={mockCompleteTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
-      expect(card).not.toHaveClass('border-primary/30');
+      expect(card).not.toHaveClass('ring-primary/30');
     });
 
     it('should not apply primary highlight border when status is pending', () => {
       render(<TrackCard track={mockTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
-      expect(card).not.toHaveClass('border-primary/30');
+      expect(card).not.toHaveClass('ring-primary/30');
     });
 
     it('should apply active primary highlight when active', () => {

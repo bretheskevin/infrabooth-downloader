@@ -49,7 +49,8 @@ export function SignInButton() {
     <Button
       onClick={handleSignIn}
       disabled={isLoading}
-      className="bg-primary hover:bg-primary/90 text-primary-foreground"
+      size="sm"
+      className="rounded-xl"
     >
       {isLoading ? (
         <>

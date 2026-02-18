@@ -98,10 +98,10 @@ describe('TrackList', () => {
 
       const listItems = screen.getAllByRole('listitem');
 
-      expect(listItems[0]).not.toHaveClass('bg-primary/10');
-      expect(listItems[1]).toHaveClass('bg-primary/10');
+      expect(listItems[0]).not.toHaveClass('bg-primary/5');
+      expect(listItems[1]).toHaveClass('bg-primary/5');
       expect(listItems[1]).toHaveAttribute('aria-current', 'true');
-      expect(listItems[2]).not.toHaveClass('bg-primary/10');
+      expect(listItems[2]).not.toHaveClass('bg-primary/5');
     });
   });
 
@@ -140,7 +140,7 @@ describe('TrackList', () => {
       expect(screen.getByText('Track 1')).toBeInTheDocument();
       const listItems = screen.getAllByRole('listitem');
       expect(listItems).toHaveLength(1);
-      expect(listItems[0]).toHaveClass('bg-primary/10');
+      expect(listItems[0]).toHaveClass('bg-primary/5');
     });
   });
 });

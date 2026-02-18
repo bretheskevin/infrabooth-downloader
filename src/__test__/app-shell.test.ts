@@ -71,12 +71,12 @@ describe('Story 1.3: App Shell Layout', () => {
       expect(content).toContain('<main');
     });
 
-    it('should use bg-background for theme support', () => {
+    it('should use gradient-subtle for theme support', () => {
       const content = readFileSync(
         join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'),
         'utf-8'
       );
-      expect(content).toContain('bg-background');
+      expect(content).toContain('gradient-subtle');
     });
 
     it('should use min-h-screen for full height', () => {
@@ -118,7 +118,7 @@ describe('Story 1.3: App Shell Layout', () => {
       expect(content).toContain("t('app.title')");
     });
 
-    it('should have border-b for visual separation', () => {
+    it('should have border for visual separation', () => {
       const content = readFileSync(
         join(PROJECT_ROOT, 'src/components/layout/Header.tsx'),
         'utf-8'

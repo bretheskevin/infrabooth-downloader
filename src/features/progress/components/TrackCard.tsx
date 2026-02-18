@@ -77,40 +77,43 @@ export const TrackCard = memo(function TrackCard({
       aria-current={isCurrentTrack ? 'true' : undefined}
       aria-label={`${track.title} by ${track.artist}`}
       className={cn(
-        'flex items-center gap-3 p-3 rounded-md overflow-hidden',
-        'border-b border-border last:border-b-0',
-        'transition-colors duration-150',
-        (isActive || showInitializing) && 'bg-primary/10 border border-primary/30',
-        !isActive && !showInitializing && isCurrentTrack && 'bg-primary/10 border-l-2 border-l-primary'
+        'flex items-center gap-4 px-4 py-3 rounded-xl overflow-hidden',
+        'transition-all duration-200',
+        'hover:bg-secondary/50',
+        (isActive || showInitializing) && 'bg-primary/10 ring-1 ring-primary/30',
+        !isActive && !showInitializing && isCurrentTrack && 'bg-primary/5'
       )}
     >
-      <Avatar className="h-12 w-12 rounded-md flex-shrink-0">
+      <Avatar className="h-12 w-12 rounded-lg flex-shrink-0 shadow-sm">
         {track.artworkUrl ? (
           <AvatarImage
             src={track.artworkUrl}
             alt={track.title}
-            className="rounded-md object-cover"
+            className="rounded-lg object-cover"
             loading="lazy"
           />
         ) : null}
         <AvatarFallback
-          className="rounded-md bg-muted"
+          className="rounded-lg bg-secondary"
           data-testid="artwork-fallback"
         >
           <Music className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
         </AvatarFallback>
       </Avatar>
 
-      <div className="flex-1 w-0">
-        <p className="text-sm font-medium truncate">{track.title}</p>
-        <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          'text-sm font-medium truncate',
+          (isActive || showInitializing) && 'text-primary'
+        )}>{track.title}</p>
+        <p className="text-xs text-muted-foreground truncate mt-0.5">{track.artist}</p>
         {isGeoBlocked && isTouchDevice && (
-          <div className="mt-1">
+          <div className="mt-1.5">
             <GeoBlockDetails />
           </div>
         )}
         {isUnavailable && isTouchDevice && (
-          <div className="mt-1">
+          <div className="mt-1.5">
             <UnavailableTrackDetails />
           </div>
         )}

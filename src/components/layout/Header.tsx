@@ -14,20 +14,28 @@ export function Header() {
   useMenuSettingsListener(openSettings);
 
   return (
-    <header className="flex items-center justify-between px-4 py-3 border-b">
-      <h1 className="text-lg font-semibold">{t('app.title')}</h1>
+    <header className="bg-background border-b border-border/50">
+      <div className="flex items-center justify-between px-6 py-4 max-w-3xl mx-auto">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <div className="h-4 w-4 rounded-sm bg-primary" />
+          </div>
+          <h1 className="text-lg font-semibold tracking-tight">{t('app.title')}</h1>
+        </div>
 
-      <div className="flex items-center gap-2">
-        <AuthContainer />
+        <div className="flex items-center gap-1">
+          <AuthContainer />
 
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setSettingsOpen(true)}
-          aria-label={t('settings.openSettings', 'Open settings')}
-        >
-          <Settings className="h-5 w-5" />
-        </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSettingsOpen(true)}
+            aria-label={t('settings.openSettings', 'Open settings')}
+            className="text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+          >
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />

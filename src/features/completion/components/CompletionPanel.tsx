@@ -98,7 +98,7 @@ export function CompletionPanel({
     <Card
       ref={panelRef}
       tabIndex={-1}
-      className="animate-in fade-in slide-in-from-bottom-4 duration-300 motion-reduce:animate-none"
+      className="animate-in fade-in slide-in-from-bottom-4 duration-300 motion-reduce:animate-none border-border/50 bg-card/80 backdrop-blur-sm"
       role="status"
       aria-live="polite"
       aria-label={t('completion.tracksDownloaded', {
@@ -106,21 +106,21 @@ export function CompletionPanel({
         total: totalCount,
       })}
     >
-      <CardContent className="pt-6 text-center">
-        <div className="flex flex-col items-center gap-4">
+      <CardContent className="pt-8 pb-2 text-center">
+        <div className="flex flex-col items-center gap-5">
           <div
             className={cn(
-              'flex items-center justify-center rounded-full',
-              isCancelled ? 'bg-muted p-3' : 'bg-success/10'
+              'flex items-center justify-center rounded-2xl',
+              isCancelled ? 'bg-secondary p-4' : 'bg-success/10 p-2'
             )}
           >
             {isCancelled ? (
               <XCircle
-                className="h-8 w-8 text-muted-foreground"
+                className="h-10 w-10 text-muted-foreground"
                 aria-hidden="true"
               />
             ) : (
-              <AnimatedCheckmark size={48} />
+              <AnimatedCheckmark size={56} />
             )}
           </div>
 
@@ -153,12 +153,12 @@ export function CompletionPanel({
         </div>
       </CardContent>
 
-      <CardFooter className="flex flex-wrap justify-center gap-3 pb-6">
+      <CardFooter className="flex flex-wrap justify-center gap-3 pt-4 pb-8">
         <Button
           variant="outline"
           onClick={handleOpenFolder}
           aria-label={t('completion.openFolder')}
-          className="gap-2"
+          className="gap-2 rounded-xl h-11 px-5"
         >
           <FolderOpen className="h-4 w-4" aria-hidden="true" />
           {t('completion.openFolder')}
@@ -170,7 +170,7 @@ export function CompletionPanel({
             onClick={handleRetryAll}
             disabled={isRetrying}
             aria-label={t('completion.retryFailed', { count: failedCount })}
-            className="gap-2"
+            className="gap-2 rounded-xl h-11 px-5"
           >
             <RefreshCw
               className={cn('h-4 w-4', isRetrying && 'animate-spin')}
@@ -184,7 +184,7 @@ export function CompletionPanel({
           variant="ghost"
           onClick={onDownloadAnother}
           aria-label={t('completion.downloadAnother')}
-          className="gap-2"
+          className="gap-2 rounded-xl h-11 px-5 text-muted-foreground hover:text-foreground"
         >
           <RefreshCw className="h-4 w-4" aria-hidden="true" />
           {t('completion.downloadAnother')}

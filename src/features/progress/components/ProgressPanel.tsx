@@ -4,16 +4,17 @@ import { OverallProgress } from './OverallProgress';
 import { TrackList } from './TrackList';
 
 const GLASSMORPHISM_STYLES = [
-  'bg-card/70 backdrop-blur-xl',
-  'border border-border/30',
-  'shadow-[0_8px_32px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.08)]',
-  'dark:shadow-[0_8px_32px_rgba(0,0,0,0.4),0_2px_8px_rgba(0,0,0,0.25)]',
+  'bg-card/80 backdrop-blur-2xl',
+  'border border-border/40',
+  'shadow-[0_8px_32px_rgba(0,0,0,0.08),0_2px_8px_rgba(0,0,0,0.04)]',
+  'dark:shadow-[0_8px_32px_rgba(0,0,0,0.5),0_2px_8px_rgba(0,0,0,0.3)]',
+  'dark:bg-card/90',
 ] as const;
 
 const TRANSPARENT_STYLES = [
-  'bg-transparent',
-  'border border-transparent',
-  'shadow-none',
+  'bg-card/50',
+  'border border-border/20',
+  'shadow-sm',
 ] as const;
 
 interface ProgressPanelProps {
