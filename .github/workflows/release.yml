@@ -1,6 +1,10 @@
 # Release Build Workflow for InfraBooth Downloader
 # Builds cross-platform installers and attaches them to GitHub Releases
 # Triggered by version tags (v*) or release creation
+#
+# Two-phase approach to avoid race conditions:
+# 1. Build phase: All platforms build in parallel, save as artifacts
+# 2. Release phase: Single job creates release and uploads all artifacts
 
 name: Release
 
@@ -8,8 +12,6 @@ on:
   push:
     tags:
       - 'v*'
-  release:
-    types: [created]
   workflow_dispatch:
 
 concurrency:
@@ -17,28 +19,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-tauri:
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Windows x64
-          - platform: windows-latest
-            target: x86_64-pc-windows-msvc
-            args: ''
-          # macOS Intel (macos-14 is x64)
-          - platform: macos-14
-            target: x86_64-apple-darwin
-            args: '--target x86_64-apple-darwin'
-          # macOS Apple Silicon (macos-15 is arm64)
-          - platform: macos-15
-            target: aarch64-apple-darwin
-            args: '--target aarch64-apple-darwin'
-
-    runs-on: ${{ matrix.platform }}
-
+  # Phase 1: Build all platforms in parallel
+  build-macos-intel:
+    runs-on: macos-14
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -52,7 +35,7 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: x86_64-apple-darwin
 
       - name: Cache Rust
         uses: Swatinem/rust-cache@v2
@@ -64,72 +47,233 @@ jobs:
         run: npm ci
 
       - name: Install macOS dependencies
-        if: runner.os == 'macOS'
         run: brew install create-dmg
 
       - name: Verify sidecar binaries exist
-        shell: bash
         run: |
-          echo "Checking sidecar binaries for target: ${{ matrix.target }}"
-          if [[ "${{ matrix.target }}" == "x86_64-pc-windows-msvc" ]]; then
-            ls -la src-tauri/binaries/yt-dlp-x86_64-pc-windows-msvc.exe
-            ls -la src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe
-            ls -la src-tauri/binaries/ffprobe-x86_64-pc-windows-msvc.exe
-          elif [[ "${{ matrix.target }}" == "x86_64-apple-darwin" ]]; then
-            ls -la src-tauri/binaries/yt-dlp-x86_64-apple-darwin
-            ls -la src-tauri/binaries/ffmpeg-x86_64-apple-darwin
-            ls -la src-tauri/binaries/ffprobe-x86_64-apple-darwin
-          elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
-            ls -la src-tauri/binaries/yt-dlp-aarch64-apple-darwin
-            ls -la src-tauri/binaries/ffmpeg-aarch64-apple-darwin
-            ls -la src-tauri/binaries/ffprobe-aarch64-apple-darwin
-          fi
+          ls -la src-tauri/binaries/yt-dlp-x86_64-apple-darwin
+          ls -la src-tauri/binaries/ffmpeg-x86_64-apple-darwin
+          ls -la src-tauri/binaries/ffprobe-x86_64-apple-darwin
 
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Tauri updater signing (required for auto-updates)
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-          # Apple code signing (uncomment when ready)
-          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          # APPLE_ID: ${{ secrets.APPLE_ID }}
-          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'InfraBooth Downloader v__VERSION__'
-          releaseBody: 'See the assets below to download and install this version.'
-          releaseDraft: true
-          prerelease: false
-          args: ${{ matrix.args }}
-          includeUpdaterJson: true
+          args: --target x86_64-apple-darwin
+          # Don't create release - just build
 
-  generate-checksums:
-    needs: build-tauri
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-intel
+          path: |
+            src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig
+          if-no-files-found: error
+
+  build-macos-arm:
+    runs-on: macos-15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          cache-on-failure: true
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Install macOS dependencies
+        run: brew install create-dmg
+
+      - name: Verify sidecar binaries exist
+        run: |
+          ls -la src-tauri/binaries/yt-dlp-aarch64-apple-darwin
+          ls -la src-tauri/binaries/ffmpeg-aarch64-apple-darwin
+          ls -la src-tauri/binaries/ffprobe-aarch64-apple-darwin
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          args: --target aarch64-apple-darwin
+          # Don't create release - just build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm
+          path: |
+            src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig
+          if-no-files-found: error
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          cache-on-failure: true
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Verify sidecar binaries exist
+        shell: bash
+        run: |
+          ls -la src-tauri/binaries/yt-dlp-x86_64-pc-windows-msvc.exe
+          ls -la src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe
+          ls -la src-tauri/binaries/ffprobe-x86_64-pc-windows-msvc.exe
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        # Don't create release - just build
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: |
+            src-tauri/target/release/bundle/msi/*.msi
+            src-tauri/target/release/bundle/msi/*.msi.sig
+            src-tauri/target/release/bundle/nsis/*.exe
+            src-tauri/target/release/bundle/nsis/*.exe.sig
+          if-no-files-found: error
+
+  # Phase 2: Create release and upload all artifacts
+  create-release:
+    needs: [build-macos-intel, build-macos-arm, build-windows]
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - name: Download release artifacts
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
+      - name: Display downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts -type f -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.tar.gz" -o -name "*.sig" | head -50
+
+      - name: Get version from Cargo.toml
+        id: version
+        run: |
+          VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Version: $VERSION"
+
+      - name: Generate latest.json for updater
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          TAG="${{ github.ref_name }}"
+          BASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
+
+          # Read signatures
+          MACOS_INTEL_SIG=$(cat artifacts/macos-intel/*.app.tar.gz.sig 2>/dev/null | base64 -w0 || echo "")
+          MACOS_ARM_SIG=$(cat artifacts/macos-arm/*.app.tar.gz.sig 2>/dev/null | base64 -w0 || echo "")
+          WINDOWS_MSI_SIG=$(cat artifacts/windows/*.msi.sig 2>/dev/null | base64 -w0 || echo "")
+          WINDOWS_NSIS_SIG=$(cat artifacts/windows/*.exe.sig 2>/dev/null | base64 -w0 || echo "")
+
+          # Get actual filenames
+          MACOS_INTEL_FILE=$(ls artifacts/macos-intel/*.app.tar.gz 2>/dev/null | head -1 | xargs basename || echo "")
+          MACOS_ARM_FILE=$(ls artifacts/macos-arm/*.app.tar.gz 2>/dev/null | head -1 | xargs basename || echo "")
+          WINDOWS_NSIS_FILE=$(ls artifacts/windows/*.exe 2>/dev/null | grep -v '.sig' | head -1 | xargs basename || echo "")
+
+          # Create latest.json
+          cat > artifacts/latest.json << EOF
+          {
+            "version": "${VERSION}",
+            "notes": "See the assets below to download and install this version.",
+            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "platforms": {
+              "darwin-x86_64": {
+                "signature": "${MACOS_INTEL_SIG}",
+                "url": "${BASE_URL}/${MACOS_INTEL_FILE}"
+              },
+              "darwin-aarch64": {
+                "signature": "${MACOS_ARM_SIG}",
+                "url": "${BASE_URL}/${MACOS_ARM_FILE}"
+              },
+              "windows-x86_64": {
+                "signature": "${WINDOWS_NSIS_SIG}",
+                "url": "${BASE_URL}/${WINDOWS_NSIS_FILE}"
+              }
+            }
+          }
+          EOF
+
+          echo "Generated latest.json:"
+          cat artifacts/latest.json
+
+      - name: Flatten artifacts for upload
+        run: |
+          mkdir -p release-assets
+          find artifacts -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.tar.gz" -o -name "*.sig" -o -name "latest.json" \) -exec cp {} release-assets/ \;
+          echo "Files to upload:"
+          ls -la release-assets/
+
       - name: Generate checksums
         run: |
-          cd artifacts
-          find . -type f \( -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" \) -exec sha256sum {} \; > ../checksums.txt
-          echo "Generated checksums:"
-          cat ../checksums.txt
+          cd release-assets
+          sha256sum * > checksums.txt
+          echo "Checksums:"
+          cat checksums.txt
 
-      - name: Upload checksums to release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: checksums.txt
+          tag_name: ${{ github.ref_name }}
+          name: "InfraBooth Downloader v${{ steps.version.outputs.version }}"
+          body: "See the assets below to download and install this version."
+          draft: true
+          prerelease: false
+          files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
