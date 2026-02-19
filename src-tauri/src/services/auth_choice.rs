@@ -24,6 +24,7 @@ pub struct AuthChoiceState {
     pending: Mutex<bool>,
 }
 
+#[allow(dead_code)]
 impl AuthChoiceState {
     pub fn new() -> Self {
         let (sender, receiver) = watch::channel(None);

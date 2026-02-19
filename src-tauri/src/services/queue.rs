@@ -93,6 +93,7 @@ impl DownloadQueue {
     /// On rate limit errors, the queue pauses with backoff and retries.
     /// On auth refresh errors, the queue pauses for user input.
     /// On other errors, the queue records the failure and continues.
+    #[allow(clippy::too_many_arguments)]
     pub async fn process<R: Runtime>(
         &mut self,
         app: AppHandle<R>,

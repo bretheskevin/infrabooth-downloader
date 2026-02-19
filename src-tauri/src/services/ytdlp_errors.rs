@@ -126,7 +126,12 @@ const UNAVAILABILITY_MATCHER: ErrorMatcher = ErrorMatcher {
             message: "Track was removed by the uploader",
         },
         PatternGroup {
-            patterns: &["private video", "track is private", "is private", "private track"],
+            patterns: &[
+                "private video",
+                "track is private",
+                "is private",
+                "private track",
+            ],
             message: "Track is private",
         },
         PatternGroup {
@@ -156,8 +161,7 @@ impl ErrorMatcher {
         }
 
         for group in self.groups {
-            let matches = if group.patterns.len() == 2
-                && group.message == "Audio encoder not found"
+            let matches = if group.patterns.len() == 2 && group.message == "Audio encoder not found"
             {
                 group.patterns.iter().all(|p| stderr_lower.contains(p))
             } else {
