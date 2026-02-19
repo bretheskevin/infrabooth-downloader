@@ -15,6 +15,7 @@ pub mod queue;
 pub mod sidecar;
 pub mod storage;
 pub mod url_validator;
+pub mod updater;
 pub mod ytdlp;
 pub mod ytdlp_errors;
 
