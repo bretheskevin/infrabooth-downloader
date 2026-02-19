@@ -1,0 +1,131 @@
+# Release Build Workflow for InfraBooth Downloader
+# Builds cross-platform installers and attaches them to GitHub Releases
+# Triggered by version tags (v*) or release creation
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  release:
+    types: [created]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows x64
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            args: ''
+          # macOS Intel
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            args: '--target x86_64-apple-darwin'
+          # macOS Apple Silicon
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            args: '--target aarch64-apple-darwin'
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+          cache-on-failure: true
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Verify sidecar binaries exist
+        shell: bash
+        run: |
+          echo "Checking sidecar binaries for target: ${{ matrix.target }}"
+          if [[ "${{ matrix.target }}" == "x86_64-pc-windows-msvc" ]]; then
+            ls -la src-tauri/binaries/yt-dlp-x86_64-pc-windows-msvc.exe
+            ls -la src-tauri/binaries/ffmpeg-x86_64-pc-windows-msvc.exe
+            ls -la src-tauri/binaries/ffprobe-x86_64-pc-windows-msvc.exe
+          elif [[ "${{ matrix.target }}" == "x86_64-apple-darwin" ]]; then
+            ls -la src-tauri/binaries/yt-dlp-x86_64-apple-darwin
+            ls -la src-tauri/binaries/ffmpeg-x86_64-apple-darwin
+            ls -la src-tauri/binaries/ffprobe-x86_64-apple-darwin
+          elif [[ "${{ matrix.target }}" == "aarch64-apple-darwin" ]]; then
+            ls -la src-tauri/binaries/yt-dlp-aarch64-apple-darwin
+            ls -la src-tauri/binaries/ffmpeg-aarch64-apple-darwin
+            ls -la src-tauri/binaries/ffprobe-aarch64-apple-darwin
+          fi
+
+      - name: Build Tauri app
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Code signing (uncomment when ready)
+          # TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          # TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Apple code signing (uncomment when ready)
+          # APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          # APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          # APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          # APPLE_ID: ${{ secrets.APPLE_ID }}
+          # APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          # APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'InfraBooth Downloader v__VERSION__'
+          releaseBody: 'See the assets below to download and install this version.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}
+          includeUpdaterJson: true
+
+  generate-checksums:
+    needs: build-tauri
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download release artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Generate checksums
+        run: |
+          cd artifacts
+          find . -type f \( -name "*.msi" -o -name "*.dmg" -o -name "*.AppImage" -o -name "*.deb" \) -exec sha256sum {} \; > ../checksums.txt
+          echo "Generated checksums:"
+          cat ../checksums.txt
+
+      - name: Upload checksums to release
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
