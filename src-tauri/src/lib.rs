@@ -5,10 +5,11 @@ mod services;
 use std::sync::Arc;
 
 use commands::{
-    cancel_download_queue, check_auth_state, check_write_permission, complete_oauth,
-    download_track_full, get_default_download_path, get_playlist_info, get_track_info,
-    respond_to_auth_choice, sign_out, start_download_queue, start_oauth, test_ffmpeg, test_ytdlp,
-    validate_download_path, validate_soundcloud_url, OAuthState,
+    cancel_download_queue, check_auth_state, check_for_updates, check_write_permission,
+    complete_oauth, download_track_full, get_default_download_path, get_playlist_info,
+    get_track_info, install_update, respond_to_auth_choice, sign_out, start_download_queue,
+    start_oauth, test_ffmpeg, test_ytdlp, validate_download_path, validate_soundcloud_url,
+    OAuthState,
 };
 use services::auth_choice::AuthChoiceState;
 use services::cancellation::CancellationState;
@@ -39,7 +40,9 @@ pub fn run() {
         respond_to_auth_choice,
         check_write_permission,
         get_default_download_path,
-        validate_download_path
+        validate_download_path,
+        check_for_updates,
+        install_update
     ]);
 
     // Export TypeScript bindings in debug mode
@@ -54,6 +57,7 @@ pub fn run() {
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
