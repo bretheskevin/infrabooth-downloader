@@ -1,7 +1,6 @@
 use serde::Serialize;
 use specta::Type;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Runtime};
 use tauri_plugin_shell::process::CommandChild;
@@ -40,7 +39,7 @@ pub struct QueueCompleteEvent {
     pub completed: u32,
     pub failed: u32,
     pub total: u32,
-    pub failed_tracks: Vec<(String, String)>, // (trackId, errorMessage)
+    pub failed_tracks: Vec<(String, String)>,
 }
 
 /// Event payload for queue cancellation.
@@ -53,10 +52,18 @@ pub struct QueueCancelledEvent {
 }
 
 /// Result of queue processing.
-#[allow(dead_code)]
 pub struct QueueResult {
     pub completed: u32,
     pub failed: u32,
+}
+
+/// Context for queue processing containing all shared state.
+pub struct QueueProcessContext {
+    pub output_dir: PathBuf,
+    pub cancel_rx: watch::Receiver<bool>,
+    pub active_child: Arc<Mutex<Option<CommandChild>>>,
+    pub active_pid: Arc<Mutex<Option<u32>>>,
+    pub auth_choice_state: Arc<AuthChoiceState>,
 }
 
 /// Download queue manager for processing multiple tracks sequentially.
@@ -69,7 +76,6 @@ pub struct DownloadQueue {
 }
 
 impl DownloadQueue {
-    /// Create a new download queue.
     pub fn new(items: Vec<QueueItem>, album_name: Option<String>) -> Self {
         let total = items.len() as u32;
         Self {
@@ -93,16 +99,10 @@ impl DownloadQueue {
     /// On rate limit errors, the queue pauses with backoff and retries.
     /// On auth refresh errors, the queue pauses for user input.
     /// On other errors, the queue records the failure and continues.
-    #[allow(clippy::too_many_arguments)]
     pub async fn process<R: Runtime>(
         &mut self,
         app: AppHandle<R>,
-        output_dir: PathBuf,
-        cancel_rx: watch::Receiver<bool>,
-        active_child: Arc<Mutex<Option<CommandChild>>>,
-        active_pid: Arc<Mutex<Option<u32>>>,
-        auth_choice_state: Arc<AuthChoiceState>,
-        skip_auth: Arc<AtomicBool>,
+        ctx: QueueProcessContext,
     ) -> QueueResult {
         self.is_processing = true;
         let mut completed = 0u32;
@@ -111,8 +111,7 @@ impl DownloadQueue {
         let mut retry_count = 0u32;
 
         while self.current_index < self.items.len() {
-            // Check for cancellation before starting next track
-            if *cancel_rx.borrow() {
+            if *ctx.cancel_rx.borrow() {
                 log::info!("[queue] Cancellation requested, stopping queue");
                 let cancelled = self.total_tracks - completed - failed;
                 let _ = app.emit(
@@ -129,7 +128,6 @@ impl DownloadQueue {
 
             let item = &self.items[self.current_index];
 
-            // Emit queue progress
             let _ = app.emit(
                 "queue-progress",
                 QueueProgressEvent {
@@ -139,7 +137,6 @@ impl DownloadQueue {
                 },
             );
 
-            // Build playlist context if this is a playlist (more than 1 track)
             let playlist_context = if self.total_tracks > 1 {
                 Some(PlaylistContext {
                     track_position: item.track_number.unwrap_or((self.current_index + 1) as u32),
@@ -152,7 +149,7 @@ impl DownloadQueue {
             let config = PipelineConfig {
                 track_url: item.track_url.clone(),
                 track_id: item.track_id.clone(),
-                output_dir: output_dir.clone(),
+                output_dir: ctx.output_dir.clone(),
                 metadata: TrackMetadata {
                     title: item.title.clone(),
                     artist: item.artist.clone(),
@@ -167,10 +164,10 @@ impl DownloadQueue {
             match download_and_convert(
                 &app,
                 config,
-                Some(active_child.clone()),
-                Some(cancel_rx.clone()),
-                Some(active_pid.clone()),
-                skip_auth.load(Ordering::SeqCst),
+                Some(ctx.active_child.clone()),
+                Some(ctx.cancel_rx.clone()),
+                Some(ctx.active_pid.clone()),
+                ctx.auth_choice_state.should_skip_auth(),
             )
             .await
             {
@@ -201,7 +198,6 @@ impl DownloadQueue {
                     return QueueResult { completed, failed };
                 }
                 Err(PipelineError::Download(YtDlpError::RateLimited)) => {
-                    // Rate limited - pause and retry same track
                     let backoff = calculate_backoff(retry_count);
                     log::warn!(
                         "Rate limited on track {}, backing off for {}s",
@@ -219,7 +215,7 @@ impl DownloadQueue {
 
                     tokio::time::sleep(std::time::Duration::from_secs(backoff)).await;
                     retry_count += 1;
-                    continue; // Retry same track, don't increment index
+                    continue;
                 }
                 Err(PipelineError::Download(YtDlpError::AuthRefreshFailed)) => {
                     log::info!(
@@ -227,7 +223,7 @@ impl DownloadQueue {
                         item.track_id
                     );
 
-                    auth_choice_state.set_pending(true).await;
+                    ctx.auth_choice_state.set_pending(true).await;
                     let _ = app.emit(
                         "download-auth-needed",
                         DownloadAuthNeededEvent {
@@ -236,11 +232,11 @@ impl DownloadQueue {
                         },
                     );
 
-                    let mut choice_rx = auth_choice_state.subscribe();
+                    let mut choice_rx = ctx.auth_choice_state.subscribe();
                     loop {
-                        if *cancel_rx.borrow() {
+                        if *ctx.cancel_rx.borrow() {
                             log::info!("[queue] Cancellation during auth wait");
-                            auth_choice_state.set_pending(false).await;
+                            ctx.auth_choice_state.set_pending(false).await;
                             let cancelled = self.total_tracks - completed - failed;
                             let _ = app.emit(
                                 "queue-cancelled",
@@ -257,15 +253,17 @@ impl DownloadQueue {
                         if choice_rx.changed().await.is_ok() {
                             let choice = { *choice_rx.borrow() };
                             if let Some(choice) = choice {
-                                auth_choice_state.set_pending(false).await;
+                                ctx.auth_choice_state.set_pending(false).await;
                                 match choice {
                                     AuthChoice::ReAuthenticated => {
                                         log::info!("[queue] User re-authenticated, retrying track");
                                         break;
                                     }
                                     AuthChoice::ContinueStandard => {
-                                        log::info!("[queue] User chose standard quality, setting skip_auth flag");
-                                        skip_auth.store(true, Ordering::SeqCst);
+                                        log::info!(
+                                            "[queue] User chose standard quality, setting skip_auth flag"
+                                        );
+                                        ctx.auth_choice_state.set_skip_auth(true);
                                         break;
                                     }
                                 }
@@ -298,13 +296,11 @@ impl DownloadQueue {
 
         self.is_processing = false;
 
-        // Clear active child on completion
         {
-            let mut guard = active_child.lock().await;
+            let mut guard = ctx.active_child.lock().await;
             *guard = None;
         }
 
-        // Emit completion
         let _ = app.emit(
             "queue-complete",
             QueueCompleteEvent {
@@ -319,10 +315,6 @@ impl DownloadQueue {
     }
 }
 
-/// Calculate backoff time using Fibonacci sequence.
-///
-/// Returns seconds to wait: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89
-/// Capped at retry_count=10 (~89 seconds max).
 fn calculate_backoff(retry_count: u32) -> u64 {
     let fib = |n: u32| -> u64 {
         let mut a = 1u64;
@@ -334,7 +326,7 @@ fn calculate_backoff(retry_count: u32) -> u64 {
         }
         a
     };
-    fib(retry_count.min(10)) // Cap at ~89 seconds
+    fib(retry_count.min(10))
 }
 
 #[cfg(test)]
@@ -429,7 +421,6 @@ mod tests {
 
     #[test]
     fn test_calculate_backoff_sequence() {
-        // Fibonacci: 1, 1, 2, 3, 5, 8, 13, 21, 34, 55, 89
         assert_eq!(calculate_backoff(2), 2);
         assert_eq!(calculate_backoff(3), 3);
         assert_eq!(calculate_backoff(4), 5);
@@ -443,7 +434,6 @@ mod tests {
 
     #[test]
     fn test_calculate_backoff_capped() {
-        // Should be capped at retry_count=10
         assert_eq!(calculate_backoff(11), 89);
         assert_eq!(calculate_backoff(100), 89);
     }
