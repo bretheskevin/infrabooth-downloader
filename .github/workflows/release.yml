@@ -215,16 +215,30 @@ jobs:
           TAG="${{ github.ref_name }}"
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
 
-          # Read signatures
-          MACOS_INTEL_SIG=$(cat artifacts/macos-intel/*.app.tar.gz.sig 2>/dev/null | base64 -w0 || echo "")
-          MACOS_ARM_SIG=$(cat artifacts/macos-arm/*.app.tar.gz.sig 2>/dev/null | base64 -w0 || echo "")
-          WINDOWS_MSI_SIG=$(cat artifacts/windows/*.msi.sig 2>/dev/null | base64 -w0 || echo "")
-          WINDOWS_NSIS_SIG=$(cat artifacts/windows/*.exe.sig 2>/dev/null | base64 -w0 || echo "")
+          # Find signature files (they're in nested directories and already contain the signature string)
+          MACOS_INTEL_SIG_FILE=$(find artifacts/macos-intel -name "*.app.tar.gz.sig" -type f | head -1)
+          MACOS_ARM_SIG_FILE=$(find artifacts/macos-arm -name "*.app.tar.gz.sig" -type f | head -1)
+          WINDOWS_NSIS_SIG_FILE=$(find artifacts/windows -name "*.exe.sig" -type f | head -1)
 
-          # Get actual filenames
-          MACOS_INTEL_FILE=$(ls artifacts/macos-intel/*.app.tar.gz 2>/dev/null | head -1 | xargs basename || echo "")
-          MACOS_ARM_FILE=$(ls artifacts/macos-arm/*.app.tar.gz 2>/dev/null | head -1 | xargs basename || echo "")
-          WINDOWS_NSIS_FILE=$(ls artifacts/windows/*.exe 2>/dev/null | grep -v '.sig' | head -1 | xargs basename || echo "")
+          # Read signatures (they're already in the correct format, no base64 needed)
+          MACOS_INTEL_SIG=$(cat "$MACOS_INTEL_SIG_FILE" 2>/dev/null || echo "")
+          MACOS_ARM_SIG=$(cat "$MACOS_ARM_SIG_FILE" 2>/dev/null || echo "")
+          WINDOWS_NSIS_SIG=$(cat "$WINDOWS_NSIS_SIG_FILE" 2>/dev/null || echo "")
+
+          # Find and get filenames for updater packages (.app.tar.gz for macOS, .exe for Windows)
+          MACOS_INTEL_FILE=$(find artifacts/macos-intel -name "*.app.tar.gz" -type f | head -1 | xargs -r basename)
+          MACOS_ARM_FILE=$(find artifacts/macos-arm -name "*.app.tar.gz" -type f | head -1 | xargs -r basename)
+          WINDOWS_NSIS_FILE=$(find artifacts/windows -name "*.exe" ! -name "*.sig" -type f | head -1 | xargs -r basename)
+
+          # URL-encode filenames (replace spaces with %20)
+          MACOS_INTEL_FILE_ENC=$(echo "$MACOS_INTEL_FILE" | sed 's/ /%20/g')
+          MACOS_ARM_FILE_ENC=$(echo "$MACOS_ARM_FILE" | sed 's/ /%20/g')
+          WINDOWS_NSIS_FILE_ENC=$(echo "$WINDOWS_NSIS_FILE" | sed 's/ /%20/g')
+
+          echo "Debug: Found files and signatures:"
+          echo "  macOS Intel: $MACOS_INTEL_FILE (sig: ${MACOS_INTEL_SIG:0:50}...)"
+          echo "  macOS ARM: $MACOS_ARM_FILE (sig: ${MACOS_ARM_SIG:0:50}...)"
+          echo "  Windows: $WINDOWS_NSIS_FILE (sig: ${WINDOWS_NSIS_SIG:0:50}...)"
 
           # Create latest.json
           cat > artifacts/latest.json << EOF
@@ -235,15 +249,15 @@ jobs:
             "platforms": {
               "darwin-x86_64": {
                 "signature": "${MACOS_INTEL_SIG}",
-                "url": "${BASE_URL}/${MACOS_INTEL_FILE}"
+                "url": "${BASE_URL}/${MACOS_INTEL_FILE_ENC}"
               },
               "darwin-aarch64": {
                 "signature": "${MACOS_ARM_SIG}",
-                "url": "${BASE_URL}/${MACOS_ARM_FILE}"
+                "url": "${BASE_URL}/${MACOS_ARM_FILE_ENC}"
               },
               "windows-x86_64": {
                 "signature": "${WINDOWS_NSIS_SIG}",
-                "url": "${BASE_URL}/${WINDOWS_NSIS_FILE}"
+                "url": "${BASE_URL}/${WINDOWS_NSIS_FILE_ENC}"
               }
             }
           }
