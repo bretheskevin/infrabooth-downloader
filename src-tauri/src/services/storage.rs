@@ -22,10 +22,6 @@ pub enum StorageError {
 
     #[error("Serialization error: {0}")]
     SerializationError(#[from] serde_json::Error),
-
-    #[allow(dead_code)]
-    #[error("No tokens stored")]
-    NoTokensStored,
 }
 
 impl From<keyring::Error> for StorageError {
