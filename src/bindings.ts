@@ -133,19 +133,6 @@ async testFfmpeg() : Promise<Result<string, ErrorResponse>> {
  * 2. Converts to high-quality MP3 using yt-dlp native conversion
  * 3. Embeds ID3 metadata (title, artist, album, track number, artwork)
  * 4. Emits progress events throughout the process
- * 
- * Progress events are emitted via the `download-progress` event channel:
- * - "downloading" - During yt-dlp download
- * - "converting" - During audio conversion
- * - "complete" - When pipeline finishes successfully
- * - "failed" - If any step fails
- * 
- * # Arguments
- * * `request` - The download request containing track URL, metadata, and options
- * * `app` - Tauri app handle
- * 
- * # Returns
- * The path to the downloaded MP3 file on success.
  */
 async downloadTrackFull(request: DownloadRequest) : Promise<Result<string, ErrorResponse>> {
     try {
@@ -164,14 +151,6 @@ async downloadTrackFull(request: DownloadRequest) : Promise<Result<string, Error
  * - `download-progress`: Per-track status
  * - `queue-complete`: Final results when queue finishes
  * - `queue-cancelled`: When queue is cancelled by user
- * 
- * # Arguments
- * * `request` - Queue request containing tracks and optional album name
- * * `app` - Tauri app handle
- * * `cancel_state` - Managed cancellation state
- * 
- * # Returns
- * Ok(()) immediately - actual processing happens in background
  */
 async startDownloadQueue(request: StartQueueRequest) : Promise<Result<null, string>> {
     try {
@@ -183,18 +162,6 @@ async startDownloadQueue(request: StartQueueRequest) : Promise<Result<null, stri
 },
 /**
  * Cancel the current download queue.
- * 
- * This command cancels the currently running download queue.
- * It will:
- * 1. Set the cancellation flag
- * 2. Kill the currently running yt-dlp process
- * 3. The queue will stop after the current track
- * 
- * # Arguments
- * * `cancel_state` - Managed cancellation state
- * 
- * # Returns
- * Ok(()) on success
  */
 async cancelDownloadQueue() : Promise<Result<null, string>> {
     try {
@@ -206,17 +173,6 @@ async cancelDownloadQueue() : Promise<Result<null, string>> {
 },
 /**
  * Respond to an auth choice prompt during download.
- * 
- * When a token refresh fails during download, the queue pauses and emits
- * a `download-auth-needed` event. The frontend should show a dialog and
- * call this command with the user's choice.
- * 
- * # Arguments
- * * `choice` - Either "re_authenticated" (after OAuth completes) or "continue_standard"
- * * `auth_choice_state` - Managed auth choice state
- * 
- * # Returns
- * Ok(()) on success
  */
 async respondToAuthChoice(choice: AuthChoice) : Promise<Result<null, string>> {
     try {
@@ -263,22 +219,13 @@ async validateDownloadPath(path: string) : Promise<Result<boolean, string>> {
 /** user-defined types **/
 
 export type AuthChoice = "re_authenticated" | "continue_standard"
-/**
- * Request payload for downloading a track with full metadata.
- */
 export type DownloadRequest = { trackUrl: string; trackId: string; title: string; artist: string; album: string | null; trackNumber: number | null; totalTracks: number | null; artworkUrl: string | null; outputDir: string | null }
 export type ErrorResponse = { code: string; message: string }
 /**
  * Playlist information from SoundCloud API.
  */
 export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
-/**
- * A track item in the queue request.
- */
 export type QueueItemRequest = { trackUrl: string; trackId: string; title: string; artist: string; artworkUrl: string | null }
-/**
- * Request payload for starting a download queue.
- */
 export type StartQueueRequest = { tracks: QueueItemRequest[]; albumName: string | null; outputDir: string | null }
 /**
  * Track information from SoundCloud API.
