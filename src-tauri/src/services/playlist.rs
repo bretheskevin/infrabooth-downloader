@@ -425,7 +425,10 @@ fn extract_playlist_from_hydration(
     for item in items {
         if item.hydratable == "playlist" {
             return serde_json::from_value(item.data.clone()).map_err(|e| {
-                log::error!("[soundcloud] Failed to parse playlist from hydration: {}", e);
+                log::error!(
+                    "[soundcloud] Failed to parse playlist from hydration: {}",
+                    e
+                );
                 PlaylistError::InvalidResponse
             });
         }
@@ -540,13 +543,11 @@ async fn fetch_track_by_id(id: u64, access_token: &str) -> Option<TrackInfo> {
         .send()
         .await
     {
-        Ok(response) if response.status().is_success() => {
-            response
-                .json::<RawTrackInfo>()
-                .await
-                .ok()
-                .map(TrackInfo::from)
-        }
+        Ok(response) if response.status().is_success() => response
+            .json::<RawTrackInfo>()
+            .await
+            .ok()
+            .map(TrackInfo::from),
         _ => None,
     }
 }
@@ -558,11 +559,7 @@ async fn fetch_tracks_by_ids_parallel(ids: &[u64], access_token: &str) -> Vec<Tr
         .map(|id| fetch_track_by_id(*id, access_token))
         .collect();
 
-    join_all(futures)
-        .await
-        .into_iter()
-        .flatten()
-        .collect()
+    join_all(futures).await.into_iter().flatten().collect()
 }
 
 /// Validates that a URL is a SoundCloud URL.
@@ -577,7 +574,10 @@ fn is_valid_soundcloud_url(url: &str) -> bool {
 /// This is used when web hydration fails (e.g., for private content).
 async fn fetch_playlist_info_via_api(url: &str) -> Result<PlaylistInfo, PlaylistError> {
     let token = get_access_token().await?;
-    log::info!("[soundcloud] Fetching playlist via OAuth API for URL: {}", url);
+    log::info!(
+        "[soundcloud] Fetching playlist via OAuth API for URL: {}",
+        url
+    );
     let raw: RawPlaylistInfo = resolve_url(url, &token).await?;
     Ok(PlaylistInfo::from(raw))
 }
@@ -655,8 +655,7 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
     );
 
     // Step 5: For any still-missing tracks, fetch in parallel
-    let fetched_ids: std::collections::HashSet<u64> =
-        fetched_tracks.iter().map(|t| t.id).collect();
+    let fetched_ids: std::collections::HashSet<u64> = fetched_tracks.iter().map(|t| t.id).collect();
     let still_missing: Vec<u64> = missing_ids
         .iter()
         .filter(|id| !fetched_ids.contains(id))
@@ -1052,17 +1051,23 @@ mod tests {
     // URL validation tests
     #[test]
     fn test_is_valid_soundcloud_url_https() {
-        assert!(is_valid_soundcloud_url("https://soundcloud.com/artist/track"));
+        assert!(is_valid_soundcloud_url(
+            "https://soundcloud.com/artist/track"
+        ));
     }
 
     #[test]
     fn test_is_valid_soundcloud_url_http() {
-        assert!(is_valid_soundcloud_url("http://soundcloud.com/artist/track"));
+        assert!(is_valid_soundcloud_url(
+            "http://soundcloud.com/artist/track"
+        ));
     }
 
     #[test]
     fn test_is_valid_soundcloud_url_www() {
-        assert!(is_valid_soundcloud_url("https://www.soundcloud.com/artist/track"));
+        assert!(is_valid_soundcloud_url(
+            "https://www.soundcloud.com/artist/track"
+        ));
     }
 
     #[test]
@@ -1085,10 +1090,7 @@ mod tests {
 
     #[test]
     fn test_extract_track_ids_from_numeric_ids() {
-        let tracks: Vec<Value> = vec![
-            serde_json::json!(123),
-            serde_json::json!(456),
-        ];
+        let tracks: Vec<Value> = vec![serde_json::json!(123), serde_json::json!(456)];
         let ids = extract_track_ids(&tracks);
         assert_eq!(ids, vec![123, 456]);
     }
@@ -1113,15 +1115,13 @@ mod tests {
 
     #[test]
     fn test_extract_full_tracks_from_hydration_with_complete_data() {
-        let tracks: Vec<Value> = vec![
-            serde_json::json!({
-                "id": 123,
-                "title": "Track 1",
-                "user": {"username": "artist1"},
-                "artwork_url": null,
-                "duration": 180000
-            }),
-        ];
+        let tracks: Vec<Value> = vec![serde_json::json!({
+            "id": 123,
+            "title": "Track 1",
+            "user": {"username": "artist1"},
+            "artwork_url": null,
+            "duration": 180000
+        })];
         let full_tracks = extract_full_tracks_from_hydration(&tracks);
         assert_eq!(full_tracks.len(), 1);
         assert_eq!(full_tracks[0].id, 123);
@@ -1132,7 +1132,7 @@ mod tests {
     fn test_extract_full_tracks_from_hydration_skips_incomplete() {
         let tracks: Vec<Value> = vec![
             serde_json::json!({"id": 123}), // Missing title and user
-            serde_json::json!(456),          // Just an ID
+            serde_json::json!(456),         // Just an ID
             serde_json::json!({
                 "id": 789,
                 "title": "Track 3",
@@ -1173,12 +1173,10 @@ mod tests {
 
     #[test]
     fn test_extract_playlist_from_hydration_not_found() {
-        let items = vec![
-            HydrationItem {
-                hydratable: "other".to_string(),
-                data: serde_json::json!({}),
-            },
-        ];
+        let items = vec![HydrationItem {
+            hydratable: "other".to_string(),
+            data: serde_json::json!({}),
+        }];
         let result = extract_playlist_from_hydration(&items);
         assert!(result.is_err());
     }
