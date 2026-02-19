@@ -2,6 +2,7 @@ pub mod auth_choice;
 pub mod cancellation;
 pub mod constants;
 pub mod deep_link;
+#[cfg(debug_assertions)]
 pub mod dev_server;
 pub mod ffmpeg;
 pub mod http;
