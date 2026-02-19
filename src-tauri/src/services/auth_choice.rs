@@ -24,7 +24,6 @@ pub struct AuthChoiceState {
     pending: Mutex<bool>,
 }
 
-#[allow(dead_code)]
 impl AuthChoiceState {
     pub fn new() -> Self {
         let (sender, receiver) = watch::channel(None);
@@ -51,11 +50,6 @@ impl AuthChoiceState {
     pub async fn set_pending(&self, pending: bool) {
         let mut guard = self.pending.lock().await;
         *guard = pending;
-    }
-
-    pub async fn is_pending(&self) -> bool {
-        let guard = self.pending.lock().await;
-        *guard
     }
 
     pub fn send_choice(&self, choice: AuthChoice) {
