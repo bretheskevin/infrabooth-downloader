@@ -21,7 +21,7 @@ export function useOverallProgressStats(): OverallProgressStats {
   );
   const hasPendingTrack = tracks.some((track) => track.status === 'pending');
 
-  const percentage = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const percentage = totalCount > 0 ? Math.floor((completedCount / totalCount) * 100) : 0;
   const showPreparing = !hasActiveTrack && hasPendingTrack;
   const showCancelButton = hasActiveTrack || hasPendingTrack;
 
