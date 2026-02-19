@@ -5,6 +5,7 @@ use sha2::{Digest, Sha256};
 use url::Url;
 
 use crate::models::AuthError;
+use crate::services::http::handle_json_response;
 
 /// OAuth configuration constants
 pub const CLIENT_ID: &str = "4CHDCUOhHIdSxBv4XN0msyZXuIXbB5wv";
@@ -102,16 +103,7 @@ pub async fn exchange_code(
         .send()
         .await?;
 
-    if response.status().is_success() {
-        Ok(response.json().await?)
-    } else {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        Err(AuthError::TokenExchangeFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )))
-    }
+    handle_json_response(response, AuthError::TokenExchangeFailed).await
 }
 
 /// Returns the client secret embedded at compile time from .env.
@@ -163,16 +155,7 @@ pub async fn refresh_tokens(
         .send()
         .await?;
 
-    if response.status().is_success() {
-        Ok(response.json().await?)
-    } else {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        Err(AuthError::RefreshFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )))
-    }
+    handle_json_response(response, AuthError::RefreshFailed).await
 }
 
 /// Gets an app-level access token using Client Credentials flow.
@@ -189,16 +172,7 @@ pub async fn get_app_token(client_secret: &str) -> Result<AppTokenResponse, Auth
         .send()
         .await?;
 
-    if response.status().is_success() {
-        Ok(response.json().await?)
-    } else {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        Err(AuthError::TokenExchangeFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )))
-    }
+    handle_json_response(response, AuthError::TokenExchangeFailed).await
 }
 
 /// Fetches the authenticated user's profile from SoundCloud.
@@ -217,16 +191,7 @@ pub async fn fetch_user_profile(access_token: &str) -> Result<UserProfile, AuthE
         .send()
         .await?;
 
-    if response.status().is_success() {
-        Ok(response.json().await?)
-    } else {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        Err(AuthError::ProfileFetchFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )))
-    }
+    handle_json_response(response, AuthError::ProfileFetchFailed).await
 }
 
 #[cfg(test)]

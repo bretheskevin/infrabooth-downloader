@@ -9,9 +9,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useSettingsStore } from '@/features/settings/store';
+import { useSettingsStore, checkWritePermission } from '@/features/settings';
 import { open } from '@tauri-apps/plugin-dialog';
-import { invoke } from '@tauri-apps/api/core';
 import { cn } from '@/lib/utils';
 import { logger } from '@/lib/logger';
 
@@ -49,9 +48,7 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
       });
 
       if (selected && typeof selected === 'string') {
-        const hasPermission = await invoke<boolean>('check_write_permission', {
-          path: selected,
-        });
+        const hasPermission = await checkWritePermission(selected);
 
         if (hasPermission) {
           setLocalPath(selected);

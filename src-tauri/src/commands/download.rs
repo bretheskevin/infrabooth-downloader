@@ -3,12 +3,13 @@ use specta::Type;
 use std::path::PathBuf;
 use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
-use tauri::{Emitter, Manager, State};
+use tauri::{Emitter, State};
 
 use crate::models::{ErrorResponse, HasErrorCode};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState};
 use crate::services::cancellation::CancellationState;
 use crate::services::metadata::TrackMetadata;
+use crate::services::paths::get_downloads_dir;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem};
 use crate::services::ytdlp::DownloadProgressEvent;
@@ -255,9 +256,9 @@ pub async fn respond_to_auth_choice(
 
 /// Get the default download path.
 fn get_download_path(app: &tauri::AppHandle) -> Result<PathBuf, ErrorResponse> {
-    app.path().download_dir().map_err(|e| ErrorResponse {
+    get_downloads_dir(app).map_err(|message| ErrorResponse {
         code: "DOWNLOAD_FAILED".to_string(),
-        message: format!("Failed to get downloads directory: {}", e),
+        message,
     })
 }
 

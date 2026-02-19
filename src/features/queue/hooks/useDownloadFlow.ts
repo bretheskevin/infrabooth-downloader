@@ -4,6 +4,7 @@ import { useSyncToQueue } from './useSyncToQueue';
 import { useQueueStore } from '@/features/queue/store';
 import { useSettingsStore } from '@/features/settings/store';
 import { startDownloadQueue } from '@/features/queue/api/download';
+import { queueTrackToDownloadRequest } from '@/features/queue/utils/transforms';
 import { logger } from '@/lib/logger';
 import type { ValidationResult, PlaylistInfo, TrackInfo } from '@/features/url-input';
 import { isPlaylist } from '@/features/url-input';
@@ -69,14 +70,7 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
 
     try {
       await startDownloadQueue({
-        tracks: queueTracks.map((t) => ({
-          // Use SoundCloud API URL format which yt-dlp can resolve
-          trackUrl: `https://api.soundcloud.com/tracks/${t.id}`,
-          trackId: t.id,
-          title: t.title,
-          artist: t.artist,
-          artworkUrl: t.artworkUrl ?? null,
-        })),
+        tracks: queueTracks.map(queueTrackToDownloadRequest),
         albumName: albumName ?? null,
         outputDir: outputDir ?? null,
       });
