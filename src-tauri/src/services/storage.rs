@@ -153,9 +153,9 @@ pub fn current_timestamp() -> u64 {
 /// # Returns
 /// `true` if the token is expired or will expire within 5 minutes
 pub fn is_token_expired_or_expiring(expires_at: u64) -> bool {
-    const REFRESH_BUFFER_SECONDS: u64 = 300; // 5 minutes
+    use crate::services::constants::TOKEN_REFRESH_BUFFER_SECS;
     let now = current_timestamp();
-    expires_at <= now + REFRESH_BUFFER_SECONDS
+    expires_at <= now + TOKEN_REFRESH_BUFFER_SECS
 }
 
 pub async fn refresh_and_store_tokens(tokens: &StoredTokens) -> Result<StoredTokens, String> {
@@ -285,13 +285,14 @@ mod tests {
 
     #[test]
     fn test_is_token_expired_at_buffer_boundary() {
+        use crate::services::constants::TOKEN_REFRESH_BUFFER_SECS;
         let now = current_timestamp();
-        // Exactly at the 5-minute buffer boundary
-        let at_boundary = now + 300;
+        // Exactly at the buffer boundary
+        let at_boundary = now + TOKEN_REFRESH_BUFFER_SECS;
         assert!(is_token_expired_or_expiring(at_boundary));
 
         // Just past the buffer
-        let past_boundary = now + 301;
+        let past_boundary = now + TOKEN_REFRESH_BUFFER_SECS + 1;
         assert!(!is_token_expired_or_expiring(past_boundary));
     }
 

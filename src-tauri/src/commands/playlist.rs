@@ -1,3 +1,5 @@
+use std::future::Future;
+
 use crate::models::url::ValidationResult;
 use crate::services::playlist::{
     fetch_playlist_info, fetch_track_info, PlaylistError, PlaylistInfo, TrackInfo,
@@ -19,27 +21,33 @@ async fn try_refresh_token() -> Result<(), String> {
     Ok(())
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn get_playlist_info(url: String) -> Result<PlaylistInfo, String> {
-    log::info!("[get_playlist_info] Called with URL: {}", url);
+async fn with_token_refresh<T, F, Fut>(
+    fetch_fn: F,
+    context: &str,
+    success_log: impl FnOnce(&T) -> String,
+) -> Result<T, String>
+where
+    F: Fn() -> Fut,
+    Fut: Future<Output = Result<T, PlaylistError>>,
+{
+    log::info!("[{}] Called", context);
 
-    match fetch_playlist_info(&url).await {
-        Ok(info) => {
-            log::info!("[get_playlist_info] Success: got playlist '{}'", info.title);
-            Ok(info)
+    match fetch_fn().await {
+        Ok(result) => {
+            log::info!("[{}] Success: {}", context, success_log(&result));
+            Ok(result)
         }
         Err(PlaylistError::TokenExpired) => {
-            log::info!("[get_playlist_info] Token expired, attempting refresh...");
+            log::info!("[{}] Token expired, attempting refresh...", context);
             try_refresh_token().await?;
-            log::info!("[get_playlist_info] Token refreshed, retrying fetch...");
-            fetch_playlist_info(&url).await.map_err(|e| {
-                log::error!("[get_playlist_info] Retry failed: {}", e);
+            log::info!("[{}] Token refreshed, retrying fetch...", context);
+            fetch_fn().await.map_err(|e| {
+                log::error!("[{}] Retry failed: {}", context, e);
                 e.to_string()
             })
         }
         Err(e) => {
-            log::error!("[get_playlist_info] Error: {}", e);
+            log::error!("[{}] Error: {}", context, e);
             Err(e.to_string())
         }
     }
@@ -47,26 +55,22 @@ pub async fn get_playlist_info(url: String) -> Result<PlaylistInfo, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_track_info(url: String) -> Result<TrackInfo, String> {
-    log::info!("[get_track_info] Called with URL: {}", url);
+pub async fn get_playlist_info(url: String) -> Result<PlaylistInfo, String> {
+    with_token_refresh(
+        || fetch_playlist_info(&url),
+        "get_playlist_info",
+        |info| format!("got playlist '{}'", info.title),
+    )
+    .await
+}
 
-    match fetch_track_info(&url).await {
-        Ok(info) => {
-            log::info!("[get_track_info] Success: got track '{}'", info.title);
-            Ok(info)
-        }
-        Err(PlaylistError::TokenExpired) => {
-            log::info!("[get_track_info] Token expired, attempting refresh...");
-            try_refresh_token().await?;
-            log::info!("[get_track_info] Token refreshed, retrying fetch...");
-            fetch_track_info(&url).await.map_err(|e| {
-                log::error!("[get_track_info] Retry failed: {}", e);
-                e.to_string()
-            })
-        }
-        Err(e) => {
-            log::error!("[get_track_info] Error: {}", e);
-            Err(e.to_string())
-        }
-    }
+#[tauri::command]
+#[specta::specta]
+pub async fn get_track_info(url: String) -> Result<TrackInfo, String> {
+    with_token_refresh(
+        || fetch_track_info(&url),
+        "get_track_info",
+        |info| format!("got track '{}'", info.title),
+    )
+    .await
 }

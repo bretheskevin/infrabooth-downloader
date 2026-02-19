@@ -192,12 +192,12 @@ static APP_TOKEN_CACHE: Lazy<Mutex<Option<CachedAppToken>>> = Lazy::new(|| Mutex
 
 /// Gets a valid app token, fetching a new one if needed.
 async fn get_cached_app_token() -> Result<String, PlaylistError> {
+    use crate::services::constants::TOKEN_REFRESH_BUFFER_SECS;
     // Check if we have a valid cached token
     {
         let cache = APP_TOKEN_CACHE.lock().unwrap();
         if let Some(ref cached) = *cache {
-            // Use 5-minute buffer before expiration
-            if cached.expires_at > current_timestamp() + 300 {
+            if cached.expires_at > current_timestamp() + TOKEN_REFRESH_BUFFER_SECS {
                 return Ok(cached.token.clone());
             }
         }

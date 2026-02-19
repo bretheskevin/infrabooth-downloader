@@ -1,6 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { trackInfoToQueueTrack, playlistTracksToQueueTracks } from '../transforms';
+import {
+  trackInfoToQueueTrack,
+  playlistTracksToQueueTracks,
+  queueTrackToDownloadRequest,
+} from '../transforms';
 import type { TrackInfo } from '@/features/url-input';
+import type { Track } from '@/features/queue/types/track';
 
 const mockTrack: TrackInfo = {
   id: 123456,
@@ -74,5 +79,54 @@ describe('playlistTracksToQueueTracks', () => {
 
     expect(result[0]!.id).toBe('789');
     expect(result[1]!.id).toBe('123456');
+  });
+});
+
+describe('queueTrackToDownloadRequest', () => {
+  const mockQueueTrack: Track = {
+    id: '123456',
+    title: 'Test Track',
+    artist: 'TestArtist',
+    artworkUrl: 'https://example.com/art.jpg',
+    status: 'pending',
+  };
+
+  const mockQueueTrackNoArtwork: Track = {
+    id: '789',
+    title: 'No Art Track',
+    artist: 'Artist2',
+    artworkUrl: null,
+    status: 'pending',
+  };
+
+  it('should convert queue Track to QueueItemRequest', () => {
+    const result = queueTrackToDownloadRequest(mockQueueTrack);
+
+    expect(result).toEqual({
+      trackUrl: 'https://api.soundcloud.com/tracks/123456',
+      trackId: '123456',
+      title: 'Test Track',
+      artist: 'TestArtist',
+      artworkUrl: 'https://example.com/art.jpg',
+    });
+  });
+
+  it('should generate correct SoundCloud API URL', () => {
+    const result = queueTrackToDownloadRequest(mockQueueTrack);
+    expect(result.trackUrl).toBe('https://api.soundcloud.com/tracks/123456');
+  });
+
+  it('should handle null artwork', () => {
+    const result = queueTrackToDownloadRequest(mockQueueTrackNoArtwork);
+    expect(result.artworkUrl).toBeNull();
+  });
+
+  it('should handle null artwork', () => {
+    const trackWithNullArt: Track = {
+      ...mockQueueTrack,
+      artworkUrl: null,
+    };
+    const result = queueTrackToDownloadRequest(trackWithNullArt);
+    expect(result.artworkUrl).toBeNull();
   });
 });

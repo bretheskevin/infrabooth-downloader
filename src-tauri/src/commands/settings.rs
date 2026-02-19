@@ -1,7 +1,8 @@
 use std::fs;
-use std::path::{Path, PathBuf};
-use tauri::Manager;
+use std::path::Path;
 use uuid::Uuid;
+
+use crate::services::paths::get_downloads_dir;
 
 #[tauri::command]
 #[specta::specta]
@@ -31,10 +32,7 @@ pub async fn check_write_permission(path: String) -> Result<bool, String> {
 #[tauri::command]
 #[specta::specta]
 pub fn get_default_download_path(app: tauri::AppHandle) -> Result<String, String> {
-    app.path()
-        .download_dir()
-        .map(|p: PathBuf| p.to_string_lossy().to_string())
-        .map_err(|e: tauri::Error| e.to_string())
+    get_downloads_dir(&app).map(|p| p.to_string_lossy().to_string())
 }
 
 #[tauri::command]
