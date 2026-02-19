@@ -205,6 +205,40 @@ async validateDownloadPath(path: string) : Promise<Result<boolean, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Checks for available updates.
+ * 
+ * # Returns
+ * * `Ok(Some(UpdateInfo))` - Update available with version, notes, and date
+ * * `Ok(None)` - No update available
+ * * `Err(String)` - Error message if check fails
+ */
+async checkForUpdates() : Promise<Result<UpdateInfo | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_for_updates") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Downloads and installs an available update.
+ * 
+ * This will download the update in the background and install it.
+ * On most platforms, the app will need to restart to apply the update.
+ * 
+ * # Returns
+ * * `Ok(())` - Update downloaded and installed successfully
+ * * `Err(String)` - Error message if installation fails
+ */
+async installUpdate() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("install_update") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -235,6 +269,10 @@ export type TrackInfo = { id: number; title: string; user: UserInfo; artwork_url
  * Duration in milliseconds.
  */
 duration: number }
+/**
+ * Information about an available update.
+ */
+export type UpdateInfo = { version: string; body: string | null; date: string | null }
 export type UrlType = "playlist" | "track"
 /**
  * User information from SoundCloud API (public).
