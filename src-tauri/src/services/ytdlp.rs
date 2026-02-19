@@ -80,6 +80,10 @@ fn sanitize_filename(s: &str) -> String {
         .collect()
 }
 
+fn escape_for_regex_replacement(s: &str) -> String {
+    s.replace('\\', "\\\\")
+}
+
 struct OutputTemplateResult {
     template: String,
     display_title: String,
@@ -186,11 +190,11 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         "--replace-in-metadata".to_string(),
         "artist".to_string(),
         ".+".to_string(),
-        config.artist.clone(),
+        escape_for_regex_replacement(&config.artist),
         "--replace-in-metadata".to_string(),
         "title".to_string(),
         ".+".to_string(),
-        output_result.display_title,
+        escape_for_regex_replacement(&output_result.display_title),
         "-o".to_string(),
         output_result.template,
         "--windows-filenames".to_string(),
@@ -629,6 +633,30 @@ mod tests {
         assert_eq!(
             parse_destination(line),
             Some("/downloads/Artist - Track 🔥.mp3".to_string())
+        );
+    }
+
+    #[test]
+    fn test_escape_for_regex_replacement_trailing_backslash() {
+        let title = r"JLT - Acid Contre-Attaque 3.03 /Xtract Live\";
+        assert_eq!(
+            escape_for_regex_replacement(title),
+            r"JLT - Acid Contre-Attaque 3.03 /Xtract Live\\"
+        );
+    }
+
+    #[test]
+    fn test_escape_for_regex_replacement_multiple_backslashes() {
+        let title = r"Path\to\file";
+        assert_eq!(escape_for_regex_replacement(title), r"Path\\to\\file");
+    }
+
+    #[test]
+    fn test_escape_for_regex_replacement_no_backslashes() {
+        let title = "Normal Title - No Backslashes";
+        assert_eq!(
+            escape_for_regex_replacement(title),
+            "Normal Title - No Backslashes"
         );
     }
 }
