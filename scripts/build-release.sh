@@ -13,6 +13,25 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m'
 
+# Load .env file if it exists (check both root and src-tauri)
+if [ -f ".env" ]; then
+    echo -e "${YELLOW}Loading environment from .env...${NC}"
+    set -a
+    source .env
+    set +a
+elif [ -f "src-tauri/.env" ]; then
+    echo -e "${YELLOW}Loading environment from src-tauri/.env...${NC}"
+    set -a
+    source src-tauri/.env
+    set +a
+fi
+
+# Verify signing keys are set
+if [ -z "$TAURI_SIGNING_PRIVATE_KEY" ]; then
+    echo -e "${RED}Warning: TAURI_SIGNING_PRIVATE_KEY not set. Updater signatures will fail.${NC}"
+    echo -e "${YELLOW}Add it to src-tauri/.env (see src-tauri/.env.example)${NC}"
+fi
+
 VERSION="${1:-$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')}"
 RELEASE_DIR="release-builds/v${VERSION}"
 
