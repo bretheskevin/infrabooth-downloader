@@ -25,8 +25,6 @@ use crate::services::storage::{current_timestamp, is_token_expired_or_expiring, 
 
 #[derive(Debug, Deserialize)]
 struct ResolveResponse {
-    #[allow(dead_code)]
-    status: Option<String>,
     location: Option<String>,
 }
 
