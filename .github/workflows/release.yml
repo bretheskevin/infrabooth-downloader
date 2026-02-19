@@ -28,12 +28,12 @@ jobs:
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
             args: ''
-          # macOS Intel
-          - platform: macos-13
+          # macOS Intel (macos-14 is x64)
+          - platform: macos-14
             target: x86_64-apple-darwin
             args: '--target x86_64-apple-darwin'
-          # macOS Apple Silicon
-          - platform: macos-latest
+          # macOS Apple Silicon (macos-15 is arm64)
+          - platform: macos-15
             target: aarch64-apple-darwin
             args: '--target aarch64-apple-darwin'
 
@@ -62,6 +62,10 @@ jobs:
 
       - name: Install npm dependencies
         run: npm ci
+
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: brew install create-dmg
 
       - name: Verify sidecar binaries exist
         shell: bash
