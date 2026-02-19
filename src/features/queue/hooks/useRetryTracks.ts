@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useQueueStore, type Track } from '@/features/queue/store';
 import { startDownloadQueue } from '@/features/queue/api/download';
+import { queueTrackToDownloadRequest } from '@/features/queue/utils/transforms';
 import { logger } from '@/lib/logger';
 
 interface UseRetryTracksReturn {
@@ -8,6 +9,26 @@ interface UseRetryTracksReturn {
   retryAllFailed: () => Promise<void>;
   retrySingleTrack: (trackId: string) => Promise<void>;
   canRetry: boolean;
+}
+
+async function executeRetry(tracks: Track[], logMessage: string): Promise<void> {
+  const { setRetrying, setInitializing, outputDir } = useQueueStore.getState();
+
+  setRetrying(true);
+  setInitializing(true);
+
+  logger.info(logMessage);
+
+  try {
+    await startDownloadQueue({
+      tracks: tracks.map(queueTrackToDownloadRequest),
+      albumName: null,
+      outputDir: outputDir ?? null,
+    });
+  } catch (error) {
+    logger.error(`[useRetryTracks] Retry failed: ${error}`);
+    setRetrying(false);
+  }
 }
 
 export function useRetryTracks(): UseRetryTracksReturn {
@@ -18,65 +39,22 @@ export function useRetryTracks(): UseRetryTracksReturn {
   const canRetry = failedCount > 0 && !isProcessing && !isRetrying;
 
   const retryAllFailed = useCallback(async () => {
-    const { prepareRetryFailed, setRetrying, setInitializing, outputDir } =
-      useQueueStore.getState();
-
+    const { prepareRetryFailed } = useQueueStore.getState();
     const failedTracks = prepareRetryFailed();
     if (failedTracks.length === 0) return;
 
-    setRetrying(true);
-    setInitializing(true);
-
-    logger.info(`[useRetryTracks] Retrying ${failedTracks.length} failed tracks`);
-
-    try {
-      await startDownloadQueue({
-        tracks: failedTracks.map((t: Track) => ({
-          trackUrl: `https://api.soundcloud.com/tracks/${t.id}`,
-          trackId: t.id,
-          title: t.title,
-          artist: t.artist,
-          artworkUrl: t.artworkUrl ?? null,
-        })),
-        albumName: null,
-        outputDir: outputDir ?? null,
-      });
-    } catch (error) {
-      logger.error(`[useRetryTracks] Retry failed: ${error}`);
-      setRetrying(false);
-    }
+    await executeRetry(
+      failedTracks,
+      `[useRetryTracks] Retrying ${failedTracks.length} failed tracks`
+    );
   }, []);
 
   const retrySingleTrack = useCallback(async (trackId: string) => {
-    const { prepareRetrySingle, setRetrying, setInitializing, outputDir } =
-      useQueueStore.getState();
-
+    const { prepareRetrySingle } = useQueueStore.getState();
     const track = prepareRetrySingle(trackId);
     if (!track) return;
 
-    setRetrying(true);
-    setInitializing(true);
-
-    logger.info(`[useRetryTracks] Retrying single track: ${track.title}`);
-
-    try {
-      await startDownloadQueue({
-        tracks: [
-          {
-            trackUrl: `https://api.soundcloud.com/tracks/${track.id}`,
-            trackId: track.id,
-            title: track.title,
-            artist: track.artist,
-            artworkUrl: track.artworkUrl ?? null,
-          },
-        ],
-        albumName: null,
-        outputDir: outputDir ?? null,
-      });
-    } catch (error) {
-      logger.error(`[useRetryTracks] Single retry failed: ${error}`);
-      setRetrying(false);
-    }
+    await executeRetry([track], `[useRetryTracks] Retrying single track: ${track.title}`);
   }, []);
 
   return {

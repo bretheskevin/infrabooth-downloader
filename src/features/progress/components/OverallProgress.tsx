@@ -6,6 +6,7 @@ import { cancelDownloadQueue } from '@/features/queue/api/download';
 import { cn } from '@/lib/utils';
 import { useQueueStore } from '@/features/queue/store';
 import { useTranslation } from 'react-i18next';
+import { useOverallProgressStats } from '../hooks/useOverallProgressStats';
 
 interface OverallProgressProps {
   className?: string;
@@ -14,30 +15,21 @@ interface OverallProgressProps {
 export function OverallProgress({ className }: OverallProgressProps) {
   const { t } = useTranslation();
 
-  const tracks = useQueueStore((state) => state.tracks);
   const isCancelling = useQueueStore((state) => state.isCancelling);
   const setCancelling = useQueueStore((state) => state.setCancelling);
-  const totalCount = tracks.length;
-  const completedCount = tracks.filter((track) => track.status === 'complete').length;
 
-  // Check if any track is currently being processed (downloading or converting)
-  const hasActiveTrack = tracks.some(
-    (track) => track.status === 'downloading' || track.status === 'converting'
-  );
-  // Check if there are still tracks waiting to be processed
-  const hasPendingTrack = tracks.some((track) => track.status === 'pending');
+  const {
+    totalCount,
+    completedCount,
+    percentage,
+    showPreparing,
+    showCancelButton,
+  } = useOverallProgressStats();
 
-  // Don't render if no tracks in queue
   if (totalCount === 0) {
     return null;
   }
 
-  const percentage = Math.round((completedCount / totalCount) * 100);
-
-  // Show preparing state when no track is actively downloading/converting but some are still pending
-  const showPreparing = !hasActiveTrack && hasPendingTrack;
-
-  // Use singular form for single track
   const translationKey =
     totalCount === 1 ? 'download.progressSingle' : 'download.progress';
 
@@ -60,9 +52,6 @@ export function OverallProgress({ className }: OverallProgressProps) {
       setCancelling(false);
     }
   };
-
-  // Show cancel button when there's work in progress or pending
-  const showCancelButton = hasActiveTrack || hasPendingTrack;
 
   return (
     <div className={cn('space-y-3', className)}>

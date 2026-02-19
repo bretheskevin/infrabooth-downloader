@@ -76,10 +76,6 @@ pub enum YtDlpError {
     #[error("{0}")]
     ConversionFailed(String),
 
-    #[allow(dead_code)]
-    #[error("Track not found")]
-    NotFound,
-
     #[error("{0}")]
     AuthRequired(String),
 
@@ -100,7 +96,6 @@ impl HasErrorCode for YtDlpError {
             YtDlpError::TrackUnavailable(_) => "DOWNLOAD_FAILED",
             YtDlpError::NetworkError(_) => "NETWORK_ERROR",
             YtDlpError::ConversionFailed(_) => "CONVERSION_FAILED",
-            YtDlpError::NotFound => "INVALID_URL",
             YtDlpError::AuthRequired(_) => "AUTH_REQUIRED",
             YtDlpError::Cancelled => "CANCELLED",
             YtDlpError::AuthRefreshFailed => "AUTH_REFRESH_FAILED",
@@ -288,19 +283,6 @@ mod tests {
     }
 
     #[test]
-    fn test_ytdlp_not_found_error_message() {
-        let err = YtDlpError::NotFound;
-        assert_eq!(err.to_string(), "Track not found");
-    }
-
-    #[test]
-    fn test_error_response_from_ytdlp_not_found() {
-        let err = YtDlpError::NotFound;
-        let response: ErrorResponse = err.into();
-        assert_eq!(response.code, "INVALID_URL");
-    }
-
-    #[test]
     fn test_ytdlp_auth_required_error_message() {
         let err = YtDlpError::AuthRequired("Sign in required to access this content".to_string());
         assert_eq!(err.to_string(), "Sign in required to access this content");
@@ -337,7 +319,6 @@ mod tests {
             YtDlpError::ConversionFailed("test".to_string()).code(),
             "CONVERSION_FAILED"
         );
-        assert_eq!(YtDlpError::NotFound.code(), "INVALID_URL");
         assert_eq!(
             YtDlpError::AuthRequired("test".to_string()).code(),
             "AUTH_REQUIRED"
