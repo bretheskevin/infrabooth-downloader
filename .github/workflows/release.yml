@@ -1,9 +1,6 @@
 # Release Build Workflow for InfraBooth Downloader
-# Builds cross-platform installers and attaches them to GitHub Releases
-#
-# Two-phase approach to avoid race conditions:
-# 1. Build phase: Matrix builds all platforms in parallel, saves as artifacts
-# 2. Release phase: Single job creates release and uploads all artifacts
+# Self-hosted runner for macOS builds (free)
+# Windows builds require GitHub-hosted runners (paid) or manual build
 
 name: Release
 
@@ -18,32 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Phase 1: Build all platforms in parallel using matrix
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: macos-14
-            args: --target x86_64-apple-darwin
-            rust_target: x86_64-apple-darwin
-            artifact_name: macos-intel
-            bundle_path: src-tauri/target/x86_64-apple-darwin/release/bundle
-            sidecar_suffix: x86_64-apple-darwin
-          - platform: macos-15
-            args: --target aarch64-apple-darwin
-            rust_target: aarch64-apple-darwin
-            artifact_name: macos-arm
-            bundle_path: src-tauri/target/aarch64-apple-darwin/release/bundle
-            sidecar_suffix: aarch64-apple-darwin
-          - platform: windows-latest
-            args: ""
-            rust_target: x86_64-pc-windows-msvc
-            artifact_name: windows
-            bundle_path: src-tauri/target/release/bundle
-            sidecar_suffix: x86_64-pc-windows-msvc
-
-    runs-on: ${{ matrix.platform }}
+  # macOS builds on self-hosted runner (FREE)
+  build-macos:
+    runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -54,73 +28,45 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: ${{ matrix.rust_target }}
-
-      - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src-tauri -> target
-          cache-on-failure: true
-
-      - name: Install npm dependencies
-        run: npm ci
-
-      - name: Install macOS dependencies
-        if: contains(matrix.platform, 'macos')
-        run: brew install create-dmg
-
-      - name: Verify sidecar binaries exist
-        shell: bash
+      - name: Setup Rust
         run: |
-          if [[ "${{ matrix.platform }}" == "windows-latest" ]]; then
-            ls -la src-tauri/binaries/yt-dlp-${{ matrix.sidecar_suffix }}.exe
-            ls -la src-tauri/binaries/ffmpeg-${{ matrix.sidecar_suffix }}.exe
-            ls -la src-tauri/binaries/ffprobe-${{ matrix.sidecar_suffix }}.exe
-          else
-            ls -la src-tauri/binaries/yt-dlp-${{ matrix.sidecar_suffix }}
-            ls -la src-tauri/binaries/ffmpeg-${{ matrix.sidecar_suffix }}
-            ls -la src-tauri/binaries/ffprobe-${{ matrix.sidecar_suffix }}
-          fi
+          rustup update stable
+          rustup default stable
+          rustup target add x86_64-apple-darwin
+          rustup target add aarch64-apple-darwin
 
-      - name: Build Tauri app
-        uses: tauri-apps/tauri-action@v0
+      - name: Install dependencies
+        run: |
+          brew install create-dmg || true
+          npm ci
+
+      - name: Build macOS ARM
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          args: ${{ matrix.args }}
+        run: npm run tauri build -- --target aarch64-apple-darwin
+
+      - name: Build macOS Intel
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        run: npm run tauri build -- --target x86_64-apple-darwin
 
       - name: Upload macOS artifacts
-        if: contains(matrix.platform, 'macos')
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact_name }}
+          name: macos-builds
           path: |
-            ${{ matrix.bundle_path }}/dmg/*.dmg
-            ${{ matrix.bundle_path }}/macos/*.app.tar.gz
-            ${{ matrix.bundle_path }}/macos/*.app.tar.gz.sig
-          if-no-files-found: error
+            src-tauri/target/aarch64-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/aarch64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig
+            src-tauri/target/x86_64-apple-darwin/release/bundle/dmg/*.dmg
+            src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz
+            src-tauri/target/x86_64-apple-darwin/release/bundle/macos/*.app.tar.gz.sig
 
-      - name: Upload Windows artifacts
-        if: matrix.platform == 'windows-latest'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ matrix.artifact_name }}
-          path: |
-            ${{ matrix.bundle_path }}/msi/*.msi
-            ${{ matrix.bundle_path }}/msi/*.msi.sig
-            ${{ matrix.bundle_path }}/nsis/*.exe
-            ${{ matrix.bundle_path }}/nsis/*.exe.sig
-          if-no-files-found: error
-
-  # Phase 2: Create release and upload all artifacts
-  # Uses self-hosted runner to avoid GitHub Actions billing limits
+  # Release job - creates GitHub release with available artifacts
   release:
-    needs: build
+    needs: build-macos
     runs-on: self-hosted
     permissions:
       contents: write
@@ -128,84 +74,55 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Download all artifacts
+      - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: artifacts
 
-      - name: Display downloaded artifacts
-        run: find artifacts -type f | sort
-
-      - name: Get version from Cargo.toml
+      - name: Get version
         id: version
         run: |
           VERSION=$(grep '^version' src-tauri/Cargo.toml | head -1 | sed 's/.*"\(.*\)".*/\1/')
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Version: $VERSION"
 
-      - name: Prepare release assets
-        id: prepare
+      - name: Prepare release
         run: |
           mkdir -p release-assets
+          find artifacts -type f \( -name "*.dmg" -o -name "*.tar.gz" -o -name "*.sig" \) -exec cp {} release-assets/ \;
 
-          # Flatten all artifacts into release-assets
-          find artifacts -type f \( -name "*.dmg" -o -name "*.msi" -o -name "*.exe" -o -name "*.tar.gz" -o -name "*.sig" \) -exec cp {} release-assets/ \;
-
-          # Generate latest.json for Tauri updater
+          # Generate latest.json
           VERSION="${{ steps.version.outputs.version }}"
           TAG="${{ github.ref_name }}"
           BASE_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}"
 
-          # Find updater files and signatures
-          MACOS_INTEL_TAR=$(find artifacts/macos-intel -name "*.app.tar.gz" ! -name "*.sig" | head -1)
-          MACOS_ARM_TAR=$(find artifacts/macos-arm -name "*.app.tar.gz" ! -name "*.sig" | head -1)
-          WINDOWS_EXE=$(find artifacts/windows -name "*.exe" ! -name "*.sig" | head -1)
+          cd release-assets
 
-          # Read signatures
-          MACOS_INTEL_SIG=$(cat "${MACOS_INTEL_TAR}.sig" 2>/dev/null || echo "")
-          MACOS_ARM_SIG=$(cat "${MACOS_ARM_TAR}.sig" 2>/dev/null || echo "")
-          WINDOWS_SIG=$(cat "${WINDOWS_EXE}.sig" 2>/dev/null || echo "")
+          # Find macOS files
+          ARM_TAR=$(ls *aarch64*.app.tar.gz 2>/dev/null | head -1)
+          INTEL_TAR=$(ls *x64*.app.tar.gz 2>/dev/null | head -1)
+          ARM_SIG=$(cat "${ARM_TAR}.sig" 2>/dev/null || echo "")
+          INTEL_SIG=$(cat "${INTEL_TAR}.sig" 2>/dev/null || echo "")
 
-          # Get filenames and URL-encode spaces
-          MACOS_INTEL_FILE=$(basename "$MACOS_INTEL_TAR" | sed 's/ /%20/g')
-          MACOS_ARM_FILE=$(basename "$MACOS_ARM_TAR" | sed 's/ /%20/g')
-          WINDOWS_FILE=$(basename "$WINDOWS_EXE" | sed 's/ /%20/g')
-
-          echo "Files found:"
-          echo "  macOS Intel: $MACOS_INTEL_FILE"
-          echo "  macOS ARM: $MACOS_ARM_FILE"
-          echo "  Windows: $WINDOWS_FILE"
-
-          # Create latest.json
-          cat > release-assets/latest.json << EOF
+          cat > latest.json << EOF
           {
             "version": "${VERSION}",
-            "notes": "See the release notes for details.",
+            "notes": "See release notes for details.",
             "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
             "platforms": {
-              "darwin-x86_64": {
-                "signature": "${MACOS_INTEL_SIG}",
-                "url": "${BASE_URL}/${MACOS_INTEL_FILE}"
-              },
               "darwin-aarch64": {
-                "signature": "${MACOS_ARM_SIG}",
-                "url": "${BASE_URL}/${MACOS_ARM_FILE}"
+                "signature": "${ARM_SIG}",
+                "url": "${BASE_URL}/$(echo $ARM_TAR | sed 's/ /%20/g')"
               },
-              "windows-x86_64": {
-                "signature": "${WINDOWS_SIG}",
-                "url": "${BASE_URL}/${WINDOWS_FILE}"
+              "darwin-x86_64": {
+                "signature": "${INTEL_SIG}",
+                "url": "${BASE_URL}/$(echo $INTEL_TAR | sed 's/ /%20/g')"
               }
             }
           }
           EOF
 
-          echo "Generated latest.json:"
-          cat release-assets/latest.json
-
-      - name: Generate checksums
-        run: |
-          cd release-assets
-          sha256sum * > checksums.txt
+          # Checksums
+          shasum -a 256 * > checksums.txt
           cat checksums.txt
 
       - name: Create GitHub Release
@@ -214,17 +131,14 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: "InfraBooth Downloader v${{ steps.version.outputs.version }}"
           body: |
-            ## What's New
-            See the [changelog](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details.
-
             ## Downloads
             | Platform | Download |
             |----------|----------|
             | macOS (Apple Silicon) | `.dmg` (aarch64) |
             | macOS (Intel) | `.dmg` (x64) |
-            | Windows | `.exe` installer or `.msi` |
+
+            > **Note:** Windows builds coming soon.
           draft: true
-          prerelease: false
           files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
