@@ -1,7 +1,7 @@
 {
   "name": "infrabooth-downloader",
   "private": true,
-  "version": "0.1.9-test",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
