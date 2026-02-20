@@ -49,6 +49,9 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
+      - name: Create .env file
+        run: echo "SOUNDCLOUD_CLIENT_SECRET=${{ secrets.SOUNDCLOUD_CLIENT_SECRET }}" > src-tauri/.env
+
       - name: Get version
         id: version
         shell: bash
