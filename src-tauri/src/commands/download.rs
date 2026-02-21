@@ -73,6 +73,8 @@ pub async fn download_track_full(
                     track_id: track_id.clone(),
                     status: "failed".to_string(),
                     percent: None,
+                    downloaded_bytes: None,
+                    total_bytes: None,
                     error: Some(ErrorResponse {
                         code: e.code().to_string(),
                         message: e.to_string(),
@@ -88,6 +90,8 @@ pub async fn download_track_full(
             track_id,
             status: "complete".to_string(),
             percent: Some(1.0),
+            downloaded_bytes: None,
+            total_bytes: None,
             error: None,
         },
     );
