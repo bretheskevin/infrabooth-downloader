@@ -14,7 +14,54 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.changelog.outputs.content }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        id: version
+        run: |
+          if [ -n "${{ github.event.inputs.version }}" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check changelog exists
+        id: changelog
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+
+          if ! grep -q "## \[${VERSION}\]" CHANGELOG.md; then
+            echo "::error::No changelog entry found for version ${VERSION}"
+            echo "Please add a changelog entry in CHANGELOG.md for version ${VERSION}"
+            exit 1
+          fi
+
+          # Extract changelog content for this version
+          CONTENT=$(awk "/## \[${VERSION}\]/{flag=1; next} /## \[/{flag=0} flag" CHANGELOG.md)
+
+          if [ -z "$CONTENT" ]; then
+            echo "::error::Changelog entry for version ${VERSION} is empty"
+            exit 1
+          fi
+
+          echo "Found changelog for version ${VERSION}"
+          echo "$CONTENT"
+
+          # Save to output (escape newlines)
+          {
+            echo 'content<<EOF'
+            echo "$CONTENT"
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
   build:
+    needs: check-changelog
     strategy:
       fail-fast: false
       matrix:
@@ -117,7 +164,7 @@ jobs:
           path: output/*
 
   release:
-    needs: build
+    needs: [check-changelog, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -197,7 +244,18 @@ jobs:
         with:
           name: InfraBooth Downloader v${{ steps.version.outputs.version }}
           draft: true
-          generate_release_notes: true
+          body: |
+            ## What's New
+
+            ${{ needs.check-changelog.outputs.changelog }}
+
+            ## Downloads
+
+            | Platform | File |
+            |----------|------|
+            | macOS (Apple Silicon) | `InfraBooth_Downloader_${{ steps.version.outputs.version }}_Apple_Silicon.dmg` |
+            | macOS (Intel) | `InfraBooth_Downloader_${{ steps.version.outputs.version }}_Intel.dmg` |
+            | Windows | `InfraBooth.Downloader_${{ steps.version.outputs.version }}_x64-setup.exe` |
           files: release/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
