@@ -26,7 +26,8 @@ interface QueueState {
   updateTrackStatus: (
     id: string,
     status: Track['status'],
-    error?: Track['error']
+    error?: Track['error'],
+    progress?: { downloadedBytes?: number; totalBytes?: number }
   ) => void;
   setQueueProgress: (current: number, total: number) => void;
   setQueueComplete: (result: QueueCompleteEvent) => void;
@@ -71,11 +72,20 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     });
   },
 
-  updateTrackStatus: (id, status, error) => {
+  updateTrackStatus: (id, status, error, progress) => {
     logger.debug(`[queueStore] Track ${id} status: ${status}${error ? ` (error: ${error.code})` : ''}`);
     set((state) => ({
       tracks: state.tracks.map((track) =>
-        track.id === id ? { ...track, status, error } : track
+        track.id === id
+          ? {
+              ...track,
+              status,
+              error,
+              downloadedBytes: progress?.downloadedBytes ?? track.downloadedBytes,
+              // Keep the maximum totalBytes value (yt-dlp estimates fluctuate)
+              totalBytes: Math.max(progress?.totalBytes ?? 0, track.totalBytes ?? 0) || undefined,
+            }
+          : track
       ),
     }));
   },

@@ -17,3 +17,16 @@ export function formatDuration(ms: number): string {
   const seconds = totalSeconds % 60;
   return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
+
+/**
+ * Format bytes to human readable string
+ *
+ * @param bytes - Number of bytes
+ * @returns Formatted string (e.g., "5.2 MB", "128 KB")
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1000) return `${bytes} B`;
+  if (bytes < 1000 * 1000) return `${(bytes / 1000).toFixed(1)} KB`;
+  if (bytes < 1000 * 1000 * 1000) return `${(bytes / (1000 * 1000)).toFixed(1)} MB`;
+  return `${(bytes / (1000 * 1000 * 1000)).toFixed(1)} GB`;
+}
