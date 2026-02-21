@@ -15,6 +15,8 @@ export interface Track {
   artworkUrl: string | null;
   status: TrackStatus;
   error?: AppError;
+  downloadedBytes?: number;
+  totalBytes?: number;
 }
 
 /** Context for playlist track numbering (used by yt-dlp) */

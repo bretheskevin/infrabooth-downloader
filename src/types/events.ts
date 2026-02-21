@@ -10,6 +10,8 @@ export interface DownloadProgressEvent {
   trackId: string;
   status: TrackStatus;
   percent?: number;
+  downloadedBytes?: number;
+  totalBytes?: number;
   error?: AppError;
 }
 

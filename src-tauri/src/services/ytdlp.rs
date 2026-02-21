@@ -57,6 +57,7 @@ pub struct DownloadProgress {
     pub percent: f32,
     pub speed: Option<String>,
     pub eta: Option<String>,
+    pub total_bytes: Option<u64>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, specta::Type)]
@@ -66,6 +67,10 @@ pub struct DownloadProgressEvent {
     pub status: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub percent: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub downloaded_bytes: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub total_bytes: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
 }
@@ -267,23 +272,35 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
 
         match event {
             Some(CommandEvent::Stdout(line_bytes)) => {
-                let line = bytes_to_string(&line_bytes);
-                log::info!("yt-dlp stdout: {}", line);
+                let raw_line = bytes_to_string(&line_bytes);
+                // yt-dlp uses \r for progress updates, split and process each part
+                for line in raw_line.split(['\r', '\n']) {
+                    let line = line.trim();
+                    if line.is_empty() {
+                        continue;
+                    }
+                    log::info!("yt-dlp stdout: {}", line);
 
-                if let Some(path) = parse_destination(&line) {
-                    output_path = Some(PathBuf::from(path));
-                }
+                    if let Some(path) = parse_destination(line) {
+                        output_path = Some(PathBuf::from(path));
+                    }
 
-                if let Some(progress) = parse_progress(&line) {
-                    let _ = app.emit(
-                        "download-progress",
-                        DownloadProgressEvent {
-                            track_id: config.track_id.clone(),
-                            status: "downloading".to_string(),
-                            percent: Some(progress.percent),
-                            error: None,
-                        },
-                    );
+                    if let Some(progress) = parse_progress(line) {
+                        let downloaded_bytes = progress.total_bytes.map(|total| {
+                            (progress.percent * total as f32) as u64
+                        });
+                        let _ = app.emit(
+                            "download-progress",
+                            DownloadProgressEvent {
+                                track_id: config.track_id.clone(),
+                                status: "downloading".to_string(),
+                                percent: Some(progress.percent),
+                                downloaded_bytes,
+                                total_bytes: progress.total_bytes,
+                                error: None,
+                            },
+                        );
+                    }
                 }
             }
             Some(CommandEvent::Stderr(line_bytes)) => {
@@ -361,6 +378,24 @@ fn parse_destination(line: &str) -> Option<String> {
     }
 }
 
+fn parse_size_to_bytes(size_str: &str) -> Option<u64> {
+    // Handle estimated sizes with ~ prefix and extra spaces (e.g., "~  69.23MiB")
+    let size_str = size_str.trim().trim_start_matches('~').trim();
+    let (num_part, unit) = if size_str.ends_with("GiB") {
+        (size_str.trim_end_matches("GiB"), 1024 * 1024 * 1024)
+    } else if size_str.ends_with("MiB") {
+        (size_str.trim_end_matches("MiB"), 1024 * 1024)
+    } else if size_str.ends_with("KiB") {
+        (size_str.trim_end_matches("KiB"), 1024)
+    } else if size_str.ends_with("B") {
+        (size_str.trim_end_matches("B"), 1)
+    } else {
+        return None;
+    };
+    let num: f64 = num_part.parse().ok()?;
+    Some((num * unit as f64) as u64)
+}
+
 fn parse_progress(line: &str) -> Option<DownloadProgress> {
     if !line.contains("[download]") || !line.contains('%') {
         return None;
@@ -375,6 +410,19 @@ fn parse_progress(line: &str) -> Option<DownloadProgress> {
             None
         }
     })?;
+
+    let total_bytes = parts
+        .iter()
+        .position(|&p| p == "of")
+        .and_then(|i| {
+            // Handle "of ~  68.35MiB" where ~ is a separate token
+            if parts.get(i + 1) == Some(&"~") {
+                parts.get(i + 2)
+            } else {
+                parts.get(i + 1)
+            }
+        })
+        .and_then(|s| parse_size_to_bytes(s));
 
     let speed = parts
         .iter()
@@ -392,6 +440,7 @@ fn parse_progress(line: &str) -> Option<DownloadProgress> {
         percent: percent / 100.0,
         speed,
         eta,
+        total_bytes,
     })
 }
 
@@ -503,6 +552,35 @@ mod tests {
         assert!((progress.percent - 0.5).abs() < 0.01);
         assert_eq!(progress.speed, Some("1.00MiB/s".to_string()));
         assert_eq!(progress.eta, Some("00:02".to_string()));
+        assert_eq!(progress.total_bytes, Some(5 * 1024 * 1024));
+    }
+
+    #[test]
+    fn test_parse_size_to_bytes() {
+        assert_eq!(parse_size_to_bytes("5.00MiB"), Some(5 * 1024 * 1024));
+        assert_eq!(parse_size_to_bytes("~5.00MiB"), Some(5 * 1024 * 1024)); // estimated size
+        assert_eq!(parse_size_to_bytes("~  69.23MiB"), Some((69.23 * 1024.0 * 1024.0) as u64)); // with spaces
+        assert_eq!(parse_size_to_bytes("1.5GiB"), Some((1.5 * 1024.0 * 1024.0 * 1024.0) as u64));
+        assert_eq!(parse_size_to_bytes("512KiB"), Some(512 * 1024));
+        assert_eq!(parse_size_to_bytes("1024B"), Some(1024));
+        assert_eq!(parse_size_to_bytes("invalid"), None);
+    }
+
+    #[test]
+    fn test_parse_progress_estimated_size() {
+        let line = "[download]  25.0% of ~10.00MiB at 2.00MiB/s ETA 00:04";
+        let progress = parse_progress(line).expect("Should parse estimated size");
+        assert!((progress.percent - 0.25).abs() < 0.01);
+        assert_eq!(progress.total_bytes, Some(10 * 1024 * 1024));
+    }
+
+    #[test]
+    fn test_parse_progress_estimated_size_with_spaces() {
+        // Real yt-dlp output with ~ as separate token
+        let line = "[download]  13.6% of ~  68.35MiB at    1.63MiB/s ETA 00:36 (frag 49/361)";
+        let progress = parse_progress(line).expect("Should parse estimated size with spaces");
+        assert!((progress.percent - 0.136).abs() < 0.01);
+        assert_eq!(progress.total_bytes, Some((68.35 * 1024.0 * 1024.0) as u64));
     }
 
     #[test]
@@ -510,6 +588,7 @@ mod tests {
         let line = "[download] 100% of 5.00MiB in 00:05";
         let progress = parse_progress(line).expect("Should parse 100% progress");
         assert!((progress.percent - 1.0).abs() < 0.01);
+        assert_eq!(progress.total_bytes, Some(5 * 1024 * 1024));
     }
 
     #[test]

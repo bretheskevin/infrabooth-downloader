@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, formatBytes } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Music, Loader2 } from 'lucide-react';
 import { TrackStatusBadge } from './TrackStatusBadge';
@@ -107,6 +107,11 @@ export const TrackCard = memo(function TrackCard({
           (isActive || showInitializing) && 'text-primary'
         )}>{track.title}</p>
         <p className="text-xs text-muted-foreground truncate mt-0.5">{track.artist}</p>
+        {track.status === 'downloading' && track.totalBytes && track.downloadedBytes !== undefined && (
+          <p className="text-xs text-primary/80 mt-0.5">
+            {formatBytes(track.downloadedBytes)} / {formatBytes(track.totalBytes)}
+          </p>
+        )}
         {isGeoBlocked && isTouchDevice && (
           <div className="mt-1.5">
             <GeoBlockDetails />
