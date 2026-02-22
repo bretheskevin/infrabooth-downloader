@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-02-22
+
+### Changed
+
+- Download progress now shows file size (e.g., "5.2 MB / 12.4 MB") for better visibility
+
+### Fixed
+
+- Partial download files (.part, .ytdl) are now automatically cleaned up when a download is canceled
+
 ## [1.0.1] - 2026-02-20
 
 ### Fixed
