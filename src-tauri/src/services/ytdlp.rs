@@ -92,15 +92,16 @@ fn escape_for_regex_replacement(s: &str) -> String {
 struct OutputTemplateResult {
     template: String,
     display_title: String,
+    base_name: String,
 }
 
-fn build_output_template(
-    output_dir: &Path,
+/// Builds the base filename (without extension) for a track.
+/// Returns (base_name, display_title) where display_title is used for UI.
+fn build_base_filename(
     playlist_context: &Option<PlaylistContext>,
     artist: &str,
     title: &str,
-) -> OutputTemplateResult {
-    let dir_str = output_dir.to_string_lossy();
+) -> (String, String) {
     let safe_artist = sanitize_filename(artist);
     let safe_title = sanitize_filename(title);
 
@@ -114,19 +115,54 @@ fn build_output_template(
                 3
             };
             let track_num = format!("{:0width$}", ctx.track_position, width = width);
+            let base_name = format!("{} - {} - {}", track_num, safe_artist, safe_title);
             let display_title = format!("{} - {}", track_num, title);
-            OutputTemplateResult {
-                template: format!(
-                    "{}/{} - {} - {}.%(ext)s",
-                    dir_str, track_num, safe_artist, safe_title
-                ),
-                display_title,
+            (base_name, display_title)
+        }
+        None => {
+            let base_name = format!("{} - {}", safe_artist, safe_title);
+            (base_name, title.to_string())
+        }
+    }
+}
+
+fn build_output_template(
+    output_dir: &Path,
+    playlist_context: &Option<PlaylistContext>,
+    artist: &str,
+    title: &str,
+) -> OutputTemplateResult {
+    let dir_str = output_dir.to_string_lossy();
+    let (base_name, display_title) = build_base_filename(playlist_context, artist, title);
+
+    OutputTemplateResult {
+        template: format!("{}/{}.%(ext)s", dir_str, base_name),
+        display_title,
+        base_name,
+    }
+}
+
+fn cleanup_partial_files(output_dir: &Path, base_name: &str) {
+    let extensions = [".part", ".ytdl"];
+
+    let entries = match std::fs::read_dir(output_dir) {
+        Ok(entries) => entries,
+        Err(e) => {
+            log::warn!("[ytdlp] Failed to read output dir for cleanup: {}", e);
+            return;
+        }
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+            if name.starts_with(base_name) && extensions.iter().any(|ext| name.ends_with(ext)) {
+                log::info!("[ytdlp] Cleaning up partial file: {:?}", path);
+                if let Err(e) = std::fs::remove_file(&path) {
+                    log::warn!("[ytdlp] Failed to remove partial file {:?}: {}", path, e);
+                }
             }
         }
-        None => OutputTemplateResult {
-            template: format!("{}/{} - {}.%(ext)s", dir_str, safe_artist, safe_title),
-            display_title: title.to_string(),
-        },
     }
 }
 
@@ -260,6 +296,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                         let _ = child.kill();
                     }
                 }
+                cleanup_partial_files(&config.output_dir, &output_result.base_name);
                 return Err(YtDlpError::Cancelled);
             }
         }
@@ -319,6 +356,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                     if let Some(ref crx) = cancel_rx {
                         if *crx.borrow() {
                             log::info!("[ytdlp] Download was cancelled (terminated)");
+                            cleanup_partial_files(&config.output_dir, &output_result.base_name);
                             return Err(YtDlpError::Cancelled);
                         }
                     }
