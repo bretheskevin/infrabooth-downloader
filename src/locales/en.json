@@ -148,6 +148,7 @@
     "available": "Update available: v{{version}}",
     "download": "Download",
     "learnMore": "Learn more",
+    "dismiss": "Dismiss",
     "later": "Later",
     "whatsNew": "What's new"
   },
