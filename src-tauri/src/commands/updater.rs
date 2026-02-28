@@ -3,12 +3,14 @@ use tauri_plugin_updater::UpdaterExt;
 
 use crate::services::updater::{self, UpdateInfo};
 
-/// Checks for available updates.
+/// Checks for available updates silently.
+///
+/// Network errors and timeouts are handled gracefully — the app continues
+/// normally without showing errors to the user (FR27 compliance).
 ///
 /// # Returns
 /// * `Ok(Some(UpdateInfo))` - Update available with version, notes, and date
-/// * `Ok(None)` - No update available
-/// * `Err(String)` - Error message if check fails
+/// * `Ok(None)` - No update available, or check failed silently
 #[tauri::command]
 #[specta::specta]
 pub async fn check_for_updates(app: AppHandle) -> Result<Option<UpdateInfo>, String> {
@@ -19,12 +21,13 @@ pub async fn check_for_updates(app: AppHandle) -> Result<Option<UpdateInfo>, Str
             Ok(Some(info))
         }
         Ok(None) => {
-            log::info!("[updater] No update available");
+            log::info!("[updater] App is up to date");
             Ok(None)
         }
         Err(e) => {
-            log::error!("[updater] Error checking for updates: {}", e);
-            Err(e)
+            // Silent failure per AC #4/#5 — log warning, return Ok(None)
+            log::warn!("[updater] Check failed (silent): {}", e);
+            Ok(None)
         }
     }
 }
