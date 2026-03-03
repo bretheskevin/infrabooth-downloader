@@ -15,3 +15,6 @@ src-tauri/.env
 # Rust build artifacts
 target/
 Cargo.lock
+
+# Serena MCP plugin
+.serena/
