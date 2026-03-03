@@ -207,12 +207,14 @@ async validateDownloadPath(path: string) : Promise<Result<boolean, string>> {
 }
 },
 /**
- * Checks for available updates.
+ * Checks for available updates silently.
+ * 
+ * Network errors and timeouts are handled gracefully — the app continues
+ * normally without showing errors to the user (FR27 compliance).
  * 
  * # Returns
  * * `Ok(Some(UpdateInfo))` - Update available with version, notes, and date
- * * `Ok(None)` - No update available
- * * `Err(String)` - Error message if check fails
+ * * `Ok(None)` - No update available, or check failed silently
  */
 async checkForUpdates() : Promise<Result<UpdateInfo | null, string>> {
     try {
