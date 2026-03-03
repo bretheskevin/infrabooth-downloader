@@ -563,9 +563,8 @@ async fn fetch_tracks_by_ids_parallel(ids: &[u64], access_token: &str) -> Vec<Tr
 /// Validates that a URL is a SoundCloud URL.
 fn is_valid_soundcloud_url(url: &str) -> bool {
     url.starts_with("https://soundcloud.com/")
-        || url.starts_with("http://soundcloud.com/")
         || url.starts_with("https://www.soundcloud.com/")
-        || url.starts_with("http://www.soundcloud.com/")
+        || url.starts_with("https://on.soundcloud.com/")
 }
 
 /// Fetches playlist info using the OAuth API (fallback for private playlists).
@@ -1048,30 +1047,17 @@ mod tests {
 
     // URL validation tests
     #[test]
-    fn test_is_valid_soundcloud_url_https() {
-        assert!(is_valid_soundcloud_url(
-            "https://soundcloud.com/artist/track"
-        ));
-    }
-
-    #[test]
-    fn test_is_valid_soundcloud_url_http() {
-        assert!(is_valid_soundcloud_url(
-            "http://soundcloud.com/artist/track"
-        ));
-    }
-
-    #[test]
-    fn test_is_valid_soundcloud_url_www() {
-        assert!(is_valid_soundcloud_url(
-            "https://www.soundcloud.com/artist/track"
-        ));
+    fn test_is_valid_soundcloud_url() {
+        assert!(is_valid_soundcloud_url("https://soundcloud.com/artist/track"));
+        assert!(is_valid_soundcloud_url("https://www.soundcloud.com/artist/track"));
+        assert!(is_valid_soundcloud_url("https://on.soundcloud.com/abc123XYZ"));
     }
 
     #[test]
     fn test_is_valid_soundcloud_url_rejects_other_domains() {
         assert!(!is_valid_soundcloud_url("https://example.com/track"));
         assert!(!is_valid_soundcloud_url("https://spotify.com/track"));
+        assert!(!is_valid_soundcloud_url("http://soundcloud.com/artist/track"));
         assert!(!is_valid_soundcloud_url("not-a-url"));
     }
 

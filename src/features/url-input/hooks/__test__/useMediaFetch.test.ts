@@ -5,8 +5,7 @@ import { createQueryWrapper } from '@/test/queryWrapper';
 import type { ValidationResult } from '@/features/url-input/types/url';
 
 vi.mock('@/features/url-input/api/playlist', () => ({
-  fetchPlaylistInfo: vi.fn(),
-  fetchTrackInfo: vi.fn(),
+  fetchMediaInfo: vi.fn(),
 }));
 
 vi.mock('react-i18next', () => ({
@@ -15,10 +14,9 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-import { fetchPlaylistInfo, fetchTrackInfo } from '@/features/url-input/api/playlist';
+import { fetchMediaInfo } from '@/features/url-input/api/playlist';
 
-const mockFetchPlaylistInfo = vi.mocked(fetchPlaylistInfo);
-const mockFetchTrackInfo = vi.mocked(fetchTrackInfo);
+const mockFetchMediaInfo = vi.mocked(fetchMediaInfo);
 
 const mockPlaylist = {
   id: 123,
@@ -41,14 +39,13 @@ const mockTrack = {
 
 const validTrackValidation: ValidationResult = { valid: true, urlType: 'track', error: null };
 const validPlaylistValidation: ValidationResult = { valid: true, urlType: 'playlist', error: null };
+const validShortLinkValidation: ValidationResult = { valid: true, urlType: null, error: null };
 const invalidValidation: ValidationResult = { valid: false, urlType: null, error: { code: 'INVALID', message: 'Invalid', hint: null } };
 
 describe('useMediaFetch', () => {
   beforeEach(() => {
-    mockFetchPlaylistInfo.mockReset();
-    mockFetchTrackInfo.mockReset();
-    mockFetchPlaylistInfo.mockResolvedValue(mockPlaylist);
-    mockFetchTrackInfo.mockResolvedValue(mockTrack);
+    mockFetchMediaInfo.mockReset();
+    mockFetchMediaInfo.mockResolvedValue(mockTrack);
   });
 
   describe('when validation is null', () => {
@@ -75,8 +72,7 @@ describe('useMediaFetch', () => {
         }
       );
 
-      expect(mockFetchPlaylistInfo).not.toHaveBeenCalled();
-      expect(mockFetchTrackInfo).not.toHaveBeenCalled();
+      expect(mockFetchMediaInfo).not.toHaveBeenCalled();
     });
   });
 
@@ -98,6 +94,8 @@ describe('useMediaFetch', () => {
 
   describe('when validation is valid for playlist', () => {
     it('should fetch playlist info', async () => {
+      mockFetchMediaInfo.mockResolvedValue(mockPlaylist);
+
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
         {
@@ -112,10 +110,10 @@ describe('useMediaFetch', () => {
 
       expect(result.current.data).toEqual(mockPlaylist);
       expect(result.current.error).toBeNull();
-      expect(mockFetchPlaylistInfo).toHaveBeenCalledWith(
-        'https://soundcloud.com/artist/sets/playlist'
+      expect(mockFetchMediaInfo).toHaveBeenCalledWith(
+        'https://soundcloud.com/artist/sets/playlist',
+        'playlist'
       );
-      expect(mockFetchTrackInfo).not.toHaveBeenCalled();
     });
   });
 
@@ -135,16 +133,38 @@ describe('useMediaFetch', () => {
 
       expect(result.current.data).toEqual(mockTrack);
       expect(result.current.error).toBeNull();
-      expect(mockFetchTrackInfo).toHaveBeenCalledWith(
-        'https://soundcloud.com/artist/track-name'
+      expect(mockFetchMediaInfo).toHaveBeenCalledWith(
+        'https://soundcloud.com/artist/track-name',
+        'track'
       );
-      expect(mockFetchPlaylistInfo).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('when validation is valid for short link', () => {
+    it('should fetch with null urlType', async () => {
+      const { result } = renderHook(
+        ({ url, validation }) => useMediaFetch(url, validation),
+        {
+          initialProps: { url: 'https://on.soundcloud.com/abc123XYZ', validation: validShortLinkValidation },
+          wrapper: createQueryWrapper(),
+        }
+      );
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      expect(result.current.data).toEqual(mockTrack);
+      expect(mockFetchMediaInfo).toHaveBeenCalledWith(
+        'https://on.soundcloud.com/abc123XYZ',
+        null
+      );
     });
   });
 
   describe('error handling', () => {
     it('should map "not found" error to INVALID_URL', async () => {
-      mockFetchTrackInfo.mockRejectedValue(new Error('Track not found'));
+      mockFetchMediaInfo.mockRejectedValue(new Error('Track not found'));
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
@@ -167,7 +187,7 @@ describe('useMediaFetch', () => {
     });
 
     it('should map "region" error to GEO_BLOCKED', async () => {
-      mockFetchTrackInfo.mockRejectedValue(
+      mockFetchMediaInfo.mockRejectedValue(
         new Error('Content not available in your region')
       );
 
@@ -190,7 +210,7 @@ describe('useMediaFetch', () => {
     });
 
     it('should map "GeoBlocked" error to GEO_BLOCKED', async () => {
-      mockFetchTrackInfo.mockRejectedValue(new Error('GeoBlocked'));
+      mockFetchMediaInfo.mockRejectedValue(new Error('GeoBlocked'));
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
@@ -211,7 +231,7 @@ describe('useMediaFetch', () => {
     });
 
     it('should map unknown error to FETCH_FAILED', async () => {
-      mockFetchTrackInfo.mockRejectedValue(new Error('Network error'));
+      mockFetchMediaInfo.mockRejectedValue(new Error('Network error'));
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
@@ -232,7 +252,7 @@ describe('useMediaFetch', () => {
     });
 
     it('should handle Tauri string errors (not Error objects)', async () => {
-      mockFetchTrackInfo.mockRejectedValue('HTTP 401 Unauthorized: session expired');
+      mockFetchMediaInfo.mockRejectedValue('HTTP 401 Unauthorized: session expired');
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
@@ -254,7 +274,7 @@ describe('useMediaFetch', () => {
     });
 
     it('should map 401 error to AUTH_EXPIRED', async () => {
-      mockFetchTrackInfo.mockRejectedValue(new Error('HTTP 401 Unauthorized'));
+      mockFetchMediaInfo.mockRejectedValue(new Error('HTTP 401 Unauthorized'));
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
@@ -276,7 +296,7 @@ describe('useMediaFetch', () => {
     });
 
     it('should map AuthRequired error to AUTH_REQUIRED', async () => {
-      mockFetchTrackInfo.mockRejectedValue('Private content requires sign-in');
+      mockFetchMediaInfo.mockRejectedValue('Private content requires sign-in');
 
       const { result } = renderHook(
         ({ url, validation }) => useMediaFetch(url, validation),
@@ -318,7 +338,7 @@ describe('useMediaFetch', () => {
     });
 
     it('should clear previous error when fetching new URL', async () => {
-      mockFetchTrackInfo
+      mockFetchMediaInfo
         .mockRejectedValueOnce(new Error('Track not found'))
         .mockResolvedValueOnce(mockTrack);
 
