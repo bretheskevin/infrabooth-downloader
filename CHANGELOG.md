@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-03-03
+
+### Added
+
+- The app now silently checks for updates when launched — if a new version is available, a non-intrusive banner appears at the top of the window
+- The update banner includes a "Learn more" link to the GitHub release page and can be dismissed for the current session
+
+### Changed
+
+- Update checks no longer show error messages when the network is unavailable — the app continues normally
+
 ## [1.1.0] - 2026-02-22
 
 ### Changed
