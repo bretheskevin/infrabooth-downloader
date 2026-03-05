@@ -89,6 +89,7 @@ describe('useDownloadCompletion', () => {
             title: 'Test',
             artist: 'Test Artist',
             artworkUrl: null,
+            durationMs: 180000,
             status: 'complete',
           },
         ],
