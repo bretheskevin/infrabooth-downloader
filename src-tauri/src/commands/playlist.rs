@@ -1,11 +1,10 @@
-use std::future::Future;
-
 use crate::models::url::ValidationResult;
 use crate::services::playlist::{
-    fetch_playlist_info, fetch_track_info, PlaylistError, PlaylistInfo, TrackInfo,
+    fetch_playlist_info, fetch_track_info, PlaylistInfo, TrackInfo,
 };
-use crate::services::storage::{load_tokens, refresh_and_store_tokens};
+use crate::services::storage::AuthState;
 use crate::services::url_validator::validate_url;
+use tauri::Manager;
 
 #[tauri::command]
 #[specta::specta]
@@ -13,41 +12,18 @@ pub fn validate_soundcloud_url(url: String) -> ValidationResult {
     validate_url(&url)
 }
 
-async fn try_refresh_token() -> Result<(), String> {
-    let tokens = load_tokens()
-        .map_err(|e| e.to_string())?
-        .ok_or("No tokens stored")?;
-    refresh_and_store_tokens(&tokens).await?;
-    Ok(())
-}
-
-async fn with_token_refresh<T, F, Fut>(
-    fetch_fn: F,
-    context: &str,
-    success_log: impl FnOnce(&T) -> String,
-) -> Result<T, String>
-where
-    F: Fn() -> Fut,
-    Fut: Future<Output = Result<T, PlaylistError>>,
-{
-    log::info!("[{}] Called", context);
-
-    match fetch_fn().await {
-        Ok(result) => {
-            log::info!("[{}] Success: {}", context, success_log(&result));
-            Ok(result)
-        }
-        Err(PlaylistError::TokenExpired) => {
-            log::info!("[{}] Token expired, attempting refresh...", context);
-            try_refresh_token().await?;
-            log::info!("[{}] Token refreshed, retrying fetch...", context);
-            fetch_fn().await.map_err(|e| {
-                log::error!("[{}] Retry failed: {}", context, e);
-                e.to_string()
-            })
+#[tauri::command]
+#[specta::specta]
+pub async fn get_playlist_info(url: String, app: tauri::AppHandle) -> Result<PlaylistInfo, String> {
+    log::info!("[get_playlist_info] Called");
+    let token = app.state::<AuthState>().get_token();
+    match fetch_playlist_info(&url, token.as_deref()).await {
+        Ok(info) => {
+            log::info!("[get_playlist_info] Success: got playlist '{}'", info.title);
+            Ok(info)
         }
         Err(e) => {
-            log::error!("[{}] Error: {}", context, e);
+            log::error!("[get_playlist_info] Error: {}", e);
             Err(e.to_string())
         }
     }
@@ -55,22 +31,17 @@ where
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_playlist_info(url: String) -> Result<PlaylistInfo, String> {
-    with_token_refresh(
-        || fetch_playlist_info(&url),
-        "get_playlist_info",
-        |info| format!("got playlist '{}'", info.title),
-    )
-    .await
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn get_track_info(url: String) -> Result<TrackInfo, String> {
-    with_token_refresh(
-        || fetch_track_info(&url),
-        "get_track_info",
-        |info| format!("got track '{}'", info.title),
-    )
-    .await
+pub async fn get_track_info(url: String, app: tauri::AppHandle) -> Result<TrackInfo, String> {
+    log::info!("[get_track_info] Called");
+    let token = app.state::<AuthState>().get_token();
+    match fetch_track_info(&url, token.as_deref()).await {
+        Ok(info) => {
+            log::info!("[get_track_info] Success: got track '{}'", info.title);
+            Ok(info)
+        }
+        Err(e) => {
+            log::error!("[get_track_info] Error: {}", e);
+            Err(e.to_string())
+        }
+    }
 }

@@ -18,10 +18,10 @@ pub fn scan_browser_cookies() -> Option<BrowserCookie> {
 
     // Each entry: (display name, extraction function)
     // rookie browser functions all share the signature:
-    //   fn(Option<Vec<String>>) -> eyre::Result<Vec<rookie::Cookie>>
+    //   fn(Option<Vec<String>>) -> eyre::Result<Vec<rookie::enums::Cookie>>
     let mut browsers: Vec<(
         &str,
-        fn(Option<Vec<String>>) -> rookie::Result<Vec<rookie::Cookie>>,
+        fn(Option<Vec<String>>) -> rookie::Result<Vec<rookie::enums::Cookie>>,
     )> = vec![
         ("Firefox", rookie::firefox),
         ("Chrome", rookie::chrome),

@@ -9,19 +9,16 @@
 //! 3. Parse playlist info with all track IDs
 //! 4. Batch-fetch full track details via API
 
-use std::sync::Mutex;
 use std::time::Duration;
 
 use futures::future::join_all;
-use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use specta::Type;
 use thiserror::Error;
 use tokio::time::sleep;
 
-use crate::services::oauth::{get_app_token, get_client_secret};
-use crate::services::storage::{current_timestamp, is_token_expired_or_expiring, load_tokens};
+use crate::services::client_id;
 
 #[derive(Debug, Deserialize)]
 struct ResolveResponse {
@@ -31,9 +28,6 @@ struct ResolveResponse {
 /// Errors that can occur during playlist operations.
 #[derive(Debug, Error)]
 pub enum PlaylistError {
-    #[error("Token expired and refresh required")]
-    TokenExpired,
-
     #[error("Failed to fetch playlist: {0}")]
     FetchFailed(String),
 
@@ -180,97 +174,29 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
     }
 }
 
-/// Cached app token for unauthenticated API requests.
-struct CachedAppToken {
-    token: String,
-    expires_at: u64,
-}
-
-static APP_TOKEN_CACHE: Lazy<Mutex<Option<CachedAppToken>>> = Lazy::new(|| Mutex::new(None));
-
-/// Gets a valid app token, fetching a new one if needed.
-async fn get_cached_app_token() -> Result<String, PlaylistError> {
-    use crate::services::constants::TOKEN_REFRESH_BUFFER_SECS;
-    // Check if we have a valid cached token
-    {
-        let cache = APP_TOKEN_CACHE.lock().unwrap();
-        if let Some(ref cached) = *cache {
-            if cached.expires_at > current_timestamp() + TOKEN_REFRESH_BUFFER_SECS {
-                return Ok(cached.token.clone());
-            }
-        }
-    }
-
-    // Need to fetch a new token
-    log::info!("[soundcloud] Fetching new app token via client credentials");
-    let secret = get_client_secret().map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
-    let response = get_app_token(secret)
-        .await
-        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
-
-    let expires_at = current_timestamp() + response.expires_in;
-
-    // Cache the new token
-    {
-        let mut cache = APP_TOKEN_CACHE.lock().unwrap();
-        *cache = Some(CachedAppToken {
-            token: response.access_token.clone(),
-            expires_at,
-        });
-    }
-
-    log::info!(
-        "[soundcloud] App token cached, expires in {} seconds",
-        response.expires_in
-    );
-    Ok(response.access_token)
-}
-
-/// Gets the authentication mode - user OAuth token if available, otherwise app token.
-///
-/// # Returns
-/// * `Ok(token)` - Access token (user or app level)
-/// * `Err(PlaylistError::TokenExpired)` - If user token exists but is expired
-async fn get_access_token() -> Result<String, PlaylistError> {
-    match load_tokens() {
-        Ok(Some(tokens)) => {
-            if is_token_expired_or_expiring(tokens.expires_at) {
-                Err(PlaylistError::TokenExpired)
-            } else {
-                log::debug!("[soundcloud] Using user OAuth token");
-                Ok(tokens.access_token)
-            }
-        }
-        Ok(None) => {
-            log::debug!("[soundcloud] No user token, using app token");
-            get_cached_app_token().await
-        }
-        Err(e) => {
-            log::warn!(
-                "[soundcloud] Failed to load user tokens: {}, using app token",
-                e
-            );
-            get_cached_app_token().await
-        }
-    }
+/// Build the authorization header value if a token is available.
+fn auth_header(oauth_token: Option<&str>) -> Option<String> {
+    oauth_token.map(|t| format!("OAuth {}", t))
 }
 
 async fn resolve_url<T: serde::de::DeserializeOwned>(
     url: &str,
-    access_token: &str,
+    cid: &str,
+    oauth_token: Option<&str>,
 ) -> Result<T, PlaylistError> {
     let client = &*crate::services::http::HTTP_CLIENT;
     let resolve_url = format!(
-        "https://api.soundcloud.com/resolve?url={}",
+        "https://api-v2.soundcloud.com/resolve?url={}&client_id={}",
         urlencoding::encode(url),
+        cid,
     );
-    let auth_header = format!("OAuth {}", access_token);
 
-    let response = client
-        .get(&resolve_url)
-        .header("Authorization", &auth_header)
-        .send()
-        .await?;
+    let mut request = client.get(&resolve_url);
+    if let Some(header) = auth_header(oauth_token) {
+        request = request.header("Authorization", &header);
+    }
+
+    let response = request.send().await?;
 
     if response.status() == reqwest::StatusCode::NOT_FOUND {
         return Err(PlaylistError::TrackNotFound);
@@ -299,11 +225,12 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
         if let Some(location) = redirect.location {
             log::info!("[soundcloud] Following redirect to: {}", location);
 
-            let redirect_response = client
-                .get(&location)
-                .header("Authorization", &auth_header)
-                .send()
-                .await?;
+            let mut redirect_request = client.get(&location);
+            if let Some(header) = auth_header(oauth_token) {
+                redirect_request = redirect_request.header("Authorization", &header);
+            }
+
+            let redirect_response = redirect_request.send().await?;
 
             if redirect_response.status() == reqwest::StatusCode::UNAUTHORIZED {
                 return Err(PlaylistError::AuthRequired);
@@ -469,12 +396,13 @@ fn extract_full_tracks_from_hydration(tracks: &[Value]) -> Vec<TrackInfo> {
         .collect()
 }
 
-/// Fetches track details by IDs using the batch API endpoint.
+/// Fetches track details by IDs using the API v2 batch endpoint.
 /// SoundCloud allows fetching up to 50 tracks per request.
 /// Includes rate limiting (100ms delay between batches) to avoid hitting API limits.
 async fn fetch_tracks_by_ids(
     ids: &[u64],
-    access_token: &str,
+    cid: &str,
+    oauth_token: Option<&str>,
 ) -> Result<Vec<TrackInfo>, PlaylistError> {
     if ids.is_empty() {
         return Ok(vec![]);
@@ -493,12 +421,16 @@ async fn fetch_tracks_by_ids(
             .collect::<Vec<_>>()
             .join(",");
 
-        let url = format!("https://api.soundcloud.com/tracks?ids={}", ids_param);
-        let response = client
-            .get(&url)
-            .header("Authorization", format!("OAuth {}", access_token))
-            .send()
-            .await?;
+        let url = format!(
+            "https://api-v2.soundcloud.com/tracks?ids={}&client_id={}",
+            ids_param, cid
+        );
+        let mut request = client.get(&url);
+        if let Some(header) = auth_header(oauth_token) {
+            request = request.header("Authorization", &header);
+        }
+
+        let response = request.send().await?;
 
         if response.status().is_success() {
             match response.json::<Vec<RawTrackInfo>>().await {
@@ -531,16 +463,19 @@ async fn fetch_tracks_by_ids(
 }
 
 /// Fetches a single track by ID (fallback for tracks not in batch response).
-async fn fetch_track_by_id(id: u64, access_token: &str) -> Option<TrackInfo> {
+async fn fetch_track_by_id(id: u64, cid: &str, oauth_token: Option<&str>) -> Option<TrackInfo> {
     let client = &*crate::services::http::HTTP_CLIENT;
-    let url = format!("https://api.soundcloud.com/tracks/{}", id);
+    let url = format!(
+        "https://api-v2.soundcloud.com/tracks/{}?client_id={}",
+        id, cid
+    );
 
-    match client
-        .get(&url)
-        .header("Authorization", format!("OAuth {}", access_token))
-        .send()
-        .await
-    {
+    let mut request = client.get(&url);
+    if let Some(header) = auth_header(oauth_token) {
+        request = request.header("Authorization", &header);
+    }
+
+    match request.send().await {
         Ok(response) if response.status().is_success() => response
             .json::<RawTrackInfo>()
             .await
@@ -551,10 +486,14 @@ async fn fetch_track_by_id(id: u64, access_token: &str) -> Option<TrackInfo> {
 }
 
 /// Fetches multiple tracks by ID in parallel (for tracks filtered by batch API).
-async fn fetch_tracks_by_ids_parallel(ids: &[u64], access_token: &str) -> Vec<TrackInfo> {
+async fn fetch_tracks_by_ids_parallel(
+    ids: &[u64],
+    cid: &str,
+    oauth_token: Option<&str>,
+) -> Vec<TrackInfo> {
     let futures: Vec<_> = ids
         .iter()
-        .map(|id| fetch_track_by_id(*id, access_token))
+        .map(|id| fetch_track_by_id(*id, cid, oauth_token))
         .collect();
 
     join_all(futures).await.into_iter().flatten().collect()
@@ -567,19 +506,27 @@ fn is_valid_soundcloud_url(url: &str) -> bool {
         || url.starts_with("https://on.soundcloud.com/")
 }
 
-/// Fetches playlist info using the OAuth API (fallback for private playlists).
+/// Fetches playlist info using the API v2 (fallback for private playlists).
 /// This is used when web hydration fails (e.g., for private content).
-async fn fetch_playlist_info_via_api(url: &str) -> Result<PlaylistInfo, PlaylistError> {
-    let token = get_access_token().await?;
+async fn fetch_playlist_info_via_api(
+    url: &str,
+    oauth_token: Option<&str>,
+) -> Result<PlaylistInfo, PlaylistError> {
+    let cid = client_id::get_client_id()
+        .await
+        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
     log::info!(
-        "[soundcloud] Fetching playlist via OAuth API for URL: {}",
+        "[soundcloud] Fetching playlist via API v2 for URL: {}",
         url
     );
-    let raw: RawPlaylistInfo = resolve_url(url, &token).await?;
+    let raw: RawPlaylistInfo = resolve_url(url, &cid, oauth_token).await?;
     Ok(PlaylistInfo::from(raw))
 }
 
-pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistError> {
+pub async fn fetch_playlist_info(
+    url: &str,
+    oauth_token: Option<&str>,
+) -> Result<PlaylistInfo, PlaylistError> {
     // Validate URL before making any requests
     if !is_valid_soundcloud_url(url) {
         return Err(PlaylistError::FetchFailed(
@@ -593,15 +540,15 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
     );
 
     // Step 1: Try to fetch hydration data from web page
-    // If this fails (e.g., private playlist), fall back to OAuth API
+    // If this fails (e.g., private playlist), fall back to API
     let hydration = match fetch_hydration_data(url).await {
         Ok(h) => h,
         Err(e) => {
             log::warn!(
-                "[soundcloud] Web hydration failed: {}, falling back to OAuth API",
+                "[soundcloud] Web hydration failed: {}, falling back to API v2",
                 e
             );
-            return fetch_playlist_info_via_api(url).await;
+            return fetch_playlist_info_via_api(url, oauth_token).await;
         }
     };
 
@@ -609,10 +556,10 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
         Ok(p) => p,
         Err(e) => {
             log::warn!(
-                "[soundcloud] Failed to extract playlist from hydration: {}, falling back to OAuth API",
+                "[soundcloud] Failed to extract playlist from hydration: {}, falling back to API v2",
                 e
             );
-            return fetch_playlist_info_via_api(url).await;
+            return fetch_playlist_info_via_api(url, oauth_token).await;
         }
     };
 
@@ -641,9 +588,11 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
         .copied()
         .collect();
 
-    // Step 4: Get access token and fetch missing tracks
-    let token = get_access_token().await?;
-    let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, &token).await?;
+    // Step 4: Get client_id and fetch missing tracks
+    let cid = client_id::get_client_id()
+        .await
+        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
+    let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, &cid, oauth_token).await?;
 
     log::info!(
         "[soundcloud] Batch API returned {} of {} missing tracks",
@@ -664,7 +613,8 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
             "[soundcloud] Fetching {} tracks in parallel (filtered by batch API)",
             still_missing.len()
         );
-        let parallel_tracks = fetch_tracks_by_ids_parallel(&still_missing, &token).await;
+        let parallel_tracks =
+            fetch_tracks_by_ids_parallel(&still_missing, &cid, oauth_token).await;
         log::info!(
             "[soundcloud] Parallel fetch returned {} tracks",
             parallel_tracks.len()
@@ -713,10 +663,15 @@ pub async fn fetch_playlist_info(url: &str) -> Result<PlaylistInfo, PlaylistErro
     })
 }
 
-pub async fn fetch_track_info(url: &str) -> Result<TrackInfo, PlaylistError> {
-    let token = get_access_token().await?;
+pub async fn fetch_track_info(
+    url: &str,
+    oauth_token: Option<&str>,
+) -> Result<TrackInfo, PlaylistError> {
+    let cid = client_id::get_client_id()
+        .await
+        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
     log::info!("[soundcloud] Fetching track info for URL: {}", url);
-    let raw: RawTrackInfo = resolve_url(url, &token).await?;
+    let raw: RawTrackInfo = resolve_url(url, &cid, oauth_token).await?;
     Ok(TrackInfo::from(raw))
 }
 
@@ -1006,12 +961,6 @@ mod tests {
     }
 
     // PlaylistError tests
-    #[test]
-    fn test_playlist_error_token_expired_message() {
-        let err = PlaylistError::TokenExpired;
-        assert_eq!(err.to_string(), "Token expired and refresh required");
-    }
-
     #[test]
     fn test_playlist_error_auth_required_message() {
         let err = PlaylistError::AuthRequired;
