@@ -19,6 +19,7 @@ use thiserror::Error;
 use tokio::time::sleep;
 
 use crate::services::client_id;
+use crate::services::http::{RequestBuilderExt, API_V2_BASE};
 
 #[derive(Debug, Deserialize)]
 struct ResolveResponse {
@@ -174,11 +175,6 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
     }
 }
 
-/// Build the authorization header value if a token is available.
-fn auth_header(oauth_token: Option<&str>) -> Option<String> {
-    oauth_token.map(|t| format!("OAuth {}", t))
-}
-
 async fn resolve_url<T: serde::de::DeserializeOwned>(
     url: &str,
     cid: &str,
@@ -186,15 +182,13 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
 ) -> Result<T, PlaylistError> {
     let client = &*crate::services::http::HTTP_CLIENT;
     let resolve_url = format!(
-        "https://api-v2.soundcloud.com/resolve?url={}&client_id={}",
+        "{}/resolve?url={}&client_id={}",
+        API_V2_BASE,
         urlencoding::encode(url),
         cid,
     );
 
-    let mut request = client.get(&resolve_url);
-    if let Some(header) = auth_header(oauth_token) {
-        request = request.header("Authorization", &header);
-    }
+    let request = client.get(&resolve_url).with_oauth(oauth_token);
 
     let response = request.send().await?;
 
@@ -225,12 +219,11 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
         if let Some(location) = redirect.location {
             log::info!("[soundcloud] Following redirect to: {}", location);
 
-            let mut redirect_request = client.get(&location);
-            if let Some(header) = auth_header(oauth_token) {
-                redirect_request = redirect_request.header("Authorization", &header);
-            }
-
-            let redirect_response = redirect_request.send().await?;
+            let redirect_response = client
+                .get(&location)
+                .with_oauth(oauth_token)
+                .send()
+                .await?;
 
             if redirect_response.status() == reqwest::StatusCode::UNAUTHORIZED {
                 return Err(PlaylistError::AuthRequired);
@@ -422,15 +415,11 @@ async fn fetch_tracks_by_ids(
             .join(",");
 
         let url = format!(
-            "https://api-v2.soundcloud.com/tracks?ids={}&client_id={}",
-            ids_param, cid
+            "{}/tracks?ids={}&client_id={}",
+            API_V2_BASE, ids_param, cid
         );
-        let mut request = client.get(&url);
-        if let Some(header) = auth_header(oauth_token) {
-            request = request.header("Authorization", &header);
-        }
 
-        let response = request.send().await?;
+        let response = client.get(&url).with_oauth(oauth_token).send().await?;
 
         if response.status().is_success() {
             match response.json::<Vec<RawTrackInfo>>().await {
@@ -466,16 +455,11 @@ async fn fetch_tracks_by_ids(
 async fn fetch_track_by_id(id: u64, cid: &str, oauth_token: Option<&str>) -> Option<TrackInfo> {
     let client = &*crate::services::http::HTTP_CLIENT;
     let url = format!(
-        "https://api-v2.soundcloud.com/tracks/{}?client_id={}",
-        id, cid
+        "{}/tracks/{}?client_id={}",
+        API_V2_BASE, id, cid
     );
 
-    let mut request = client.get(&url);
-    if let Some(header) = auth_header(oauth_token) {
-        request = request.header("Authorization", &header);
-    }
-
-    match request.send().await {
+    match client.get(&url).with_oauth(oauth_token).send().await {
         Ok(response) if response.status().is_success() => response
             .json::<RawTrackInfo>()
             .await
@@ -499,6 +483,13 @@ async fn fetch_tracks_by_ids_parallel(
     join_all(futures).await.into_iter().flatten().collect()
 }
 
+/// Get a SoundCloud client_id, mapping errors to `PlaylistError`.
+async fn get_cid() -> Result<String, PlaylistError> {
+    client_id::get_client_id()
+        .await
+        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))
+}
+
 /// Validates that a URL is a SoundCloud URL.
 fn is_valid_soundcloud_url(url: &str) -> bool {
     url.starts_with("https://soundcloud.com/")
@@ -512,9 +503,7 @@ async fn fetch_playlist_info_via_api(
     url: &str,
     oauth_token: Option<&str>,
 ) -> Result<PlaylistInfo, PlaylistError> {
-    let cid = client_id::get_client_id()
-        .await
-        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
+    let cid = get_cid().await?;
     log::info!(
         "[soundcloud] Fetching playlist via API v2 for URL: {}",
         url
@@ -589,9 +578,7 @@ pub async fn fetch_playlist_info(
         .collect();
 
     // Step 4: Get client_id and fetch missing tracks
-    let cid = client_id::get_client_id()
-        .await
-        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
+    let cid = get_cid().await?;
     let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, &cid, oauth_token).await?;
 
     log::info!(
@@ -667,9 +654,7 @@ pub async fn fetch_track_info(
     url: &str,
     oauth_token: Option<&str>,
 ) -> Result<TrackInfo, PlaylistError> {
-    let cid = client_id::get_client_id()
-        .await
-        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))?;
+    let cid = get_cid().await?;
     log::info!("[soundcloud] Fetching track info for URL: {}", url);
     let raw: RawTrackInfo = resolve_url(url, &cid, oauth_token).await?;
     Ok(TrackInfo::from(raw))

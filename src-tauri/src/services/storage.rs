@@ -38,17 +38,17 @@ impl AuthState {
     }
 
     pub fn set(&self, auth: CachedAuth) {
-        *self.cached.lock().unwrap() = Some(auth);
+        *self.cached.lock().expect("AuthState lock poisoned") = Some(auth);
     }
 
     pub fn clear(&self) {
-        *self.cached.lock().unwrap() = None;
+        *self.cached.lock().expect("AuthState lock poisoned") = None;
     }
 
     pub fn get_token(&self) -> Option<String> {
         self.cached
             .lock()
-            .unwrap()
+            .expect("AuthState lock poisoned")
             .as_ref()
             .map(|a| a.oauth_token.clone())
     }
