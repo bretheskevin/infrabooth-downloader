@@ -55,7 +55,7 @@ impl CancellationState {
         let mut guard = self.active_child.lock().await;
         if let Some(child) = guard.take() {
             let _ = child.kill();
-            log::info!("[cancellation] Killed active yt-dlp process");
+            log::info!("[cancellation] Killed active download process");
         }
 
         // Clear the PID

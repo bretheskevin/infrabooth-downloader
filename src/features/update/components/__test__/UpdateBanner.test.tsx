@@ -89,7 +89,7 @@ describe('UpdateBanner', () => {
     fireEvent.click(learnMoreButton);
 
     expect(mockOpen).toHaveBeenCalledWith(
-      'https://github.com/bretheskevin/soundcloud-downloader/releases/tag/v2.0.0'
+      'https://github.com/bretheskevin/infrabooth-downloader/releases/tag/v2.0.0'
     );
   });
 

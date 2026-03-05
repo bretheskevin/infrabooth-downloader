@@ -35,6 +35,7 @@ const createMockTracks = (count: number): Track[] =>
     title: `Track ${i + 1}`,
     artist: `Artist ${i + 1}`,
     artworkUrl: null,
+    durationMs: 180000,
     status: 'pending' as const,
   }));
 

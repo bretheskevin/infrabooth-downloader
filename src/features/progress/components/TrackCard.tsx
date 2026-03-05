@@ -107,9 +107,12 @@ export const TrackCard = memo(function TrackCard({
           (isActive || showInitializing) && 'text-primary'
         )}>{track.title}</p>
         <p className="text-xs text-muted-foreground truncate mt-0.5">{track.artist}</p>
-        {track.status === 'downloading' && track.totalBytes && track.downloadedBytes !== undefined && (
+        {track.status === 'downloading' && track.percent !== undefined && track.percent > 0 && (
           <p className="text-xs text-primary/80 mt-0.5">
-            {formatBytes(track.downloadedBytes)} / {formatBytes(track.totalBytes)}
+            {Math.round(track.percent * 100)}%
+            {track.totalBytes && track.downloadedBytes !== undefined && (
+              <> — {formatBytes(track.downloadedBytes)} / {formatBytes(track.totalBytes)}</>
+            )}
           </p>
         )}
         {isGeoBlocked && isTouchDevice && (

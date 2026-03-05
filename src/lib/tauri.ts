@@ -72,9 +72,6 @@ export const api = {
     commands.validateDownloadPath(path).then(unwrap),
 
   // Testing/Debug
-  testYtdlp: (): Promise<string> =>
-    commands.testYtdlp().then(unwrap),
-
   testFfmpeg: (): Promise<string> =>
     commands.testFfmpeg().then(unwrap),
 };

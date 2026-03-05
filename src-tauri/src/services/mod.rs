@@ -1,7 +1,9 @@
 pub mod auth_choice;
 pub mod cancellation;
+pub mod client_id;
 pub mod constants;
 pub mod deep_link;
+pub mod downloader;
 #[cfg(debug_assertions)]
 pub mod dev_server;
 pub mod ffmpeg;
@@ -14,9 +16,8 @@ pub mod playlist;
 pub mod queue;
 pub mod sidecar;
 pub mod storage;
+pub mod stream;
 pub mod url_validator;
 pub mod updater;
-pub mod ytdlp;
-pub mod ytdlp_errors;
 
 pub const AUTH_CALLBACK_EVENT: &str = "auth-callback";

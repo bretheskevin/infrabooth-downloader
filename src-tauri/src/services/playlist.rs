@@ -259,7 +259,7 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
     url: &str,
     access_token: &str,
 ) -> Result<T, PlaylistError> {
-    let client = reqwest::Client::new();
+    let client = &*crate::services::http::HTTP_CLIENT;
     let resolve_url = format!(
         "https://api.soundcloud.com/resolve?url={}",
         urlencoding::encode(url),
@@ -335,7 +335,7 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
 /// page structure. If hydration extraction fails, callers should fall back to the
 /// OAuth API via `fetch_playlist_info_via_api`.
 async fn fetch_hydration_data(url: &str) -> Result<Vec<HydrationItem>, PlaylistError> {
-    let client = reqwest::Client::new();
+    let client = &*crate::services::http::HTTP_CLIENT;
     let response = client
         .get(url)
         .header(
@@ -480,7 +480,7 @@ async fn fetch_tracks_by_ids(
         return Ok(vec![]);
     }
 
-    let client = reqwest::Client::new();
+    let client = &*crate::services::http::HTTP_CLIENT;
     let mut all_tracks = Vec::new();
     let chunks: Vec<_> = ids.chunks(50).collect();
     let total_chunks = chunks.len();
@@ -532,7 +532,7 @@ async fn fetch_tracks_by_ids(
 
 /// Fetches a single track by ID (fallback for tracks not in batch response).
 async fn fetch_track_by_id(id: u64, access_token: &str) -> Option<TrackInfo> {
-    let client = reqwest::Client::new();
+    let client = &*crate::services::http::HTTP_CLIENT;
     let url = format!("https://api.soundcloud.com/tracks/{}", id);
 
     match client

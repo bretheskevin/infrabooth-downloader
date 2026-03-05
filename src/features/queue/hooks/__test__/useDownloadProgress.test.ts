@@ -27,6 +27,7 @@ describe('useDownloadProgress', () => {
           title: 'Track 1',
           artist: 'Artist',
           artworkUrl: null,
+          durationMs: 180000,
           status: 'pending',
         },
         {
@@ -34,6 +35,7 @@ describe('useDownloadProgress', () => {
           title: 'Track 2',
           artist: 'Artist',
           artworkUrl: null,
+          durationMs: 180000,
           status: 'pending',
         },
       ],

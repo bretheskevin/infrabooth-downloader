@@ -12,8 +12,8 @@ export type {
  * Download a track and convert it to MP3 with metadata.
  *
  * This function orchestrates the full download pipeline:
- * 1. Downloads audio using yt-dlp with OAuth authentication
- * 2. Converts to high-quality MP3 using yt-dlp native conversion
+ * 1. Resolves stream URL and downloads audio via ffmpeg
+ * 2. Converts to high-quality MP3 (320kbps)
  * 3. Embeds ID3 metadata (title, artist, album, track number, artwork)
  *
  * Progress events are emitted via the `download-progress` event channel:

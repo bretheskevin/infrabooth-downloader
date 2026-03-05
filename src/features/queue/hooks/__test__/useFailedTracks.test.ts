@@ -20,6 +20,7 @@ const createMockTrack = (
   title,
   artist,
   artworkUrl: null,
+  durationMs: 180000,
   status,
   error,
 });

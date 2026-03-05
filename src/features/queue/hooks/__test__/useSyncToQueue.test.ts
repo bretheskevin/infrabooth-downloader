@@ -51,6 +51,7 @@ describe('useSyncToQueue', () => {
         title: 'Track 1',
         artist: 'Artist1',
         artworkUrl: null,
+        durationMs: 180000,
         status: 'pending',
       },
       {
@@ -58,6 +59,7 @@ describe('useSyncToQueue', () => {
         title: 'Track 2',
         artist: 'Artist2',
         artworkUrl: 'https://example.com/art2.jpg',
+        durationMs: 240000,
         status: 'pending',
       },
     ]);
@@ -73,6 +75,7 @@ describe('useSyncToQueue', () => {
         title: 'Test Track',
         artist: 'TestArtist',
         artworkUrl: 'https://example.com/track-art.jpg',
+        durationMs: 185000,
         status: 'pending',
       },
     ]);

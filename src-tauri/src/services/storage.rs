@@ -95,6 +95,13 @@ pub fn load_tokens() -> Result<Option<StoredTokens>, StorageError> {
     }
 }
 
+/// Convenience helper: loads tokens and extracts the access token string.
+///
+/// Returns `None` if no tokens are stored or if loading fails.
+pub fn get_current_access_token() -> Option<String> {
+    load_tokens().ok().flatten().map(|t| t.access_token)
+}
+
 /// Deletes stored OAuth tokens from the OS keychain.
 ///
 /// This should be called during sign-out to ensure credentials
