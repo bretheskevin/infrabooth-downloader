@@ -1,5 +1,7 @@
 use once_cell::sync::Lazy;
-use serde::de::DeserializeOwned;
+
+/// Base URL for SoundCloud API v2.
+pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 
 /// Shared HTTP client for connection pooling across all services.
 ///
@@ -12,19 +14,15 @@ pub static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
         .expect("Failed to create HTTP client")
 });
 
-pub async fn handle_json_response<T, E>(
-    response: reqwest::Response,
-    error_constructor: impl FnOnce(String) -> E,
-) -> Result<T, E>
-where
-    T: DeserializeOwned,
-    E: From<reqwest::Error>,
-{
-    if response.status().is_success() {
-        Ok(response.json().await?)
-    } else {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        Err(error_constructor(format!("HTTP {}: {}", status, body)))
+pub trait RequestBuilderExt {
+    fn with_oauth(self, token: Option<&str>) -> Self;
+}
+
+impl RequestBuilderExt for reqwest::RequestBuilder {
+    fn with_oauth(self, token: Option<&str>) -> Self {
+        match token {
+            Some(t) => self.header("Authorization", format!("OAuth {}", t)),
+            None => self,
+        }
     }
 }

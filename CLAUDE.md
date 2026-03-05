@@ -79,9 +79,15 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 | `src-tauri/src/services/pipeline.rs` | Core download pipeline |
 | `src-tauri/src/services/stream.rs` | SoundCloud stream URL resolution |
 | `src-tauri/src/services/downloader.rs` | FFmpeg-based audio downloader |
-| `src-tauri/src/services/oauth.rs` | OAuth PKCE flow |
+| `src-tauri/src/services/cookie.rs` | Browser cookie extraction via rookie |
+| `src-tauri/src/services/storage.rs` | In-memory auth state cache |
+| `src-tauri/src/services/oauth.rs` | Cookie token verification via SoundCloud API |
 | `src/bindings.ts` | Auto-generated IPC types (do not edit) |
 | `tauri.conf.json` | App config, bundling |
+
+## Git Policy
+
+**NEVER commit unless explicitly asked to.** Do not commit as part of implementation workflows, subagent tasks, or skill processes. All commits require explicit user approval. This applies to all agents and subagents — include this instruction in every subagent prompt.
 
 ## Conventions
 

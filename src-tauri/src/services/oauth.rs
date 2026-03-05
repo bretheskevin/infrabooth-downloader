@@ -1,6 +1,6 @@
 use crate::models::error::AuthError;
 use crate::services::client_id::get_client_id;
-use crate::services::http::HTTP_CLIENT;
+use crate::services::http::{RequestBuilderExt, HTTP_CLIENT, API_V2_BASE};
 use serde::Deserialize;
 
 /// User profile response from SoundCloud `/me` endpoint (API v2).
@@ -32,10 +32,11 @@ pub async fn verify_token(oauth_token: &str) -> Result<UserProfile, AuthError> {
         .map_err(|e| AuthError::VerificationFailed(e.to_string()))?;
 
     let client = &*HTTP_CLIENT;
+    let url = format!("{}/me", API_V2_BASE);
     let resp = client
-        .get("https://api-v2.soundcloud.com/me")
+        .get(&url)
         .query(&[("client_id", client_id.as_str())])
-        .header("Authorization", format!("OAuth {}", oauth_token))
+        .with_oauth(Some(oauth_token))
         .send()
         .await?;
 
