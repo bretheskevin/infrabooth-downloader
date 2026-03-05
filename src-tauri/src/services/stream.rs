@@ -38,6 +38,7 @@ pub struct Transcoding {
 pub struct StreamInfo {
     pub url: String,
     pub is_hls: bool,
+    pub codec: StreamCodec,
 }
 
 /// CDN URL response from SoundCloud's media endpoint.
@@ -58,6 +59,26 @@ struct ApiV2TrackData {
     media: Option<MediaInfo>,
     /// "BLOCK" if geo-restricted
     policy: Option<String>,
+}
+
+/// Source codec type exposed to consumers (e.g. downloader).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum StreamCodec {
+    Mp3,
+    Aac,
+    Opus,
+    Unknown,
+}
+
+impl From<Codec> for StreamCodec {
+    fn from(c: Codec) -> Self {
+        match c {
+            Codec::Mp3 => StreamCodec::Mp3,
+            Codec::Aac => StreamCodec::Aac,
+            Codec::Opus => StreamCodec::Opus,
+            Codec::Unknown => StreamCodec::Unknown,
+        }
+    }
 }
 
 /// Normalized codec type for transcoding selection.
@@ -377,9 +398,12 @@ pub async fn resolve_stream_url(
             &cdn_url[..cdn_url.len().min(80)]
         );
 
+        let codec: StreamCodec = extract_codec(&transcoding.format.mime_type).into();
+
         return Ok(StreamInfo {
             url: cdn_url,
             is_hls,
+            codec,
         });
     }
 
@@ -636,5 +660,15 @@ mod tests {
         let json = r#"{}"#;
         let data: ApiV2TrackData = serde_json::from_str(json).unwrap();
         assert!(data.media.is_none());
+    }
+
+    // --- StreamCodec conversion tests ---
+
+    #[test]
+    fn test_stream_codec_from_codec() {
+        assert_eq!(StreamCodec::from(Codec::Aac), StreamCodec::Aac);
+        assert_eq!(StreamCodec::from(Codec::Opus), StreamCodec::Opus);
+        assert_eq!(StreamCodec::from(Codec::Mp3), StreamCodec::Mp3);
+        assert_eq!(StreamCodec::from(Codec::Unknown), StreamCodec::Unknown);
     }
 }

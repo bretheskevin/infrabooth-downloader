@@ -14,10 +14,17 @@ use crate::models::error::DownloadError;
 use crate::models::ErrorResponse;
 use crate::services::sidecar::bytes_to_string;
 
-use crate::services::stream;
+use crate::services::stream::{self, StreamCodec};
 
-/// 320kbps MP3 ≈ 40 bytes per millisecond (320_000 bits/s ÷ 8 ÷ 1000).
-const MP3_320KBPS_BYTES_PER_MS: u64 = 40;
+/// Estimate bytes per millisecond for the output MP3 based on source codec.
+fn output_bytes_per_ms(codec: &StreamCodec) -> u64 {
+    match codec {
+        StreamCodec::Mp3 => 16,      // ~128kbps (SC serves MP3 at 128k), stream-copied
+        StreamCodec::Aac => 32,      // 256kbps target output
+        StreamCodec::Opus => 16,     // 128kbps target output
+        StreamCodec::Unknown => 32,  // 256kbps fallback
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct PlaylistContext {
@@ -248,6 +255,11 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
 
     log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
+    log::info!(
+        "[downloader] Encoding strategy for track {}: codec={:?}",
+        config.track_id,
+        stream_info.codec
+    );
 
     // Build output filename
     let (base_name, _display_title) =
@@ -267,13 +279,31 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     // Input
     args.extend_from_slice(&["-i".to_string(), stream_info.url.clone()]);
 
-    // Output codec and quality
-    args.extend_from_slice(&[
-        "-codec:a".to_string(),
-        "libmp3lame".to_string(),
-        "-b:a".to_string(),
-        "320k".to_string(),
-    ]);
+    // Output codec and quality — codec-aware encoding
+    match stream_info.codec {
+        StreamCodec::Mp3 => {
+            // Source is already MP3: stream-copy (no re-encoding, no quality loss)
+            args.extend_from_slice(&["-codec:a".to_string(), "copy".to_string()]);
+        }
+        StreamCodec::Aac | StreamCodec::Unknown => {
+            // AAC 256kbps source or unknown: transcode to MP3 256kbps
+            args.extend_from_slice(&[
+                "-codec:a".to_string(),
+                "libmp3lame".to_string(),
+                "-b:a".to_string(),
+                "256k".to_string(),
+            ]);
+        }
+        StreamCodec::Opus => {
+            // Opus ~64kbps: transcode to MP3 128kbps (2x for perceptual parity)
+            args.extend_from_slice(&[
+                "-codec:a".to_string(),
+                "libmp3lame".to_string(),
+                "-b:a".to_string(),
+                "128k".to_string(),
+            ]);
+        }
+    }
 
     // Progress reporting
     args.extend_from_slice(&["-progress".to_string(), "pipe:1".to_string()]);
@@ -314,7 +344,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     let mut last_downloaded_bytes: Option<u64> = None;
     // Estimate total output size from duration and target bitrate
     let estimated_total_bytes: Option<u64> = if config.duration_ms > 0 {
-        Some(config.duration_ms * MP3_320KBPS_BYTES_PER_MS)
+        Some(config.duration_ms * output_bytes_per_ms(&stream_info.codec))
     } else {
         None
     };
@@ -619,5 +649,27 @@ mod tests {
         let (base, display) = build_base_filename(&ctx, "Artist", "Title");
         assert_eq!(base, "001 - Artist - Title");
         assert_eq!(display, "001 - Title");
+    }
+
+    // output_bytes_per_ms tests
+
+    #[test]
+    fn test_output_bytes_per_ms_mp3() {
+        assert_eq!(output_bytes_per_ms(&StreamCodec::Mp3), 16);
+    }
+
+    #[test]
+    fn test_output_bytes_per_ms_aac() {
+        assert_eq!(output_bytes_per_ms(&StreamCodec::Aac), 32);
+    }
+
+    #[test]
+    fn test_output_bytes_per_ms_opus() {
+        assert_eq!(output_bytes_per_ms(&StreamCodec::Opus), 16);
+    }
+
+    #[test]
+    fn test_output_bytes_per_ms_unknown() {
+        assert_eq!(output_bytes_per_ms(&StreamCodec::Unknown), 32);
     }
 }
