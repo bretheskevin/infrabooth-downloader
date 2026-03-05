@@ -17,8 +17,6 @@ describe('useDownloadCompletion', () => {
         completedCount: 0,
         failedCount: 0,
         cancelledCount: 0,
-        isRateLimited: false,
-        rateLimitedAt: null,
       });
     });
   });

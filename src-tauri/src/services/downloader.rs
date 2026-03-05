@@ -203,7 +203,7 @@ pub fn classify_ffmpeg_error(stderr: &str) -> Option<DownloadError> {
         return Some(DownloadError::GeoBlocked("Access forbidden".to_string()));
     }
     if lower.contains("429") || lower.contains("rate limit") {
-        return Some(DownloadError::RateLimited);
+        return Some(DownloadError::RateLimited(None));
     }
     if lower.contains("404 not found") || lower.contains("server returned 404") {
         return Some(DownloadError::TrackUnavailable(
@@ -516,7 +516,7 @@ mod tests {
     #[test]
     fn test_classify_ffmpeg_error_429() {
         let err = classify_ffmpeg_error("HTTP error 429");
-        assert!(matches!(err, Some(DownloadError::RateLimited)));
+        assert!(matches!(err, Some(DownloadError::RateLimited(_))));
     }
 
     #[test]

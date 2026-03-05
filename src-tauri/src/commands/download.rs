@@ -8,6 +8,7 @@ use tauri::Manager;
 
 use crate::models::{ErrorResponse, HasErrorCode};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState};
+use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
 use crate::services::cancellation::CancellationState;
 use crate::services::metadata::TrackMetadata;
 use crate::services::paths::get_downloads_dir;
@@ -139,9 +140,11 @@ pub async fn start_download_queue(
     app: tauri::AppHandle,
     cancel_state: State<'_, CancellationState>,
     auth_choice_state: State<'_, Arc<AuthChoiceState>>,
+    rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
 ) -> Result<(), String> {
     cancel_state.reset();
     auth_choice_state.reset();
+    rate_limit_choice_state.reset();
 
     let output_dir = match request.output_dir {
         Some(dir) => PathBuf::from(dir),
@@ -171,6 +174,7 @@ pub async fn start_download_queue(
         active_child: cancel_state.active_child(),
         active_pid: cancel_state.active_pid(),
         auth_choice_state: Arc::clone(&auth_choice_state),
+        rate_limit_choice_state: Arc::clone(&rate_limit_choice_state),
     };
 
     tokio::spawn(async move {
@@ -206,6 +210,18 @@ pub async fn respond_to_auth_choice(
 ) -> Result<(), String> {
     log::info!("[download] Auth choice received: {:?}", choice);
     auth_choice_state.send_choice(choice);
+    Ok(())
+}
+
+/// Respond to a rate limit choice prompt during download.
+#[tauri::command]
+#[specta::specta]
+pub async fn respond_to_rate_limit_choice(
+    choice: RateLimitChoice,
+    rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
+) -> Result<(), String> {
+    log::info!("[download] Rate limit choice received: {:?}", choice);
+    rate_limit_choice_state.send_choice(choice);
     Ok(())
 }
 

@@ -5,12 +5,10 @@ import { useQueueStore, useDownloadFlow, useDownloadProgress, useDownloadComplet
 import { UrlInput, ValidationFeedback, PlaylistPreview, TrackPreview, isPlaylist } from '@/features/url-input';
 import { CompletionPanel } from '@/features/completion';
 import { ProgressPanel } from '@/features/progress/components/ProgressPanel';
-import { RateLimitBanner } from '@/features/progress/components/RateLimitBanner';
 
 export function DownloadPage() {
   const { t } = useTranslation();
   const isProcessing = useQueueStore((state) => state.isProcessing);
-  const isRateLimited = useQueueStore((state) => state.isRateLimited);
 
   const {
     setUrl,
@@ -65,7 +63,6 @@ export function DownloadPage() {
   if (isProcessing) {
     return (
       <section className="space-y-4">
-        {isRateLimited && <RateLimitBanner />}
         <ProgressPanel />
       </section>
     );

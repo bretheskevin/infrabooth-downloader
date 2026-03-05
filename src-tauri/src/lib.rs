@@ -7,10 +7,12 @@ use std::sync::Arc;
 use commands::{
     cancel_download_queue, check_auth, check_for_updates, check_write_permission,
     download_track_full, get_default_download_path, get_playlist_info,
-    get_track_info, install_update, refresh_auth, respond_to_auth_choice, sign_out,
+    get_track_info, install_update, refresh_auth, respond_to_auth_choice,
+    respond_to_rate_limit_choice, sign_out,
     start_download_queue, test_ffmpeg, validate_download_path, validate_soundcloud_url,
 };
 use services::auth_choice::AuthChoiceState;
+use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
 use services::storage::AuthState;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
@@ -34,6 +36,7 @@ pub fn run() {
         start_download_queue,
         cancel_download_queue,
         respond_to_auth_choice,
+        respond_to_rate_limit_choice,
         check_write_permission,
         get_default_download_path,
         validate_download_path,
@@ -61,6 +64,7 @@ pub fn run() {
         .manage(AuthState::default())
         .manage(CancellationState::default())
         .manage(Arc::new(AuthChoiceState::default()))
+        .manage(Arc::new(RateLimitChoiceState::default()))
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);

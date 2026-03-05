@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use specta::Type;
 use thiserror::Error;
 
@@ -53,6 +53,14 @@ impl HasErrorCode for MetadataError {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RateLimitInfo {
+    pub remaining_requests: Option<u32>,
+    pub reset_time: Option<String>,
+    pub max_nr_of_requests: Option<u32>,
+    pub time_window: Option<String>,
+}
+
 #[derive(Debug, Error, Serialize)]
 pub enum DownloadError {
     #[error("{0}")]
@@ -62,7 +70,7 @@ pub enum DownloadError {
     BinaryNotFound,
 
     #[error("Rate limited by SoundCloud")]
-    RateLimited,
+    RateLimited(Option<RateLimitInfo>),
 
     #[error("{0}")]
     GeoBlocked(String),
@@ -94,7 +102,7 @@ impl HasErrorCode for DownloadError {
         match self {
             DownloadError::DownloadFailed(_) => "DOWNLOAD_FAILED",
             DownloadError::BinaryNotFound => "DOWNLOAD_FAILED",
-            DownloadError::RateLimited => "RATE_LIMITED",
+            DownloadError::RateLimited(_) => "RATE_LIMITED",
             DownloadError::GeoBlocked(_) => "GEO_BLOCKED",
             DownloadError::TrackUnavailable(_) => "DOWNLOAD_FAILED",
             DownloadError::NetworkError(_) => "NETWORK_ERROR",
@@ -199,7 +207,6 @@ mod tests {
         assert_eq!(response.code, "PROFILE_FETCH_FAILED");
     }
 
-
     #[test]
     fn test_download_download_failed_error_message() {
         let err = DownloadError::DownloadFailed("Connection timeout".to_string());
@@ -214,7 +221,7 @@ mod tests {
 
     #[test]
     fn test_download_rate_limited_error_message() {
-        let err = DownloadError::RateLimited;
+        let err = DownloadError::RateLimited(None);
         assert_eq!(err.to_string(), "Rate limited by SoundCloud");
     }
 
@@ -241,7 +248,7 @@ mod tests {
 
     #[test]
     fn test_error_response_from_download_rate_limited() {
-        let err = DownloadError::RateLimited;
+        let err = DownloadError::RateLimited(None);
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "RATE_LIMITED");
     }
@@ -273,7 +280,7 @@ mod tests {
             "DOWNLOAD_FAILED"
         );
         assert_eq!(DownloadError::BinaryNotFound.code(), "DOWNLOAD_FAILED");
-        assert_eq!(DownloadError::RateLimited.code(), "RATE_LIMITED");
+        assert_eq!(DownloadError::RateLimited(None).code(), "RATE_LIMITED");
         assert_eq!(
             DownloadError::GeoBlocked("test".to_string()).code(),
             "GEO_BLOCKED"
@@ -323,7 +330,7 @@ mod tests {
 
     #[test]
     fn test_error_response_from_pipeline_download() {
-        let err = PipelineError::Download(DownloadError::RateLimited);
+        let err = PipelineError::Download(DownloadError::RateLimited(None));
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "RATE_LIMITED");
     }

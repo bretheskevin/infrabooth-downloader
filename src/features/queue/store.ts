@@ -17,8 +17,6 @@ interface QueueState {
   completedCount: number;
   failedCount: number;
   cancelledCount: number;
-  isRateLimited: boolean;
-  rateLimitedAt: number | null;
   outputDir: string | null;
   isRetrying: boolean;
   // Actions
@@ -34,7 +32,6 @@ interface QueueState {
   setQueueCancelled: (result: QueueCancelledEvent) => void;
   setCancelling: (isCancelling: boolean) => void;
   clearQueue: () => void;
-  setRateLimited: (isLimited: boolean) => void;
   setInitializing: (isInitializing: boolean) => void;
   setOutputDir: (path: string | null) => void;
   prepareRetryFailed: () => Track[];
@@ -52,8 +49,6 @@ const INITIAL_QUEUE_STATE = {
   completedCount: 0,
   failedCount: 0,
   cancelledCount: 0,
-  isRateLimited: false,
-  rateLimitedAt: null as number | null,
   outputDir: null as string | null,
   isRetrying: false,
 };
@@ -138,16 +133,6 @@ export const useQueueStore = create<QueueState>((set, get) => ({
       tracks: [],
       totalTracks: 0,
       ...INITIAL_QUEUE_STATE,
-    });
-  },
-
-  setRateLimited: (isLimited) => {
-    if (isLimited) {
-      logger.warn('[queueStore] Rate limited!');
-    }
-    set({
-      isRateLimited: isLimited,
-      rateLimitedAt: isLimited ? Date.now() : null,
     });
   },
 

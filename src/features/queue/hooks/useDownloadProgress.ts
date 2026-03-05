@@ -25,8 +25,6 @@ export function useDownloadProgress(): void {
   const setQueueProgress = useQueueStore((state) => state.setQueueProgress);
   const setQueueComplete = useQueueStore((state) => state.setQueueComplete);
   const setQueueCancelled = useQueueStore((state) => state.setQueueCancelled);
-  const setRateLimited = useQueueStore((state) => state.setRateLimited);
-
   useEffect(() => {
     logger.debug('[useDownloadProgress] Setting up event listeners');
 
@@ -35,15 +33,6 @@ export function useDownloadProgress(): void {
       (event) => {
         const { status, error, trackId, percent, downloadedBytes, totalBytes } = event.payload;
         logger.debug(`[useDownloadProgress] download-progress: trackId=${trackId}, status=${status}`);
-
-        // Handle rate limit detection
-        if (status === 'rate_limited' || error?.code === 'RATE_LIMITED') {
-          logger.warn(`[useDownloadProgress] Rate limit detected for track ${trackId}`);
-          setRateLimited(true);
-        } else if (status === 'downloading' || status === 'converting') {
-          // Clear rate limit when processing resumes
-          setRateLimited(false);
-        }
 
         if (error) {
           logger.error(`[useDownloadProgress] Track error: ${error.code} - ${error.message}`);
@@ -88,5 +77,5 @@ export function useDownloadProgress(): void {
       unlistenComplete.then((fn) => fn());
       unlistenCancelled.then((fn) => fn());
     };
-  }, [updateTrackStatus, setQueueProgress, setQueueComplete, setQueueCancelled, setRateLimited]);
+  }, [updateTrackStatus, setQueueProgress, setQueueComplete, setQueueCancelled]);
 }

@@ -7,7 +7,8 @@ pub mod updater;
 
 pub use auth::{check_auth, refresh_auth, sign_out};
 pub use download::{
-    cancel_download_queue, download_track_full, respond_to_auth_choice, start_download_queue,
+    cancel_download_queue, download_track_full, respond_to_auth_choice,
+    respond_to_rate_limit_choice, start_download_queue,
 };
 pub use ffmpeg::test_ffmpeg;
 pub use playlist::{get_playlist_info, get_track_info, validate_soundcloud_url};

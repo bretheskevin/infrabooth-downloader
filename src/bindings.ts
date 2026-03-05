@@ -140,6 +140,17 @@ async respondToAuthChoice(choice: AuthChoice) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+/**
+ * Respond to a rate limit choice prompt during download.
+ */
+async respondToRateLimitChoice(choice: RateLimitChoice) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("respond_to_rate_limit_choice", { choice }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async checkWritePermission(path: string) : Promise<Result<boolean, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("check_write_permission", { path }) };
@@ -220,6 +231,7 @@ export type ErrorResponse = { code: string; message: string }
  */
 export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
 export type QueueItemRequest = { trackUrl: string; trackId: string; title: string; artist: string; artworkUrl: string | null; durationMs: number }
+export type RateLimitChoice = "retry" | "stop"
 export type StartQueueRequest = { tracks: QueueItemRequest[]; albumName: string | null; outputDir: string | null }
 /**
  * Track information from SoundCloud API.

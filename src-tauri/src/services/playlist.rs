@@ -46,6 +46,9 @@ pub enum PlaylistError {
 
     #[error("Private content requires sign-in")]
     AuthRequired,
+
+    #[error("Rate limited by SoundCloud")]
+    RateLimited,
 }
 
 /// User information from SoundCloud API (public).
@@ -192,6 +195,10 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
 
     let response = request.send().await?;
 
+    if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return Err(PlaylistError::RateLimited);
+    }
+
     if response.status() == reqwest::StatusCode::NOT_FOUND {
         return Err(PlaylistError::TrackNotFound);
     }
@@ -224,6 +231,10 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
                 .with_oauth(oauth_token)
                 .send()
                 .await?;
+
+            if redirect_response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                return Err(PlaylistError::RateLimited);
+            }
 
             if redirect_response.status() == reqwest::StatusCode::UNAUTHORIZED {
                 return Err(PlaylistError::AuthRequired);
@@ -420,6 +431,10 @@ async fn fetch_tracks_by_ids(
         );
 
         let response = client.get(&url).with_oauth(oauth_token).send().await?;
+
+        if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            return Err(PlaylistError::RateLimited);
+        }
 
         if response.status().is_success() {
             match response.json::<Vec<RawTrackInfo>>().await {
