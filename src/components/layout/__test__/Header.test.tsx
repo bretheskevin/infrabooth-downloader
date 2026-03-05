@@ -6,7 +6,7 @@ import { useAuthStore } from '@/features/auth/store';
 
 // Mock auth module
 vi.mock('@/features/auth/api', () => ({
-  startOAuth: vi.fn(),
+  checkAuth: vi.fn().mockResolvedValue(false),
   signOut: vi.fn(),
 }));
 
@@ -60,7 +60,7 @@ describe('Header', () => {
   it('should render AuthContainer with sign-in button when not authenticated', () => {
     render(<Header />);
 
-    expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
   });
 
   it('should render AuthContainer with UserMenu when authenticated', () => {
@@ -70,8 +70,8 @@ describe('Header', () => {
 
     // UserMenu displays username and quality badge in a dropdown trigger
     expect(screen.getByText('testuser')).toBeInTheDocument();
-    expect(screen.getByText('Go+')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
+    expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Check browser login/i })).not.toBeInTheDocument();
   });
 
   it('should render settings button', () => {

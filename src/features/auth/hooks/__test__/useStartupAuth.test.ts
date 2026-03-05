@@ -4,51 +4,51 @@ import { useStartupAuth } from '../useStartupAuth';
 
 // Mock the auth module
 vi.mock('@/features/auth/api', () => ({
-  checkAuthState: vi.fn(),
+  checkAuth: vi.fn(),
 }));
 
-import { checkAuthState } from '@/features/auth/api';
+import { checkAuth } from '@/features/auth/api';
 
 describe('useStartupAuth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('should call checkAuthState on mount', async () => {
-    vi.mocked(checkAuthState).mockResolvedValue(true);
+  it('should call checkAuth on mount', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true);
 
     renderHook(() => useStartupAuth());
 
     await waitFor(() => {
-      expect(checkAuthState).toHaveBeenCalledTimes(1);
+      expect(checkAuth).toHaveBeenCalledTimes(1);
     });
   });
 
-  it('should handle checkAuthState returning true (authenticated)', async () => {
-    vi.mocked(checkAuthState).mockResolvedValue(true);
+  it('should handle checkAuth returning true (authenticated)', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true);
 
     renderHook(() => useStartupAuth());
 
     await waitFor(() => {
-      expect(checkAuthState).toHaveBeenCalled();
-    });
-    // No error should be thrown
-  });
-
-  it('should handle checkAuthState returning false (not authenticated)', async () => {
-    vi.mocked(checkAuthState).mockResolvedValue(false);
-
-    renderHook(() => useStartupAuth());
-
-    await waitFor(() => {
-      expect(checkAuthState).toHaveBeenCalled();
+      expect(checkAuth).toHaveBeenCalled();
     });
     // No error should be thrown
   });
 
-  it('should log error when checkAuthState fails', async () => {
+  it('should handle checkAuth returning false (not authenticated)', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(false);
+
+    renderHook(() => useStartupAuth());
+
+    await waitFor(() => {
+      expect(checkAuth).toHaveBeenCalled();
+    });
+    // No error should be thrown
+  });
+
+  it('should log error when checkAuth fails', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    vi.mocked(checkAuthState).mockRejectedValue(new Error('Network error'));
+    vi.mocked(checkAuth).mockRejectedValue(new Error('Network error'));
 
     renderHook(() => useStartupAuth());
 
@@ -62,22 +62,22 @@ describe('useStartupAuth', () => {
     consoleSpy.mockRestore();
   });
 
-  it('should only call checkAuthState once', async () => {
-    vi.mocked(checkAuthState).mockResolvedValue(true);
+  it('should only call checkAuth once', async () => {
+    vi.mocked(checkAuth).mockResolvedValue(true);
 
     const { rerender } = renderHook(() => useStartupAuth());
 
     await waitFor(() => {
-      expect(checkAuthState).toHaveBeenCalledTimes(1);
+      expect(checkAuth).toHaveBeenCalledTimes(1);
     });
 
-    // Rerender should not call checkAuthState again
+    // Rerender should not call checkAuth again
     rerender();
 
-    expect(checkAuthState).toHaveBeenCalledTimes(1);
+    expect(checkAuth).toHaveBeenCalledTimes(1);
   });
 
-  it('should not log error if component unmounts before checkAuthState resolves', async () => {
+  it('should not log error if component unmounts before checkAuth resolves', async () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
     // Create a promise that we control
@@ -85,7 +85,7 @@ describe('useStartupAuth', () => {
     const promise = new Promise<boolean>((resolve) => {
       resolvePromise = resolve;
     });
-    vi.mocked(checkAuthState).mockReturnValue(promise);
+    vi.mocked(checkAuth).mockReturnValue(promise);
 
     const { unmount } = renderHook(() => useStartupAuth());
 

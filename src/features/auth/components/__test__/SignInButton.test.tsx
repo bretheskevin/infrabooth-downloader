@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { SignInButton } from '../SignInButton';
 import * as auth from '@/features/auth/api';
@@ -8,8 +8,9 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
-        'auth.signIn': 'Sign in with SoundCloud',
-        'auth.openingBrowser': 'Opening browser...',
+        'auth.signInHint': 'Log in to SoundCloud in your browser for higher quality downloads',
+        'auth.checkBrowser': 'Check browser login',
+        'auth.checking': 'Checking...',
       };
       return translations[key] || key;
     },
@@ -18,131 +19,152 @@ vi.mock('react-i18next', () => ({
 
 // Mock auth module
 vi.mock('@/features/auth/api', () => ({
-  startOAuth: vi.fn(),
+  checkAuth: vi.fn(),
 }));
 
 describe('SignInButton', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
   });
 
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  it('should render sign-in button with correct text', () => {
+  it('should render check browser login button', () => {
     render(<SignInButton />);
 
-    expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
   });
 
-  it('should show loading state when clicked', async () => {
-    vi.mocked(auth.startOAuth).mockResolvedValue();
+  it('should render hint text', () => {
+    render(<SignInButton />);
+
+    expect(screen.getByText('Log in to SoundCloud in your browser for higher quality downloads')).toBeInTheDocument();
+  });
+
+  it('should show loading spinner and "Checking..." text when clicked', async () => {
+    // Make checkAuth hang so we can observe loading state
+    let resolveCheck: (value: boolean) => void;
+    vi.mocked(auth.checkAuth).mockImplementation(
+      () => new Promise<boolean>((resolve) => { resolveCheck = resolve; })
+    );
 
     render(<SignInButton />);
 
-    const button = screen.getByRole('button', { name: 'Sign in with SoundCloud' });
+    const button = screen.getByRole('button', { name: /Check browser login/i });
 
     await act(async () => {
       fireEvent.click(button);
     });
 
-    expect(screen.getByText('Opening browser...')).toBeInTheDocument();
+    expect(screen.getByText('Checking...')).toBeInTheDocument();
     expect(button).toBeDisabled();
+
+    // Cleanup: resolve the promise
+    await act(async () => {
+      resolveCheck!(true);
+    });
   });
 
-  it('should call startOAuth when clicked', async () => {
-    vi.mocked(auth.startOAuth).mockResolvedValue();
+  it('should call checkAuth on click', async () => {
+    vi.mocked(auth.checkAuth).mockResolvedValue(true);
 
     render(<SignInButton />);
 
-    const button = screen.getByRole('button', { name: 'Sign in with SoundCloud' });
+    const button = screen.getByRole('button', { name: /Check browser login/i });
 
     await act(async () => {
       fireEvent.click(button);
     });
 
-    expect(auth.startOAuth).toHaveBeenCalledTimes(1);
+    expect(auth.checkAuth).toHaveBeenCalledTimes(1);
   });
 
-  it('should reset loading state on error', async () => {
-    vi.useRealTimers(); // Use real timers for this test
-    vi.mocked(auth.startOAuth).mockRejectedValue(new Error('Failed'));
+  it('should disable button while checking', async () => {
+    let resolveCheck: (value: boolean) => void;
+    vi.mocked(auth.checkAuth).mockImplementation(
+      () => new Promise<boolean>((resolve) => { resolveCheck = resolve; })
+    );
 
     render(<SignInButton />);
 
-    const button = screen.getByRole('button', { name: 'Sign in with SoundCloud' });
+    const button = screen.getByRole('button', { name: /Check browser login/i });
 
     await act(async () => {
       fireEvent.click(button);
     });
 
-    // Wait for the error to be handled and state to reset
+    expect(button).toBeDisabled();
+
+    // Cleanup
+    await act(async () => {
+      resolveCheck!(false);
+    });
+  });
+
+  it('should re-enable button after check completes successfully', async () => {
+    vi.mocked(auth.checkAuth).mockResolvedValue(true);
+
+    render(<SignInButton />);
+
+    const button = screen.getByRole('button', { name: /Check browser login/i });
+
+    await act(async () => {
+      fireEvent.click(button);
+    });
+
     await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeDisabled();
+      expect(screen.getByRole('button', { name: /Check browser login/i })).not.toBeDisabled();
     });
-
-    vi.useFakeTimers(); // Restore fake timers for other tests
   });
 
-  it('should reset loading state after timeout', async () => {
-    vi.mocked(auth.startOAuth).mockResolvedValue();
+  it('should re-enable button after check fails', async () => {
+    vi.mocked(auth.checkAuth).mockRejectedValue(new Error('Failed'));
 
     render(<SignInButton />);
 
-    const button = screen.getByRole('button', { name: 'Sign in with SoundCloud' });
+    const button = screen.getByRole('button', { name: /Check browser login/i });
 
     await act(async () => {
       fireEvent.click(button);
     });
 
-    expect(button).toBeDisabled();
-
-    // Fast-forward past the timeout (5 minutes)
-    await act(async () => {
-      vi.advanceTimersByTime(5 * 60 * 1000);
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /Check browser login/i })).not.toBeDisabled();
     });
-
-    expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeDisabled();
   });
 
-  it('should have primary styling', () => {
+  it('should prevent double-clicks when checking', async () => {
+    let resolveCheck: (value: boolean) => void;
+    vi.mocked(auth.checkAuth).mockImplementation(
+      () => new Promise<boolean>((resolve) => { resolveCheck = resolve; })
+    );
+
     render(<SignInButton />);
 
-    const button = screen.getByRole('button', { name: 'Sign in with SoundCloud' });
+    const button = screen.getByRole('button', { name: /Check browser login/i });
 
-    expect(button).toHaveClass('bg-primary');
-    expect(button).toHaveClass('text-primary-foreground');
+    await act(async () => {
+      fireEvent.click(button);
+    });
+
+    // Try clicking again while checking
+    await act(async () => {
+      fireEvent.click(button);
+    });
+
+    // Should only be called once since button is disabled
+    expect(auth.checkAuth).toHaveBeenCalledTimes(1);
+
+    // Cleanup
+    await act(async () => {
+      resolveCheck!(true);
+    });
   });
 
   it('should be keyboard accessible', () => {
     render(<SignInButton />);
 
-    const button = screen.getByRole('button', { name: 'Sign in with SoundCloud' });
+    const button = screen.getByRole('button', { name: /Check browser login/i });
 
-    // Button should be focusable
     button.focus();
     expect(document.activeElement).toBe(button);
-  });
-
-  it('should prevent double-clicks when loading', async () => {
-    vi.mocked(auth.startOAuth).mockResolvedValue();
-
-    render(<SignInButton />);
-
-    const button = screen.getByRole('button', { name: 'Sign in with SoundCloud' });
-
-    await act(async () => {
-      fireEvent.click(button);
-    });
-
-    // Try clicking again while loading
-    await act(async () => {
-      fireEvent.click(button);
-    });
-
-    // Should only be called once
-    expect(auth.startOAuth).toHaveBeenCalledTimes(1);
   });
 });

@@ -8,8 +8,9 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
-        'auth.signIn': 'Sign in with SoundCloud',
-        'auth.openingBrowser': 'Opening browser...',
+        'auth.signInHint': 'Log in to SoundCloud in your browser for higher quality downloads',
+        'auth.checkBrowser': 'Check browser login',
+        'auth.checking': 'Checking...',
         'auth.signedInAs': 'Signed in as {{username}}',
         'auth.accessibilityStatus': 'Signed in as {{username}}, Go+ quality enabled',
         'auth.qualityBadge': 'Go+ 256kbps',
@@ -26,7 +27,7 @@ vi.mock('react-i18next', () => ({
 
 // Mock auth module
 vi.mock('@/features/auth/api', () => ({
-  startOAuth: vi.fn(),
+  checkAuth: vi.fn(),
   signOut: vi.fn(),
 }));
 
@@ -39,7 +40,7 @@ describe('AuthContainer', () => {
   it('should render SignInButton when not signed in', () => {
     render(<AuthContainer />);
 
-    expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
   });
 
   it('should render UserMenu when signed in with username', () => {
@@ -50,14 +51,14 @@ describe('AuthContainer', () => {
     // UserMenu shows username and quality badge in a dropdown trigger button
     expect(screen.getByText('testuser')).toBeInTheDocument();
     expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Check browser login/i })).not.toBeInTheDocument();
   });
 
   it('should switch from SignInButton to UserMenu when auth state changes', () => {
     const { rerender } = render(<AuthContainer />);
 
-    // Initially shows sign-in button
-    expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
+    // Initially shows check browser login button
+    expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
 
     // Change auth state (wrapped in act)
     act(() => {
@@ -69,7 +70,7 @@ describe('AuthContainer', () => {
 
     // Now shows user menu with username
     expect(screen.getByText('testuser')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'Sign in with SoundCloud' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Check browser login/i })).not.toBeInTheDocument();
   });
 
   it('should have transition classes for smooth state changes', () => {
