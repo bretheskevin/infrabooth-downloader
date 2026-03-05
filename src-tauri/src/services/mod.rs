@@ -1,5 +1,6 @@
 pub mod auth_choice;
 pub mod cancellation;
+pub mod cookie;
 pub mod client_id;
 pub mod constants;
 pub mod deep_link;
