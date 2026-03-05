@@ -80,7 +80,7 @@ export const TrackCard = memo(function TrackCard({
         'flex items-center gap-4 px-4 py-3 rounded-xl overflow-hidden',
         'transition-all duration-200',
         'hover:bg-secondary/50',
-        (isActive || showInitializing) && 'bg-primary/10 ring-1 ring-primary/30',
+        (isActive || showInitializing) && 'bg-primary/10 border border-primary/30',
         !isActive && !showInitializing && isCurrentTrack && 'bg-primary/5'
       )}
     >

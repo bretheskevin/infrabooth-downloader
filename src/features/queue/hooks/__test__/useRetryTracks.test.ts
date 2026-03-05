@@ -8,6 +8,12 @@ vi.mock('@/features/queue/store', () => ({
   useQueueStore: vi.fn(),
 }));
 
+vi.mock('@/features/settings/store', () => ({
+  useSettingsStore: {
+    getState: () => ({ maxConcurrentDownloads: 3 }),
+  },
+}));
+
 vi.mock('@/features/queue/api/download', () => ({
   startDownloadQueue: vi.fn(),
 }));
@@ -136,6 +142,7 @@ describe('useRetryTracks', () => {
             title: 'Track 1',
             artist: 'Artist 1',
             artworkUrl: null,
+            durationMs: undefined,
           },
           {
             trackUrl: 'https://api.soundcloud.com/tracks/2',
@@ -143,10 +150,12 @@ describe('useRetryTracks', () => {
             title: 'Track 2',
             artist: 'Artist 2',
             artworkUrl: 'http://art.jpg',
+            durationMs: undefined,
           },
         ],
         albumName: null,
         outputDir: '/test/downloads',
+        maxConcurrent: 3,
       });
     });
 
@@ -233,10 +242,12 @@ describe('useRetryTracks', () => {
             title: 'Track 1',
             artist: 'Artist 1',
             artworkUrl: null,
+            durationMs: undefined,
           },
         ],
         albumName: null,
         outputDir: '/test/downloads',
+        maxConcurrent: 3,
       });
     });
 

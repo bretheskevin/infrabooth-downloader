@@ -232,7 +232,7 @@ export type ErrorResponse = { code: string; message: string }
 export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
 export type QueueItemRequest = { trackUrl: string; trackId: string; title: string; artist: string; artworkUrl: string | null; durationMs: number }
 export type RateLimitChoice = "retry" | "stop"
-export type StartQueueRequest = { tracks: QueueItemRequest[]; albumName: string | null; outputDir: string | null }
+export type StartQueueRequest = { tracks: QueueItemRequest[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null }
 /**
  * Track information from SoundCloud API.
  */

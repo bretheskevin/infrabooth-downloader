@@ -89,20 +89,20 @@ describe('TrackList', () => {
 
     it('should highlight current track', () => {
       const mockTracks = createMockTracks(3);
+      mockTracks[1]!.status = 'downloading';
       useQueueStore.setState({
         tracks: mockTracks,
         totalTracks: 3,
-        currentIndex: 1,
       });
 
       render(<TrackList />);
 
       const listItems = screen.getAllByRole('listitem');
 
-      expect(listItems[0]).not.toHaveClass('bg-primary/5');
-      expect(listItems[1]).toHaveClass('bg-primary/5');
+      expect(listItems[0]).not.toHaveClass('bg-primary/10');
+      expect(listItems[1]).toHaveClass('bg-primary/10');
       expect(listItems[1]).toHaveAttribute('aria-current', 'true');
-      expect(listItems[2]).not.toHaveClass('bg-primary/5');
+      expect(listItems[2]).not.toHaveClass('bg-primary/10');
     });
   });
 
@@ -130,10 +130,10 @@ describe('TrackList', () => {
   describe('single track', () => {
     it('should render single track correctly', () => {
       const mockTracks = createMockTracks(1);
+      mockTracks[0]!.status = 'downloading';
       useQueueStore.setState({
         tracks: mockTracks,
         totalTracks: 1,
-        currentIndex: 0,
       });
 
       render(<TrackList />);
@@ -141,7 +141,7 @@ describe('TrackList', () => {
       expect(screen.getByText('Track 1')).toBeInTheDocument();
       const listItems = screen.getAllByRole('listitem');
       expect(listItems).toHaveLength(1);
-      expect(listItems[0]).toHaveClass('bg-primary/5');
+      expect(listItems[0]).toHaveClass('bg-primary/10');
     });
   });
 });
