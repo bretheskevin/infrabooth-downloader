@@ -12,6 +12,8 @@ export function SignInButton() {
     setIsChecking(true);
     try {
       await checkAuth();
+    } catch {
+      // Auth check failed — state event handles UI update
     } finally {
       setIsChecking(false);
     }
