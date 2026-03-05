@@ -1,59 +1,32 @@
 import { api } from '@/lib/tauri';
-import { open } from '@tauri-apps/plugin-shell';
 
 /**
- * Starts the OAuth flow by generating PKCE parameters and opening the browser.
+ * Scans browser cookies for a SoundCloud oauth_token, verifies it
+ * against the API, and caches the result. Emits an auth state event.
  *
- * This function:
- * 1. Calls the backend to generate PKCE parameters and get the auth URL
- * 2. Opens the authorization URL in the user's default browser
- *
- * The OAuth callback will be handled by the deep link handler,
- * which emits an 'auth-callback' event with the authorization code.
- *
- * @throws Error if the backend fails or browser cannot be opened
- */
-export async function startOAuth(): Promise<void> {
-  const authUrl = await api.startOauth();
-  await open(authUrl);
-}
-
-/**
- * Completes the OAuth flow by exchanging the authorization code for tokens.
- *
- * This function should be called after receiving the 'auth-callback' event
- * with the authorization code from the deep link handler.
- *
- * On success, an 'auth-state-changed' event is emitted to notify the app
- * that the user is now signed in.
- *
- * @param code - The authorization code received from the OAuth callback
- * @throws Error if token exchange fails
- */
-export async function completeOAuth(code: string): Promise<void> {
-  await api.completeOauth(code);
-}
-
-/**
- * Checks authentication state on app startup.
- *
- * This function loads stored tokens from the OS keychain, checks if they're valid,
- * and refreshes them if needed. It emits auth state events to notify the app
- * whether the user is signed in.
- *
- * @returns true if the user is authenticated, false otherwise
+ * @returns true if a valid token was found, false otherwise
  * @throws Error if the check fails
  */
-export async function checkAuthState(): Promise<boolean> {
-  return api.checkAuthState();
+export async function checkAuth(): Promise<boolean> {
+  return api.checkAuth();
 }
 
 /**
- * Signs out the user by deleting stored tokens.
+ * Re-scans browser cookies on demand (e.g., after user logs in via browser).
+ * Same logic as checkAuth.
  *
- * This function:
- * 1. Deletes tokens from the OS keychain
- * 2. Emits an auth-state-changed event with signed-out state
+ * @returns true if a valid token was found, false otherwise
+ * @throws Error if the refresh fails
+ */
+export async function refreshAuth(): Promise<boolean> {
+  return api.refreshAuth();
+}
+
+/**
+ * Signs out the user by clearing cached auth state.
+ *
+ * Note: This does NOT delete the browser cookie — the user remains logged in
+ * to SoundCloud in their browser. It only clears the app's cached token.
  *
  * @throws Error if sign-out fails
  */

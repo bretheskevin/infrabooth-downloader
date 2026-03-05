@@ -6,72 +6,31 @@
 
 export const commands = {
 /**
- * Starts the OAuth flow by generating PKCE parameters and returning the auth URL.
- * 
- * The PKCE code verifier is stored in the app state for later use during token exchange.
- * 
- * # Returns
- * * `Ok(String)` - The authorization URL to open in the browser
- * * `Err(String)` - Error message if generation fails
+ * Scans browser cookies for a SoundCloud oauth_token, verifies it
+ * against the API, and caches the result. Emits an auth state event.
  */
-async startOauth() : Promise<Result<string, string>> {
+async checkAuth() : Promise<Result<boolean, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("start_oauth") };
+    return { status: "ok", data: await TAURI_INVOKE("check_auth") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
 /**
- * Completes the OAuth flow by exchanging the authorization code for tokens.
- * 
- * Retrieves the stored PKCE verifier, exchanges the code for tokens,
- * and emits an auth state change event to the frontend.
- * 
- * # Arguments
- * * `code` - The authorization code received from the OAuth callback
- * 
- * # Returns
- * * `Ok(())` - If token exchange succeeds
- * * `Err(String)` - Error message if exchange fails
+ * Re-scans browser cookies on demand (e.g., after user logs in via browser).
+ * Same logic as checkAuth.
  */
-async completeOauth(code: string) : Promise<Result<null, string>> {
+async refreshAuth() : Promise<Result<boolean, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("complete_oauth", { code }) };
+    return { status: "ok", data: await TAURI_INVOKE("refresh_auth") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
 /**
- * Checks authentication state on app startup.
- * 
- * Loads stored tokens from the OS keychain, checks if they're valid,
- * and refreshes them if needed. Emits auth state to the frontend.
- * 
- * # Returns
- * * `Ok(true)` - User is authenticated (tokens valid or refreshed)
- * * `Ok(false)` - User is not authenticated (no tokens or refresh failed)
- * * `Err(String)` - Error during the check
- */
-async checkAuthState() : Promise<Result<boolean, string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("check_auth_state") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
- * Signs out the user by deleting stored tokens and emitting signed-out state.
- * 
- * This command:
- * 1. Deletes tokens from the OS keychain
- * 2. Emits an auth-state-changed event with signed-out state
- * 
- * # Returns
- * * `Ok(())` - If sign-out succeeds
- * * `Err(String)` - Error message if sign-out fails
+ * Signs out by clearing cached auth state and emitting signed-out event.
  */
 async signOut() : Promise<Result<null, string>> {
     try {

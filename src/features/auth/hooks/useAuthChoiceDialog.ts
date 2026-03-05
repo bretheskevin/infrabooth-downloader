@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { commands } from '@/bindings';
-import { startOAuth } from '../api';
-import { useAuthStore } from '../store';
+import { refreshAuth } from '../api';
 
 interface DownloadAuthNeededEvent {
   trackTitle: string;
@@ -18,8 +17,6 @@ export function useAuthChoiceDialog() {
     isOpen: false,
     trackTitle: null,
   });
-  const [waitingForAuth, setWaitingForAuth] = useState(false);
-  const isSignedIn = useAuthStore((s) => s.isSignedIn);
 
   useEffect(() => {
     let unlisten: UnlistenFn | undefined;
@@ -47,22 +44,17 @@ export function useAuthChoiceDialog() {
     };
   }, []);
 
-  useEffect(() => {
-    if (waitingForAuth && isSignedIn) {
-      commands.respondToAuthChoice('re_authenticated');
-      setState({ isOpen: false, trackTitle: null });
-      setWaitingForAuth(false);
-    }
-  }, [waitingForAuth, isSignedIn]);
-
   const handleReAuthenticate = useCallback(async () => {
-    setWaitingForAuth(true);
-    setState((prev) => ({ ...prev, isOpen: false }));
+    setState({ isOpen: false, trackTitle: null });
     try {
-      await startOAuth();
+      const success = await refreshAuth();
+      if (success) {
+        await commands.respondToAuthChoice('re_authenticated');
+      } else {
+        await commands.respondToAuthChoice('continue_standard');
+      }
     } catch (error) {
-      console.error('[useAuthChoiceDialog] OAuth start failed:', error);
-      setWaitingForAuth(false);
+      console.error('[useAuthChoiceDialog] Auth refresh failed:', error);
       await commands.respondToAuthChoice('continue_standard');
     }
   }, []);
