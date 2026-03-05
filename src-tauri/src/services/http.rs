@@ -26,3 +26,11 @@ impl RequestBuilderExt for reqwest::RequestBuilder {
         }
     }
 }
+
+pub async fn parse_rate_limit_response(response: reqwest::Response) -> crate::models::error::DownloadError {
+    let info = response
+        .json::<crate::models::error::RateLimitInfo>()
+        .await
+        .ok();
+    crate::models::error::DownloadError::RateLimited(info)
+}

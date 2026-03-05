@@ -8,6 +8,7 @@ use tokio::sync::{watch, Mutex};
 
 use crate::models::error::{HasErrorCode, PipelineError, DownloadError};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeededEvent};
+use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState, DownloadRateLimitedEvent};
 use crate::services::downloader::PlaylistContext;
 use crate::services::metadata::TrackMetadata;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
@@ -66,6 +67,7 @@ pub struct QueueProcessContext {
     pub active_child: Arc<Mutex<Option<CommandChild>>>,
     pub active_pid: Arc<Mutex<Option<u32>>>,
     pub auth_choice_state: Arc<AuthChoiceState>,
+    pub rate_limit_choice_state: Arc<RateLimitChoiceState>,
 }
 
 /// Download queue manager for processing multiple tracks sequentially.
@@ -97,8 +99,9 @@ impl DownloadQueue {
     /// - `queue-complete`: When all tracks are processed
     /// - `queue-cancelled`: When queue is cancelled by user
     /// - `download-auth-needed`: When auth refresh fails and user input is needed
+    /// - `download-rate-limited`: When SoundCloud rate limit is hit, pauses for user choice
     ///
-    /// On rate limit errors, the queue pauses with backoff and retries.
+    /// On rate limit errors, the queue pauses and waits for user to retry or stop.
     /// On auth refresh errors, the queue pauses for user input.
     /// On other errors, the queue records the failure and continues.
     pub async fn process<R: Runtime>(
@@ -110,7 +113,6 @@ impl DownloadQueue {
         let mut completed = 0u32;
         let mut failed = 0u32;
         let mut failed_tracks: Vec<(String, String)> = vec![];
-        let mut retry_count = 0u32;
         let mut oauth_token = app.state::<AuthState>().get_token();
 
         while self.current_index < self.items.len() {
@@ -185,7 +187,6 @@ impl DownloadQueue {
                         }),
                     );
                     completed += 1;
-                    retry_count = 0;
                 }
                 Err(PipelineError::Download(DownloadError::Cancelled)) => {
                     log::info!("[queue] Track {} download was cancelled", item.track_id);
@@ -201,12 +202,10 @@ impl DownloadQueue {
                     self.is_processing = false;
                     return QueueResult { completed, failed };
                 }
-                Err(PipelineError::Download(DownloadError::RateLimited)) => {
-                    let backoff = calculate_backoff(retry_count);
+                Err(PipelineError::Download(DownloadError::RateLimited(ref info))) => {
                     log::warn!(
-                        "Rate limited on track {}, backing off for {}s",
-                        item.track_id,
-                        backoff
+                        "[queue] Rate limited on track {}, pausing for user choice",
+                        item.track_id
                     );
 
                     let _ = app.emit(
@@ -217,8 +216,60 @@ impl DownloadQueue {
                         }),
                     );
 
-                    tokio::time::sleep(std::time::Duration::from_secs(backoff)).await;
-                    retry_count += 1;
+                    let reset_time = info.as_ref().and_then(|i| i.reset_time.clone());
+
+                    let _ = app.emit(
+                        "download-rate-limited",
+                        DownloadRateLimitedEvent {
+                            track_id: item.track_id.clone(),
+                            track_title: item.title.clone(),
+                            reset_time,
+                        },
+                    );
+
+                    let mut choice_rx = ctx.rate_limit_choice_state.subscribe();
+                    loop {
+                        if *ctx.cancel_rx.borrow() {
+                            log::info!("[queue] Cancellation during rate limit wait");
+                            let cancelled = self.total_tracks - completed - failed;
+                            let _ = app.emit(
+                                "queue-cancelled",
+                                QueueCancelledEvent {
+                                    completed,
+                                    cancelled,
+                                    total: self.total_tracks,
+                                },
+                            );
+                            self.is_processing = false;
+                            return QueueResult { completed, failed };
+                        }
+
+                        if choice_rx.changed().await.is_ok() {
+                            let choice = { *choice_rx.borrow() };
+                            if let Some(choice) = choice {
+                                match choice {
+                                    RateLimitChoice::Retry => {
+                                        log::info!("[queue] User chose to retry after rate limit");
+                                        break;
+                                    }
+                                    RateLimitChoice::Stop => {
+                                        log::info!("[queue] User chose to stop after rate limit");
+                                        let cancelled = self.total_tracks - completed - failed;
+                                        let _ = app.emit(
+                                            "queue-cancelled",
+                                            QueueCancelledEvent {
+                                                completed,
+                                                cancelled,
+                                                total: self.total_tracks,
+                                            },
+                                        );
+                                        self.is_processing = false;
+                                        return QueueResult { completed, failed };
+                                    }
+                                }
+                            }
+                        }
+                    }
                     continue;
                 }
                 Err(PipelineError::Download(DownloadError::AuthRefreshFailed)) => {
@@ -292,7 +343,6 @@ impl DownloadQueue {
                     );
                     failed += 1;
                     failed_tracks.push((item.track_id.clone(), e.to_string()));
-                    retry_count = 0;
                 }
             }
 
@@ -318,20 +368,6 @@ impl DownloadQueue {
 
         QueueResult { completed, failed }
     }
-}
-
-fn calculate_backoff(retry_count: u32) -> u64 {
-    let fib = |n: u32| -> u64 {
-        let mut a = 1u64;
-        let mut b = 1u64;
-        for _ in 0..n {
-            let tmp = a + b;
-            a = b;
-            b = tmp;
-        }
-        a
-    };
-    fib(retry_count.min(10))
 }
 
 #[cfg(test)]
@@ -416,35 +452,6 @@ mod tests {
         assert_eq!(queue.total_tracks, 0);
         assert_eq!(queue.items.len(), 0);
         assert!(queue.album_name.is_none());
-    }
-
-    #[test]
-    fn test_calculate_backoff_first() {
-        assert_eq!(calculate_backoff(0), 1);
-    }
-
-    #[test]
-    fn test_calculate_backoff_second() {
-        assert_eq!(calculate_backoff(1), 1);
-    }
-
-    #[test]
-    fn test_calculate_backoff_sequence() {
-        assert_eq!(calculate_backoff(2), 2);
-        assert_eq!(calculate_backoff(3), 3);
-        assert_eq!(calculate_backoff(4), 5);
-        assert_eq!(calculate_backoff(5), 8);
-        assert_eq!(calculate_backoff(6), 13);
-        assert_eq!(calculate_backoff(7), 21);
-        assert_eq!(calculate_backoff(8), 34);
-        assert_eq!(calculate_backoff(9), 55);
-        assert_eq!(calculate_backoff(10), 89);
-    }
-
-    #[test]
-    fn test_calculate_backoff_capped() {
-        assert_eq!(calculate_backoff(11), 89);
-        assert_eq!(calculate_backoff(100), 89);
     }
 
     #[test]

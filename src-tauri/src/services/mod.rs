@@ -1,4 +1,5 @@
 pub mod auth_choice;
+pub mod rate_limit_choice;
 pub mod cancellation;
 pub mod cookie;
 pub mod client_id;

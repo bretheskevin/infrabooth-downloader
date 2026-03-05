@@ -170,13 +170,9 @@ pub fn select_best_transcoding(transcodings: &[Transcoding]) -> Option<&Transcod
 
 /// Check common SoundCloud API error status codes.
 ///
-/// Maps 429→RateLimited, 404→TrackUnavailable, 401→StreamResolutionFailed.
-/// Returns `Ok(())` for success status codes.
-/// Returns `None` for unhandled error codes (caller should handle 403 and generic failures).
+/// Maps 404→TrackUnavailable, 401→StreamResolutionFailed.
+/// Returns `None` for unhandled error codes (caller should handle 429, 403 and generic failures).
 fn check_common_status(status: reqwest::StatusCode) -> Option<DownloadError> {
-    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-        return Some(DownloadError::RateLimited);
-    }
     if status == reqwest::StatusCode::NOT_FOUND {
         return Some(DownloadError::TrackUnavailable("Not found".to_string()));
     }
@@ -211,6 +207,9 @@ async fn fetch_track_data_v2(
 
     let status = response.status();
 
+    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return Err(crate::services::http::parse_rate_limit_response(response).await);
+    }
     if let Some(err) = check_common_status(status) {
         return Err(err);
     }
@@ -259,6 +258,9 @@ async fn resolve_transcoding_url(
 
     let status = response.status();
 
+    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return Err(crate::services::http::parse_rate_limit_response(response).await);
+    }
     if let Some(err) = check_common_status(status) {
         return Err(err);
     }
