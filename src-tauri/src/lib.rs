@@ -5,18 +5,16 @@ mod services;
 use std::sync::Arc;
 
 use commands::{
-    cancel_download_queue, check_auth_state, check_for_updates, check_write_permission,
-    complete_oauth, download_track_full, get_default_download_path, get_playlist_info,
-    get_track_info, install_update, respond_to_auth_choice, sign_out, start_download_queue,
-    start_oauth, test_ffmpeg, validate_download_path, validate_soundcloud_url,
-    OAuthState,
+    cancel_download_queue, check_auth, check_for_updates, check_write_permission,
+    download_track_full, get_default_download_path, get_playlist_info,
+    get_track_info, install_update, refresh_auth, respond_to_auth_choice, sign_out,
+    start_download_queue, test_ffmpeg, validate_download_path, validate_soundcloud_url,
 };
 use services::auth_choice::AuthChoiceState;
 use services::cancellation::CancellationState;
-use services::deep_link::handle_deep_link;
+use services::storage::AuthState;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
-use tauri_plugin_deep_link::DeepLinkExt;
 
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
@@ -25,9 +23,8 @@ use tauri_specta::{collect_commands, Builder};
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let builder = Builder::<tauri::Wry>::new().commands(collect_commands![
-        start_oauth,
-        complete_oauth,
-        check_auth_state,
+        check_auth,
+        refresh_auth,
         sign_out,
         validate_soundcloud_url,
         get_playlist_info,
@@ -57,12 +54,11 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_plugin_deep_link::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
-        .manage(OAuthState::default())
+        .manage(AuthState::default())
         .manage(CancellationState::default())
         .manage(Arc::new(AuthChoiceState::default()))
         .invoke_handler(builder.invoke_handler())
@@ -123,18 +119,6 @@ pub fn run() {
                     .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepOne)
                     .build(),
             )?;
-
-            // Register deep link handler using the plugin's extension trait
-            let handle = app.handle().clone();
-            app.deep_link().on_open_url(move |event| {
-                let urls: Vec<String> = event.urls().iter().map(|u| u.to_string()).collect();
-                log::info!(
-                    "[deep-link] on_open_url triggered with {} URLs: {:?}",
-                    urls.len(),
-                    urls
-                );
-                handle_deep_link(&handle, urls);
-            });
 
             Ok(())
         })

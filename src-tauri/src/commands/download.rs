@@ -4,6 +4,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{Emitter, State};
 
+use tauri::Manager;
+
 use crate::models::{ErrorResponse, HasErrorCode};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState};
 use crate::services::cancellation::CancellationState;
@@ -11,6 +13,7 @@ use crate::services::metadata::TrackMetadata;
 use crate::services::paths::get_downloads_dir;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem, QueueProcessContext};
+use crate::services::storage::AuthState;
 use crate::services::downloader::DownloadProgressEvent;
 
 #[derive(Debug, Deserialize, Type)]
@@ -64,7 +67,7 @@ pub async fn download_track_full(
         metadata,
         playlist_context: None,
         duration_ms: request.duration_ms,
-        oauth_token: crate::services::storage::get_current_access_token(),
+        oauth_token: app.state::<AuthState>().get_token(),
     };
 
     let result_path = download_and_convert(&app, config, None, None, None)

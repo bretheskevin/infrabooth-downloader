@@ -118,8 +118,8 @@ async testFfmpeg() : Promise<Result<string, ErrorResponse>> {
  * Download and convert a track to MP3 with metadata embedding.
  * 
  * This command orchestrates the full download pipeline:
- * 1. Downloads audio using yt-dlp with OAuth authentication
- * 2. Converts to high-quality MP3 using yt-dlp native conversion
+ * 1. Resolves stream URL via SoundCloud API v2
+ * 2. Downloads and converts to 320kbps MP3 via ffmpeg
  * 3. Embeds ID3 metadata (title, artist, album, track number, artwork)
  * 4. Emits progress events throughout the process
  */
@@ -250,7 +250,7 @@ export type ErrorResponse = { code: string; message: string }
  * Playlist information from SoundCloud API.
  */
 export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
-export type QueueItemRequest = { trackUrl: string; trackId: string; title: string; artist: string; artworkUrl: string | null }
+export type QueueItemRequest = { trackUrl: string; trackId: string; title: string; artist: string; artworkUrl: string | null; durationMs: number }
 export type StartQueueRequest = { tracks: QueueItemRequest[]; albumName: string | null; outputDir: string | null }
 /**
  * Track information from SoundCloud API.
