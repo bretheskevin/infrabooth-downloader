@@ -28,17 +28,13 @@ specta = "=2.0.0-rc.22"
 specta-typescript = "0.0.9"
 tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 tauri-plugin-log = "2"
-tauri-plugin-deep-link = "2"
+rookie = "0.5"
 tauri-plugin-shell = "2"
 url = "2"
-rand = "0.8"
-base64 = "0.21"
-sha2 = "0.10"
 reqwest = { version = "0.11", features = ["json"] }
 tokio = { version = "1", features = ["full"] }
 futures = "0.3"
 thiserror = "1"
-keyring = "2"
 regex = "1"
 urlencoding = "2"
 tempfile = "3"
