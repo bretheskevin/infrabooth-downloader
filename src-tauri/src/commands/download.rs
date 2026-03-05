@@ -112,6 +112,7 @@ pub struct StartQueueRequest {
     pub tracks: Vec<QueueItemRequest>,
     pub album_name: Option<String>,
     pub output_dir: Option<String>,
+    pub max_concurrent: Option<u8>,
 }
 
 #[derive(Debug, Deserialize, Type)]
@@ -171,10 +172,10 @@ pub async fn start_download_queue(
     let ctx = QueueProcessContext {
         output_dir,
         cancel_rx: cancel_state.subscribe(),
-        active_child: cancel_state.active_child(),
-        active_pid: cancel_state.active_pid(),
+        active_processes: cancel_state.active_processes(),
         auth_choice_state: Arc::clone(&auth_choice_state),
         rate_limit_choice_state: Arc::clone(&rate_limit_choice_state),
+        max_concurrent: request.max_concurrent.unwrap_or(3).clamp(1, 10) as usize,
     };
 
     tokio::spawn(async move {
@@ -197,7 +198,7 @@ pub async fn cancel_download_queue(
 ) -> Result<(), String> {
     log::info!("[download] Cancelling download queue");
     cancel_state.cancel();
-    cancel_state.kill_active_process().await;
+    cancel_state.kill_active_processes().await;
     Ok(())
 }
 

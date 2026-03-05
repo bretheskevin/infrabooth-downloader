@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useQueueStore, type Track } from '@/features/queue/store';
+import { useSettingsStore } from '@/features/settings/store';
 import { startDownloadQueue } from '@/features/queue/api/download';
 import { queueTrackToDownloadRequest } from '@/features/queue/utils/transforms';
 import { logger } from '@/lib/logger';
@@ -20,10 +21,12 @@ async function executeRetry(tracks: Track[], logMessage: string): Promise<void> 
   logger.info(logMessage);
 
   try {
+    const { maxConcurrentDownloads } = useSettingsStore.getState();
     await startDownloadQueue({
       tracks: tracks.map(queueTrackToDownloadRequest),
       albumName: null,
       outputDir: outputDir ?? null,
+      maxConcurrent: maxConcurrentDownloads,
     });
   } catch (error) {
     logger.error(`[useRetryTracks] Retry failed: ${error}`);

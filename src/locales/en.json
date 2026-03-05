@@ -116,7 +116,9 @@
     "themeDescription": "Choose your preferred appearance",
     "themeSystem": "System",
     "themeLight": "Light",
-    "themeDark": "Dark"
+    "themeDark": "Dark",
+    "concurrentDownloads": "Concurrent downloads",
+    "concurrentDownloadsDescription": "Number of tracks to download simultaneously (1-10)"
   },
   "completion": {
     "title": "Download complete!",

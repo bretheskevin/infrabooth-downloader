@@ -89,6 +89,10 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 
 **NEVER commit unless explicitly asked to.** Do not commit as part of implementation workflows, subagent tasks, or skill processes. All commits require explicit user approval. This applies to all agents and subagents — include this instruction in every subagent prompt.
 
+**NEVER use git worktrees.** Always work directly on the current branch. Since we never auto-commit, worktree isolation is unnecessary even if I ask for it.
+
+**When executing plans in batches, do NOT stop between batches to ask for feedback.** Execute all batches continuously until the plan is complete. Only stop if blocked.
+
 ## Conventions
 
 - Use existing shadcn/ui components from `src/components/ui/`

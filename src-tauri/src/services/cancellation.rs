@@ -1,12 +1,18 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::{watch, Mutex};
 
+/// A single active download process (ffmpeg child + PID).
+pub struct ActiveProcess {
+    pub child: Arc<Mutex<Option<CommandChild>>>,
+    pub pid: Arc<Mutex<Option<u32>>>,
+}
+
 pub struct CancellationState {
     sender: watch::Sender<bool>,
     receiver: watch::Receiver<bool>,
-    active_child: Arc<Mutex<Option<CommandChild>>>,
-    active_pid: Arc<Mutex<Option<u32>>>,
+    active_processes: Arc<Mutex<HashMap<String, ActiveProcess>>>,
 }
 
 impl CancellationState {
@@ -15,8 +21,7 @@ impl CancellationState {
         Self {
             sender,
             receiver,
-            active_child: Arc::new(Mutex::new(None)),
-            active_pid: Arc::new(Mutex::new(None)),
+            active_processes: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -32,35 +37,26 @@ impl CancellationState {
         let _ = self.sender.send(false);
     }
 
-    pub fn active_child(&self) -> Arc<Mutex<Option<CommandChild>>> {
-        self.active_child.clone()
+    pub fn active_processes(&self) -> Arc<Mutex<HashMap<String, ActiveProcess>>> {
+        self.active_processes.clone()
     }
 
-    pub fn active_pid(&self) -> Arc<Mutex<Option<u32>>> {
-        self.active_pid.clone()
-    }
 
-    pub async fn kill_active_process(&self) {
-        // First, try to kill the process group using the stored PID
-        let pid = {
-            let guard = self.active_pid.lock().await;
-            *guard
-        };
 
-        if let Some(pid) = pid {
-            kill_process_tree(pid);
+    pub async fn kill_active_processes(&self) {
+        let mut processes = self.active_processes.lock().await;
+        for (track_id, proc) in processes.iter() {
+            log::info!("[cancel] Killing process for track {}", track_id);
+            // Kill PID tree first
+            if let Some(pid) = proc.pid.lock().await.take() {
+                kill_process_tree(pid);
+            }
+            // Kill CommandChild
+            if let Some(child) = proc.child.lock().await.take() {
+                let _ = child.kill();
+            }
         }
-
-        // Also call kill on the CommandChild for good measure
-        let mut guard = self.active_child.lock().await;
-        if let Some(child) = guard.take() {
-            let _ = child.kill();
-            log::info!("[cancellation] Killed active download process");
-        }
-
-        // Clear the PID
-        let mut pid_guard = self.active_pid.lock().await;
-        *pid_guard = None;
+        processes.clear();
     }
 }
 

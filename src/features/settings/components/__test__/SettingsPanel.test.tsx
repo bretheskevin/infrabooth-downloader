@@ -24,6 +24,10 @@ vi.mock('../LanguageSection', () => ({
   LanguageSection: () => <div data-testid="language-section">Language Section</div>,
 }));
 
+vi.mock('../ConcurrentDownloadsSection', () => ({
+  ConcurrentDownloadsSection: () => <div data-testid="concurrent-downloads-section">Concurrent Downloads Section</div>,
+}));
+
 vi.mock('../DownloadLocationSection', () => ({
   DownloadLocationSection: () => <div data-testid="download-location-section">Download Location Section</div>,
 }));
