@@ -38,12 +38,12 @@ describe('i18n configuration', () => {
   });
 
   it('should handle interpolation correctly', () => {
-    expect(i18n.t('auth.signedInAs', { username: 'TestUser' })).toBe('Signed in as TestUser');
+    expect(i18n.t('settings.currentPath', { path: '/Downloads' })).toBe('Current: /Downloads');
   });
 
   it('should handle interpolation in French', async () => {
     await i18n.changeLanguage('fr');
-    expect(i18n.t('auth.signedInAs', { username: 'TestUser' })).toBe('TestUser');
+    expect(i18n.t('settings.currentPath', { path: '/Downloads' })).toBe('Actuel : /Downloads');
   });
 
   it('should return key name for missing translations in development', () => {

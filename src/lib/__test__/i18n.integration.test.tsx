@@ -23,17 +23,17 @@ describe('i18n integration tests', () => {
       expect(screen.getByTestId('translation')).toHaveTextContent('InfraBooth Downloader');
     });
 
-    it('should handle interpolation with username', () => {
-      render(<TestComponent translationKey="auth.signedInAs" options={{ username: 'TestUser' }} />);
+    it('should handle interpolation with path', () => {
+      render(<TestComponent translationKey="settings.currentPath" options={{ path: '/Downloads' }} />);
 
-      expect(screen.getByTestId('translation')).toHaveTextContent('Signed in as TestUser');
+      expect(screen.getByTestId('translation')).toHaveTextContent('Current: /Downloads');
     });
 
-    it('should handle interpolation with special characters in username', () => {
-      render(<TestComponent translationKey="auth.signedInAs" options={{ username: '<script>alert("xss")</script>' }} />);
+    it('should handle interpolation with special characters', () => {
+      render(<TestComponent translationKey="settings.currentPath" options={{ path: '<script>alert("xss")</script>' }} />);
 
       // escapeValue is false, so HTML is not escaped (React handles this)
-      expect(screen.getByTestId('translation')).toHaveTextContent('Signed in as <script>alert("xss")</script>');
+      expect(screen.getByTestId('translation')).toHaveTextContent('Current: <script>alert("xss")</script>');
     });
 
     it('should handle multiple interpolation values', () => {
@@ -55,7 +55,7 @@ describe('i18n integration tests', () => {
     it('should update translations when language changes to French', async () => {
       const { rerender } = render(<TestComponent translationKey="auth.signIn" />);
 
-      expect(screen.getByTestId('translation')).toHaveTextContent('Sign in with SoundCloud');
+      expect(screen.getByTestId('translation')).toHaveTextContent('Sign In');
 
       await act(async () => {
         await i18n.changeLanguage('fr');
@@ -63,7 +63,7 @@ describe('i18n integration tests', () => {
 
       rerender(<TestComponent translationKey="auth.signIn" />);
 
-      expect(screen.getByTestId('translation')).toHaveTextContent('Connexion avec SoundCloud');
+      expect(screen.getByTestId('translation')).toHaveTextContent('Se connecter');
     });
 
     it('should handle interpolation in French', async () => {
