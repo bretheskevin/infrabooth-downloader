@@ -9,6 +9,13 @@ export interface FetchError {
 export function parseMediaError(err: unknown, t: TFunction): FetchError {
   const message = typeof err === 'string' ? err : (err as Error)?.message ?? '';
 
+  if (message.includes('Rate limited') || message.includes('429') || message.includes('rate limit')) {
+    return {
+      code: 'RATE_LIMITED',
+      message: t('errors.rateLimitedFetch'),
+    };
+  }
+
   if (message.includes('401') || message.includes('Unauthorized')) {
     return {
       code: 'AUTH_EXPIRED',
