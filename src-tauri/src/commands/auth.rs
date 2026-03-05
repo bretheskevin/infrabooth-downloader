@@ -34,6 +34,10 @@ pub const AUTH_REAUTH_NEEDED_EVENT: &str = "auth-reauth-needed";
 pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
     let state = app.state::<AuthState>();
 
+    // Hold the refresh guard across the full scan-verify-cache cycle.
+    // Other callers wait here until the first one finishes.
+    let _guard = state.lock_refresh().await;
+
     let result = tokio::task::spawn_blocking(|| scan_browser_cookies())
         .await
         .map_err(|e| e.to_string())?;
@@ -89,12 +93,16 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
     }
 }
 
-/// Re-scans browser cookies on demand (e.g., after user logs in via browser).
-/// Same logic as `check_auth`.
+/// Re-scans browser cookies on demand (e.g., after download 401/403 or user click).
+/// If the re-scan fails, emits `auth-reauth-needed` so the frontend can prompt the user.
 #[tauri::command]
 #[specta::specta]
 pub async fn refresh_auth(app: AppHandle) -> Result<bool, String> {
-    check_auth(app).await
+    let result = check_auth(app.clone()).await?;
+    if !result {
+        let _ = app.emit(AUTH_REAUTH_NEEDED_EVENT, ());
+    }
+    Ok(result)
 }
 
 /// Signs out by clearing cached auth state and emitting signed-out event.
