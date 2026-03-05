@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use tokio::sync::Mutex as AsyncMutex;
 
 /// Cached auth state, held in Tauri managed state.
 /// Re-populated from browser cookies on each app launch.
@@ -11,13 +12,31 @@ pub struct CachedAuth {
 }
 
 /// Thread-safe auth state container.
-/// The Mutex also serves as the concurrent refresh guard.
-#[derive(Debug, Default)]
+///
+/// `cached` holds the current token and user info.
+/// `refresh_guard` ensures only one cookie scan runs at a time
+/// (prevents redundant scans when multiple downloads hit 401/403).
 pub struct AuthState {
-    pub cached: Mutex<Option<CachedAuth>>,
+    pub(crate) cached: Mutex<Option<CachedAuth>>,
+    refresh_guard: AsyncMutex<()>,
+}
+
+impl Default for AuthState {
+    fn default() -> Self {
+        Self {
+            cached: Mutex::new(None),
+            refresh_guard: AsyncMutex::new(()),
+        }
+    }
 }
 
 impl AuthState {
+    /// Acquire the refresh guard. Hold this across the full
+    /// scan-verify-cache cycle to prevent concurrent cookie scans.
+    pub async fn lock_refresh(&self) -> tokio::sync::MutexGuard<'_, ()> {
+        self.refresh_guard.lock().await
+    }
+
     pub fn set(&self, auth: CachedAuth) {
         *self.cached.lock().unwrap() = Some(auth);
     }
