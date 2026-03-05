@@ -1,12 +1,12 @@
 import { useEffect } from 'react';
-import { checkAuthState } from '@/features/auth/api';
+import { checkAuth } from '@/features/auth/api';
 
 /**
  * Hook to check authentication state on app startup.
  *
- * This hook calls the backend to check if valid tokens are stored,
- * and handles token refresh if needed. The auth state is automatically
- * propagated through the 'auth-state-changed' event.
+ * This hook scans browser cookies for a SoundCloud oauth_token,
+ * verifies it against the API, and caches the result.
+ * The auth state is automatically propagated through the 'auth-state-changed' event.
  *
  * Should be called once at the top level of the app (e.g., in App.tsx).
  *
@@ -23,9 +23,9 @@ export function useStartupAuth(): void {
   useEffect(() => {
     let mounted = true;
 
-    const checkAuth = async () => {
+    const check = async () => {
       try {
-        await checkAuthState();
+        await checkAuth();
       } catch (error) {
         if (mounted) {
           console.error('Failed to check auth state on startup:', error);
@@ -33,7 +33,7 @@ export function useStartupAuth(): void {
       }
     };
 
-    checkAuth();
+    check();
 
     return () => {
       mounted = false;

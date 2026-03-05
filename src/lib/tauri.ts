@@ -28,14 +28,11 @@ function unwrap<T>(result: Result<T, AnyError>): T {
 
 export const api = {
   // Auth
-  startOauth: (): Promise<string> =>
-    commands.startOauth().then(unwrap),
+  checkAuth: (): Promise<boolean> =>
+    commands.checkAuth().then(unwrap),
 
-  completeOauth: (code: string): Promise<void> =>
-    commands.completeOauth(code).then(unwrap).then(() => undefined),
-
-  checkAuthState: (): Promise<boolean> =>
-    commands.checkAuthState().then(unwrap),
+  refreshAuth: (): Promise<boolean> =>
+    commands.refreshAuth().then(unwrap),
 
   signOut: (): Promise<void> =>
     commands.signOut().then(unwrap).then(() => undefined),

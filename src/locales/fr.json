@@ -6,17 +6,16 @@
     "done": "Terminé"
   },
   "auth": {
-    "signIn": "Connexion avec SoundCloud",
-    "signOut": "Déconnexion",
-    "signedInAs": "{{username}}",
-    "accessibilityStatus": "Connecté en tant que {{username}}, qualité Go+ active",
-    "qualityBadge": "Go+",
-    "loading": "Chargement...",
-    "openingBrowser": "Ouverture du navigateur...",
+    "signIn": "Se connecter",
+    "signOut": "Se déconnecter",
+    "signInHint": "Connectez-vous à SoundCloud dans votre navigateur pour des téléchargements en meilleure qualité",
+    "checkBrowser": "Vérifier la connexion",
+    "checking": "Vérification...",
     "sessionExpired": "Session expirée",
-    "sessionExpiredDescription": "Votre session a expiré pendant le téléchargement. Reconnectez-vous pour continuer en haute qualité, ou continuez en qualité standard.",
-    "signInAgain": "Se reconnecter",
-    "continueStandard": "Continuer en qualité standard"
+    "sessionExpiredDescription": "Votre session SoundCloud a expiré. Veuillez vous reconnecter dans votre navigateur.",
+    "signInAgain": "Actualiser",
+    "continueStandard": "Continuer en qualité standard",
+    "qualityBadge": "Go+ 256kbps"
   },
   "download": {
     "button": "Télécharger",
