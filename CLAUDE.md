@@ -81,7 +81,7 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 | `src-tauri/src/services/downloader.rs` | FFmpeg-based audio downloader |
 | `src-tauri/src/services/oauth.rs` | OAuth PKCE flow |
 | `src/bindings.ts` | Auto-generated IPC types (do not edit) |
-| `tauri.conf.json` | App config, deep-link scheme, bundling |
+| `tauri.conf.json` | App config, bundling |
 
 ## Conventions
 

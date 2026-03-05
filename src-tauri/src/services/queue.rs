@@ -2,7 +2,7 @@ use serde::Serialize;
 use specta::Type;
 use std::path::PathBuf;
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, Runtime};
+use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::{watch, Mutex};
 
@@ -11,7 +11,7 @@ use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeed
 use crate::services::downloader::PlaylistContext;
 use crate::services::metadata::TrackMetadata;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
-use crate::services::storage;
+use crate::services::storage::AuthState;
 
 /// An item in the download queue.
 #[derive(Clone, Debug, Type)]
@@ -111,7 +111,7 @@ impl DownloadQueue {
         let mut failed = 0u32;
         let mut failed_tracks: Vec<(String, String)> = vec![];
         let mut retry_count = 0u32;
-        let mut oauth_token = storage::get_current_access_token();
+        let mut oauth_token = app.state::<AuthState>().get_token();
 
         while self.current_index < self.items.len() {
             if *ctx.cancel_rx.borrow() {
@@ -261,7 +261,7 @@ impl DownloadQueue {
                                 match choice {
                                     AuthChoice::ReAuthenticated => {
                                         log::info!("[queue] User re-authenticated, retrying track");
-                                        oauth_token = storage::get_current_access_token();
+                                        oauth_token = app.state::<AuthState>().get_token();
                                         break;
                                     }
                                     AuthChoice::ContinueStandard => {

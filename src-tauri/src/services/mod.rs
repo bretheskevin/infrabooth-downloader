@@ -3,10 +3,7 @@ pub mod cancellation;
 pub mod cookie;
 pub mod client_id;
 pub mod constants;
-pub mod deep_link;
 pub mod downloader;
-#[cfg(debug_assertions)]
-pub mod dev_server;
 pub mod ffmpeg;
 pub mod http;
 pub mod metadata;
@@ -21,4 +18,3 @@ pub mod stream;
 pub mod url_validator;
 pub mod updater;
 
-pub const AUTH_CALLBACK_EVENT: &str = "auth-callback";
