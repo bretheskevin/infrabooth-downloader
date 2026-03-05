@@ -5,7 +5,10 @@ export type ErrorCode =
   | 'NETWORK_ERROR'
   | 'DOWNLOAD_FAILED'
   | 'CONVERSION_FAILED'
-  | 'AUTH_REQUIRED';
+  | 'AUTH_REQUIRED'
+  | 'STREAM_RESOLUTION_FAILED'
+  | 'CANCELLED'
+  | 'AUTH_REFRESH_FAILED';
 
 export interface AppError {
   code: ErrorCode;

@@ -324,11 +324,11 @@ describe('OverallProgress', () => {
 
     it('should only count complete status, not intermediate states', () => {
       const mockTracks: Track[] = [
-        { id: '1', title: 'T1', artist: 'A1', artworkUrl: null, status: 'complete' },
-        { id: '2', title: 'T2', artist: 'A2', artworkUrl: null, status: 'downloading' },
-        { id: '3', title: 'T3', artist: 'A3', artworkUrl: null, status: 'converting' },
-        { id: '4', title: 'T4', artist: 'A4', artworkUrl: null, status: 'pending' },
-        { id: '5', title: 'T5', artist: 'A5', artworkUrl: null, status: 'failed' },
+        { id: '1', title: 'T1', artist: 'A1', artworkUrl: null, durationMs: 0, status: 'complete' },
+        { id: '2', title: 'T2', artist: 'A2', artworkUrl: null, durationMs: 0, status: 'downloading' },
+        { id: '3', title: 'T3', artist: 'A3', artworkUrl: null, durationMs: 0, status: 'converting' },
+        { id: '4', title: 'T4', artist: 'A4', artworkUrl: null, durationMs: 0, status: 'pending' },
+        { id: '5', title: 'T5', artist: 'A5', artworkUrl: null, durationMs: 0, status: 'failed' },
       ];
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 5 });
 

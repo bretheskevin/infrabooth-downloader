@@ -101,17 +101,6 @@ async getTrackInfo(url: string) : Promise<Result<TrackInfo, string>> {
 }
 },
 /**
- * Test the yt-dlp sidecar by getting its version.
- */
-async testYtdlp() : Promise<Result<string, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("test_ytdlp") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
  * Test the FFmpeg sidecar by getting its version.
  * 
  * This command verifies that the FFmpeg binary is properly bundled
@@ -255,7 +244,7 @@ async installUpdate() : Promise<Result<null, string>> {
 /** user-defined types **/
 
 export type AuthChoice = "re_authenticated" | "continue_standard"
-export type DownloadRequest = { trackUrl: string; trackId: string; title: string; artist: string; album: string | null; trackNumber: number | null; totalTracks: number | null; artworkUrl: string | null; outputDir: string | null }
+export type DownloadRequest = { trackUrl: string; trackId: string; title: string; artist: string; album: string | null; trackNumber: number | null; totalTracks: number | null; artworkUrl: string | null; outputDir: string | null; durationMs: number }
 export type ErrorResponse = { code: string; message: string }
 /**
  * Playlist information from SoundCloud API.

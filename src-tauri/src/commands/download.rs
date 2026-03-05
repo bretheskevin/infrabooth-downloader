@@ -11,7 +11,7 @@ use crate::services::metadata::TrackMetadata;
 use crate::services::paths::get_downloads_dir;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem, QueueProcessContext};
-use crate::services::ytdlp::DownloadProgressEvent;
+use crate::services::downloader::DownloadProgressEvent;
 
 #[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -25,13 +25,14 @@ pub struct DownloadRequest {
     pub total_tracks: Option<u32>,
     pub artwork_url: Option<String>,
     pub output_dir: Option<String>,
+    pub duration_ms: u64,
 }
 
 /// Download and convert a track to MP3 with metadata embedding.
 ///
 /// This command orchestrates the full download pipeline:
-/// 1. Downloads audio using yt-dlp with OAuth authentication
-/// 2. Converts to high-quality MP3 using yt-dlp native conversion
+/// 1. Resolves stream URL via SoundCloud API v2
+/// 2. Downloads and converts to 320kbps MP3 via ffmpeg
 /// 3. Embeds ID3 metadata (title, artist, album, track number, artwork)
 /// 4. Emits progress events throughout the process
 #[tauri::command]
@@ -62,9 +63,11 @@ pub async fn download_track_full(
         output_dir: output_path,
         metadata,
         playlist_context: None,
+        duration_ms: request.duration_ms,
+        oauth_token: crate::services::storage::get_current_access_token(),
     };
 
-    let result_path = download_and_convert(&app, config, None, None, None, false)
+    let result_path = download_and_convert(&app, config, None, None, None)
         .await
         .map_err(|e| {
             let _ = app.emit(
@@ -115,6 +118,7 @@ pub struct QueueItemRequest {
     pub title: String,
     pub artist: String,
     pub artwork_url: Option<String>,
+    pub duration_ms: u64,
 }
 
 /// Start processing a download queue.
@@ -152,6 +156,7 @@ pub async fn start_download_queue(
             artist: t.artist,
             artwork_url: t.artwork_url,
             track_number: Some((i + 1) as u32),
+            duration_ms: t.duration_ms,
         })
         .collect();
 
@@ -222,7 +227,8 @@ mod tests {
             "album": "Test Album",
             "trackNumber": 5,
             "totalTracks": 10,
-            "artworkUrl": "https://example.com/art.jpg"
+            "artworkUrl": "https://example.com/art.jpg",
+            "durationMs": 180000
         }"#;
 
         let request: DownloadRequest = serde_json::from_str(json).unwrap();
@@ -237,6 +243,7 @@ mod tests {
             request.artwork_url,
             Some("https://example.com/art.jpg".to_string())
         );
+        assert_eq!(request.duration_ms, 180000);
     }
 
     #[test]
@@ -245,7 +252,8 @@ mod tests {
             "trackUrl": "https://soundcloud.com/test/track",
             "trackId": "123456",
             "title": "Test Track",
-            "artist": "Test Artist"
+            "artist": "Test Artist",
+            "durationMs": 0
         }"#;
 
         let request: DownloadRequest = serde_json::from_str(json).unwrap();
@@ -254,6 +262,7 @@ mod tests {
         assert!(request.track_number.is_none());
         assert!(request.artwork_url.is_none());
         assert!(request.output_dir.is_none());
+        assert_eq!(request.duration_ms, 0);
     }
 
     #[test]
@@ -263,7 +272,8 @@ mod tests {
             "trackId": "123456",
             "title": "Test Track",
             "artist": "Test Artist",
-            "artworkUrl": "https://example.com/art.jpg"
+            "artworkUrl": "https://example.com/art.jpg",
+            "durationMs": 180000
         }"#;
 
         let item: QueueItemRequest = serde_json::from_str(json).unwrap();
@@ -275,6 +285,7 @@ mod tests {
             item.artwork_url,
             Some("https://example.com/art.jpg".to_string())
         );
+        assert_eq!(item.duration_ms, 180000);
     }
 
     #[test]
@@ -283,7 +294,8 @@ mod tests {
             "trackUrl": "https://soundcloud.com/test/track",
             "trackId": "123456",
             "title": "Test Track",
-            "artist": "Test Artist"
+            "artist": "Test Artist",
+            "durationMs": 0
         }"#;
 
         let item: QueueItemRequest = serde_json::from_str(json).unwrap();
@@ -299,14 +311,16 @@ mod tests {
                     "trackUrl": "https://soundcloud.com/test/track1",
                     "trackId": "1",
                     "title": "Track 1",
-                    "artist": "Artist"
+                    "artist": "Artist",
+                    "durationMs": 180000
                 },
                 {
                     "trackUrl": "https://soundcloud.com/test/track2",
                     "trackId": "2",
                     "title": "Track 2",
                     "artist": "Artist",
-                    "artworkUrl": "https://example.com/art.jpg"
+                    "artworkUrl": "https://example.com/art.jpg",
+                    "durationMs": 240000
                 }
             ],
             "albumName": "Test Album"
@@ -329,7 +343,8 @@ mod tests {
                     "trackUrl": "https://soundcloud.com/test/track1",
                     "trackId": "1",
                     "title": "Track 1",
-                    "artist": "Artist"
+                    "artist": "Artist",
+                    "durationMs": 180000
                 }
             ]
         }"#;

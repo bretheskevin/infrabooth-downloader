@@ -33,7 +33,7 @@ export function useDownloadProgress(): void {
     const unlistenProgress = listen<DownloadProgressEvent>(
       'download-progress',
       (event) => {
-        const { status, error, trackId, downloadedBytes, totalBytes } = event.payload;
+        const { status, error, trackId, percent, downloadedBytes, totalBytes } = event.payload;
         logger.debug(`[useDownloadProgress] download-progress: trackId=${trackId}, status=${status}`);
 
         // Handle rate limit detection
@@ -53,7 +53,7 @@ export function useDownloadProgress(): void {
           event.payload.trackId,
           event.payload.status,
           event.payload.error,
-          { downloadedBytes, totalBytes }
+          { percent, downloadedBytes, totalBytes }
         );
       }
     );

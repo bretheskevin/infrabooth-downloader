@@ -85,7 +85,7 @@ pub async fn exchange_code(
     client_secret: &str,
     redirect_uri: &str,
 ) -> Result<TokenResponse, AuthError> {
-    let client = reqwest::Client::new();
+    let client = &*crate::services::http::HTTP_CLIENT;
     let response = client
         .post(TOKEN_URL)
         .form(&[
@@ -139,7 +139,7 @@ pub async fn refresh_tokens(
     refresh_token: &str,
     client_secret: &str,
 ) -> Result<TokenResponse, AuthError> {
-    let client = reqwest::Client::new();
+    let client = &*crate::services::http::HTTP_CLIENT;
     let response = client
         .post(TOKEN_URL)
         .form(&[
@@ -157,7 +157,7 @@ pub async fn refresh_tokens(
 /// Gets an app-level access token using Client Credentials flow.
 /// This token can be used for public API requests without user sign-in.
 pub async fn get_app_token(client_secret: &str) -> Result<AppTokenResponse, AuthError> {
-    let client = reqwest::Client::new();
+    let client = &*crate::services::http::HTTP_CLIENT;
     let response = client
         .post(TOKEN_URL)
         .form(&[
@@ -180,7 +180,7 @@ pub async fn get_app_token(client_secret: &str) -> Result<AppTokenResponse, Auth
 /// * `Ok(UserProfile)` - The user's profile data
 /// * `Err(AuthError)` - Error if fetch fails
 pub async fn fetch_user_profile(access_token: &str) -> Result<UserProfile, AuthError> {
-    let client = reqwest::Client::new();
+    let client = &*crate::services::http::HTTP_CLIENT;
     let response = client
         .get("https://api.soundcloud.com/me")
         .header("Authorization", format!("OAuth {}", access_token))

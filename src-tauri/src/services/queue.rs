@@ -6,11 +6,12 @@ use tauri::{AppHandle, Emitter, Runtime};
 use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::{watch, Mutex};
 
-use crate::models::error::{HasErrorCode, PipelineError, YtDlpError};
+use crate::models::error::{HasErrorCode, PipelineError, DownloadError};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeededEvent};
+use crate::services::downloader::PlaylistContext;
 use crate::services::metadata::TrackMetadata;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
-use crate::services::ytdlp::PlaylistContext;
+use crate::services::storage;
 
 /// An item in the download queue.
 #[derive(Clone, Debug, Type)]
@@ -21,6 +22,7 @@ pub struct QueueItem {
     pub artist: String,
     pub artwork_url: Option<String>,
     pub track_number: Option<u32>,
+    pub duration_ms: u64,
 }
 
 /// Event payload for queue progress updates.
@@ -109,6 +111,7 @@ impl DownloadQueue {
         let mut failed = 0u32;
         let mut failed_tracks: Vec<(String, String)> = vec![];
         let mut retry_count = 0u32;
+        let mut oauth_token = storage::get_current_access_token();
 
         while self.current_index < self.items.len() {
             if *ctx.cancel_rx.borrow() {
@@ -159,6 +162,8 @@ impl DownloadQueue {
                     artwork_url: item.artwork_url.clone(),
                 },
                 playlist_context,
+                duration_ms: item.duration_ms,
+                oauth_token: oauth_token.clone(),
             };
 
             match download_and_convert(
@@ -167,7 +172,6 @@ impl DownloadQueue {
                 Some(ctx.active_child.clone()),
                 Some(ctx.cancel_rx.clone()),
                 Some(ctx.active_pid.clone()),
-                ctx.auth_choice_state.should_skip_auth(),
             )
             .await
             {
@@ -183,7 +187,7 @@ impl DownloadQueue {
                     completed += 1;
                     retry_count = 0;
                 }
-                Err(PipelineError::Download(YtDlpError::Cancelled)) => {
+                Err(PipelineError::Download(DownloadError::Cancelled)) => {
                     log::info!("[queue] Track {} download was cancelled", item.track_id);
                     let cancelled = self.total_tracks - completed - failed;
                     let _ = app.emit(
@@ -197,7 +201,7 @@ impl DownloadQueue {
                     self.is_processing = false;
                     return QueueResult { completed, failed };
                 }
-                Err(PipelineError::Download(YtDlpError::RateLimited)) => {
+                Err(PipelineError::Download(DownloadError::RateLimited)) => {
                     let backoff = calculate_backoff(retry_count);
                     log::warn!(
                         "Rate limited on track {}, backing off for {}s",
@@ -217,7 +221,7 @@ impl DownloadQueue {
                     retry_count += 1;
                     continue;
                 }
-                Err(PipelineError::Download(YtDlpError::AuthRefreshFailed)) => {
+                Err(PipelineError::Download(DownloadError::AuthRefreshFailed)) => {
                     log::info!(
                         "[queue] Auth refresh failed for track {}, waiting for user choice",
                         item.track_id
@@ -257,6 +261,7 @@ impl DownloadQueue {
                                 match choice {
                                     AuthChoice::ReAuthenticated => {
                                         log::info!("[queue] User re-authenticated, retrying track");
+                                        oauth_token = storage::get_current_access_token();
                                         break;
                                     }
                                     AuthChoice::ContinueStandard => {
@@ -342,6 +347,7 @@ mod tests {
             artist: "Artist".to_string(),
             artwork_url: Some("https://example.com/art.jpg".to_string()),
             track_number: Some(1),
+            duration_ms: 180000,
         };
 
         assert_eq!(item.track_url, "https://soundcloud.com/test/track");
@@ -364,6 +370,7 @@ mod tests {
             artist: "Artist".to_string(),
             artwork_url: None,
             track_number: None,
+            duration_ms: 120000,
         };
 
         let cloned = item.clone();
@@ -381,6 +388,7 @@ mod tests {
                 artist: "Artist".to_string(),
                 artwork_url: None,
                 track_number: Some(1),
+                duration_ms: 180000,
             },
             QueueItem {
                 track_url: "url2".to_string(),
@@ -389,6 +397,7 @@ mod tests {
                 artist: "Artist".to_string(),
                 artwork_url: None,
                 track_number: Some(2),
+                duration_ms: 240000,
             },
         ];
 

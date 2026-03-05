@@ -10,6 +10,7 @@ describe('queueStore', () => {
       title: 'Test Track 1',
       artist: 'Artist 1',
       artworkUrl: 'https://example.com/art1.jpg',
+      durationMs: 180000,
       status: 'pending',
     },
     {
@@ -17,6 +18,7 @@ describe('queueStore', () => {
       title: 'Test Track 2',
       artist: 'Artist 2',
       artworkUrl: null,
+      durationMs: 120000,
       status: 'pending',
     },
   ];

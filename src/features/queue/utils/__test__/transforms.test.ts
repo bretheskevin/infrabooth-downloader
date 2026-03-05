@@ -32,6 +32,7 @@ describe('trackInfoToQueueTrack', () => {
       title: 'Test Track',
       artist: 'TestArtist',
       artworkUrl: 'https://example.com/art.jpg',
+      durationMs: 180000,
       status: 'pending',
     });
   });
@@ -88,6 +89,7 @@ describe('queueTrackToDownloadRequest', () => {
     title: 'Test Track',
     artist: 'TestArtist',
     artworkUrl: 'https://example.com/art.jpg',
+    durationMs: 180000,
     status: 'pending',
   };
 
@@ -96,6 +98,7 @@ describe('queueTrackToDownloadRequest', () => {
     title: 'No Art Track',
     artist: 'Artist2',
     artworkUrl: null,
+    durationMs: 120000,
     status: 'pending',
   };
 
@@ -108,6 +111,7 @@ describe('queueTrackToDownloadRequest', () => {
       title: 'Test Track',
       artist: 'TestArtist',
       artworkUrl: 'https://example.com/art.jpg',
+      durationMs: 180000,
     });
   });
 

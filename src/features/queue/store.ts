@@ -27,7 +27,7 @@ interface QueueState {
     id: string,
     status: Track['status'],
     error?: Track['error'],
-    progress?: { downloadedBytes?: number; totalBytes?: number }
+    progress?: { percent?: number; downloadedBytes?: number; totalBytes?: number }
   ) => void;
   setQueueProgress: (current: number, total: number) => void;
   setQueueComplete: (result: QueueCompleteEvent) => void;
@@ -81,8 +81,9 @@ export const useQueueStore = create<QueueState>((set, get) => ({
               ...track,
               status,
               error,
+              percent: progress?.percent ?? track.percent,
               downloadedBytes: progress?.downloadedBytes ?? track.downloadedBytes,
-              // Keep the maximum totalBytes value (yt-dlp estimates fluctuate)
+              // Keep the maximum totalBytes value (estimates may fluctuate)
               totalBytes: Math.max(progress?.totalBytes ?? 0, track.totalBytes ?? 0) || undefined,
             }
           : track
