@@ -9,6 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { useTranslation } from 'react-i18next';
 import { LanguageSection } from './LanguageSection';
 import { ThemeSection } from './ThemeSection';
+import { ConcurrentDownloadsSection } from './ConcurrentDownloadsSection';
 import { DownloadLocationSection } from './DownloadLocationSection';
 
 interface SettingsPanelProps {
@@ -33,10 +34,12 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-6">
+        <div className="mt-6 space-y-3 overflow-y-auto max-h-[calc(100vh-8rem)] px-1">
           <LanguageSection />
           <Separator />
           <ThemeSection />
+          <Separator />
+          <ConcurrentDownloadsSection />
           <Separator />
           <DownloadLocationSection />
         </div>

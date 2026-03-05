@@ -68,6 +68,14 @@ class MockIntersectionObserver implements IntersectionObserver {
 
 global.IntersectionObserver = MockIntersectionObserver;
 
+// Mock ResizeObserver for Radix UI components (e.g. Slider)
+class MockResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
+
 export { mockObserverInstances };
 
 // Mock @tauri-apps/api/event

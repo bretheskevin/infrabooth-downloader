@@ -5,15 +5,14 @@ import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { TrackCard } from './TrackCard';
 
-const TRACK_CARD_HEIGHT = 72;
+const TRACK_CARD_HEIGHT = 84;
 
 export function TrackList() {
   const { t } = useTranslation();
 
-  const { tracks, currentIndex, isInitializing } = useQueueStore(
+  const { tracks, isInitializing } = useQueueStore(
     useShallow((state) => ({
       tracks: state.tracks,
-      currentIndex: state.currentIndex,
       isInitializing: state.isInitializing,
     }))
   );
@@ -41,10 +40,10 @@ export function TrackList() {
         const track = tracks[virtualItem.index];
         if (!track) return null;
         return (
-          <VirtualRow key={track.id} virtualItem={virtualItem} className="px-2">
+          <VirtualRow key={track.id} virtualItem={virtualItem} className="px-2 py-1.5">
             <TrackCard
               track={track}
-              isCurrentTrack={virtualItem.index === currentIndex}
+              isCurrentTrack={track.status === 'downloading' || track.status === 'converting'}
               isInitializing={isInitializing && virtualItem.index === 0}
             />
           </VirtualRow>

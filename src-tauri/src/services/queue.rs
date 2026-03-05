@@ -1,13 +1,16 @@
 use serde::Serialize;
 use specta::Type;
+use std::collections::{HashMap, VecDeque};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, Runtime};
-use tauri_plugin_shell::process::CommandChild;
-use tokio::sync::{watch, Mutex};
+use tokio::sync::{watch, Mutex, Notify, Semaphore};
+use tokio::task::JoinSet;
 
 use crate::models::error::{HasErrorCode, PipelineError, DownloadError};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeededEvent};
+use crate::services::cancellation::ActiveProcess;
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState, DownloadRateLimitedEvent};
 use crate::services::downloader::PlaylistContext;
 use crate::services::metadata::TrackMetadata;
@@ -60,20 +63,37 @@ pub struct QueueResult {
     pub failed: u32,
 }
 
+/// Mutable progress tracking state for the queue processor.
+struct QueueProgress {
+    oauth_token: Option<String>,
+    pending: VecDeque<usize>,
+    completed: u32,
+    failed: u32,
+    failed_tracks: Vec<(String, String)>,
+}
+
+/// Result of a single track download in parallel processing.
+pub enum TrackOutcome {
+    Completed { track_id: String },
+    Failed { track_id: String, error_code: String, error_message: String },
+    Cancelled { track_id: String },
+    RateLimited { track_id: String, reset_time: Option<String> },
+    AuthFailed { track_id: String },
+}
+
 /// Context for queue processing containing all shared state.
 pub struct QueueProcessContext {
     pub output_dir: PathBuf,
     pub cancel_rx: watch::Receiver<bool>,
-    pub active_child: Arc<Mutex<Option<CommandChild>>>,
-    pub active_pid: Arc<Mutex<Option<u32>>>,
+    pub active_processes: Arc<Mutex<HashMap<String, ActiveProcess>>>,
     pub auth_choice_state: Arc<AuthChoiceState>,
     pub rate_limit_choice_state: Arc<RateLimitChoiceState>,
+    pub max_concurrent: usize,
 }
 
 /// Download queue manager for processing multiple tracks sequentially.
 pub struct DownloadQueue {
     items: Vec<QueueItem>,
-    current_index: usize,
     is_processing: bool,
     album_name: Option<String>,
     total_tracks: u32,
@@ -84,289 +104,397 @@ impl DownloadQueue {
         let total = items.len() as u32;
         Self {
             items,
-            current_index: 0,
             is_processing: false,
             album_name,
             total_tracks: total,
         }
     }
 
-    /// Process all items in the queue sequentially.
+    /// Process all items in the queue with parallel downloads.
     ///
-    /// Emits events for progress tracking:
-    /// - `queue-progress`: After each track starts
-    /// - `download-progress`: Per-track status (from pipeline)
-    /// - `queue-complete`: When all tracks are processed
-    /// - `queue-cancelled`: When queue is cancelled by user
-    /// - `download-auth-needed`: When auth refresh fails and user input is needed
-    /// - `download-rate-limited`: When SoundCloud rate limit is hit, pauses for user choice
-    ///
-    /// On rate limit errors, the queue pauses and waits for user to retry or stop.
-    /// On auth refresh errors, the queue pauses for user input.
-    /// On other errors, the queue records the failure and continues.
+    /// Uses a JoinSet + Semaphore pattern to run up to `max_concurrent` downloads
+    /// simultaneously. Rate limit and auth failures pause new spawns while
+    /// in-flight tasks finish.
     pub async fn process<R: Runtime>(
         &mut self,
         app: AppHandle<R>,
         ctx: QueueProcessContext,
     ) -> QueueResult {
         self.is_processing = true;
-        let mut completed = 0u32;
-        let mut failed = 0u32;
-        let mut failed_tracks: Vec<(String, String)> = vec![];
-        let mut oauth_token = app.state::<AuthState>().get_token();
+        let mut progress = QueueProgress {
+            oauth_token: app.state::<AuthState>().get_token(),
+            pending: (0..self.items.len()).collect(),
+            completed: 0,
+            failed: 0,
+            failed_tracks: vec![],
+        };
 
-        while self.current_index < self.items.len() {
+        let semaphore = Arc::new(Semaphore::new(ctx.max_concurrent));
+        let mut join_set: JoinSet<TrackOutcome> = JoinSet::new();
+        let paused = Arc::new(AtomicBool::new(false));
+        let stopped = Arc::new(AtomicBool::new(false));
+        let pause_notify = Arc::new(Notify::new());
+
+        // Build lookup map: track_id → (index, item)
+        let track_lookup: HashMap<String, (usize, QueueItem)> = self.items.iter().enumerate()
+            .map(|(i, item)| (item.track_id.clone(), (i, item.clone())))
+            .collect();
+        let mut started_count = 0u32;
+        let mut started_indices: std::collections::HashSet<usize> = std::collections::HashSet::new();
+
+        loop {
+            // Check cancellation
             if *ctx.cancel_rx.borrow() {
-                log::info!("[queue] Cancellation requested, stopping queue");
-                let cancelled = self.total_tracks - completed - failed;
-                let _ = app.emit(
-                    "queue-cancelled",
-                    QueueCancelledEvent {
-                        completed,
-                        cancelled,
-                        total: self.total_tracks,
-                    },
-                );
-                self.is_processing = false;
-                return QueueResult { completed, failed };
+                log::info!("[queue] Cancellation requested, stopping new spawns");
+                break;
             }
 
-            let item = &self.items[self.current_index];
+            // If paused (rate limit / auth), wait for unpause or cancel
+            if paused.load(Ordering::SeqCst) {
+                let mut cancel_rx_clone = ctx.cancel_rx.clone();
+                tokio::select! {
+                    _ = pause_notify.notified() => continue,
+                    Ok(()) = cancel_rx_clone.changed() => continue,
+                }
+            }
 
-            let _ = app.emit(
-                "queue-progress",
-                QueueProgressEvent {
-                    current: (self.current_index + 1) as u32,
-                    total: self.total_tracks,
-                    track_id: item.track_id.clone(),
-                },
-            );
+            let has_pending = !progress.pending.is_empty();
 
-            let playlist_context = if self.total_tracks > 1 {
-                Some(PlaylistContext {
-                    track_position: item.track_number.unwrap_or((self.current_index + 1) as u32),
-                    total_tracks: self.total_tracks,
-                })
+            if has_pending {
+                tokio::select! {
+                    biased;
+
+                    // Collect completed tasks first (avoids starvation)
+                    Some(result) = join_set.join_next() => {
+                        Self::handle_outcome(
+                            result, &app, &ctx, &paused, &stopped, &pause_notify,
+                            &track_lookup, &mut progress,
+                        ).await;
+                    }
+
+                    // Try to spawn next task
+                    permit = semaphore.clone().acquire_owned() => {
+                        let permit = permit.expect("semaphore closed");
+                        let idx = progress.pending.pop_front().unwrap();
+                        let item = &self.items[idx];
+
+                        // Only count first spawn (not retries after rate limit/auth)
+                        if started_indices.insert(idx) {
+                            started_count += 1;
+                        }
+
+                        // Emit queue-progress
+                        let _ = app.emit(
+                            "queue-progress",
+                            QueueProgressEvent {
+                                current: started_count,
+                                total: self.total_tracks,
+                                track_id: item.track_id.clone(),
+                            },
+                        );
+
+                        // Create per-worker process tracking
+                        let child_handle = Arc::new(Mutex::new(None));
+                        let pid_handle = Arc::new(Mutex::new(None));
+                        ctx.active_processes.lock().await.insert(
+                            item.track_id.clone(),
+                            ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() },
+                        );
+
+                        // Build pipeline config
+                        let playlist_context = if self.total_tracks > 1 {
+                            Some(PlaylistContext {
+                                track_position: item.track_number.unwrap_or((idx + 1) as u32),
+                                total_tracks: self.total_tracks,
+                            })
+                        } else {
+                            None
+                        };
+
+                        let config = PipelineConfig {
+                            track_url: item.track_url.clone(),
+                            track_id: item.track_id.clone(),
+                            output_dir: ctx.output_dir.clone(),
+                            metadata: TrackMetadata {
+                                title: item.title.clone(),
+                                artist: item.artist.clone(),
+                                album: self.album_name.clone(),
+                                track_number: item.track_number,
+                                total_tracks: Some(self.total_tracks),
+                                artwork_url: item.artwork_url.clone(),
+                            },
+                            playlist_context,
+                            duration_ms: item.duration_ms,
+                            oauth_token: progress.oauth_token.clone(),
+                        };
+
+                        let app_clone = app.clone();
+                        let worker_cancel_rx = ctx.cancel_rx.clone();
+                        let active_procs = ctx.active_processes.clone();
+                        let track_id = item.track_id.clone();
+
+                        join_set.spawn(async move {
+                            let result = download_and_convert(
+                                &app_clone,
+                                config,
+                                Some(child_handle),
+                                Some(worker_cancel_rx),
+                                Some(pid_handle),
+                            ).await;
+
+                            // Deregister process tracking
+                            active_procs.lock().await.remove(&track_id);
+
+                            // Release semaphore slot
+                            drop(permit);
+
+                            match result {
+                                Ok(_) => {
+                                    let _ = app_clone.emit(
+                                        "download-progress",
+                                        serde_json::json!({
+                                            "trackId": track_id,
+                                            "status": "complete",
+                                            "percent": 1.0
+                                        }),
+                                    );
+                                    TrackOutcome::Completed { track_id }
+                                }
+                                Err(PipelineError::Download(DownloadError::Cancelled)) => {
+                                    TrackOutcome::Cancelled { track_id }
+                                }
+                                Err(PipelineError::Download(DownloadError::RateLimited(ref info))) => {
+                                    let reset_time = info.as_ref().and_then(|i| i.reset_time.clone());
+                                    let _ = app_clone.emit(
+                                        "download-progress",
+                                        serde_json::json!({
+                                            "trackId": track_id,
+                                            "status": "rate_limited",
+                                        }),
+                                    );
+                                    TrackOutcome::RateLimited { track_id, reset_time }
+                                }
+                                Err(PipelineError::Download(DownloadError::AuthRefreshFailed)) => {
+                                    TrackOutcome::AuthFailed { track_id }
+                                }
+                                Err(e) => {
+                                    log::error!("[queue] Track {} failed: {}", track_id, e);
+                                    let _ = app_clone.emit(
+                                        "download-progress",
+                                        serde_json::json!({
+                                            "trackId": track_id,
+                                            "status": "failed",
+                                            "error": {
+                                                "code": e.code(),
+                                                "message": e.to_string()
+                                            }
+                                        }),
+                                    );
+                                    TrackOutcome::Failed {
+                                        track_id,
+                                        error_code: e.code().to_string(),
+                                        error_message: e.to_string(),
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            } else if !join_set.is_empty() {
+                // No more pending items — drain remaining tasks
+                if let Some(result) = join_set.join_next().await {
+                    Self::handle_outcome(
+                        result, &app, &ctx, &paused, &stopped, &pause_notify,
+                        &track_lookup, &mut progress,
+                    ).await;
+                }
             } else {
-                None
-            };
+                // All done
+                break;
+            }
+        }
 
-            let config = PipelineConfig {
-                track_url: item.track_url.clone(),
-                track_id: item.track_id.clone(),
-                output_dir: ctx.output_dir.clone(),
-                metadata: TrackMetadata {
-                    title: item.title.clone(),
-                    artist: item.artist.clone(),
-                    album: self.album_name.clone(),
-                    track_number: item.track_number,
-                    total_tracks: Some(self.total_tracks),
-                    artwork_url: item.artwork_url.clone(),
-                },
-                playlist_context,
-                duration_ms: item.duration_ms,
-                oauth_token: oauth_token.clone(),
-            };
-
-            match download_and_convert(
-                &app,
-                config,
-                Some(ctx.active_child.clone()),
-                Some(ctx.cancel_rx.clone()),
-                Some(ctx.active_pid.clone()),
-            )
-            .await
-            {
-                Ok(_) => {
-                    let _ = app.emit(
-                        "download-progress",
-                        serde_json::json!({
-                            "trackId": item.track_id,
-                            "status": "complete",
-                            "percent": 1.0
-                        }),
-                    );
-                    completed += 1;
-                }
-                Err(PipelineError::Download(DownloadError::Cancelled)) => {
-                    log::info!("[queue] Track {} download was cancelled", item.track_id);
-                    let cancelled = self.total_tracks - completed - failed;
-                    let _ = app.emit(
-                        "queue-cancelled",
-                        QueueCancelledEvent {
-                            completed,
-                            cancelled,
-                            total: self.total_tracks,
-                        },
-                    );
-                    self.is_processing = false;
-                    return QueueResult { completed, failed };
-                }
-                Err(PipelineError::Download(DownloadError::RateLimited(ref info))) => {
-                    log::warn!(
-                        "[queue] Rate limited on track {}, pausing for user choice",
-                        item.track_id
-                    );
-
-                    let _ = app.emit(
-                        "download-progress",
-                        serde_json::json!({
-                            "trackId": item.track_id,
-                            "status": "rate_limited",
-                        }),
-                    );
-
-                    let reset_time = info.as_ref().and_then(|i| i.reset_time.clone());
-
-                    let _ = app.emit(
-                        "download-rate-limited",
-                        DownloadRateLimitedEvent {
-                            track_id: item.track_id.clone(),
-                            track_title: item.title.clone(),
-                            reset_time,
-                        },
-                    );
-
-                    let mut choice_rx = ctx.rate_limit_choice_state.subscribe();
-                    loop {
-                        if *ctx.cancel_rx.borrow() {
-                            log::info!("[queue] Cancellation during rate limit wait");
-                            let cancelled = self.total_tracks - completed - failed;
-                            let _ = app.emit(
-                                "queue-cancelled",
-                                QueueCancelledEvent {
-                                    completed,
-                                    cancelled,
-                                    total: self.total_tracks,
-                                },
-                            );
-                            self.is_processing = false;
-                            return QueueResult { completed, failed };
-                        }
-
-                        if choice_rx.changed().await.is_ok() {
-                            let choice = { *choice_rx.borrow() };
-                            if let Some(choice) = choice {
-                                match choice {
-                                    RateLimitChoice::Retry => {
-                                        log::info!("[queue] User chose to retry after rate limit");
-                                        break;
-                                    }
-                                    RateLimitChoice::Stop => {
-                                        log::info!("[queue] User chose to stop after rate limit");
-                                        let cancelled = self.total_tracks - completed - failed;
-                                        let _ = app.emit(
-                                            "queue-cancelled",
-                                            QueueCancelledEvent {
-                                                completed,
-                                                cancelled,
-                                                total: self.total_tracks,
-                                            },
-                                        );
-                                        self.is_processing = false;
-                                        return QueueResult { completed, failed };
-                                    }
-                                }
-                            }
-                        }
+        // Drain any remaining in-flight tasks (e.g. after cancellation)
+        while let Some(result) = join_set.join_next().await {
+            if let Ok(outcome) = result {
+                match outcome {
+                    TrackOutcome::Completed { .. } => progress.completed += 1,
+                    TrackOutcome::Failed { track_id, error_message, .. } => {
+                        progress.failed += 1;
+                        progress.failed_tracks.push((track_id, error_message));
                     }
-                    continue;
-                }
-                Err(PipelineError::Download(DownloadError::AuthRefreshFailed)) => {
-                    log::info!(
-                        "[queue] Auth refresh failed for track {}, waiting for user choice",
-                        item.track_id
-                    );
-
-                    ctx.auth_choice_state.set_pending(true).await;
-                    let _ = app.emit(
-                        "download-auth-needed",
-                        DownloadAuthNeededEvent {
-                            track_id: item.track_id.clone(),
-                            track_title: item.title.clone(),
-                        },
-                    );
-
-                    let mut choice_rx = ctx.auth_choice_state.subscribe();
-                    loop {
-                        if *ctx.cancel_rx.borrow() {
-                            log::info!("[queue] Cancellation during auth wait");
-                            ctx.auth_choice_state.set_pending(false).await;
-                            let cancelled = self.total_tracks - completed - failed;
-                            let _ = app.emit(
-                                "queue-cancelled",
-                                QueueCancelledEvent {
-                                    completed,
-                                    cancelled,
-                                    total: self.total_tracks,
-                                },
-                            );
-                            self.is_processing = false;
-                            return QueueResult { completed, failed };
-                        }
-
-                        if choice_rx.changed().await.is_ok() {
-                            let choice = { *choice_rx.borrow() };
-                            if let Some(choice) = choice {
-                                ctx.auth_choice_state.set_pending(false).await;
-                                match choice {
-                                    AuthChoice::ReAuthenticated => {
-                                        log::info!("[queue] User re-authenticated, retrying track");
-                                        oauth_token = app.state::<AuthState>().get_token();
-                                        break;
-                                    }
-                                    AuthChoice::ContinueStandard => {
-                                        log::info!(
-                                            "[queue] User chose standard quality, setting skip_auth flag"
-                                        );
-                                        ctx.auth_choice_state.set_skip_auth(true);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    continue;
-                }
-                Err(e) => {
-                    log::error!("[queue] Track {} failed: {}", item.track_id, e);
-                    let _ = app.emit(
-                        "download-progress",
-                        serde_json::json!({
-                            "trackId": item.track_id,
-                            "status": "failed",
-                            "error": {
-                                "code": e.code(),
-                                "message": e.to_string()
-                            }
-                        }),
-                    );
-                    failed += 1;
-                    failed_tracks.push((item.track_id.clone(), e.to_string()));
+                    _ => {} // Cancelled tracks counted below
                 }
             }
-
-            self.current_index += 1;
         }
 
         self.is_processing = false;
 
-        {
-            let mut guard = ctx.active_child.lock().await;
-            *guard = None;
+        // Clear any remaining active processes
+        ctx.active_processes.lock().await.clear();
+
+        // Emit final event
+        if *ctx.cancel_rx.borrow() || stopped.load(Ordering::SeqCst) {
+            let cancelled = self.total_tracks - progress.completed - progress.failed;
+            let _ = app.emit(
+                "queue-cancelled",
+                QueueCancelledEvent {
+                    completed: progress.completed,
+                    cancelled,
+                    total: self.total_tracks,
+                },
+            );
+        } else {
+            let _ = app.emit(
+                "queue-complete",
+                QueueCompleteEvent {
+                    completed: progress.completed,
+                    failed: progress.failed,
+                    total: self.total_tracks,
+                    failed_tracks: progress.failed_tracks.clone(),
+                },
+            );
         }
 
-        let _ = app.emit(
-            "queue-complete",
-            QueueCompleteEvent {
-                completed,
-                failed,
-                total: self.total_tracks,
-                failed_tracks: failed_tracks.clone(),
-            },
-        );
+        QueueResult { completed: progress.completed, failed: progress.failed }
+    }
 
-        QueueResult { completed, failed }
+    /// Handle a completed task outcome from the JoinSet.
+    async fn handle_outcome<R: Runtime>(
+        result: Result<TrackOutcome, tokio::task::JoinError>,
+        app: &AppHandle<R>,
+        ctx: &QueueProcessContext,
+        paused: &Arc<AtomicBool>,
+        stopped: &Arc<AtomicBool>,
+        pause_notify: &Arc<Notify>,
+        track_lookup: &HashMap<String, (usize, QueueItem)>,
+        progress: &mut QueueProgress,
+    ) {
+        let outcome = match result {
+            Ok(o) => o,
+            Err(e) => {
+                log::error!("[queue] Task panicked: {}", e);
+                progress.failed += 1;
+                return;
+            }
+        };
+
+        match outcome {
+            TrackOutcome::Completed { track_id } => {
+                log::info!("[queue] Track {} completed", track_id);
+                progress.completed += 1;
+            }
+            TrackOutcome::Failed { track_id, error_code: _, error_message } => {
+                log::error!("[queue] Track {} failed: {}", track_id, error_message);
+                progress.failed += 1;
+                progress.failed_tracks.push((track_id, error_message));
+            }
+            TrackOutcome::Cancelled { track_id } => {
+                log::info!("[queue] Track {} cancelled", track_id);
+                // Counted in the final cancelled tally
+            }
+            TrackOutcome::RateLimited { track_id, reset_time } => {
+                log::warn!("[queue] Track {} rate limited, pausing queue", track_id);
+                paused.store(true, Ordering::SeqCst);
+
+                let _ = app.emit(
+                    "download-rate-limited",
+                    DownloadRateLimitedEvent {
+                        track_id: track_id.clone(),
+                        track_title: track_lookup.get(&track_id)
+                            .map(|(_, item)| item.title.clone())
+                            .unwrap_or_default(),
+                        reset_time,
+                    },
+                );
+
+                // Wait for user choice
+                let mut choice_rx = ctx.rate_limit_choice_state.subscribe();
+                loop {
+                    if *ctx.cancel_rx.borrow() {
+                        paused.store(false, Ordering::SeqCst);
+                        pause_notify.notify_waiters();
+                        break;
+                    }
+                    if choice_rx.changed().await.is_ok() {
+                        let choice = { *choice_rx.borrow() };
+                        if let Some(choice) = choice {
+                            match choice {
+                                RateLimitChoice::Retry => {
+                                    log::info!("[queue] User chose retry after rate limit");
+                                    if let Some(&(idx, _)) = track_lookup.get(&track_id) {
+                                        progress.pending.push_front(idx);
+                                    }
+                                    paused.store(false, Ordering::SeqCst);
+                                    pause_notify.notify_waiters();
+                                    break;
+                                }
+                                RateLimitChoice::Stop => {
+                                    log::info!("[queue] User chose stop after rate limit");
+                                    stopped.store(true, Ordering::SeqCst);
+                                    progress.pending.clear();
+                                    paused.store(false, Ordering::SeqCst);
+                                    pause_notify.notify_waiters();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            TrackOutcome::AuthFailed { track_id } => {
+                log::info!("[queue] Track {} auth failed, pausing queue", track_id);
+                paused.store(true, Ordering::SeqCst);
+
+                ctx.auth_choice_state.set_pending(true).await;
+                let _ = app.emit(
+                    "download-auth-needed",
+                    DownloadAuthNeededEvent {
+                        track_id: track_id.clone(),
+                        track_title: track_lookup.get(&track_id)
+                            .map(|(_, item)| item.title.clone())
+                            .unwrap_or_default(),
+                    },
+                );
+
+                let mut choice_rx = ctx.auth_choice_state.subscribe();
+                loop {
+                    if *ctx.cancel_rx.borrow() {
+                        ctx.auth_choice_state.set_pending(false).await;
+                        paused.store(false, Ordering::SeqCst);
+                        pause_notify.notify_waiters();
+                        break;
+                    }
+                    if choice_rx.changed().await.is_ok() {
+                        let choice = { *choice_rx.borrow() };
+                        if let Some(choice) = choice {
+                            ctx.auth_choice_state.set_pending(false).await;
+                            match choice {
+                                AuthChoice::ReAuthenticated => {
+                                    log::info!("[queue] User re-authenticated, refreshing token");
+                                    progress.oauth_token = app.state::<AuthState>().get_token();
+                                    // Re-queue the failed track
+                                    if let Some(&(idx, _)) = track_lookup.get(&track_id) {
+                                        progress.pending.push_front(idx);
+                                    }
+                                }
+                                AuthChoice::ContinueStandard => {
+                                    log::info!("[queue] User chose standard quality");
+                                    ctx.auth_choice_state.set_skip_auth(true);
+                                    // Re-queue the failed track (will retry without auth)
+                                    if let Some(&(idx, _)) = track_lookup.get(&track_id) {
+                                        progress.pending.push_front(idx);
+                                    }
+                                }
+                            }
+                            paused.store(false, Ordering::SeqCst);
+                            pause_notify.notify_waiters();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -440,7 +568,6 @@ mod tests {
         let queue = DownloadQueue::new(items, Some("Album Name".to_string()));
 
         assert_eq!(queue.total_tracks, 2);
-        assert_eq!(queue.current_index, 0);
         assert!(!queue.is_processing);
         assert_eq!(queue.album_name, Some("Album Name".to_string()));
     }

@@ -314,6 +314,7 @@ describe('useDownloadFlow', () => {
         ],
         albumName: null,
         outputDir: null,
+        maxConcurrent: 3,
       });
     });
 
@@ -392,6 +393,7 @@ describe('useDownloadFlow', () => {
         ],
         albumName: null,
         outputDir: null,
+        maxConcurrent: 3,
       });
     });
 

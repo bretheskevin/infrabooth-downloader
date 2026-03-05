@@ -116,7 +116,9 @@
     "themeDescription": "Choisissez votre apparence préférée",
     "themeSystem": "Système",
     "themeLight": "Clair",
-    "themeDark": "Sombre"
+    "themeDark": "Sombre",
+    "concurrentDownloads": "Téléchargements simultanés",
+    "concurrentDownloadsDescription": "Nombre de pistes à télécharger simultanément (1-10)"
   },
   "completion": {
     "title": "Téléchargement terminé !",
