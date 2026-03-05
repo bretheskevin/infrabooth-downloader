@@ -30,6 +30,7 @@ const createDownloadRequest = (
   totalTracks: null,
   artworkUrl: null,
   outputDir: null,
+  durationMs: 180000,
   ...partial,
 });
 
@@ -38,6 +39,7 @@ const createQueueItem = (
   partial: Partial<QueueItemRequest> & Pick<QueueItemRequest, 'trackUrl' | 'trackId' | 'title' | 'artist'>
 ): QueueItemRequest => ({
   artworkUrl: null,
+  durationMs: 180000,
   ...partial,
 });
 

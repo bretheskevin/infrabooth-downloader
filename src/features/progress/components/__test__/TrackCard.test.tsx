@@ -29,6 +29,7 @@ const mockTrack: Track = {
   title: 'Test Track Title',
   artist: 'Test Artist',
   artworkUrl: 'https://example.com/artwork.jpg',
+  durationMs: 180000,
   status: 'pending',
 };
 

@@ -8,7 +8,7 @@ use commands::{
     cancel_download_queue, check_auth_state, check_for_updates, check_write_permission,
     complete_oauth, download_track_full, get_default_download_path, get_playlist_info,
     get_track_info, install_update, respond_to_auth_choice, sign_out, start_download_queue,
-    start_oauth, test_ffmpeg, test_ytdlp, validate_download_path, validate_soundcloud_url,
+    start_oauth, test_ffmpeg, validate_download_path, validate_soundcloud_url,
     OAuthState,
 };
 use services::auth_choice::AuthChoiceState;
@@ -32,7 +32,6 @@ pub fn run() {
         validate_soundcloud_url,
         get_playlist_info,
         get_track_info,
-        test_ytdlp,
         test_ffmpeg,
         download_track_full,
         start_download_queue,

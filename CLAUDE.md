@@ -57,19 +57,18 @@ Features: `auth`, `url-input`, `queue`, `progress`, `completion`, `settings`
 3. Frontend calls commands through type-safe generated functions
 
 ### Download Pipeline (`src-tauri/src/services/pipeline.rs`)
-1. URL validation → SoundCloud API playlist fetch
-2. yt-dlp sidecar downloads audio
-3. FFmpeg converts to target format
+1. URL validation → SoundCloud API v2 playlist/track fetch
+2. Stream resolution: select best transcoding → resolve CDN URL (`stream.rs`)
+3. FFmpeg sidecar downloads and converts audio to MP3 320kbps (`downloader.rs`)
 4. ID3 metadata embedded with id3 crate
 5. Progress events streamed to frontend via Tauri events
 
 ### Sidecar Binaries
 Bundled in `src-tauri/binaries/`:
-- yt-dlp (audio download)
-- ffmpeg (conversion)
+- ffmpeg (download + conversion)
 - ffprobe (media inspection)
 
-Platform-specific naming: `yt-dlp-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windows-msvc.exe`, etc.
+Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windows-msvc.exe`, etc.
 
 ## Key Files
 
@@ -78,6 +77,8 @@ Platform-specific naming: `yt-dlp-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 | `src/pages/DownloadPage.tsx` | Main UI orchestrating all features |
 | `src-tauri/src/lib.rs` | Tauri setup, command registration, plugins |
 | `src-tauri/src/services/pipeline.rs` | Core download pipeline |
+| `src-tauri/src/services/stream.rs` | SoundCloud stream URL resolution |
+| `src-tauri/src/services/downloader.rs` | FFmpeg-based audio downloader |
 | `src-tauri/src/services/oauth.rs` | OAuth PKCE flow |
 | `src/bindings.ts` | Auto-generated IPC types (do not edit) |
 | `tauri.conf.json` | App config, deep-link scheme, bundling |

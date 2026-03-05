@@ -118,6 +118,7 @@ const mockQueueTracksData: Track[] = [
     title: 'Track 1',
     artist: 'Artist1',
     artworkUrl: 'https://example.com/art1.jpg',
+    durationMs: 180000,
     status: 'pending',
   },
   {
@@ -125,6 +126,7 @@ const mockQueueTracksData: Track[] = [
     title: 'Track 2',
     artist: 'Artist2',
     artworkUrl: null,
+    durationMs: 240000,
     status: 'pending',
   },
 ];
@@ -302,6 +304,7 @@ describe('useDownloadFlow', () => {
             title: 'Track 1',
             artist: 'Artist1',
             artworkUrl: 'https://example.com/art1.jpg',
+            durationMs: 180000,
           },
           {
             trackUrl: 'https://api.soundcloud.com/tracks/2',
@@ -309,6 +312,7 @@ describe('useDownloadFlow', () => {
             title: 'Track 2',
             artist: 'Artist2',
             artworkUrl: null,
+            durationMs: 240000,
           },
         ],
         albumName: null,
@@ -369,6 +373,7 @@ describe('useDownloadFlow', () => {
           title: 'Track 1',
           artist: 'Artist1',
           artworkUrl: null,
+          durationMs: 180000,
           status: 'pending',
         },
       ];
