@@ -91,7 +91,82 @@ pub struct QueueProcessContext {
     pub max_concurrent: usize,
 }
 
-/// Download queue manager for processing multiple tracks sequentially.
+/// Execute a single download task: download, convert, and map the result to a TrackOutcome.
+async fn execute_download<R: Runtime>(
+    app: AppHandle<R>,
+    config: PipelineConfig,
+    child_handle: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
+    pid_handle: Arc<Mutex<Option<u32>>>,
+    cancel_rx: watch::Receiver<bool>,
+    active_procs: Arc<Mutex<HashMap<String, ActiveProcess>>>,
+    permit: tokio::sync::OwnedSemaphorePermit,
+) -> TrackOutcome {
+    let track_id = config.track_id.clone();
+
+    let result = download_and_convert(
+        &app,
+        config,
+        Some(child_handle),
+        Some(cancel_rx),
+        Some(pid_handle),
+    ).await;
+
+    // Deregister process tracking
+    active_procs.lock().await.remove(&track_id);
+    drop(permit);
+
+    match result {
+        Ok(_) => {
+            let _ = app.emit(
+                "download-progress",
+                serde_json::json!({
+                    "trackId": track_id,
+                    "status": "complete",
+                    "percent": 1.0
+                }),
+            );
+            TrackOutcome::Completed { track_id }
+        }
+        Err(PipelineError::Download(DownloadError::Cancelled)) => {
+            TrackOutcome::Cancelled { track_id }
+        }
+        Err(PipelineError::Download(DownloadError::RateLimited(ref info))) => {
+            let reset_time = info.as_ref().and_then(|i| i.reset_time.clone());
+            let _ = app.emit(
+                "download-progress",
+                serde_json::json!({
+                    "trackId": track_id,
+                    "status": "rate_limited",
+                }),
+            );
+            TrackOutcome::RateLimited { track_id, reset_time }
+        }
+        Err(PipelineError::Download(DownloadError::AuthRefreshFailed)) => {
+            TrackOutcome::AuthFailed { track_id }
+        }
+        Err(e) => {
+            log::error!("[queue] Track {} failed: {}", track_id, e);
+            let _ = app.emit(
+                "download-progress",
+                serde_json::json!({
+                    "trackId": track_id,
+                    "status": "failed",
+                    "error": {
+                        "code": e.code(),
+                        "message": e.to_string()
+                    }
+                }),
+            );
+            TrackOutcome::Failed {
+                track_id,
+                error_code: e.code().to_string(),
+                error_message: e.to_string(),
+            }
+        }
+    }
+}
+
+/// Download queue manager for processing multiple tracks.
 pub struct DownloadQueue {
     items: Vec<QueueItem>,
     is_processing: bool,
@@ -135,7 +210,6 @@ impl DownloadQueue {
         let stopped = Arc::new(AtomicBool::new(false));
         let pause_notify = Arc::new(Notify::new());
 
-        // Build lookup map: track_id → (index, item)
         let track_lookup: HashMap<String, (usize, QueueItem)> = self.items.iter().enumerate()
             .map(|(i, item)| (item.track_id.clone(), (i, item.clone())))
             .collect();
@@ -143,13 +217,11 @@ impl DownloadQueue {
         let mut started_indices: std::collections::HashSet<usize> = std::collections::HashSet::new();
 
         loop {
-            // Check cancellation
             if *ctx.cancel_rx.borrow() {
                 log::info!("[queue] Cancellation requested, stopping new spawns");
                 break;
             }
 
-            // If paused (rate limit / auth), wait for unpause or cancel
             if paused.load(Ordering::SeqCst) {
                 let mut cancel_rx_clone = ctx.cancel_rx.clone();
                 tokio::select! {
@@ -158,163 +230,136 @@ impl DownloadQueue {
                 }
             }
 
-            let has_pending = !progress.pending.is_empty();
+            // Phase 1: Drain all completed tasks (non-blocking)
+            while let Some(result) = join_set.try_join_next() {
+                Self::handle_outcome(
+                    result, &app, &ctx, &paused, &stopped, &pause_notify,
+                    &track_lookup, &mut progress,
+                ).await;
+            }
 
-            if has_pending {
-                tokio::select! {
-                    biased;
+            // Phase 2: Spawn as many tasks as permits allow
+            self.spawn_pending_tasks(
+                &app, &ctx, &semaphore, &mut join_set, &mut progress,
+                &mut started_count, &mut started_indices, &paused,
+            ).await;
 
-                    // Collect completed tasks first (avoids starvation)
-                    Some(result) = join_set.join_next() => {
-                        Self::handle_outcome(
-                            result, &app, &ctx, &paused, &stopped, &pause_notify,
-                            &track_lookup, &mut progress,
-                        ).await;
-                    }
-
-                    // Try to spawn next task
-                    permit = semaphore.clone().acquire_owned() => {
-                        let permit = permit.expect("semaphore closed");
-                        let idx = progress.pending.pop_front().unwrap();
-                        let item = &self.items[idx];
-
-                        // Only count first spawn (not retries after rate limit/auth)
-                        if started_indices.insert(idx) {
-                            started_count += 1;
-                        }
-
-                        // Emit queue-progress
-                        let _ = app.emit(
-                            "queue-progress",
-                            QueueProgressEvent {
-                                current: started_count,
-                                total: self.total_tracks,
-                                track_id: item.track_id.clone(),
-                            },
-                        );
-
-                        // Create per-worker process tracking
-                        let child_handle = Arc::new(Mutex::new(None));
-                        let pid_handle = Arc::new(Mutex::new(None));
-                        ctx.active_processes.lock().await.insert(
-                            item.track_id.clone(),
-                            ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() },
-                        );
-
-                        // Build pipeline config
-                        let playlist_context = if self.total_tracks > 1 {
-                            Some(PlaylistContext {
-                                track_position: item.track_number.unwrap_or((idx + 1) as u32),
-                                total_tracks: self.total_tracks,
-                            })
-                        } else {
-                            None
-                        };
-
-                        let config = PipelineConfig {
-                            track_url: item.track_url.clone(),
-                            track_id: item.track_id.clone(),
-                            output_dir: ctx.output_dir.clone(),
-                            metadata: TrackMetadata {
-                                title: item.title.clone(),
-                                artist: item.artist.clone(),
-                                album: self.album_name.clone(),
-                                track_number: item.track_number,
-                                total_tracks: Some(self.total_tracks),
-                                artwork_url: item.artwork_url.clone(),
-                            },
-                            playlist_context,
-                            duration_ms: item.duration_ms,
-                            oauth_token: progress.oauth_token.clone(),
-                        };
-
-                        let app_clone = app.clone();
-                        let worker_cancel_rx = ctx.cancel_rx.clone();
-                        let active_procs = ctx.active_processes.clone();
-                        let track_id = item.track_id.clone();
-
-                        join_set.spawn(async move {
-                            let result = download_and_convert(
-                                &app_clone,
-                                config,
-                                Some(child_handle),
-                                Some(worker_cancel_rx),
-                                Some(pid_handle),
-                            ).await;
-
-                            // Deregister process tracking
-                            active_procs.lock().await.remove(&track_id);
-
-                            // Release semaphore slot
-                            drop(permit);
-
-                            match result {
-                                Ok(_) => {
-                                    let _ = app_clone.emit(
-                                        "download-progress",
-                                        serde_json::json!({
-                                            "trackId": track_id,
-                                            "status": "complete",
-                                            "percent": 1.0
-                                        }),
-                                    );
-                                    TrackOutcome::Completed { track_id }
-                                }
-                                Err(PipelineError::Download(DownloadError::Cancelled)) => {
-                                    TrackOutcome::Cancelled { track_id }
-                                }
-                                Err(PipelineError::Download(DownloadError::RateLimited(ref info))) => {
-                                    let reset_time = info.as_ref().and_then(|i| i.reset_time.clone());
-                                    let _ = app_clone.emit(
-                                        "download-progress",
-                                        serde_json::json!({
-                                            "trackId": track_id,
-                                            "status": "rate_limited",
-                                        }),
-                                    );
-                                    TrackOutcome::RateLimited { track_id, reset_time }
-                                }
-                                Err(PipelineError::Download(DownloadError::AuthRefreshFailed)) => {
-                                    TrackOutcome::AuthFailed { track_id }
-                                }
-                                Err(e) => {
-                                    log::error!("[queue] Track {} failed: {}", track_id, e);
-                                    let _ = app_clone.emit(
-                                        "download-progress",
-                                        serde_json::json!({
-                                            "trackId": track_id,
-                                            "status": "failed",
-                                            "error": {
-                                                "code": e.code(),
-                                                "message": e.to_string()
-                                            }
-                                        }),
-                                    );
-                                    TrackOutcome::Failed {
-                                        track_id,
-                                        error_code: e.code().to_string(),
-                                        error_message: e.to_string(),
-                                    }
-                                }
-                            }
-                        });
-                    }
-                }
-            } else if !join_set.is_empty() {
-                // No more pending items — drain remaining tasks
-                if let Some(result) = join_set.join_next().await {
-                    Self::handle_outcome(
-                        result, &app, &ctx, &paused, &stopped, &pause_notify,
-                        &track_lookup, &mut progress,
-                    ).await;
-                }
-            } else {
-                // All done
+            // Phase 3: Check if we're done
+            if progress.pending.is_empty() && join_set.is_empty() {
                 break;
+            }
+
+            // Phase 4: Wait for a task to complete (blocking)
+            if let Some(result) = join_set.join_next().await {
+                Self::handle_outcome(
+                    result, &app, &ctx, &paused, &stopped, &pause_notify,
+                    &track_lookup, &mut progress,
+                ).await;
             }
         }
 
-        // Drain any remaining in-flight tasks (e.g. after cancellation)
+        Self::drain_remaining(&mut join_set, &mut progress).await;
+        self.is_processing = false;
+        ctx.active_processes.lock().await.clear();
+        self.emit_final_event(&app, &ctx, &stopped, &progress);
+
+        QueueResult { completed: progress.completed, failed: progress.failed }
+    }
+
+    /// Spawn download tasks for all pending items that have available semaphore permits.
+    #[allow(clippy::too_many_arguments)]
+    async fn spawn_pending_tasks<R: Runtime>(
+        &self,
+        app: &AppHandle<R>,
+        ctx: &QueueProcessContext,
+        semaphore: &Arc<Semaphore>,
+        join_set: &mut JoinSet<TrackOutcome>,
+        progress: &mut QueueProgress,
+        started_count: &mut u32,
+        started_indices: &mut std::collections::HashSet<usize>,
+        paused: &Arc<AtomicBool>,
+    ) {
+        while !progress.pending.is_empty() && !paused.load(Ordering::SeqCst) {
+            let permit = match semaphore.clone().try_acquire_owned() {
+                Ok(p) => p,
+                Err(_) => break,
+            };
+
+            let idx = progress.pending.pop_front().unwrap();
+            let item = &self.items[idx];
+
+            if started_indices.insert(idx) {
+                *started_count += 1;
+            }
+
+            let _ = app.emit(
+                "queue-progress",
+                QueueProgressEvent {
+                    current: *started_count,
+                    total: self.total_tracks,
+                    track_id: item.track_id.clone(),
+                },
+            );
+
+            let child_handle = Arc::new(Mutex::new(None));
+            let pid_handle = Arc::new(Mutex::new(None));
+            ctx.active_processes.lock().await.insert(
+                item.track_id.clone(),
+                ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() },
+            );
+
+            let config = self.build_pipeline_config(item, idx, &ctx.output_dir, &progress.oauth_token);
+            let app_clone = app.clone();
+            let worker_cancel_rx = ctx.cancel_rx.clone();
+            let active_procs = ctx.active_processes.clone();
+
+            join_set.spawn(execute_download(
+                app_clone, config, child_handle, pid_handle,
+                worker_cancel_rx, active_procs, permit,
+            ));
+        }
+    }
+
+    /// Build a PipelineConfig for a queue item.
+    fn build_pipeline_config(
+        &self,
+        item: &QueueItem,
+        idx: usize,
+        output_dir: &PathBuf,
+        oauth_token: &Option<String>,
+    ) -> PipelineConfig {
+        let playlist_context = if self.total_tracks > 1 {
+            Some(PlaylistContext {
+                track_position: item.track_number.unwrap_or((idx + 1) as u32),
+                total_tracks: self.total_tracks,
+            })
+        } else {
+            None
+        };
+
+        PipelineConfig {
+            track_url: item.track_url.clone(),
+            track_id: item.track_id.clone(),
+            output_dir: output_dir.clone(),
+            metadata: TrackMetadata {
+                title: item.title.clone(),
+                artist: item.artist.clone(),
+                album: self.album_name.clone(),
+                track_number: item.track_number,
+                total_tracks: Some(self.total_tracks),
+                artwork_url: item.artwork_url.clone(),
+            },
+            playlist_context,
+            duration_ms: item.duration_ms,
+            oauth_token: oauth_token.clone(),
+        }
+    }
+
+    /// Drain remaining in-flight tasks after loop exit (e.g. after cancellation).
+    async fn drain_remaining(
+        join_set: &mut JoinSet<TrackOutcome>,
+        progress: &mut QueueProgress,
+    ) {
         while let Some(result) = join_set.join_next().await {
             if let Ok(outcome) = result {
                 match outcome {
@@ -323,17 +368,20 @@ impl DownloadQueue {
                         progress.failed += 1;
                         progress.failed_tracks.push((track_id, error_message));
                     }
-                    _ => {} // Cancelled tracks counted below
+                    _ => {}
                 }
             }
         }
+    }
 
-        self.is_processing = false;
-
-        // Clear any remaining active processes
-        ctx.active_processes.lock().await.clear();
-
-        // Emit final event
+    /// Emit the final queue-complete or queue-cancelled event.
+    fn emit_final_event<R: Runtime>(
+        &self,
+        app: &AppHandle<R>,
+        ctx: &QueueProcessContext,
+        stopped: &Arc<AtomicBool>,
+        progress: &QueueProgress,
+    ) {
         if *ctx.cancel_rx.borrow() || stopped.load(Ordering::SeqCst) {
             let cancelled = self.total_tracks - progress.completed - progress.failed;
             let _ = app.emit(
@@ -355,8 +403,6 @@ impl DownloadQueue {
                 },
             );
         }
-
-        QueueResult { completed: progress.completed, failed: progress.failed }
     }
 
     /// Handle a completed task outcome from the JoinSet.
