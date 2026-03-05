@@ -19,7 +19,7 @@ pub fn scan_browser_cookies() -> Option<BrowserCookie> {
     // Each entry: (display name, extraction function)
     // rookie browser functions all share the signature:
     //   fn(Option<Vec<String>>) -> eyre::Result<Vec<rookie::Cookie>>
-    let browsers: Vec<(
+    let mut browsers: Vec<(
         &str,
         fn(Option<Vec<String>>) -> rookie::Result<Vec<rookie::Cookie>>,
     )> = vec![
@@ -29,8 +29,10 @@ pub fn scan_browser_cookies() -> Option<BrowserCookie> {
         ("Edge", rookie::edge),
         ("Opera", rookie::opera),
         ("Vivaldi", rookie::vivaldi),
-        ("Arc", rookie::arc),
     ];
+
+    #[cfg(target_os = "macos")]
+    browsers.push(("Arc", rookie::arc));
 
     for (name, extract_fn) in &browsers {
         match extract_fn(domains.clone()) {
