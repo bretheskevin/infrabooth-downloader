@@ -11,10 +11,8 @@ vi.mock('react-i18next', () => ({
         'auth.signInHint': 'Log in to SoundCloud in your browser for higher quality downloads',
         'auth.checkBrowser': 'Check browser login',
         'auth.checking': 'Checking...',
-        'auth.signedInAs': 'Signed in as {{username}}',
-        'auth.accessibilityStatus': 'Signed in as {{username}}, Go+ quality enabled',
         'auth.qualityBadge': 'Go+ 256kbps',
-        'auth.loading': 'Loading...',
+        'auth.signOut': 'Sign Out',
       };
       const template = translations[key] || key;
       if (options) {

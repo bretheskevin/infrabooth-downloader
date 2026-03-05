@@ -22,6 +22,15 @@ pub const AUTH_STATE_CHANGED_EVENT: &str = "auth-state-changed";
 /// Event name emitted when re-authentication is required.
 pub const AUTH_REAUTH_NEEDED_EVENT: &str = "auth-reauth-needed";
 
+fn signed_out_payload() -> AuthStatePayload {
+    AuthStatePayload {
+        is_signed_in: false,
+        username: None,
+        plan: None,
+        avatar_url: None,
+    }
+}
+
 /// Scans browser cookies for a SoundCloud oauth_token, verifies it
 /// against the API, and caches the result. Emits an auth state event.
 ///
@@ -44,15 +53,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
 
     let Some(cookie) = result else {
         state.clear();
-        let _ = app.emit(
-            AUTH_STATE_CHANGED_EVENT,
-            AuthStatePayload {
-                is_signed_in: false,
-                username: None,
-                plan: None,
-                avatar_url: None,
-            },
-        );
+        let _ = app.emit(AUTH_STATE_CHANGED_EVENT, signed_out_payload());
         return Ok(false);
     };
 
@@ -79,25 +80,28 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
         Err(e) => {
             warn!("Cookie verification failed: {}", e);
             state.clear();
-            let _ = app.emit(
-                AUTH_STATE_CHANGED_EVENT,
-                AuthStatePayload {
-                    is_signed_in: false,
-                    username: None,
-                    plan: None,
-                    avatar_url: None,
-                },
-            );
+            let _ = app.emit(AUTH_STATE_CHANGED_EVENT, signed_out_payload());
             Ok(false)
         }
     }
 }
 
-/// Re-scans browser cookies on demand (e.g., after download 401/403 or user click).
-/// If the re-scan fails, emits `auth-reauth-needed` so the frontend can prompt the user.
+/// Re-verifies auth on demand (e.g., after download 401/403).
+/// First tries to re-verify the cached token (cheap API call) before
+/// falling back to a full browser cookie scan (expensive I/O).
+/// If no valid token is found, emits `auth-reauth-needed` so the frontend can prompt the user.
 #[tauri::command]
 #[specta::specta]
 pub async fn refresh_auth(app: AppHandle) -> Result<bool, String> {
+    // Fast path: re-verify the cached token without rescanning cookies.
+    let cached_token = app.state::<AuthState>().get_token();
+    if let Some(token) = cached_token {
+        if verify_token(&token).await.is_ok() {
+            return Ok(true);
+        }
+        info!("Cached token verification failed, falling back to cookie scan");
+    }
+
     let result = check_auth(app.clone()).await?;
     if !result {
         let _ = app.emit(AUTH_REAUTH_NEEDED_EVENT, ());
@@ -114,15 +118,7 @@ pub async fn refresh_auth(app: AppHandle) -> Result<bool, String> {
 pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     let state = app.state::<AuthState>();
     state.clear();
-    let _ = app.emit(
-        AUTH_STATE_CHANGED_EVENT,
-        AuthStatePayload {
-            is_signed_in: false,
-            username: None,
-            plan: None,
-            avatar_url: None,
-        },
-    );
+    let _ = app.emit(AUTH_STATE_CHANGED_EVENT, signed_out_payload());
     info!("User signed out");
     Ok(())
 }
@@ -161,13 +157,8 @@ mod tests {
     }
 
     #[test]
-    fn test_sign_out_payload_is_correct() {
-        let payload = AuthStatePayload {
-            is_signed_in: false,
-            username: None,
-            plan: None,
-            avatar_url: None,
-        };
+    fn test_signed_out_payload_is_correct() {
+        let payload = signed_out_payload();
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":false"));
         assert!(json.contains("\"username\":null"));

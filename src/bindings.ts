@@ -8,6 +8,11 @@ export const commands = {
 /**
  * Scans browser cookies for a SoundCloud oauth_token, verifies it
  * against the API, and caches the result. Emits an auth state event.
+ * 
+ * # Returns
+ * * `Ok(true)` - A valid token was found and verified
+ * * `Ok(false)` - No valid token found (not signed in)
+ * * `Err(String)` - Error during the check
  */
 async checkAuth() : Promise<Result<boolean, string>> {
     try {
@@ -18,8 +23,10 @@ async checkAuth() : Promise<Result<boolean, string>> {
 }
 },
 /**
- * Re-scans browser cookies on demand (e.g., after user logs in via browser).
- * Same logic as checkAuth.
+ * Re-verifies auth on demand (e.g., after download 401/403).
+ * First tries to re-verify the cached token (cheap API call) before
+ * falling back to a full browser cookie scan (expensive I/O).
+ * If no valid token is found, emits `auth-reauth-needed` so the frontend can prompt the user.
  */
 async refreshAuth() : Promise<Result<boolean, string>> {
     try {
@@ -31,6 +38,9 @@ async refreshAuth() : Promise<Result<boolean, string>> {
 },
 /**
  * Signs out by clearing cached auth state and emitting signed-out event.
+ * 
+ * Note: This does NOT delete the browser cookie — the user remains logged in
+ * to SoundCloud in their browser. It only clears the app's cached token.
  */
 async signOut() : Promise<Result<null, string>> {
     try {

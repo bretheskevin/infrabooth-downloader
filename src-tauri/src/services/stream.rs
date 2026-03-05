@@ -13,8 +13,7 @@ use serde::Deserialize;
 
 use crate::models::error::DownloadError;
 use crate::services::client_id;
-
-const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
+use crate::services::http::{RequestBuilderExt, API_V2_BASE};
 
 /// Format info from a SoundCloud transcoding entry.
 #[derive(Debug, Clone, Deserialize)]
@@ -201,14 +200,14 @@ async fn fetch_track_data_v2(
         client_id
     );
 
-    let mut request = client.get(&url);
-    if let Some(token) = oauth_token {
-        request = request.header("Authorization", format!("OAuth {}", token));
-    }
-
-    let response = request.send().await.map_err(|e| {
-        DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
-    })?;
+    let response = client
+        .get(&url)
+        .with_oauth(oauth_token)
+        .send()
+        .await
+        .map_err(|e| {
+            DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
+        })?;
 
     let status = response.status();
 
@@ -249,14 +248,14 @@ async fn resolve_transcoding_url(
         transcoding.url, separator, client_id
     );
 
-    let mut request = client.get(&url);
-    if let Some(token) = oauth_token {
-        request = request.header("Authorization", format!("OAuth {}", token));
-    }
-
-    let response = request.send().await.map_err(|e| {
-        DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
-    })?;
+    let response = client
+        .get(&url)
+        .with_oauth(oauth_token)
+        .send()
+        .await
+        .map_err(|e| {
+            DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
+        })?;
 
     let status = response.status();
 
