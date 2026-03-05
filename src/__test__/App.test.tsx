@@ -12,9 +12,8 @@ vi.mock('@tauri-apps/api/event', () => ({
 
 // Mock auth module
 vi.mock('@/features/auth/api', () => ({
-  startOAuth: vi.fn(),
-  completeOAuth: vi.fn(),
-  checkAuthState: vi.fn().mockResolvedValue(false),
+  checkAuth: vi.fn().mockResolvedValue(false),
+  refreshAuth: vi.fn().mockResolvedValue(false),
   signOut: vi.fn(),
 }));
 
@@ -35,6 +34,6 @@ describe('App', () => {
 
   it('should render sign-in button when not authenticated', () => {
     render(<App />, { wrapper: createQueryWrapper() });
-    expect(screen.getByRole('button', { name: 'Sign in with SoundCloud' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
   });
 });

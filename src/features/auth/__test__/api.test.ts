@@ -1,103 +1,87 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { startOAuth, completeOAuth, checkAuthState, signOut } from '../api';
+import { checkAuth, refreshAuth, signOut } from '../api';
 
-// Mock Tauri APIs
-vi.mock('@tauri-apps/api/core', () => ({
-  invoke: vi.fn(),
+// Mock the Tauri API layer
+vi.mock('@/lib/tauri', () => ({
+  api: {
+    checkAuth: vi.fn(),
+    refreshAuth: vi.fn(),
+    signOut: vi.fn(),
+  },
 }));
 
-vi.mock('@tauri-apps/plugin-shell', () => ({
-  open: vi.fn(),
-}));
+import { api } from '@/lib/tauri';
 
-import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-shell';
-
-describe('auth', () => {
+describe('auth api', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('startOAuth', () => {
-    it('should invoke start_oauth and open the returned URL', async () => {
-      const mockAuthUrl = 'https://api.soundcloud.com/connect?client_id=test';
-      vi.mocked(invoke).mockResolvedValue(mockAuthUrl);
+  describe('checkAuth', () => {
+    it('should call api.checkAuth and return true when authenticated', async () => {
+      vi.mocked(api.checkAuth).mockResolvedValue(true);
 
-      await startOAuth();
+      const result = await checkAuth();
 
-      expect(invoke).toHaveBeenCalledWith('start_oauth');
-      expect(open).toHaveBeenCalledWith(mockAuthUrl);
-    });
-
-    it('should throw when backend fails', async () => {
-      vi.mocked(invoke).mockRejectedValue(new Error('Backend error'));
-
-      await expect(startOAuth()).rejects.toThrow('Backend error');
-    });
-
-    it('should throw when browser open fails', async () => {
-      vi.mocked(invoke).mockResolvedValue('https://example.com');
-      vi.mocked(open).mockRejectedValue(new Error('Failed to open browser'));
-
-      await expect(startOAuth()).rejects.toThrow('Failed to open browser');
-    });
-  });
-
-  describe('completeOAuth', () => {
-    it('should invoke complete_oauth with the provided code', async () => {
-      vi.mocked(invoke).mockResolvedValue(undefined);
-
-      await completeOAuth('auth_code_123');
-
-      expect(invoke).toHaveBeenCalledWith('complete_oauth', { code: 'auth_code_123' });
-    });
-
-    it('should throw when token exchange fails', async () => {
-      vi.mocked(invoke).mockRejectedValue(new Error('Token exchange failed'));
-
-      await expect(completeOAuth('invalid_code')).rejects.toThrow('Token exchange failed');
-    });
-  });
-
-  describe('checkAuthState', () => {
-    it('should invoke check_auth_state and return true when authenticated', async () => {
-      vi.mocked(invoke).mockResolvedValue(true);
-
-      const result = await checkAuthState();
-
-      expect(invoke).toHaveBeenCalledWith('check_auth_state');
+      expect(api.checkAuth).toHaveBeenCalledTimes(1);
       expect(result).toBe(true);
     });
 
-    it('should invoke check_auth_state and return false when not authenticated', async () => {
-      vi.mocked(invoke).mockResolvedValue(false);
+    it('should call api.checkAuth and return false when not authenticated', async () => {
+      vi.mocked(api.checkAuth).mockResolvedValue(false);
 
-      const result = await checkAuthState();
+      const result = await checkAuth();
 
-      expect(invoke).toHaveBeenCalledWith('check_auth_state');
+      expect(api.checkAuth).toHaveBeenCalledTimes(1);
       expect(result).toBe(false);
     });
 
     it('should throw when the check fails', async () => {
-      vi.mocked(invoke).mockRejectedValue(new Error('Keychain error'));
+      vi.mocked(api.checkAuth).mockRejectedValue(new Error('Cookie scan failed'));
 
-      await expect(checkAuthState()).rejects.toThrow('Keychain error');
+      await expect(checkAuth()).rejects.toThrow('Cookie scan failed');
+    });
+  });
+
+  describe('refreshAuth', () => {
+    it('should call api.refreshAuth and return true when authenticated', async () => {
+      vi.mocked(api.refreshAuth).mockResolvedValue(true);
+
+      const result = await refreshAuth();
+
+      expect(api.refreshAuth).toHaveBeenCalledTimes(1);
+      expect(result).toBe(true);
+    });
+
+    it('should call api.refreshAuth and return false when not authenticated', async () => {
+      vi.mocked(api.refreshAuth).mockResolvedValue(false);
+
+      const result = await refreshAuth();
+
+      expect(api.refreshAuth).toHaveBeenCalledTimes(1);
+      expect(result).toBe(false);
+    });
+
+    it('should throw when the refresh fails', async () => {
+      vi.mocked(api.refreshAuth).mockRejectedValue(new Error('Refresh failed'));
+
+      await expect(refreshAuth()).rejects.toThrow('Refresh failed');
     });
   });
 
   describe('signOut', () => {
-    it('should invoke sign_out command', async () => {
-      vi.mocked(invoke).mockResolvedValue(undefined);
+    it('should call api.signOut', async () => {
+      vi.mocked(api.signOut).mockResolvedValue(undefined);
 
       await signOut();
 
-      expect(invoke).toHaveBeenCalledWith('sign_out');
+      expect(api.signOut).toHaveBeenCalledTimes(1);
     });
 
     it('should throw when sign-out fails', async () => {
-      vi.mocked(invoke).mockRejectedValue(new Error('Keychain deletion failed'));
+      vi.mocked(api.signOut).mockRejectedValue(new Error('Sign-out failed'));
 
-      await expect(signOut()).rejects.toThrow('Keychain deletion failed');
+      await expect(signOut()).rejects.toThrow('Sign-out failed');
     });
   });
 });

@@ -27,6 +27,7 @@ const createMockTracks = (
     title: `Track ${i + 1}`,
     artist: `Artist ${i + 1}`,
     artworkUrl: null,
+    durationMs: 180000,
     status,
   }));
 
