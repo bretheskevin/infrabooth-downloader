@@ -49,8 +49,7 @@
       "icons/icon.ico"
     ],
     "externalBin": [
-      "binaries/ffmpeg",
-      "binaries/ffprobe"
+      "binaries/ffmpeg"
     ],
     "windows": {
       "certificateThumbprint": null,

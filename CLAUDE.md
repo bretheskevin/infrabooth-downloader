@@ -66,7 +66,6 @@ Features: `auth`, `url-input`, `queue`, `progress`, `completion`, `settings`
 ### Sidecar Binaries
 Bundled in `src-tauri/binaries/`:
 - ffmpeg (download + conversion)
-- ffprobe (media inspection)
 
 Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windows-msvc.exe`, etc.
 
