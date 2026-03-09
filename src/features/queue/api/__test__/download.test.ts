@@ -155,6 +155,7 @@ describe('startDownloadQueue', () => {
       albumName: 'Playlist Name',
       outputDir: null,
       maxConcurrent: 3,
+      preserveOrder: true,
     };
 
     mockStartDownloadQueue.mockResolvedValue({ status: 'ok', data: null });
@@ -177,6 +178,7 @@ describe('startDownloadQueue', () => {
       albumName: null,
       outputDir: null,
       maxConcurrent: 3,
+      preserveOrder: true,
     };
 
     mockStartDownloadQueue.mockResolvedValue({ status: 'ok', data: null });
@@ -192,6 +194,7 @@ describe('startDownloadQueue', () => {
       albumName: null,
       outputDir: null,
       maxConcurrent: 3,
+      preserveOrder: true,
     };
 
     mockStartDownloadQueue.mockResolvedValue({ status: 'ok', data: null });
@@ -214,6 +217,7 @@ describe('startDownloadQueue', () => {
       albumName: null,
       outputDir: null,
       maxConcurrent: 3,
+      preserveOrder: true,
     };
     const errorMessage = 'Failed to start queue';
 

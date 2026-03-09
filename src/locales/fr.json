@@ -56,7 +56,9 @@
     "rateLimitDialogStop": "Arrêter le téléchargement",
     "cancel": "Annuler le téléchargement",
     "cancelling": "Annulation...",
-    "cancelled": "Téléchargement annulé"
+    "cancelled": "Téléchargement annulé",
+    "preserveOrder": "Numéroter les pistes",
+    "preserveOrderDescription": "Préfixer les noms de fichiers avec la position (ex: 01 - Artiste - Titre)"
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",

@@ -328,13 +328,13 @@ impl DownloadQueue {
         output_dir: &PathBuf,
         oauth_token: &Option<String>,
     ) -> PipelineConfig {
-        let playlist_context = if self.total_tracks > 1 {
-            Some(PlaylistContext {
-                track_position: item.track_number.unwrap_or((idx + 1) as u32),
+        // Skip playlist context for single tracks — numbering is meaningless
+        let playlist_context = match item.track_number {
+            Some(track_num) if self.total_tracks > 1 => Some(PlaylistContext {
+                track_position: track_num,
                 total_tracks: self.total_tracks,
-            })
-        } else {
-            None
+            }),
+            _ => None,
         };
 
         PipelineConfig {
