@@ -42,7 +42,7 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
 
   const handleDownload = useCallback(async (overrideOutputDir?: string) => {
     const { tracks: queueTracks, setInitializing, setOutputDir } = useQueueStore.getState();
-    const { downloadPath, maxConcurrentDownloads } = useSettingsStore.getState();
+    const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } = useSettingsStore.getState();
 
     // Use override if provided, otherwise fall back to settings default
     const outputDir = overrideOutputDir || downloadPath || undefined;
@@ -74,6 +74,7 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
         albumName: albumName ?? null,
         outputDir: outputDir ?? null,
         maxConcurrent: maxConcurrentDownloads,
+        preserveOrder: preservePlaylistOrder,
       });
     } catch (error) {
       logger.error(`[useDownloadFlow] Download failed: ${error}`);

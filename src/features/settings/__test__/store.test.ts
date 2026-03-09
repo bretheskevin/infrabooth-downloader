@@ -10,6 +10,7 @@ describe('settingsStore', () => {
       downloadPath: '',
       language: 'en',
       theme: 'system',
+      preservePlaylistOrder: true,
       _hasHydrated: false,
     });
   });
@@ -28,6 +29,11 @@ describe('settingsStore', () => {
     it('should have theme as system by default', () => {
       const { theme } = useSettingsStore.getState();
       expect(theme).toBe('system');
+    });
+
+    it('should have preservePlaylistOrder as true by default', () => {
+      const { preservePlaylistOrder } = useSettingsStore.getState();
+      expect(preservePlaylistOrder).toBe(true);
     });
   });
 
@@ -96,12 +102,32 @@ describe('settingsStore', () => {
     });
   });
 
+  describe('setPreservePlaylistOrder', () => {
+    it('should set preservePlaylistOrder to false', () => {
+      const { setPreservePlaylistOrder } = useSettingsStore.getState();
+      setPreservePlaylistOrder(false);
+
+      const { preservePlaylistOrder } = useSettingsStore.getState();
+      expect(preservePlaylistOrder).toBe(false);
+    });
+
+    it('should set preservePlaylistOrder back to true', () => {
+      const { setPreservePlaylistOrder } = useSettingsStore.getState();
+      setPreservePlaylistOrder(false);
+      setPreservePlaylistOrder(true);
+
+      const { preservePlaylistOrder } = useSettingsStore.getState();
+      expect(preservePlaylistOrder).toBe(true);
+    });
+  });
+
   describe('persistence', () => {
     it('should persist settings to localStorage', () => {
-      const { setDownloadPath, setLanguage, setTheme } = useSettingsStore.getState();
+      const { setDownloadPath, setLanguage, setTheme, setPreservePlaylistOrder } = useSettingsStore.getState();
       setDownloadPath('/test/path');
       setLanguage('fr');
       setTheme('dark');
+      setPreservePlaylistOrder(false);
 
       const stored = localStorage.getItem('sc-downloader-settings');
       expect(stored).toBeTruthy();
@@ -110,6 +136,7 @@ describe('settingsStore', () => {
       expect(parsed.state.downloadPath).toBe('/test/path');
       expect(parsed.state.language).toBe('fr');
       expect(parsed.state.theme).toBe('dark');
+      expect(parsed.state.preservePlaylistOrder).toBe(false);
     });
 
     it('should use sc-downloader-settings as the storage key', () => {

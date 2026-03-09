@@ -21,12 +21,13 @@ async function executeRetry(tracks: Track[], logMessage: string): Promise<void> 
   logger.info(logMessage);
 
   try {
-    const { maxConcurrentDownloads } = useSettingsStore.getState();
+    const { maxConcurrentDownloads, preservePlaylistOrder } = useSettingsStore.getState();
     await startDownloadQueue({
       tracks: tracks.map(queueTrackToDownloadRequest),
       albumName: null,
       outputDir: outputDir ?? null,
       maxConcurrent: maxConcurrentDownloads,
+      preserveOrder: preservePlaylistOrder,
     });
   } catch (error) {
     logger.error(`[useRetryTracks] Retry failed: ${error}`);

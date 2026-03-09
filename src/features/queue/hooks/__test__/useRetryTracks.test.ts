@@ -10,7 +10,7 @@ vi.mock('@/features/queue/store', () => ({
 
 vi.mock('@/features/settings/store', () => ({
   useSettingsStore: {
-    getState: () => ({ maxConcurrentDownloads: 3 }),
+    getState: () => ({ maxConcurrentDownloads: 3, preservePlaylistOrder: true }),
   },
 }));
 
@@ -156,6 +156,7 @@ describe('useRetryTracks', () => {
         albumName: null,
         outputDir: '/test/downloads',
         maxConcurrent: 3,
+        preserveOrder: true,
       });
     });
 
@@ -248,6 +249,7 @@ describe('useRetryTracks', () => {
         albumName: null,
         outputDir: '/test/downloads',
         maxConcurrent: 3,
+        preserveOrder: true,
       });
     });
 
