@@ -38,6 +38,8 @@ pub async fn download_and_convert<R: tauri::Runtime>(
     cancel_rx: Option<watch::Receiver<bool>>,
     active_pid: Option<Arc<Mutex<Option<u32>>>>,
 ) -> Result<PathBuf, PipelineError> {
+    let playlist_context = config.playlist_context.clone();
+
     let download_config = TrackDownloadToMp3Config {
         track_url: config.track_url,
         track_id: config.track_id,
@@ -59,8 +61,21 @@ pub async fn download_and_convert<R: tauri::Runtime>(
     .await
     .map_err(PipelineError::Download)?;
 
+    // Prefix metadata title with track number for playlist tracks
+    let mut metadata = config.metadata;
+    if let Some(ctx) = playlist_context {
+        let width = if ctx.total_tracks < 10 {
+            1
+        } else if ctx.total_tracks < 100 {
+            2
+        } else {
+            3
+        };
+        metadata.title = format!("{:0width$} - {}", ctx.track_position, metadata.title, width = width);
+    }
+
     // Embed metadata (graceful degradation - log errors but don't fail)
-    if let Err(e) = embed_metadata(&output_path, config.metadata).await {
+    if let Err(e) = embed_metadata(&output_path, metadata).await {
         log::warn!("Metadata embedding failed: {}", e);
         // Continue - file without metadata is still playable
     }
