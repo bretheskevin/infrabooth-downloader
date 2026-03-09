@@ -1,7 +1,19 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PlaylistPreview } from '../PlaylistPreview';
 import type { PlaylistInfo } from '@/features/url-input/types/playlist';
+
+// Mock settings store
+const mockSetPreservePlaylistOrder = vi.fn();
+vi.mock('@/features/settings/store', () => ({
+  useSettingsStore: vi.fn((selector) => {
+    const state = {
+      preservePlaylistOrder: true,
+      setPreservePlaylistOrder: mockSetPreservePlaylistOrder,
+    };
+    return selector(state);
+  }),
+}));
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -10,6 +22,8 @@ vi.mock('react-i18next', () => ({
       const translations: Record<string, string> = {
         'download.button': 'Download',
         'download.trackCount': `${options?.count ?? 0} tracks`,
+        'download.preserveOrder': 'Number tracks',
+        'download.preserveOrderDescription': 'Prefix filenames with track position (e.g. 01 - Artist - Title)',
       };
       return translations[key] || key;
     },
@@ -35,7 +49,21 @@ const mockPlaylist: PlaylistInfo = {
   user: { username: 'testuser' },
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 47,
-  tracks: [],
+  tracks: [
+    { id: 1, title: 'Track 1', user: { username: 'testuser' }, artwork_url: null, duration: 180000 },
+    { id: 2, title: 'Track 2', user: { username: 'testuser' }, artwork_url: null, duration: 200000 },
+  ],
+};
+
+const mockSingleTrackPlaylist: PlaylistInfo = {
+  id: 999,
+  title: 'Single Track',
+  user: { username: 'testuser' },
+  artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
+  track_count: 1,
+  tracks: [
+    { id: 1, title: 'Track 1', user: { username: 'testuser' }, artwork_url: null, duration: 180000 },
+  ],
 };
 
 const mockPlaylistNoArtwork: PlaylistInfo = {
@@ -73,6 +101,10 @@ const mockPlaylistWithTrackArtwork: PlaylistInfo = {
 };
 
 describe('PlaylistPreview', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   describe('display', () => {
     it('should render playlist title (AC #2)', () => {
       render(
@@ -216,6 +248,50 @@ describe('PlaylistPreview', () => {
       );
 
       expect(screen.getByTestId('playlist-creator')).toHaveClass('truncate');
+    });
+  });
+
+  describe('preserve order toggle', () => {
+    it('should render the preserve order switch', () => {
+      render(
+        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
+      );
+
+      expect(screen.getByTestId('preserve-order-switch')).toBeInTheDocument();
+    });
+
+    it('should render the label text', () => {
+      render(
+        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
+      );
+
+      expect(screen.getByText('Number tracks')).toBeInTheDocument();
+    });
+
+    it('should be checked when preservePlaylistOrder is true', () => {
+      render(
+        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
+      );
+
+      const switchEl = screen.getByTestId('preserve-order-switch');
+      expect(switchEl).toHaveAttribute('data-state', 'checked');
+    });
+
+    it('should call setPreservePlaylistOrder when toggled', () => {
+      render(
+        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
+      );
+
+      fireEvent.click(screen.getByTestId('preserve-order-switch'));
+      expect(mockSetPreservePlaylistOrder).toHaveBeenCalledWith(false);
+    });
+
+    it('should not render the toggle for single-track playlists', () => {
+      render(
+        <PlaylistPreview playlist={mockSingleTrackPlaylist} onDownload={vi.fn()} />
+      );
+
+      expect(screen.queryByTestId('preserve-order-switch')).not.toBeInTheDocument();
     });
   });
 });

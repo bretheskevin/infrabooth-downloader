@@ -56,7 +56,9 @@
     "rateLimitDialogStop": "Stop Download",
     "cancel": "Cancel download",
     "cancelling": "Cancelling...",
-    "cancelled": "Download cancelled"
+    "cancelled": "Download cancelled",
+    "preserveOrder": "Number tracks",
+    "preserveOrderDescription": "Prefix filenames with track position (e.g. 01 - Artist - Title)"
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",

@@ -113,6 +113,7 @@ pub struct StartQueueRequest {
     pub album_name: Option<String>,
     pub output_dir: Option<String>,
     pub max_concurrent: Option<u8>,
+    pub preserve_order: Option<bool>,
 }
 
 #[derive(Debug, Deserialize, Type)]
@@ -152,6 +153,8 @@ pub async fn start_download_queue(
         None => get_download_path(&app).map_err(|e| e.message)?,
     };
 
+    let preserve_order = request.preserve_order.unwrap_or(true);
+
     let items: Vec<QueueItem> = request
         .tracks
         .into_iter()
@@ -162,7 +165,11 @@ pub async fn start_download_queue(
             title: t.title,
             artist: t.artist,
             artwork_url: t.artwork_url,
-            track_number: Some((i + 1) as u32),
+            track_number: if preserve_order {
+                Some((i + 1) as u32)
+            } else {
+                None
+            },
             duration_ms: t.duration_ms,
         })
         .collect();
