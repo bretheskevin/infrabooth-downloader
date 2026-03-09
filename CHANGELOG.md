@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-03-09
+
+### Added
+
+- Download multiple tracks simultaneously with configurable parallel downloads (1-10 concurrent)
+- Support for SoundCloud short links (on.soundcloud.com)
+
+### Changed
+
+- Authentication now uses browser cookies — sign in to SoundCloud in your browser and the app detects your session automatically
+- Downloads now use SoundCloud's native API instead of yt-dlp, resulting in faster and more reliable downloads
+- When rate-limited by SoundCloud, an interactive dialog lets you choose how to proceed instead of automatic backoff
+- Playlist track numbering is now optional via a toggle on the playlist preview
+- App size significantly reduced by removing bundled yt-dlp and ffprobe binaries
+
+### Fixed
+
+- Improved handling of concurrent authentication refreshes
+
 ## [1.2.0] - 2026-03-03
 
 ### Added
