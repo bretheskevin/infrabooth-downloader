@@ -21,8 +21,8 @@ interface UseDownloadFlowReturn {
   handleDownload: (overrideOutputDir?: string) => void;
 }
 
-export function useDownloadFlow(): UseDownloadFlowReturn {
-  const [url, setUrl] = useState('');
+export function useDownloadFlow(initialUrl = ''): UseDownloadFlowReturn {
+  const [url, setUrl] = useState(initialUrl);
   const [isPending, setIsPending] = useState(false);
 
   const isProcessing = useQueueStore((state) => state.isProcessing);
