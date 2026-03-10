@@ -8,7 +8,7 @@ export function DownloadLocationSection() {
   return (
     <div className="space-y-3" data-testid="download-location-section">
       <div className="space-y-1">
-        <Label>{t('settings.downloadLocation')}</Label>
+        <Label className="text-base font-medium">{t('settings.downloadLocation')}</Label>
         <p className="text-sm text-muted-foreground">
           {t('settings.downloadLocationDescription')}
         </p>

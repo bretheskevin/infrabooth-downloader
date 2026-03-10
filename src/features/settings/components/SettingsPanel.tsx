@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSection } from './LanguageSection';
 import { ThemeSection } from './ThemeSection';
 import { ConcurrentDownloadsSection } from './ConcurrentDownloadsSection';
+import { PlaylistOrderSection } from './PlaylistOrderSection';
 import { DownloadLocationSection } from './DownloadLocationSection';
 
 interface SettingsPanelProps {
@@ -34,14 +35,24 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
           </SheetDescription>
         </SheetHeader>
 
-        <div className="mt-6 space-y-3 overflow-y-auto max-h-[calc(100vh-8rem)] px-1">
-          <LanguageSection />
+        <div className="mt-6 space-y-5 overflow-y-auto max-h-[calc(100vh-8rem)] pl-1 pr-3">
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.categoryGeneral')}</h3>
+            <LanguageSection />
+            <Separator />
+            <ThemeSection />
+            <Separator />
+            <DownloadLocationSection />
+          </div>
+
           <Separator />
-          <ThemeSection />
-          <Separator />
-          <ConcurrentDownloadsSection />
-          <Separator />
-          <DownloadLocationSection />
+
+          <div className="space-y-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.categoryPlaylists')}</h3>
+            <ConcurrentDownloadsSection />
+            <Separator />
+            <PlaylistOrderSection />
+          </div>
         </div>
       </SheetContent>
     </Sheet>
