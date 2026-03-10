@@ -1,12 +1,14 @@
+import { useState, useEffect, useCallback } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DownloadPage } from '@/pages/DownloadPage';
+import { LibraryTab } from '@/features/library';
 import { AuthChoiceDialog } from '@/features/auth/components/AuthChoiceDialog';
 import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
+import { useAuthStore } from '@/features/auth/store';
 import { RateLimitDialog } from '@/features/queue/components/RateLimitDialog';
 import { useRateLimitDialog } from '@/features/queue/hooks/useRateLimitDialog';
 import { useUpdateStore } from '@/features/update';
 import { useLanguageSync, useThemeSync, useAuthStateListener, useStartupAuth, useInitializeSettings } from '@/hooks';
-import { useEffect } from 'react';
 
 export function App() {
   useLanguageSync();
@@ -16,6 +18,20 @@ export function App() {
   useInitializeSettings();
   useEffect(() => {
     useUpdateStore.getState().checkForUpdates();
+  }, []);
+
+  const [activePage, setActivePage] = useState<'download' | 'library'>('download');
+  const [initialUrl, setInitialUrl] = useState('');
+  const isSignedIn = useAuthStore((s) => s.isSignedIn);
+
+  const handlePageChange = useCallback((page: 'download' | 'library') => {
+    if (page === 'library') setInitialUrl('');
+    setActivePage(page);
+  }, []);
+
+  const handleSelectLibraryPlaylist = useCallback((permalinkUrl: string) => {
+    setInitialUrl(permalinkUrl);
+    setActivePage('download');
   }, []);
 
   const {
@@ -31,8 +47,18 @@ export function App() {
   } = useRateLimitDialog();
 
   return (
-    <AppLayout>
-      <DownloadPage />
+    <AppLayout
+      activePage={activePage}
+      onPageChange={handlePageChange}
+      isLibraryLocked={!isSignedIn}
+    >
+      {activePage === 'download' ? (
+        <DownloadPage initialUrl={initialUrl} />
+      ) : (
+        <section className="space-y-4">
+          <LibraryTab onSelectPlaylist={handleSelectLibraryPlaylist} />
+        </section>
+      )}
       <AuthChoiceDialog
         open={authChoiceOpen}
         onReAuthenticate={handleReAuthenticate}
