@@ -40,7 +40,6 @@ export function FolderPicker() {
 
   return (
     <div className="space-y-2">
-      <label className="text-sm font-medium">{t('settings.downloadLocation')}</label>
       <div className="flex items-center gap-2">
         <span
           className="flex-1 truncate text-sm text-muted-foreground"

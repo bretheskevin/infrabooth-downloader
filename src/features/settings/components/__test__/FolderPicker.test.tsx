@@ -63,12 +63,6 @@ describe('FolderPicker', () => {
     expect(browseButton).toHaveTextContent('Browse');
   });
 
-  it('renders download location label', () => {
-    render(<FolderPicker />);
-
-    expect(screen.getByText('Download Location')).toBeInTheDocument();
-  });
-
   it('opens folder dialog when browse button is clicked', async () => {
     vi.mocked(open).mockResolvedValue('/Users/test/NewFolder');
     vi.mocked(invoke).mockResolvedValue(true);

@@ -119,8 +119,12 @@
     "themeSystem": "Système",
     "themeLight": "Clair",
     "themeDark": "Sombre",
+    "categoryGeneral": "Général",
+    "categoryPlaylists": "Playlists",
     "concurrentDownloads": "Téléchargements simultanés",
-    "concurrentDownloadsDescription": "Nombre de pistes à télécharger simultanément (1-10)"
+    "concurrentDownloadsDescription": "Nombre de pistes à télécharger simultanément (1-10)",
+    "preserveOrder": "Numéroter les pistes",
+    "preserveOrderDescription": "Préfixer les noms de fichiers de playlist avec la position (ex: 01 - Artiste - Titre)"
   },
   "completion": {
     "title": "Téléchargement terminé !",
