@@ -185,6 +185,20 @@
     "trackUnavailableRestriction": "Track unavailable - external restriction",
     "geoRestrictionWarning": "Geographic restriction warning"
   },
+  "library": {
+    "tabLabel": "My Library",
+    "pasteUrlTab": "Paste URL",
+    "searchPlaceholder": "Search playlists...",
+    "filterAll": "All",
+    "filterMine": "Mine",
+    "filterLiked": "Liked",
+    "lockedTitle": "Sign in to access your library",
+    "lockedDescription": "Browse and download your SoundCloud playlists",
+    "rateLimited": "Rate limit reached. Click to retry.",
+    "errorRetry": "Failed to load library. Click to retry.",
+    "noResults": "No playlists match your search",
+    "emptyState": "No playlists found"
+  },
   "downloadBar": {
     "clickToChange": "Click to change download folder",
     "customLocation": "custom"

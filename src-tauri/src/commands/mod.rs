@@ -14,3 +14,6 @@ pub use ffmpeg::test_ffmpeg;
 pub use playlist::{get_playlist_info, get_track_info, validate_soundcloud_url};
 pub use settings::{check_write_permission, get_default_download_path, validate_download_path};
 pub use updater::{check_for_updates, install_update};
+
+pub mod library;
+pub use library::{clear_library_cache, get_library_playlists, resolve_library_artwork};
