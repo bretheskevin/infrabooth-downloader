@@ -1,4 +1,5 @@
 use crate::services::cookie::scan_browser_cookies;
+use crate::services::library::LibraryCache;
 use crate::services::oauth::verify_token;
 use crate::services::storage::{AuthState, CachedAuth};
 use log::{info, warn};
@@ -118,6 +119,7 @@ pub async fn refresh_auth(app: AppHandle) -> Result<bool, String> {
 pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     let state = app.state::<AuthState>();
     state.clear();
+    app.state::<LibraryCache>().clear();
     let _ = app.emit(AUTH_STATE_CHANGED_EVENT, signed_out_payload());
     info!("User signed out");
     Ok(())

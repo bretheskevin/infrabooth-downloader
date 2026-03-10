@@ -210,6 +210,30 @@ async installUpdate() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getLibraryPlaylists() : Promise<Result<LibraryPlaylist[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_library_playlists") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async resolveLibraryArtwork(playlistId: number, secretToken: string | null) : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("resolve_library_artwork", { playlistId, secretToken }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearLibraryCache() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_library_cache") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -226,6 +250,7 @@ async installUpdate() : Promise<Result<null, string>> {
 export type AuthChoice = "re_authenticated" | "continue_standard"
 export type DownloadRequest = { trackUrl: string; trackId: string; title: string; artist: string; album: string | null; trackNumber: number | null; totalTracks: number | null; artworkUrl: string | null; outputDir: string | null; durationMs: number }
 export type ErrorResponse = { code: string; message: string }
+export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
 /**
  * Playlist information from SoundCloud API.
  */

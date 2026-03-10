@@ -185,6 +185,20 @@
     "trackUnavailableRestriction": "Piste indisponible - restriction externe",
     "geoRestrictionWarning": "Avertissement de restriction géographique"
   },
+  "library": {
+    "tabLabel": "Ma bibliothèque",
+    "pasteUrlTab": "Coller un lien",
+    "searchPlaceholder": "Rechercher des playlists...",
+    "filterAll": "Tout",
+    "filterMine": "Mes playlists",
+    "filterLiked": "Aimées",
+    "lockedTitle": "Connectez-vous pour accéder à votre bibliothèque",
+    "lockedDescription": "Parcourez et téléchargez vos playlists SoundCloud",
+    "rateLimited": "Limite atteinte. Cliquez pour réessayer.",
+    "errorRetry": "Échec du chargement. Cliquez pour réessayer.",
+    "noResults": "Aucune playlist ne correspond à votre recherche",
+    "emptyState": "Aucune playlist trouvée"
+  },
   "downloadBar": {
     "clickToChange": "Cliquez pour changer le dossier",
     "customLocation": "personnalisé"

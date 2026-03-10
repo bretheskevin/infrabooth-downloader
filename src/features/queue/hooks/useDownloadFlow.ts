@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useUrlValidation, useMediaFetch, type FetchError } from '@/features/url-input';
 import { useSyncToQueue } from './useSyncToQueue';
 import { useQueueStore } from '@/features/queue/store';
@@ -28,7 +28,17 @@ export function useDownloadFlow(): UseDownloadFlowReturn {
   const isProcessing = useQueueStore((state) => state.isProcessing);
 
   const { result: validation, isValidating } = useUrlValidation(url);
-  const { data: media, isLoading, error } = useMediaFetch(url, validation);
+  const { data: fetchedMedia, isLoading: isFetching, error } = useMediaFetch(url, validation);
+
+  // Track which URL produced the current media to avoid showing stale previews
+  const mediaUrlRef = useRef('');
+  useEffect(() => {
+    if (fetchedMedia && !isFetching) {
+      mediaUrlRef.current = url;
+    }
+  }, [fetchedMedia, isFetching, url]);
+  const media = url === mediaUrlRef.current ? fetchedMedia : null;
+  const isLoading = isFetching || (!!url && !media && !error && url !== mediaUrlRef.current);
 
   // Sync to queue whenever media changes
   useSyncToQueue(media);

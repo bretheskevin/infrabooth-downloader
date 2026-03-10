@@ -18,3 +18,4 @@ Cargo.lock
 
 # Test scripts with credentials
 test_api_v2_auth.sh
+.superpowers/

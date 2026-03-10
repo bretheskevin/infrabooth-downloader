@@ -6,14 +6,15 @@ use std::sync::Arc;
 
 use commands::{
     cancel_download_queue, check_auth, check_for_updates, check_write_permission,
-    download_track_full, get_default_download_path, get_playlist_info,
-    get_track_info, install_update, refresh_auth, respond_to_auth_choice,
-    respond_to_rate_limit_choice, sign_out,
-    start_download_queue, test_ffmpeg, validate_download_path, validate_soundcloud_url,
+    clear_library_cache, download_track_full, get_default_download_path, get_library_playlists,
+    get_playlist_info, get_track_info, install_update, refresh_auth, resolve_library_artwork,
+    respond_to_auth_choice, respond_to_rate_limit_choice, sign_out, start_download_queue,
+    test_ffmpeg, validate_download_path, validate_soundcloud_url,
 };
 use services::auth_choice::AuthChoiceState;
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
+use services::library::LibraryCache;
 use services::storage::AuthState;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use tauri::Emitter;
@@ -41,7 +42,10 @@ pub fn run() {
         get_default_download_path,
         validate_download_path,
         check_for_updates,
-        install_update
+        install_update,
+        get_library_playlists,
+        resolve_library_artwork,
+        clear_library_cache
     ]);
 
     // Export TypeScript bindings in debug mode
@@ -62,6 +66,7 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_clipboard_manager::init())
         .manage(AuthState::default())
+        .manage(LibraryCache::default())
         .manage(CancellationState::default())
         .manage(Arc::new(AuthChoiceState::default()))
         .manage(Arc::new(RateLimitChoiceState::default()))
