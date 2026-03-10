@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClipboardPaste } from 'lucide-react';
 import { Spinner } from '@/components/ui/spinner';
@@ -15,11 +15,18 @@ interface UrlInputProps {
   className?: string;
   isValidating?: boolean;
   validationResult?: ValidationResult | null;
+  externalValue?: string;
 }
 
-export function UrlInput({ onUrlChange, disabled, className, isValidating, validationResult }: UrlInputProps) {
+export function UrlInput({ onUrlChange, disabled, className, isValidating, validationResult, externalValue }: UrlInputProps) {
   const { t } = useTranslation();
-  const [value, setValue] = useState('');
+  const [value, setValue] = useState(externalValue ?? '');
+
+  useEffect(() => {
+    if (externalValue !== undefined) {
+      setValue(externalValue);
+    }
+  }, [externalValue]);
 
   const borderClass = useMemo(() => {
     if (isValidating) return 'border-primary ring-2 ring-primary/30 shadow-glow';
@@ -62,7 +69,7 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
         disabled={disabled}
         className={cn(
           'h-14 text-base transition-all duration-300 pr-14 rounded-xl',
-          'bg-secondary/50 border-border/50',
+          'border-border/50',
           'placeholder:text-muted-foreground/60',
           'focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:bg-background',
           'hover:bg-secondary/70 hover:border-border',

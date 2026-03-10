@@ -8,6 +8,7 @@ import {
   type ValidationResult,
   type ErrorResponse,
 } from '@/bindings';
+import type { LibraryPlaylist } from '@/bindings';
 
 type StringError = string;
 type AnyError = ErrorResponse | StringError;
@@ -71,4 +72,14 @@ export const api = {
   // Testing/Debug
   testFfmpeg: (): Promise<string> =>
     commands.testFfmpeg().then(unwrap),
+
+  // Library
+  getLibraryPlaylists: (): Promise<LibraryPlaylist[]> =>
+    commands.getLibraryPlaylists().then(unwrap),
+
+  clearLibraryCache: (): Promise<void> =>
+    commands.clearLibraryCache().then(unwrap).then(() => undefined),
+
+  resolveLibraryArtwork: (playlistId: number, secretToken: string | null): Promise<string | null> =>
+    commands.resolveLibraryArtwork(playlistId, secretToken).then(unwrap),
 };

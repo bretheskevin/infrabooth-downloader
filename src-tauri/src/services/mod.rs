@@ -17,4 +17,5 @@ pub mod storage;
 pub mod stream;
 pub mod url_validator;
 pub mod updater;
+pub mod library;
 
