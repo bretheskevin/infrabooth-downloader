@@ -119,8 +119,12 @@
     "themeSystem": "System",
     "themeLight": "Light",
     "themeDark": "Dark",
+    "categoryGeneral": "General",
+    "categoryPlaylists": "Playlists",
     "concurrentDownloads": "Concurrent downloads",
-    "concurrentDownloadsDescription": "Number of tracks to download simultaneously (1-10)"
+    "concurrentDownloadsDescription": "Number of tracks to download simultaneously (1-10)",
+    "preserveOrder": "Number tracks",
+    "preserveOrderDescription": "Prefix playlist filenames with track position (e.g. 01 - Artist - Title)"
   },
   "completion": {
     "title": "Download complete!",
