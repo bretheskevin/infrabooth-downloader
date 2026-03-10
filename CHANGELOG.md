@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-03-10
+
+### Added
+
+- Library browser to browse and download your SoundCloud playlists directly from the app
+
+### Changed
+
+- Playlist order toggle is now also accessible from the settings panel
+- Settings panel reorganized with scroll shadow indicators for better navigation
+
 ## [1.3.0] - 2026-03-09
 
 ### Added
