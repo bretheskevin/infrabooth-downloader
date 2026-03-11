@@ -202,7 +202,11 @@ pub fn parse_ffmpeg_progress(line: &str, duration_ms: u64) -> Option<DownloadPro
     None
 }
 
-/// Classify ffmpeg stderr output into specific error types.
+/// Classify ffmpeg stderr output into fatal errors that should abort immediately.
+///
+/// Only returns errors for conditions where FFmpeg cannot recover (HTTP errors, network failures,
+/// disk full). Recoverable warnings (e.g. corrupt AAC frames) are NOT classified here — they are
+/// stored in `last_error` and only used if FFmpeg ultimately exits with a non-zero code.
 pub fn classify_ffmpeg_error(stderr: &str) -> Option<DownloadError> {
     let lower = stderr.to_lowercase();
 
@@ -235,13 +239,25 @@ pub fn classify_ffmpeg_error(stderr: &str) -> Option<DownloadError> {
     if lower.contains("no space left") || lower.contains("disk full") {
         return Some(DownloadError::ConversionFailed("Disk is full".to_string()));
     }
-    if lower.contains("invalid data found") || lower.contains("conversion failed") {
-        return Some(DownloadError::ConversionFailed(
-            "Audio conversion failed".to_string(),
-        ));
-    }
 
     None
+}
+
+/// Classify the final stderr output after FFmpeg has terminated with a non-zero exit code.
+/// This is more aggressive than `classify_ffmpeg_error` since we know the process failed.
+///
+/// Messages like "invalid data found" and "conversion failed" are intentionally only matched
+/// here (not in `classify_ffmpeg_error`) because they are often recoverable warnings
+/// (e.g. corrupt AAC frames that FFmpeg can skip). They only become fatal when FFmpeg
+/// actually exits with a non-zero code.
+pub fn classify_ffmpeg_exit_error(stderr: &str) -> DownloadError {
+    let lower = stderr.to_lowercase();
+
+    if lower.contains("invalid data found") || lower.contains("conversion failed") {
+        return DownloadError::ConversionFailed("Audio conversion failed".to_string());
+    }
+
+    DownloadError::DownloadFailed(stderr.to_string())
 }
 
 pub async fn download_track_to_mp3<R: tauri::Runtime>(
@@ -433,16 +449,15 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
                             return Err(DownloadError::Cancelled);
                         }
                     }
+                    let error_text = last_error.unwrap_or_else(|| "Unknown error".to_string());
                     log::error!(
-                        "ffmpeg terminated with code {:?}: {:?}",
+                        "ffmpeg terminated with code {:?}: {}",
                         payload.code,
-                        last_error
+                        error_text
                     );
                     // Clean up failed output
                     let _ = std::fs::remove_file(&output_file);
-                    return Err(DownloadError::DownloadFailed(
-                        last_error.unwrap_or_else(|| "Unknown error".to_string()),
-                    ));
+                    return Err(classify_ffmpeg_exit_error(&error_text));
                 }
                 break;
             }
@@ -580,9 +595,23 @@ mod tests {
     }
 
     #[test]
-    fn test_classify_ffmpeg_error_invalid_data() {
+    fn test_classify_ffmpeg_error_invalid_data_not_fatal() {
+        // "invalid data found" should NOT be classified as an immediate fatal error
+        // (it's a recoverable warning for corrupt AAC frames)
         let err = classify_ffmpeg_error("Invalid data found when processing input");
-        assert!(matches!(err, Some(DownloadError::ConversionFailed(_))));
+        assert!(err.is_none());
+    }
+
+    #[test]
+    fn test_classify_ffmpeg_exit_error_invalid_data() {
+        let err = classify_ffmpeg_exit_error("Invalid data found when processing input");
+        assert!(matches!(err, DownloadError::ConversionFailed(_)));
+    }
+
+    #[test]
+    fn test_classify_ffmpeg_exit_error_unknown() {
+        let err = classify_ffmpeg_exit_error("some unknown error");
+        assert!(matches!(err, DownloadError::DownloadFailed(_)));
     }
 
     // sanitize_filename tests

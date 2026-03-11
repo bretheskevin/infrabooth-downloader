@@ -4,7 +4,7 @@ import { useSyncToQueue } from './useSyncToQueue';
 import { useQueueStore } from '@/features/queue/store';
 import { useSettingsStore } from '@/features/settings/store';
 import { startDownloadQueue } from '@/features/queue/api/download';
-import { queueTrackToDownloadRequest } from '@/features/queue/utils/transforms';
+import { queueTrackToDownloadRequest, playlistTracksToQueueTracks, trackInfoToQueueTrack } from '@/features/queue/utils/transforms';
 import { logger } from '@/lib/logger';
 import type { ValidationResult, PlaylistInfo, TrackInfo } from '@/features/url-input';
 import { isPlaylist } from '@/features/url-input';
@@ -26,6 +26,7 @@ export function useDownloadFlow(initialUrl = ''): UseDownloadFlowReturn {
   const [isPending, setIsPending] = useState(false);
 
   const isProcessing = useQueueStore((state) => state.isProcessing);
+  const isComplete = useQueueStore((state) => state.isComplete);
 
   const { result: validation, isValidating } = useUrlValidation(url);
   const { data: fetchedMedia, isLoading: isFetching, error } = useMediaFetch(url, validation);
@@ -43,15 +44,16 @@ export function useDownloadFlow(initialUrl = ''): UseDownloadFlowReturn {
   // Sync to queue whenever media changes
   useSyncToQueue(media);
 
-  // Reset pending state when processing starts
+  // Reset pending state when processing starts or completes (handles all-skipped and error cases)
   useEffect(() => {
-    if (isProcessing) {
+    if (isProcessing || isComplete) {
       setIsPending(false);
     }
-  }, [isProcessing]);
+  }, [isProcessing, isComplete]);
 
   const handleDownload = useCallback(async (overrideOutputDir?: string) => {
-    const { tracks: queueTracks, setInitializing, setOutputDir } = useQueueStore.getState();
+    let { tracks: queueTracks } = useQueueStore.getState();
+    const { setInitializing, setOutputDir } = useQueueStore.getState();
     const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } = useSettingsStore.getState();
 
     // Use override if provided, otherwise fall back to settings default
@@ -60,11 +62,22 @@ export function useDownloadFlow(initialUrl = ''): UseDownloadFlowReturn {
     // Store the actual output dir used for this download (for "Open Folder" button)
     setOutputDir(outputDir || null);
 
+    // If the download button is pressed before useSyncToQueue's effect fires,
+    // the queue may still be empty. Populate it synchronously from media.
+    if (queueTracks.length === 0 && media) {
+      logger.info('[useDownloadFlow] Queue empty, populating from media');
+      const newTracks = isPlaylist(media)
+        ? playlistTracksToQueueTracks(media.tracks)
+        : [trackInfoToQueueTrack(media)];
+      useQueueStore.getState().enqueueTracks(newTracks);
+      queueTracks = useQueueStore.getState().tracks;
+    }
+
     logger.info(`[useDownloadFlow] handleDownload called with ${queueTracks.length} tracks`);
     logger.debug(`[useDownloadFlow] Download path: ${outputDir || 'default'}`);
 
     if (queueTracks.length === 0) {
-      logger.warn('[useDownloadFlow] No tracks in queue, aborting download');
+      logger.warn('[useDownloadFlow] No tracks in queue and no media, aborting download');
       return;
     }
 
@@ -88,6 +101,8 @@ export function useDownloadFlow(initialUrl = ''): UseDownloadFlowReturn {
       });
     } catch (error) {
       logger.error(`[useDownloadFlow] Download failed: ${error}`);
+      setIsPending(false);
+      useQueueStore.getState().setInitializing(false);
     }
   }, [media]);
 

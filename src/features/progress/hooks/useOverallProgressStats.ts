@@ -3,6 +3,7 @@ import { useQueueStore } from '@/features/queue/store';
 interface OverallProgressStats {
   totalCount: number;
   completedCount: number;
+  skippedCount: number;
   percentage: number;
   hasActiveTrack: boolean;
   hasPendingTrack: boolean;
@@ -14,7 +15,16 @@ export function useOverallProgressStats(): OverallProgressStats {
   const tracks = useQueueStore((state) => state.tracks);
 
   const totalCount = tracks.length;
-  const completedCount = tracks.filter((track) => track.status === 'complete').length;
+  let completedCount = 0;
+  let skippedCount = 0;
+  for (const track of tracks) {
+    if (track.status === 'skipped') {
+      skippedCount++;
+      completedCount++;
+    } else if (track.status === 'complete') {
+      completedCount++;
+    }
+  }
 
   const hasActiveTrack = tracks.some(
     (track) => track.status === 'downloading' || track.status === 'converting'
@@ -28,6 +38,7 @@ export function useOverallProgressStats(): OverallProgressStats {
   return {
     totalCount,
     completedCount,
+    skippedCount,
     percentage,
     hasActiveTrack,
     hasPendingTrack,

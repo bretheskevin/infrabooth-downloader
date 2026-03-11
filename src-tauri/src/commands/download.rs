@@ -10,7 +10,7 @@ use crate::models::{ErrorResponse, HasErrorCode};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState};
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
 use crate::services::cancellation::CancellationState;
-use crate::services::metadata::TrackMetadata;
+use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
 use crate::services::paths::get_downloads_dir;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem, QueueProcessContext};
@@ -57,6 +57,7 @@ pub async fn download_track_full(
         track_number: request.track_number,
         total_tracks: request.total_tracks,
         artwork_url: request.artwork_url,
+        track_id: Some(request.track_id.clone()),
     };
 
     let track_id = request.track_id.clone();
@@ -238,6 +239,20 @@ fn get_download_path(app: &tauri::AppHandle) -> Result<PathBuf, ErrorResponse> {
         code: "DOWNLOAD_FAILED".to_string(),
         message,
     })
+}
+
+/// Scan the output directory for tracks already downloaded (by SoundCloud track ID in ID3 metadata).
+///
+/// Returns the list of track IDs that already exist in the output directory.
+#[tauri::command]
+#[specta::specta]
+pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>) -> Vec<String> {
+    let dir = PathBuf::from(&output_dir);
+    if !dir.exists() {
+        return vec![];
+    }
+    let found = scan_existing_track_ids(&dir, &track_ids);
+    found.into_iter().collect()
 }
 
 #[cfg(test)]

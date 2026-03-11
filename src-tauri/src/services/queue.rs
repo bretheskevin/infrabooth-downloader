@@ -12,8 +12,8 @@ use crate::models::error::{HasErrorCode, PipelineError, DownloadError};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeededEvent};
 use crate::services::cancellation::ActiveProcess;
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState, DownloadRateLimitedEvent};
-use crate::services::downloader::PlaylistContext;
-use crate::services::metadata::TrackMetadata;
+use crate::services::downloader::{DownloadProgressEvent, PlaylistContext};
+use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::storage::AuthState;
 
@@ -204,6 +204,44 @@ impl DownloadQueue {
             failed_tracks: vec![],
         };
 
+        // Pre-scan for already-downloaded tracks (blocking I/O on a dedicated thread)
+        let track_ids: Vec<String> = self.items.iter().map(|item| item.track_id.clone()).collect();
+        let scan_dir = ctx.output_dir.clone();
+        let existing_ids = tokio::task::spawn_blocking(move || {
+            scan_existing_track_ids(&scan_dir, &track_ids)
+        })
+        .await
+        .unwrap_or_default();
+
+        if !existing_ids.is_empty() {
+            log::info!(
+                "[queue] Found {} already-downloaded tracks, skipping",
+                existing_ids.len()
+            );
+
+            let mut new_pending = VecDeque::new();
+            for idx in progress.pending.drain(..) {
+                let item = &self.items[idx];
+                if existing_ids.contains(&item.track_id) {
+                    let _ = app.emit(
+                        "download-progress",
+                        DownloadProgressEvent {
+                            track_id: item.track_id.clone(),
+                            status: "skipped".to_string(),
+                            percent: Some(1.0),
+                            downloaded_bytes: None,
+                            total_bytes: None,
+                            error: None,
+                        },
+                    );
+                    progress.completed += 1;
+                } else {
+                    new_pending.push_back(idx);
+                }
+            }
+            progress.pending = new_pending;
+        }
+
         let semaphore = Arc::new(Semaphore::new(ctx.max_concurrent));
         let mut join_set: JoinSet<TrackOutcome> = JoinSet::new();
         let paused = Arc::new(AtomicBool::new(false));
@@ -348,6 +386,7 @@ impl DownloadQueue {
                 track_number: item.track_number,
                 total_tracks: Some(self.total_tracks),
                 artwork_url: item.artwork_url.clone(),
+                track_id: Some(item.track_id.clone()),
             },
             playlist_context,
             duration_ms: item.duration_ms,

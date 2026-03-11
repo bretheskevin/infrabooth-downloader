@@ -13,6 +13,7 @@ vi.mock('react-i18next', () => ({
         'download.status.failed': 'Failed',
         'download.status.rateLimited': 'Rate limited',
         'download.rateLimitStatus': 'Waiting...',
+        'download.status.skipped': 'Already downloaded',
         'errors.geoBlocked': 'Unavailable in your region',
         'errors.rateLimited': 'Rate limited - will retry',
         'errors.networkError': 'Network error',
@@ -56,6 +57,11 @@ describe('TrackStatusLabel', () => {
     it('should render "Waiting..." for rate_limited status', () => {
       render(<TrackStatusLabel status="rate_limited" />);
       expect(screen.getByText('Waiting...')).toBeInTheDocument();
+    });
+
+    it('should render "Already downloaded" for skipped status', () => {
+      render(<TrackStatusLabel status="skipped" />);
+      expect(screen.getByText('Already downloaded')).toBeInTheDocument();
     });
   });
 
@@ -116,6 +122,12 @@ describe('TrackStatusLabel', () => {
       render(<TrackStatusLabel status="rate_limited" />);
       const label = screen.getByText('Waiting...');
       expect(label).toHaveClass('text-warning');
+    });
+
+    it('should apply success color for skipped status', () => {
+      render(<TrackStatusLabel status="skipped" />);
+      const label = screen.getByText('Already downloaded');
+      expect(label).toHaveClass('text-success');
     });
 
     it('should apply warning color for geo-blocked error', () => {

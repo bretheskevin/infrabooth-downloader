@@ -1,5 +1,6 @@
 // src-tauri/src/services/library.rs
 
+use std::collections::HashMap;
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
@@ -100,6 +101,7 @@ struct LibraryPageResponse {
 struct LibraryCacheInner {
     playlists: Vec<LibraryPlaylist>,
     complete: bool,
+    artwork: HashMap<u64, Option<String>>,
 }
 
 pub struct LibraryCache {
@@ -112,6 +114,7 @@ impl Default for LibraryCache {
             inner: Mutex::new(LibraryCacheInner {
                 playlists: Vec::new(),
                 complete: false,
+                artwork: HashMap::new(),
             }),
         }
     }
@@ -137,6 +140,17 @@ impl LibraryCache {
         let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
         inner.playlists.clear();
         inner.complete = false;
+        inner.artwork.clear();
+    }
+
+    pub fn get_artwork(&self, playlist_id: u64) -> Option<Option<String>> {
+        let inner = self.inner.lock().expect("LibraryCache lock poisoned");
+        inner.artwork.get(&playlist_id).cloned()
+    }
+
+    pub fn set_artwork(&self, playlist_id: u64, url: Option<String>) {
+        let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
+        inner.artwork.insert(playlist_id, url);
     }
 }
 
@@ -485,5 +499,24 @@ mod tests {
 
         cache.clear();
         assert!(cache.get_if_complete().is_none());
+    }
+
+    #[test]
+    fn test_library_cache_artwork() {
+        let cache = LibraryCache::default();
+        assert!(cache.get_artwork(1).is_none());
+
+        cache.set_artwork(1, Some("https://example.com/art.jpg".to_string()));
+        assert_eq!(
+            cache.get_artwork(1),
+            Some(Some("https://example.com/art.jpg".to_string()))
+        );
+
+        cache.set_artwork(2, None);
+        assert_eq!(cache.get_artwork(2), Some(None));
+
+        cache.clear();
+        assert!(cache.get_artwork(1).is_none());
+        assert!(cache.get_artwork(2).is_none());
     }
 }

@@ -1,13 +1,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { PlaylistPreview } from '../PlaylistPreview';
 import type { PlaylistInfo } from '@/features/url-input/types/playlist';
+
+// Mock bindings
+const mockScanExistingTracks = vi.fn().mockResolvedValue([]);
+vi.mock('@/bindings', () => ({
+  commands: {
+    scanExistingTracks: (...args: unknown[]) => mockScanExistingTracks(...args),
+  },
+}));
 
 // Mock settings store
 const mockSetPreservePlaylistOrder = vi.fn();
 vi.mock('@/features/settings/store', () => ({
   useSettingsStore: vi.fn((selector) => {
     const state = {
+      downloadPath: '/test/downloads',
       preservePlaylistOrder: true,
       setPreservePlaylistOrder: mockSetPreservePlaylistOrder,
     };
@@ -24,6 +33,7 @@ vi.mock('react-i18next', () => ({
         'download.trackCount': `${options?.count ?? 0} tracks`,
         'download.preserveOrder': 'Number tracks',
         'download.preserveOrderDescription': 'Prefix filenames with track position (e.g. 01 - Artist - Title)',
+        'download.alreadyDownloaded': `${options?.count ?? 0} already downloaded`,
       };
       return translations[key] || key;
     },
@@ -292,6 +302,40 @@ describe('PlaylistPreview', () => {
       );
 
       expect(screen.queryByTestId('preserve-order-switch')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('already downloaded badge', () => {
+    it('should show already downloaded badge when tracks exist', async () => {
+      mockScanExistingTracks.mockResolvedValue(['1', '2']);
+
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('already-downloaded-count')).toHaveTextContent(
+          '2 already downloaded'
+        );
+      });
+    });
+
+    it('should not show badge when no tracks exist', async () => {
+      mockScanExistingTracks.mockResolvedValue([]);
+
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('already-downloaded-count')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should not show badge when scan fails', async () => {
+      mockScanExistingTracks.mockRejectedValue(new Error('scan failed'));
+
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('already-downloaded-count')).not.toBeInTheDocument();
+      });
     });
   });
 });

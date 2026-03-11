@@ -8,8 +8,8 @@ use commands::{
     cancel_download_queue, check_auth, check_for_updates, check_write_permission,
     clear_library_cache, download_track_full, get_default_download_path, get_library_playlists,
     get_playlist_info, get_track_info, install_update, refresh_auth, resolve_library_artwork,
-    respond_to_auth_choice, respond_to_rate_limit_choice, sign_out, start_download_queue,
-    test_ffmpeg, validate_download_path, validate_soundcloud_url,
+    respond_to_auth_choice, respond_to_rate_limit_choice, scan_existing_tracks, sign_out,
+    start_download_queue, test_ffmpeg, validate_download_path, validate_soundcloud_url,
 };
 use services::auth_choice::AuthChoiceState;
 use services::rate_limit_choice::RateLimitChoiceState;
@@ -45,7 +45,8 @@ pub fn run() {
         install_update,
         get_library_playlists,
         resolve_library_artwork,
-        clear_library_cache
+        clear_library_cache,
+        scan_existing_tracks
     ]);
 
     // Export TypeScript bindings in debug mode
