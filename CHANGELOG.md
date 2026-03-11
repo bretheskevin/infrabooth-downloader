@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-03-11
+
+### Added
+
+- Browse tracks inside any library playlist — click a playlist to see all its tracks with artwork and details
+- Select individual tracks from a playlist and download just the ones you want
+- Search and filter tracks within a playlist by title or artist
+- Sort playlist tracks by title or artist (ascending/descending)
+- Download conflict dialog — if a download is already running, you can choose to cancel it and start a new one
+
+### Changed
+
+- Playlist detail header is now more compact, showing more tracks at a glance
+
 ## [1.5.0] - 2026-03-11
 
 ### Added
