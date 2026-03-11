@@ -3,6 +3,7 @@ import { ArrowLeft, CheckCircle2, ChevronRight, Download, Folder, Music } from '
 import { Button } from '@/components/ui/button';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import type { LibraryPlaylist } from '@/bindings';
+import { formatTotalDuration } from '@/lib/utils';
 
 interface PlaylistDetailHeaderProps {
   playlist: LibraryPlaylist;
@@ -16,14 +17,6 @@ interface PlaylistDetailHeaderProps {
   isCustomFolder: boolean;
   onChangeFolder: () => void;
   showOrderToggle?: boolean;
-}
-
-function formatTotalDuration(ms: number): string {
-  const totalMinutes = Math.floor(ms / 60000);
-  if (totalMinutes < 60) return `${totalMinutes} min`;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }
 
 export function PlaylistDetailHeader({

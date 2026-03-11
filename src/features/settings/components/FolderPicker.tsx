@@ -1,42 +1,18 @@
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useSettingsStore } from '@/features/settings/store';
 import { useTranslation } from 'react-i18next';
-import { open } from '@tauri-apps/plugin-dialog';
-import { invoke } from '@tauri-apps/api/core';
+import { useFolderSelection } from '@/hooks';
 
 export function FolderPicker() {
   const { t } = useTranslation();
   const downloadPath = useSettingsStore((state) => state.downloadPath);
   const setDownloadPath = useSettingsStore((state) => state.setDownloadPath);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleBrowse = async () => {
-    try {
-      const selected = await open({
-        directory: true,
-        defaultPath: downloadPath || undefined,
-        title: t('settings.selectFolder'),
-      });
-
-      if (selected && typeof selected === 'string') {
-        const hasPermission = await invoke<boolean>('check_write_permission', {
-          path: selected,
-        });
-
-        if (hasPermission) {
-          setDownloadPath(selected);
-          setError(null);
-        } else {
-          setError(t('settings.permissionDenied'));
-        }
-      }
-      // If selected is null, user cancelled - do nothing
-    } catch (err) {
-      console.error('Folder selection error:', err);
-      setError(t('settings.permissionDenied'));
-    }
-  };
+  const { selectFolder, error } = useFolderSelection({
+    defaultPath: downloadPath || undefined,
+    dialogTitle: t('settings.selectFolder'),
+    onSelected: setDownloadPath,
+  });
 
   return (
     <div className="space-y-2">
@@ -49,7 +25,7 @@ export function FolderPicker() {
         </span>
         <Button
           variant="outline"
-          onClick={handleBrowse}
+          onClick={selectFolder}
           aria-label={t('settings.selectFolder')}
         >
           {t('settings.browse')}
@@ -57,7 +33,7 @@ export function FolderPicker() {
       </div>
       {error && (
         <p className="text-sm text-destructive" role="alert" aria-live="assertive">
-          {error}
+          {error === 'permission_denied' && t('settings.permissionDenied')}
         </p>
       )}
     </div>
