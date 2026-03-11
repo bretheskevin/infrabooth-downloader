@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckCircle2, ChevronRight, Download, Folder, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import type { LibraryPlaylist } from '@/bindings';
 
 interface PlaylistDetailHeaderProps {
@@ -14,6 +15,7 @@ interface PlaylistDetailHeaderProps {
   folderName: string | undefined;
   isCustomFolder: boolean;
   onChangeFolder: () => void;
+  showOrderToggle?: boolean;
 }
 
 function formatTotalDuration(ms: number): string {
@@ -35,6 +37,7 @@ export function PlaylistDetailHeader({
   folderName,
   isCustomFolder,
   onChangeFolder,
+  showOrderToggle,
 }: PlaylistDetailHeaderProps) {
   const { t } = useTranslation();
 
@@ -109,6 +112,11 @@ export function PlaylistDetailHeader({
           {t('library.detail.downloadAll')}
         </Button>
       </div>
+      {showOrderToggle && (
+        <div className="flex justify-end">
+          <PreserveOrderToggle compact />
+        </div>
+      )}
     </div>
   );
 }
