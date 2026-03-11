@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-03-11
+
+### Added
+
+- Already-downloaded tracks are now automatically skipped — the app scans your download folder before starting and skips tracks it already has
+- Updates can now be installed directly from the app — the update banner includes an "Install" button with progress feedback
+
+### Changed
+
+- Improved FFmpeg error handling — recoverable audio warnings no longer cancel the entire download
+
+### Fixed
+
+- Library playlist selection now properly resets the download state
+- Search bar in library no longer triggers autocorrect suggestions
+- Fixed downloads failing on tracks that only offer HLS Opus streams (incompatible with bundled FFmpeg)
+
 ## [1.4.0] - 2026-03-10
 
 ### Added
