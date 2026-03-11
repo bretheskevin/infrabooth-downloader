@@ -7,7 +7,11 @@ interface UpdateState {
   checkInProgress: boolean;
   lastChecked: Date | null;
   dismissed: boolean;
+  installing: boolean;
+  installError: string | null;
+  installed: boolean;
   checkForUpdates: () => Promise<void>;
+  installUpdate: () => Promise<void>;
   dismissUpdate: () => void;
   clearUpdateInfo: () => void;
 }
@@ -18,6 +22,9 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   checkInProgress: false,
   lastChecked: null,
   dismissed: false,
+  installing: false,
+  installError: null,
+  installed: false,
 
   checkForUpdates: async () => {
     if (get().checkInProgress) return;
@@ -54,6 +61,29 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         checkInProgress: false,
         lastChecked: new Date(),
       });
+    }
+  },
+
+  installUpdate: async () => {
+    if (get().installing) return;
+
+    set({ installing: true, installError: null });
+    console.log('[Update] Starting installation...');
+
+    try {
+      const result = await commands.installUpdate();
+
+      if (result.status === 'ok') {
+        console.log('[Update] Installation successful, restart required');
+        set({ installing: false, installed: true });
+      } else {
+        console.log('[Update] Installation failed:', result.error);
+        set({ installing: false, installError: result.error });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.log('[Update] Installation error:', message);
+      set({ installing: false, installError: message });
     }
   },
 

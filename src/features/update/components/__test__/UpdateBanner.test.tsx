@@ -11,6 +11,10 @@ vi.mock('react-i18next', () => ({
         'update.available': `Update available: v${opts?.version ?? ''}`,
         'update.learnMore': 'Learn more',
         'update.dismiss': 'Dismiss',
+        'update.updateNow': 'Update now',
+        'update.installing': 'Installing...',
+        'update.installed': 'Update installed — restart to apply',
+        'update.installError': 'Update failed — click to retry',
       };
       return translations[key] ?? key;
     },
@@ -23,16 +27,21 @@ vi.mock('@tauri-apps/plugin-shell', () => ({
   open: (...args: unknown[]) => mockOpen(...args),
 }));
 
+const defaultState = {
+  updateAvailable: false,
+  updateInfo: null,
+  checkInProgress: false,
+  lastChecked: null,
+  dismissed: false,
+  installing: false,
+  installError: null,
+  installed: false,
+};
+
 describe('UpdateBanner', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useUpdateStore.setState({
-      updateAvailable: false,
-      updateInfo: null,
-      checkInProgress: false,
-      lastChecked: null,
-      dismissed: false,
-    });
+    useUpdateStore.setState(defaultState);
   });
 
   it('should render when update is available', () => {
@@ -64,6 +73,32 @@ describe('UpdateBanner', () => {
     const { container } = render(<UpdateBanner />);
 
     expect(container.firstChild).toBeNull();
+  });
+
+  it('should have an "Update now" button', () => {
+    useUpdateStore.setState({
+      updateAvailable: true,
+      updateInfo: { version: '2.0.0', body: null, date: null },
+    });
+
+    render(<UpdateBanner />);
+
+    expect(screen.getByRole('button', { name: 'Update now' })).toBeInTheDocument();
+  });
+
+  it('should call installUpdate when "Update now" is clicked', () => {
+    const installSpy = vi.fn();
+    useUpdateStore.setState({
+      updateAvailable: true,
+      updateInfo: { version: '2.0.0', body: null, date: null },
+      installUpdate: installSpy,
+    });
+
+    render(<UpdateBanner />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Update now' }));
+
+    expect(installSpy).toHaveBeenCalledOnce();
   });
 
   it('should have a "Learn more" button', () => {
@@ -136,6 +171,92 @@ describe('UpdateBanner', () => {
     expect(container.firstChild).toBeNull();
   });
 
+  describe('installing state', () => {
+    beforeEach(() => {
+      useUpdateStore.setState({
+        updateAvailable: true,
+        updateInfo: { version: '2.0.0', body: null, date: null },
+        installing: true,
+      });
+    });
+
+    it('should show "Installing..." text', () => {
+      render(<UpdateBanner />);
+
+      expect(screen.getByText('Installing...')).toBeInTheDocument();
+    });
+
+    it('should disable "Update now" button while installing', () => {
+      render(<UpdateBanner />);
+
+      const updateButton = screen.getByRole('button', { name: 'Installing...' });
+      expect(updateButton).toBeDisabled();
+    });
+
+    it('should disable "Learn more" button while installing', () => {
+      render(<UpdateBanner />);
+
+      const learnMoreButton = screen.getByRole('button', { name: 'Learn more' });
+      expect(learnMoreButton).toBeDisabled();
+    });
+  });
+
+  describe('installed state', () => {
+    beforeEach(() => {
+      useUpdateStore.setState({
+        updateAvailable: true,
+        updateInfo: { version: '2.0.0', body: null, date: null },
+        installed: true,
+      });
+    });
+
+    it('should show installed message', () => {
+      render(<UpdateBanner />);
+
+      expect(screen.getByText('Update installed — restart to apply')).toBeInTheDocument();
+    });
+
+    it('should not show "Update now" button after installation', () => {
+      render(<UpdateBanner />);
+
+      expect(screen.queryByRole('button', { name: 'Update now' })).not.toBeInTheDocument();
+    });
+
+    it('should not show "Learn more" button after installation', () => {
+      render(<UpdateBanner />);
+
+      expect(screen.queryByRole('button', { name: 'Learn more' })).not.toBeInTheDocument();
+    });
+
+    it('should still show dismiss button', () => {
+      render(<UpdateBanner />);
+
+      expect(screen.getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
+    });
+  });
+
+  describe('error state', () => {
+    beforeEach(() => {
+      useUpdateStore.setState({
+        updateAvailable: true,
+        updateInfo: { version: '2.0.0', body: null, date: null },
+        installError: 'Download failed',
+      });
+    });
+
+    it('should show error message', () => {
+      render(<UpdateBanner />);
+
+      expect(screen.getByText('Update failed — click to retry')).toBeInTheDocument();
+    });
+
+    it('should still show "Update now" button for retry', () => {
+      render(<UpdateBanner />);
+
+      expect(screen.getByRole('button', { name: 'Update now' })).toBeInTheDocument();
+    });
+  });
+
   describe('accessibility', () => {
     beforeEach(() => {
       useUpdateStore.setState({
@@ -164,37 +285,58 @@ describe('UpdateBanner', () => {
       expect(dismissButton).toHaveAttribute('aria-label', 'Dismiss');
     });
 
-    it('should have "Learn more" button before dismiss in tab order', () => {
+    it('should have "Update now" button before "Learn more" in tab order', () => {
       render(<UpdateBanner />);
 
+      const updateNow = screen.getByRole('button', { name: 'Update now' });
       const learnMore = screen.getByRole('button', { name: 'Learn more' });
-      const dismiss = screen.getByRole('button', { name: 'Dismiss' });
 
-      // Both should be focusable
+      expect(updateNow.tabIndex).not.toBe(-1);
       expect(learnMore.tabIndex).not.toBe(-1);
-      expect(dismiss.tabIndex).not.toBe(-1);
 
-      // Learn more should come first in DOM order (which determines tab order)
       expect(
-        learnMore.compareDocumentPosition(dismiss) & Node.DOCUMENT_POSITION_FOLLOWING
+        updateNow.compareDocumentPosition(learnMore) & Node.DOCUMENT_POSITION_FOLLOWING
       ).toBeTruthy();
     });
   });
 
   describe('styling', () => {
-    beforeEach(() => {
+    it('should use info color scheme when update available', () => {
       useUpdateStore.setState({
         updateAvailable: true,
         updateInfo: { version: '2.0.0', body: null, date: null },
       });
-    });
 
-    it('should use info color scheme (blue/sky tones)', () => {
       render(<UpdateBanner />);
 
       const banner = screen.getByRole('status');
-      expect(banner.className).toMatch(/bg-sky-50|bg-blue-50/);
-      expect(banner.className).toMatch(/border-sky-200|border-blue-200/);
+      expect(banner.className).toMatch(/bg-sky-50/);
+    });
+
+    it('should use green color scheme when installed', () => {
+      useUpdateStore.setState({
+        updateAvailable: true,
+        updateInfo: { version: '2.0.0', body: null, date: null },
+        installed: true,
+      });
+
+      render(<UpdateBanner />);
+
+      const banner = screen.getByRole('status');
+      expect(banner.className).toMatch(/bg-green-50/);
+    });
+
+    it('should use amber color scheme on error', () => {
+      useUpdateStore.setState({
+        updateAvailable: true,
+        updateInfo: { version: '2.0.0', body: null, date: null },
+        installError: 'Failed',
+      });
+
+      render(<UpdateBanner />);
+
+      const banner = screen.getByRole('status');
+      expect(banner.className).toMatch(/bg-amber-50/);
     });
   });
 });
