@@ -7,6 +7,8 @@ use crate::services::library::{
     fetch_all_library_pages, resolve_playlist_artwork as resolve_artwork, LibraryCache,
     LibraryError, LibraryPlaylist,
 };
+use crate::services::playlist;
+use crate::services::playlist::TrackInfo;
 use crate::services::storage::AuthState;
 
 #[tauri::command]
@@ -91,4 +93,44 @@ pub async fn resolve_library_artwork(
 
     app.state::<LibraryCache>().set_artwork(playlist_id, artwork.clone());
     Ok(artwork)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_library_playlist_tracks(
+    playlist_id: u64,
+    app: tauri::AppHandle,
+) -> Result<Vec<TrackInfo>, String> {
+    let token = app
+        .state::<AuthState>()
+        .get_token()
+        .ok_or_else(|| {
+            log::error!("[get_library_playlist_tracks] No auth token");
+            LibraryError::AuthRequired.to_string()
+        })?;
+
+    let secret_token = app
+        .state::<LibraryCache>()
+        .get_secret_token(playlist_id);
+
+    match playlist::fetch_playlist_by_id(
+        playlist_id,
+        secret_token.as_deref(),
+        Some(&token),
+    )
+    .await
+    {
+        Ok(tracks) => {
+            log::info!(
+                "[get_library_playlist_tracks] Returning {} tracks for playlist {}",
+                tracks.len(),
+                playlist_id
+            );
+            Ok(tracks)
+        }
+        Err(e) => {
+            log::error!("[get_library_playlist_tracks] Error: {}", e);
+            Err(e.to_string())
+        }
+    }
 }

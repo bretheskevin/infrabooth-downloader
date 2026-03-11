@@ -400,6 +400,82 @@ fn extract_full_tracks_from_hydration(tracks: &[Value]) -> Vec<TrackInfo> {
         .collect()
 }
 
+/// Resolves a mixed list of track data (full objects + ID stubs) into ordered TrackInfo.
+/// Extracts full tracks from the data, batch-fetches missing ones, and sorts by original order.
+async fn resolve_tracks_from_mixed(
+    tracks: &[Value],
+    cid: &str,
+    oauth_token: Option<&str>,
+) -> Result<Vec<TrackInfo>, PlaylistError> {
+    let all_track_ids = extract_track_ids(tracks);
+    let full_tracks = extract_full_tracks_from_hydration(tracks);
+
+    log::info!(
+        "[soundcloud] {} full tracks available, {} total IDs",
+        full_tracks.len(),
+        all_track_ids.len()
+    );
+
+    let full_track_ids: std::collections::HashSet<u64> =
+        full_tracks.iter().map(|t| t.id).collect();
+    let missing_ids: Vec<u64> = all_track_ids
+        .iter()
+        .filter(|id| !full_track_ids.contains(id))
+        .copied()
+        .collect();
+
+    let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, cid, oauth_token).await?;
+
+    log::info!(
+        "[soundcloud] Batch API returned {} of {} missing tracks",
+        fetched_tracks.len(),
+        missing_ids.len()
+    );
+
+    let fetched_ids: std::collections::HashSet<u64> =
+        fetched_tracks.iter().map(|t| t.id).collect();
+    let still_missing: Vec<u64> = missing_ids
+        .iter()
+        .filter(|id| !fetched_ids.contains(id))
+        .copied()
+        .collect();
+
+    if !still_missing.is_empty() {
+        log::info!(
+            "[soundcloud] Fetching {} tracks in parallel",
+            still_missing.len()
+        );
+        let parallel_tracks =
+            fetch_tracks_by_ids_parallel(&still_missing, cid, oauth_token).await;
+        log::info!(
+            "[soundcloud] Parallel fetch returned {} tracks",
+            parallel_tracks.len()
+        );
+        fetched_tracks.extend(parallel_tracks);
+
+        let final_fetched_ids: std::collections::HashSet<u64> =
+            fetched_tracks.iter().map(|t| t.id).collect();
+        for id in &still_missing {
+            if !final_fetched_ids.contains(id) {
+                log::warn!("[soundcloud] Could not fetch track {}", id);
+            }
+        }
+    }
+
+    let mut all_tracks: Vec<TrackInfo> = full_tracks;
+    all_tracks.extend(fetched_tracks);
+
+    let track_map: std::collections::HashMap<u64, TrackInfo> =
+        all_tracks.into_iter().map(|t| (t.id, t)).collect();
+
+    let ordered_tracks: Vec<TrackInfo> = all_track_ids
+        .iter()
+        .filter_map(|id| track_map.get(id).cloned())
+        .collect();
+
+    Ok(ordered_tracks)
+}
+
 /// Fetches track details by IDs using the API v2 batch endpoint.
 /// SoundCloud allows fetching up to 50 tracks per request.
 /// Includes rate limiting (100ms delay between batches) to avoid hitting API limits.
@@ -573,79 +649,9 @@ pub async fn fetch_playlist_info(
         playlist_data.track_count
     );
 
-    // Step 2: Extract track IDs and any full track data from hydration
-    let all_track_ids = extract_track_ids(&playlist_data.tracks);
-    let hydration_tracks = extract_full_tracks_from_hydration(&playlist_data.tracks);
-
-    log::info!(
-        "[soundcloud] Hydration contains {} full tracks, {} total IDs",
-        hydration_tracks.len(),
-        all_track_ids.len()
-    );
-
-    // Step 3: Determine which track IDs need to be fetched
-    let hydration_track_ids: std::collections::HashSet<u64> =
-        hydration_tracks.iter().map(|t| t.id).collect();
-    let missing_ids: Vec<u64> = all_track_ids
-        .iter()
-        .filter(|id| !hydration_track_ids.contains(id))
-        .copied()
-        .collect();
-
-    // Step 4: Get client_id and fetch missing tracks
+    // Step 2: Resolve all tracks (fetch missing ones via API)
     let cid = get_cid().await?;
-    let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, &cid, oauth_token).await?;
-
-    log::info!(
-        "[soundcloud] Batch API returned {} of {} missing tracks",
-        fetched_tracks.len(),
-        missing_ids.len()
-    );
-
-    // Step 5: For any still-missing tracks, fetch in parallel
-    let fetched_ids: std::collections::HashSet<u64> = fetched_tracks.iter().map(|t| t.id).collect();
-    let still_missing: Vec<u64> = missing_ids
-        .iter()
-        .filter(|id| !fetched_ids.contains(id))
-        .copied()
-        .collect();
-
-    if !still_missing.is_empty() {
-        log::info!(
-            "[soundcloud] Fetching {} tracks in parallel (filtered by batch API)",
-            still_missing.len()
-        );
-        let parallel_tracks =
-            fetch_tracks_by_ids_parallel(&still_missing, &cid, oauth_token).await;
-        log::info!(
-            "[soundcloud] Parallel fetch returned {} tracks",
-            parallel_tracks.len()
-        );
-        fetched_tracks.extend(parallel_tracks);
-
-        // Log any tracks that couldn't be fetched
-        let final_fetched_ids: std::collections::HashSet<u64> =
-            fetched_tracks.iter().map(|t| t.id).collect();
-        for id in &still_missing {
-            if !final_fetched_ids.contains(id) {
-                log::warn!("[soundcloud] Could not fetch track {}", id);
-            }
-        }
-    }
-
-    // Step 6: Combine all tracks and sort by original order
-    let mut all_tracks: Vec<TrackInfo> = hydration_tracks;
-    all_tracks.extend(fetched_tracks);
-
-    // Create a map for quick lookup
-    let track_map: std::collections::HashMap<u64, TrackInfo> =
-        all_tracks.into_iter().map(|t| (t.id, t)).collect();
-
-    // Reconstruct in original order
-    let ordered_tracks: Vec<TrackInfo> = all_track_ids
-        .iter()
-        .filter_map(|id| track_map.get(id).cloned())
-        .collect();
+    let ordered_tracks = resolve_tracks_from_mixed(&playlist_data.tracks, &cid, oauth_token).await?;
 
     log::info!(
         "[soundcloud] Final playlist has {} of {} tracks",
@@ -673,6 +679,68 @@ pub async fn fetch_track_info(
     log::info!("[soundcloud] Fetching track info for URL: {}", url);
     let raw: RawTrackInfo = resolve_url(url, &cid, oauth_token).await?;
     Ok(TrackInfo::from(raw))
+}
+
+/// Fetches all tracks from a playlist by its numeric ID.
+/// Used by the library detail view to load tracklists without URL resolution.
+/// Handles mixed track data (full objects + ID stubs) from the API.
+pub async fn fetch_playlist_by_id(
+    id: u64,
+    secret_token: Option<&str>,
+    oauth_token: Option<&str>,
+) -> Result<Vec<TrackInfo>, PlaylistError> {
+    let cid = get_cid().await?;
+
+    let mut url = format!(
+        "{}/playlists/{}?representation=full&client_id={}",
+        API_V2_BASE, id, cid
+    );
+    if let Some(token) = secret_token {
+        url.push_str(&format!("&secret_token={}", token));
+    }
+
+    log::info!("[soundcloud] Fetching playlist by ID: {}", id);
+
+    let response = crate::services::http::HTTP_CLIENT
+        .get(&url)
+        .with_oauth(oauth_token)
+        .send()
+        .await?;
+
+    let status = response.status();
+    if status == reqwest::StatusCode::UNAUTHORIZED {
+        return Err(PlaylistError::AuthRequired);
+    }
+    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return Err(PlaylistError::RateLimited);
+    }
+    if !status.is_success() {
+        return Err(PlaylistError::FetchFailed(format!("HTTP {}", status)));
+    }
+
+    let playlist: HydrationPlaylist = response
+        .json()
+        .await
+        .map_err(|e| {
+            log::error!("[soundcloud] Failed to parse playlist response: {}", e);
+            PlaylistError::InvalidResponse
+        })?;
+
+    log::info!(
+        "[soundcloud] Playlist '{}' has {} tracks",
+        playlist.title,
+        playlist.track_count
+    );
+
+    let ordered_tracks = resolve_tracks_from_mixed(&playlist.tracks, &cid, oauth_token).await?;
+
+    log::info!(
+        "[soundcloud] Returning {} of {} tracks",
+        ordered_tracks.len(),
+        playlist.track_count
+    );
+
+    Ok(ordered_tracks)
 }
 
 #[cfg(test)]
@@ -1112,5 +1180,34 @@ mod tests {
         }];
         let result = extract_playlist_from_hydration(&items);
         assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_fetch_playlist_by_id_extract_track_ids_from_api_response() {
+        // Test that extract_track_ids handles mixed full objects and ID stubs
+        let tracks = vec![
+            serde_json::json!({"id": 100, "title": "Track 1", "user": {"username": "artist"}}),
+            serde_json::json!(200),
+            serde_json::json!({"id": 300, "title": "Track 3", "user": {"username": "artist"}}),
+        ];
+        let ids = extract_track_ids(&tracks);
+        assert_eq!(ids, vec![100, 200, 300]);
+    }
+
+    #[test]
+    fn test_fetch_playlist_by_id_extract_full_tracks() {
+        let tracks = vec![
+            serde_json::json!({
+                "id": 100, "title": "Track 1",
+                "user": {"username": "artist", "avatar_url": null},
+                "artwork_url": null, "duration": 180000,
+                "publisher_metadata": null
+            }),
+            serde_json::json!(200),
+        ];
+        let full = extract_full_tracks_from_hydration(&tracks);
+        assert_eq!(full.len(), 1);
+        assert_eq!(full[0].id, 100);
+        assert_eq!(full[0].title, "Track 1");
     }
 }

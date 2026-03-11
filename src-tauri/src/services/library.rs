@@ -152,6 +152,15 @@ impl LibraryCache {
         let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
         inner.artwork.insert(playlist_id, url);
     }
+
+    pub fn get_secret_token(&self, playlist_id: u64) -> Option<String> {
+        let inner = self.inner.lock().expect("LibraryCache lock poisoned");
+        inner
+            .playlists
+            .iter()
+            .find(|p| p.id == playlist_id)
+            .and_then(|p| p.secret_token.clone())
+    }
 }
 
 // === Mapping ===
@@ -518,5 +527,39 @@ mod tests {
         cache.clear();
         assert!(cache.get_artwork(1).is_none());
         assert!(cache.get_artwork(2).is_none());
+    }
+
+    #[test]
+    fn test_library_cache_get_secret_token() {
+        let cache = LibraryCache::default();
+        cache.set(vec![
+            LibraryPlaylist {
+                id: 1,
+                title: "Public".into(),
+                username: "user".into(),
+                artwork_url: None,
+                track_count: 5,
+                duration: 300000,
+                permalink_url: "https://soundcloud.com/user/sets/public".into(),
+                is_owned: true,
+                is_public: true,
+                secret_token: None,
+            },
+            LibraryPlaylist {
+                id: 2,
+                title: "Private".into(),
+                username: "user".into(),
+                artwork_url: None,
+                track_count: 3,
+                duration: 180000,
+                permalink_url: "https://soundcloud.com/user/sets/private".into(),
+                is_owned: true,
+                is_public: false,
+                secret_token: Some("s-abc123".into()),
+            },
+        ]);
+        assert_eq!(cache.get_secret_token(1), None);
+        assert_eq!(cache.get_secret_token(2), Some("s-abc123".into()));
+        assert_eq!(cache.get_secret_token(999), None);
     }
 }
