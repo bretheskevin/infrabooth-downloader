@@ -1,7 +1,6 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
@@ -115,18 +114,13 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
         </p>
       )}
 
-      {tracks && tracks.length > 1 && (
-        <div className="py-2 px-1">
-          <PreserveOrderToggle />
-        </div>
-      )}
-
       {tracks && tracks.length > 0 && (
         <PlaylistTrackList
           tracks={tracks}
           isStreaming={isStreaming}
           selectedIds={selectedIds}
           isAllSelected={isAllSelected}
+          showOrderToggle={tracks.length > 1}
           onToggleTrack={toggleTrack}
           onToggleAll={toggleAll}
           onDownloadTrack={handleDownloadTrack}

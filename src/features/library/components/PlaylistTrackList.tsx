@@ -5,6 +5,7 @@ import type { TrackInfo } from '@/bindings';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { Checkbox } from '@/components/ui/checkbox';
+import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import { PlaylistTrackItem } from './PlaylistTrackItem';
 
 const TRACK_ITEM_HEIGHT = 56;
@@ -14,6 +15,7 @@ interface PlaylistTrackListProps {
   isStreaming?: boolean;
   selectedIds: Set<number>;
   isAllSelected: boolean;
+  showOrderToggle?: boolean;
   onToggleTrack: (id: number) => void;
   onToggleAll: () => void;
   onDownloadTrack: (track: TrackInfo) => void;
@@ -24,6 +26,7 @@ export function PlaylistTrackList({
   isStreaming,
   selectedIds,
   isAllSelected,
+  showOrderToggle = false,
   onToggleTrack,
   onToggleAll,
   onDownloadTrack,
@@ -42,15 +45,18 @@ export function PlaylistTrackList({
 
   return (
     <>
-      <div className="flex items-center gap-3 px-3">
-        <Checkbox
-          checked={isAllSelected}
-          onCheckedChange={onToggleAll}
-          className="shrink-0"
-        />
-        <span className="text-xs text-muted-foreground cursor-pointer select-none" onClick={onToggleAll}>
-          {t('library.detail.selectAll')}
-        </span>
+      <div className="flex items-center justify-between px-3">
+        <div className="flex items-center gap-3">
+          <Checkbox
+            checked={isAllSelected}
+            onCheckedChange={onToggleAll}
+            className="shrink-0"
+          />
+          <span className="text-xs text-muted-foreground cursor-pointer select-none" onClick={onToggleAll}>
+            {t('library.detail.selectAll')}
+          </span>
+        </div>
+        {showOrderToggle && <PreserveOrderToggle compact />}
       </div>
       <VirtualListContainer
         parentRef={parentRef}

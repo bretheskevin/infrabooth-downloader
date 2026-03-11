@@ -11,6 +11,7 @@ import { DownloadConflictDialog } from '@/features/queue/components/DownloadConf
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Toaster } from '@/components/ui/sonner';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import {
   useQueueStore,
   startDownloadQueue,
@@ -131,34 +132,36 @@ export function App() {
   } = useRateLimitDialog();
 
   return (
-    <AppLayout
-      activePage={activePage}
-      onPageChange={handlePageChange}
-      isLibraryLocked={!isSignedIn}
-    >
-      {activePage === 'download' ? (
-        <DownloadPage initialUrl={initialUrl} />
-      ) : (
-        <section className="flex-1 min-h-0 flex flex-col">
-          <LibraryTab onDownloadTracks={handleDownloadTracks} />
-        </section>
-      )}
-      <AuthChoiceDialog
-        open={authChoiceOpen}
-        onReAuthenticate={handleReAuthenticate}
-        onContinueStandard={handleContinueStandard}
-      />
-      <RateLimitDialog
-        open={rateLimitOpen}
-        onRetry={handleRateLimitRetry}
-        onStop={handleRateLimitStop}
-      />
-      <DownloadConflictDialog
-        open={pendingDownload !== null}
-        onConfirm={handleConfirmReplace}
-        onCancel={handleCancelReplace}
-      />
-      <Toaster />
-    </AppLayout>
+    <TooltipProvider>
+      <AppLayout
+        activePage={activePage}
+        onPageChange={handlePageChange}
+        isLibraryLocked={!isSignedIn}
+      >
+        {activePage === 'download' ? (
+          <DownloadPage initialUrl={initialUrl} />
+        ) : (
+          <section className="flex-1 min-h-0 flex flex-col">
+            <LibraryTab onDownloadTracks={handleDownloadTracks} />
+          </section>
+        )}
+        <AuthChoiceDialog
+          open={authChoiceOpen}
+          onReAuthenticate={handleReAuthenticate}
+          onContinueStandard={handleContinueStandard}
+        />
+        <RateLimitDialog
+          open={rateLimitOpen}
+          onRetry={handleRateLimitRetry}
+          onStop={handleRateLimitStop}
+        />
+        <DownloadConflictDialog
+          open={pendingDownload !== null}
+          onConfirm={handleConfirmReplace}
+          onCancel={handleCancelReplace}
+        />
+        <Toaster />
+      </AppLayout>
+    </TooltipProvider>
   );
 }
