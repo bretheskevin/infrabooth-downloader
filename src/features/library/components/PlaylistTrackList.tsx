@@ -5,7 +5,6 @@ import type { TrackInfo } from '@/bindings';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { Checkbox } from '@/components/ui/checkbox';
-import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { SORT_MODES, type SortMode } from '../types';
 import { PlaylistTrackItem } from './PlaylistTrackItem';
@@ -17,7 +16,6 @@ interface PlaylistTrackListProps {
   isStreaming?: boolean;
   selectedIds: Set<number>;
   isAllSelected: boolean;
-  showOrderToggle?: boolean;
   sortMode?: SortMode;
   onSortChange?: (mode: SortMode) => void;
   onToggleTrack: (id: number) => void;
@@ -31,7 +29,6 @@ export function PlaylistTrackList({
   isStreaming,
   selectedIds,
   isAllSelected,
-  showOrderToggle = false,
   sortMode,
   onSortChange,
   onToggleTrack,
@@ -82,7 +79,6 @@ export function PlaylistTrackList({
               </SelectContent>
             </Select>
           )}
-          {showOrderToggle && <PreserveOrderToggle compact />}
         </div>
       </div>
       <VirtualListContainer

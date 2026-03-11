@@ -155,6 +155,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
         folderName={folderName}
         isCustomFolder={isCustomFolder}
         onChangeFolder={handleChangeFolder}
+        showOrderToggle={(tracks?.length ?? 0) > 1}
       />
 
       {showSkeleton && (
@@ -200,7 +201,6 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           isStreaming={isStreaming}
           selectedIds={selectedIds}
           isAllSelected={isAllSelected}
-          showOrderToggle={(tracks?.length ?? 0) > 1}
           sortMode={sortMode}
           onSortChange={setSortMode}
           onToggleTrack={toggleTrack}
