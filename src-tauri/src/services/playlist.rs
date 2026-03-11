@@ -402,11 +402,16 @@ fn extract_full_tracks_from_hydration(tracks: &[Value]) -> Vec<TrackInfo> {
 
 /// Resolves a mixed list of track data (full objects + ID stubs) into ordered TrackInfo.
 /// Extracts full tracks from the data, batch-fetches missing ones, and sorts by original order.
-async fn resolve_tracks_from_mixed(
+/// Calls `on_batch` with each batch of resolved tracks for progressive loading.
+async fn resolve_tracks_from_mixed<F>(
     tracks: &[Value],
     cid: &str,
     oauth_token: Option<&str>,
-) -> Result<Vec<TrackInfo>, PlaylistError> {
+    on_batch: F,
+) -> Result<Vec<TrackInfo>, PlaylistError>
+where
+    F: Fn(&[TrackInfo]),
+{
     let all_track_ids = extract_track_ids(tracks);
     let full_tracks = extract_full_tracks_from_hydration(tracks);
 
@@ -416,6 +421,10 @@ async fn resolve_tracks_from_mixed(
         all_track_ids.len()
     );
 
+    if !full_tracks.is_empty() {
+        on_batch(&full_tracks);
+    }
+
     let full_track_ids: std::collections::HashSet<u64> =
         full_tracks.iter().map(|t| t.id).collect();
     let missing_ids: Vec<u64> = all_track_ids
@@ -424,7 +433,7 @@ async fn resolve_tracks_from_mixed(
         .copied()
         .collect();
 
-    let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, cid, oauth_token).await?;
+    let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, cid, oauth_token, &on_batch).await?;
 
     log::info!(
         "[soundcloud] Batch API returned {} of {} missing tracks",
@@ -451,6 +460,9 @@ async fn resolve_tracks_from_mixed(
             "[soundcloud] Parallel fetch returned {} tracks",
             parallel_tracks.len()
         );
+        if !parallel_tracks.is_empty() {
+            on_batch(&parallel_tracks);
+        }
         fetched_tracks.extend(parallel_tracks);
 
         let final_fetched_ids: std::collections::HashSet<u64> =
@@ -479,11 +491,15 @@ async fn resolve_tracks_from_mixed(
 /// Fetches track details by IDs using the API v2 batch endpoint.
 /// SoundCloud allows fetching up to 50 tracks per request.
 /// Includes rate limiting (100ms delay between batches) to avoid hitting API limits.
-async fn fetch_tracks_by_ids(
+async fn fetch_tracks_by_ids<F>(
     ids: &[u64],
     cid: &str,
     oauth_token: Option<&str>,
-) -> Result<Vec<TrackInfo>, PlaylistError> {
+    on_batch: &F,
+) -> Result<Vec<TrackInfo>, PlaylistError>
+where
+    F: Fn(&[TrackInfo]),
+{
     if ids.is_empty() {
         return Ok(vec![]);
     }
@@ -515,7 +531,10 @@ async fn fetch_tracks_by_ids(
         if response.status().is_success() {
             match response.json::<Vec<RawTrackInfo>>().await {
                 Ok(raw_tracks) => {
-                    all_tracks.extend(raw_tracks.into_iter().map(TrackInfo::from));
+                    let batch: Vec<TrackInfo> =
+                        raw_tracks.into_iter().map(TrackInfo::from).collect();
+                    on_batch(&batch);
+                    all_tracks.extend(batch);
                 }
                 Err(e) => {
                     log::warn!(
@@ -651,7 +670,7 @@ pub async fn fetch_playlist_info(
 
     // Step 2: Resolve all tracks (fetch missing ones via API)
     let cid = get_cid().await?;
-    let ordered_tracks = resolve_tracks_from_mixed(&playlist_data.tracks, &cid, oauth_token).await?;
+    let ordered_tracks = resolve_tracks_from_mixed(&playlist_data.tracks, &cid, oauth_token, |_| {}).await?;
 
     log::info!(
         "[soundcloud] Final playlist has {} of {} tracks",
@@ -684,11 +703,16 @@ pub async fn fetch_track_info(
 /// Fetches all tracks from a playlist by its numeric ID.
 /// Used by the library detail view to load tracklists without URL resolution.
 /// Handles mixed track data (full objects + ID stubs) from the API.
-pub async fn fetch_playlist_by_id(
+/// Calls `on_batch` with each batch of resolved tracks for progressive loading.
+pub async fn fetch_playlist_by_id<F>(
     id: u64,
     secret_token: Option<&str>,
     oauth_token: Option<&str>,
-) -> Result<Vec<TrackInfo>, PlaylistError> {
+    on_batch: F,
+) -> Result<Vec<TrackInfo>, PlaylistError>
+where
+    F: Fn(&[TrackInfo]),
+{
     let cid = get_cid().await?;
 
     let mut url = format!(
@@ -732,7 +756,7 @@ pub async fn fetch_playlist_by_id(
         playlist.track_count
     );
 
-    let ordered_tracks = resolve_tracks_from_mixed(&playlist.tracks, &cid, oauth_token).await?;
+    let ordered_tracks = resolve_tracks_from_mixed(&playlist.tracks, &cid, oauth_token, on_batch).await?;
 
     log::info!(
         "[soundcloud] Returning {} of {} tracks",

@@ -205,7 +205,15 @@
     "rateLimited": "Rate limit reached. Click to retry.",
     "errorRetry": "Failed to load library. Click to retry.",
     "noResults": "No playlists match your search",
-    "emptyState": "No playlists found"
+    "emptyState": "No playlists found",
+    "detail": {
+      "back": "Back",
+      "tracks": "{{count}} tracks",
+      "loadingTracks": "Loading tracks...",
+      "errorLoading": "Failed to load tracks",
+      "retry": "Retry",
+      "emptyPlaylist": "This playlist has no tracks"
+    }
   },
   "downloadBar": {
     "clickToChange": "Click to change download folder",
