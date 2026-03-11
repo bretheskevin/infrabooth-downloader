@@ -23,6 +23,7 @@ interface PlaylistTrackListProps {
   onToggleTrack: (id: number) => void;
   onToggleAll: () => void;
   onDownloadTrack: (track: TrackInfo) => void;
+  downloadedIds?: Set<number>;
 }
 
 export function PlaylistTrackList({
@@ -36,6 +37,7 @@ export function PlaylistTrackList({
   onToggleTrack,
   onToggleAll,
   onDownloadTrack,
+  downloadedIds,
 }: PlaylistTrackListProps) {
   const { t } = useTranslation();
   const prevCountRef = useRef(0);
@@ -99,6 +101,7 @@ export function PlaylistTrackList({
                 staggerIndex={virtualItem.index}
                 animate={shouldAnimate}
                 isSelected={selectedIds.has(track.id)}
+                isDownloaded={downloadedIds?.has(track.id) ?? false}
                 onToggle={() => onToggleTrack(track.id)}
                 onDownload={() => onDownloadTrack(track)}
               />

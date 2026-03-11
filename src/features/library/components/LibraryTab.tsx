@@ -15,7 +15,7 @@ import type { TrackInfo } from '@/bindings';
 import type { LibraryFilter, LibraryPlaylist, LibraryView } from '../types';
 
 interface LibraryTabProps {
-  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string) => void | Promise<void>;
+  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
 }
 
 export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
