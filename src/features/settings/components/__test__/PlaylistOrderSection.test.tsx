@@ -6,9 +6,9 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
-        'settings.preserveOrder': 'Number tracks',
-        'settings.preserveOrderDescription':
-          'Prefix playlist filenames with track position (e.g. 01 - Artist - Title)',
+        'download.preserveOrder': 'Number tracks',
+        'download.preserveOrderDescription':
+          'Prefix filenames with track position (e.g. 01 - Artist - Title)',
       };
       return translations[key] || key;
     },
@@ -40,7 +40,7 @@ describe('PlaylistOrderSection', () => {
     expect(screen.getByText('Number tracks')).toBeInTheDocument();
     expect(
       screen.getByText(
-        'Prefix playlist filenames with track position (e.g. 01 - Artist - Title)'
+        'Prefix filenames with track position (e.g. 01 - Artist - Title)'
       )
     ).toBeInTheDocument();
   });
@@ -49,14 +49,14 @@ describe('PlaylistOrderSection', () => {
     render(<PlaylistOrderSection />);
 
     expect(
-      screen.getByTestId('settings-preserve-order-switch')
+      screen.getByTestId('preserve-order-switch')
     ).toBeInTheDocument();
   });
 
   it('calls setPreservePlaylistOrder when toggled', () => {
     render(<PlaylistOrderSection />);
 
-    const toggle = screen.getByTestId('settings-preserve-order-switch');
+    const toggle = screen.getByTestId('preserve-order-switch');
     fireEvent.click(toggle);
 
     expect(mockSetPreservePlaylistOrder).toHaveBeenCalledWith(true);
@@ -66,7 +66,7 @@ describe('PlaylistOrderSection', () => {
     mockPreservePlaylistOrder = true;
     render(<PlaylistOrderSection />);
 
-    const toggle = screen.getByTestId('settings-preserve-order-switch');
+    const toggle = screen.getByTestId('preserve-order-switch');
     expect(toggle).toHaveAttribute('data-state', 'checked');
   });
 });
