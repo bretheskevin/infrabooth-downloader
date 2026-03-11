@@ -234,6 +234,14 @@ async clearLibraryCache() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+/**
+ * Scan the output directory for tracks already downloaded (by SoundCloud track ID in ID3 metadata).
+ * 
+ * Returns the list of track IDs that already exist in the output directory.
+ */
+async scanExistingTracks(outputDir: string, trackIds: string[]) : Promise<string[]> {
+    return await TAURI_INVOKE("scan_existing_tracks", { outputDir, trackIds });
 }
 }
 

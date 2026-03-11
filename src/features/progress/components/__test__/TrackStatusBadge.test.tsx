@@ -12,6 +12,8 @@ vi.mock('react-i18next', () => ({
         'download.status.complete': 'Complete',
         'download.status.failed': 'Failed',
         'download.status.rateLimited': 'Rate limited',
+        'download.status.skipped': 'Already downloaded',
+        'accessibility.statusSkipped': 'Already downloaded',
         'errors.geoBlocked': 'Unavailable in your region',
       };
       return translations[key] || key;
@@ -37,6 +39,12 @@ describe('TrackStatusBadge', () => {
       render(<TrackStatusBadge status="complete" />);
       expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
       expect(screen.getByText('Complete')).toBeInTheDocument();
+    });
+
+    it('should render both icon and label for skipped status', () => {
+      render(<TrackStatusBadge status="skipped" />);
+      expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
+      expect(screen.getByText('Already downloaded')).toBeInTheDocument();
     });
 
     it('should render error message when failed with error', () => {

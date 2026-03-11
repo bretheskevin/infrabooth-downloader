@@ -21,6 +21,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
   const {
     totalCount,
     completedCount,
+    skippedCount,
     percentage,
     showPreparing,
     showCancelButton,
@@ -69,6 +70,11 @@ export function OverallProgress({ className }: OverallProgressProps) {
               : showPreparing
                 ? t('download.preparingTracks')
                 : progressText}
+            {skippedCount > 0 && !isCancelling && !showPreparing && (
+              <span className="text-xs text-success ml-1">
+                {t('download.skippedCount', { count: skippedCount })}
+              </span>
+            )}
           </span>
         </div>
         <div className="flex items-center gap-3">

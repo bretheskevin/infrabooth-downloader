@@ -17,6 +17,7 @@ const statusColorClasses: Record<TrackStatus, string> = {
   complete: 'text-success',
   failed: 'text-destructive',
   rate_limited: 'text-warning',
+  skipped: 'text-success',
 };
 
 export function TrackStatusLabel({ status, error, className }: TrackStatusLabelProps) {
@@ -38,6 +39,7 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
       complete: 'download.status.complete',
       failed: 'download.status.failed',
       rate_limited: 'download.rateLimitStatus',
+      skipped: 'download.status.skipped',
     };
 
     return t(statusKeys[status]);
