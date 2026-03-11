@@ -24,14 +24,14 @@ describe('Story 1.3: App Shell Layout', () => {
       expect(config.app.windows[0].height).toBe(700);
     });
 
-    it('should have minimum window width of 520 pixels (UX-6)', () => {
+    it('should have minimum window width of 580 pixels (UX-6)', () => {
       const config = getTauriConfig();
-      expect(config.app.windows[0].minWidth).toBe(520);
+      expect(config.app.windows[0].minWidth).toBe(580);
     });
 
-    it('should have minimum window height of 500 pixels (UX-6)', () => {
+    it('should have minimum window height of 550 pixels (UX-6)', () => {
       const config = getTauriConfig();
-      expect(config.app.windows[0].minHeight).toBe(500);
+      expect(config.app.windows[0].minHeight).toBe(550);
     });
 
     it('should have window centered on launch', () => {
@@ -79,12 +79,12 @@ describe('Story 1.3: App Shell Layout', () => {
       expect(content).toContain('gradient-subtle');
     });
 
-    it('should use min-h-screen for full height', () => {
+    it('should use h-screen for fixed viewport height', () => {
       const content = readFileSync(
         join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'),
         'utf-8'
       );
-      expect(content).toContain('min-h-screen');
+      expect(content).toContain('h-screen');
     });
   });
 

@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { logger } from '@/lib/logger';
 import type { Track, TrackStatus } from '@/features/queue/types/track';
-import type { QueueCancelledEvent, QueueCompleteEvent } from '@/types/events';
+import { listen } from '@tauri-apps/api/event';
+import type { DownloadProgressEvent, QueueProgressEvent, QueueCancelledEvent, QueueCompleteEvent } from '@/types/events';
 
 export type { Track, TrackStatus };
 
@@ -205,3 +206,37 @@ export const useQueueStore = create<QueueState>((set, get) => ({
     set({ isRetrying });
   },
 }));
+
+// Register Tauri event listeners at module level so they are active before any
+// React component mounts. This avoids a race condition where downloads triggered
+// from the library tab emit events before the DownloadPage's useEffect listeners
+// are registered.
+function setupQueueEventListeners() {
+  const store = useQueueStore;
+
+  listen<DownloadProgressEvent>('download-progress', (event) => {
+    const { status, error, trackId, percent, downloadedBytes, totalBytes } = event.payload;
+    logger.debug(`[queueStore] download-progress: trackId=${trackId}, status=${status}`);
+    if (error) {
+      logger.error(`[queueStore] Track error: ${error.code} - ${error.message}`);
+    }
+    store.getState().updateTrackStatus(trackId, status, error, { percent, downloadedBytes, totalBytes });
+  });
+
+  listen<QueueProgressEvent>('queue-progress', (event) => {
+    logger.info(`[queueStore] queue-progress: ${event.payload.current}/${event.payload.total}`);
+    store.getState().setQueueProgress(event.payload.current, event.payload.total);
+  });
+
+  listen<QueueCompleteEvent>('queue-complete', (event) => {
+    logger.info(`[queueStore] queue-complete: completed=${event.payload.completed}, failed=${event.payload.failed}`);
+    store.getState().setQueueComplete(event.payload);
+  });
+
+  listen<QueueCancelledEvent>('queue-cancelled', (event) => {
+    logger.info(`[queueStore] queue-cancelled: completed=${event.payload.completed}, cancelled=${event.payload.cancelled}`);
+    store.getState().setQueueCancelled(event.payload);
+  });
+}
+
+setupQueueEventListeners();

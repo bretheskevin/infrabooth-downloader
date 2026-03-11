@@ -212,7 +212,12 @@
       "loadingTracks": "Loading tracks...",
       "errorLoading": "Failed to load tracks",
       "retry": "Retry",
-      "emptyPlaylist": "This playlist has no tracks"
+      "emptyPlaylist": "This playlist has no tracks",
+      "downloadAll": "Download All",
+      "download": "Download",
+      "selectAll": "Select all",
+      "selected": "{{count}} selected",
+      "quickDownloadFailed": "Failed to fetch playlist tracks"
     }
   },
   "downloadBar": {

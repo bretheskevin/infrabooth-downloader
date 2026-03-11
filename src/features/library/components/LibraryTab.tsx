@@ -1,6 +1,8 @@
-import { useState, useMemo, useCallback, useRef } from 'react';
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/tauri';
 import { useAuthStore } from '@/features/auth/store';
 import { useLibraryPlaylists } from '../hooks/useLibraryPlaylists';
 import { filterPlaylists } from '../utils/filterPlaylists';
@@ -9,18 +11,28 @@ import { LibraryFilterChips } from './LibraryFilterChips';
 import { LibraryPlaylistList } from './LibraryPlaylistList';
 import { LibraryLockedState } from './LibraryLockedState';
 import { PlaylistDetailView } from './PlaylistDetailView';
-import type { LibraryFilter, LibraryView } from '../types';
+import type { TrackInfo } from '@/bindings';
+import type { LibraryFilter, LibraryPlaylist, LibraryView } from '../types';
 
 interface LibraryTabProps {
-  onSelectPlaylist: (permalinkUrl: string) => void;
+  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string) => void | Promise<void>;
 }
 
-export function LibraryTab({ onSelectPlaylist: _onSelectPlaylist }: LibraryTabProps) {
+export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
+  const { t } = useTranslation();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<LibraryFilter>('all');
   const [libraryView, setLibraryView] = useState<LibraryView>({ view: 'list' });
   const [slideClass, setSlideClass] = useState('');
+  const [quickDownloadFailedPlaylist, setQuickDownloadFailedPlaylist] = useState<string | null>(null);
+  const [downloadingPlaylistId, setDownloadingPlaylistId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!quickDownloadFailedPlaylist) return;
+    const timer = setTimeout(() => setQuickDownloadFailedPlaylist(null), 4000);
+    return () => clearTimeout(timer);
+  }, [quickDownloadFailedPlaylist]);
 
   const { playlists, isLoading, error, refetch, clearCache } =
     useLibraryPlaylists(isSignedIn);
@@ -51,15 +63,29 @@ export function LibraryTab({ onSelectPlaylist: _onSelectPlaylist }: LibraryTabPr
     refetch();
   }, [refetch, clearCache]);
 
-  const handlePlaylistClick = useCallback(
-    (permalinkUrl: string) => {
-      const playlist = playlists.find((p) => p.permalink_url === permalinkUrl);
-      if (playlist) {
-        setSlideClass('library-slide-in-detail');
-        setLibraryView({ view: 'detail', playlist });
+  const handleOpenDetail = useCallback(
+    (playlist: LibraryPlaylist) => {
+      setSlideClass('library-slide-in-detail');
+      setLibraryView({ view: 'detail', playlist });
+    },
+    [],
+  );
+
+  const handleQuickDownload = useCallback(
+    async (playlist: LibraryPlaylist) => {
+      if (downloadingPlaylistId) return;
+      setDownloadingPlaylistId(playlist.id);
+      try {
+        const tracks = await api.getLibraryPlaylistTracks(playlist.id);
+        onDownloadTracks(tracks, playlist.title);
+      } catch (err) {
+        console.error('[LibraryTab] Quick download failed:', err);
+        setQuickDownloadFailedPlaylist(playlist.title);
+      } finally {
+        setDownloadingPlaylistId(null);
       }
     },
-    [playlists],
+    [onDownloadTracks, downloadingPlaylistId],
   );
 
   if (!isSignedIn) {
@@ -68,17 +94,18 @@ export function LibraryTab({ onSelectPlaylist: _onSelectPlaylist }: LibraryTabPr
 
   if (libraryView.view === 'detail') {
     return (
-      <div key="detail" className={slideClass}>
+      <div key="detail" className={`flex-1 min-h-0 flex flex-col ${slideClass}`}>
         <PlaylistDetailView
           playlist={libraryView.playlist}
           onBack={handleBackToList}
+          onDownloadTracks={onDownloadTracks}
         />
       </div>
     );
   }
 
   return (
-    <div key="list" className={`space-y-4 ${slideClass}`}>
+    <div key="list" className={`flex flex-col gap-4 flex-1 min-h-0 ${slideClass}`}>
       <LibrarySearchBar value={searchQuery} onChange={setSearchQuery} />
       <div className="flex items-center justify-between">
         <LibraryFilterChips active={filter} onChange={setFilter} />
@@ -92,13 +119,20 @@ export function LibraryTab({ onSelectPlaylist: _onSelectPlaylist }: LibraryTabPr
           <RefreshCw className="h-3.5 w-3.5" />
         </Button>
       </div>
+      {quickDownloadFailedPlaylist && (
+        <p className="text-sm text-destructive px-1">
+          {t('library.detail.quickDownloadFailed')} — {quickDownloadFailedPlaylist}
+        </p>
+      )}
       <LibraryPlaylistList
         playlists={filtered}
         isLoading={isLoading}
         error={error}
         isEmpty={filtered.length === 0 && !isLoading}
         isFiltered={searchQuery.trim() !== '' || filter !== 'all'}
-        onSelect={handlePlaylistClick}
+        onOpenDetail={handleOpenDetail}
+        onDownload={handleQuickDownload}
+        downloadingPlaylistId={downloadingPlaylistId}
         onRetry={handleRetry}
       />
     </div>

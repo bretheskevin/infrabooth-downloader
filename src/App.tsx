@@ -7,7 +7,14 @@ import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
 import { useAuthStore } from '@/features/auth/store';
 import { RateLimitDialog } from '@/features/queue/components/RateLimitDialog';
 import { useRateLimitDialog } from '@/features/queue/hooks/useRateLimitDialog';
-import { useQueueStore } from '@/features/queue';
+import {
+  useQueueStore,
+  startDownloadQueue,
+  trackInfoToQueueTrack,
+  queueTrackToDownloadRequest,
+} from '@/features/queue';
+import { useSettingsStore } from '@/features/settings';
+import type { TrackInfo } from '@/bindings';
 import { useUpdateStore } from '@/features/update';
 import { useLanguageSync, useThemeSync, useAuthStateListener, useStartupAuth, useInitializeSettings } from '@/hooks';
 
@@ -30,13 +37,38 @@ export function App() {
     setActivePage(page);
   }, []);
 
-  const handleSelectLibraryPlaylist = useCallback((permalinkUrl: string) => {
-    const { isComplete, failedCount, clearQueue } = useQueueStore.getState();
-    if (isComplete && failedCount > 0) return;
-    if (isComplete) clearQueue();
-    setInitialUrl(permalinkUrl);
-    setActivePage('download');
-  }, []);
+  const handleDownloadTracks = useCallback(
+    async (tracks: TrackInfo[], playlistTitle: string) => {
+      const { isComplete, failedCount, clearQueue, enqueueTracks, setInitializing, setOutputDir } =
+        useQueueStore.getState();
+      const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } =
+        useSettingsStore.getState();
+
+      if (isComplete && failedCount > 0) return;
+      if (isComplete) clearQueue();
+
+      const queueTracks = tracks.map(trackInfoToQueueTrack);
+      enqueueTracks(queueTracks);
+
+      setOutputDir(downloadPath || null);
+      setInitializing(true);
+      setActivePage('download');
+
+      try {
+        await startDownloadQueue({
+          tracks: queueTracks.map(queueTrackToDownloadRequest),
+          albumName: playlistTitle,
+          outputDir: downloadPath || null,
+          maxConcurrent: maxConcurrentDownloads,
+          preserveOrder: preservePlaylistOrder,
+        });
+      } catch (error) {
+        console.error('[App] Download from library failed:', error);
+        useQueueStore.getState().setInitializing(false);
+      }
+    },
+    [],
+  );
 
   const {
     isOpen: authChoiceOpen,
@@ -59,8 +91,8 @@ export function App() {
       {activePage === 'download' ? (
         <DownloadPage initialUrl={initialUrl} />
       ) : (
-        <section className="space-y-4">
-          <LibraryTab onSelectPlaylist={handleSelectLibraryPlaylist} />
+        <section className="flex-1 min-h-0 flex flex-col">
+          <LibraryTab onDownloadTracks={handleDownloadTracks} />
         </section>
       )}
       <AuthChoiceDialog
