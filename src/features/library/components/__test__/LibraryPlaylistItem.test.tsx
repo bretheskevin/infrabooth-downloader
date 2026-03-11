@@ -31,33 +31,43 @@ const mockPlaylist: LibraryPlaylist = {
 
 describe('LibraryPlaylistItem', () => {
   it('renders playlist title and track count', () => {
-    render(<LibraryPlaylistItem playlist={mockPlaylist} onSelect={vi.fn()} />);
+    render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
     expect(screen.getByText('Test Playlist')).toBeInTheDocument();
     expect(screen.getByText(/10/)).toBeInTheDocument();
   });
 
   it('renders artwork image when artwork_url is provided', () => {
-    render(<LibraryPlaylistItem playlist={mockPlaylist} onSelect={vi.fn()} />);
+    render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('src', 'https://example.com/art.jpg');
   });
 
   it('renders placeholder when artwork_url is null', () => {
     const noArt = { ...mockPlaylist, artwork_url: null };
-    render(<LibraryPlaylistItem playlist={noArt} onSelect={vi.fn()} />);
+    render(<LibraryPlaylistItem playlist={noArt} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
     expect(screen.getByTestId('library-item-artwork-placeholder')).toBeInTheDocument();
   });
 
-  it('calls onSelect with permalink_url when clicked', () => {
-    const onSelect = vi.fn();
-    render(<LibraryPlaylistItem playlist={mockPlaylist} onSelect={onSelect} />);
-    fireEvent.click(screen.getByRole('button'));
-    expect(onSelect).toHaveBeenCalledWith('https://soundcloud.com/test/sets/test');
+  it('calls onOpenDetail when row is clicked', () => {
+    const onOpenDetail = vi.fn();
+    render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={onOpenDetail} onDownload={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: /test playlist/i }));
+    expect(onOpenDetail).toHaveBeenCalled();
+  });
+
+  it('calls onDownload when download icon is clicked without opening detail', () => {
+    const onOpenDetail = vi.fn();
+    const onDownload = vi.fn();
+    render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={onOpenDetail} onDownload={onDownload} />);
+    const downloadBtn = screen.getByRole('button', { name: /download/i });
+    fireEvent.click(downloadBtn);
+    expect(onDownload).toHaveBeenCalled();
+    expect(onOpenDetail).not.toHaveBeenCalled();
   });
 
   it('shows username', () => {
-    render(<LibraryPlaylistItem playlist={mockPlaylist} onSelect={vi.fn()} />);
+    render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
     expect(screen.getByText('TestUser')).toBeInTheDocument();
   });
 });

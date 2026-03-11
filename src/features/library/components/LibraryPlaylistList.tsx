@@ -12,7 +12,9 @@ interface LibraryPlaylistListProps {
   error: Error | null;
   isEmpty: boolean;
   isFiltered: boolean;
-  onSelect: (permalinkUrl: string) => void;
+  onOpenDetail: (playlist: LibraryPlaylist) => void;
+  onDownload: (playlist: LibraryPlaylist) => void;
+  downloadingPlaylistId: number | null;
   onRetry: () => void;
 }
 
@@ -32,10 +34,14 @@ const PLAYLIST_ITEM_HEIGHT = 68;
 
 function ScrollablePlaylistList({
   playlists,
-  onSelect,
+  onOpenDetail,
+  onDownload,
+  downloadingPlaylistId,
 }: {
   playlists: LibraryPlaylist[];
-  onSelect: (permalinkUrl: string) => void;
+  onOpenDetail: (playlist: LibraryPlaylist) => void;
+  onDownload: (playlist: LibraryPlaylist) => void;
+  downloadingPlaylistId: number | null;
 }) {
   const { parentRef, virtualItems, totalSize } = useVirtualizedList({
     count: playlists.length,
@@ -46,7 +52,7 @@ function ScrollablePlaylistList({
     <VirtualListContainer
       parentRef={parentRef}
       totalSize={totalSize}
-      className="max-h-[400px] pr-2"
+      className="flex-1 min-h-0 pr-2"
     >
       {virtualItems.map((virtualItem) => {
         const playlist = playlists[virtualItem.index];
@@ -55,7 +61,9 @@ function ScrollablePlaylistList({
           <VirtualRow key={playlist.id} virtualItem={virtualItem}>
             <LibraryPlaylistItem
               playlist={playlist}
-              onSelect={onSelect}
+              onOpenDetail={() => onOpenDetail(playlist)}
+              onDownload={() => onDownload(playlist)}
+              isDownloading={downloadingPlaylistId === playlist.id}
             />
           </VirtualRow>
         );
@@ -70,7 +78,9 @@ export function LibraryPlaylistList({
   error,
   isEmpty,
   isFiltered,
-  onSelect,
+  onOpenDetail,
+  onDownload,
+  downloadingPlaylistId,
   onRetry,
 }: LibraryPlaylistListProps) {
   const { t } = useTranslation();
@@ -114,7 +124,9 @@ export function LibraryPlaylistList({
   return (
     <ScrollablePlaylistList
       playlists={playlists}
-      onSelect={onSelect}
+      onOpenDetail={onOpenDetail}
+      onDownload={onDownload}
+      downloadingPlaylistId={downloadingPlaylistId}
     />
   );
 }

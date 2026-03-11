@@ -1,4 +1,4 @@
-import { Music } from 'lucide-react';
+import { Download, Loader2, Music } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
@@ -6,10 +6,12 @@ import type { LibraryPlaylist } from '../types';
 
 interface LibraryPlaylistItemProps {
   playlist: LibraryPlaylist;
-  onSelect: (permalinkUrl: string) => void;
+  onOpenDetail: () => void;
+  onDownload: () => void;
+  isDownloading?: boolean;
 }
 
-export function LibraryPlaylistItem({ playlist, onSelect }: LibraryPlaylistItemProps) {
+export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDownloading }: LibraryPlaylistItemProps) {
   const { t } = useTranslation();
   const needsArtwork = !playlist.artwork_url;
   const { data: resolvedArtwork } = usePlaylistArtwork(
@@ -20,11 +22,13 @@ export function LibraryPlaylistItem({ playlist, onSelect }: LibraryPlaylistItemP
   const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
 
   return (
-    <Button
-      variant="ghost"
-      className="flex items-center gap-3 w-full h-auto p-2.5 text-left justify-start"
-      onClick={() => onSelect(playlist.permalink_url)}
-    >
+    <div className="relative flex items-center gap-3 w-full h-auto p-2.5 text-left justify-start rounded-md hover:bg-accent hover:text-accent-foreground">
+      <button
+        type="button"
+        className="absolute inset-0 rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        onClick={onOpenDetail}
+        aria-label={playlist.title}
+      />
       <div className="flex-shrink-0">
         {artworkUrl ? (
           <img
@@ -48,6 +52,23 @@ export function LibraryPlaylistItem({ playlist, onSelect }: LibraryPlaylistItemP
       <span className="text-xs text-muted-foreground flex-shrink-0">
         {t('download.trackCount', { count: playlist.track_count })}
       </span>
-    </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative z-10 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+        aria-label={t('library.detail.download')}
+        disabled={isDownloading}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDownload();
+        }}
+      >
+        {isDownloading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Download className="h-4 w-4" />
+        )}
+      </Button>
+    </div>
   );
 }

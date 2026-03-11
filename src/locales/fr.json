@@ -212,7 +212,12 @@
       "loadingTracks": "Chargement des pistes...",
       "errorLoading": "Échec du chargement des pistes",
       "retry": "Réessayer",
-      "emptyPlaylist": "Cette playlist n'a aucune piste"
+      "emptyPlaylist": "Cette playlist n'a aucune piste",
+      "downloadAll": "Tout télécharger",
+      "download": "Télécharger",
+      "selectAll": "Tout sélectionner",
+      "selected": "{{count}} sélectionnés",
+      "quickDownloadFailed": "Échec de la récupération des pistes"
     }
   },
   "downloadBar": {

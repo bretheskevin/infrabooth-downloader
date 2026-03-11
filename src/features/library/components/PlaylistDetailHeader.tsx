@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Music } from 'lucide-react';
+import { ArrowLeft, Download, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -8,6 +8,8 @@ interface PlaylistDetailHeaderProps {
   artworkUrl: string | null;
   trackCount: number;
   onBack: () => void;
+  onDownloadAll: () => void;
+  isDownloadDisabled?: boolean;
 }
 
 function formatTotalDuration(ms: number): string {
@@ -23,6 +25,8 @@ export function PlaylistDetailHeader({
   artworkUrl,
   trackCount,
   onBack,
+  onDownloadAll,
+  isDownloadDisabled,
 }: PlaylistDetailHeaderProps) {
   const { t } = useTranslation();
 
@@ -60,6 +64,10 @@ export function PlaylistDetailHeader({
             {formatTotalDuration(playlist.duration)}
           </p>
         </div>
+        <Button size="sm" onClick={onDownloadAll} disabled={isDownloadDisabled} className="gap-1.5 shrink-0">
+          <Download className="h-3.5 w-3.5" />
+          {t('library.detail.downloadAll')}
+        </Button>
       </div>
     </div>
   );

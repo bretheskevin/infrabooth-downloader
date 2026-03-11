@@ -1,15 +1,19 @@
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { LibraryPlaylist } from '@/bindings';
+import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
+import { useTrackSelection } from '../hooks/useTrackSelection';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
 import { PlaylistTrackList } from './PlaylistTrackList';
+import { SelectionFloatingBar } from './SelectionFloatingBar';
 
 interface PlaylistDetailViewProps {
   playlist: LibraryPlaylist;
   onBack: () => void;
+  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string) => void | Promise<void>;
 }
 
 function TrackSkeletonRow() {
@@ -36,7 +40,7 @@ function getErrorMessageKey(error: Error): string {
   return 'library.detail.errorLoading';
 }
 
-export function PlaylistDetailView({ playlist, onBack }: PlaylistDetailViewProps) {
+export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: PlaylistDetailViewProps) {
   const { t } = useTranslation();
   const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id);
 
@@ -50,13 +54,41 @@ export function PlaylistDetailView({ playlist, onBack }: PlaylistDetailViewProps
 
   const showSkeleton = isLoading && (!tracks || tracks.length === 0);
 
+  const {
+    selectedIds,
+    toggleTrack,
+    toggleAll,
+    clearSelection,
+    selectedCount,
+    isAllSelected,
+    selectedTracks,
+  } = useTrackSelection(tracks ?? []);
+
+  const handleDownloadAll = useCallback(() => {
+    if (tracks && tracks.length > 0) onDownloadTracks(tracks, playlist.title);
+  }, [tracks, playlist.title, onDownloadTracks]);
+
+  const handleDownloadSelected = useCallback(async () => {
+    await onDownloadTracks(selectedTracks, playlist.title);
+    clearSelection();
+  }, [selectedTracks, playlist.title, onDownloadTracks, clearSelection]);
+
+  const handleDownloadTrack = useCallback(
+    (track: TrackInfo) => {
+      onDownloadTracks([track], playlist.title);
+    },
+    [playlist.title, onDownloadTracks],
+  );
+
   return (
-    <div className="space-y-4">
+    <div className="flex flex-col gap-4 flex-1 min-h-0">
       <PlaylistDetailHeader
         playlist={playlist}
         artworkUrl={artworkUrl}
         trackCount={tracks?.length ?? playlist.track_count}
         onBack={onBack}
+        onDownloadAll={handleDownloadAll}
+        isDownloadDisabled={!tracks || tracks.length === 0}
       />
 
       {showSkeleton && (
@@ -83,8 +115,21 @@ export function PlaylistDetailView({ playlist, onBack }: PlaylistDetailViewProps
       )}
 
       {tracks && tracks.length > 0 && (
-        <PlaylistTrackList tracks={tracks} isStreaming={isStreaming} />
+        <PlaylistTrackList
+          tracks={tracks}
+          isStreaming={isStreaming}
+          selectedIds={selectedIds}
+          isAllSelected={isAllSelected}
+          onToggleTrack={toggleTrack}
+          onToggleAll={toggleAll}
+          onDownloadTrack={handleDownloadTrack}
+        />
       )}
+
+      <SelectionFloatingBar
+        selectedCount={selectedCount}
+        onDownload={handleDownloadSelected}
+      />
     </div>
   );
 }
