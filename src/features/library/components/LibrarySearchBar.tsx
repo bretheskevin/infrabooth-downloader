@@ -23,7 +23,7 @@ export function LibrarySearchBar({ value, onChange, placeholder }: LibrarySearch
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder ?? t('library.searchPlaceholder')}
-        className="pl-9 pr-8 py-2.5"
+        className="pl-9 pr-8 py-1.5 h-9"
       />
       {value && (
         <Button

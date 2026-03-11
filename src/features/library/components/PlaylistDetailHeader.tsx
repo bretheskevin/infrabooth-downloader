@@ -31,18 +31,18 @@ export function PlaylistDetailHeader({
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <Button
         variant="ghost"
         size="sm"
         onClick={onBack}
-        className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
+        className="gap-1.5 -ml-2 h-7 text-xs text-muted-foreground hover:text-foreground"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-3.5 w-3.5" />
         {t('library.detail.back')}
       </Button>
-      <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-lg bg-muted overflow-hidden shrink-0">
+      <div className="flex items-center gap-3">
+        <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0">
           {artworkUrl ? (
             <img
               src={artworkUrl}
@@ -51,14 +51,15 @@ export function PlaylistDetailHeader({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <Music className="w-6 h-6" />
+              <Music className="w-5 h-5" />
             </div>
           )}
         </div>
         <div className="min-w-0 flex-1">
-          <h2 className="text-lg font-semibold truncate">{playlist.title}</h2>
-          <p className="text-sm text-muted-foreground truncate">{playlist.username}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">
+          <h2 className="text-base font-semibold truncate leading-tight">{playlist.title}</h2>
+          <p className="text-xs text-muted-foreground truncate">
+            {playlist.username}
+            {' · '}
             {t('library.detail.tracks', { count: trackCount })}
             {' · '}
             {formatTotalDuration(playlist.duration)}
