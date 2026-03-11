@@ -96,6 +96,7 @@ mod tests {
             track_number: Some(1),
             total_tracks: Some(10),
             artwork_url: Some("https://example.com/art.jpg".to_string()),
+            track_id: None,
         };
 
         let config = PipelineConfig {
@@ -126,6 +127,7 @@ mod tests {
             track_number: Some(5),
             total_tracks: Some(20),
             artwork_url: None,
+            track_id: None,
         };
 
         let config = PipelineConfig {
@@ -157,6 +159,7 @@ mod tests {
             track_number: None,
             total_tracks: None,
             artwork_url: None,
+            track_id: None,
         };
 
         let config = PipelineConfig {

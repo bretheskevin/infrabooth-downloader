@@ -145,6 +145,7 @@ fn normalize_protocol(protocol: &str, url: &str) -> Protocol {
 ///
 /// HQ quality adds +100 to the score.
 /// Snipped/preview tracks get -1000 penalty.
+/// HLS Opus is excluded: our bundled ffmpeg cannot handle .opus segments in HLS playlists.
 fn transcoding_score(t: &Transcoding) -> i32 {
     let protocol = normalize_protocol(&t.format.protocol, &t.url);
     let codec = extract_codec(&t.format.mime_type);
@@ -154,6 +155,10 @@ fn transcoding_score(t: &Transcoding) -> i32 {
         return -10000;
     }
     if preset_base == "abr" {
+        return -10000;
+    }
+    // Bundled ffmpeg rejects .opus as HLS segment extension → filter out
+    if codec == Codec::Opus && matches!(protocol, Protocol::Hls | Protocol::HlsAes) {
         return -10000;
     }
 
@@ -611,6 +616,30 @@ mod tests {
         let best = select_best_transcoding(&transcodings).unwrap();
         assert_eq!(best.format.protocol, "progressive");
         assert!(best.format.mime_type.contains("mp4"));
+    }
+
+    #[test]
+    fn test_select_skips_hls_opus() {
+        // Reproduces the bug: HLS Opus was preferred over progressive MP3
+        // but our ffmpeg can't handle .opus segments in HLS playlists
+        let transcodings = vec![
+            make_transcoding("hls", "audio/mpeg", "sq", "mp3_0", false),
+            make_transcoding("progressive", "audio/mpeg", "sq", "mp3_0", false),
+            make_transcoding("hls", "audio/ogg; codecs=\"opus\"", "sq", "opus_0", false),
+        ];
+        let best = select_best_transcoding(&transcodings).unwrap();
+        // Should pick progressive MP3, not HLS Opus
+        assert_eq!(best.format.protocol, "progressive");
+        assert!(best.format.mime_type.contains("mpeg"));
+    }
+
+    #[test]
+    fn test_select_hls_opus_only_returns_none() {
+        // If only HLS Opus is available, no suitable transcoding
+        let transcodings = vec![
+            make_transcoding("hls", "audio/ogg; codecs=\"opus\"", "sq", "opus_0", false),
+        ];
+        assert!(select_best_transcoding(&transcodings).is_none());
     }
 
     // --- API v2 deserialization tests ---

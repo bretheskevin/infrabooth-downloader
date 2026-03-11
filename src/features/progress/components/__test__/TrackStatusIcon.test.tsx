@@ -13,6 +13,7 @@ vi.mock('react-i18next', () => ({
         'accessibility.statusComplete': 'Complete',
         'accessibility.statusFailed': 'Failed',
         'accessibility.statusRateLimited': 'Rate limited',
+        'accessibility.statusSkipped': 'Already downloaded',
         'accessibility.trackUnavailableRestriction': 'Track unavailable - external restriction',
         'accessibility.geoRestrictionWarning': 'Geographic restriction warning',
       };
@@ -101,6 +102,12 @@ describe('TrackStatusIcon', () => {
       expect(icon).toHaveClass('text-warning');
       expect(icon).not.toHaveClass('animate-spin');
     });
+
+    it('should render checkmark icon for skipped status', () => {
+      render(<TrackStatusIcon status="skipped" />);
+      const icon = screen.getByRole('img', { hidden: true });
+      expect(icon).toHaveClass('text-success');
+    });
   });
 
   describe('accessibility', () => {
@@ -150,6 +157,12 @@ describe('TrackStatusIcon', () => {
       render(<TrackStatusIcon status="failed" errorCode="RATE_LIMITED" />);
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveAttribute('aria-label', 'Failed');
+    });
+
+    it('should have aria-label for skipped status', () => {
+      render(<TrackStatusIcon status="skipped" />);
+      const icon = screen.getByRole('img', { hidden: true });
+      expect(icon).toHaveAttribute('aria-label', 'Already downloaded');
     });
 
     it('should have specific aria-label for unavailable errors', () => {

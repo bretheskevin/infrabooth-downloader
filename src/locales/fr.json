@@ -45,7 +45,8 @@
       "converting": "Conversion...",
       "complete": "Terminé",
       "failed": "Échec",
-      "rateLimited": "Limite atteinte"
+      "rateLimited": "Limite atteinte",
+      "skipped": "Déjà téléchargé"
     },
     "rateLimitMessage": "Courte pause — limite SoundCloud (c'est normal)",
     "rateLimitStatus": "En attente...",
@@ -58,7 +59,9 @@
     "cancelling": "Annulation...",
     "cancelled": "Téléchargement annulé",
     "preserveOrder": "Numéroter les pistes",
-    "preserveOrderDescription": "Préfixer les noms de fichiers avec la position (ex: 01 - Artiste - Titre)"
+    "preserveOrderDescription": "Préfixer les noms de fichiers avec la position (ex: 01 - Artiste - Titre)",
+    "alreadyDownloaded": "{{count}} déjà téléchargé(s)",
+    "skippedCount": "({{count}} ignoré(s))"
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",
@@ -182,6 +185,7 @@
     "statusComplete": "Terminé",
     "statusFailed": "Échec",
     "statusRateLimited": "Limite atteinte",
+    "statusSkipped": "Déjà téléchargé",
     "trackUnavailableRestriction": "Piste indisponible - restriction externe",
     "geoRestrictionWarning": "Avertissement de restriction géographique"
   },

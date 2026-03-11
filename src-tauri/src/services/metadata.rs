@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use id3::{frame::Picture, Tag, TagLike, Version};
 use std::path::Path;
 
@@ -12,6 +14,7 @@ pub struct TrackMetadata {
     pub track_number: Option<u32>,
     pub total_tracks: Option<u32>,
     pub artwork_url: Option<String>,
+    pub track_id: Option<String>,
 }
 
 /// Embed metadata (ID3 tags) into an MP3 file.
@@ -70,6 +73,14 @@ pub async fn embed_metadata(
         }
     }
 
+    // Embed SoundCloud track ID for deduplication
+    if let Some(track_id) = &metadata.track_id {
+        tag.add_frame(id3::frame::ExtendedText {
+            description: "SOUNDCLOUD_TRACK_ID".to_string(),
+            value: track_id.clone(),
+        });
+    }
+
     // Write tag to file
     tag.write_to_path(file_path, Version::Id3v24)
         .map_err(|e| MetadataError::WriteFailed(e.to_string()))?;
@@ -107,6 +118,47 @@ async fn download_artwork(url: &str) -> Result<Vec<u8>, MetadataError> {
     Ok(bytes.to_vec())
 }
 
+/// Scan MP3 files in a directory for SOUNDCLOUD_TRACK_ID TXXX frames.
+///
+/// Returns the subset of `track_ids` that were found in existing files.
+/// Errors reading individual files are logged and skipped.
+pub fn scan_existing_track_ids(output_dir: &Path, track_ids: &[String]) -> HashSet<String> {
+    let wanted: HashSet<&str> = track_ids.iter().map(|s| s.as_str()).collect();
+    let mut found = HashSet::new();
+
+    let entries = match std::fs::read_dir(output_dir) {
+        Ok(e) => e,
+        Err(e) => {
+            log::warn!("[metadata] Failed to read dir for scan: {}", e);
+            return found;
+        }
+    };
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("mp3") {
+            continue;
+        }
+
+        match Tag::read_from_path(&path) {
+            Ok(tag) => {
+                for frame in tag.extended_texts() {
+                    if frame.description == "SOUNDCLOUD_TRACK_ID"
+                        && wanted.contains(frame.value.as_str())
+                    {
+                        found.insert(frame.value.clone());
+                    }
+                }
+            }
+            Err(e) => {
+                log::debug!("[metadata] Could not read tags from {:?}: {}", path, e);
+            }
+        }
+    }
+
+    found
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -138,6 +190,7 @@ mod tests {
             track_number: Some(5),
             total_tracks: Some(10),
             artwork_url: None,
+            track_id: None,
         };
 
         let result = embed_metadata(&file_path, metadata).await;
@@ -166,6 +219,7 @@ mod tests {
             track_number: None,
             total_tracks: None,
             artwork_url: None,
+            track_id: None,
         };
 
         let result = embed_metadata(&file_path, metadata).await;
@@ -187,6 +241,7 @@ mod tests {
             track_number: None,
             total_tracks: None,
             artwork_url: None,
+            track_id: None,
         };
 
         let result = embed_metadata(Path::new("/nonexistent/path.mp3"), metadata).await;
@@ -206,11 +261,58 @@ mod tests {
             track_number: Some(1),
             total_tracks: Some(10),
             artwork_url: Some("https://example.com/art.jpg".to_string()),
+            track_id: None,
         };
 
         let cloned = metadata.clone();
         assert_eq!(cloned.title, metadata.title);
         assert_eq!(cloned.artist, metadata.artist);
         assert_eq!(cloned.album, metadata.album);
+    }
+
+    #[test]
+    fn test_scan_existing_track_ids_finds_matching() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("test.mp3");
+        fs::write(&file_path, create_minimal_mp3()).unwrap();
+
+        // Write a tag with SOUNDCLOUD_TRACK_ID
+        let mut tag = Tag::new();
+        tag.set_title("Test");
+        tag.add_frame(id3::frame::ExtendedText {
+            description: "SOUNDCLOUD_TRACK_ID".to_string(),
+            value: "12345".to_string(),
+        });
+        tag.write_to_path(&file_path, Version::Id3v24).unwrap();
+
+        let result =
+            scan_existing_track_ids(dir.path(), &["12345".to_string(), "99999".to_string()]);
+        assert!(result.contains("12345"));
+        assert!(!result.contains("99999"));
+        assert_eq!(result.len(), 1);
+    }
+
+    #[test]
+    fn test_scan_existing_track_ids_empty_dir() {
+        let dir = tempdir().unwrap();
+        let result = scan_existing_track_ids(dir.path(), &["12345".to_string()]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_scan_existing_track_ids_no_tags() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("test.mp3");
+        fs::write(&file_path, create_minimal_mp3()).unwrap();
+
+        let result = scan_existing_track_ids(dir.path(), &["12345".to_string()]);
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_scan_existing_track_ids_nonexistent_dir() {
+        let result =
+            scan_existing_track_ids(Path::new("/nonexistent/dir"), &["12345".to_string()]);
+        assert!(result.is_empty());
     }
 }

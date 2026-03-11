@@ -1,7 +1,9 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { commands } from '@/bindings';
 import type { PlaylistInfo } from '@/features/url-input/types/playlist';
 import { useSettingsStore } from '@/features/settings/store';
 import { ArtworkThumbnail } from './ArtworkThumbnail';
@@ -24,6 +26,21 @@ export function PlaylistPreview({
   isDownloading = false,
 }: PlaylistPreviewProps) {
   const { t } = useTranslation();
+  const downloadPath = useSettingsStore((s) => s.downloadPath);
+  const [existingCount, setExistingCount] = useState(0);
+
+  useEffect(() => {
+    if (!downloadPath || playlist.tracks.length === 0) {
+      setExistingCount(0);
+      return;
+    }
+
+    const trackIds = playlist.tracks.map((track) => String(track.id));
+    commands
+      .scanExistingTracks(downloadPath, trackIds)
+      .then((result) => setExistingCount(result.length))
+      .catch(() => setExistingCount(0));
+  }, [downloadPath, playlist.id, playlist.tracks]);
 
   const artworkUrl = getArtworkUrl(
     playlist.artwork_url ?? playlist.tracks[0]?.artwork_url ?? null
@@ -57,6 +74,14 @@ export function PlaylistPreview({
               <span className="text-xs font-medium px-2 py-1 rounded-md bg-secondary text-secondary-foreground" data-testid="playlist-track-count">
                 {t('download.trackCount', { count: playlist.track_count })}
               </span>
+              {existingCount > 0 && (
+                <span
+                  className="text-xs font-medium px-2 py-1 rounded-md bg-success/10 text-success"
+                  data-testid="already-downloaded-count"
+                >
+                  {t('download.alreadyDownloaded', { count: existingCount })}
+                </span>
+              )}
             </div>
           </div>
         </div>

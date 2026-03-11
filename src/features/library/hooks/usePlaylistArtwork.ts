@@ -10,7 +10,6 @@ export function usePlaylistArtwork(
     queryKey: ['playlist-artwork', playlistId],
     queryFn: () => api.resolveLibraryArtwork(playlistId, secretToken),
     enabled,
-    staleTime: Infinity,
     retry: false,
   });
 }

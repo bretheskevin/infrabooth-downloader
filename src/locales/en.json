@@ -45,7 +45,8 @@
       "converting": "Converting...",
       "complete": "Complete",
       "failed": "Failed",
-      "rateLimited": "Rate limited"
+      "rateLimited": "Rate limited",
+      "skipped": "Already downloaded"
     },
     "rateLimitMessage": "Brief pause -- SoundCloud rate limit (this is normal)",
     "rateLimitStatus": "Waiting...",
@@ -58,7 +59,9 @@
     "cancelling": "Cancelling...",
     "cancelled": "Download cancelled",
     "preserveOrder": "Number tracks",
-    "preserveOrderDescription": "Prefix filenames with track position (e.g. 01 - Artist - Title)"
+    "preserveOrderDescription": "Prefix filenames with track position (e.g. 01 - Artist - Title)",
+    "alreadyDownloaded": "{{count}} already downloaded",
+    "skippedCount": "({{count}} skipped)"
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",
@@ -182,6 +185,7 @@
     "statusComplete": "Complete",
     "statusFailed": "Failed",
     "statusRateLimited": "Rate limited",
+    "statusSkipped": "Already downloaded",
     "trackUnavailableRestriction": "Track unavailable - external restriction",
     "geoRestrictionWarning": "Geographic restriction warning"
   },

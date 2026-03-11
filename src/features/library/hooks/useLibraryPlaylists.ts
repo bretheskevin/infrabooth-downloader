@@ -10,7 +10,6 @@ export function useLibraryPlaylists(enabled: boolean) {
     queryKey: ['library-playlists', username],
     queryFn: api.getLibraryPlaylists,
     enabled,
-    staleTime: Infinity,
   });
 
   const clearCache = useCallback(async () => {

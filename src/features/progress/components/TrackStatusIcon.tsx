@@ -19,6 +19,7 @@ const ariaLabelKeys: Record<TrackStatus, string> = {
   complete: 'accessibility.statusComplete',
   failed: 'accessibility.statusFailed',
   rate_limited: 'accessibility.statusRateLimited',
+  skipped: 'accessibility.statusSkipped',
 };
 
 export function TrackStatusIcon({ status, errorCode, error, className }: TrackStatusIconProps) {
@@ -47,6 +48,7 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
       );
 
     case 'complete':
+    case 'skipped':
       return (
         <CheckCircle2
           role="img"

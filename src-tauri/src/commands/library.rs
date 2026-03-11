@@ -72,6 +72,10 @@ pub async fn resolve_library_artwork(
     secret_token: Option<String>,
     app: tauri::AppHandle,
 ) -> Result<Option<String>, String> {
+    if let Some(cached) = app.state::<LibraryCache>().get_artwork(playlist_id) {
+        return Ok(cached);
+    }
+
     let token = app
         .state::<AuthState>()
         .get_token()
@@ -81,7 +85,10 @@ pub async fn resolve_library_artwork(
         .await
         .map_err(|e| LibraryError::FetchFailed(e.to_string()).to_string())?;
 
-    resolve_artwork(&token, &cid, playlist_id, secret_token)
+    let artwork = resolve_artwork(&token, &cid, playlist_id, secret_token)
         .await
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+
+    app.state::<LibraryCache>().set_artwork(playlist_id, artwork.clone());
+    Ok(artwork)
 }

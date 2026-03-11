@@ -6,7 +6,8 @@ export type TrackStatus =
   | 'converting'
   | 'complete'
   | 'failed'
-  | 'rate_limited';
+  | 'rate_limited'
+  | 'skipped';
 
 export interface Track {
   id: string;
