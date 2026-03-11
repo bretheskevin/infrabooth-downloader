@@ -229,7 +229,13 @@
       "sortTitleAsc": "Titre A → Z",
       "sortTitleDesc": "Titre Z → A",
       "sortArtistAsc": "Artiste A → Z",
-      "sortArtistDesc": "Artiste Z → A"
+      "sortArtistDesc": "Artiste Z → A",
+      "downloadedCount_one": "{{count}} téléchargé",
+      "downloadedCount_other": "{{count}} téléchargés",
+      "changeFolder": "Changer le dossier",
+      "customFolder": "personnalisé",
+      "alreadyDownloaded": "Déjà téléchargé",
+      "folderPermissionDenied": "Impossible d'écrire dans ce dossier. Veuillez choisir un autre emplacement."
     }
   },
   "downloadBar": {
