@@ -7,6 +7,7 @@ import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
 import { useAuthStore } from '@/features/auth/store';
 import { RateLimitDialog } from '@/features/queue/components/RateLimitDialog';
 import { useRateLimitDialog } from '@/features/queue/hooks/useRateLimitDialog';
+import { useQueueStore } from '@/features/queue';
 import { useUpdateStore } from '@/features/update';
 import { useLanguageSync, useThemeSync, useAuthStateListener, useStartupAuth, useInitializeSettings } from '@/hooks';
 
@@ -30,6 +31,9 @@ export function App() {
   }, []);
 
   const handleSelectLibraryPlaylist = useCallback((permalinkUrl: string) => {
+    const { isComplete, failedCount, clearQueue } = useQueueStore.getState();
+    if (isComplete && failedCount > 0) return;
+    if (isComplete) clearQueue();
     setInitialUrl(permalinkUrl);
     setActivePage('download');
   }, []);
