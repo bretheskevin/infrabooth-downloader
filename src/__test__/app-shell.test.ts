@@ -29,9 +29,9 @@ describe('Story 1.3: App Shell Layout', () => {
       expect(config.app.windows[0].minWidth).toBe(580);
     });
 
-    it('should have minimum window height of 550 pixels (UX-6)', () => {
+    it('should have minimum window height of 620 pixels (UX-6)', () => {
       const config = getTauriConfig();
-      expect(config.app.windows[0].minHeight).toBe(550);
+      expect(config.app.windows[0].minHeight).toBe(620);
     });
 
     it('should have window centered on launch', () => {

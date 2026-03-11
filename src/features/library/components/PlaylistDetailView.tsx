@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -7,8 +7,14 @@ import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useTrackSelection } from '../hooks/useTrackSelection';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
+import { filterTracks } from '../utils/filterTracks';
+import { sortTracks } from '../utils/sortTracks';
+import { LibrarySearchBar } from './LibrarySearchBar';
 import { PlaylistTrackList } from './PlaylistTrackList';
+import type { SortMode } from '../types';
 import { SelectionFloatingBar } from './SelectionFloatingBar';
+
+const MIN_TRACKS_FOR_SEARCH = 5;
 
 interface PlaylistDetailViewProps {
   playlist: LibraryPlaylist;
@@ -52,6 +58,24 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
   );
   const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortMode, setSortMode] = useState<SortMode>('default');
+
+  useEffect(() => {
+    setSearchQuery('');
+    setSortMode('default');
+  }, [playlist.id]);
+
+  const filteredTracks = useMemo(
+    () => filterTracks(tracks ?? [], searchQuery),
+    [tracks, searchQuery],
+  );
+
+  const displayTracks = useMemo(
+    () => sortTracks(filteredTracks, sortMode),
+    [filteredTracks, sortMode],
+  );
+
   const showSkeleton = isLoading && (!tracks || tracks.length === 0);
 
   const {
@@ -62,7 +86,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
     selectedCount,
     isAllSelected,
     selectedTracks,
-  } = useTrackSelection(tracks ?? []);
+  } = useTrackSelection(displayTracks);
 
   const handleDownloadAll = useCallback(() => {
     if (tracks && tracks.length > 0) onDownloadTracks(tracks, playlist.title);
@@ -108,19 +132,35 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
         </div>
       )}
 
+      {tracks && tracks.length >= MIN_TRACKS_FOR_SEARCH && (
+        <LibrarySearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t('library.detail.filterPlaceholder')}
+        />
+      )}
+
       {tracks && tracks.length === 0 && !isLoading && (
         <p className="text-center py-12 text-sm text-muted-foreground">
           {t('library.detail.emptyPlaylist')}
         </p>
       )}
 
-      {tracks && tracks.length > 0 && (
+      {tracks && tracks.length > 0 && displayTracks.length === 0 && (
+        <p className="text-center py-12 text-sm text-muted-foreground">
+          {t('library.detail.noFilterResults')}
+        </p>
+      )}
+
+      {displayTracks.length > 0 && (
         <PlaylistTrackList
-          tracks={tracks}
+          tracks={displayTracks}
           isStreaming={isStreaming}
           selectedIds={selectedIds}
           isAllSelected={isAllSelected}
-          showOrderToggle={tracks.length > 1}
+          showOrderToggle={(tracks?.length ?? 0) > 1}
+          sortMode={sortMode}
+          onSortChange={setSortMode}
           onToggleTrack={toggleTrack}
           onToggleAll={toggleAll}
           onDownloadTrack={handleDownloadTrack}

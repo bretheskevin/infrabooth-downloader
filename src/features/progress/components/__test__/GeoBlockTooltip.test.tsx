@@ -1,6 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { GeoBlockTooltip } from '../GeoBlockTooltip';
 
 vi.mock('react-i18next', () => ({
@@ -18,9 +19,11 @@ vi.mock('react-i18next', () => ({
 describe('GeoBlockTooltip', () => {
   it('should render children', () => {
     render(
+      <TooltipProvider>
       <GeoBlockTooltip>
         <button>Trigger</button>
       </GeoBlockTooltip>
+      </TooltipProvider>
     );
     expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument();
   });
@@ -28,9 +31,11 @@ describe('GeoBlockTooltip', () => {
   it('should show tooltip content on hover', async () => {
     const user = userEvent.setup();
     render(
+      <TooltipProvider>
       <GeoBlockTooltip>
         <button>Hover me</button>
       </GeoBlockTooltip>
+      </TooltipProvider>
     );
 
     const trigger = screen.getByRole('button', { name: 'Hover me' });
@@ -50,9 +55,11 @@ describe('GeoBlockTooltip', () => {
   it('should show tooltip content on focus for keyboard accessibility', async () => {
     const user = userEvent.setup();
     render(
+      <TooltipProvider>
       <GeoBlockTooltip>
         <button>Focus me</button>
       </GeoBlockTooltip>
+      </TooltipProvider>
     );
 
     const trigger = screen.getByRole('button', { name: 'Focus me' });

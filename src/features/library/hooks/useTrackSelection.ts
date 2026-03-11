@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import type { TrackInfo } from '@/bindings';
 
-export function useTrackSelection(tracks: TrackInfo[]) {
+export function useTrackSelection(visibleTracks: TrackInfo[]) {
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const toggleTrack = useCallback((id: number) => {
@@ -18,22 +18,37 @@ export function useTrackSelection(tracks: TrackInfo[]) {
 
   const toggleAll = useCallback(() => {
     setSelectedIds((prev) => {
-      const allSelected = tracks.every((t) => prev.has(t.id));
-      return allSelected ? new Set() : new Set(tracks.map((t) => t.id));
+      const allVisible = visibleTracks.every((t) => prev.has(t.id));
+      if (allVisible) {
+        const next = new Set(prev);
+        for (const t of visibleTracks) {
+          next.delete(t.id);
+        }
+        return next;
+      }
+      const next = new Set(prev);
+      for (const t of visibleTracks) {
+        next.add(t.id);
+      }
+      return next;
     });
-  }, [tracks]);
+  }, [visibleTracks]);
 
   const clearSelection = useCallback(() => {
     setSelectedIds(new Set());
   }, []);
 
   const selectedTracks = useMemo(
-    () => tracks.filter((t) => selectedIds.has(t.id)),
-    [tracks, selectedIds],
+    () => visibleTracks.filter((t) => selectedIds.has(t.id)),
+    [visibleTracks, selectedIds],
   );
 
   const selectedCount = selectedTracks.length;
-  const isAllSelected = tracks.length > 0 && selectedCount === tracks.length;
+
+  const isAllSelected = useMemo(
+    () => visibleTracks.length > 0 && visibleTracks.every((t) => selectedIds.has(t.id)),
+    [visibleTracks, selectedIds],
+  );
 
   return {
     selectedIds,
