@@ -1,13 +1,15 @@
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 interface LibrarySearchBarProps {
   value: string;
   onChange: (value: string) => void;
+  placeholder?: string;
 }
 
-export function LibrarySearchBar({ value, onChange }: LibrarySearchBarProps) {
+export function LibrarySearchBar({ value, onChange, placeholder }: LibrarySearchBarProps) {
   const { t } = useTranslation();
 
   return (
@@ -20,9 +22,19 @@ export function LibrarySearchBar({ value, onChange }: LibrarySearchBarProps) {
         spellCheck={false}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={t('library.searchPlaceholder')}
-        className="pl-9 pr-3 py-2.5"
+        placeholder={placeholder ?? t('library.searchPlaceholder')}
+        className="pl-9 pr-8 py-2.5"
       />
+      {value && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => onChange('')}
+          className="absolute right-1.5 top-1/2 -translate-y-1/2 h-6 w-6 text-muted-foreground hover:text-foreground"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </div>
   );
 }

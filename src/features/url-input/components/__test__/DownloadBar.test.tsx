@@ -1,6 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { DownloadBar } from '../DownloadBar';
+
+function renderDownloadBar(props: React.ComponentProps<typeof DownloadBar>) {
+  return render(
+    <TooltipProvider>
+      <DownloadBar {...props} />
+    </TooltipProvider>
+  );
+}
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -46,25 +55,25 @@ describe('DownloadBar', () => {
 
   describe('rendering', () => {
     it('renders the folder name from settings', () => {
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       expect(screen.getByText('Downloads')).toBeInTheDocument();
     });
 
     it('renders the download button', () => {
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       expect(screen.getByTestId('download-button')).toHaveTextContent('Download');
     });
 
     it('renders the folder selector button', () => {
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       expect(screen.getByTestId('folder-selector')).toBeInTheDocument();
     });
 
     it('has correct test id on container', () => {
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       expect(screen.getByTestId('download-bar')).toBeInTheDocument();
     });
@@ -72,7 +81,7 @@ describe('DownloadBar', () => {
 
   describe('download button', () => {
     it('calls onDownload with current path when clicked', () => {
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('download-button'));
 
@@ -80,19 +89,19 @@ describe('DownloadBar', () => {
     });
 
     it('is disabled when isDownloading is true', () => {
-      render(<DownloadBar onDownload={mockOnDownload} isDownloading={true} />);
+      renderDownloadBar({ onDownload: mockOnDownload, isDownloading: true });
 
       expect(screen.getByTestId('download-button')).toBeDisabled();
     });
 
     it('shows downloading text when isDownloading is true', () => {
-      render(<DownloadBar onDownload={mockOnDownload} isDownloading={true} />);
+      renderDownloadBar({ onDownload: mockOnDownload, isDownloading: true });
 
       expect(screen.getByTestId('download-button')).toHaveTextContent('Downloading...');
     });
 
     it('is enabled when isDownloading is false', () => {
-      render(<DownloadBar onDownload={mockOnDownload} isDownloading={false} />);
+      renderDownloadBar({ onDownload: mockOnDownload, isDownloading: false });
 
       expect(screen.getByTestId('download-button')).not.toBeDisabled();
     });
@@ -100,7 +109,7 @@ describe('DownloadBar', () => {
 
   describe('folder selection', () => {
     it('opens folder dialog when folder selector is clicked', async () => {
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -118,7 +127,7 @@ describe('DownloadBar', () => {
       mockOpen.mockResolvedValue(newPath);
       mockInvoke.mockResolvedValue(true);
 
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -132,7 +141,7 @@ describe('DownloadBar', () => {
       mockOpen.mockResolvedValue(newPath);
       mockInvoke.mockResolvedValue(true);
 
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -146,7 +155,7 @@ describe('DownloadBar', () => {
       mockOpen.mockResolvedValue(newPath);
       mockInvoke.mockResolvedValue(true);
 
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -164,7 +173,7 @@ describe('DownloadBar', () => {
       mockOpen.mockResolvedValue(newPath);
       mockInvoke.mockResolvedValue(false);
 
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -176,7 +185,7 @@ describe('DownloadBar', () => {
     it('does not update path when user cancels dialog', async () => {
       mockOpen.mockResolvedValue(null);
 
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -188,7 +197,7 @@ describe('DownloadBar', () => {
     });
 
     it('is disabled when isDownloading is true', () => {
-      render(<DownloadBar onDownload={mockOnDownload} isDownloading={true} />);
+      renderDownloadBar({ onDownload: mockOnDownload, isDownloading: true });
 
       expect(screen.getByTestId('folder-selector')).toBeDisabled();
     });
@@ -198,7 +207,7 @@ describe('DownloadBar', () => {
     it('shows error when dialog throws', async () => {
       mockOpen.mockRejectedValue(new Error('Dialog error'));
 
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -211,7 +220,7 @@ describe('DownloadBar', () => {
       mockOpen.mockResolvedValueOnce('/restricted');
       mockInvoke.mockResolvedValueOnce(false);
 
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -233,7 +242,7 @@ describe('DownloadBar', () => {
       mockOpen.mockResolvedValue('/restricted');
       mockInvoke.mockResolvedValue(false);
 
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       fireEvent.click(screen.getByTestId('folder-selector'));
 
@@ -247,7 +256,7 @@ describe('DownloadBar', () => {
 
   describe('accessibility', () => {
     it('folder selector has aria-label', () => {
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       expect(screen.getByTestId('folder-selector')).toHaveAttribute(
         'aria-label',
@@ -256,7 +265,7 @@ describe('DownloadBar', () => {
     });
 
     it('folder selector is keyboard accessible', () => {
-      render(<DownloadBar onDownload={mockOnDownload} />);
+      renderDownloadBar({ onDownload: mockOnDownload });
 
       const selector = screen.getByTestId('folder-selector');
       expect(selector.tagName).toBe('BUTTON');
