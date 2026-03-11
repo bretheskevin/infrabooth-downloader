@@ -8,16 +8,19 @@ import { LibrarySearchBar } from './LibrarySearchBar';
 import { LibraryFilterChips } from './LibraryFilterChips';
 import { LibraryPlaylistList } from './LibraryPlaylistList';
 import { LibraryLockedState } from './LibraryLockedState';
-import type { LibraryFilter } from '../types';
+import { PlaylistDetailView } from './PlaylistDetailView';
+import type { LibraryFilter, LibraryView } from '../types';
 
 interface LibraryTabProps {
   onSelectPlaylist: (permalinkUrl: string) => void;
 }
 
-export function LibraryTab({ onSelectPlaylist }: LibraryTabProps) {
+export function LibraryTab({ onSelectPlaylist: _onSelectPlaylist }: LibraryTabProps) {
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<LibraryFilter>('all');
+  const [libraryView, setLibraryView] = useState<LibraryView>({ view: 'list' });
+  const [slideClass, setSlideClass] = useState('');
 
   const { playlists, isLoading, error, refetch, clearCache } =
     useLibraryPlaylists(isSignedIn);
@@ -31,8 +34,14 @@ export function LibraryTab({ onSelectPlaylist }: LibraryTabProps) {
     refetch();
   }, [refetch]);
 
+  const handleBackToList = useCallback(() => {
+    setSlideClass('library-slide-in-list');
+    setLibraryView({ view: 'list' });
+  }, []);
+
   const refreshButtonRef = useRef<HTMLButtonElement>(null);
   const handleRefresh = useCallback(async () => {
+    setLibraryView({ view: 'list' });
     const btn = refreshButtonRef.current;
     if (btn) {
       btn.classList.add('animate-spin');
@@ -42,12 +51,34 @@ export function LibraryTab({ onSelectPlaylist }: LibraryTabProps) {
     refetch();
   }, [refetch, clearCache]);
 
+  const handlePlaylistClick = useCallback(
+    (permalinkUrl: string) => {
+      const playlist = playlists.find((p) => p.permalink_url === permalinkUrl);
+      if (playlist) {
+        setSlideClass('library-slide-in-detail');
+        setLibraryView({ view: 'detail', playlist });
+      }
+    },
+    [playlists],
+  );
+
   if (!isSignedIn) {
     return <LibraryLockedState />;
   }
 
+  if (libraryView.view === 'detail') {
+    return (
+      <div key="detail" className={slideClass}>
+        <PlaylistDetailView
+          playlist={libraryView.playlist}
+          onBack={handleBackToList}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
+    <div key="list" className={`space-y-4 ${slideClass}`}>
       <LibrarySearchBar value={searchQuery} onChange={setSearchQuery} />
       <div className="flex items-center justify-between">
         <LibraryFilterChips active={filter} onChange={setFilter} />
@@ -67,7 +98,7 @@ export function LibraryTab({ onSelectPlaylist }: LibraryTabProps) {
         error={error}
         isEmpty={filtered.length === 0 && !isLoading}
         isFiltered={searchQuery.trim() !== '' || filter !== 'all'}
-        onSelect={onSelectPlaylist}
+        onSelect={handlePlaylistClick}
         onRetry={handleRetry}
       />
     </div>

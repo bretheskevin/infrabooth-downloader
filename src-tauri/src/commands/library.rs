@@ -1,5 +1,8 @@
 // src-tauri/src/commands/library.rs
 
+use serde::Serialize;
+use specta::Type;
+use tauri::Emitter;
 use tauri::Manager;
 
 use crate::services::client_id;
@@ -10,6 +13,13 @@ use crate::services::library::{
 use crate::services::playlist;
 use crate::services::playlist::TrackInfo;
 use crate::services::storage::AuthState;
+
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct PlaylistTracksBatchEvent {
+    pub playlist_id: u64,
+    pub tracks: Vec<TrackInfo>,
+}
 
 #[tauri::command]
 #[specta::specta]
@@ -113,10 +123,22 @@ pub async fn get_library_playlist_tracks(
         .state::<LibraryCache>()
         .get_secret_token(playlist_id);
 
+    let app_handle = app.clone();
+    let on_batch = move |batch: &[TrackInfo]| {
+        let _ = app_handle.emit(
+            "playlist-tracks-batch",
+            PlaylistTracksBatchEvent {
+                playlist_id,
+                tracks: batch.to_vec(),
+            },
+        );
+    };
+
     match playlist::fetch_playlist_by_id(
         playlist_id,
         secret_token.as_deref(),
         Some(&token),
+        on_batch,
     )
     .await
     {

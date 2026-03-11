@@ -205,7 +205,15 @@
     "rateLimited": "Limite atteinte. Cliquez pour réessayer.",
     "errorRetry": "Échec du chargement. Cliquez pour réessayer.",
     "noResults": "Aucune playlist ne correspond à votre recherche",
-    "emptyState": "Aucune playlist trouvée"
+    "emptyState": "Aucune playlist trouvée",
+    "detail": {
+      "back": "Retour",
+      "tracks": "{{count}} pistes",
+      "loadingTracks": "Chargement des pistes...",
+      "errorLoading": "Échec du chargement des pistes",
+      "retry": "Réessayer",
+      "emptyPlaylist": "Cette playlist n'a aucune piste"
+    }
   },
   "downloadBar": {
     "clickToChange": "Cliquez pour changer le dossier",

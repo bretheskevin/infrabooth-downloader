@@ -1,2 +1,2 @@
 export { LibraryTab } from './components/LibraryTab';
-export type { LibraryPlaylist, LibraryFilter } from './types';
+export type { LibraryPlaylist, LibraryFilter, LibraryView, TrackInfo } from './types';
