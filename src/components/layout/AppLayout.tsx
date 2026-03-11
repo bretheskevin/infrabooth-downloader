@@ -53,10 +53,10 @@ function PageNav({ activePage, onPageChange, isLibraryLocked }: PageNavProps) {
 
 export function AppLayout({ children, activePage, onPageChange, isLibraryLocked }: AppLayoutProps) {
   return (
-    <div className="flex flex-col min-h-screen gradient-subtle">
+    <div className="flex flex-col h-screen overflow-hidden gradient-subtle">
       <UpdateBanner />
       <Header />
-      <main className="flex-1 px-6 py-6 w-full max-w-3xl mx-auto">
+      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6 w-full max-w-3xl mx-auto">
         <PageNav activePage={activePage} onPageChange={onPageChange} isLibraryLocked={isLibraryLocked} />
         {children}
       </main>

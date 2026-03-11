@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Spinner } from '@/components/ui/spinner';
-import { useQueueStore, useDownloadFlow, useDownloadProgress, useDownloadCompletion } from '@/features/queue';
+import { useQueueStore, useDownloadFlow, useDownloadCompletion } from '@/features/queue';
 import { UrlInput, ValidationFeedback, PlaylistPreview, TrackPreview, isPlaylist } from '@/features/url-input';
 import { CompletionPanel } from '@/features/completion';
 import { ProgressPanel } from '@/features/progress/components/ProgressPanel';
@@ -13,6 +13,7 @@ interface DownloadPageProps {
 export function DownloadPage({ initialUrl }: DownloadPageProps) {
   const { t } = useTranslation();
   const isProcessing = useQueueStore((state) => state.isProcessing);
+  const isInitializing = useQueueStore((state) => state.isInitializing);
 
   const {
     url,
@@ -25,8 +26,6 @@ export function DownloadPage({ initialUrl }: DownloadPageProps) {
     isPending,
     handleDownload,
   } = useDownloadFlow(initialUrl);
-
-  useDownloadProgress();
 
   const { isComplete, completedCount, failedCount, cancelledCount, totalCount, isCancelled, resetQueue } =
     useDownloadCompletion();
@@ -73,7 +72,7 @@ export function DownloadPage({ initialUrl }: DownloadPageProps) {
     );
   }
 
-  if (isPending) {
+  if (isPending || isInitializing) {
     return (
       <section className="space-y-4">
         <div

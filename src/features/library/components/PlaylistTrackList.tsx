@@ -4,6 +4,7 @@ import { Loader2 } from 'lucide-react';
 import type { TrackInfo } from '@/bindings';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
+import { Checkbox } from '@/components/ui/checkbox';
 import { PlaylistTrackItem } from './PlaylistTrackItem';
 
 const TRACK_ITEM_HEIGHT = 56;
@@ -11,9 +12,22 @@ const TRACK_ITEM_HEIGHT = 56;
 interface PlaylistTrackListProps {
   tracks: TrackInfo[];
   isStreaming?: boolean;
+  selectedIds: Set<number>;
+  isAllSelected: boolean;
+  onToggleTrack: (id: number) => void;
+  onToggleAll: () => void;
+  onDownloadTrack: (track: TrackInfo) => void;
 }
 
-export function PlaylistTrackList({ tracks, isStreaming }: PlaylistTrackListProps) {
+export function PlaylistTrackList({
+  tracks,
+  isStreaming,
+  selectedIds,
+  isAllSelected,
+  onToggleTrack,
+  onToggleAll,
+  onDownloadTrack,
+}: PlaylistTrackListProps) {
   const { t } = useTranslation();
   const prevCountRef = useRef(0);
   const shouldAnimate = tracks.length > prevCountRef.current;
@@ -28,10 +42,20 @@ export function PlaylistTrackList({ tracks, isStreaming }: PlaylistTrackListProp
 
   return (
     <>
+      <div className="flex items-center gap-3 px-3">
+        <Checkbox
+          checked={isAllSelected}
+          onCheckedChange={onToggleAll}
+          className="shrink-0"
+        />
+        <span className="text-xs text-muted-foreground">
+          {t('library.detail.selectAll')}
+        </span>
+      </div>
       <VirtualListContainer
         parentRef={parentRef}
         totalSize={totalSize}
-        className="max-h-[400px] pr-2"
+        className="flex-1 min-h-0 pr-2"
       >
         {virtualItems.map((virtualItem) => {
           const track = tracks[virtualItem.index];
@@ -43,6 +67,9 @@ export function PlaylistTrackList({ tracks, isStreaming }: PlaylistTrackListProp
                 index={virtualItem.index}
                 staggerIndex={virtualItem.index}
                 animate={shouldAnimate}
+                isSelected={selectedIds.has(track.id)}
+                onToggle={() => onToggleTrack(track.id)}
+                onDownload={() => onDownloadTrack(track)}
               />
             </VirtualRow>
           );
