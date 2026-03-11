@@ -235,6 +235,14 @@ async clearLibraryCache() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getLibraryPlaylistTracks(playlistId: number) : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_library_playlist_tracks", { playlistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Scan the output directory for tracks already downloaded (by SoundCloud track ID in ID3 metadata).
  * 

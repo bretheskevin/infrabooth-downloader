@@ -6,10 +6,11 @@ use std::sync::Arc;
 
 use commands::{
     cancel_download_queue, check_auth, check_for_updates, check_write_permission,
-    clear_library_cache, download_track_full, get_default_download_path, get_library_playlists,
-    get_playlist_info, get_track_info, install_update, refresh_auth, resolve_library_artwork,
-    respond_to_auth_choice, respond_to_rate_limit_choice, scan_existing_tracks, sign_out,
-    start_download_queue, test_ffmpeg, validate_download_path, validate_soundcloud_url,
+    clear_library_cache, download_track_full, get_default_download_path,
+    get_library_playlist_tracks, get_library_playlists, get_playlist_info, get_track_info,
+    install_update, refresh_auth, resolve_library_artwork, respond_to_auth_choice,
+    respond_to_rate_limit_choice, scan_existing_tracks, sign_out, start_download_queue,
+    test_ffmpeg, validate_download_path, validate_soundcloud_url,
 };
 use services::auth_choice::AuthChoiceState;
 use services::rate_limit_choice::RateLimitChoiceState;
@@ -46,6 +47,7 @@ pub fn run() {
         get_library_playlists,
         resolve_library_artwork,
         clear_library_cache,
+        get_library_playlist_tracks,
         scan_existing_tracks
     ]);
 
