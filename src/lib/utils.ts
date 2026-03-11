@@ -19,6 +19,20 @@ export function formatDuration(ms: number): string {
 }
 
 /**
+ * Format duration in milliseconds to human-readable string
+ *
+ * @param ms - Duration in milliseconds
+ * @returns Formatted duration string (e.g., "45 min", "2h 30m")
+ */
+export function formatTotalDuration(ms: number): string {
+  const totalMinutes = Math.floor(ms / 60000);
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
+}
+
+/**
  * Format bytes to human readable string
  *
  * @param bytes - Number of bytes
