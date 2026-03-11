@@ -165,7 +165,11 @@
     "learnMore": "En savoir plus",
     "dismiss": "Ignorer",
     "later": "Plus tard",
-    "whatsNew": "Nouveautés"
+    "whatsNew": "Nouveautés",
+    "updateNow": "Mettre à jour",
+    "installing": "Installation...",
+    "installed": "Mise à jour installée — redémarrez l'application",
+    "installError": "Échec de la mise à jour — cliquez pour réessayer"
   },
   "accessibility": {
     "signInButton": "Se connecter avec SoundCloud pour activer les téléchargements",

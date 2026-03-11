@@ -165,7 +165,11 @@
     "learnMore": "Learn more",
     "dismiss": "Dismiss",
     "later": "Later",
-    "whatsNew": "What's new"
+    "whatsNew": "What's new",
+    "updateNow": "Update now",
+    "installing": "Installing...",
+    "installed": "Update installed — restart to apply",
+    "installError": "Update failed — click to retry"
   },
   "accessibility": {
     "signInButton": "Sign in with SoundCloud to enable downloads",
