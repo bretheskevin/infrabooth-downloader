@@ -1,7 +1,9 @@
-import { Download, Music } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { CheckCircle2, Download, Music } from 'lucide-react';
 import { cn, formatDuration } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { TrackInfo } from '@/bindings';
 
 interface PlaylistTrackItemProps {
@@ -12,6 +14,7 @@ interface PlaylistTrackItemProps {
   isSelected: boolean;
   onToggle: () => void;
   onDownload: () => void;
+  isDownloaded?: boolean;
 }
 
 const MAX_STAGGER_ITEMS = 15;
@@ -25,7 +28,9 @@ export function PlaylistTrackItem({
   isSelected,
   onToggle,
   onDownload,
+  isDownloaded = false,
 }: PlaylistTrackItemProps) {
+  const { t } = useTranslation();
   const delay = animate && staggerIndex < MAX_STAGGER_ITEMS ? staggerIndex * STAGGER_DELAY_MS : 0;
   const artworkUrl = track.artwork_url ?? null;
 
@@ -34,6 +39,7 @@ export function PlaylistTrackItem({
       className={cn(
         'flex items-center gap-3 px-3 py-2 rounded-md border transition-colors',
         animate && 'track-row-stagger',
+        isDownloaded && 'opacity-60',
         isSelected
           ? 'bg-primary/5 border-primary/20'
           : 'border-transparent hover:bg-muted/50',
@@ -43,6 +49,7 @@ export function PlaylistTrackItem({
       <Checkbox
         checked={isSelected}
         onCheckedChange={onToggle}
+        disabled={isDownloaded}
         className="shrink-0"
       />
       <span className="w-6 text-right text-xs text-muted-foreground tabular-nums shrink-0">
@@ -69,14 +76,30 @@ export function PlaylistTrackItem({
       <span className="text-xs text-muted-foreground tabular-nums shrink-0">
         {formatDuration(track.duration)}
       </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-        onClick={onDownload}
-      >
-        <Download className="h-3.5 w-3.5" />
-      </Button>
+      {isDownloaded ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div
+              className="h-7 w-7 shrink-0 flex items-center justify-center text-green-500"
+              aria-label={t('library.detail.alreadyDownloaded')}
+            >
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            </div>
+          </TooltipTrigger>
+          <TooltipContent side="left">
+            <p>{t('library.detail.alreadyDownloaded')}</p>
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
+          onClick={onDownload}
+        >
+          <Download className="h-3.5 w-3.5" />
+        </Button>
+      )}
     </div>
   );
 }

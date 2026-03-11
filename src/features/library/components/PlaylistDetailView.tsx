@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { open } from '@tauri-apps/plugin-dialog';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
+import { useSettingsStore, checkWritePermission } from '@/features/settings';
+import { logger } from '@/lib/logger';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useTrackSelection } from '../hooks/useTrackSelection';
+import { useDownloadedTracks } from '../hooks/useDownloadedTracks';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
 import { filterTracks } from '../utils/filterTracks';
 import { sortTracks } from '../utils/sortTracks';
@@ -19,7 +24,7 @@ const MIN_TRACKS_FOR_SEARCH = 5;
 interface PlaylistDetailViewProps {
   playlist: LibraryPlaylist;
   onBack: () => void;
-  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string) => void | Promise<void>;
+  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
 }
 
 function TrackSkeletonRow() {
@@ -60,10 +65,16 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
 
   const [searchQuery, setSearchQuery] = useState('');
   const [sortMode, setSortMode] = useState<SortMode>('default');
+  const defaultPath = useSettingsStore((s) => s.downloadPath);
+  const [localPath, setLocalPath] = useState<string | undefined>(undefined);
+  const effectivePath = localPath || defaultPath || undefined;
+
+  const { downloadedIds, downloadedCount } = useDownloadedTracks(tracks, effectivePath, !isStreaming);
 
   useEffect(() => {
     setSearchQuery('');
     setSortMode('default');
+    setLocalPath(undefined);
   }, [playlist.id]);
 
   const filteredTracks = useMemo(
@@ -86,22 +97,49 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
     selectedCount,
     isAllSelected,
     selectedTracks,
-  } = useTrackSelection(displayTracks);
+  } = useTrackSelection(displayTracks, downloadedIds);
+
+  const handleChangeFolder = useCallback(async () => {
+    try {
+      const selected = await open({
+        directory: true,
+        defaultPath: effectivePath,
+        title: t('library.detail.changeFolder'),
+      });
+
+      if (selected && typeof selected === 'string') {
+        const hasPermission = await checkWritePermission(selected);
+        if (hasPermission) {
+          setLocalPath(selected);
+        } else {
+          toast.error(t('library.detail.folderPermissionDenied'));
+        }
+      }
+    } catch (err) {
+      logger.error(`[PlaylistDetailView] Folder selection error: ${err}`);
+    }
+  }, [effectivePath, t]);
+
+  const folderName = useMemo(
+    () => effectivePath ? effectivePath.split(/[/\\]/).filter(Boolean).pop() : undefined,
+    [effectivePath],
+  );
+  const isCustomFolder = Boolean(localPath && localPath !== defaultPath);
 
   const handleDownloadAll = useCallback(() => {
-    if (tracks && tracks.length > 0) onDownloadTracks(tracks, playlist.title);
-  }, [tracks, playlist.title, onDownloadTracks]);
+    if (tracks && tracks.length > 0) onDownloadTracks(tracks, playlist.title, effectivePath);
+  }, [tracks, playlist.title, onDownloadTracks, effectivePath]);
 
   const handleDownloadSelected = useCallback(async () => {
-    await onDownloadTracks(selectedTracks, playlist.title);
+    await onDownloadTracks(selectedTracks, playlist.title, effectivePath);
     clearSelection();
-  }, [selectedTracks, playlist.title, onDownloadTracks, clearSelection]);
+  }, [selectedTracks, playlist.title, onDownloadTracks, clearSelection, effectivePath]);
 
   const handleDownloadTrack = useCallback(
     (track: TrackInfo) => {
-      onDownloadTracks([track], playlist.title);
+      onDownloadTracks([track], playlist.title, effectivePath);
     },
-    [playlist.title, onDownloadTracks],
+    [playlist.title, onDownloadTracks, effectivePath],
   );
 
   return (
@@ -113,6 +151,10 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
         onBack={onBack}
         onDownloadAll={handleDownloadAll}
         isDownloadDisabled={!tracks || tracks.length === 0}
+        downloadedCount={downloadedCount}
+        folderName={folderName}
+        isCustomFolder={isCustomFolder}
+        onChangeFolder={handleChangeFolder}
       />
 
       {showSkeleton && (
@@ -164,6 +206,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           onToggleTrack={toggleTrack}
           onToggleAll={toggleAll}
           onDownloadTrack={handleDownloadTrack}
+          downloadedIds={downloadedIds}
         />
       )}
 
