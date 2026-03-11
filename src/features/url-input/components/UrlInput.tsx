@@ -5,7 +5,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { readText } from '@tauri-apps/plugin-clipboard-manager';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ValidationResult } from '@/features/url-input/types/url';
 
@@ -84,25 +84,23 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
         </div>
       )}
       {!isValidating && !disabled && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={handlePasteFromClipboard}
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/80"
-                aria-label={t('download.pasteButton')}
-              >
-                <ClipboardPaste className="h-5 w-5" aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>{t('download.pasteButton')}</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={handlePasteFromClipboard}
+              className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+              aria-label={t('download.pasteButton')}
+            >
+              <ClipboardPaste className="h-5 w-5" aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('download.pasteButton')}</p>
+          </TooltipContent>
+        </Tooltip>
       )}
     </div>
   );
