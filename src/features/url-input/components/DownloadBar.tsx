@@ -8,10 +8,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useSettingsStore, checkWritePermission } from '@/features/settings';
-import { open } from '@tauri-apps/plugin-dialog';
+import { useSettingsStore } from '@/features/settings';
 import { cn } from '@/lib/utils';
-import { logger } from '@/lib/logger';
+import { useFolderSelection } from '@/hooks';
 
 interface DownloadBarProps {
   onDownload: (outputDir?: string) => void;
@@ -29,7 +28,6 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
 
   // Local state for per-download override (starts with default from settings)
   const [localPath, setLocalPath] = useState<string | undefined>(defaultPath || undefined);
-  const [error, setError] = useState<string | null>(null);
 
   // Initialize localPath when defaultPath becomes available (e.g., after hydration)
   useEffect(() => {
@@ -38,29 +36,11 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
     }
   }, [defaultPath, localPath]);
 
-  const handleChangeFolder = async () => {
-    try {
-      const selected = await open({
-        directory: true,
-        defaultPath: localPath || defaultPath || undefined,
-        title: t('settings.selectFolder'),
-      });
-
-      if (selected && typeof selected === 'string') {
-        const hasPermission = await checkWritePermission(selected);
-
-        if (hasPermission) {
-          setLocalPath(selected);
-          setError(null);
-        } else {
-          setError(t('settings.permissionDenied'));
-        }
-      }
-    } catch (err) {
-      logger.error(`[DownloadBar] Folder selection error: ${err}`);
-      setError(t('settings.permissionDenied'));
-    }
-  };
+  const { selectFolder, error } = useFolderSelection({
+    defaultPath: localPath || defaultPath || undefined,
+    dialogTitle: t('settings.selectFolder'),
+    onSelected: setLocalPath,
+  });
 
   const handleDownloadClick = () => {
     onDownload(localPath || undefined);
@@ -83,7 +63,7 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
           <TooltipTrigger asChild>
             <button
               type="button"
-              onClick={handleChangeFolder}
+              onClick={selectFolder}
               disabled={isDownloading}
               className={cn(
                 'flex items-center gap-2.5 flex-1 min-w-0 text-left px-2 py-1.5 -ml-2 rounded-lg',
@@ -144,7 +124,7 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
           aria-live="assertive"
           data-testid="folder-error"
         >
-          {error}
+          {error === 'permission_denied' && t('settings.permissionDenied')}
         </p>
       )}
     </div>

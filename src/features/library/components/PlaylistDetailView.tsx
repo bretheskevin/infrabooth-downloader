@@ -1,12 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { open } from '@tauri-apps/plugin-dialog';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
-import { useSettingsStore, checkWritePermission } from '@/features/settings';
-import { logger } from '@/lib/logger';
+import { useSettingsStore } from '@/features/settings';
+import { useFolderSelection } from '@/hooks';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useTrackSelection } from '../hooks/useTrackSelection';
@@ -99,26 +98,12 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
     selectedTracks,
   } = useTrackSelection(displayTracks, downloadedIds);
 
-  const handleChangeFolder = useCallback(async () => {
-    try {
-      const selected = await open({
-        directory: true,
-        defaultPath: effectivePath,
-        title: t('library.detail.changeFolder'),
-      });
-
-      if (selected && typeof selected === 'string') {
-        const hasPermission = await checkWritePermission(selected);
-        if (hasPermission) {
-          setLocalPath(selected);
-        } else {
-          toast.error(t('library.detail.folderPermissionDenied'));
-        }
-      }
-    } catch (err) {
-      logger.error(`[PlaylistDetailView] Folder selection error: ${err}`);
-    }
-  }, [effectivePath, t]);
+  const { selectFolder: handleChangeFolder } = useFolderSelection({
+    defaultPath: effectivePath,
+    dialogTitle: t('library.detail.changeFolder'),
+    onSelected: setLocalPath,
+    onPermissionDenied: () => toast.error(t('library.detail.folderPermissionDenied')),
+  });
 
   const folderName = useMemo(
     () => effectivePath ? effectivePath.split(/[/\\]/).filter(Boolean).pop() : undefined,

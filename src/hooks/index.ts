@@ -3,5 +3,6 @@ export { useThemeSync } from '@/features/settings/hooks/useThemeSync';
 export { useAuthStateListener } from '@/features/auth/hooks/useAuthStateListener';
 export { useStartupAuth } from '@/features/auth/hooks/useStartupAuth';
 export { useDebounce } from './useDebounce';
+export { useFolderSelection } from './useFolderSelection';
 export { useInitializeSettings } from '@/features/settings/hooks/useInitializeSettings';
 export * from '@/features/queue/hooks';
