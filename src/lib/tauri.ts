@@ -82,4 +82,7 @@ export const api = {
 
   resolveLibraryArtwork: (playlistId: number, secretToken: string | null): Promise<string | null> =>
     commands.resolveLibraryArtwork(playlistId, secretToken).then(unwrap),
+
+  getLibraryPlaylistTracks: (playlistId: number): Promise<TrackInfo[]> =>
+    commands.getLibraryPlaylistTracks(playlistId).then(unwrap),
 };
