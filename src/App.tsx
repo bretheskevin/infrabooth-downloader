@@ -7,9 +7,15 @@ import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
 import { useAuthStore } from '@/features/auth/store';
 import { RateLimitDialog } from '@/features/queue/components/RateLimitDialog';
 import { useRateLimitDialog } from '@/features/queue/hooks/useRateLimitDialog';
+import { DownloadConflictDialog } from '@/features/queue/components/DownloadConflictDialog';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { Toaster } from '@/components/ui/sonner';
 import {
   useQueueStore,
   startDownloadQueue,
+  cancelDownloadQueue,
+  waitForQueueIdle,
   trackInfoToQueueTrack,
   queueTrackToDownloadRequest,
 } from '@/features/queue';
@@ -28,16 +34,22 @@ export function App() {
     useUpdateStore.getState().checkForUpdates();
   }, []);
 
+  const { t } = useTranslation();
   const [activePage, setActivePage] = useState<'download' | 'library'>('download');
   const [initialUrl, setInitialUrl] = useState('');
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
+
+  const [pendingDownload, setPendingDownload] = useState<{
+    tracks: TrackInfo[];
+    playlistTitle: string;
+  } | null>(null);
 
   const handlePageChange = useCallback((page: 'download' | 'library') => {
     if (page === 'library') setInitialUrl('');
     setActivePage(page);
   }, []);
 
-  const handleDownloadTracks = useCallback(
+  const executeDownload = useCallback(
     async (tracks: TrackInfo[], playlistTitle: string) => {
       const { isComplete, failedCount, clearQueue, enqueueTracks, setInitializing, setOutputDir } =
         useQueueStore.getState();
@@ -69,6 +81,42 @@ export function App() {
     },
     [],
   );
+
+  const handleDownloadTracks = useCallback(
+    (tracks: TrackInfo[], playlistTitle: string) => {
+      const { isProcessing, isCancelling } = useQueueStore.getState();
+
+      if (isProcessing || isCancelling) {
+        setPendingDownload({ tracks, playlistTitle });
+        return;
+      }
+
+      executeDownload(tracks, playlistTitle);
+    },
+    [executeDownload],
+  );
+
+  const handleConfirmReplace = useCallback(async () => {
+    if (!pendingDownload) return;
+    const { tracks, playlistTitle } = pendingDownload;
+    setPendingDownload(null);
+
+    try {
+      await cancelDownloadQueue();
+      await waitForQueueIdle();
+    } catch (error) {
+      console.error('[App] Failed to cancel current download:', error);
+      toast.error(t('library.detail.conflictError'));
+      return;
+    }
+
+    useQueueStore.getState().clearQueue();
+    executeDownload(tracks, playlistTitle);
+  }, [pendingDownload, executeDownload, t]);
+
+  const handleCancelReplace = useCallback(() => {
+    setPendingDownload(null);
+  }, []);
 
   const {
     isOpen: authChoiceOpen,
@@ -105,6 +153,12 @@ export function App() {
         onRetry={handleRateLimitRetry}
         onStop={handleRateLimitStop}
       />
+      <DownloadConflictDialog
+        open={pendingDownload !== null}
+        onConfirm={handleConfirmReplace}
+        onCancel={handleCancelReplace}
+      />
+      <Toaster />
     </AppLayout>
   );
 }

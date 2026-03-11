@@ -217,7 +217,12 @@
       "download": "Télécharger",
       "selectAll": "Tout sélectionner",
       "selected": "{{count}} sélectionnés",
-      "quickDownloadFailed": "Échec de la récupération des pistes"
+      "quickDownloadFailed": "Échec de la récupération des pistes",
+      "conflictTitle": "Téléchargement en cours",
+      "conflictDescription": "Un téléchargement est déjà en cours. Voulez-vous l'annuler et en démarrer un nouveau ?",
+      "conflictConfirm": "Annuler et démarrer",
+      "conflictCancel": "Garder l'actuel",
+      "conflictError": "Échec de l'annulation du téléchargement en cours"
     }
   },
   "downloadBar": {
