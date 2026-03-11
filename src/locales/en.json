@@ -217,7 +217,12 @@
       "download": "Download",
       "selectAll": "Select all",
       "selected": "{{count}} selected",
-      "quickDownloadFailed": "Failed to fetch playlist tracks"
+      "quickDownloadFailed": "Failed to fetch playlist tracks",
+      "conflictTitle": "Download in progress",
+      "conflictDescription": "A download is already in progress. Do you want to cancel it and start a new one?",
+      "conflictConfirm": "Cancel & Start New",
+      "conflictCancel": "Keep Current",
+      "conflictError": "Failed to cancel the current download"
     }
   },
   "downloadBar": {

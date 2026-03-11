@@ -240,3 +240,29 @@ function setupQueueEventListeners() {
 }
 
 setupQueueEventListeners();
+
+/**
+ * Returns a promise that resolves when the queue is idle (not processing or cancelling).
+ * Resolves immediately if already idle. Includes a safety timeout to avoid hanging forever.
+ */
+export function waitForQueueIdle(timeoutMs = 10_000): Promise<void> {
+  const state = useQueueStore.getState();
+  if (!state.isProcessing && !state.isCancelling) {
+    return Promise.resolve();
+  }
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      unsub();
+      resolve();
+    }, timeoutMs);
+
+    const unsub = useQueueStore.subscribe((s) => {
+      if (!s.isProcessing && !s.isCancelling) {
+        clearTimeout(timeout);
+        unsub();
+        resolve();
+      }
+    });
+  });
+}
