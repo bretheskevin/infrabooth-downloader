@@ -48,7 +48,7 @@ export function PlaylistTrackList({
           onCheckedChange={onToggleAll}
           className="shrink-0"
         />
-        <span className="text-xs text-muted-foreground">
+        <span className="text-xs text-muted-foreground cursor-pointer select-none" onClick={onToggleAll}>
           {t('library.detail.selectAll')}
         </span>
       </div>
