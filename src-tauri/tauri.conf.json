@@ -27,7 +27,7 @@
         "width": 700,
         "height": 700,
         "minWidth": 580,
-        "minHeight": 550,
+        "minHeight": 620,
         "resizable": true,
         "center": true,
         "devtools": false

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { UrlInput } from '../UrlInput';
 import type { ValidationResult } from '@/features/url-input/types/url';
 
@@ -15,6 +16,14 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
+function renderUrlInput(props: React.ComponentProps<typeof UrlInput>) {
+  return render(
+    <TooltipProvider>
+      <UrlInput {...props} />
+    </TooltipProvider>
+  );
+}
+
 describe('UrlInput', () => {
   const mockOnUrlChange = vi.fn();
 
@@ -23,28 +32,28 @@ describe('UrlInput', () => {
   });
 
   it('should render input with placeholder text (AC #1)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toBeInTheDocument();
   });
 
   it('should have type="url" for semantic correctness (AC #4)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toHaveAttribute('type', 'url');
   });
 
   it('should have aria-label for screen readers (AC #4)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByLabelText('Paste a SoundCloud playlist or track URL');
     expect(input).toBeInTheDocument();
   });
 
   it('should call onUrlChange when value changes (AC #3)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     fireEvent.change(input, { target: { value: 'https://soundcloud.com/test' } });
@@ -53,7 +62,7 @@ describe('UrlInput', () => {
   });
 
   it('should trigger onUrlChange on paste event (AC #3)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
 
@@ -64,28 +73,28 @@ describe('UrlInput', () => {
   });
 
   it('should be disabled when disabled prop is true (AC #5)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} disabled />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange, disabled: true });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toBeDisabled();
   });
 
   it('should have prominent height styling h-14 (AC #1)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toHaveClass('h-14');
   });
 
   it('should have readable text size text-base (AC #1)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toHaveClass('text-base');
   });
 
   it('should have focus ring styling (AC #2)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toHaveClass('focus-visible:ring-2');
@@ -93,14 +102,14 @@ describe('UrlInput', () => {
   });
 
   it('should accept custom className', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} className="custom-class" />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange, className: 'custom-class' });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     expect(input).toHaveClass('custom-class');
   });
 
   it('should be keyboard navigable (AC #4)', () => {
-    render(<UrlInput onUrlChange={mockOnUrlChange} />);
+    renderUrlInput({ onUrlChange: mockOnUrlChange });
 
     const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
     input.focus();
@@ -109,13 +118,11 @@ describe('UrlInput', () => {
 
   describe('validation state borders (Story 3.3)', () => {
     it('should show primary border when validating (AC #1)', () => {
-      render(
-        <UrlInput
-          onUrlChange={mockOnUrlChange}
-          isValidating={true}
-          validationResult={null}
-        />
-      );
+      renderUrlInput({
+        onUrlChange: mockOnUrlChange,
+        isValidating: true,
+        validationResult: null,
+      });
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       expect(input).toHaveClass('border-primary');
@@ -124,13 +131,11 @@ describe('UrlInput', () => {
     });
 
     it('should show loading spinner when validating (AC #1)', () => {
-      render(
-        <UrlInput
-          onUrlChange={mockOnUrlChange}
-          isValidating={true}
-          validationResult={null}
-        />
-      );
+      renderUrlInput({
+        onUrlChange: mockOnUrlChange,
+        isValidating: true,
+        validationResult: null,
+      });
 
       const spinner = document.querySelector('.animate-spin');
       expect(spinner).toBeInTheDocument();
@@ -143,13 +148,11 @@ describe('UrlInput', () => {
         error: null,
       };
 
-      render(
-        <UrlInput
-          onUrlChange={mockOnUrlChange}
-          isValidating={false}
-          validationResult={successResult}
-        />
-      );
+      renderUrlInput({
+        onUrlChange: mockOnUrlChange,
+        isValidating: false,
+        validationResult: successResult,
+      });
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       expect(input).toHaveClass('border-success');
@@ -168,13 +171,11 @@ describe('UrlInput', () => {
         },
       };
 
-      render(
-        <UrlInput
-          onUrlChange={mockOnUrlChange}
-          isValidating={false}
-          validationResult={errorResult}
-        />
-      );
+      renderUrlInput({
+        onUrlChange: mockOnUrlChange,
+        isValidating: false,
+        validationResult: errorResult,
+      });
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       expect(input).toHaveClass('border-destructive');
@@ -183,20 +184,18 @@ describe('UrlInput', () => {
     });
 
     it('should not show spinner when not validating', () => {
-      render(
-        <UrlInput
-          onUrlChange={mockOnUrlChange}
-          isValidating={false}
-          validationResult={null}
-        />
-      );
+      renderUrlInput({
+        onUrlChange: mockOnUrlChange,
+        isValidating: false,
+        validationResult: null,
+      });
 
       const spinner = document.querySelector('.animate-spin');
       expect(spinner).not.toBeInTheDocument();
     });
 
     it('should have transition styling for smooth border changes', () => {
-      render(<UrlInput onUrlChange={mockOnUrlChange} />);
+      renderUrlInput({ onUrlChange: mockOnUrlChange });
 
       const input = screen.getByPlaceholderText('Paste a SoundCloud playlist or track URL');
       expect(input).toHaveClass('transition-all');

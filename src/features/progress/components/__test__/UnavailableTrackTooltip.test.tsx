@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { UnavailableTrackTooltip } from '../UnavailableTrackTooltip';
 
 vi.mock('react-i18next', () => ({
@@ -17,9 +18,11 @@ vi.mock('react-i18next', () => ({
 describe('UnavailableTrackTooltip', () => {
   it('should render children', () => {
     render(
+      <TooltipProvider>
       <UnavailableTrackTooltip>
         <button>Trigger</button>
       </UnavailableTrackTooltip>
+      </TooltipProvider>
     );
     expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument();
   });
@@ -28,9 +31,11 @@ describe('UnavailableTrackTooltip', () => {
     const user = userEvent.setup();
 
     render(
+      <TooltipProvider>
       <UnavailableTrackTooltip>
         <button>Trigger</button>
       </UnavailableTrackTooltip>
+      </TooltipProvider>
     );
 
     const trigger = screen.getByRole('button', { name: 'Trigger' });
@@ -45,9 +50,11 @@ describe('UnavailableTrackTooltip', () => {
     const user = userEvent.setup();
 
     render(
+      <TooltipProvider>
       <UnavailableTrackTooltip>
         <button>Trigger</button>
       </UnavailableTrackTooltip>
+      </TooltipProvider>
     );
 
     const trigger = screen.getByRole('button', { name: 'Trigger' });

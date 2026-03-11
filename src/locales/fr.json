@@ -222,7 +222,14 @@
       "conflictDescription": "Un téléchargement est déjà en cours. Voulez-vous l'annuler et en démarrer un nouveau ?",
       "conflictConfirm": "Annuler et démarrer",
       "conflictCancel": "Garder l'actuel",
-      "conflictError": "Échec de l'annulation du téléchargement en cours"
+      "conflictError": "Échec de l'annulation du téléchargement en cours",
+      "filterPlaceholder": "Filtrer les pistes...",
+      "noFilterResults": "Aucune piste ne correspond à votre recherche",
+      "sortDefault": "Ordre de la playlist",
+      "sortTitleAsc": "Titre A → Z",
+      "sortTitleDesc": "Titre Z → A",
+      "sortArtistAsc": "Artiste A → Z",
+      "sortArtistDesc": "Artiste Z → A"
     }
   },
   "downloadBar": {

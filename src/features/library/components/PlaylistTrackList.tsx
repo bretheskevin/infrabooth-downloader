@@ -1,11 +1,13 @@
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Loader2 } from 'lucide-react';
+import { ArrowUpDown, Loader2 } from 'lucide-react';
 import type { TrackInfo } from '@/bindings';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { Checkbox } from '@/components/ui/checkbox';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SORT_MODES, type SortMode } from '../types';
 import { PlaylistTrackItem } from './PlaylistTrackItem';
 
 const TRACK_ITEM_HEIGHT = 56;
@@ -16,6 +18,8 @@ interface PlaylistTrackListProps {
   selectedIds: Set<number>;
   isAllSelected: boolean;
   showOrderToggle?: boolean;
+  sortMode?: SortMode;
+  onSortChange?: (mode: SortMode) => void;
   onToggleTrack: (id: number) => void;
   onToggleAll: () => void;
   onDownloadTrack: (track: TrackInfo) => void;
@@ -27,6 +31,8 @@ export function PlaylistTrackList({
   selectedIds,
   isAllSelected,
   showOrderToggle = false,
+  sortMode,
+  onSortChange,
   onToggleTrack,
   onToggleAll,
   onDownloadTrack,
@@ -56,7 +62,26 @@ export function PlaylistTrackList({
             {t('library.detail.selectAll')}
           </span>
         </div>
-        {showOrderToggle && <PreserveOrderToggle compact />}
+        <div className="flex items-center gap-2">
+          {onSortChange && sortMode && (
+            <Select value={sortMode} onValueChange={(v) => {
+              if (SORT_MODES.includes(v as SortMode)) onSortChange(v as SortMode);
+            }}>
+              <SelectTrigger className="h-7 text-xs w-auto gap-1.5 px-2">
+                <ArrowUpDown className="h-3 w-3 shrink-0" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">{t('library.detail.sortDefault')}</SelectItem>
+                <SelectItem value="title-asc">{t('library.detail.sortTitleAsc')}</SelectItem>
+                <SelectItem value="title-desc">{t('library.detail.sortTitleDesc')}</SelectItem>
+                <SelectItem value="artist-asc">{t('library.detail.sortArtistAsc')}</SelectItem>
+                <SelectItem value="artist-desc">{t('library.detail.sortArtistDesc')}</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+          {showOrderToggle && <PreserveOrderToggle compact />}
+        </div>
       </div>
       <VirtualListContainer
         parentRef={parentRef}
