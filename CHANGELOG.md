@@ -7,93 +7,108 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-03-12
+
+### Added
+
+- Search tab to find and download individual tracks
+- "What's New" dialog after each update
+- Downloaded track indicator in playlists
+- Per-playlist folder selection
+
+### Changed
+
+- Playlist header shows download count and save folder
+- Improved performance on large playlists
+- Sign-in hint moved to a tooltip
+
 ## [1.6.0] - 2026-03-11
 
 ### Added
 
-- Browse tracks inside any library playlist — click a playlist to see all its tracks with artwork and details
-- Select individual tracks from a playlist and download just the ones you want
-- Search and filter tracks within a playlist by title or artist
-- Sort playlist tracks by title or artist (ascending/descending)
-- Download conflict dialog — if a download is already running, you can choose to cancel it and start a new one
+- Browse and view tracks inside any playlist
+- Select and download individual tracks from a playlist
+- Search and filter tracks by title or artist
+- Sort tracks by title or artist
+- Download conflict dialog when a download is already running
 
 ### Changed
 
-- Playlist detail header is now more compact, showing more tracks at a glance
+- More compact playlist detail header
 
 ## [1.5.0] - 2026-03-11
 
 ### Added
 
-- Already-downloaded tracks are now automatically skipped — the app scans your download folder before starting and skips tracks it already has
-- Updates can now be installed directly from the app — the update banner includes an "Install" button with progress feedback
+- Auto-skip already-downloaded tracks
+- In-app update installation with progress
 
 ### Changed
 
-- Improved FFmpeg error handling — recoverable audio warnings no longer cancel the entire download
+- Recoverable FFmpeg warnings no longer cancel downloads
 
 ### Fixed
 
-- Library playlist selection now properly resets the download state
-- Search bar in library no longer triggers autocorrect suggestions
-- Fixed downloads failing on tracks that only offer HLS Opus streams (incompatible with bundled FFmpeg)
+- Playlist selection now resets download state properly
+- Library search no longer triggers autocorrect
+- Fixed downloads on HLS Opus-only tracks
 
 ## [1.4.0] - 2026-03-10
 
 ### Added
 
-- Library browser to browse and download your SoundCloud playlists directly from the app
+- Library browser for your SoundCloud playlists
 
 ### Changed
 
-- Playlist order toggle is now also accessible from the settings panel
-- Settings panel reorganized with scroll shadow indicators for better navigation
+- Track numbering toggle also in settings
+- Reorganized settings panel with scroll indicators
 
 ## [1.3.0] - 2026-03-09
 
 ### Added
 
-- Download multiple tracks simultaneously with configurable parallel downloads (1-10 concurrent)
-- Support for SoundCloud short links (on.soundcloud.com)
+- Parallel downloads (1-10 concurrent)
+- Support for SoundCloud short links
 
 ### Changed
 
-- Authentication now uses browser cookies — sign in to SoundCloud in your browser and the app detects your session automatically
-- Downloads now use SoundCloud's native API instead of yt-dlp, resulting in faster and more reliable downloads
-- When rate-limited by SoundCloud, an interactive dialog lets you choose how to proceed instead of automatic backoff
-- Playlist track numbering is now optional via a toggle on the playlist preview
-- App size significantly reduced by removing bundled yt-dlp and ffprobe binaries
+- Authentication via browser cookies instead of manual login
+- Native SoundCloud API replaces yt-dlp for faster downloads
+- Interactive dialog on rate limit instead of auto-backoff
+- Optional track numbering via playlist preview toggle
+- Smaller app size (removed yt-dlp and ffprobe)
 
 ### Fixed
 
-- Improved handling of concurrent authentication refreshes
+- Better handling of concurrent auth refreshes
 
 ## [1.2.0] - 2026-03-03
 
 ### Added
 
-- The app now silently checks for updates when launched — if a new version is available, a non-intrusive banner appears at the top of the window
-- The update banner includes a "Learn more" link to the GitHub release page and can be dismissed for the current session
+- Automatic update checks at startup
+- Dismissable update banner with release link
 
 ### Changed
 
-- Update checks no longer show error messages when the network is unavailable — the app continues normally
+- No error shown when update check has no network
 
 ## [1.1.0] - 2026-02-22
 
 ### Changed
 
-- Download progress now shows file size (e.g., "5.2 MB / 12.4 MB") for better visibility
+- Download progress shows file size (e.g. "5.2 MB / 12.4 MB")
 
 ### Fixed
 
-- Partial download files (.part, .ytdl) are now automatically cleaned up when a download is canceled
+- Partial download files cleaned up on cancel
 
 ## [1.0.1] - 2026-02-20
 
 ### Fixed
 
-- Sign in with SoundCloud now works correctly
+- SoundCloud sign-in now works correctly
 
 ### Changed
 
@@ -104,7 +119,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - OAuth authentication with SoundCloud
-- Download SoundCloud tracks at high quality (premium quality with Go+ subscription)
+- High-quality track downloads (premium with Go+)
 - ID3 metadata embedding (title, artist, artwork)
 - macOS (Intel & Apple Silicon) and Windows support
 - English and French translations
