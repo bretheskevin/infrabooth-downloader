@@ -1,3 +1,4 @@
+import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Download, Music } from 'lucide-react';
 import { cn, formatDuration } from '@/lib/utils';
@@ -12,15 +13,15 @@ interface PlaylistTrackItemProps {
   staggerIndex: number;
   animate?: boolean;
   isSelected: boolean;
-  onToggle: () => void;
-  onDownload: () => void;
+  onToggle: (id: number) => void;
+  onDownload: (track: TrackInfo) => void;
   isDownloaded?: boolean;
 }
 
 const MAX_STAGGER_ITEMS = 15;
 const STAGGER_DELAY_MS = 25;
 
-export function PlaylistTrackItem({
+export const PlaylistTrackItem = memo(function PlaylistTrackItem({
   track,
   index,
   staggerIndex,
@@ -34,10 +35,13 @@ export function PlaylistTrackItem({
   const delay = animate && staggerIndex < MAX_STAGGER_ITEMS ? staggerIndex * STAGGER_DELAY_MS : 0;
   const artworkUrl = track.artwork_url ?? null;
 
+  const handleToggle = useCallback(() => onToggle(track.id), [onToggle, track.id]);
+  const handleDownload = useCallback(() => onDownload(track), [onDownload, track]);
+
   return (
     <div
       className={cn(
-        'flex items-center gap-3 px-3 py-2 rounded-md border transition-colors',
+        'flex items-center gap-3 px-3 py-2 rounded-md border transition-[background-color,border-color] duration-150',
         animate && 'track-row-stagger',
         isDownloaded && 'opacity-60',
         isSelected
@@ -48,7 +52,7 @@ export function PlaylistTrackItem({
     >
       <Checkbox
         checked={isSelected}
-        onCheckedChange={onToggle}
+        onCheckedChange={handleToggle}
         disabled={isDownloaded}
         className="shrink-0"
       />
@@ -95,11 +99,11 @@ export function PlaylistTrackItem({
           variant="ghost"
           size="icon"
           className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-          onClick={onDownload}
+          onClick={handleDownload}
         >
           <Download className="h-3.5 w-3.5" />
         </Button>
       )}
     </div>
   );
-}
+});

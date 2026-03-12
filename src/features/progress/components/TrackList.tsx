@@ -40,7 +40,7 @@ export function TrackList() {
         const track = tracks[virtualItem.index];
         if (!track) return null;
         return (
-          <VirtualRow key={track.id} virtualItem={virtualItem} className="px-2 py-1.5">
+          <VirtualRow key={track.id} size={virtualItem.size} start={virtualItem.start} className="px-2 py-1.5">
             <TrackCard
               track={track}
               isCurrentTrack={track.status === 'downloading' || track.status === 'converting'}

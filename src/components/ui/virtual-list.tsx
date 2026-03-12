@@ -1,5 +1,5 @@
-import type { ReactNode, RefObject } from 'react';
-import type { VirtualItem } from '@tanstack/react-virtual';
+import { memo, type ReactNode, type RefObject } from 'react';
+
 import { cn } from '@/lib/utils';
 
 interface VirtualListContainerProps {
@@ -37,21 +37,22 @@ export function VirtualListContainer({
 }
 
 interface VirtualRowProps {
-  virtualItem: VirtualItem;
+  size: number;
+  start: number;
   className?: string;
   children: ReactNode;
 }
 
-export function VirtualRow({ virtualItem, className, children }: VirtualRowProps) {
+export const VirtualRow = memo(function VirtualRow({ size, start, className, children }: VirtualRowProps) {
   return (
     <div
       className={cn('absolute top-0 left-0 w-full', className)}
       style={{
-        height: `${virtualItem.size}px`,
-        transform: `translateY(${virtualItem.start}px)`,
+        height: `${size}px`,
+        transform: `translateY(${start}px)`,
       }}
     >
       {children}
     </div>
   );
-}
+});
