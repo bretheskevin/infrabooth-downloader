@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AppLayout } from '@/components/layout/AppLayout';
+import { AppLayout, type AppPage } from '@/components/layout/AppLayout';
 import { DownloadPage } from '@/pages/DownloadPage';
 import { LibraryTab } from '@/features/library';
+import { SearchTab } from '@/features/search';
 import { AuthChoiceDialog } from '@/features/auth/components/AuthChoiceDialog';
 import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
 import { useAuthStore } from '@/features/auth/store';
@@ -24,11 +25,11 @@ export function App() {
     useUpdateStore.getState().checkForUpdates();
   }, []);
 
-  const [activePage, setActivePage] = useState<'download' | 'library'>('download');
+  const [activePage, setActivePage] = useState<AppPage>('download');
   const [initialUrl, setInitialUrl] = useState('');
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
 
-  const handlePageChange = useCallback((page: 'download' | 'library') => {
+  const handlePageChange = useCallback((page: AppPage) => {
     if (page === 'library') setInitialUrl('');
     setActivePage(page);
   }, []);
@@ -59,13 +60,17 @@ export function App() {
       <AppLayout
         activePage={activePage}
         onPageChange={handlePageChange}
-        isLibraryLocked={!isSignedIn}
+        isSignedIn={isSignedIn}
       >
         {activePage === 'download' ? (
           <DownloadPage initialUrl={initialUrl} />
-        ) : (
+        ) : activePage === 'library' ? (
           <section className="flex-1 min-h-0 flex flex-col">
             <LibraryTab onDownloadTracks={handleDownloadTracks} />
+          </section>
+        ) : (
+          <section className="flex-1 min-h-0 flex flex-col">
+            <SearchTab />
           </section>
         )}
         <AuthChoiceDialog

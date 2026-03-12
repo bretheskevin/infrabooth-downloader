@@ -5,13 +5,9 @@ import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import { commands } from '@/bindings';
 import type { PlaylistInfo } from '@/features/url-input/types/playlist';
 import { useSettingsStore } from '@/features/settings/store';
+import { getArtworkUrl } from '@/lib/utils';
 import { ArtworkThumbnail } from './ArtworkThumbnail';
 import { DownloadBar } from './DownloadBar';
-
-function getArtworkUrl(url: string | null, size: number = 67): string | null {
-  if (!url) return null;
-  return url.replace('-large', `-t${size}x${size}`);
-}
 
 interface PlaylistPreviewProps {
   playlist: PlaylistInfo;
