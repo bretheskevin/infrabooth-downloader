@@ -7,22 +7,30 @@ import {
   type TrackInfo,
   type ValidationResult,
   type ErrorResponse,
+  type SearchResponse,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
 type StringError = string;
 type AnyError = ErrorResponse | StringError;
 
-function getErrorMessage(error: AnyError): string {
-  if (typeof error === 'string') {
-    return error;
+export class ApiError extends Error {
+  code: string;
+
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
   }
-  return error.message;
 }
 
 function unwrap<T>(result: Result<T, AnyError>): T {
   if (result.status === 'error') {
-    throw new Error(getErrorMessage(result.error));
+    const err = result.error;
+    if (typeof err === 'string') {
+      throw new ApiError('UNKNOWN', err);
+    }
+    throw new ApiError(err.code, err.message);
   }
   return result.data;
 }
@@ -85,4 +93,8 @@ export const api = {
 
   getLibraryPlaylistTracks: (playlistId: number): Promise<TrackInfo[]> =>
     commands.getLibraryPlaylistTracks(playlistId).then(unwrap),
+
+  // Search
+  searchTracks: (query: string, limit: number, offset: number): Promise<SearchResponse> =>
+    commands.searchTracks(query, limit, offset).then(unwrap),
 };

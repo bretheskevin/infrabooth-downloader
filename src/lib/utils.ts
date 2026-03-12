@@ -44,3 +44,14 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1000 * 1000 * 1000) return `${(bytes / (1000 * 1000)).toFixed(1)} MB`;
   return `${(bytes / (1000 * 1000 * 1000)).toFixed(1)} GB`;
 }
+
+/**
+ * Get SoundCloud artwork URL at a specific size.
+ *
+ * SoundCloud serves `-large` (100x100) by default. Replace with `-t{size}x{size}`
+ * to get the desired resolution.
+ */
+export function getArtworkUrl(url: string | null, size: number = 67): string | null {
+  if (!url) return null;
+  return url.replace('-large', `-t${size}x${size}`);
+}
