@@ -3,10 +3,10 @@ import { filterTracks } from '../filterTracks';
 import type { TrackInfo } from '@/bindings';
 
 const makeTracks = (): TrackInfo[] => [
-  { id: 1, title: 'Acid Rain', user: { username: 'DJ Kandid' }, artwork_url: null, duration: 240000 },
-  { id: 2, title: 'Tekno Drive', user: { username: 'Anetha' }, artwork_url: null, duration: 300000 },
-  { id: 3, title: 'Hard Pulse', user: { username: 'SPFDJ' }, artwork_url: null, duration: 180000 },
-  { id: 4, title: 'Night Acid', user: { username: 'Anetha' }, artwork_url: null, duration: 420000 },
+  { id: 1, title: 'Acid Rain', user: { username: 'DJ Kandid' }, artwork_url: null, duration: 240000, permalink_url: '' },
+  { id: 2, title: 'Tekno Drive', user: { username: 'Anetha' }, artwork_url: null, duration: 300000, permalink_url: '' },
+  { id: 3, title: 'Hard Pulse', user: { username: 'SPFDJ' }, artwork_url: null, duration: 180000, permalink_url: '' },
+  { id: 4, title: 'Night Acid', user: { username: 'Anetha' }, artwork_url: null, duration: 420000, permalink_url: '' },
 ];
 
 describe('filterTracks', () => {

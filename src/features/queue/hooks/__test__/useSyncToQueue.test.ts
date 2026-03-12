@@ -17,8 +17,8 @@ const mockPlaylist: PlaylistInfo = {
   artwork_url: 'https://example.com/art.jpg',
   track_count: 2,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'Artist1' }, artwork_url: null, duration: 180000 },
-    { id: 2, title: 'Track 2', user: { username: 'Artist2' }, artwork_url: 'https://example.com/art2.jpg', duration: 240000 },
+    { id: 1, title: 'Track 1', user: { username: 'Artist1' }, artwork_url: null, duration: 180000, permalink_url: '' },
+    { id: 2, title: 'Track 2', user: { username: 'Artist2' }, artwork_url: 'https://example.com/art2.jpg', duration: 240000, permalink_url: '' },
   ],
 };
 
@@ -28,6 +28,7 @@ const mockTrack: TrackInfo = {
   user: { username: 'TestArtist' },
   artwork_url: 'https://example.com/track-art.jpg',
   duration: 185000,
+  permalink_url: '',
 };
 
 describe('useSyncToQueue', () => {

@@ -45,6 +45,9 @@ struct RawSearchTrack {
     user: RawSearchUser,
     artwork_url: Option<String>,
     duration: u64,
+    /// SoundCloud permalink URL. Always present in API responses; `#[serde(default)]` is a safety net.
+    #[serde(default)]
+    permalink_url: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -77,6 +80,7 @@ fn map_raw_track(raw: RawSearchTrack) -> TrackInfo {
         },
         artwork_url: raw.artwork_url,
         duration: raw.duration,
+        permalink_url: raw.permalink_url,
     }
 }
 
@@ -183,6 +187,7 @@ mod tests {
             },
             artwork_url: Some("https://artwork.jpg".to_string()),
             duration: 240000,
+            permalink_url: "https://soundcloud.com/artist/my-song".to_string(),
         };
         let track = map_raw_track(raw);
         assert_eq!(track.id, 456);
@@ -202,6 +207,7 @@ mod tests {
             },
             artwork_url: None,
             duration: 60000,
+            permalink_url: "https://soundcloud.com/user/no-art".to_string(),
         };
         let track = map_raw_track(raw);
         assert!(track.artwork_url.is_none());
@@ -234,6 +240,7 @@ mod tests {
                 },
                 artwork_url: None,
                 duration: 100000,
+                permalink_url: "https://soundcloud.com/user/test".to_string(),
             }],
             total_results: Some(1),
         };

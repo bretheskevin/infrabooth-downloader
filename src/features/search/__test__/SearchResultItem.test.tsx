@@ -14,6 +14,7 @@ const mockTrack: TrackInfo = {
   user: { username: 'TestArtist' },
   artwork_url: null,
   duration: 180000,
+  permalink_url: '',
 } as TrackInfo;
 
 describe('SearchResultItem', () => {

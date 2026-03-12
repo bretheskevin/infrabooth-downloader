@@ -10,6 +10,7 @@ pub mod metadata;
 pub mod oauth;
 pub mod paths;
 pub mod pipeline;
+pub mod player;
 pub mod playlist;
 pub mod queue;
 pub mod sidecar;

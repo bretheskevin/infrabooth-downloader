@@ -3,9 +3,9 @@ import { sortTracks } from '../sortTracks';
 import type { TrackInfo } from '@/bindings';
 
 const makeTracks = (): TrackInfo[] => [
-  { id: 1, title: 'Zebra', user: { username: 'Charlie' }, artwork_url: null, duration: 240000 },
-  { id: 2, title: 'Alpha', user: { username: 'Bob' }, artwork_url: null, duration: 300000 },
-  { id: 3, title: 'Mango', user: { username: 'Alice' }, artwork_url: null, duration: 180000 },
+  { id: 1, title: 'Zebra', user: { username: 'Charlie' }, artwork_url: null, duration: 240000, permalink_url: '' },
+  { id: 2, title: 'Alpha', user: { username: 'Bob' }, artwork_url: null, duration: 300000, permalink_url: '' },
+  { id: 3, title: 'Mango', user: { username: 'Alice' }, artwork_url: null, duration: 180000, permalink_url: '' },
 ];
 
 describe('sortTracks', () => {
@@ -48,8 +48,8 @@ describe('sortTracks', () => {
 
   it('is case-insensitive for title sort', () => {
     const mixed: TrackInfo[] = [
-      { id: 1, title: 'banana', user: { username: 'X' }, artwork_url: null, duration: 100 },
-      { id: 2, title: 'Apple', user: { username: 'X' }, artwork_url: null, duration: 100 },
+      { id: 1, title: 'banana', user: { username: 'X' }, artwork_url: null, duration: 100, permalink_url: '' },
+      { id: 2, title: 'Apple', user: { username: 'X' }, artwork_url: null, duration: 100, permalink_url: '' },
     ];
     const result = sortTracks(mixed, 'title-asc');
     expect(result.map((t) => t.title)).toEqual(['Apple', 'banana']);
