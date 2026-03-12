@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useSettingsStore } from '@/features/settings/store';
+import { usePlayContext, usePlayerStore } from '@/features/player';
 import { useDownloadedTracks } from '@/features/library/hooks/useDownloadedTracks';
 import { SearchBar } from '@/components/ui/search-bar';
 import { SearchFolderPicker } from './SearchFolderPicker';
@@ -45,6 +46,10 @@ export function SearchTab() {
     [getRawTrackState, downloadedIds],
   );
 
+  const { playTrack } = usePlayContext(results);
+  const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
+  const playerPause = usePlayerStore((s) => s.pause);
+
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
       <SearchBar value={inputValue} onChange={handleInputChange} placeholder={t('search.placeholder')} autoFocus />
@@ -61,6 +66,9 @@ export function SearchTab() {
           getTrackState={getTrackState}
           onDownload={downloadTrack}
           onRetry={downloadTrack}
+          onPlayTrack={playTrack}
+          onPauseTrack={playerPause}
+          currentlyPlayingId={currentTrackId}
         />
       </div>
     </div>

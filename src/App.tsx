@@ -3,6 +3,7 @@ import { AppLayout, type AppPage } from '@/components/layout/AppLayout';
 import { DownloadPage } from '@/pages/DownloadPage';
 import { LibraryTab } from '@/features/library';
 import { SearchTab } from '@/features/search';
+import { PlayerContainer } from '@/features/player';
 import { AuthChoiceDialog } from '@/features/auth/components/AuthChoiceDialog';
 import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
 import { useAuthStore } from '@/features/auth/store';
@@ -75,6 +76,7 @@ export function App() {
             <SearchTab />
           </section>
         )}
+        <PlayerContainer />
         <AuthChoiceDialog
           open={authChoiceOpen}
           onReAuthenticate={handleReAuthenticate}
