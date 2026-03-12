@@ -29,6 +29,7 @@ interface PlayerStore {
   // UI-only actions
   toggleExpanded: () => void;
   toggleQueue: () => void;
+  collapse: () => void;
 
   // Event handlers (called by usePlayerEvents)
   _onStateChanged: (state: PlaybackState, trackId: number | null) => void;
@@ -120,6 +121,7 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
 
   toggleExpanded: () => set((s) => ({ isExpanded: !s.isExpanded })),
   toggleQueue: () => set((s) => ({ isQueueOpen: !s.isQueueOpen })),
+  collapse: () => set({ isExpanded: false }),
 
   _onStateChanged: (state, _trackId) => {
     if (state === 'stopped') {

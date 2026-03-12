@@ -268,5 +268,20 @@
   "downloadBar": {
     "clickToChange": "Cliquez pour changer le dossier",
     "customLocation": "personnalisé"
+  },
+  "player": {
+    "queue": "File d'attente",
+    "queueCount_one": "{{count}} piste",
+    "queueCount_other": "{{count}} pistes",
+    "queueEmpty": "La file d'attente est vide",
+    "nowPlaying": "En cours de lecture",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "play": "Lecture",
+    "pause": "Pause",
+    "collapse": "Réduire le lecteur",
+    "expand": "Agrandir le lecteur",
+    "reorder": "Réorganiser",
+    "removeFromQueue": "Retirer de la file"
   }
 }
