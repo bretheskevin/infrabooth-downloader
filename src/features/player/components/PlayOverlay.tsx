@@ -6,14 +6,18 @@ import { cn } from '@/lib/utils';
 interface PlayOverlayProps {
   onPlay: () => void;
   onPause?: () => void;
+  /** Show overlay persistently (e.g. current track, even when paused) */
+  isActive?: boolean;
+  /** Currently playing — controls pause/play icon. Defaults isActive if not set. */
   isPlaying?: boolean;
   children: ReactNode;
   className?: string;
 }
 
-export function PlayOverlay({ onPlay, onPause, isPlaying, children, className }: PlayOverlayProps) {
+export function PlayOverlay({ onPlay, onPause, isActive, isPlaying, children, className }: PlayOverlayProps) {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
+  const showOverlay = isActive ?? isPlaying;
 
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,7 +47,7 @@ export function PlayOverlay({ onPlay, onPause, isPlaying, children, className }:
       onMouseLeave={() => setIsHovered(false)}
     >
       {children}
-      {(isHovered || isPlaying) && (
+      {(isHovered || showOverlay) && (
         <div
           role="button"
           tabIndex={0}
@@ -51,7 +55,7 @@ export function PlayOverlay({ onPlay, onPause, isPlaying, children, className }:
           aria-label={isPlaying ? t('player.pause') : t('player.play')}
           className={cn(
             'absolute inset-0 flex items-center justify-center rounded-md bg-black/40 transition-opacity duration-150 cursor-pointer',
-            isHovered ? 'opacity-100' : 'opacity-60',
+            isHovered ? 'opacity-100' : 'opacity-50',
           )}
           onClick={handleClick}
           onKeyDown={handleKeyDown}

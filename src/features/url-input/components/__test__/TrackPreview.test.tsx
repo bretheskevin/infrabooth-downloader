@@ -33,7 +33,7 @@ describe('TrackPreview', () => {
   const mockTrack: TrackInfo = {
     id: 123456,
     title: 'Test Track Title',
-    user: { username: 'Test Artist' },
+    user: { username: 'Test Artist', avatar_url: null },
     artwork_url: 'https://example.com/artwork.jpg',
     duration: 185000, // 3:05
     permalink_url: 'https://soundcloud.com/test-artist/test-track',

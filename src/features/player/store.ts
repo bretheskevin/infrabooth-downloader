@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { api } from '@/lib/tauri';
+import { useSettingsStore } from '@/features/settings/store';
 import type { PlaybackItem, PlaybackState } from './types';
 import { toBindingsItem } from './types';
 
@@ -50,7 +51,9 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   isQueueOpen: false,
 
   play: async (queue, index) => {
-    set({ queue, cursor: index, currentTrack: queue[index] ?? null, state: 'loading' });
+    const vol = useSettingsStore.getState().playerVolume;
+    set({ queue, cursor: index, currentTrack: queue[index] ?? null, state: 'loading', volume: vol });
+    await api.playerSetVolume(vol);
     await api.playerPlayAt(queue.map(toBindingsItem), index);
   },
 
@@ -66,6 +69,7 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
     set({ volume });
     try {
       await api.playerSetVolume(volume);
+      useSettingsStore.getState().setPlayerVolume(volume);
     } catch (e) {
       set({ volume: prev });
       throw e;

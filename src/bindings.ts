@@ -396,10 +396,7 @@ duration: number; permalink_url: string }
  */
 export type UpdateInfo = { version: string; body: string | null; date: string | null }
 export type UrlType = "playlist" | "track"
-/**
- * User information from SoundCloud API (public).
- */
-export type UserInfo = { username: string }
+export type UserInfo = { username: string; avatar_url: string | null }
 export type ValidationError = { code: string; message: string; hint: string | null }
 export type ValidationResult = { valid: boolean; urlType: UrlType | null; error: ValidationError | null }
 

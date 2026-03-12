@@ -58,7 +58,7 @@ export function QueuePanelItem({ item, index, isCurrent, onRemove }: QueuePanelI
 
       <div className="h-7 w-7 rounded bg-secondary flex-shrink-0 overflow-hidden">
         {item.artworkUrl && (
-          <img src={getArtworkUrl(item.artworkUrl, 48) ?? undefined} alt="" className="h-full w-full object-cover" />
+          <img src={getArtworkUrl(item.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />
         )}
       </div>
 

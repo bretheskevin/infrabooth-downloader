@@ -10,6 +10,7 @@ interface SettingsState {
   theme: Theme;
   maxConcurrentDownloads: number;
   preservePlaylistOrder: boolean;
+  playerVolume: number;
   _hasHydrated: boolean;
   // Actions
   setDownloadPath: (path: string) => void;
@@ -17,6 +18,7 @@ interface SettingsState {
   setTheme: (theme: Theme) => void;
   setMaxConcurrentDownloads: (n: number) => void;
   setPreservePlaylistOrder: (value: boolean) => void;
+  setPlayerVolume: (volume: number) => void;
   _setHasHydrated: (state: boolean) => void;
 }
 
@@ -28,12 +30,14 @@ export const useSettingsStore = create<SettingsState>()(
       theme: 'system' as Theme,
       maxConcurrentDownloads: 3,
       preservePlaylistOrder: true,
+      playerVolume: 1.0,
       _hasHydrated: false,
       setDownloadPath: (path) => set({ downloadPath: path }),
       setLanguage: (lang) => set({ language: lang }),
       setTheme: (theme) => set({ theme }),
       setMaxConcurrentDownloads: (n) => set({ maxConcurrentDownloads: Math.min(10, Math.max(1, n)) }),
       setPreservePlaylistOrder: (value) => set({ preservePlaylistOrder: value }),
+      setPlayerVolume: (volume) => set({ playerVolume: Math.min(1, Math.max(0, volume)) }),
       _setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
@@ -45,6 +49,7 @@ export const useSettingsStore = create<SettingsState>()(
         theme: state.theme,
         maxConcurrentDownloads: state.maxConcurrentDownloads,
         preservePlaylistOrder: state.preservePlaylistOrder,
+        playerVolume: state.playerVolume,
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {

@@ -11,7 +11,7 @@ vi.mock('react-i18next', () => ({
 const mockTrack: TrackInfo = {
   id: 123,
   title: 'Test Track',
-  user: { username: 'TestArtist' },
+  user: { username: 'TestArtist', avatar_url: null },
   artwork_url: null,
   duration: 180000,
   permalink_url: '',

@@ -48,7 +48,9 @@ export function SearchTab() {
 
   const { playTrack } = usePlayContext(results);
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
+  const playerState = usePlayerStore((s) => s.state);
   const playerPause = usePlayerStore((s) => s.pause);
+  const playerResume = usePlayerStore((s) => s.resume);
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
@@ -68,7 +70,9 @@ export function SearchTab() {
           onRetry={downloadTrack}
           onPlayTrack={playTrack}
           onPauseTrack={playerPause}
+          onResumeTrack={playerResume}
           currentlyPlayingId={currentTrackId}
+          isPlayerPlaying={playerState === 'playing'}
         />
       </div>
     </div>

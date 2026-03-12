@@ -19,7 +19,9 @@ interface SearchResultListProps {
   onRetry: (track: TrackInfo) => void;
   onPlayTrack?: (index: number) => void;
   onPauseTrack?: () => void;
+  onResumeTrack?: () => void;
   currentlyPlayingId?: number;
+  isPlayerPlaying?: boolean;
 }
 
 export function SearchResultList({
@@ -35,7 +37,9 @@ export function SearchResultList({
   onRetry,
   onPlayTrack,
   onPauseTrack,
+  onResumeTrack,
   currentlyPlayingId,
+  isPlayerPlaying,
 }: SearchResultListProps) {
   const { t } = useTranslation();
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -110,7 +114,9 @@ export function SearchResultList({
           onRetry={() => onRetry(track)}
           onPlay={onPlayTrack}
           onPause={onPauseTrack}
+          onResume={onResumeTrack}
           isCurrentlyPlaying={track.id === currentlyPlayingId}
+          isPlayerPlaying={isPlayerPlaying}
         />
       ))}
 
