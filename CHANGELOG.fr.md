@@ -14,112 +14,112 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 - Onglet de recherche de pistes
 - Fenêtre « Nouveautés » après chaque mise à jour
 - Indicateur de pistes déjà téléchargées dans les playlists
-- Choix du dossier par playlist
+- Choix du dossier de téléchargement par playlist
 
 ### Changed
 
 - L'en-tête de playlist affiche le nombre de pistes et le dossier
-- Meilleures performances sur les grandes playlists
+- Amélioration des performances sur les grandes playlists
 - Indication de connexion déplacée dans une infobulle
 
 ## [1.6.0] - 2026-03-11
 
 ### Added
 
-- Parcourir les pistes d'une playlist
-- Télécharger des pistes individuelles depuis une playlist
-- Recherche et filtrage par titre ou artiste
-- Tri par titre ou artiste
-- Gestion des conflits de téléchargement en cours
+- Parcourir les pistes de n'importe quelle playlist — cliquez sur une playlist pour voir toutes ses pistes avec pochettes et détails
+- Sélectionner des pistes individuelles d'une playlist et ne télécharger que celles souhaitées
+- Rechercher et filtrer les pistes d'une playlist par titre ou artiste
+- Trier les pistes par titre ou artiste (croissant/décroissant)
+- Boîte de dialogue de conflit de téléchargement — si un téléchargement est déjà en cours, vous pouvez l'annuler et en démarrer un nouveau
 
 ### Changed
 
-- En-tête de playlist plus compact
+- L'en-tête de détail de playlist est désormais plus compact, affichant plus de pistes en un coup d'œil
 
 ## [1.5.0] - 2026-03-11
 
 ### Added
 
-- Les pistes déjà téléchargées sont ignorées automatiquement
-- Installation des mises à jour directement dans l'appli
+- Les pistes déjà téléchargées sont automatiquement ignorées — l'application analyse votre dossier avant de commencer et ignore les pistes existantes
+- Les mises à jour peuvent maintenant être installées directement depuis l'application — la bannière de mise à jour inclut un bouton « Installer » avec un suivi de la progression
 
 ### Changed
 
-- Les avertissements FFmpeg récupérables n'annulent plus le téléchargement
+- Amélioration de la gestion des erreurs FFmpeg — les avertissements audio récupérables n'annulent plus le téléchargement entier
 
 ### Fixed
 
-- La sélection de playlist réinitialise bien l'état de téléchargement
-- La barre de recherche ne déclenche plus la correction automatique
-- Téléchargement corrigé sur les pistes en HLS Opus uniquement
+- La sélection de playlist dans la bibliothèque réinitialise désormais correctement l'état de téléchargement
+- La barre de recherche de la bibliothèque ne déclenche plus de suggestions de correction automatique
+- Correction des téléchargements échouant sur les pistes ne proposant que des flux HLS Opus (incompatibles avec le FFmpeg inclus)
 
 ## [1.4.0] - 2026-03-10
 
 ### Added
 
-- Navigateur de bibliothèque pour vos playlists SoundCloud
+- Navigateur de bibliothèque pour parcourir et télécharger vos playlists SoundCloud directement depuis l'application
 
 ### Changed
 
-- Numérotation des pistes aussi dans les paramètres
-- Panneau de paramètres réorganisé avec indicateurs de défilement
+- Le bouton de numérotation des pistes est désormais aussi accessible depuis les paramètres
+- Panneau de paramètres réorganisé avec des indicateurs de défilement pour une meilleure navigation
 
 ## [1.3.0] - 2026-03-09
 
 ### Added
 
-- Téléchargements parallèles (1 à 10 simultanés)
-- Support des liens courts SoundCloud
+- Télécharger plusieurs pistes simultanément avec un nombre configurable de téléchargements parallèles (1-10)
+- Prise en charge des liens courts SoundCloud (on.soundcloud.com)
 
 ### Changed
 
-- Authentification par cookies du navigateur
-- API native SoundCloud au lieu de yt-dlp
-- Dialogue interactif en cas de limitation de débit
-- Numérotation des pistes optionnelle
-- Appli plus légère (retrait de yt-dlp et ffprobe)
+- L'authentification utilise désormais les cookies du navigateur — connectez-vous à SoundCloud dans votre navigateur et l'application détecte votre session automatiquement
+- Les téléchargements utilisent désormais l'API native de SoundCloud au lieu de yt-dlp, offrant des téléchargements plus rapides et plus fiables
+- En cas de limitation de débit par SoundCloud, une boîte de dialogue interactive vous permet de choisir comment procéder au lieu d'une attente automatique
+- La numérotation des pistes est désormais optionnelle via un bouton dans l'aperçu de la playlist
+- Taille de l'application considérablement réduite grâce à la suppression des binaires yt-dlp et ffprobe
 
 ### Fixed
 
-- Meilleure gestion des rafraîchissements d'auth simultanés
+- Amélioration de la gestion des rafraîchissements d'authentification simultanés
 
 ## [1.2.0] - 2026-03-03
 
 ### Added
 
-- Vérification automatique des mises à jour au démarrage
-- Bannière de mise à jour avec lien vers la release
+- L'application vérifie silencieusement les mises à jour au démarrage — si une nouvelle version est disponible, une bannière discrète apparaît en haut de la fenêtre
+- La bannière de mise à jour inclut un lien « En savoir plus » vers la page de publication GitHub et peut être masquée pour la session en cours
 
 ### Changed
 
-- Plus d'erreur affichée si pas de réseau lors de la vérification
+- Les vérifications de mise à jour n'affichent plus de messages d'erreur en l'absence de réseau — l'application continue normalement
 
 ## [1.1.0] - 2026-02-22
 
 ### Changed
 
-- La progression affiche la taille du fichier (ex : « 5,2 Mo / 12,4 Mo »)
+- La progression du téléchargement affiche désormais la taille du fichier (ex: « 5.2 Mo / 12.4 Mo ») pour une meilleure visibilité
 
 ### Fixed
 
-- Les fichiers partiels sont nettoyés à l'annulation
+- Les fichiers de téléchargement partiels (.part, .ytdl) sont automatiquement nettoyés lors de l'annulation d'un téléchargement
 
 ## [1.0.1] - 2026-02-20
 
 ### Fixed
 
-- Connexion SoundCloud corrigée
+- La connexion avec SoundCloud fonctionne désormais correctement
 
 ### Changed
 
-- Nouvelle icône de l'appli
+- Nouvelle icône de l'application
 
 ## [1.0.0] - 2026-02-20
 
 ### Added
 
 - Authentification OAuth avec SoundCloud
-- Téléchargement en haute qualité (premium avec Go+)
-- Métadonnées ID3 (titre, artiste, pochette)
+- Téléchargement de pistes SoundCloud en haute qualité (qualité premium avec abonnement Go+)
+- Intégration des métadonnées ID3 (titre, artiste, pochette)
 - Support macOS (Intel et Apple Silicon) et Windows
-- Traductions anglais et français
+- Traductions en anglais et français
