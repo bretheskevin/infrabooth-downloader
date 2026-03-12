@@ -6,6 +6,12 @@ export default {
     "./src/**/*.{ts,tsx}",
   ],
   theme: {
+  	container: {
+  		center: true,
+  		screens: {
+  			DEFAULT: '1024px',
+  		},
+  	},
   	extend: {
   		borderRadius: {
   			lg: 'var(--radius)',

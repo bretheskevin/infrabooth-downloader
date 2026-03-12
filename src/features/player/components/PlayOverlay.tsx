@@ -10,11 +10,13 @@ interface PlayOverlayProps {
   isActive?: boolean;
   /** Currently playing — controls pause/play icon. Defaults isActive if not set. */
   isPlaying?: boolean;
+  /** Force the overlay to show (e.g. when parent row is hovered) */
+  forceShow?: boolean;
   children: ReactNode;
   className?: string;
 }
 
-export function PlayOverlay({ onPlay, onPause, isActive, isPlaying, children, className }: PlayOverlayProps) {
+export function PlayOverlay({ onPlay, onPause, isActive, isPlaying, forceShow, children, className }: PlayOverlayProps) {
   const { t } = useTranslation();
   const [isHovered, setIsHovered] = useState(false);
   const showOverlay = isActive ?? isPlaying;
@@ -47,7 +49,7 @@ export function PlayOverlay({ onPlay, onPause, isActive, isPlaying, children, cl
       onMouseLeave={() => setIsHovered(false)}
     >
       {children}
-      {(isHovered || showOverlay) && (
+      {(isHovered || forceShow || showOverlay) && (
         <div
           role="button"
           tabIndex={0}
@@ -55,7 +57,7 @@ export function PlayOverlay({ onPlay, onPause, isActive, isPlaying, children, cl
           aria-label={isPlaying ? t('player.pause') : t('player.play')}
           className={cn(
             'absolute inset-0 flex items-center justify-center rounded-md bg-black/40 transition-opacity duration-150 cursor-pointer',
-            isHovered ? 'opacity-100' : 'opacity-50',
+            (isHovered || forceShow) ? 'opacity-100' : 'opacity-50',
           )}
           onClick={handleClick}
           onKeyDown={handleKeyDown}

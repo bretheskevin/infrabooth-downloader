@@ -282,6 +282,8 @@
     "collapse": "Réduire le lecteur",
     "expand": "Agrandir le lecteur",
     "reorder": "Réorganiser",
-    "removeFromQueue": "Retirer de la file"
+    "removeFromQueue": "Retirer de la file",
+    "errorNext": "Impossible de passer à la piste suivante",
+    "errorPrevious": "Impossible de revenir à la piste précédente"
   }
 }
