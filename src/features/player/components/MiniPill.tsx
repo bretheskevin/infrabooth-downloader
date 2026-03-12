@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Pause, Play, Loader2 } from 'lucide-react';
 import { cn, getArtworkUrl } from '@/lib/utils';
 import { usePlayerStore } from '../store';
+import { ScrollingText } from './ScrollingText';
 
 export function MiniPill() {
   const { t } = useTranslation();
@@ -64,10 +65,11 @@ export function MiniPill() {
             )}
           </svg>
         </div>
-        <div className="max-w-[120px] overflow-hidden">
-          <div className="text-[10px] font-semibold text-primary-foreground truncate">
-            {currentTrack.title}
-          </div>
+        <div className="max-w-[70px]">
+          <ScrollingText
+            text={currentTrack.title}
+            className="text-[10px] font-semibold text-primary-foreground"
+          />
           <div className="text-[9px] text-primary-foreground/65 truncate">
             {currentTrack.artist}
           </div>

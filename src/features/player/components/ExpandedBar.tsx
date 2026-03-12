@@ -2,8 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ListMusic, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn, formatDuration, getArtworkUrl } from '@/lib/utils';
 import { usePlayerStore } from '../store';
+import { ScrollingText } from './ScrollingText';
 
 export const EXPANDED_BAR_HEIGHT = 76;
 
@@ -61,7 +63,7 @@ export function ExpandedBar() {
           )}
         </div>
         <div className="flex-1 min-w-0">
-          <div className="text-xs font-semibold truncate">{currentTrack.title}</div>
+          <ScrollingText text={currentTrack.title} className="text-xs font-semibold" />
           <div className="text-[10px] text-muted-foreground truncate">{currentTrack.artist}</div>
         </div>
 
@@ -102,15 +104,22 @@ export function ExpandedBar() {
         </div>
 
         {/* Queue button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          className={cn('h-7 w-7', isQueueOpen && 'text-primary bg-primary/10')}
-          onClick={toggleQueue}
-          aria-label={t('player.queue')}
-        >
-          <ListMusic className="h-3.5 w-3.5" />
-        </Button>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('h-7 w-7', isQueueOpen && 'text-primary bg-primary/10')}
+              onClick={toggleQueue}
+              aria-label={t('player.queue')}
+            >
+              <ListMusic className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('player.queue')}</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Collapse */}
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleExpanded} aria-label={t('player.collapse')}>
