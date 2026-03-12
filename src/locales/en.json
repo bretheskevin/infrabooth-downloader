@@ -8,7 +8,7 @@
   "auth": {
     "signIn": "Sign In",
     "signOut": "Sign Out",
-    "signInHint": "Log in to SoundCloud in your browser for higher quality downloads",
+    "signInHint": "Sign in to SoundCloud in your browser for better quality downloads",
     "checkBrowser": "Check browser login",
     "checking": "Checking...",
     "sessionExpired": "Session Expired",
