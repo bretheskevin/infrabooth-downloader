@@ -54,7 +54,7 @@ export function AppLayout({ children, activePage, onPageChange, isSignedIn }: Ap
     <div className="flex flex-col h-screen overflow-hidden gradient-subtle">
       <UpdateBanner />
       <Header />
-      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6 w-full max-w-3xl mx-auto">
+      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6 w-full container mx-auto">
         <PageNav activePage={activePage} onPageChange={onPageChange} isSignedIn={isSignedIn} />
         {children}
       </main>

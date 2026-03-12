@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { X, Music } from 'lucide-react';
+import { GripVertical, X, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, formatDuration, getArtworkUrl } from '@/lib/utils';
 import type { PlaybackItem } from '../types';
@@ -39,10 +39,13 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onRemove }: Que
       className={cn(
         'flex items-center gap-2 px-3 py-1.5 rounded-md cursor-grab touch-none',
         isCurrent && 'bg-primary/5',
-        isDragging && 'opacity-50',
+        isDragging && 'opacity-50 cursor-grabbing',
       )}
       onClick={() => onPlay(index)}
     >
+      <div className="h-6 w-6 flex items-center justify-center text-muted-foreground" aria-hidden="true">
+        <GripVertical className="h-3.5 w-3.5" />
+      </div>
 
       {isCurrent ? (
         <Music className="h-3 w-3 text-primary flex-shrink-0" aria-hidden="true" />

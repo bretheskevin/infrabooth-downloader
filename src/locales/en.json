@@ -282,6 +282,8 @@
     "collapse": "Collapse player",
     "expand": "Expand player",
     "reorder": "Reorder",
-    "removeFromQueue": "Remove from queue"
+    "removeFromQueue": "Remove from queue",
+    "errorNext": "Failed to skip to next track",
+    "errorPrevious": "Failed to skip to previous track"
   }
 }

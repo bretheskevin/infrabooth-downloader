@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
+import i18n from '@/lib/i18n';
 import { api } from '@/lib/tauri';
 import { useSettingsStore } from '@/features/settings/store';
 import type { PlaybackItem, PlaybackState } from './types';
@@ -39,6 +41,24 @@ interface PlayerStore {
   _onError: (trackId: number | null, message: string) => void;
 }
 
+async function skipTo(
+  set: (partial: Partial<PlayerStore>) => void,
+  queue: PlaybackItem[],
+  cursor: number,
+  targetCursor: number,
+  apiFn: () => Promise<void>,
+  errorKey: string,
+) {
+  if (targetCursor < 0 || targetCursor >= queue.length) return;
+  set({ cursor: targetCursor, currentTrack: queue[targetCursor] ?? null, state: 'loading', positionMs: 0, durationMs: 0 });
+  try {
+    await apiFn();
+  } catch {
+    set({ cursor, currentTrack: queue[cursor] ?? null });
+    toast.error(i18n.t(errorKey));
+  }
+}
+
 export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   state: 'stopped',
   currentTrack: null,
@@ -53,15 +73,26 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   play: async (queue, index) => {
     const vol = useSettingsStore.getState().playerVolume;
     set({ queue, cursor: index, currentTrack: queue[index] ?? null, state: 'loading', volume: vol });
-    await api.playerSetVolume(vol);
-    await api.playerPlayAt(queue.map(toBindingsItem), index);
+    try {
+      await api.playerSetVolume(vol);
+      await api.playerPlayAt(queue.map(toBindingsItem), index);
+    } catch (e) {
+      set({ state: 'stopped', currentTrack: null, queue: [], cursor: 0, positionMs: 0, durationMs: 0 });
+      throw e;
+    }
   },
 
   pause: async () => { await api.playerPause(); },
   resume: async () => { await api.playerResume(); },
   seek: async (positionMs) => { await api.playerSeek(positionMs); },
-  next: async () => { await api.playerNext(); },
-  previous: async () => { await api.playerPrevious(); },
+  next: async () => {
+    const { queue, cursor } = get();
+    await skipTo(set, queue, cursor, cursor + 1, api.playerNext, 'player.errorNext');
+  },
+  previous: async () => {
+    const { queue, cursor } = get();
+    await skipTo(set, queue, cursor, cursor - 1, api.playerPrevious, 'player.errorPrevious');
+  },
   stop: async () => { await api.playerStop(); },
 
   setVolume: async (volume) => {
@@ -129,7 +160,7 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
 
   _onStateChanged: (state, _trackId) => {
     if (state === 'stopped') {
-      set({ state, currentTrack: null, queue: [], cursor: 0, positionMs: 0, isQueueOpen: false });
+      set({ state, currentTrack: null, queue: [], cursor: 0, positionMs: 0, durationMs: 0, isQueueOpen: false });
     } else {
       set({ state });
     }
@@ -147,5 +178,9 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
 
   _onError: (_trackId, message) => {
     console.error(`[player] Error for track ${_trackId}: ${message}`);
+    const { state } = get();
+    if (state === 'loading') {
+      set({ state: 'stopped', positionMs: 0, durationMs: 0 });
+    }
   },
 }));
