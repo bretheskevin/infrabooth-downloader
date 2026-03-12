@@ -238,6 +238,20 @@
       "folderPermissionDenied": "Impossible d'écrire dans ce dossier. Veuillez choisir un autre emplacement."
     }
   },
+  "search": {
+    "tabLabel": "Rechercher",
+    "placeholder": "Rechercher des morceaux...",
+    "noResults": "Aucun morceau trouvé",
+    "emptyState": "Recherchez des morceaux sur SoundCloud",
+    "errorSearch": "La recherche a échoué. Veuillez réessayer.",
+    "loadingMore": "Chargement...",
+    "toastSuccess": "\"{{title}}\" téléchargé",
+    "toastError": "Échec du téléchargement : {{error}}",
+    "folderLabel": "Dossier de téléchargement",
+    "rateLimited": "Limite atteinte. Réessayez plus tard.",
+    "lockedTitle": "Connectez-vous pour rechercher",
+    "lockedDescription": "Recherchez et téléchargez des morceaux SoundCloud"
+  },
   "downloadBar": {
     "clickToChange": "Cliquez pour changer le dossier",
     "customLocation": "personnalisé"

@@ -20,3 +20,6 @@ pub use library::{
     clear_library_cache, get_library_playlist_tracks, get_library_playlists,
     resolve_library_artwork,
 };
+
+pub mod search;
+pub use search::search_tracks;

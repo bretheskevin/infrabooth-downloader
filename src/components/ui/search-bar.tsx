@@ -1,28 +1,29 @@
 import { Search, X } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
-interface LibrarySearchBarProps {
+interface SearchBarProps {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  autoFocus?: boolean;
+  className?: string;
 }
 
-export function LibrarySearchBar({ value, onChange, placeholder }: LibrarySearchBarProps) {
-  const { t } = useTranslation();
-
+export function SearchBar({ value, onChange, placeholder, autoFocus, className }: SearchBarProps) {
   return (
-    <div className="relative">
+    <div className={cn('relative', className)}>
       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
       <Input
         type="text"
         autoCorrect="off"
         autoCapitalize="off"
+        autoFocus={autoFocus}
         spellCheck={false}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder={placeholder ?? t('library.searchPlaceholder')}
+        placeholder={placeholder}
         className="pl-9 pr-8 py-1.5 h-9"
       />
       {value && (

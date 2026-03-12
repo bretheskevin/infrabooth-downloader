@@ -238,6 +238,20 @@
       "folderPermissionDenied": "Cannot write to this folder. Please choose another location."
     }
   },
+  "search": {
+    "tabLabel": "Search",
+    "placeholder": "Search for tracks...",
+    "noResults": "No tracks found",
+    "emptyState": "Search for tracks on SoundCloud",
+    "errorSearch": "Search failed. Please try again.",
+    "loadingMore": "Loading more...",
+    "toastSuccess": "\"{{title}}\" downloaded",
+    "toastError": "Download failed: {{error}}",
+    "folderLabel": "Download folder",
+    "rateLimited": "Rate limit reached. Try again later.",
+    "lockedTitle": "Sign in to search tracks",
+    "lockedDescription": "Search and download tracks from SoundCloud"
+  },
   "downloadBar": {
     "clickToChange": "Click to change download folder",
     "customLocation": "custom"

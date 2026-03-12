@@ -13,7 +13,7 @@ import { useDownloadedTracks } from '../hooks/useDownloadedTracks';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
 import { filterTracks } from '../utils/filterTracks';
 import { sortTracks } from '../utils/sortTracks';
-import { LibrarySearchBar } from './LibrarySearchBar';
+import { SearchBar } from '@/components/ui/search-bar';
 import { PlaylistTrackList } from './PlaylistTrackList';
 import type { SortMode } from '../types';
 import { SelectionFloatingBar } from './SelectionFloatingBar';
@@ -161,10 +161,11 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
       )}
 
       {tracks && tracks.length >= MIN_TRACKS_FOR_SEARCH && (
-        <LibrarySearchBar
+        <SearchBar
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder={t('library.detail.filterPlaceholder')}
+          autoFocus
         />
       )}
 

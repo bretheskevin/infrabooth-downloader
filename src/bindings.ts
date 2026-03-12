@@ -250,6 +250,14 @@ async getLibraryPlaylistTracks(playlistId: number) : Promise<Result<TrackInfo[],
  */
 async scanExistingTracks(outputDir: string, trackIds: string[]) : Promise<string[]> {
     return await TAURI_INVOKE("scan_existing_tracks", { outputDir, trackIds });
+},
+async searchTracks(query: string, limit: number, offset: number) : Promise<Result<SearchResponse, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_tracks", { query, limit, offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -273,6 +281,7 @@ export type LibraryPlaylist = { id: number; title: string; username: string; art
 export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
 export type QueueItemRequest = { trackUrl: string; trackId: string; title: string; artist: string; artworkUrl: string | null; durationMs: number }
 export type RateLimitChoice = "retry" | "stop"
+export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type StartQueueRequest = { tracks: QueueItemRequest[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }
 /**
  * Track information from SoundCloud API.

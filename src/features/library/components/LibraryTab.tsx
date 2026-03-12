@@ -6,7 +6,7 @@ import { api } from '@/lib/tauri';
 import { useAuthStore } from '@/features/auth/store';
 import { useLibraryPlaylists } from '../hooks/useLibraryPlaylists';
 import { filterPlaylists } from '../utils/filterPlaylists';
-import { LibrarySearchBar } from './LibrarySearchBar';
+import { SearchBar } from '@/components/ui/search-bar';
 import { LibraryFilterChips } from './LibraryFilterChips';
 import { LibraryPlaylistList } from './LibraryPlaylistList';
 import { LibraryLockedState } from './LibraryLockedState';
@@ -106,7 +106,7 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
 
   return (
     <div key="list" className={`flex flex-col gap-4 flex-1 min-h-0 ${slideClass}`}>
-      <LibrarySearchBar value={searchQuery} onChange={setSearchQuery} />
+      <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder={t('library.searchPlaceholder')} autoFocus />
       <div className="flex items-center justify-between">
         <LibraryFilterChips active={filter} onChange={setFilter} />
         <Button
