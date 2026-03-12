@@ -13,6 +13,13 @@ export function useTrackDownload(downloadPath: string) {
   const trackInfoRef = useRef<Map<string, TrackInfo>>(new Map());
   const toastedRef = useRef<Set<string>>(new Set());
 
+  // Reset all state when download path changes so stale "completed" marks don't persist
+  useEffect(() => {
+    setTrackStates(new Map());
+    trackInfoRef.current.clear();
+    toastedRef.current.clear();
+  }, [downloadPath]);
+
   useEffect(() => {
     const unlisten = listen<DownloadProgressEvent>('download-progress', (event) => {
       const { trackId, status, percent, downloadedBytes, totalBytes, error } = event.payload;
