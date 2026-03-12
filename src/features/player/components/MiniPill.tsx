@@ -38,7 +38,7 @@ export function MiniPill() {
           <div className="h-9 w-9 rounded-full bg-primary-foreground/20 overflow-hidden">
             {currentTrack.artworkUrl && (
               <img
-                src={getArtworkUrl(currentTrack.artworkUrl, 64) ?? undefined}
+                src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined}
                 alt=""
                 className="h-full w-full object-cover"
               />

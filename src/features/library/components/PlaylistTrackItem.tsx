@@ -19,7 +19,9 @@ interface PlaylistTrackItemProps {
   isDownloaded?: boolean;
   onPlay?: (index: number) => void;
   onPause?: () => void;
+  onResume?: () => void;
   isCurrentlyPlaying?: boolean;
+  isPlayerPlaying?: boolean;
 }
 
 const MAX_STAGGER_ITEMS = 15;
@@ -36,7 +38,9 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
   isDownloaded = false,
   onPlay,
   onPause,
+  onResume,
   isCurrentlyPlaying = false,
+  isPlayerPlaying = false,
 }: PlaylistTrackItemProps) {
   const { t } = useTranslation();
   const delay = animate && staggerIndex < MAX_STAGGER_ITEMS ? staggerIndex * STAGGER_DELAY_MS : 0;
@@ -69,9 +73,10 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
         {isCurrentlyPlaying ? <Music className="h-3 w-3 text-primary" /> : index + 1}
       </span>
       <PlayOverlay
-        onPlay={() => onPlay?.(index)}
+        onPlay={() => (isCurrentlyPlaying && !isPlayerPlaying) ? onResume?.() : onPlay?.(index)}
         onPause={onPause}
-        isPlaying={isCurrentlyPlaying}
+        isActive={isCurrentlyPlaying}
+        isPlaying={isCurrentlyPlaying && isPlayerPlaying}
         className="w-8 h-8 shrink-0"
       >
         <div className="w-8 h-8 rounded bg-muted overflow-hidden">

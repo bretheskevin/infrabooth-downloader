@@ -56,37 +56,37 @@ vi.mock('../DownloadBar', () => ({
 const mockPlaylist: PlaylistInfo = {
   id: 123,
   title: 'Test Playlist',
-  user: { username: 'testuser' },
+  user: { username: 'testuser', avatar_url: null },
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 47,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'testuser' }, artwork_url: null, duration: 180000, permalink_url: '' },
-    { id: 2, title: 'Track 2', user: { username: 'testuser' }, artwork_url: null, duration: 200000, permalink_url: '' },
+    { id: 1, title: 'Track 1', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '' },
+    { id: 2, title: 'Track 2', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 200000, permalink_url: '' },
   ],
 };
 
 const mockSingleTrackPlaylist: PlaylistInfo = {
   id: 999,
   title: 'Single Track',
-  user: { username: 'testuser' },
+  user: { username: 'testuser', avatar_url: null },
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 1,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'testuser' }, artwork_url: null, duration: 180000, permalink_url: '' },
+    { id: 1, title: 'Track 1', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '' },
   ],
 };
 
 const mockPlaylistNoArtwork: PlaylistInfo = {
   id: 456,
   title: 'No Art Playlist',
-  user: { username: 'anotheruser' },
+  user: { username: 'anotheruser', avatar_url: null },
   artwork_url: null,
   track_count: 12,
   tracks: [
     {
       id: 1,
       title: 'Track 1',
-      user: { username: 'anotheruser' },
+      user: { username: 'anotheruser', avatar_url: null },
       artwork_url: null,
       duration: 180000,
       permalink_url: '',
@@ -97,14 +97,14 @@ const mockPlaylistNoArtwork: PlaylistInfo = {
 const mockPlaylistWithTrackArtwork: PlaylistInfo = {
   id: 789,
   title: 'Playlist With Track Art',
-  user: { username: 'someuser' },
+  user: { username: 'someuser', avatar_url: null },
   artwork_url: null,
   track_count: 3,
   tracks: [
     {
       id: 1,
       title: 'Track 1',
-      user: { username: 'someuser' },
+      user: { username: 'someuser', avatar_url: null },
       artwork_url: 'https://i1.sndcdn.com/artworks-track1-large.jpg',
       duration: 180000,
       permalink_url: '',

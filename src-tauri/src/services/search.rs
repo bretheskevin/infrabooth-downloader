@@ -53,6 +53,7 @@ struct RawSearchTrack {
 #[derive(Debug, Deserialize)]
 struct RawSearchUser {
     username: String,
+    avatar_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -77,6 +78,7 @@ fn map_raw_track(raw: RawSearchTrack) -> TrackInfo {
         title: raw.title,
         user: UserInfo {
             username: raw.user.username,
+            avatar_url: raw.user.avatar_url,
         },
         artwork_url: raw.artwork_url,
         duration: raw.duration,
@@ -184,6 +186,7 @@ mod tests {
             title: "My Song".to_string(),
             user: RawSearchUser {
                 username: "Artist".to_string(),
+                avatar_url: None,
             },
             artwork_url: Some("https://artwork.jpg".to_string()),
             duration: 240000,
@@ -204,6 +207,7 @@ mod tests {
             title: "No Art".to_string(),
             user: RawSearchUser {
                 username: "User".to_string(),
+                avatar_url: None,
             },
             artwork_url: None,
             duration: 60000,
@@ -237,6 +241,7 @@ mod tests {
                 title: "Test".to_string(),
                 user: UserInfo {
                     username: "user".to_string(),
+                    avatar_url: None,
                 },
                 artwork_url: None,
                 duration: 100000,

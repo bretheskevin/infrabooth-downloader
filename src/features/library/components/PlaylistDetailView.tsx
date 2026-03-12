@@ -89,7 +89,9 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
 
   const { playTrack } = usePlayContext(displayTracks);
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
+  const playerState = usePlayerStore((s) => s.state);
   const playerPause = usePlayerStore((s) => s.pause);
+  const playerResume = usePlayerStore((s) => s.resume);
 
   const showSkeleton = isLoading && (!tracks || tracks.length === 0);
 
@@ -200,7 +202,9 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           downloadedIds={downloadedIds}
           onPlayTrack={playTrack}
           onPauseTrack={playerPause}
+          onResumeTrack={playerResume}
           currentlyPlayingId={currentTrackId}
+          isPlayerPlaying={playerState === 'playing'}
         />
       )}
 

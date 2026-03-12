@@ -13,12 +13,14 @@ interface SearchResultItemProps {
   onRetry: () => void;
   onPlay?: (index: number) => void;
   onPause?: () => void;
+  onResume?: () => void;
   isCurrentlyPlaying?: boolean;
+  isPlayerPlaying?: boolean;
 }
 
 export function SearchResultItem({
   track, state, onDownload, onRetry,
-  index, onPlay, onPause, isCurrentlyPlaying = false,
+  index, onPlay, onPause, onResume, isCurrentlyPlaying = false, isPlayerPlaying = false,
 }: SearchResultItemProps) {
   const { t } = useTranslation();
   return (
@@ -28,9 +30,10 @@ export function SearchResultItem({
     )}>
       {/* Artwork */}
       <PlayOverlay
-        onPlay={() => onPlay?.(index)}
+        onPlay={() => (isCurrentlyPlaying && !isPlayerPlaying) ? onResume?.() : onPlay?.(index)}
         onPause={onPause}
-        isPlaying={isCurrentlyPlaying}
+        isActive={isCurrentlyPlaying}
+        isPlaying={isCurrentlyPlaying && isPlayerPlaying}
         className="h-12 w-12 flex-shrink-0"
       >
         <div className="h-12 w-12 rounded-md bg-secondary overflow-hidden">

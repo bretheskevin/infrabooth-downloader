@@ -13,19 +13,19 @@ vi.mock('@/features/queue/store', () => ({
 const mockPlaylist: PlaylistInfo = {
   id: 123,
   title: 'Test Playlist',
-  user: { username: 'TestUser' },
+  user: { username: 'TestUser', avatar_url: null },
   artwork_url: 'https://example.com/art.jpg',
   track_count: 2,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'Artist1' }, artwork_url: null, duration: 180000, permalink_url: '' },
-    { id: 2, title: 'Track 2', user: { username: 'Artist2' }, artwork_url: 'https://example.com/art2.jpg', duration: 240000, permalink_url: '' },
+    { id: 1, title: 'Track 1', user: { username: 'Artist1', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '' },
+    { id: 2, title: 'Track 2', user: { username: 'Artist2', avatar_url: null }, artwork_url: 'https://example.com/art2.jpg', duration: 240000, permalink_url: '' },
   ],
 };
 
 const mockTrack: TrackInfo = {
   id: 456,
   title: 'Test Track',
-  user: { username: 'TestArtist' },
+  user: { username: 'TestArtist', avatar_url: null },
   artwork_url: 'https://example.com/track-art.jpg',
   duration: 185000,
   permalink_url: '',
