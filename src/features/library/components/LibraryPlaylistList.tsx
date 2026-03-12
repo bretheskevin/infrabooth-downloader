@@ -58,7 +58,7 @@ function ScrollablePlaylistList({
         const playlist = playlists[virtualItem.index];
         if (!playlist) return null;
         return (
-          <VirtualRow key={playlist.id} virtualItem={virtualItem}>
+          <VirtualRow key={playlist.id} size={virtualItem.size} start={virtualItem.start}>
             <LibraryPlaylistItem
               playlist={playlist}
               onOpenDetail={() => onOpenDetail(playlist)}

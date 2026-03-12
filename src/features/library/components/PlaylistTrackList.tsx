@@ -41,7 +41,7 @@ export function PlaylistTrackList({
   const shouldAnimate = tracks.length > prevCountRef.current;
   useEffect(() => {
     prevCountRef.current = tracks.length;
-  });
+  }, [tracks.length]);
 
   const { parentRef, virtualItems, totalSize } = useVirtualizedList({
     count: tracks.length,
@@ -90,7 +90,7 @@ export function PlaylistTrackList({
           const track = tracks[virtualItem.index];
           if (!track) return null;
           return (
-            <VirtualRow key={track.id} virtualItem={virtualItem}>
+            <VirtualRow key={track.id} size={virtualItem.size} start={virtualItem.start}>
               <PlaylistTrackItem
                 track={track}
                 index={virtualItem.index}
@@ -98,8 +98,8 @@ export function PlaylistTrackList({
                 animate={shouldAnimate}
                 isSelected={selectedIds.has(track.id)}
                 isDownloaded={downloadedIds?.has(track.id) ?? false}
-                onToggle={() => onToggleTrack(track.id)}
-                onDownload={() => onDownloadTrack(track)}
+                onToggle={onToggleTrack}
+                onDownload={onDownloadTrack}
               />
             </VirtualRow>
           );
