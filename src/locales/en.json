@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "InfraBooth Downloader"
+    "title": "InfraBooth Downloader",
+    "version": "Version {{version}}"
   },
   "common": {
     "done": "Done"
@@ -127,7 +128,9 @@
     "concurrentDownloads": "Concurrent downloads",
     "concurrentDownloadsDescription": "Number of tracks to download simultaneously (1-10)",
     "preserveOrder": "Number tracks",
-    "preserveOrderDescription": "Prefix playlist filenames with track position (e.g. 01 - Artist - Title)"
+    "preserveOrderDescription": "Prefix playlist filenames with track position (e.g. 01 - Artist - Title)",
+    "categoryAbout": "About",
+    "viewChangelog": "View changelog"
   },
   "completion": {
     "title": "Download complete!",
@@ -249,6 +252,18 @@
     "toastError": "Download failed: {{error}}",
     "folderLabel": "Download folder",
     "rateLimited": "Rate limit reached. Try again later."
+  },
+  "changelog": {
+    "whatsNew": "What's new in v{{version}}",
+    "released": "Released {{date}}",
+    "gotIt": "Got it",
+    "title": "Changelog",
+    "added": "Added",
+    "changed": "Changed",
+    "fixed": "Fixed",
+    "removed": "Removed",
+    "current": "current",
+    "description": "Version history and release notes"
   },
   "downloadBar": {
     "clickToChange": "Click to change download folder",

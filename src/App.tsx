@@ -13,6 +13,7 @@ import { useLibraryDownload } from '@/features/queue';
 import { Toaster } from '@/components/ui/sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { useUpdateStore } from '@/features/update';
+import { WhatsNewDialog, useChangelogCheck } from '@/features/changelog';
 import { useLanguageSync, useThemeSync, useAuthStateListener, useStartupAuth, useInitializeSettings } from '@/hooks';
 
 export function App() {
@@ -21,6 +22,7 @@ export function App() {
   useAuthStateListener();
   useStartupAuth();
   useInitializeSettings();
+  const { showWhatsNew, version, date, sections, dismiss } = useChangelogCheck();
   useEffect(() => {
     useUpdateStore.getState().checkForUpdates();
   }, []);
@@ -87,6 +89,13 @@ export function App() {
           open={pendingDownload !== null}
           onConfirm={handleConfirmReplace}
           onCancel={handleCancelReplace}
+        />
+        <WhatsNewDialog
+          open={showWhatsNew}
+          onDismiss={dismiss}
+          version={version}
+          date={date}
+          sections={sections}
         />
         <Toaster />
       </AppLayout>

@@ -88,8 +88,8 @@ function generateChangelogEntry(version, categories) {
   return entry;
 }
 
-function updateChangelog(newEntry) {
-  const changelogPath = resolve(rootDir, 'CHANGELOG.md');
+function updateChangelog(newEntry, filename = 'CHANGELOG.md') {
+  const changelogPath = resolve(rootDir, filename);
   const content = readFileSync(changelogPath, 'utf-8');
 
   // Insert after ## [Unreleased]
@@ -207,13 +207,16 @@ updateVersion(newVersion);
 console.log('Updating CHANGELOG.md...');
 updateChangelog(changelogEntry);
 
+console.log('Updating CHANGELOG.fr.md...');
+updateChangelog(changelogEntry, 'CHANGELOG.fr.md');
+
 // Update Cargo.lock
 console.log('Updating Cargo.lock...');
 exec('cargo check --manifest-path src-tauri/Cargo.toml 2>/dev/null || true');
 
 // Git operations
 console.log('\nStaging changes...');
-exec('git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock CHANGELOG.md');
+exec('git add package.json src-tauri/tauri.conf.json src-tauri/Cargo.toml src-tauri/Cargo.lock CHANGELOG.md CHANGELOG.fr.md');
 
 console.log('Creating commit...');
 exec(`git commit -m "chore: release v${newVersion}"`);

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { commands, type UpdateInfo } from '@/bindings';
+import { useChangelogStore } from '@/features/changelog/store';
 
 interface UpdateState {
   updateAvailable: boolean;
@@ -37,6 +38,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 
       if (result.status === 'ok' && result.data) {
         console.log(`[Update] New version available: ${result.data.version}`);
+        useChangelogStore.getState().cacheChangelog(result.data.body ?? null, result.data.date ?? null);
         set({
           updateAvailable: true,
           updateInfo: result.data,
