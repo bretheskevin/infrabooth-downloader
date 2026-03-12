@@ -97,6 +97,7 @@ const mockPlaylist: PlaylistInfo = {
       user: { username: 'Artist1' },
       artwork_url: null,
       duration: 180000,
+      permalink_url: '',
     },
   ],
 };
@@ -107,6 +108,7 @@ const mockTrack: TrackInfo = {
   user: { username: 'Artist2' },
   artwork_url: 'https://example.com/single.jpg',
   duration: 240000,
+  permalink_url: '',
 };
 
 const mockQueueTracksData: Track[] = [

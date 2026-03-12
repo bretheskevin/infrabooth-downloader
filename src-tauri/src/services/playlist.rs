@@ -85,6 +85,9 @@ struct RawTrackInfo {
     pub duration: u64,
     /// Publisher metadata containing the actual artist name for label content.
     pub publisher_metadata: Option<PublisherMetadata>,
+    /// SoundCloud permalink URL. Always present in API responses; `#[serde(default)]` is a safety net.
+    #[serde(default)]
+    pub permalink_url: String,
 }
 
 /// Track information from SoundCloud API.
@@ -96,6 +99,7 @@ pub struct TrackInfo {
     pub artwork_url: Option<String>,
     /// Duration in milliseconds.
     pub duration: u64,
+    pub permalink_url: String,
 }
 
 impl From<RawTrackInfo> for TrackInfo {
@@ -118,6 +122,7 @@ impl From<RawTrackInfo> for TrackInfo {
             },
             artwork_url: artwork,
             duration: raw.duration,
+            permalink_url: raw.permalink_url,
         }
     }
 }
@@ -931,6 +936,7 @@ mod tests {
             },
             artwork_url: Some("https://example.com/art.jpg".to_string()),
             duration: 180000,
+            permalink_url: "https://soundcloud.com/test_artist/test-track".to_string(),
         };
         let json = serde_json::to_string(&track).unwrap();
         assert!(json.contains("\"id\":123456"));
@@ -1044,6 +1050,7 @@ mod tests {
                 },
                 artwork_url: None,
                 duration: 180000,
+                permalink_url: "https://soundcloud.com/artist/track-1".to_string(),
             }],
         };
         let json = serde_json::to_string(&playlist).unwrap();
