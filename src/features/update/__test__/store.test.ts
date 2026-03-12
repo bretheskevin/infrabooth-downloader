@@ -139,6 +139,31 @@ describe('updateStore', () => {
       expect(useUpdateStore.getState().checkInProgress).toBe(false);
     });
 
+    it('should cache changelog body when update is detected', async () => {
+      const { useChangelogStore } = await import('@/features/changelog/store');
+      useChangelogStore.setState({ cachedBody: null, cachedDate: null });
+
+      const updateInfo = { version: '2.0.0', body: 'New features', date: '2026-01-01' };
+      mockCheckForUpdates.mockResolvedValue({ status: 'ok', data: updateInfo });
+
+      await useUpdateStore.getState().checkForUpdates();
+
+      const changelogState = useChangelogStore.getState();
+      expect(changelogState.cachedBody).toBe('New features');
+      expect(changelogState.cachedDate).toBe('2026-01-01');
+    });
+
+    it('should not cache changelog when no update available', async () => {
+      const { useChangelogStore } = await import('@/features/changelog/store');
+      useChangelogStore.setState({ cachedBody: null, cachedDate: null });
+
+      mockCheckForUpdates.mockResolvedValue({ status: 'ok', data: null });
+
+      await useUpdateStore.getState().checkForUpdates();
+
+      expect(useChangelogStore.getState().cachedBody).toBeNull();
+    });
+
     it('should log update available message', async () => {
       const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const updateInfo = { version: '2.0.0', body: null, date: null };

@@ -26,6 +26,11 @@ vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn(() => Promise.resolve(() => {})),
 }));
 
+// Mock @tauri-apps/api/app
+vi.mock('@tauri-apps/api/app', () => ({
+  getVersion: vi.fn().mockResolvedValue('1.6.0'),
+}));
+
 describe('Header', () => {
   beforeEach(async () => {
     useAuthStore.setState({ isSignedIn: false, username: null, plan: null });
@@ -118,6 +123,12 @@ describe('Header', () => {
     });
 
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+
+  it('should display the app version', async () => {
+    render(<TooltipProvider><Header /></TooltipProvider>);
+
+    expect(await screen.findByText('Version 1.6.0')).toBeInTheDocument();
   });
 
   it('should have accessible settings button with aria-label', () => {

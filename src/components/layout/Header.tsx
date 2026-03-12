@@ -5,10 +5,12 @@ import { Button } from '@/components/ui/button';
 import { AuthContainer } from '@/features/auth/components/AuthContainer';
 import { SettingsPanel } from '@/features/settings/components/SettingsPanel';
 import { useMenuSettingsListener } from '@/features/settings/hooks/useMenuSettingsListener';
+import { useAppVersion } from '@/hooks';
 
 export function Header() {
   const { t } = useTranslation();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const appVersion = useAppVersion();
 
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   useMenuSettingsListener(openSettings);
@@ -17,7 +19,14 @@ export function Header() {
     <header className="bg-background border-b border-border/50">
       <div className="flex items-center justify-between px-6 py-4 max-w-3xl mx-auto">
         <div className="flex items-center gap-3">
-          <h1 className="text-lg font-semibold tracking-tight whitespace-nowrap">{t('app.title')}</h1>
+          <div className="flex flex-col">
+            <h1 className="text-lg font-semibold tracking-tight whitespace-nowrap">{t('app.title')}</h1>
+            {appVersion && (
+              <span className="text-xs text-muted-foreground">
+                {t('app.version', { version: appVersion })}
+              </span>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-1">

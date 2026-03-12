@@ -13,6 +13,9 @@ import { ThemeSection } from './ThemeSection';
 import { ConcurrentDownloadsSection } from './ConcurrentDownloadsSection';
 import { PlaylistOrderSection } from './PlaylistOrderSection';
 import { DownloadLocationSection } from './DownloadLocationSection';
+import { Button } from '@/components/ui/button';
+import { ChangelogDialog } from '@/features/changelog';
+import { useAppVersion } from '@/hooks';
 
 function ScrollShadow({ position, visible }: { position: 'top' | 'bottom'; visible: boolean }) {
   return (
@@ -34,6 +37,8 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showTopShadow, setShowTopShadow] = useState(false);
   const [showBottomShadow, setShowBottomShadow] = useState(false);
+  const appVersion = useAppVersion();
+  const [changelogOpen, setChangelogOpen] = useState(false);
 
   const updateShadows = useCallback(() => {
     const el = scrollRef.current;
@@ -94,9 +99,27 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
               <Separator />
               <PlaylistOrderSection />
             </div>
+
+            <Separator />
+
+            <div className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{t('settings.categoryAbout')}</h3>
+              <div className="flex items-center justify-between">
+                <span className="text-sm">{t('app.version', { version: appVersion || '...' })}</span>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-auto p-0 text-xs text-muted-foreground hover:text-foreground"
+                  onClick={() => setChangelogOpen(true)}
+                >
+                  {t('settings.viewChangelog')}
+                </Button>
+              </div>
+            </div>
           </div>
           <ScrollShadow position="bottom" visible={showBottomShadow} />
         </div>
+        <ChangelogDialog open={changelogOpen} onOpenChange={setChangelogOpen} />
       </SheetContent>
     </Sheet>
   );

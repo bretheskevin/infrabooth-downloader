@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "InfraBooth Downloader"
+    "title": "InfraBooth Downloader",
+    "version": "Version {{version}}"
   },
   "common": {
     "done": "Terminé"
@@ -127,7 +128,9 @@
     "concurrentDownloads": "Téléchargements simultanés",
     "concurrentDownloadsDescription": "Nombre de pistes à télécharger simultanément (1-10)",
     "preserveOrder": "Numéroter les pistes",
-    "preserveOrderDescription": "Préfixer les noms de fichiers de playlist avec la position (ex: 01 - Artiste - Titre)"
+    "preserveOrderDescription": "Préfixer les noms de fichiers de playlist avec la position (ex: 01 - Artiste - Titre)",
+    "categoryAbout": "À propos",
+    "viewChangelog": "Voir les nouveautés"
   },
   "completion": {
     "title": "Téléchargement terminé !",
@@ -249,6 +252,18 @@
     "toastError": "Échec du téléchargement : {{error}}",
     "folderLabel": "Dossier de téléchargement",
     "rateLimited": "Limite atteinte. Réessayez plus tard."
+  },
+  "changelog": {
+    "whatsNew": "Nouveautés de la v{{version}}",
+    "released": "Publié le {{date}}",
+    "gotIt": "Compris",
+    "title": "Nouveautés",
+    "added": "Ajouté",
+    "changed": "Modifié",
+    "fixed": "Corrigé",
+    "removed": "Supprimé",
+    "current": "actuelle",
+    "description": "Historique des versions et notes de mise à jour"
   },
   "downloadBar": {
     "clickToChange": "Cliquez pour changer le dossier",
