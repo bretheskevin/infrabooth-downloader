@@ -35,7 +35,7 @@ export function PreserveOrderToggle({ compact = false }: PreserveOrderToggleProp
             />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="bottom">
+        <TooltipContent side="bottom" className="max-w-xs mr-2">
           {t('download.preserveOrderDescription')}
         </TooltipContent>
       </Tooltip>

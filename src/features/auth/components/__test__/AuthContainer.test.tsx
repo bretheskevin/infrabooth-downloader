@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthContainer } from '../AuthContainer';
 import { useAuthStore } from '@/features/auth/store';
 
@@ -8,7 +9,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
-        'auth.signInHint': 'Log in to SoundCloud in your browser for higher quality downloads',
+        'auth.signInHint': 'Sign in to SoundCloud in your browser for better quality downloads',
         'auth.checkBrowser': 'Check browser login',
         'auth.checking': 'Checking...',
         'auth.qualityBadge': 'Go+ 256kbps',
@@ -36,7 +37,7 @@ describe('AuthContainer', () => {
   });
 
   it('should render SignInButton when not signed in', () => {
-    render(<AuthContainer />);
+    render(<TooltipProvider><AuthContainer /></TooltipProvider>);
 
     expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
   });
@@ -44,7 +45,7 @@ describe('AuthContainer', () => {
   it('should render UserMenu when signed in with username', () => {
     useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
-    render(<AuthContainer />);
+    render(<TooltipProvider><AuthContainer /></TooltipProvider>);
 
     // UserMenu shows username and quality badge in a dropdown trigger button
     expect(screen.getByText('testuser')).toBeInTheDocument();
@@ -53,7 +54,7 @@ describe('AuthContainer', () => {
   });
 
   it('should switch from SignInButton to UserMenu when auth state changes', () => {
-    const { rerender } = render(<AuthContainer />);
+    const { rerender } = render(<TooltipProvider><AuthContainer /></TooltipProvider>);
 
     // Initially shows check browser login button
     expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
@@ -64,7 +65,7 @@ describe('AuthContainer', () => {
     });
 
     // Rerender to pick up state change
-    rerender(<AuthContainer />);
+    rerender(<TooltipProvider><AuthContainer /></TooltipProvider>);
 
     // Now shows user menu with username
     expect(screen.getByText('testuser')).toBeInTheDocument();
@@ -72,7 +73,7 @@ describe('AuthContainer', () => {
   });
 
   it('should have transition classes for smooth state changes', () => {
-    const { container } = render(<AuthContainer />);
+    const { container } = render(<TooltipProvider><AuthContainer /></TooltipProvider>);
 
     const wrapper = container.firstChild;
     expect(wrapper).toHaveClass('transition-opacity', 'duration-200');
