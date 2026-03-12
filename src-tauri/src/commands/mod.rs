@@ -23,3 +23,10 @@ pub use library::{
 
 pub mod search;
 pub use search::search_tracks;
+
+pub mod player;
+pub use player::{
+    player_get_state, player_next, player_pause, player_play_at, player_previous,
+    player_remove_from_queue, player_reorder_queue, player_resume, player_seek, player_set_volume,
+    player_stop,
+};

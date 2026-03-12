@@ -13,6 +13,7 @@ const mockTrack: TrackInfo = {
   user: { username: 'TestArtist' },
   artwork_url: 'https://example.com/art.jpg',
   duration: 180000,
+  permalink_url: '',
 };
 
 const mockTrackNoArtwork: TrackInfo = {
@@ -21,6 +22,7 @@ const mockTrackNoArtwork: TrackInfo = {
   user: { username: 'Artist2' },
   artwork_url: null,
   duration: 120000,
+  permalink_url: '',
 };
 
 describe('trackInfoToQueueTrack', () => {
