@@ -24,7 +24,7 @@ function PageNav({ activePage, onPageChange, isSignedIn }: PageNavProps) {
   const tabs: { key: AppPage; label: string; locked: boolean }[] = [
     { key: 'download', label: t('library.pasteUrlTab'), locked: false },
     { key: 'library', label: t('library.tabLabel'), locked: !isSignedIn },
-    { key: 'search', label: t('search.tabLabel'), locked: !isSignedIn },
+    { key: 'search', label: t('search.tabLabel'), locked: false },
   ];
 
   return (

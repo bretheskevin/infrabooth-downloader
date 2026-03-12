@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Lock } from 'lucide-react';
-import { useAuthStore } from '@/features/auth/store';
+
 import { useSettingsStore } from '@/features/settings/store';
 import { useDownloadedTracks } from '@/features/library/hooks/useDownloadedTracks';
 import { SearchBar } from '@/components/ui/search-bar';
@@ -13,7 +12,6 @@ import type { DownloadState } from '../types';
 
 export function SearchTab() {
   const { t } = useTranslation();
-  const isSignedIn = useAuthStore((s) => s.isSignedIn);
   const defaultPath = useSettingsStore((s) => s.downloadPath);
   const [downloadPath, setDownloadPath] = useState(defaultPath);
 
@@ -46,20 +44,6 @@ export function SearchTab() {
     },
     [getRawTrackState, downloadedIds],
   );
-
-  if (!isSignedIn) {
-    return (
-      <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-        <div className="rounded-full bg-secondary p-3">
-          <Lock className="h-6 w-6 text-muted-foreground" />
-        </div>
-        <div className="space-y-1">
-          <p className="text-sm font-medium">{t('search.lockedTitle')}</p>
-          <p className="text-xs text-muted-foreground">{t('search.lockedDescription')}</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
