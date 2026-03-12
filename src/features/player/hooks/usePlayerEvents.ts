@@ -16,7 +16,26 @@ export function usePlayerEvents(): void {
     const unlisteners: UnlistenFn[] = [];
 
     const setup = async () => {
-      // Restore state on mount (handles hot-reload)
+      // Register all listeners concurrently to avoid missing events during setup
+      const listeners = await Promise.all([
+        listen<PlaybackStateChangedEvent>('player:state-changed', (e) => {
+          usePlayerStore.getState()._onStateChanged(e.payload.state, e.payload.track_id);
+        }),
+        listen<PlayerProgressEvent>('player:progress', (e) => {
+          usePlayerStore.getState()._onProgress(e.payload.position_ms, e.payload.duration_ms);
+        }),
+        listen<PlayerTrackChangedEvent>('player:track-changed', (e) => {
+          usePlayerStore.getState()._onTrackChanged(e.payload.track_id, e.payload.cursor, e.payload.queue_length);
+        }),
+        listen<PlayerErrorEvent>('player:error', (e) => {
+          usePlayerStore.getState()._onError(e.payload.track_id, e.payload.message);
+        }),
+      ]);
+      unlisteners.push(...listeners);
+
+      if (!mounted) return;
+
+      // Reconcile state AFTER listeners are active (handles hot-reload)
       try {
         const snapshot = await api.playerGetState();
         if (!mounted) return;
@@ -35,23 +54,6 @@ export function usePlayerEvents(): void {
       } catch (e) {
         console.warn('[player] Failed to restore state:', e);
       }
-
-      if (!mounted) return;
-
-      unlisteners.push(
-        await listen<PlaybackStateChangedEvent>('player:state-changed', (e) => {
-          usePlayerStore.getState()._onStateChanged(e.payload.state, e.payload.track_id);
-        }),
-        await listen<PlayerProgressEvent>('player:progress', (e) => {
-          usePlayerStore.getState()._onProgress(e.payload.position_ms, e.payload.duration_ms);
-        }),
-        await listen<PlayerTrackChangedEvent>('player:track-changed', (e) => {
-          usePlayerStore.getState()._onTrackChanged(e.payload.track_id, e.payload.cursor, e.payload.queue_length);
-        }),
-        await listen<PlayerErrorEvent>('player:error', (e) => {
-          usePlayerStore.getState()._onError(e.payload.track_id, e.payload.message);
-        }),
-      );
     };
 
     setup();

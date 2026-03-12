@@ -1,4 +1,4 @@
-import { memo, useCallback } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Download, Music } from 'lucide-react';
 import { PlayOverlay } from '@/features/player';
@@ -46,13 +46,26 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
   const delay = animate && staggerIndex < MAX_STAGGER_ITEMS ? staggerIndex * STAGGER_DELAY_MS : 0;
   const artworkUrl = track.artwork_url ?? null;
 
+  const [isRowHovered, setIsRowHovered] = useState(false);
   const handleToggle = useCallback(() => onToggle(track.id), [onToggle, track.id]);
   const handleDownload = useCallback(() => onDownload(track), [onDownload, track]);
+  const handlePlayPause = useCallback(() => {
+    if (isCurrentlyPlaying && isPlayerPlaying) {
+      onPause?.();
+    } else if (isCurrentlyPlaying && !isPlayerPlaying) {
+      onResume?.();
+    } else {
+      onPlay?.(index);
+    }
+  }, [isCurrentlyPlaying, isPlayerPlaying, onPause, onResume, onPlay, index]);
+  const handleMouseEnter = useCallback(() => setIsRowHovered(true), []);
+  const handleMouseLeave = useCallback(() => setIsRowHovered(false), []);
 
   return (
     <div
       className={cn(
         'flex items-center gap-3 px-3 py-2 rounded-md border transition-[background-color,border-color] duration-150',
+        !isDownloaded && 'cursor-pointer',
         animate && 'track-row-stagger',
         isDownloaded && 'opacity-60',
         isSelected
@@ -62,21 +75,26 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
             : 'border-transparent hover:bg-muted/50',
       )}
       style={delay > 0 ? { animationDelay: `${delay}ms` } : undefined}
+      onClick={handlePlayPause}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <Checkbox
         checked={isSelected}
         onCheckedChange={handleToggle}
         disabled={isDownloaded}
         className="shrink-0"
+        onClick={(e) => e.stopPropagation()}
       />
       <span className="w-6 text-right text-xs text-muted-foreground tabular-nums shrink-0">
         {isCurrentlyPlaying ? <Music className="h-3 w-3 text-primary" /> : index + 1}
       </span>
       <PlayOverlay
-        onPlay={() => (isCurrentlyPlaying && !isPlayerPlaying) ? onResume?.() : onPlay?.(index)}
-        onPause={onPause}
+        onPlay={handlePlayPause}
+        onPause={handlePlayPause}
         isActive={isCurrentlyPlaying}
         isPlaying={isCurrentlyPlaying && isPlayerPlaying}
+        forceShow={isRowHovered}
         className="w-8 h-8 shrink-0"
       >
         <div className="w-8 h-8 rounded bg-muted overflow-hidden">
@@ -120,7 +138,7 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
           variant="ghost"
           size="icon"
           className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-          onClick={handleDownload}
+          onClick={(e) => { e.stopPropagation(); handleDownload(); }}
         >
           <Download className="h-3.5 w-3.5" />
         </Button>
