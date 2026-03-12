@@ -23,6 +23,7 @@ describe('SearchResultItem', () => {
     render(
       <SearchResultItem
         track={mockTrack}
+        index={0}
         state={state}
         onDownload={vi.fn()}
         onRetry={vi.fn()}
@@ -38,6 +39,7 @@ describe('SearchResultItem', () => {
     render(
       <SearchResultItem
         track={mockTrack}
+        index={0}
         state={state}
         onDownload={onDownload}
         onRetry={vi.fn()}
@@ -52,6 +54,7 @@ describe('SearchResultItem', () => {
     render(
       <SearchResultItem
         track={mockTrack}
+        index={0}
         state={state}
         onDownload={vi.fn()}
         onRetry={vi.fn()}
@@ -65,6 +68,7 @@ describe('SearchResultItem', () => {
     const { container } = render(
       <SearchResultItem
         track={mockTrack}
+        index={0}
         state={state}
         onDownload={vi.fn()}
         onRetry={vi.fn()}
@@ -79,6 +83,7 @@ describe('SearchResultItem', () => {
     render(
       <SearchResultItem
         track={mockTrack}
+        index={0}
         state={state}
         onDownload={vi.fn()}
         onRetry={onRetry}

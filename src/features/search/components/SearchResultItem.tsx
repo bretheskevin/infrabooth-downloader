@@ -1,37 +1,55 @@
 import { useTranslation } from 'react-i18next';
 import { Download, Check, RotateCw, Loader2 } from 'lucide-react';
 import type { TrackInfo } from '@/bindings';
-import { formatDuration, formatBytes, getArtworkUrl } from '@/lib/utils';
+import { cn, formatDuration, formatBytes, getArtworkUrl } from '@/lib/utils';
+import { PlayOverlay } from '@/features/player';
 import type { DownloadState } from '../types';
 
 interface SearchResultItemProps {
   track: TrackInfo;
+  index: number;
   state: DownloadState;
   onDownload: () => void;
   onRetry: () => void;
+  onPlay?: (index: number) => void;
+  onPause?: () => void;
+  isCurrentlyPlaying?: boolean;
 }
 
-export function SearchResultItem({ track, state, onDownload, onRetry }: SearchResultItemProps) {
+export function SearchResultItem({
+  track, state, onDownload, onRetry,
+  index, onPlay, onPause, isCurrentlyPlaying = false,
+}: SearchResultItemProps) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center gap-3 py-3 border-b border-border/50 last:border-b-0">
+    <div className={cn(
+      "flex items-center gap-3 px-2 py-3 rounded-md border-b border-border/50 last:border-b-0",
+      isCurrentlyPlaying && 'bg-primary/5',
+    )}>
       {/* Artwork */}
-      <div className="h-12 w-12 rounded-md bg-secondary flex-shrink-0 overflow-hidden">
-        {track.artwork_url ? (
-          <img
-            src={getArtworkUrl(track.artwork_url) ?? undefined}
-            alt=""
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="h-full w-full bg-secondary" />
-        )}
-      </div>
+      <PlayOverlay
+        onPlay={() => onPlay?.(index)}
+        onPause={onPause}
+        isPlaying={isCurrentlyPlaying}
+        className="h-12 w-12 flex-shrink-0"
+      >
+        <div className="h-12 w-12 rounded-md bg-secondary overflow-hidden">
+          {track.artwork_url ? (
+            <img
+              src={getArtworkUrl(track.artwork_url) ?? undefined}
+              alt=""
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="h-full w-full bg-secondary" />
+          )}
+        </div>
+      </PlayOverlay>
 
       {/* Track info */}
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{track.title}</p>
+        <p className={cn("text-sm font-medium truncate", isCurrentlyPlaying && "text-primary")}>{track.title}</p>
         {state.status === 'error' ? (
           <p className="text-xs text-destructive truncate">
             {state.error ?? 'Download failed'}
