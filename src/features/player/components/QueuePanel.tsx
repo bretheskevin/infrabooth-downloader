@@ -24,6 +24,7 @@ export function QueuePanel() {
   const cursor = usePlayerStore((s) => s.cursor);
   const reorderQueue = usePlayerStore((s) => s.reorderQueue);
   const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
+  const play = usePlayerStore((s) => s.play);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -43,10 +44,10 @@ export function QueuePanel() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-40 bg-background border-t shadow-lg animate-in slide-in-from-bottom duration-250 max-h-[60vh]"
+      className="fixed left-0 right-0 z-40 bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.08)] animate-in slide-in-from-bottom duration-250 max-h-[60vh]"
       style={{ bottom: `${EXPANDED_BAR_HEIGHT}px` }}
     >
-      <div className="px-4 py-2 border-b">
+      <div className="px-4 py-2 border-b border-border/50">
         <h3 className="text-xs font-semibold">{t('player.queue')}</h3>
         <p className="text-[10px] text-muted-foreground">
           {t('player.queueCount', { count: queue.length })}
@@ -67,6 +68,7 @@ export function QueuePanel() {
                     item={item}
                     index={index}
                     isCurrent={index === cursor}
+                    onPlay={(i) => play(queue, i)}
                     onRemove={removeFromQueue}
                   />
                 ))}
