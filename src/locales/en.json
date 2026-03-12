@@ -248,9 +248,7 @@
     "toastSuccess": "\"{{title}}\" downloaded",
     "toastError": "Download failed: {{error}}",
     "folderLabel": "Download folder",
-    "rateLimited": "Rate limit reached. Try again later.",
-    "lockedTitle": "Sign in to search tracks",
-    "lockedDescription": "Search and download tracks from SoundCloud"
+    "rateLimited": "Rate limit reached. Try again later."
   },
   "downloadBar": {
     "clickToChange": "Click to change download folder",
