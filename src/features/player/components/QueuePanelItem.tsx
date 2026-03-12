@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, X, Music } from 'lucide-react';
+import { X, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, formatDuration, getArtworkUrl } from '@/lib/utils';
 import type { PlaybackItem } from '../types';
@@ -10,10 +10,11 @@ interface QueuePanelItemProps {
   item: PlaybackItem;
   index: number;
   isCurrent: boolean;
+  onPlay: (index: number) => void;
   onRemove: (index: number) => void;
 }
 
-export function QueuePanelItem({ item, index, isCurrent, onRemove }: QueuePanelItemProps) {
+export function QueuePanelItem({ item, index, isCurrent, onPlay, onRemove }: QueuePanelItemProps) {
   const { t } = useTranslation();
   const {
     attributes,
@@ -33,20 +34,15 @@ export function QueuePanelItem({ item, index, isCurrent, onRemove }: QueuePanelI
     <div
       ref={setNodeRef}
       style={style}
+      {...attributes}
+      {...listeners}
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5 rounded-md',
+        'flex items-center gap-2 px-3 py-1.5 rounded-md cursor-grab touch-none',
         isCurrent && 'bg-primary/5',
         isDragging && 'opacity-50',
       )}
+      onClick={() => onPlay(index)}
     >
-      <button
-        {...attributes}
-        {...listeners}
-        className="cursor-grab touch-none p-0.5 text-muted-foreground hover:text-foreground"
-        aria-label={t('player.reorder')}
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </button>
 
       {isCurrent ? (
         <Music className="h-3 w-3 text-primary flex-shrink-0" aria-hidden="true" />
@@ -76,7 +72,7 @@ export function QueuePanelItem({ item, index, isCurrent, onRemove }: QueuePanelI
           variant="ghost"
           size="icon"
           className="h-6 w-6"
-          onClick={() => onRemove(index)}
+          onClick={(e) => { e.stopPropagation(); onRemove(index); }}
           aria-label={t('player.removeFromQueue')}
         >
           <X className="h-3 w-3" />

@@ -219,3 +219,12 @@
     stroke-dashoffset: 0;
   }
 }
+
+@keyframes marquee {
+  0%, 15% {
+    transform: translateX(0%);
+  }
+  85%, 100% {
+    transform: translateX(calc(-50% - 1rem));
+  }
+}

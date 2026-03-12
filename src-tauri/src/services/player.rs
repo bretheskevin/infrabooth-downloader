@@ -242,7 +242,6 @@ async fn load_progressive_stream(url: &str) -> Result<Vec<u8>, String> {
     Ok(audio_bytes)
 }
 
-/// Fetch an HLS stream: parse M3U8 playlist and concatenate audio segments.
 async fn load_hls_stream(playlist_url: &str) -> Result<Vec<u8>, String> {
     let playlist_text = reqwest::get(playlist_url)
         .await
@@ -251,20 +250,39 @@ async fn load_hls_stream(playlist_url: &str) -> Result<Vec<u8>, String> {
         .await
         .map_err(|e| format!("Failed to read HLS playlist: {}", e))?;
 
-    let segment_urls = parse_m3u8_segments(&playlist_text, playlist_url);
-    if segment_urls.is_empty() {
+    let playlist = parse_m3u8_segments(&playlist_text, playlist_url);
+    if playlist.segment_urls.is_empty() {
         return Err("HLS playlist contains no audio segments".to_string());
     }
 
     log::info!(
-        "[player] HLS: fetching {} segments from playlist",
-        segment_urls.len()
+        "[player] HLS: fetching {} segments from playlist (init_segment={})",
+        playlist.segment_urls.len(),
+        playlist.init_segment_url.is_some()
     );
 
     let client = reqwest::Client::new();
     let mut audio_bytes = Vec::new();
 
-    for segment_url in &segment_urls {
+    if let Some(init_url) = &playlist.init_segment_url {
+        let response = client
+            .get(init_url)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to fetch HLS init segment: {}", e))?;
+
+        if !response.status().is_success() {
+            return Err(format!("HLS init segment HTTP {}", response.status()));
+        }
+
+        let bytes = response
+            .bytes()
+            .await
+            .map_err(|e| format!("Failed to read HLS init segment: {}", e))?;
+        audio_bytes.extend_from_slice(&bytes);
+    }
+
+    for segment_url in &playlist.segment_urls {
         let response = client
             .get(segment_url)
             .send()
@@ -288,25 +306,49 @@ async fn load_hls_stream(playlist_url: &str) -> Result<Vec<u8>, String> {
     Ok(audio_bytes)
 }
 
-/// Parse an M3U8 playlist and return absolute segment URLs.
-fn parse_m3u8_segments(playlist_text: &str, playlist_url: &str) -> Vec<String> {
+struct HlsPlaylist {
+    init_segment_url: Option<String>,
+    segment_urls: Vec<String>,
+}
+
+fn parse_m3u8_segments(playlist_text: &str, playlist_url: &str) -> HlsPlaylist {
     let base_url = playlist_url
         .rsplit_once('/')
         .map(|(base, _)| base)
         .unwrap_or(playlist_url);
 
-    playlist_text
+    let resolve = |uri: &str| -> String {
+        if uri.starts_with("http://") || uri.starts_with("https://") {
+            uri.to_string()
+        } else {
+            format!("{}/{}", base_url, uri)
+        }
+    };
+
+    let mut init_segment_url = None;
+
+    for line in playlist_text.lines() {
+        let line = line.trim();
+        if let Some(rest) = line.strip_prefix("#EXT-X-MAP:") {
+            if let Some(start) = rest.find("URI=\"") {
+                let uri_start = start + 5;
+                if let Some(end) = rest[uri_start..].find('"') {
+                    init_segment_url = Some(resolve(&rest[uri_start..uri_start + end]));
+                }
+            }
+        }
+    }
+
+    let segment_urls = playlist_text
         .lines()
         .filter(|line| !line.starts_with('#') && !line.trim().is_empty())
-        .map(|line| {
-            let line = line.trim();
-            if line.starts_with("http://") || line.starts_with("https://") {
-                line.to_string()
-            } else {
-                format!("{}/{}", base_url, line)
-            }
-        })
-        .collect()
+        .map(|line| resolve(line.trim()))
+        .collect();
+
+    HlsPlaylist {
+        init_segment_url,
+        segment_urls,
+    }
 }
 
 
@@ -951,26 +993,47 @@ mod tests {
     #[test]
     fn test_parse_m3u8_segments_absolute_urls() {
         let playlist = "#EXTM3U\n#EXT-X-TARGETDURATION:10\n#EXTINF:10,\nhttps://cdn.example.com/seg1.ts\n#EXTINF:10,\nhttps://cdn.example.com/seg2.ts\n#EXT-X-ENDLIST";
-        let segments = parse_m3u8_segments(playlist, "https://api.example.com/playlist.m3u8");
-        assert_eq!(segments.len(), 2);
-        assert_eq!(segments[0], "https://cdn.example.com/seg1.ts");
-        assert_eq!(segments[1], "https://cdn.example.com/seg2.ts");
+        let result = parse_m3u8_segments(playlist, "https://api.example.com/playlist.m3u8");
+        assert!(result.init_segment_url.is_none());
+        assert_eq!(result.segment_urls.len(), 2);
+        assert_eq!(result.segment_urls[0], "https://cdn.example.com/seg1.ts");
+        assert_eq!(result.segment_urls[1], "https://cdn.example.com/seg2.ts");
     }
 
     #[test]
     fn test_parse_m3u8_segments_relative_urls() {
         let playlist = "#EXTM3U\n#EXT-X-TARGETDURATION:10\n#EXTINF:10,\nseg1.ts\n#EXTINF:10,\nseg2.ts\n#EXT-X-ENDLIST";
-        let segments =
+        let result =
             parse_m3u8_segments(playlist, "https://cdn.example.com/path/playlist.m3u8");
-        assert_eq!(segments.len(), 2);
-        assert_eq!(segments[0], "https://cdn.example.com/path/seg1.ts");
-        assert_eq!(segments[1], "https://cdn.example.com/path/seg2.ts");
+        assert!(result.init_segment_url.is_none());
+        assert_eq!(result.segment_urls.len(), 2);
+        assert_eq!(result.segment_urls[0], "https://cdn.example.com/path/seg1.ts");
+        assert_eq!(result.segment_urls[1], "https://cdn.example.com/path/seg2.ts");
     }
 
     #[test]
     fn test_parse_m3u8_segments_empty_playlist() {
         let playlist = "#EXTM3U\n#EXT-X-ENDLIST";
-        let segments = parse_m3u8_segments(playlist, "https://example.com/playlist.m3u8");
-        assert!(segments.is_empty());
+        let result = parse_m3u8_segments(playlist, "https://example.com/playlist.m3u8");
+        assert!(result.init_segment_url.is_none());
+        assert!(result.segment_urls.is_empty());
+    }
+
+    #[test]
+    fn test_parse_m3u8_segments_with_init_segment() {
+        let playlist = "#EXTM3U\n#EXT-X-TARGETDURATION:10\n#EXT-X-MAP:URI=\"init.mp4\"\n#EXTINF:10,\nseg1.m4s\n#EXTINF:10,\nseg2.m4s\n#EXT-X-ENDLIST";
+        let result = parse_m3u8_segments(playlist, "https://cdn.example.com/path/playlist.m3u8");
+        assert_eq!(result.init_segment_url.as_deref(), Some("https://cdn.example.com/path/init.mp4"));
+        assert_eq!(result.segment_urls.len(), 2);
+        assert_eq!(result.segment_urls[0], "https://cdn.example.com/path/seg1.m4s");
+        assert_eq!(result.segment_urls[1], "https://cdn.example.com/path/seg2.m4s");
+    }
+
+    #[test]
+    fn test_parse_m3u8_segments_with_absolute_init_segment() {
+        let playlist = "#EXTM3U\n#EXT-X-MAP:URI=\"https://cdn.example.com/init.mp4\"\n#EXTINF:10,\nseg1.m4s\n#EXT-X-ENDLIST";
+        let result = parse_m3u8_segments(playlist, "https://api.example.com/playlist.m3u8");
+        assert_eq!(result.init_segment_url.as_deref(), Some("https://cdn.example.com/init.mp4"));
+        assert_eq!(result.segment_urls.len(), 1);
     }
 }

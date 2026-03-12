@@ -24,14 +24,14 @@ describe('Story 1.3: App Shell Layout', () => {
       expect(config.app.windows[0].height).toBe(700);
     });
 
-    it('should have minimum window width of 580 pixels (UX-6)', () => {
+    it('should have minimum window width of 680 pixels (UX-6)', () => {
       const config = getTauriConfig();
-      expect(config.app.windows[0].minWidth).toBe(580);
+      expect(config.app.windows[0].minWidth).toBe(680);
     });
 
-    it('should have minimum window height of 620 pixels (UX-6)', () => {
+    it('should have minimum window height of 720 pixels (UX-6)', () => {
       const config = getTauriConfig();
-      expect(config.app.windows[0].minHeight).toBe(620);
+      expect(config.app.windows[0].minHeight).toBe(720);
     });
 
     it('should have window centered on launch', () => {

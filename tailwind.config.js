@@ -76,6 +76,7 @@ export default {
   		},
   		animation: {
   			'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+  			'marquee': 'marquee 15s linear infinite',
   		}
   	}
   },
