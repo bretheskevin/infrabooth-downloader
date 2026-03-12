@@ -13,10 +13,24 @@ vi.mock('react-i18next', () => ({
         'settings.languageDescription': 'Choose your preferred language',
         'settings.downloadLocation': 'Download location',
         'settings.downloadLocationDescription': 'Where your files will be saved',
+        'settings.categoryAbout': 'About',
+        'app.version': 'Version 1.6.0',
+        'settings.viewChangelog': 'View changelog',
       };
       return translations[key] || key;
     },
   }),
+}));
+
+// Mock @tauri-apps/api/app
+vi.mock('@tauri-apps/api/app', () => ({
+  getVersion: vi.fn().mockResolvedValue('1.6.0'),
+}));
+
+// Mock ChangelogDialog from barrel export
+vi.mock('@/features/changelog', () => ({
+  ChangelogDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="changelog-dialog">Changelog Dialog</div> : null,
 }));
 
 // Mock child components
@@ -104,6 +118,14 @@ describe('SettingsPanel', () => {
     const dialog = screen.getByRole('dialog');
     expect(dialog).toBeInTheDocument();
     // Focus trap is handled by Radix Dialog primitive automatically
+  });
+
+  it('should render About section with version and changelog link', async () => {
+    render(<SettingsPanel open={true} onOpenChange={() => {}} />);
+
+    expect(await screen.findByText('About')).toBeInTheDocument();
+    expect(await screen.findByText('Version 1.6.0')).toBeInTheDocument();
+    expect(screen.getByText('View changelog')).toBeInTheDocument();
   });
 
   it('renders sections with visual separators', () => {

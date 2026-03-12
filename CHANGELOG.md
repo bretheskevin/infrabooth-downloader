@@ -106,6 +106,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - OAuth authentication with SoundCloud
 - Download SoundCloud tracks at high quality (premium quality with Go+ subscription)
 - ID3 metadata embedding (title, artist, artwork)
-- Auto-updater for seamless updates
 - macOS (Intel & Apple Silicon) and Windows support
 - English and French translations
