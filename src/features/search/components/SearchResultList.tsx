@@ -17,6 +17,9 @@ interface SearchResultListProps {
   getTrackState: (trackId: number) => DownloadState;
   onDownload: (track: TrackInfo) => void;
   onRetry: (track: TrackInfo) => void;
+  onPlayTrack?: (index: number) => void;
+  onPauseTrack?: () => void;
+  currentlyPlayingId?: number;
 }
 
 export function SearchResultList({
@@ -30,6 +33,9 @@ export function SearchResultList({
   getTrackState,
   onDownload,
   onRetry,
+  onPlayTrack,
+  onPauseTrack,
+  currentlyPlayingId,
 }: SearchResultListProps) {
   const { t } = useTranslation();
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -94,13 +100,17 @@ export function SearchResultList({
 
   return (
     <div>
-      {results.map((track) => (
+      {results.map((track, index) => (
         <SearchResultItem
           key={track.id}
           track={track}
+          index={index}
           state={getTrackState(track.id)}
           onDownload={() => onDownload(track)}
           onRetry={() => onRetry(track)}
+          onPlay={onPlayTrack}
+          onPause={onPauseTrack}
+          isCurrentlyPlaying={track.id === currentlyPlayingId}
         />
       ))}
 

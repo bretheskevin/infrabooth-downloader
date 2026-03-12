@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { useSettingsStore } from '@/features/settings';
 import { useFolderSelection } from '@/hooks';
+import { usePlayContext, usePlayerStore } from '@/features/player';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useTrackSelection } from '../hooks/useTrackSelection';
@@ -85,6 +86,10 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
     () => sortTracks(filteredTracks, sortMode),
     [filteredTracks, sortMode],
   );
+
+  const { playTrack } = usePlayContext(displayTracks);
+  const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
+  const playerPause = usePlayerStore((s) => s.pause);
 
   const showSkeleton = isLoading && (!tracks || tracks.length === 0);
 
@@ -193,6 +198,9 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           onToggleAll={toggleAll}
           onDownloadTrack={handleDownloadTrack}
           downloadedIds={downloadedIds}
+          onPlayTrack={playTrack}
+          onPauseTrack={playerPause}
+          currentlyPlayingId={currentTrackId}
         />
       )}
 
