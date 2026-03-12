@@ -51,10 +51,10 @@ pub enum PlaylistError {
     RateLimited,
 }
 
-/// User information from SoundCloud API (public).
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct UserInfo {
     pub username: String,
+    pub avatar_url: Option<String>,
 }
 
 /// Raw user information from SoundCloud API.
@@ -119,6 +119,7 @@ impl From<RawTrackInfo> for TrackInfo {
             title: raw.title,
             user: UserInfo {
                 username: artist_name,
+                avatar_url: None,
             },
             artwork_url: artwork,
             duration: raw.duration,
@@ -175,6 +176,7 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
             title: raw.title,
             user: UserInfo {
                 username: raw.user.username,
+                avatar_url: raw.user.avatar_url,
             },
             artwork_url: raw.artwork_url,
             track_count: raw.track_count,
@@ -688,6 +690,7 @@ pub async fn fetch_playlist_info(
         title: playlist_data.title,
         user: UserInfo {
             username: playlist_data.user.username,
+            avatar_url: playlist_data.user.avatar_url,
         },
         artwork_url: playlist_data.artwork_url,
         track_count: playlist_data.track_count,
@@ -788,6 +791,7 @@ mod tests {
     fn test_user_info_serializes_correctly() {
         let user = UserInfo {
             username: "test_artist".to_string(),
+            avatar_url: None,
         };
         let json = serde_json::to_string(&user).unwrap();
         assert!(json.contains("\"username\":\"test_artist\""));
@@ -933,6 +937,7 @@ mod tests {
             title: "Test Track".to_string(),
             user: UserInfo {
                 username: "test_artist".to_string(),
+                avatar_url: None,
             },
             artwork_url: Some("https://example.com/art.jpg".to_string()),
             duration: 180000,
@@ -1039,6 +1044,7 @@ mod tests {
             title: "My Playlist".to_string(),
             user: UserInfo {
                 username: "owner".to_string(),
+                avatar_url: None,
             },
             artwork_url: Some("https://example.com/playlist.jpg".to_string()),
             track_count: 1,
@@ -1047,6 +1053,7 @@ mod tests {
                 title: "Track 1".to_string(),
                 user: UserInfo {
                     username: "artist".to_string(),
+                    avatar_url: None,
                 },
                 artwork_url: None,
                 duration: 180000,

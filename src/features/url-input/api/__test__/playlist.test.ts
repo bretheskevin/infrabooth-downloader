@@ -16,7 +16,7 @@ describe('fetchPlaylistInfo', () => {
     const mockPlaylist = {
       id: 123,
       title: 'Test Playlist',
-      user: { username: 'testuser' },
+      user: { username: 'testuser', avatar_url: null },
       artwork_url: 'https://example.com/art.jpg',
       track_count: 5,
       tracks: [],
@@ -34,21 +34,21 @@ describe('fetchPlaylistInfo', () => {
     const mockPlaylist = {
       id: 123,
       title: 'Test Playlist',
-      user: { username: 'testuser' },
+      user: { username: 'testuser', avatar_url: null },
       artwork_url: 'https://example.com/art.jpg',
       track_count: 2,
       tracks: [
         {
           id: 1,
           title: 'Track 1',
-          user: { username: 'artist1' },
+          user: { username: 'artist1', avatar_url: null },
           artwork_url: null,
           duration: 180000,
         },
         {
           id: 2,
           title: 'Track 2',
-          user: { username: 'artist2' },
+          user: { username: 'artist2', avatar_url: null },
           artwork_url: 'https://example.com/track2.jpg',
           duration: 240000,
         },
@@ -72,7 +72,7 @@ describe('fetchPlaylistInfo', () => {
     const mockPlaylist = {
       id: 456,
       title: 'No Art Playlist',
-      user: { username: 'owner' },
+      user: { username: 'owner', avatar_url: null },
       artwork_url: null,
       track_count: 0,
       tracks: [],

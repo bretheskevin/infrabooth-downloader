@@ -54,7 +54,7 @@ export function ExpandedBar() {
         <div className="h-8 w-8 rounded-md bg-secondary flex-shrink-0 overflow-hidden">
           {currentTrack.artworkUrl && (
             <img
-              src={getArtworkUrl(currentTrack.artworkUrl, 64) ?? undefined}
+              src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined}
               alt=""
               className="h-full w-full object-cover"
             />

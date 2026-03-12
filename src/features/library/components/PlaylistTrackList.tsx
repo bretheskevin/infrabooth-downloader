@@ -24,7 +24,9 @@ interface PlaylistTrackListProps {
   downloadedIds?: Set<number>;
   onPlayTrack?: (index: number) => void;
   onPauseTrack?: () => void;
+  onResumeTrack?: () => void;
   currentlyPlayingId?: number;
+  isPlayerPlaying?: boolean;
 }
 
 export function PlaylistTrackList({
@@ -40,7 +42,9 @@ export function PlaylistTrackList({
   downloadedIds,
   onPlayTrack,
   onPauseTrack,
+  onResumeTrack,
   currentlyPlayingId,
+  isPlayerPlaying,
 }: PlaylistTrackListProps) {
   const { t } = useTranslation();
   const prevCountRef = useRef(0);
@@ -108,7 +112,9 @@ export function PlaylistTrackList({
                 onDownload={onDownloadTrack}
                 onPlay={onPlayTrack}
                 onPause={onPauseTrack}
+                onResume={onResumeTrack}
                 isCurrentlyPlaying={track.id === currentlyPlayingId}
+                isPlayerPlaying={isPlayerPlaying}
               />
             </VirtualRow>
           );

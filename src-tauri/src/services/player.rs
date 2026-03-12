@@ -2,7 +2,10 @@ use std::sync::mpsc;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use rodio::{Decoder, OutputStream, Sink};
+use rodio::{OutputStream, Sink};
+
+use super::audio_decoder::AudioDecoder;
+use crate::services::stream::StreamCodec;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::Mutex;
 
@@ -80,8 +83,6 @@ impl PlayerState {
 // Initialization
 // ---------------------------------------------------------------------------
 
-/// Initialize the player engine. Call once during app setup.
-/// Returns `(shared_state, command_sender)` — register both with Tauri.
 pub fn init_player(app_handle: AppHandle) -> (SharedPlayerState, PlayerCommandSender) {
     let (command_tx, command_rx) = mpsc::channel::<PlayerCommand>();
 
@@ -163,15 +164,12 @@ struct PlaybackContext<'a> {
 // ---------------------------------------------------------------------------
 
 
-/// Spawn a background tokio task that resolves the stream URL and downloads
-/// audio bytes. Returns a `tokio::sync::oneshot::Receiver` so the audio thread
-/// can poll for completion without blocking.
 fn spawn_track_loader(
     rt: &tokio::runtime::Handle,
     app: &AppHandle,
     track: &PlaybackItem,
     shared_state: &SharedPlayerState,
-) -> tokio::sync::oneshot::Receiver<Result<Vec<u8>, String>> {
+) -> tokio::sync::oneshot::Receiver<Result<(Vec<u8>, StreamCodec), String>> {
     let (tx, rx) = tokio::sync::oneshot::channel();
     let track_url = track.track_url.clone();
     let app_clone = app.clone();
@@ -192,13 +190,11 @@ async fn is_still_loading(shared: &SharedPlayerState) -> bool {
     s.state == PlaybackState::Loading
 }
 
-/// Async track loading — resolves stream URL, fetches audio bytes.
-/// Supports both progressive and HLS streams.
 async fn load_track_async(
     app: &AppHandle,
     track_url: &str,
     shared: &SharedPlayerState,
-) -> Result<Vec<u8>, String> {
+) -> Result<(Vec<u8>, StreamCodec), String> {
     let oauth_token = app
         .try_state::<AuthState>()
         .and_then(|state| state.get_token());
@@ -212,11 +208,14 @@ async fn load_track_async(
         return Err("Load cancelled".to_string());
     }
 
-    if stream_info.is_hls {
-        load_hls_stream(&stream_info.url).await
+    let codec = stream_info.codec.clone();
+    let bytes = if stream_info.is_hls {
+        load_hls_stream(&stream_info.url).await?
     } else {
-        load_progressive_stream(&stream_info.url).await
-    }
+        load_progressive_stream(&stream_info.url).await?
+    };
+
+    Ok((bytes, codec))
 }
 
 /// Fetch a progressive (direct HTTP) audio stream.
@@ -315,15 +314,20 @@ fn parse_m3u8_segments(playlist_text: &str, playlist_url: &str) -> Vec<String> {
 // Playback helpers
 // ---------------------------------------------------------------------------
 
-/// Start playback of a loaded track from decoded audio bytes.
 fn play_loaded_audio(
     audio_bytes: Vec<u8>,
+    codec: StreamCodec,
     track: &PlaybackItem,
     cursor: usize,
     ctx: &mut PlaybackContext,
 ) {
-    let reader = std::io::Cursor::new(audio_bytes);
-    match Decoder::new(reader) {
+    let decoder_result = match codec {
+        StreamCodec::Aac => AudioDecoder::new_m4a(audio_bytes),
+        StreamCodec::Mp3 => AudioDecoder::new_mp3(audio_bytes),
+        StreamCodec::Opus => AudioDecoder::new_opus(audio_bytes),
+        StreamCodec::Unknown => AudioDecoder::new_auto(audio_bytes),
+    };
+    match decoder_result {
         Ok(source) => {
             ctx.sink.clear();
             ctx.sink.append(source);
@@ -375,13 +379,12 @@ fn play_loaded_audio(
     }
 }
 
-/// Initiate loading a track — sets state to Loading, spawns background loader.
 fn begin_track_load(
     track: &PlaybackItem,
     cursor: usize,
     ctx: &mut PlaybackContext,
 ) -> (
-    tokio::sync::oneshot::Receiver<Result<Vec<u8>, String>>,
+    tokio::sync::oneshot::Receiver<Result<(Vec<u8>, StreamCodec), String>>,
     PlaybackItem,
 ) {
     *ctx.load_generation += 1;
@@ -441,7 +444,7 @@ fn stop_playback(ctx: &mut PlaybackContext) {
 fn advance_next(
     ctx: &mut PlaybackContext,
 ) -> Option<(
-    tokio::sync::oneshot::Receiver<Result<Vec<u8>, String>>,
+    tokio::sync::oneshot::Receiver<Result<(Vec<u8>, StreamCodec), String>>,
     PlaybackItem,
     usize,
 )> {
@@ -484,7 +487,7 @@ fn advance_next(
 fn advance_previous(
     ctx: &mut PlaybackContext,
 ) -> Option<(
-    tokio::sync::oneshot::Receiver<Result<Vec<u8>, String>>,
+    tokio::sync::oneshot::Receiver<Result<(Vec<u8>, StreamCodec), String>>,
     PlaybackItem,
     usize,
 )> {
@@ -542,7 +545,7 @@ fn audio_thread_main(
 
     // Currently pending background load, if any.
     let mut pending_load: Option<(
-        tokio::sync::oneshot::Receiver<Result<Vec<u8>, String>>,
+        tokio::sync::oneshot::Receiver<Result<(Vec<u8>, StreamCodec), String>>,
         PlaybackItem,
         usize, // cursor at time of load
     )> = None;
@@ -561,10 +564,10 @@ fn audio_thread_main(
         // ── Check for completed background load ──
         if let Some((ref mut rx, ref track, cursor)) = pending_load {
             match rx.try_recv() {
-                Ok(Ok(audio_bytes)) => {
+                Ok(Ok((audio_bytes, codec))) => {
                     let track_clone = track.clone();
                     pending_load = None;
-                    play_loaded_audio(audio_bytes, &track_clone, cursor, &mut ctx);
+                    play_loaded_audio(audio_bytes, codec, &track_clone, cursor, &mut ctx);
                 }
                 Ok(Err(msg)) => {
                     if msg != "Load cancelled" {
