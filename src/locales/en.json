@@ -268,5 +268,20 @@
   "downloadBar": {
     "clickToChange": "Click to change download folder",
     "customLocation": "custom"
+  },
+  "player": {
+    "queue": "Queue",
+    "queueCount_one": "{{count}} track",
+    "queueCount_other": "{{count}} tracks",
+    "queueEmpty": "Queue is empty",
+    "nowPlaying": "Now playing",
+    "previous": "Previous",
+    "next": "Next",
+    "play": "Play",
+    "pause": "Pause",
+    "collapse": "Collapse player",
+    "expand": "Expand player",
+    "reorder": "Reorder",
+    "removeFromQueue": "Remove from queue"
   }
 }
