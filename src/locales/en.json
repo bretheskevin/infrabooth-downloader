@@ -284,6 +284,7 @@
     "reorder": "Reorder",
     "removeFromQueue": "Remove from queue",
     "errorNext": "Failed to skip to next track",
-    "errorPrevious": "Failed to skip to previous track"
+    "errorPrevious": "Failed to skip to previous track",
+    "errorLoadTrack": "Failed to load track"
   }
 }
