@@ -65,7 +65,7 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
     <div
       className={cn(
         'flex items-center gap-3 px-3 py-2 rounded-md border transition-[background-color,border-color] duration-150',
-        !isDownloaded && 'cursor-pointer',
+        !isDownloaded && 'group',
         animate && 'track-row-stagger',
         isDownloaded && 'opacity-60',
         isSelected
@@ -75,50 +75,64 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
             : 'border-transparent hover:bg-muted/50',
       )}
       style={delay > 0 ? { animationDelay: `${delay}ms` } : undefined}
-      onClick={handlePlayPause}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <Checkbox
-        checked={isSelected}
-        onCheckedChange={handleToggle}
-        disabled={isDownloaded}
-        className="shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      />
-      <span className="w-6 text-right text-xs text-muted-foreground tabular-nums shrink-0">
-        {isCurrentlyPlaying ? <Music className="h-3 w-3 text-primary" /> : index + 1}
-      </span>
-      <PlayOverlay
-        onPlay={handlePlayPause}
-        onPause={handlePlayPause}
-        isActive={isCurrentlyPlaying}
-        isPlaying={isCurrentlyPlaying && isPlayerPlaying}
-        forceShow={isRowHovered}
-        className="w-8 h-8 shrink-0"
+      {/* Selection zone: checkbox + track number */}
+      <div
+        className={cn(
+          'flex items-center gap-3 shrink-0 self-stretch -my-2 py-2 -ml-3 pl-3',
+          !isDownloaded && 'cursor-pointer',
+        )}
+        onClick={handleToggle}
       >
-        <div className="w-8 h-8 rounded bg-muted overflow-hidden">
-          {artworkUrl ? (
-            <img
-              src={artworkUrl}
-              alt=""
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <Music className="h-3.5 w-3.5" />
-            </div>
-          )}
-        </div>
-      </PlayOverlay>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{track.title}</p>
-        <p className="text-xs text-muted-foreground truncate">{track.user.username}</p>
+        <Checkbox
+          checked={isSelected}
+          onCheckedChange={handleToggle}
+          disabled={isDownloaded}
+          className="shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        />
+        <span className="w-6 text-right text-xs text-muted-foreground tabular-nums shrink-0">
+          {isCurrentlyPlaying ? <Music className="h-3 w-3 text-primary ml-auto" /> : index + 1}
+        </span>
       </div>
-      <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-        {formatDuration(track.duration)}
-      </span>
+      {/* Play zone: artwork + title + duration */}
+      <div
+        className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+        onClick={handlePlayPause}
+      >
+        <PlayOverlay
+          onPlay={handlePlayPause}
+          onPause={handlePlayPause}
+          isActive={isCurrentlyPlaying}
+          isPlaying={isCurrentlyPlaying && isPlayerPlaying}
+          forceShow={isRowHovered}
+          className="w-8 h-8 shrink-0"
+        >
+          <div className="w-8 h-8 rounded bg-muted overflow-hidden">
+            {artworkUrl ? (
+              <img
+                src={artworkUrl}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="lazy"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                <Music className="h-3.5 w-3.5" />
+              </div>
+            )}
+          </div>
+        </PlayOverlay>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium truncate">{track.title}</p>
+          <p className="text-xs text-muted-foreground truncate">{track.user.username}</p>
+        </div>
+        <span className="text-xs text-muted-foreground tabular-nums shrink-0">
+          {formatDuration(track.duration)}
+        </span>
+      </div>
       {isDownloaded ? (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -138,7 +152,7 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
           variant="ghost"
           size="icon"
           className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-          onClick={(e) => { e.stopPropagation(); handleDownload(); }}
+          onClick={handleDownload}
         >
           <Download className="h-3.5 w-3.5" />
         </Button>
