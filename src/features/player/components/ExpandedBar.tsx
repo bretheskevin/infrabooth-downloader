@@ -9,6 +9,8 @@ import { usePlayerStore } from '../store';
 import { ScrollingText } from './ScrollingText';
 
 export const EXPANDED_BAR_HEIGHT = 76;
+/** Gap between the expanded bar top and floating elements above it. */
+export const EXPANDED_BAR_GAP = 16;
 
 export function ExpandedBar() {
   const { t } = useTranslation();

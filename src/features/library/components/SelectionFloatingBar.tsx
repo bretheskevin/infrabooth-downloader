@@ -1,6 +1,8 @@
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
+import { EXPANDED_BAR_HEIGHT, EXPANDED_BAR_GAP } from '@/features/player/components/ExpandedBar';
 
 interface SelectionFloatingBarProps {
   selectedCount: number;
@@ -9,11 +11,17 @@ interface SelectionFloatingBarProps {
 
 export function SelectionFloatingBar({ selectedCount, onDownload }: SelectionFloatingBarProps) {
   const { t } = useTranslation();
+  const expandedBarVisible = useIsExpandedBarVisible();
 
   if (selectedCount === 0) return null;
 
+  const bottom = expandedBarVisible ? EXPANDED_BAR_HEIGHT + EXPANDED_BAR_GAP : 24;
+
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-200">
+    <div
+      className="fixed left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-4 fade-in duration-200 transition-[bottom] ease-in-out"
+      style={{ bottom }}
+    >
       <div className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-background/80 backdrop-blur-xl border shadow-lg whitespace-nowrap">
         <span className="text-sm font-medium">
           {t('library.detail.selected', { count: selectedCount })}
