@@ -12,9 +12,11 @@ use tokio::sync::{watch, Mutex};
 
 use crate::models::error::DownloadError;
 use crate::models::ErrorResponse;
+use crate::services::events;
+use crate::services::pipeline::PipelineConfig;
 use crate::services::sidecar::bytes_to_string;
 
-use crate::services::stream::{self, StreamCodec};
+use crate::services::stream::{self, StreamCodec, StreamInfo};
 
 /// Estimate bytes per millisecond for the output MP3 based on source codec.
 fn output_bytes_per_ms(codec: &StreamCodec) -> u64 {
@@ -32,20 +34,9 @@ pub struct PlaylistContext {
     pub total_tracks: u32,
 }
 
-pub struct TrackDownloadToMp3Config {
-    pub track_url: String,
-    pub track_id: String,
-    pub output_dir: PathBuf,
-    pub playlist_context: Option<PlaylistContext>,
-    pub artist: String,
-    pub title: String,
-    pub duration_ms: u64,
-    pub oauth_token: Option<String>,
-}
-
 #[derive(Debug, Clone, serde::Serialize, specta::Type)]
 pub struct DownloadProgress {
-    pub percent: f32,
+    pub percent: Option<f32>,
     pub speed: Option<String>,
     pub eta: Option<String>,
     pub total_bytes: Option<u64>,
@@ -147,7 +138,7 @@ pub fn parse_ffmpeg_progress(line: &str, duration_ms: u64) -> Option<DownloadPro
 
     if line.starts_with("progress=end") {
         return Some(DownloadProgress {
-            percent: 1.0,
+            percent: Some(1.0),
             speed: None,
             eta: None,
             total_bytes: None,
@@ -164,7 +155,7 @@ pub fn parse_ffmpeg_progress(line: &str, duration_ms: u64) -> Option<DownloadPro
             let out_ms = out_us as f64 / 1000.0;
             let percent = (out_ms / duration_ms as f64).min(1.0) as f32;
             return Some(DownloadProgress {
-                percent,
+                percent: Some(percent),
                 speed: None,
                 eta: None,
                 total_bytes: None,
@@ -177,7 +168,7 @@ pub fn parse_ffmpeg_progress(line: &str, duration_ms: u64) -> Option<DownloadPro
         let size_str = line.trim_start_matches("total_size=");
         if let Ok(bytes) = size_str.parse::<u64>() {
             return Some(DownloadProgress {
-                percent: -1.0,
+                percent: None,
                 speed: None,
                 eta: None,
                 total_bytes: None,
@@ -190,7 +181,7 @@ pub fn parse_ffmpeg_progress(line: &str, duration_ms: u64) -> Option<DownloadPro
         let speed_str = line.trim_start_matches("speed=").trim();
         if speed_str != "N/A" && !speed_str.is_empty() {
             return Some(DownloadProgress {
-                percent: -1.0,
+                percent: None,
                 speed: Some(speed_str.to_string()),
                 eta: None,
                 total_bytes: None,
@@ -260,36 +251,9 @@ pub fn classify_ffmpeg_exit_error(stderr: &str) -> DownloadError {
     DownloadError::DownloadFailed(stderr.to_string())
 }
 
-pub async fn download_track_to_mp3<R: tauri::Runtime>(
-    app: &AppHandle<R>,
-    config: TrackDownloadToMp3Config,
-    active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
-    cancel_rx: Option<watch::Receiver<bool>>,
-    active_pid: Option<Arc<Mutex<Option<u32>>>>,
-) -> Result<PathBuf, DownloadError> {
-    // Resolve stream URL
-    let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
-
-    log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
-    log::info!(
-        "[downloader] Encoding strategy for track {}: codec={:?}",
-        config.track_id,
-        stream_info.codec
-    );
-
-    // Build output filename
-    let (base_name, _display_title) =
-        build_base_filename(&config.playlist_context, &config.artist, &config.title);
-    let output_file = config.output_dir.join(format!("{}.mp3", base_name));
-
-    // Check if already downloaded
-    if output_file.exists() {
-        log::info!("[downloader] File already exists: {:?}", output_file);
-        return Ok(output_file);
-    }
-
-    // Build ffmpeg args
-    let output_str = output_file.to_string_lossy().to_string();
+/// Build FFmpeg command arguments based on stream codec and output path.
+fn build_ffmpeg_args(stream_info: &StreamInfo, output_path: &Path) -> Vec<String> {
+    let output_str = output_path.to_string_lossy().to_string();
     let mut args: Vec<String> = Vec::new();
 
     // Input
@@ -331,9 +295,179 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     args.push("-y".to_string());
 
     // Output file
-    args.push(output_str.clone());
+    args.push(output_str);
 
-    // Spawn ffmpeg sidecar
+    args
+}
+
+/// Check if cancellation has been requested.
+fn is_cancelled(cancel_rx: &Option<watch::Receiver<bool>>) -> bool {
+    cancel_rx.as_ref().map_or(false, |crx| *crx.borrow())
+}
+
+/// Kill the active child process and clean up partial files.
+async fn cancel_and_cleanup(
+    active_child: &Option<Arc<Mutex<Option<CommandChild>>>>,
+    output_dir: &Path,
+    base_name: &str,
+    output_file: &Path,
+) {
+    if let Some(ref active_child_mutex) = active_child {
+        let mut guard = active_child_mutex.lock().await;
+        if let Some(child) = guard.take() {
+            let _ = child.kill();
+        }
+    }
+    cleanup_partial_files(output_dir, base_name);
+    let _ = std::fs::remove_file(output_file);
+}
+
+/// Process the ffmpeg event loop: handles stdout progress, stderr errors,
+/// cancellation, and termination.
+async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    rx: &mut tauri::async_runtime::Receiver<CommandEvent>,
+    track_id: &str,
+    duration_ms: u64,
+    codec: &StreamCodec,
+    cancel_rx: &Option<watch::Receiver<bool>>,
+    active_child: &Option<Arc<Mutex<Option<CommandChild>>>>,
+    output_dir: &Path,
+    base_name: &str,
+    output_file: &Path,
+) -> Result<(), DownloadError> {
+    let mut last_error: Option<String> = None;
+    let mut last_percent: f32 = 0.0;
+    let mut last_downloaded_bytes: Option<u64> = None;
+    let estimated_total_bytes: Option<u64> = if duration_ms > 0 {
+        Some(duration_ms * output_bytes_per_ms(codec))
+    } else {
+        None
+    };
+
+    loop {
+        if is_cancelled(cancel_rx) {
+            log::info!("[downloader] Cancellation detected, aborting download");
+            cancel_and_cleanup(active_child, output_dir, base_name, output_file).await;
+            return Err(DownloadError::Cancelled);
+        }
+
+        let event = tokio::select! {
+            event = rx.recv() => event,
+            _ = tokio::time::sleep(std::time::Duration::from_millis(100)) => continue,
+        };
+
+        match event {
+            Some(CommandEvent::Stdout(line_bytes)) => {
+                let raw_line = bytes_to_string(&line_bytes);
+                for line in raw_line.lines() {
+                    let line = line.trim();
+                    if line.is_empty() {
+                        continue;
+                    }
+
+                    if let Some(progress) = parse_ffmpeg_progress(line, duration_ms) {
+                        // Update tracking state
+                        if let Some(pct) = progress.percent {
+                            last_percent = pct;
+                        }
+                        if progress.downloaded_bytes.is_some() {
+                            last_downloaded_bytes = progress.downloaded_bytes;
+                        }
+
+                        // Only emit meaningful progress updates
+                        if progress.percent.is_some() {
+                            let _ = app.emit(
+                                events::DOWNLOAD_PROGRESS,
+                                DownloadProgressEvent {
+                                    track_id: track_id.to_string(),
+                                    status: "downloading".to_string(),
+                                    percent: Some(last_percent),
+                                    downloaded_bytes: last_downloaded_bytes,
+                                    total_bytes: estimated_total_bytes,
+                                    error: None,
+                                },
+                            );
+                        }
+                    }
+                }
+            }
+            Some(CommandEvent::Stderr(line_bytes)) => {
+                let line = bytes_to_string(&line_bytes);
+                log::info!("ffmpeg stderr: {}", line);
+                last_error = Some(line.clone());
+
+                if let Some(err) = classify_ffmpeg_error(&line) {
+                    log::info!(
+                        "[downloader] Track {} error: {}",
+                        track_id,
+                        err
+                    );
+                    return Err(err);
+                }
+            }
+            Some(CommandEvent::Terminated(payload)) => {
+                if payload.code != Some(0) {
+                    if is_cancelled(cancel_rx) {
+                        log::info!("[downloader] Download was cancelled (terminated)");
+                        cleanup_partial_files(output_dir, base_name);
+                        let _ = std::fs::remove_file(output_file);
+                        return Err(DownloadError::Cancelled);
+                    }
+                    let error_text = last_error.unwrap_or_else(|| "Unknown error".to_string());
+                    log::error!(
+                        "ffmpeg terminated with code {:?}: {}",
+                        payload.code,
+                        error_text
+                    );
+                    let _ = std::fs::remove_file(output_file);
+                    return Err(classify_ffmpeg_exit_error(&error_text));
+                }
+                break;
+            }
+            Some(_) => {}
+            None => break,
+        }
+    }
+
+    Ok(())
+}
+
+/// Download a track to MP3 via ffmpeg.
+///
+/// Resolves the stream URL, builds codec-aware ffmpeg arguments,
+/// spawns the ffmpeg sidecar, and processes its output events.
+pub async fn download_track_to_mp3<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    config: &PipelineConfig,
+    active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
+    cancel_rx: Option<watch::Receiver<bool>>,
+    active_pid: Option<Arc<Mutex<Option<u32>>>>,
+) -> Result<PathBuf, DownloadError> {
+    // Resolve stream URL
+    let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
+
+    log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
+    log::info!(
+        "[downloader] Encoding strategy for track {}: codec={:?}",
+        config.track_id,
+        stream_info.codec
+    );
+
+    // Build output filename
+    let (base_name, _display_title) =
+        build_base_filename(&config.playlist_context, &config.metadata.artist, &config.metadata.title);
+    let output_file = config.output_dir.join(format!("{}.mp3", base_name));
+
+    // Check if already downloaded
+    if output_file.exists() {
+        log::info!("[downloader] File already exists: {:?}", output_file);
+        return Ok(output_file);
+    }
+
+    // Build ffmpeg args and spawn
+    let args = build_ffmpeg_args(&stream_info, &output_file);
+
     let shell = app.shell();
     let (mut rx, child) = shell
         .sidecar("ffmpeg")
@@ -355,116 +489,19 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         *guard = Some(child);
     }
 
-    let mut last_error: Option<String> = None;
-    let mut last_percent: f32 = 0.0;
-    let mut last_downloaded_bytes: Option<u64> = None;
-    // Estimate total output size from duration and target bitrate
-    let estimated_total_bytes: Option<u64> = if config.duration_ms > 0 {
-        Some(config.duration_ms * output_bytes_per_ms(&stream_info.codec))
-    } else {
-        None
-    };
-
     // Process ffmpeg output
-    loop {
-        // Check for cancellation
-        if let Some(ref crx) = cancel_rx {
-            if *crx.borrow() {
-                log::info!("[downloader] Cancellation detected, aborting download");
-                if let Some(ref active_child_mutex) = active_child {
-                    let mut guard = active_child_mutex.lock().await;
-                    if let Some(child) = guard.take() {
-                        let _ = child.kill();
-                    }
-                }
-                cleanup_partial_files(&config.output_dir, &base_name);
-                // Also remove the incomplete output file
-                let _ = std::fs::remove_file(&output_file);
-                return Err(DownloadError::Cancelled);
-            }
-        }
-
-        let event = tokio::select! {
-            event = rx.recv() => event,
-            _ = tokio::time::sleep(std::time::Duration::from_millis(100)) => continue,
-        };
-
-        match event {
-            Some(CommandEvent::Stdout(line_bytes)) => {
-                let raw_line = bytes_to_string(&line_bytes);
-                for line in raw_line.lines() {
-                    let line = line.trim();
-                    if line.is_empty() {
-                        continue;
-                    }
-
-                    if let Some(progress) = parse_ffmpeg_progress(line, config.duration_ms) {
-                        // Update tracking state
-                        if progress.percent >= 0.0 {
-                            last_percent = progress.percent;
-                        }
-                        if progress.downloaded_bytes.is_some() {
-                            last_downloaded_bytes = progress.downloaded_bytes;
-                        }
-
-                        // Only emit meaningful progress updates
-                        if progress.percent >= 0.0 {
-                            let _ = app.emit(
-                                "download-progress",
-                                DownloadProgressEvent {
-                                    track_id: config.track_id.clone(),
-                                    status: "downloading".to_string(),
-                                    percent: Some(last_percent),
-                                    downloaded_bytes: last_downloaded_bytes,
-                                    total_bytes: estimated_total_bytes,
-                                    error: None,
-                                },
-                            );
-                        }
-                    }
-                }
-            }
-            Some(CommandEvent::Stderr(line_bytes)) => {
-                let line = bytes_to_string(&line_bytes);
-                log::info!("ffmpeg stderr: {}", line);
-                last_error = Some(line.clone());
-
-                if let Some(err) = classify_ffmpeg_error(&line) {
-                    log::info!(
-                        "[downloader] Track {} error: {}",
-                        config.track_id,
-                        err
-                    );
-                    return Err(err);
-                }
-            }
-            Some(CommandEvent::Terminated(payload)) => {
-                if payload.code != Some(0) {
-                    // Check if this was a cancellation
-                    if let Some(ref crx) = cancel_rx {
-                        if *crx.borrow() {
-                            log::info!("[downloader] Download was cancelled (terminated)");
-                            cleanup_partial_files(&config.output_dir, &base_name);
-                            let _ = std::fs::remove_file(&output_file);
-                            return Err(DownloadError::Cancelled);
-                        }
-                    }
-                    let error_text = last_error.unwrap_or_else(|| "Unknown error".to_string());
-                    log::error!(
-                        "ffmpeg terminated with code {:?}: {}",
-                        payload.code,
-                        error_text
-                    );
-                    // Clean up failed output
-                    let _ = std::fs::remove_file(&output_file);
-                    return Err(classify_ffmpeg_exit_error(&error_text));
-                }
-                break;
-            }
-            Some(_) => {}
-            None => break,
-        }
-    }
+    run_ffmpeg_event_loop(
+        app,
+        &mut rx,
+        &config.track_id,
+        config.duration_ms,
+        &stream_info.codec,
+        &cancel_rx,
+        &active_child,
+        &config.output_dir,
+        &base_name,
+        &output_file,
+    ).await?;
 
     // Verify output file exists
     if !output_file.exists() {
@@ -485,12 +522,10 @@ mod tests {
 
     #[test]
     fn test_parse_ffmpeg_progress_basic() {
-        // out_time_us=5000000 means 5 seconds
-        // For a 10-second track (10000ms), this is 50%
         let progress = parse_ffmpeg_progress("out_time_us=5000000", 10000);
         assert!(progress.is_some());
         let p = progress.unwrap();
-        assert!((p.percent - 0.5).abs() < 0.01);
+        assert!((p.percent.unwrap() - 0.5).abs() < 0.01);
     }
 
     #[test]
@@ -498,7 +533,7 @@ mod tests {
         let progress = parse_ffmpeg_progress("progress=end", 10000);
         assert!(progress.is_some());
         let p = progress.unwrap();
-        assert!((p.percent - 1.0).abs() < 0.01);
+        assert!((p.percent.unwrap() - 1.0).abs() < 0.01);
     }
 
     #[test]
@@ -507,6 +542,7 @@ mod tests {
         assert!(progress.is_some());
         let p = progress.unwrap();
         assert_eq!(p.speed, Some("2.5x".to_string()));
+        assert!(p.percent.is_none());
     }
 
     #[test]
@@ -527,6 +563,7 @@ mod tests {
         assert!(progress.is_some());
         let p = progress.unwrap();
         assert_eq!(p.downloaded_bytes, Some(1234567));
+        assert!(p.percent.is_none());
     }
 
     #[test]
@@ -537,11 +574,10 @@ mod tests {
 
     #[test]
     fn test_parse_ffmpeg_progress_caps_at_100_percent() {
-        // out_time_us exceeds duration
         let progress = parse_ffmpeg_progress("out_time_us=20000000", 10000);
         assert!(progress.is_some());
         let p = progress.unwrap();
-        assert!((p.percent - 1.0).abs() < 0.01);
+        assert!((p.percent.unwrap() - 1.0).abs() < 0.01);
     }
 
     #[test]
@@ -596,8 +632,6 @@ mod tests {
 
     #[test]
     fn test_classify_ffmpeg_error_invalid_data_not_fatal() {
-        // "invalid data found" should NOT be classified as an immediate fatal error
-        // (it's a recoverable warning for corrupt AAC frames)
         let err = classify_ffmpeg_error("Invalid data found when processing input");
         assert!(err.is_none());
     }

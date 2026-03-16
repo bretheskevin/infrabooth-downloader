@@ -88,7 +88,7 @@ async testFfmpeg() : Promise<Result<string, ErrorResponse>> {
  * 
  * This command orchestrates the full download pipeline:
  * 1. Resolves stream URL via SoundCloud API v2
- * 2. Downloads and converts to 320kbps MP3 via ffmpeg
+ * 2. Downloads and converts to MP3 via ffmpeg
  * 3. Embeds ID3 metadata (title, artist, album, track number, artwork)
  * 4. Emits progress events throughout the process
  */
@@ -103,14 +103,14 @@ async downloadTrackFull(request: DownloadRequest) : Promise<Result<string, Error
 /**
  * Start processing a download queue.
  * 
- * This command accepts a list of tracks and processes them sequentially.
+ * This command accepts a list of tracks and processes them in parallel.
  * Progress events are emitted via:
  * - `queue-progress`: Overall queue progress (X of Y)
  * - `download-progress`: Per-track status
  * - `queue-complete`: Final results when queue finishes
  * - `queue-cancelled`: When queue is cancelled by user
  */
-async startDownloadQueue(request: StartQueueRequest) : Promise<Result<null, string>> {
+async startDownloadQueue(request: StartQueueRequest) : Promise<Result<null, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("start_download_queue", { request }) };
 } catch (e) {
@@ -121,7 +121,7 @@ async startDownloadQueue(request: StartQueueRequest) : Promise<Result<null, stri
 /**
  * Cancel the current download queue.
  */
-async cancelDownloadQueue() : Promise<Result<null, string>> {
+async cancelDownloadQueue() : Promise<Result<null, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("cancel_download_queue") };
 } catch (e) {
@@ -132,7 +132,7 @@ async cancelDownloadQueue() : Promise<Result<null, string>> {
 /**
  * Respond to an auth choice prompt during download.
  */
-async respondToAuthChoice(choice: AuthChoice) : Promise<Result<null, string>> {
+async respondToAuthChoice(choice: AuthChoice) : Promise<Result<null, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("respond_to_auth_choice", { choice }) };
 } catch (e) {
@@ -143,7 +143,7 @@ async respondToAuthChoice(choice: AuthChoice) : Promise<Result<null, string>> {
 /**
  * Respond to a rate limit choice prompt during download.
  */
-async respondToRateLimitChoice(choice: RateLimitChoice) : Promise<Result<null, string>> {
+async respondToRateLimitChoice(choice: RateLimitChoice) : Promise<Result<null, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("respond_to_rate_limit_choice", { choice }) };
 } catch (e) {

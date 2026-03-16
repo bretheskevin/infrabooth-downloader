@@ -34,3 +34,45 @@ pub async fn parse_rate_limit_response(response: reqwest::Response) -> crate::mo
         .ok();
     crate::models::error::DownloadError::RateLimited(info)
 }
+
+/// Validate a SoundCloud API response, mapping error statuses to DownloadError.
+///
+/// Handles 429 (rate limit), 404 (not found), 401 (unauthorized),
+/// 403 (forbidden/geo-blocked), and other non-success statuses.
+///
+/// `map_403` controls how 403 is interpreted:
+/// - `None`: treated as StreamResolutionFailed (default for track data fetches)
+/// - `Some(f)`: custom mapping (e.g. GeoBlocked for transcoding URL resolution)
+pub async fn validate_sc_response(
+    response: reqwest::Response,
+    map_403: Option<fn() -> crate::models::error::DownloadError>,
+) -> Result<reqwest::Response, crate::models::error::DownloadError> {
+    use crate::models::error::DownloadError;
+
+    let status = response.status();
+
+    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return Err(parse_rate_limit_response(response).await);
+    }
+    if status == reqwest::StatusCode::NOT_FOUND {
+        return Err(DownloadError::TrackUnavailable("Not found".to_string()));
+    }
+    if status == reqwest::StatusCode::UNAUTHORIZED {
+        return Err(DownloadError::StreamResolutionFailed(format!("HTTP {}", status)));
+    }
+    if status == reqwest::StatusCode::FORBIDDEN {
+        return Err(match map_403 {
+            Some(f) => f(),
+            None => DownloadError::StreamResolutionFailed(format!("HTTP {}", status)),
+        });
+    }
+    if !status.is_success() {
+        let body = response.text().await.unwrap_or_default();
+        return Err(DownloadError::StreamResolutionFailed(format!(
+            "HTTP {}: {}",
+            status, body
+        )));
+    }
+
+    Ok(response)
+}

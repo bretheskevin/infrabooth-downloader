@@ -147,19 +147,7 @@ impl From<AuthError> for String {
     }
 }
 
-#[derive(Debug, Error)]
-pub enum PipelineError {
-    #[error("Download failed: {0}")]
-    Download(#[from] DownloadError),
-}
 
-impl HasErrorCode for PipelineError {
-    fn code(&self) -> &'static str {
-        match self {
-            PipelineError::Download(e) => e.code(),
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
@@ -316,24 +304,7 @@ mod tests {
         assert_eq!(response.code, "BINARY_NOT_FOUND");
     }
 
-    #[test]
-    fn test_pipeline_download_error_message() {
-        let err = PipelineError::Download(DownloadError::DownloadFailed("test error".to_string()));
-        assert_eq!(err.to_string(), "Download failed: test error");
-    }
 
-    #[test]
-    fn test_pipeline_error_code_download() {
-        let err = PipelineError::Download(DownloadError::GeoBlocked("test".to_string()));
-        assert_eq!(err.code(), "GEO_BLOCKED");
-    }
-
-    #[test]
-    fn test_error_response_from_pipeline_download() {
-        let err = PipelineError::Download(DownloadError::RateLimited(None));
-        let response: ErrorResponse = err.into();
-        assert_eq!(response.code, "RATE_LIMITED");
-    }
 
     #[test]
     fn test_metadata_write_failed_error_message() {
