@@ -219,6 +219,7 @@
       "downloadAll": "Tout télécharger",
       "download": "Télécharger",
       "selectAll": "Tout sélectionner",
+      "deselectAll": "Tout désélectionner",
       "selected": "{{count}} sélectionnés",
       "quickDownloadFailed": "Échec de la récupération des pistes",
       "conflictTitle": "Téléchargement en cours",

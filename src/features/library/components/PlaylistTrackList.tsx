@@ -68,7 +68,7 @@ export function PlaylistTrackList({
             className="shrink-0"
           />
           <span className="text-xs text-muted-foreground cursor-pointer select-none" onClick={onToggleAll}>
-            {t('library.detail.selectAll')}
+            {t(isAllSelected ? 'library.detail.deselectAll' : 'library.detail.selectAll')}
           </span>
         </div>
         <div className="flex items-center gap-2">
