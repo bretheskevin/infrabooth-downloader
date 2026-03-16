@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Pause, Play, Loader2 } from 'lucide-react';
 import { cn, getArtworkUrl } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { usePlayerStore } from '../store';
 import { ScrollingText } from './ScrollingText';
 
@@ -30,51 +31,56 @@ export function MiniPill() {
       )}
     >
       {/* Left: artwork + info (click to expand) */}
-      <button
-        className="flex items-center gap-2 pl-1.5 pr-3 h-full rounded-l-full hover:bg-white/10 transition-colors"
-        onClick={toggleExpanded}
-        aria-label={t('player.expand')}
-      >
-        <div className="relative h-9 w-9 flex-shrink-0">
-          <div className="h-9 w-9 rounded-full bg-primary-foreground/20 overflow-hidden">
-            {currentTrack.artworkUrl && (
-              <img
-                src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined}
-                alt=""
-                className="h-full w-full object-cover"
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            className="flex items-center gap-2 pl-1.5 pr-3 h-full rounded-l-full hover:bg-white/10 transition-colors"
+            onClick={toggleExpanded}
+            aria-label={t('player.expand')}
+          >
+            <div className="relative h-9 w-9 flex-shrink-0">
+              <div className="h-9 w-9 rounded-full bg-primary-foreground/20 overflow-hidden">
+                {currentTrack.artworkUrl && (
+                  <img
+                    src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined}
+                    alt=""
+                    className="h-full w-full object-cover"
+                  />
+                )}
+              </div>
+              {/* Progress ring */}
+              <svg className="absolute inset-0 -rotate-90" width="36" height="36" aria-hidden="true">
+                <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
+                {isLoading ? (
+                  <circle
+                    cx="18" cy="18" r="16" fill="none" stroke="white" strokeWidth="2"
+                    strokeDasharray={circumference} strokeDashoffset={circumference * 0.75}
+                    strokeLinecap="round"
+                    className="animate-spin origin-center"
+                  />
+                ) : (
+                  <circle
+                    cx="18" cy="18" r="16" fill="none" stroke="white" strokeWidth="2"
+                    strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+                    strokeLinecap="round"
+                    className="transition-[stroke-dashoffset] duration-300"
+                  />
+                )}
+              </svg>
+            </div>
+            <div className="max-w-[70px]">
+              <ScrollingText
+                text={currentTrack.title}
+                className="text-[10px] font-semibold text-primary-foreground"
               />
-            )}
-          </div>
-          {/* Progress ring */}
-          <svg className="absolute inset-0 -rotate-90" width="36" height="36" aria-hidden="true">
-            <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
-            {isLoading ? (
-              <circle
-                cx="18" cy="18" r="16" fill="none" stroke="white" strokeWidth="2"
-                strokeDasharray={circumference} strokeDashoffset={circumference * 0.75}
-                strokeLinecap="round"
-                className="animate-spin origin-center"
-              />
-            ) : (
-              <circle
-                cx="18" cy="18" r="16" fill="none" stroke="white" strokeWidth="2"
-                strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
-                strokeLinecap="round"
-                className="transition-[stroke-dashoffset] duration-300"
-              />
-            )}
-          </svg>
-        </div>
-        <div className="max-w-[70px]">
-          <ScrollingText
-            text={currentTrack.title}
-            className="text-[10px] font-semibold text-primary-foreground"
-          />
-          <div className="text-[9px] text-primary-foreground/65 truncate">
-            {currentTrack.artist}
-          </div>
-        </div>
-      </button>
+              <div className="text-[9px] text-primary-foreground/65 truncate">
+                {currentTrack.artist}
+              </div>
+            </div>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="top">{t('player.clickToExpand')}</TooltipContent>
+      </Tooltip>
 
       {/* Right: play/pause (click to toggle) */}
       <button
