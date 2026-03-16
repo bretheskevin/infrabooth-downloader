@@ -1,3 +1,4 @@
+import { useCallback, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ListMusic, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,22 @@ export function ExpandedBar() {
   const toggleExpanded = usePlayerStore((s) => s.toggleExpanded);
   const toggleQueue = usePlayerStore((s) => s.toggleQueue);
 
+  const seekbarRef = useRef<HTMLDivElement>(null);
+  const [seekHover, setSeekHover] = useState<{ x: number; timeMs: number } | null>(null);
+
+  const onSeekbarMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      const bar = seekbarRef.current;
+      if (!bar || !durationMs) return;
+      const rect = bar.getBoundingClientRect();
+      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
+      setSeekHover({ x, timeMs: Math.round((x / rect.width) * durationMs) });
+    },
+    [durationMs],
+  );
+
+  const onSeekbarMouseLeave = useCallback(() => setSeekHover(null), []);
+
   if (!currentTrack || state === 'stopped') return null;
 
   const isPlaying = state === 'playing';
@@ -38,13 +55,27 @@ export function ExpandedBar() {
         <span className="text-[10px] text-muted-foreground min-w-[32px] text-right tabular-nums">
           {formatDuration(positionMs)}
         </span>
-        <Slider
-          value={[positionMs]}
-          max={durationMs || 1}
-          step={1000}
-          onValueChange={([v]) => seek(v ?? 0)}
-          className="flex-1"
-        />
+        <div
+          ref={seekbarRef}
+          className="relative flex-1"
+          onMouseMove={onSeekbarMouseMove}
+          onMouseLeave={onSeekbarMouseLeave}
+        >
+          <Slider
+            value={[positionMs]}
+            max={durationMs || 1}
+            step={1000}
+            onValueChange={([v]) => seek(v ?? 0)}
+          />
+          {seekHover && (
+            <div
+              className="absolute bottom-full mb-1.5 -translate-x-1/2 pointer-events-none rounded-md bg-primary px-2 py-0.5 text-[10px] text-primary-foreground tabular-nums shadow-sm"
+              style={{ left: seekHover.x }}
+            >
+              {formatDuration(seekHover.timeMs)}
+            </div>
+          )}
+        </div>
         <span className="text-[10px] text-muted-foreground min-w-[32px] tabular-nums">
           {formatDuration(durationMs)}
         </span>
