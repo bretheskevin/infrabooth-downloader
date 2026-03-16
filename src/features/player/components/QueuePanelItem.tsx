@@ -5,6 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, formatDuration, getArtworkUrl } from '@/lib/utils';
+import { EqualizerBars } from './EqualizerBars';
 import { PlayOverlay } from './PlayOverlay';
 import type { PlaybackItem } from '../types';
 
@@ -108,7 +109,9 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResu
 
       <span className="text-[10px] text-muted-foreground tabular-nums">{formatDuration(item.durationMs)}</span>
 
-      {!isCurrent && (
+      {isCurrent ? (
+        <EqualizerBars className="h-6 w-6" />
+      ) : (
         <Button
           variant="ghost"
           size="icon"
