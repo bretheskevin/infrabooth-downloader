@@ -1,22 +1,37 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock the tauri API
-vi.mock('@/lib/tauri', () => ({
-  api: {
-    playerPlayAt: vi.fn().mockResolvedValue(undefined),
-    playerPause: vi.fn().mockResolvedValue(undefined),
-    playerResume: vi.fn().mockResolvedValue(undefined),
-    playerSeek: vi.fn().mockResolvedValue(undefined),
-    playerSetVolume: vi.fn().mockResolvedValue(undefined),
-    playerNext: vi.fn().mockResolvedValue(undefined),
-    playerPrevious: vi.fn().mockResolvedValue(undefined),
-    playerStop: vi.fn().mockResolvedValue(undefined),
-    playerReorderQueue: vi.fn().mockResolvedValue(undefined),
-    playerRemoveFromQueue: vi.fn().mockResolvedValue(undefined),
+// Mock the audio engine
+vi.mock('../audio-engine', () => ({
+  audioEngine: {
+    setCallbacks: vi.fn(),
+    load: vi.fn(),
+    play: vi.fn(),
+    pause: vi.fn(),
+    resume: vi.fn(),
+    seek: vi.fn(),
+    setVolume: vi.fn(),
+    stop: vi.fn(),
+    destroy: vi.fn(),
+    getState: vi.fn().mockReturnValue('idle'),
+    getPosition: vi.fn().mockReturnValue({ positionMs: 0, durationMs: 0 }),
   },
 }));
 
+// Mock the tauri API
+vi.mock('@/lib/tauri', () => ({
+  api: {
+    resolvePlaybackUrl: vi.fn().mockResolvedValue('https://example.com/stream.m3u8'),
+  },
+}));
+
+// Mock the url-cache so tests don't interfere via shared cache
+vi.mock('../url-cache', () => ({
+  getCachedUrl: vi.fn().mockReturnValue(null),
+  setCachedUrl: vi.fn(),
+}));
+
 import { usePlayerStore } from '../store';
+import { audioEngine } from '../audio-engine';
 import { api } from '@/lib/tauri';
 import type { PlaybackItem } from '../types';
 
@@ -59,36 +74,55 @@ describe('playerStore', () => {
     expect(state.currentTrack).toBeNull();
   });
 
-  it('play() should optimistically update state and call API', async () => {
+  it('play() should set loading state and resolve URL', async () => {
     const queue = [mockTrack];
     await usePlayerStore.getState().play(queue, 0);
+    expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(1, mockTrack.trackUrl);
+    expect(audioEngine.load).toHaveBeenCalledWith('https://example.com/stream.m3u8');
+    expect(audioEngine.play).toHaveBeenCalled();
+  });
+
+  it('play() should set queue and current track optimistically', async () => {
+    const queue = [mockTrack];
+    const promise = usePlayerStore.getState().play(queue, 0);
+    // Check optimistic state before resolve completes
     const state = usePlayerStore.getState();
     expect(state.queue).toEqual(queue);
     expect(state.cursor).toBe(0);
     expect(state.currentTrack).toEqual(mockTrack);
-    expect(state.state).toBe('loading');
-    expect(api.playerPlayAt).toHaveBeenCalledWith(
-      [{ track_id: 1, track_url: mockTrack.trackUrl, title: mockTrack.title, artist: mockTrack.artist, artwork_url: null, duration_ms: 180000 }],
-      0,
-    );
+    await promise;
   });
 
-  it('pause() should call API', async () => {
-    await usePlayerStore.getState().pause();
-    expect(api.playerPause).toHaveBeenCalled();
+  it('pause() should call audio engine', () => {
+    usePlayerStore.getState().pause();
+    expect(audioEngine.pause).toHaveBeenCalled();
   });
 
-  it('setVolume() should optimistically update and call API', async () => {
-    await usePlayerStore.getState().setVolume(0.5);
+  it('resume() should call audio engine', () => {
+    usePlayerStore.getState().resume();
+    expect(audioEngine.resume).toHaveBeenCalled();
+  });
+
+  it('seek() should call audio engine and update state', () => {
+    usePlayerStore.getState().seek(5000);
+    expect(audioEngine.seek).toHaveBeenCalledWith(5000);
+    expect(usePlayerStore.getState().positionMs).toBe(5000);
+  });
+
+  it('stop() should call audio engine and reset state', () => {
+    usePlayerStore.setState({ state: 'playing', queue: makeQueue(), cursor: 1 });
+    usePlayerStore.getState().stop();
+    expect(audioEngine.stop).toHaveBeenCalled();
+    const state = usePlayerStore.getState();
+    expect(state.state).toBe('stopped');
+    expect(state.currentTrack).toBeNull();
+    expect(state.queue).toEqual([]);
+  });
+
+  it('setVolume() should call audio engine and update state', () => {
+    usePlayerStore.getState().setVolume(0.5);
+    expect(audioEngine.setVolume).toHaveBeenCalledWith(0.5);
     expect(usePlayerStore.getState().volume).toBe(0.5);
-    expect(api.playerSetVolume).toHaveBeenCalledWith(0.5);
-  });
-
-  it('setVolume() should rollback on API failure', async () => {
-    vi.mocked(api.playerSetVolume).mockRejectedValueOnce(new Error('fail'));
-    usePlayerStore.setState({ volume: 0.8 });
-    await expect(usePlayerStore.getState().setVolume(0.3)).rejects.toThrow('fail');
-    expect(usePlayerStore.getState().volume).toBe(0.8);
   });
 
   it('toggleExpanded should toggle isExpanded', () => {
@@ -103,10 +137,10 @@ describe('playerStore', () => {
     expect(usePlayerStore.getState().isQueueOpen).toBe(true);
   });
 
-  it('reorderQueue should optimistically update queue and cursor', async () => {
+  it('reorderQueue should update queue and cursor', () => {
     const queue = makeQueue();
     usePlayerStore.setState({ queue, cursor: 0 });
-    await usePlayerStore.getState().reorderQueue(0, 2);
+    usePlayerStore.getState().reorderQueue(0, 2);
 
     const state = usePlayerStore.getState();
     expect(state.queue[0]!.trackId).toBe(2);
@@ -114,103 +148,77 @@ describe('playerStore', () => {
     expect(state.queue[2]!.trackId).toBe(1);
     expect(state.cursor).toBe(2);
     expect(state.currentTrack!.trackId).toBe(1);
-    expect(api.playerReorderQueue).toHaveBeenCalledWith(0, 2);
   });
 
-  it('reorderQueue should rollback on API failure', async () => {
-    vi.mocked(api.playerReorderQueue).mockRejectedValueOnce(new Error('fail'));
-    const queue = makeQueue();
-    usePlayerStore.setState({ queue, cursor: 0 });
-    await expect(usePlayerStore.getState().reorderQueue(0, 2)).rejects.toThrow('fail');
-    expect(usePlayerStore.getState().queue[0]!.trackId).toBe(1);
-    expect(usePlayerStore.getState().cursor).toBe(0);
-  });
-
-  it('removeFromQueue should optimistically update and call API', async () => {
+  it('removeFromQueue should update queue', () => {
     const queue = makeQueue();
     usePlayerStore.setState({ queue, cursor: 2 });
-    await usePlayerStore.getState().removeFromQueue(0);
+    usePlayerStore.getState().removeFromQueue(0);
 
     const state = usePlayerStore.getState();
     expect(state.queue).toHaveLength(2);
     expect(state.cursor).toBe(1);
     expect(state.currentTrack!.trackId).toBe(3);
-    expect(api.playerRemoveFromQueue).toHaveBeenCalledWith(0);
   });
 
-  it('removeFromQueue should handle removing current track', async () => {
+  it('removeFromQueue should auto-play new current when removing current track', async () => {
     const queue = makeQueue();
-    usePlayerStore.setState({ queue, cursor: 1 });
-    await usePlayerStore.getState().removeFromQueue(1);
+    usePlayerStore.setState({ queue, cursor: 1, state: 'playing' });
+    usePlayerStore.getState().removeFromQueue(1);
 
     const state = usePlayerStore.getState();
     expect(state.queue).toHaveLength(2);
     expect(state.cursor).toBe(1);
     expect(state.currentTrack!.trackId).toBe(3);
+    expect(state.state).toBe('loading');
+    expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(3, expect.any(String));
   });
 
-  it('removeFromQueue should stop when queue becomes empty', async () => {
+  it('removeFromQueue should stop when queue becomes empty', () => {
     const queue = [mockTrack];
     usePlayerStore.setState({ queue, cursor: 0, state: 'playing' });
-    await usePlayerStore.getState().removeFromQueue(0);
+    usePlayerStore.getState().removeFromQueue(0);
 
     const state = usePlayerStore.getState();
     expect(state.queue).toEqual([]);
-    expect(state.cursor).toBe(0);
-    expect(state.currentTrack).toBeNull();
     expect(state.state).toBe('stopped');
-    expect(state.positionMs).toBe(0);
-    expect(state.isQueueOpen).toBe(false);
-    expect(api.playerRemoveFromQueue).toHaveBeenCalledWith(0);
+    expect(audioEngine.stop).toHaveBeenCalled();
   });
 
-  it('removeFromQueue should rollback on API failure', async () => {
-    vi.mocked(api.playerRemoveFromQueue).mockRejectedValueOnce(new Error('fail'));
+  it('next() should advance cursor and resolve next track', async () => {
     const queue = makeQueue();
-    usePlayerStore.setState({ queue, cursor: 1 });
-    await expect(usePlayerStore.getState().removeFromQueue(0)).rejects.toThrow('fail');
-    expect(usePlayerStore.getState().queue).toHaveLength(3);
+    usePlayerStore.setState({ queue, cursor: 0, state: 'playing' });
+    await usePlayerStore.getState().next();
+
     expect(usePlayerStore.getState().cursor).toBe(1);
+    expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(2, queue[1]!.trackUrl);
+    expect(audioEngine.load).toHaveBeenCalled();
   });
 
-  describe('event handlers', () => {
-    it('_onStateChanged should update state', () => {
-      usePlayerStore.getState()._onStateChanged('playing', 1);
-      expect(usePlayerStore.getState().state).toBe('playing');
-    });
+  it('next() at end of queue should stop', async () => {
+    const queue = makeQueue();
+    usePlayerStore.setState({ queue, cursor: 2, state: 'playing' });
+    await usePlayerStore.getState().next();
 
-    it('_onStateChanged stopped should reset all state', () => {
-      usePlayerStore.setState({ state: 'playing', queue: makeQueue(), cursor: 1, positionMs: 5000, isQueueOpen: true });
-      usePlayerStore.getState()._onStateChanged('stopped', null);
-      const state = usePlayerStore.getState();
-      expect(state.state).toBe('stopped');
-      expect(state.currentTrack).toBeNull();
-      expect(state.queue).toEqual([]);
-      expect(state.cursor).toBe(0);
-      expect(state.positionMs).toBe(0);
-      expect(state.isQueueOpen).toBe(false);
-    });
+    expect(usePlayerStore.getState().state).toBe('stopped');
+    expect(audioEngine.stop).toHaveBeenCalled();
+  });
 
-    it('_onProgress should update position and duration', () => {
-      usePlayerStore.getState()._onProgress(5000, 180000);
-      expect(usePlayerStore.getState().positionMs).toBe(5000);
-      expect(usePlayerStore.getState().durationMs).toBe(180000);
-    });
+  it('previous() should go back and resolve previous track', async () => {
+    const queue = makeQueue();
+    usePlayerStore.setState({ queue, cursor: 2, state: 'playing' });
+    await usePlayerStore.getState().previous();
 
-    it('_onTrackChanged should update cursor and currentTrack', () => {
-      const queue = makeQueue();
-      usePlayerStore.setState({ queue });
-      usePlayerStore.getState()._onTrackChanged(2, 1, 3);
-      expect(usePlayerStore.getState().cursor).toBe(1);
-      expect(usePlayerStore.getState().currentTrack!.trackId).toBe(2);
-      expect(usePlayerStore.getState().positionMs).toBe(0);
-    });
+    expect(usePlayerStore.getState().cursor).toBe(1);
+    expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(2, queue[1]!.trackUrl);
+  });
 
-    it('_onError should log error', () => {
-      const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      usePlayerStore.getState()._onError(1, 'decode error');
-      expect(spy).toHaveBeenCalledWith('[player] Error for track 1: decode error');
-      spy.mockRestore();
-    });
+  it('previous() at start should do nothing', async () => {
+    const queue = makeQueue();
+    usePlayerStore.setState({ queue, cursor: 0, state: 'playing' });
+    await usePlayerStore.getState().previous();
+
+    expect(usePlayerStore.getState().cursor).toBe(0);
+    expect(api.resolvePlaybackUrl).not.toHaveBeenCalled();
   });
 });

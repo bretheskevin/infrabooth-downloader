@@ -8,9 +8,7 @@ use commands::{
     cancel_download_queue, check_auth, check_for_updates, check_write_permission,
     clear_library_cache, download_track_full, get_default_download_path,
     get_library_playlist_tracks, get_library_playlists, get_playlist_info, get_track_info,
-    install_update, player_get_state, player_next, player_pause, player_play_at,
-    player_previous, player_remove_from_queue, player_reorder_queue, player_resume,
-    player_seek, player_set_volume, player_stop, refresh_auth, resolve_library_artwork,
+    install_update, refresh_auth, resolve_library_artwork, resolve_playback_url,
     respond_to_auth_choice, respond_to_rate_limit_choice, scan_existing_tracks, search_tracks,
     sign_out, start_download_queue, test_ffmpeg, validate_download_path,
     validate_soundcloud_url,
@@ -21,7 +19,7 @@ use services::cancellation::CancellationState;
 use services::library::LibraryCache;
 use services::storage::AuthState;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-use tauri::{Emitter, Manager};
+use tauri::Emitter;
 
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
@@ -53,17 +51,7 @@ pub fn run() {
         get_library_playlist_tracks,
         scan_existing_tracks,
         search_tracks,
-        player_play_at,
-        player_pause,
-        player_resume,
-        player_seek,
-        player_set_volume,
-        player_next,
-        player_previous,
-        player_stop,
-        player_get_state,
-        player_reorder_queue,
-        player_remove_from_queue
+        resolve_playback_url
     ]);
 
     // Export TypeScript bindings in debug mode
@@ -91,11 +79,6 @@ pub fn run() {
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
-
-            // Initialize audio player engine
-            let (player_state, player_tx) = services::player::init_player(app.handle().clone());
-            app.manage(player_state);
-            app.manage(player_tx);
 
             // Create settings menu item with Cmd+, shortcut
             let settings_item =
