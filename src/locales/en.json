@@ -219,6 +219,7 @@
       "downloadAll": "Download All",
       "download": "Download",
       "selectAll": "Select all",
+      "deselectAll": "Deselect all",
       "selected": "{{count}} selected",
       "quickDownloadFailed": "Failed to fetch playlist tracks",
       "conflictTitle": "Download in progress",
