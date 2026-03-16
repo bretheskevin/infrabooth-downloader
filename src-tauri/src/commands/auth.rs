@@ -17,11 +17,7 @@ pub struct AuthStatePayload {
     pub avatar_url: Option<String>,
 }
 
-/// Event name for auth state changes.
-pub const AUTH_STATE_CHANGED_EVENT: &str = "auth-state-changed";
-
-/// Event name emitted when re-authentication is required.
-pub const AUTH_REAUTH_NEEDED_EVENT: &str = "auth-reauth-needed";
+use crate::services::events;
 
 fn signed_out_payload() -> AuthStatePayload {
     AuthStatePayload {
@@ -54,7 +50,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
 
     let Some(cookie) = result else {
         state.clear();
-        let _ = app.emit(AUTH_STATE_CHANGED_EVENT, signed_out_payload());
+        let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload());
         return Ok(false);
     };
 
@@ -67,7 +63,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
                 avatar_url: profile.avatar_url.clone(),
             });
             let _ = app.emit(
-                AUTH_STATE_CHANGED_EVENT,
+                events::AUTH_STATE_CHANGED,
                 AuthStatePayload {
                     is_signed_in: true,
                     username: Some(profile.username),
@@ -81,7 +77,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
         Err(e) => {
             warn!("Cookie verification failed: {}", e);
             state.clear();
-            let _ = app.emit(AUTH_STATE_CHANGED_EVENT, signed_out_payload());
+            let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload());
             Ok(false)
         }
     }
@@ -105,7 +101,7 @@ pub async fn refresh_auth(app: AppHandle) -> Result<bool, String> {
 
     let result = check_auth(app.clone()).await?;
     if !result {
-        let _ = app.emit(AUTH_REAUTH_NEEDED_EVENT, ());
+        let _ = app.emit(events::AUTH_REAUTH_NEEDED, ());
     }
     Ok(result)
 }
@@ -120,7 +116,7 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     let state = app.state::<AuthState>();
     state.clear();
     app.state::<LibraryCache>().clear();
-    let _ = app.emit(AUTH_STATE_CHANGED_EVENT, signed_out_payload());
+    let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload());
     info!("User signed out");
     Ok(())
 }

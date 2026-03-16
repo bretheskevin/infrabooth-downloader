@@ -19,6 +19,7 @@ use services::cancellation::CancellationState;
 use services::library::LibraryCache;
 use services::storage::AuthState;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
+use services::events;
 use tauri::Emitter;
 
 #[cfg(debug_assertions)]
@@ -123,7 +124,7 @@ pub fn run() {
             // Handle custom menu events
             app.on_menu_event(move |app_handle, event| {
                 if event.id() == settings_item.id() {
-                    let _ = app_handle.emit("open-settings", ());
+                    let _ = app_handle.emit(events::OPEN_SETTINGS, ());
                 }
             });
 
