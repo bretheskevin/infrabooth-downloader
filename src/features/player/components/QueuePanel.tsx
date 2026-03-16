@@ -22,9 +22,12 @@ export function QueuePanel() {
   const { t } = useTranslation();
   const queue = usePlayerStore((s) => s.queue);
   const cursor = usePlayerStore((s) => s.cursor);
+  const playerState = usePlayerStore((s) => s.state);
   const reorderQueue = usePlayerStore((s) => s.reorderQueue);
   const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
   const play = usePlayerStore((s) => s.play);
+  const pause = usePlayerStore((s) => s.pause);
+  const resume = usePlayerStore((s) => s.resume);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -69,7 +72,10 @@ export function QueuePanel() {
                     index={index}
                     isCurrent={index === cursor}
                     onPlay={(i) => play(queue, i)}
+                    onPause={pause}
+                    onResume={resume}
                     onRemove={removeFromQueue}
+                    isPlayerPlaying={playerState === 'playing'}
                   />
                 ))}
               </div>

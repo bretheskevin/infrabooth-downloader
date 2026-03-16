@@ -1,9 +1,11 @@
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { GripVertical, X, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn, formatDuration, getArtworkUrl } from '@/lib/utils';
+import { PlayOverlay } from './PlayOverlay';
 import type { PlaybackItem } from '../types';
 
 interface QueuePanelItemProps {
@@ -11,10 +13,13 @@ interface QueuePanelItemProps {
   index: number;
   isCurrent: boolean;
   onPlay: (index: number) => void;
+  onPause: () => void;
+  onResume: () => void;
   onRemove: (index: number) => void;
+  isPlayerPlaying: boolean;
 }
 
-export function QueuePanelItem({ item, index, isCurrent, onPlay, onRemove }: QueuePanelItemProps) {
+export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResume, onRemove, isPlayerPlaying }: QueuePanelItemProps) {
   const { t } = useTranslation();
   const {
     attributes,
@@ -30,6 +35,20 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onRemove }: Que
     transition,
   };
 
+  const [isRowHovered, setIsRowHovered] = useState(false);
+  const handleMouseEnter = useCallback(() => setIsRowHovered(true), []);
+  const handleMouseLeave = useCallback(() => setIsRowHovered(false), []);
+
+  const handlePlayPause = useCallback(() => {
+    if (isCurrent && isPlayerPlaying) {
+      onPause();
+    } else if (isCurrent && !isPlayerPlaying) {
+      onResume();
+    } else {
+      onPlay(index);
+    }
+  }, [isCurrent, isPlayerPlaying, onPause, onResume, onPlay, index]);
+
   return (
     <div
       ref={setNodeRef}
@@ -41,7 +60,9 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onRemove }: Que
         isCurrent && 'bg-primary/5',
         isDragging && 'opacity-50 cursor-grabbing',
       )}
-      onClick={() => onPlay(index)}
+      onClick={handlePlayPause}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       <div className="h-6 w-6 flex items-center justify-center text-muted-foreground" aria-hidden="true">
         <GripVertical className="h-3.5 w-3.5" />
@@ -55,11 +76,24 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onRemove }: Que
         </span>
       )}
 
-      <div className="h-7 w-7 rounded bg-secondary flex-shrink-0 overflow-hidden">
-        {item.artworkUrl && (
-          <img src={getArtworkUrl(item.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />
-        )}
-      </div>
+      <PlayOverlay
+        onPlay={handlePlayPause}
+        onPause={handlePlayPause}
+        isActive={isCurrent}
+        isPlaying={isCurrent && isPlayerPlaying}
+        forceShow={isRowHovered}
+        className="h-7 w-7 shrink-0"
+      >
+        <div className="h-7 w-7 rounded bg-secondary flex-shrink-0 overflow-hidden">
+          {item.artworkUrl ? (
+            <img src={getArtworkUrl(item.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />
+          ) : (
+            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+              <Music className="h-3 w-3" />
+            </div>
+          )}
+        </div>
+      </PlayOverlay>
 
       <div className="flex-1 min-w-0">
         <div className={cn('text-[11px] truncate', isCurrent ? 'font-semibold text-primary' : 'font-medium')}>
