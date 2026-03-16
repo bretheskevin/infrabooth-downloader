@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   DndContext,
@@ -29,6 +30,13 @@ export function QueuePanel() {
   const pause = usePlayerStore((s) => s.pause);
   const resume = usePlayerStore((s) => s.resume);
 
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = scrollRef.current?.querySelector('[data-current]');
+    el?.scrollIntoView({ block: 'center' });
+  }, []);
+
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -56,7 +64,7 @@ export function QueuePanel() {
           {t('player.queueCount', { count: queue.length })}
         </p>
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto">
         {queue.length === 0 ? (
           <p className="py-6 text-center text-xs text-muted-foreground">
             {t('player.queueEmpty')}
