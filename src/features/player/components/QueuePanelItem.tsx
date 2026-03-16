@@ -56,7 +56,7 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResu
       {...attributes}
       {...listeners}
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5 rounded-md cursor-grab touch-none',
+        'flex items-center gap-2 px-3 py-1.5 rounded-md cursor-grab',
         isCurrent && 'bg-primary/5',
         isDragging && 'opacity-50 cursor-grabbing',
       )}
@@ -64,7 +64,10 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResu
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <div className="h-6 w-6 flex items-center justify-center text-muted-foreground" aria-hidden="true">
+      <div
+        className="h-6 w-6 flex items-center justify-center text-muted-foreground"
+        aria-hidden="true"
+      >
         <GripVertical className="h-3.5 w-3.5" />
       </div>
 
