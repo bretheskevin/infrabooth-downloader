@@ -13,7 +13,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import { ScrollArea } from '@/components/ui/scroll-area';
+
 import { EXPANDED_BAR_HEIGHT } from './ExpandedBar';
 import { usePlayerStore } from '../store';
 import { QueuePanelItem } from './QueuePanelItem';
@@ -47,7 +47,7 @@ export function QueuePanel() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-40 bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.08)] animate-in slide-in-from-bottom duration-250 max-h-[60vh]"
+      className="fixed left-0 right-0 z-40 bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.08)] animate-in slide-in-from-bottom duration-250 max-h-[60vh] flex flex-col"
       style={{ bottom: `${EXPANDED_BAR_HEIGHT}px` }}
     >
       <div className="px-4 py-2 border-b border-border/50">
@@ -56,7 +56,7 @@ export function QueuePanel() {
           {t('player.queueCount', { count: queue.length })}
         </p>
       </div>
-      <ScrollArea className="max-h-[calc(60vh-48px)]">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {queue.length === 0 ? (
           <p className="py-6 text-center text-xs text-muted-foreground">
             {t('player.queueEmpty')}
@@ -82,7 +82,7 @@ export function QueuePanel() {
             </SortableContext>
           </DndContext>
         )}
-      </ScrollArea>
+      </div>
     </div>
   );
 }
