@@ -47,7 +47,7 @@ describe('Tauri Configuration (AC #1)', () => {
     const tauriConfig = JSON.parse(
       readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8')
     );
-    expect(tauriConfig.build.devUrl).toBe('http://localhost:5173');
+    expect(tauriConfig.build.devUrl).toBe('http://localhost:5973');
   });
 });
 
