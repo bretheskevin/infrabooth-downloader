@@ -47,6 +47,19 @@ struct StreamUrlResponse {
     url: String,
 }
 
+/// Response from the `/tracks/{urn}/streams` endpoint.
+#[derive(Debug, Deserialize)]
+struct StreamsResponse {
+    /// AAC HLS at 160kbps (preferred).
+    hls_aac_160_url: Option<String>,
+    /// AAC HLS at 96kbps (fallback).
+    hls_aac_96_url: Option<String>,
+    /// Legacy HLS MP3 (still works with hls.js).
+    hls_mp3_128_url: Option<String>,
+    /// Legacy progressive MP3 (last resort).
+    http_mp3_128_url: Option<String>,
+}
+
 /// Media section from API v2 track data.
 #[derive(Debug, Deserialize)]
 struct MediaInfo {
@@ -140,13 +153,14 @@ fn normalize_protocol(protocol: &str, url: &str) -> Protocol {
 
 /// Compute a priority score for a transcoding.
 ///
-/// Higher score = better. Matching yt-dlp's _DEFAULT_FORMATS order:
-/// http_aac(12) > hls_aac(11) > http_opus(10) > hls_opus(9) > http_mp3(8) > hls_mp3(7)
+/// Higher score = better. `prefer_hls` controls protocol preference:
+/// - `false` (downloads): progressive > HLS (matches yt-dlp's _DEFAULT_FORMATS)
+/// - `true` (streaming): HLS > progressive (instant playback, only first segment needed)
 ///
 /// HQ quality adds +100 to the score.
 /// Snipped/preview tracks get -1000 penalty.
 /// HLS Opus is excluded: our bundled ffmpeg cannot handle .opus segments in HLS playlists.
-fn transcoding_score(t: &Transcoding) -> i32 {
+fn score_transcoding(t: &Transcoding, prefer_hls: bool) -> i32 {
     let protocol = normalize_protocol(&t.format.protocol, &t.url);
     let codec = extract_codec(&t.format.mime_type);
     let preset_base = t.preset.split('_').next().unwrap_or("");
@@ -169,11 +183,20 @@ fn transcoding_score(t: &Transcoding) -> i32 {
         Codec::Unknown => -1,
     };
 
-    let protocol_score = match protocol {
-        Protocol::Http => 1,
-        Protocol::Hls => 0,
-        Protocol::HlsAes => -1,
-        Protocol::Unknown => -2,
+    let protocol_score = if prefer_hls {
+        match protocol {
+            Protocol::Hls => 1,
+            Protocol::Http => 0,
+            Protocol::HlsAes => -1,
+            Protocol::Unknown => -2,
+        }
+    } else {
+        match protocol {
+            Protocol::Http => 1,
+            Protocol::Hls => 0,
+            Protocol::HlsAes => -1,
+            Protocol::Unknown => -2,
+        }
     };
 
     let quality_bonus = if t.quality == "hq" { 100 } else { 0 };
@@ -182,16 +205,25 @@ fn transcoding_score(t: &Transcoding) -> i32 {
     codec_score + protocol_score + quality_bonus + snipped_penalty
 }
 
-/// Select the best transcoding from available options.
+/// Select the best transcoding from available options (prefers progressive for downloads).
 pub fn select_best_transcoding(transcodings: &[Transcoding]) -> Option<&Transcoding> {
+    select_best(transcodings, false)
+}
+
+/// Select the best transcoding for streaming playback (prefers HLS for instant start).
+pub fn select_best_transcoding_for_streaming(transcodings: &[Transcoding]) -> Option<&Transcoding> {
+    select_best(transcodings, true)
+}
+
+fn select_best(transcodings: &[Transcoding], prefer_hls: bool) -> Option<&Transcoding> {
     if transcodings.is_empty() {
         return None;
     }
 
     transcodings
         .iter()
-        .filter(|t| transcoding_score(t) > -10000)
-        .max_by_key(|t| transcoding_score(t))
+        .filter(|t| score_transcoding(t, prefer_hls) > -10000)
+        .max_by_key(|t| score_transcoding(t, prefer_hls))
 }
 
 /// Check common SoundCloud API error status codes.
@@ -241,6 +273,48 @@ async fn fetch_track_data_v2(
     }
     if status == reqwest::StatusCode::FORBIDDEN {
         return Err(DownloadError::StreamResolutionFailed(format!("HTTP {}", status)));
+    }
+    if !status.is_success() {
+        let body = response.text().await.unwrap_or_default();
+        return Err(DownloadError::StreamResolutionFailed(format!(
+            "HTTP {}: {}",
+            status, body
+        )));
+    }
+
+    response.json().await.map_err(|e| {
+        DownloadError::StreamResolutionFailed(format!("Invalid API response: {}", e))
+    })
+}
+
+/// Fetch track data directly by numeric ID (skips the resolve redirect).
+async fn fetch_track_data_by_id(
+    track_id: u64,
+    client_id: &str,
+    oauth_token: Option<&str>,
+) -> Result<ApiV2TrackData, DownloadError> {
+    let client = &*crate::services::http::HTTP_CLIENT;
+    let url = format!(
+        "{}/tracks/{}?client_id={}",
+        API_V2_BASE, track_id, client_id
+    );
+
+    let response = client
+        .get(&url)
+        .with_oauth(oauth_token)
+        .send()
+        .await
+        .map_err(|e| {
+            DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
+        })?;
+
+    let status = response.status();
+
+    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        return Err(crate::services::http::parse_rate_limit_response(response).await);
+    }
+    if let Some(err) = check_common_status(status) {
+        return Err(err);
     }
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
@@ -414,6 +488,200 @@ pub async fn resolve_stream_url(
 
     Err(DownloadError::StreamResolutionFailed(
         "Failed after client_id refresh".to_string(),
+    ))
+}
+
+/// Resolve a SoundCloud track to an HLS playback URL using the `/streams` endpoint.
+///
+/// Falls back to the legacy transcodings approach if the `/streams` endpoint
+/// fails or returns no AAC URLs. The fallback prefers HLS over progressive
+/// for instant browser streaming.
+pub async fn resolve_playback_url(
+    track_id: u64,
+    track_url: &str,
+    oauth_token: Option<&str>,
+) -> Result<String, DownloadError> {
+    log::info!(
+        "[stream] resolve_playback_url called for track_id={}, oauth={}",
+        track_id,
+        if oauth_token.is_some() { "present" } else { "none" }
+    );
+
+    match resolve_via_streams_endpoint(track_id, oauth_token).await {
+        Ok(url) => {
+            log::info!("[stream] Resolved via /streams endpoint");
+            Ok(url)
+        }
+        Err(e) => {
+            log::warn!("[stream] /streams endpoint failed ({}), falling back to transcodings", e);
+            resolve_playback_url_via_transcodings(track_id, track_url, oauth_token).await
+        }
+    }
+}
+
+/// Fallback: resolve via transcodings, preferring HLS for streaming playback.
+/// Uses /tracks/{id} directly instead of /resolve?url= to skip the resolve step.
+async fn resolve_playback_url_via_transcodings(
+    track_id: u64,
+    track_url: &str,
+    oauth_token: Option<&str>,
+) -> Result<String, DownloadError> {
+    for is_first_attempt in [true, false] {
+        let cid = client_id::get_client_id().await?;
+
+        // Try direct /tracks/{id} first (faster, no resolve redirect)
+        let data = match fetch_track_data_by_id(track_id, &cid, oauth_token).await {
+            Ok(data) => data,
+            Err(_) if is_first_attempt => {
+                // Fallback to resolve by URL if direct fetch fails
+                match fetch_track_data_v2(track_url, &cid, oauth_token).await {
+                    Ok(data) => data,
+                    Err(DownloadError::StreamResolutionFailed(msg))
+                        if oauth_token.is_none()
+                            && (msg.contains("401") || msg.contains("403")) =>
+                    {
+                        client_id::invalidate_client_id();
+                        continue;
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
+            Err(e) => return Err(e),
+        };
+
+        if data.policy.as_deref() == Some("BLOCK") {
+            return Err(DownloadError::GeoBlocked(
+                "Track unavailable in your region".to_string(),
+            ));
+        }
+
+        let transcodings = data
+            .media
+            .map(|m| m.transcodings)
+            .unwrap_or_default();
+
+        if transcodings.is_empty() {
+            return Err(DownloadError::StreamResolutionFailed(
+                "No transcodings available".into(),
+            ));
+        }
+
+        // Prefer HLS for browser streaming (instant playback)
+        let transcoding = select_best_transcoding_for_streaming(&transcodings)
+            .ok_or_else(|| {
+                DownloadError::StreamResolutionFailed("No suitable transcoding found".into())
+            })?;
+
+        log::info!(
+            "[stream] Streaming fallback selected: protocol={}, mime={}, quality={}",
+            transcoding.format.protocol,
+            transcoding.format.mime_type,
+            transcoding.quality,
+        );
+
+        let cdn_url = match resolve_transcoding_url(transcoding, &cid, oauth_token).await {
+            Ok(url) => url,
+            Err(DownloadError::StreamResolutionFailed(msg))
+                if is_first_attempt
+                    && oauth_token.is_none()
+                    && (msg.contains("401") || msg.contains("403")) =>
+            {
+                client_id::invalidate_client_id();
+                continue;
+            }
+            Err(e) => return Err(e),
+        };
+
+        return Ok(cdn_url);
+    }
+
+    Err(DownloadError::StreamResolutionFailed(
+        "Failed after client_id refresh".to_string(),
+    ))
+}
+
+async fn resolve_via_streams_endpoint(
+    track_id: u64,
+    oauth_token: Option<&str>,
+) -> Result<String, DownloadError> {
+    let client = &*crate::services::http::HTTP_CLIENT;
+
+    for is_first_attempt in [true, false] {
+        let cid = client_id::get_client_id().await?;
+
+        // Try both the public API (api.soundcloud.com) and v2 API
+        let urls = [
+            format!(
+                "https://api.soundcloud.com/tracks/{}/streams?client_id={}",
+                track_id, cid
+            ),
+            format!(
+                "{}/tracks/{}/streams?client_id={}",
+                API_V2_BASE, track_id, cid
+            ),
+        ];
+
+        for url in &urls {
+            let response = match client
+                .get(url)
+                .with_oauth(oauth_token)
+                .send()
+                .await
+            {
+                Ok(r) => r,
+                Err(_) => continue,
+            };
+
+            let status = response.status();
+
+            if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                return Err(crate::services::http::parse_rate_limit_response(response).await);
+            }
+            if status == reqwest::StatusCode::NOT_FOUND {
+                continue; // Try next URL
+            }
+            if (status == reqwest::StatusCode::UNAUTHORIZED
+                || status == reqwest::StatusCode::FORBIDDEN)
+                && is_first_attempt
+                && oauth_token.is_none()
+            {
+                log::warn!("[stream] Got auth error on /streams, refreshing client_id");
+                client_id::invalidate_client_id();
+                break; // Break inner loop to retry with new client_id
+            }
+            if !status.is_success() {
+                continue;
+            }
+
+            let streams: StreamsResponse = match response.json().await {
+                Ok(s) => s,
+                Err(_) => continue,
+            };
+
+            // Prefer AAC HLS > legacy HLS MP3 > progressive MP3
+            let format = if streams.hls_aac_160_url.is_some() { "aac_160" }
+                else if streams.hls_aac_96_url.is_some() { "aac_96" }
+                else if streams.hls_mp3_128_url.is_some() { "hls_mp3" }
+                else if streams.http_mp3_128_url.is_some() { "http_mp3" }
+                else { "none" };
+            if let Some(hls_url) = streams.hls_aac_160_url
+                .or(streams.hls_aac_96_url)
+                .or(streams.hls_mp3_128_url)
+                .or(streams.http_mp3_128_url)
+            {
+                let source = if url.contains("api.soundcloud.com/tracks") { "public API" } else { "v2 API" };
+                log::info!("[stream] /streams resolved via {} (format={})", source, format);
+                return Ok(hls_url);
+            }
+        }
+
+        if !is_first_attempt {
+            break;
+        }
+    }
+
+    Err(DownloadError::StreamResolutionFailed(
+        "No streaming URLs from /streams endpoint".into(),
     ))
 }
 
@@ -699,5 +967,49 @@ mod tests {
         assert_eq!(StreamCodec::from(Codec::Opus), StreamCodec::Opus);
         assert_eq!(StreamCodec::from(Codec::Mp3), StreamCodec::Mp3);
         assert_eq!(StreamCodec::from(Codec::Unknown), StreamCodec::Unknown);
+    }
+
+    // --- Streams API response tests ---
+
+    #[test]
+    fn test_streams_response_deserializes_both_urls() {
+        let json = r#"{
+            "hls_aac_160_url": "https://playback.media-streaming.soundcloud.cloud/123/aac_160k/uuid/playlist.m3u8",
+            "hls_aac_96_url": "https://playback.media-streaming.soundcloud.cloud/123/aac_96k/uuid/playlist.m3u8"
+        }"#;
+        let resp: StreamsResponse = serde_json::from_str(json).unwrap();
+        assert!(resp.hls_aac_160_url.is_some());
+        assert!(resp.hls_aac_96_url.is_some());
+    }
+
+    #[test]
+    fn test_streams_response_deserializes_160_only() {
+        let json = r#"{
+            "hls_aac_160_url": "https://playback.media-streaming.soundcloud.cloud/123/aac_160k/uuid/playlist.m3u8"
+        }"#;
+        let resp: StreamsResponse = serde_json::from_str(json).unwrap();
+        assert!(resp.hls_aac_160_url.is_some());
+        assert!(resp.hls_aac_96_url.is_none());
+    }
+
+    #[test]
+    fn test_streams_response_deserializes_empty() {
+        let json = r#"{}"#;
+        let resp: StreamsResponse = serde_json::from_str(json).unwrap();
+        assert!(resp.hls_aac_160_url.is_none());
+        assert!(resp.hls_aac_96_url.is_none());
+    }
+
+    #[test]
+    fn test_streams_response_ignores_legacy_fields() {
+        let json = r#"{
+            "hls_aac_160_url": "https://example.com/aac160.m3u8",
+            "http_mp3_128_url": "https://example.com/mp3.mp3",
+            "hls_mp3_128_url": "https://example.com/mp3.m3u8",
+            "hls_opus_64_url": "https://example.com/opus.m3u8",
+            "preview_mp3_128_url": "https://example.com/preview.mp3"
+        }"#;
+        let resp: StreamsResponse = serde_json::from_str(json).unwrap();
+        assert!(resp.hls_aac_160_url.is_some());
     }
 }

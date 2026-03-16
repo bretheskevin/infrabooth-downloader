@@ -1,113 +1,23 @@
 use tauri::State;
 
 use crate::models::error::ErrorResponse;
-use crate::models::player::*;
-use crate::services::player::{PlayerCommandSender, SharedPlayerState};
+use crate::services::storage::AuthState;
+use crate::services::stream;
 
-/// Send a command to the audio thread without acquiring the state mutex.
-fn send(tx: &PlayerCommandSender, cmd: PlayerCommand) -> Result<(), ErrorResponse> {
-    tx.send(cmd).map_err(|_| PlayerError::AudioThreadUnavailable)?;
-    Ok(())
-}
-
+/// Resolve a track ID to an HLS playback URL.
+///
+/// Calls SoundCloud's `/tracks/{urn}/streams` endpoint (with fallback to
+/// the legacy transcodings approach) and returns a signed HLS playlist URL
+/// ready for the frontend audio element.
 #[tauri::command]
 #[specta::specta]
-pub async fn player_play_at(
-    queue: Vec<PlaybackItem>,
-    index: usize,
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::Play { queue, index })
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_pause(
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::Pause)
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_resume(
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::Resume)
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_seek(
-    position_ms: u64,
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::Seek { position_ms })
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_set_volume(
-    volume: f32,
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::SetVolume { volume })
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_next(
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::Next)
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_previous(
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::Previous)
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_stop(
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::Stop)
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_get_state(
-    state: State<'_, SharedPlayerState>,
-) -> Result<PlayerStateSnapshot, ErrorResponse> {
-    let player = state.lock().await;
-    Ok(player.get_snapshot())
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_reorder_queue(
-    from_index: usize,
-    to_index: usize,
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(
-        &tx,
-        PlayerCommand::Reorder {
-            from_index,
-            to_index,
-        },
-    )
-}
-
-#[tauri::command]
-#[specta::specta]
-pub async fn player_remove_from_queue(
-    index: usize,
-    tx: State<'_, PlayerCommandSender>,
-) -> Result<(), ErrorResponse> {
-    send(&tx, PlayerCommand::Remove { index })
+pub async fn resolve_playback_url(
+    track_id: u64,
+    track_url: String,
+    auth_state: State<'_, AuthState>,
+) -> Result<String, ErrorResponse> {
+    let oauth_token = auth_state.get_token();
+    stream::resolve_playback_url(track_id, &track_url, oauth_token.as_deref())
+        .await
+        .map_err(|e| e.into())
 }

@@ -3,8 +3,12 @@ import { toast } from 'sonner';
 import i18n from '@/lib/i18n';
 import { api } from '@/lib/tauri';
 import { useSettingsStore } from '@/features/settings/store';
+import { audioEngine } from './audio-engine';
+import { getCachedUrl, setCachedUrl } from './url-cache';
 import type { PlaybackItem, PlaybackState } from './types';
-import { toBindingsItem } from './types';
+
+/** Max consecutive load failures before stopping instead of auto-skipping. */
+const MAX_CONSECUTIVE_FAILURES = 3;
 
 interface PlayerStore {
   state: PlaybackState;
@@ -17,45 +21,76 @@ interface PlayerStore {
   isExpanded: boolean;
   isQueueOpen: boolean;
 
-  // IPC actions
   play: (queue: PlaybackItem[], index: number) => Promise<void>;
-  pause: () => Promise<void>;
-  resume: () => Promise<void>;
-  seek: (positionMs: number) => Promise<void>;
+  pause: () => void;
+  resume: () => void;
+  seek: (positionMs: number) => void;
   next: () => Promise<void>;
   previous: () => Promise<void>;
-  setVolume: (volume: number) => Promise<void>;
-  stop: () => Promise<void>;
-  reorderQueue: (fromIndex: number, toIndex: number) => Promise<void>;
-  removeFromQueue: (index: number) => Promise<void>;
-
-  // UI-only actions
+  stop: () => void;
+  setVolume: (volume: number) => void;
+  reorderQueue: (fromIndex: number, toIndex: number) => void;
+  removeFromQueue: (index: number) => void;
   toggleExpanded: () => void;
   toggleQueue: () => void;
   collapse: () => void;
 
-  // Event handlers (called by usePlayerEvents)
-  _onStateChanged: (state: PlaybackState, trackId: number | null) => void;
-  _onProgress: (positionMs: number, durationMs: number) => void;
-  _onTrackChanged: (trackId: number, cursor: number, queueLength: number) => void;
-  _onError: (trackId: number | null, message: string) => void;
+  /** Called by usePlayerEvents to wire audio engine callbacks */
+  _initAudioEngine: () => void;
+  _destroyAudioEngine: () => void;
 }
 
-async function skipTo(
-  set: (partial: Partial<PlayerStore>) => void,
-  queue: PlaybackItem[],
-  cursor: number,
-  targetCursor: number,
-  apiFn: () => Promise<void>,
-  errorKey: string,
+/**
+ * Monotonically increasing generation counter.
+ * Incremented each time a new track starts loading. Async loaders compare
+ * their captured generation with the current one to detect cancellation.
+ */
+let loadGeneration = 0;
+
+/** Tracks consecutive load failures to avoid infinite error-skip cascades. */
+let consecutiveFailures = 0;
+
+/** Load and play a track by resolving its URL and feeding it to the audio engine. */
+async function loadAndPlay(
+  track: PlaybackItem,
+  generation: number,
+  get: () => PlayerStore,
 ) {
-  if (targetCursor < 0 || targetCursor >= queue.length) return;
-  set({ cursor: targetCursor, currentTrack: queue[targetCursor] ?? null, state: 'loading', positionMs: 0, durationMs: 0 });
   try {
-    await apiFn();
-  } catch {
-    set({ cursor, currentTrack: queue[cursor] ?? null });
-    toast.error(i18n.t(errorKey));
+    // Use cached URL if available (preloaded), otherwise resolve
+    let url = getCachedUrl(track.trackId);
+    if (!url) {
+      url = await api.resolvePlaybackUrl(track.trackId, track.trackUrl);
+      setCachedUrl(track.trackId, url);
+    }
+    // Check if this load is still current (user may have pressed stop/next)
+    if (generation !== loadGeneration) return;
+    consecutiveFailures = 0;
+    audioEngine.setVolume(get().volume);
+    audioEngine.load(url);
+    audioEngine.play();
+  } catch (e) {
+    // Check if this load is still current
+    if (generation !== loadGeneration) return;
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error(`[player] Failed to resolve track ${track.trackId}: ${msg}`);
+    toast.error(i18n.t('player.errorLoadTrack'));
+
+    consecutiveFailures++;
+    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+      console.error(`[player] ${MAX_CONSECUTIVE_FAILURES} consecutive failures, stopping`);
+      consecutiveFailures = 0;
+      get().stop();
+      return;
+    }
+
+    // Try next track automatically
+    const { cursor, queue } = get();
+    if (cursor + 1 < queue.length) {
+      get().next();
+    } else {
+      get().stop();
+    }
   }
 }
 
@@ -71,43 +106,94 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   isQueueOpen: false,
 
   play: async (queue, index) => {
+    const track = queue[index];
+    if (!track) return;
+
+    const generation = ++loadGeneration;
+    consecutiveFailures = 0;
     const vol = useSettingsStore.getState().playerVolume;
-    set({ queue, cursor: index, currentTrack: queue[index] ?? null, state: 'loading', volume: vol });
-    try {
-      await api.playerSetVolume(vol);
-      await api.playerPlayAt(queue.map(toBindingsItem), index);
-    } catch (e) {
-      set({ state: 'stopped', currentTrack: null, queue: [], cursor: 0, positionMs: 0, durationMs: 0 });
-      throw e;
-    }
+    set({
+      queue,
+      cursor: index,
+      currentTrack: track,
+      state: 'loading',
+      volume: vol,
+      positionMs: 0,
+      durationMs: track.durationMs,
+    });
+
+    await loadAndPlay(track, generation, get);
   },
 
-  pause: async () => { await api.playerPause(); },
-  resume: async () => { await api.playerResume(); },
-  seek: async (positionMs) => { await api.playerSeek(positionMs); },
+  pause: () => {
+    audioEngine.pause();
+  },
+
+  resume: () => {
+    audioEngine.resume();
+  },
+
+  seek: (positionMs) => {
+    audioEngine.seek(positionMs);
+    set({ positionMs });
+  },
+
   next: async () => {
     const { queue, cursor } = get();
-    await skipTo(set, queue, cursor, cursor + 1, api.playerNext, 'player.errorNext');
+    const nextCursor = cursor + 1;
+    const track = queue[nextCursor];
+    if (!track) {
+      get().stop();
+      return;
+    }
+    const generation = ++loadGeneration;
+    set({
+      cursor: nextCursor,
+      currentTrack: track,
+      state: 'loading',
+      positionMs: 0,
+      durationMs: track.durationMs,
+    });
+    await loadAndPlay(track, generation, get);
   },
+
   previous: async () => {
     const { queue, cursor } = get();
-    await skipTo(set, queue, cursor, cursor - 1, api.playerPrevious, 'player.errorPrevious');
+    const prevCursor = cursor - 1;
+    const track = queue[prevCursor];
+    if (!track) return;
+    const generation = ++loadGeneration;
+    set({
+      cursor: prevCursor,
+      currentTrack: track,
+      state: 'loading',
+      positionMs: 0,
+      durationMs: track.durationMs,
+    });
+    await loadAndPlay(track, generation, get);
   },
-  stop: async () => { await api.playerStop(); },
 
-  setVolume: async (volume) => {
-    const prev = get().volume;
+  stop: () => {
+    ++loadGeneration; // Cancel any in-flight loader
+    audioEngine.stop();
+    set({
+      state: 'stopped',
+      currentTrack: null,
+      queue: [],
+      cursor: 0,
+      positionMs: 0,
+      durationMs: 0,
+      isQueueOpen: false,
+    });
+  },
+
+  setVolume: (volume) => {
+    audioEngine.setVolume(volume);
     set({ volume });
-    try {
-      await api.playerSetVolume(volume);
-      useSettingsStore.getState().setPlayerVolume(volume);
-    } catch (e) {
-      set({ volume: prev });
-      throw e;
-    }
+    useSettingsStore.getState().setPlayerVolume(volume);
   },
 
-  reorderQueue: async (fromIndex, toIndex) => {
+  reorderQueue: (fromIndex, toIndex) => {
     const { queue, cursor } = get();
     const newQueue = [...queue];
     const [moved] = newQueue.splice(fromIndex, 1);
@@ -123,34 +209,34 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
     }
 
     set({ queue: newQueue, cursor: newCursor, currentTrack: newQueue[newCursor] ?? null });
-    try {
-      await api.playerReorderQueue(fromIndex, toIndex);
-    } catch (e) {
-      set({ queue, cursor, currentTrack: queue[cursor] ?? null });
-      throw e;
-    }
   },
 
-  removeFromQueue: async (index) => {
+  removeFromQueue: (index) => {
     const { queue, cursor } = get();
     const newQueue = queue.filter((_, i) => i !== index);
-    let newCursor = cursor;
+
     if (newQueue.length === 0) {
-      set({ queue: [], cursor: 0, currentTrack: null, state: 'stopped', positionMs: 0, isQueueOpen: false });
-      await api.playerRemoveFromQueue(index);
+      get().stop();
       return;
     }
+
+    let newCursor = cursor;
+    const removingCurrent = index === cursor;
     if (index < cursor) {
       newCursor = cursor - 1;
-    } else if (index === cursor) {
+    } else if (removingCurrent) {
       newCursor = Math.min(cursor, newQueue.length - 1);
     }
-    set({ queue: newQueue, cursor: newCursor, currentTrack: newQueue[newCursor] ?? null });
-    try {
-      await api.playerRemoveFromQueue(index);
-    } catch (e) {
-      set({ queue, cursor, currentTrack: queue[cursor] ?? null });
-      throw e;
+
+    const newTrack = newQueue[newCursor] ?? null;
+    set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack });
+
+    // If we removed the currently playing track, load the new current track.
+    // Fire-and-forget: errors are handled inside loadAndPlay (toast + auto-skip).
+    if (removingCurrent && newTrack) {
+      const generation = ++loadGeneration;
+      set({ state: 'loading', positionMs: 0, durationMs: newTrack.durationMs });
+      void loadAndPlay(newTrack, generation, get);
     }
   },
 
@@ -158,29 +244,36 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   toggleQueue: () => set((s) => ({ isQueueOpen: !s.isQueueOpen })),
   collapse: () => set({ isExpanded: false }),
 
-  _onStateChanged: (state, _trackId) => {
-    if (state === 'stopped') {
-      set({ state, currentTrack: null, queue: [], cursor: 0, positionMs: 0, durationMs: 0, isQueueOpen: false });
-    } else {
-      set({ state });
-    }
+  _initAudioEngine: () => {
+    audioEngine.setCallbacks({
+      onStateChange: (engineState) => {
+        // Only accept engine state changes if they don't conflict with
+        // an in-progress store-driven transition (e.g. optimistic 'loading')
+        const current = get().state;
+        const stateMap: Record<string, PlaybackState> = {
+          idle: 'stopped',
+          loading: 'loading',
+          playing: 'playing',
+          paused: 'paused',
+        };
+        const mapped = stateMap[engineState] ?? 'stopped';
+        // Don't let a stale 'idle' clobber an optimistic 'loading' state
+        if (current === 'loading' && mapped === 'stopped') return;
+        set({ state: mapped });
+      },
+      onProgress: (positionMs, durationMs) => {
+        set({ positionMs, durationMs });
+      },
+      onEnded: () => {
+        get().next();
+      },
+      onError: (message) => {
+        console.error(`[player] Audio engine error: ${message}`);
+      },
+    });
   },
 
-  _onProgress: (positionMs, durationMs) => {
-    set({ positionMs, durationMs });
-  },
-
-  _onTrackChanged: (_trackId, cursor) => {
-    const { queue } = get();
-    const currentTrack = queue[cursor] ?? null;
-    set({ cursor, currentTrack, positionMs: 0 });
-  },
-
-  _onError: (_trackId, message) => {
-    console.error(`[player] Error for track ${_trackId}: ${message}`);
-    const { state } = get();
-    if (state === 'loading') {
-      set({ state: 'stopped', positionMs: 0, durationMs: 0 });
-    }
+  _destroyAudioEngine: () => {
+    audioEngine.destroy();
   },
 }));

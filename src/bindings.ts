@@ -259,89 +259,16 @@ async searchTracks(query: string, limit: number, offset: number) : Promise<Resul
     else return { status: "error", error: e  as any };
 }
 },
-async playerPlayAt(queue: PlaybackItem[], index: number) : Promise<Result<null, ErrorResponse>> {
+/**
+ * Resolve a track ID to an HLS playback URL.
+ * 
+ * Calls SoundCloud's `/tracks/{urn}/streams` endpoint (with fallback to
+ * the legacy transcodings approach) and returns a signed HLS playlist URL
+ * ready for the frontend audio element.
+ */
+async resolvePlaybackUrl(trackId: number, trackUrl: string) : Promise<Result<string, ErrorResponse>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("player_play_at", { queue, index }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerPause() : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_pause") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerResume() : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_resume") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerSeek(positionMs: number) : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_seek", { positionMs }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerSetVolume(volume: number) : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_set_volume", { volume }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerNext() : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_next") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerPrevious() : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_previous") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerStop() : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_stop") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerGetState() : Promise<Result<PlayerStateSnapshot, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_get_state") };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerReorderQueue(fromIndex: number, toIndex: number) : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_reorder_queue", { fromIndex, toIndex }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-async playerRemoveFromQueue(index: number) : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("player_remove_from_queue", { index }) };
+    return { status: "ok", data: await TAURI_INVOKE("resolve_playback_url", { trackId, trackUrl }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -363,18 +290,6 @@ export type AuthChoice = "re_authenticated" | "continue_standard"
 export type DownloadRequest = { trackUrl: string; trackId: string; title: string; artist: string; album: string | null; trackNumber: number | null; totalTracks: number | null; artworkUrl: string | null; outputDir: string | null; durationMs: number }
 export type ErrorResponse = { code: string; message: string }
 export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
-/**
- * A track in the playback queue.
- */
-export type PlaybackItem = { track_id: number; track_url: string; title: string; artist: string; artwork_url: string | null; duration_ms: number }
-/**
- * Playback state enum.
- */
-export type PlaybackState = "stopped" | "loading" | "playing" | "paused"
-/**
- * Full state snapshot returned by `player_get_state`.
- */
-export type PlayerStateSnapshot = { state: PlaybackState; current_track: PlaybackItem | null; queue: PlaybackItem[]; cursor: number; position_ms: number; duration_ms: number; volume: number }
 /**
  * Playlist information from SoundCloud API.
  */

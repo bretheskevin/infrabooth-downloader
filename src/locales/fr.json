@@ -284,6 +284,7 @@
     "reorder": "Réorganiser",
     "removeFromQueue": "Retirer de la file",
     "errorNext": "Impossible de passer à la piste suivante",
-    "errorPrevious": "Impossible de revenir à la piste précédente"
+    "errorPrevious": "Impossible de revenir à la piste précédente",
+    "errorLoadTrack": "Impossible de charger la piste"
   }
 }

@@ -8,8 +8,6 @@ import {
   type ValidationResult,
   type ErrorResponse,
   type SearchResponse,
-  type PlaybackItem as BindingsPlaybackItem,
-  type PlayerStateSnapshot,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -101,36 +99,6 @@ export const api = {
     commands.searchTracks(query, limit, offset).then(unwrap),
 
   // Player
-  playerPlayAt: (queue: BindingsPlaybackItem[], index: number): Promise<void> =>
-    commands.playerPlayAt(queue, index).then(unwrap).then(() => undefined),
-
-  playerPause: (): Promise<void> =>
-    commands.playerPause().then(unwrap).then(() => undefined),
-
-  playerResume: (): Promise<void> =>
-    commands.playerResume().then(unwrap).then(() => undefined),
-
-  playerSeek: (positionMs: number): Promise<void> =>
-    commands.playerSeek(positionMs).then(unwrap).then(() => undefined),
-
-  playerSetVolume: (volume: number): Promise<void> =>
-    commands.playerSetVolume(volume).then(unwrap).then(() => undefined),
-
-  playerNext: (): Promise<void> =>
-    commands.playerNext().then(unwrap).then(() => undefined),
-
-  playerPrevious: (): Promise<void> =>
-    commands.playerPrevious().then(unwrap).then(() => undefined),
-
-  playerStop: (): Promise<void> =>
-    commands.playerStop().then(unwrap).then(() => undefined),
-
-  playerGetState: (): Promise<PlayerStateSnapshot> =>
-    commands.playerGetState().then(unwrap),
-
-  playerReorderQueue: (fromIndex: number, toIndex: number): Promise<void> =>
-    commands.playerReorderQueue(fromIndex, toIndex).then(unwrap).then(() => undefined),
-
-  playerRemoveFromQueue: (index: number): Promise<void> =>
-    commands.playerRemoveFromQueue(index).then(unwrap).then(() => undefined),
+  resolvePlaybackUrl: (trackId: number, trackUrl: string): Promise<string> =>
+    commands.resolvePlaybackUrl(trackId, trackUrl).then(unwrap),
 };
