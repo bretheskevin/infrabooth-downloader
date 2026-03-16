@@ -1,6 +1,7 @@
 import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, Download, Music } from 'lucide-react';
+import { EqualizerBars } from '@/features/player/components/EqualizerBars';
 import { PlayOverlay } from '@/features/player';
 import { cn, formatDuration } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -94,7 +95,7 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
           onClick={(e) => e.stopPropagation()}
         />
         <span className="w-6 text-right text-xs text-muted-foreground tabular-nums shrink-0">
-          {isCurrentlyPlaying ? <Music className="h-3 w-3 text-primary ml-auto" /> : index + 1}
+          {isCurrentlyPlaying ? <EqualizerBars className="h-3 w-3 ml-auto" /> : index + 1}
         </span>
       </div>
       {/* Play zone: artwork + title + duration */}

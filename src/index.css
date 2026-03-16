@@ -228,3 +228,8 @@
     transform: translateX(calc(-50% - 1rem));
   }
 }
+
+@keyframes equalizer-bar {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
