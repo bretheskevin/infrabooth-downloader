@@ -13,7 +13,7 @@ use serde::Deserialize;
 
 use crate::models::error::DownloadError;
 use crate::services::client_id;
-use crate::services::http::{RequestBuilderExt, API_V2_BASE};
+use crate::services::http::{validate_sc_response, RequestBuilderExt, API_V2_BASE};
 
 /// Format info from a SoundCloud transcoding entry.
 #[derive(Debug, Clone, Deserialize)]
@@ -193,11 +193,13 @@ fn score_transcoding(t: &Transcoding, prefer_hls: bool) -> i32 {
 }
 
 /// Select the best transcoding from available options (prefers progressive for downloads).
+#[cfg(test)]
 pub fn select_best_transcoding(transcodings: &[Transcoding]) -> Option<&Transcoding> {
     select_best(transcodings, false)
 }
 
 /// Select the best transcoding for streaming playback (prefers HLS for instant start).
+#[cfg(test)]
 pub fn select_best_transcoding_for_streaming(transcodings: &[Transcoding]) -> Option<&Transcoding> {
     select_best(transcodings, true)
 }
@@ -213,19 +215,9 @@ fn select_best(transcodings: &[Transcoding], prefer_hls: bool) -> Option<&Transc
         .max_by_key(|t| score_transcoding(t, prefer_hls))
 }
 
-/// Check common SoundCloud API error status codes.
-///
-/// Maps 404→TrackUnavailable, 401→StreamResolutionFailed.
-/// Returns `None` for unhandled error codes (caller should handle 429, 403 and generic failures).
-fn check_common_status(status: reqwest::StatusCode) -> Option<DownloadError> {
-    if status == reqwest::StatusCode::NOT_FOUND {
-        return Some(DownloadError::TrackUnavailable("Not found".to_string()));
-    }
-    if status == reqwest::StatusCode::UNAUTHORIZED {
-        return Some(DownloadError::StreamResolutionFailed(format!("HTTP {}", status)));
-    }
-    None
-}
+// ---------------------------------------------------------------------------
+// API v2 fetching (shared by both resolve_stream_url and resolve_playback_url)
+// ---------------------------------------------------------------------------
 
 /// Fetch track data from API v2 resolve endpoint.
 async fn fetch_track_data_v2(
@@ -250,24 +242,7 @@ async fn fetch_track_data_v2(
             DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
         })?;
 
-    let status = response.status();
-
-    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-        return Err(crate::services::http::parse_rate_limit_response(response).await);
-    }
-    if let Some(err) = check_common_status(status) {
-        return Err(err);
-    }
-    if status == reqwest::StatusCode::FORBIDDEN {
-        return Err(DownloadError::StreamResolutionFailed(format!("HTTP {}", status)));
-    }
-    if !status.is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(DownloadError::StreamResolutionFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )));
-    }
+    let response = validate_sc_response(response, None).await?;
 
     response.json().await.map_err(|e| {
         DownloadError::StreamResolutionFailed(format!("Invalid API response: {}", e))
@@ -295,21 +270,7 @@ async fn fetch_track_data_by_id(
             DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
         })?;
 
-    let status = response.status();
-
-    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-        return Err(crate::services::http::parse_rate_limit_response(response).await);
-    }
-    if let Some(err) = check_common_status(status) {
-        return Err(err);
-    }
-    if !status.is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(DownloadError::StreamResolutionFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )));
-    }
+    let response = validate_sc_response(response, None).await?;
 
     response.json().await.map_err(|e| {
         DownloadError::StreamResolutionFailed(format!("Invalid API response: {}", e))
@@ -343,26 +304,11 @@ async fn resolve_transcoding_url(
             DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
         })?;
 
-    let status = response.status();
+    fn geo_blocked_403() -> DownloadError {
+        DownloadError::GeoBlocked("Stream access forbidden".to_string())
+    }
 
-    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-        return Err(crate::services::http::parse_rate_limit_response(response).await);
-    }
-    if let Some(err) = check_common_status(status) {
-        return Err(err);
-    }
-    if status == reqwest::StatusCode::FORBIDDEN {
-        return Err(DownloadError::GeoBlocked(
-            "Stream access forbidden".to_string(),
-        ));
-    }
-    if !status.is_success() {
-        let body = response.text().await.unwrap_or_default();
-        return Err(DownloadError::StreamResolutionFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )));
-    }
+    let response = validate_sc_response(response, Some(geo_blocked_403)).await?;
 
     let stream_response: StreamUrlResponse = response.json().await.map_err(|e| {
         DownloadError::StreamResolutionFailed(format!("Invalid response: {}", e))
@@ -371,39 +317,67 @@ async fn resolve_transcoding_url(
     Ok(stream_response.url)
 }
 
-/// Resolve a SoundCloud track URL to a CDN stream URL.
-///
-/// This is the main public API. It:
-/// 1. Gets a dynamic client_id
-/// 2. Calls API v2 resolve to get track data with transcodings
-/// 3. Selects the best transcoding
-/// 4. Resolves it to a CDN URL
-///
-/// On 401/403, invalidates client_id and retries once.
-pub async fn resolve_stream_url(
-    track_url: &str,
-    oauth_token: Option<&str>,
-) -> Result<StreamInfo, DownloadError> {
-    log::info!(
-        "[stream] resolve_stream_url called, oauth_token={}",
-        if oauth_token.is_some() { "present" } else { "none" }
-    );
+// ---------------------------------------------------------------------------
+// Shared resolve core (eliminates duplication between download & playback)
+// ---------------------------------------------------------------------------
 
+/// Options for the shared resolve logic.
+struct ResolveOptions<'a> {
+    /// If set, try direct /tracks/{id} first (faster, no redirect).
+    track_id: Option<u64>,
+    track_url: &'a str,
+    oauth_token: Option<&'a str>,
+    /// `false` for downloads (progressive preferred), `true` for streaming (HLS preferred).
+    prefer_hls: bool,
+}
+
+/// Resolved transcoding result from the shared core.
+struct ResolvedTranscoding {
+    cdn_url: String,
+    is_hls: bool,
+    codec: StreamCodec,
+}
+
+/// Returns true if the error is a 401/403 that should trigger a client_id refresh.
+fn is_auth_retry_error(err: &DownloadError) -> bool {
+    matches!(err, DownloadError::StreamResolutionFailed(msg) if msg.contains("401") || msg.contains("403"))
+}
+
+/// Core resolve logic: fetch track data → select transcoding → resolve CDN URL.
+/// Retries once on 401/403 by invalidating client_id (only when no oauth_token).
+async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, DownloadError> {
     for is_first_attempt in [true, false] {
         let cid = client_id::get_client_id().await?;
 
-        let data = match fetch_track_data_v2(track_url, &cid, oauth_token).await {
-            Ok(data) => data,
-            Err(DownloadError::StreamResolutionFailed(msg))
-                if is_first_attempt
-                    && oauth_token.is_none()
-                    && (msg.contains("401") || msg.contains("403")) =>
-            {
-                log::warn!("[stream] Got auth error, refreshing client_id and retrying");
-                client_id::invalidate_client_id();
-                continue;
+        // Fetch track data (with optional by-id fast path)
+        let data = match opts.track_id {
+            Some(id) if is_first_attempt => {
+                match fetch_track_data_by_id(id, &cid, opts.oauth_token).await {
+                    Ok(data) => data,
+                    Err(_) => {
+                        // Fallback to resolve by URL if direct fetch fails
+                        match fetch_track_data_v2(opts.track_url, &cid, opts.oauth_token).await {
+                            Ok(data) => data,
+                            Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
+                                client_id::invalidate_client_id();
+                                continue;
+                            }
+                            Err(e) => return Err(e),
+                        }
+                    }
+                }
             }
-            Err(e) => return Err(e),
+            _ => {
+                match fetch_track_data_v2(opts.track_url, &cid, opts.oauth_token).await {
+                    Ok(data) => data,
+                    Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
+                        log::warn!("[stream] Got auth error, refreshing client_id and retrying");
+                        client_id::invalidate_client_id();
+                        continue;
+                    }
+                    Err(e) => return Err(e),
+                }
+            }
         };
 
         // Check geo-restriction
@@ -429,7 +403,8 @@ pub async fn resolve_stream_url(
             transcodings.len()
         );
 
-        let transcoding = select_best_transcoding(&transcodings).ok_or_else(|| {
+        // Select best transcoding based on use case
+        let transcoding = select_best(&transcodings, opts.prefer_hls).ok_or_else(|| {
             DownloadError::StreamResolutionFailed("No suitable transcoding found".into())
         })?;
 
@@ -445,13 +420,9 @@ pub async fn resolve_stream_url(
 
         let is_hls = matches!(protocol, Protocol::Hls | Protocol::HlsAes);
 
-        let cdn_url = match resolve_transcoding_url(transcoding, &cid, oauth_token).await {
+        let cdn_url = match resolve_transcoding_url(transcoding, &cid, opts.oauth_token).await {
             Ok(url) => url,
-            Err(DownloadError::StreamResolutionFailed(msg))
-                if is_first_attempt
-                    && oauth_token.is_none()
-                    && (msg.contains("401") || msg.contains("403")) =>
-            {
+            Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
                 log::warn!("[stream] Got auth error on transcoding resolve, refreshing client_id");
                 client_id::invalidate_client_id();
                 continue;
@@ -466,8 +437,8 @@ pub async fn resolve_stream_url(
 
         let codec: StreamCodec = extract_codec(&transcoding.format.mime_type).into();
 
-        return Ok(StreamInfo {
-            url: cdn_url,
+        return Ok(ResolvedTranscoding {
+            cdn_url,
             is_hls,
             codec,
         });
@@ -478,11 +449,42 @@ pub async fn resolve_stream_url(
     ))
 }
 
+// ---------------------------------------------------------------------------
+// Public API
+// ---------------------------------------------------------------------------
+
+/// Resolve a SoundCloud track URL to a CDN stream URL for downloading.
+///
+/// Selects the best progressive transcoding, resolves it to a CDN URL,
+/// and returns full stream info including codec for encoding decisions.
+/// On 401/403, invalidates client_id and retries once.
+pub async fn resolve_stream_url(
+    track_url: &str,
+    oauth_token: Option<&str>,
+) -> Result<StreamInfo, DownloadError> {
+    log::info!(
+        "[stream] resolve_stream_url called, oauth_token={}",
+        if oauth_token.is_some() { "present" } else { "none" }
+    );
+
+    let resolved = resolve_inner(ResolveOptions {
+        track_id: None,
+        track_url,
+        oauth_token,
+        prefer_hls: false,
+    }).await?;
+
+    Ok(StreamInfo {
+        url: resolved.cdn_url,
+        is_hls: resolved.is_hls,
+        codec: resolved.codec,
+    })
+}
+
 /// Resolve a SoundCloud track to an HLS playback URL via transcodings.
 ///
-/// Fetches track metadata, selects the best HLS transcoding, and resolves
-/// the transcoding URL to a signed CDN playlist URL. This mirrors the same
-/// approach used by SoundCloud's own web player.
+/// Tries direct /tracks/{id} first (faster), then falls back to URL resolve.
+/// Selects the best HLS transcoding for browser streaming.
 pub async fn resolve_playback_url(
     track_id: u64,
     track_url: &str,
@@ -494,78 +496,14 @@ pub async fn resolve_playback_url(
         if oauth_token.is_some() { "present" } else { "none" }
     );
 
-    for is_first_attempt in [true, false] {
-        let cid = client_id::get_client_id().await?;
+    let resolved = resolve_inner(ResolveOptions {
+        track_id: Some(track_id),
+        track_url,
+        oauth_token,
+        prefer_hls: true,
+    }).await?;
 
-        // Try direct /tracks/{id} first (faster, no resolve redirect)
-        let data = match fetch_track_data_by_id(track_id, &cid, oauth_token).await {
-            Ok(data) => data,
-            Err(_) if is_first_attempt => {
-                // Fallback to resolve by URL if direct fetch fails
-                match fetch_track_data_v2(track_url, &cid, oauth_token).await {
-                    Ok(data) => data,
-                    Err(DownloadError::StreamResolutionFailed(msg))
-                        if oauth_token.is_none()
-                            && (msg.contains("401") || msg.contains("403")) =>
-                    {
-                        client_id::invalidate_client_id();
-                        continue;
-                    }
-                    Err(e) => return Err(e),
-                }
-            }
-            Err(e) => return Err(e),
-        };
-
-        if data.policy.as_deref() == Some("BLOCK") {
-            return Err(DownloadError::GeoBlocked(
-                "Track unavailable in your region".to_string(),
-            ));
-        }
-
-        let transcodings = data
-            .media
-            .map(|m| m.transcodings)
-            .unwrap_or_default();
-
-        if transcodings.is_empty() {
-            return Err(DownloadError::StreamResolutionFailed(
-                "No transcodings available".into(),
-            ));
-        }
-
-        // Prefer HLS for browser streaming (instant playback)
-        let transcoding = select_best_transcoding_for_streaming(&transcodings)
-            .ok_or_else(|| {
-                DownloadError::StreamResolutionFailed("No suitable transcoding found".into())
-            })?;
-
-        log::info!(
-            "[stream] Selected transcoding: protocol={}, mime={}, quality={}",
-            transcoding.format.protocol,
-            transcoding.format.mime_type,
-            transcoding.quality,
-        );
-
-        let cdn_url = match resolve_transcoding_url(transcoding, &cid, oauth_token).await {
-            Ok(url) => url,
-            Err(DownloadError::StreamResolutionFailed(msg))
-                if is_first_attempt
-                    && oauth_token.is_none()
-                    && (msg.contains("401") || msg.contains("403")) =>
-            {
-                client_id::invalidate_client_id();
-                continue;
-            }
-            Err(e) => return Err(e),
-        };
-
-        return Ok(cdn_url);
-    }
-
-    Err(DownloadError::StreamResolutionFailed(
-        "Failed after client_id refresh".to_string(),
-    ))
+    Ok(resolved.cdn_url)
 }
 
 #[cfg(test)]
@@ -852,5 +790,21 @@ mod tests {
         assert_eq!(StreamCodec::from(Codec::Unknown), StreamCodec::Unknown);
     }
 
+    // --- Auth retry helper tests ---
 
+    #[test]
+    fn test_is_auth_retry_error_401() {
+        assert!(is_auth_retry_error(&DownloadError::StreamResolutionFailed("HTTP 401 Unauthorized".into())));
+    }
+
+    #[test]
+    fn test_is_auth_retry_error_403() {
+        assert!(is_auth_retry_error(&DownloadError::StreamResolutionFailed("HTTP 403 Forbidden".into())));
+    }
+
+    #[test]
+    fn test_is_auth_retry_error_other() {
+        assert!(!is_auth_retry_error(&DownloadError::StreamResolutionFailed("HTTP 500".into())));
+        assert!(!is_auth_retry_error(&DownloadError::GeoBlocked("test".into())));
+    }
 }

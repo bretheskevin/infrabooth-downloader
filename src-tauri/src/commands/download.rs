@@ -10,6 +10,7 @@ use crate::models::{ErrorResponse, HasErrorCode};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState};
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
 use crate::services::cancellation::CancellationState;
+use crate::services::events;
 use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
 use crate::services::paths::get_downloads_dir;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
@@ -36,7 +37,7 @@ pub struct DownloadRequest {
 ///
 /// This command orchestrates the full download pipeline:
 /// 1. Resolves stream URL via SoundCloud API v2
-/// 2. Downloads and converts to 320kbps MP3 via ffmpeg
+/// 2. Downloads and converts to MP3 via ffmpeg
 /// 3. Embeds ID3 metadata (title, artist, album, track number, artwork)
 /// 4. Emits progress events throughout the process
 #[tauri::command]
@@ -76,7 +77,7 @@ pub async fn download_track_full(
         .await
         .map_err(|e| {
             let _ = app.emit(
-                "download-progress",
+                events::DOWNLOAD_PROGRESS,
                 DownloadProgressEvent {
                     track_id: track_id.clone(),
                     status: "failed".to_string(),
@@ -93,7 +94,7 @@ pub async fn download_track_full(
         })?;
 
     let _ = app.emit(
-        "download-progress",
+        events::DOWNLOAD_PROGRESS,
         DownloadProgressEvent {
             track_id,
             status: "complete".to_string(),
@@ -130,7 +131,7 @@ pub struct QueueItemRequest {
 
 /// Start processing a download queue.
 ///
-/// This command accepts a list of tracks and processes them sequentially.
+/// This command accepts a list of tracks and processes them in parallel.
 /// Progress events are emitted via:
 /// - `queue-progress`: Overall queue progress (X of Y)
 /// - `download-progress`: Per-track status
@@ -144,14 +145,14 @@ pub async fn start_download_queue(
     cancel_state: State<'_, CancellationState>,
     auth_choice_state: State<'_, Arc<AuthChoiceState>>,
     rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
-) -> Result<(), String> {
+) -> Result<(), ErrorResponse> {
     cancel_state.reset();
     auth_choice_state.reset();
     rate_limit_choice_state.reset();
 
     let output_dir = match request.output_dir {
         Some(dir) => PathBuf::from(dir),
-        None => get_download_path(&app).map_err(|e| e.message)?,
+        None => get_download_path(&app)?,
     };
 
     let preserve_order = request.preserve_order.unwrap_or(true);
@@ -203,7 +204,7 @@ pub async fn start_download_queue(
 #[specta::specta]
 pub async fn cancel_download_queue(
     cancel_state: State<'_, CancellationState>,
-) -> Result<(), String> {
+) -> Result<(), ErrorResponse> {
     log::info!("[download] Cancelling download queue");
     cancel_state.cancel();
     cancel_state.kill_active_processes().await;
@@ -216,7 +217,7 @@ pub async fn cancel_download_queue(
 pub async fn respond_to_auth_choice(
     choice: AuthChoice,
     auth_choice_state: State<'_, Arc<AuthChoiceState>>,
-) -> Result<(), String> {
+) -> Result<(), ErrorResponse> {
     log::info!("[download] Auth choice received: {:?}", choice);
     auth_choice_state.send_choice(choice);
     Ok(())
@@ -228,7 +229,7 @@ pub async fn respond_to_auth_choice(
 pub async fn respond_to_rate_limit_choice(
     choice: RateLimitChoice,
     rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
-) -> Result<(), String> {
+) -> Result<(), ErrorResponse> {
     log::info!("[download] Rate limit choice received: {:?}", choice);
     rate_limit_choice_state.send_choice(choice);
     Ok(())

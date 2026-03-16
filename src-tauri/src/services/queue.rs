@@ -8,9 +8,10 @@ use tauri::{AppHandle, Emitter, Manager, Runtime};
 use tokio::sync::{watch, Mutex, Notify, Semaphore};
 use tokio::task::JoinSet;
 
-use crate::models::error::{HasErrorCode, PipelineError, DownloadError};
+use crate::models::error::{HasErrorCode, DownloadError};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeededEvent};
 use crate::services::cancellation::ActiveProcess;
+use crate::services::events;
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState, DownloadRateLimitedEvent};
 use crate::services::downloader::{DownloadProgressEvent, PlaylistContext};
 use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
@@ -75,7 +76,7 @@ struct QueueProgress {
 /// Result of a single track download in parallel processing.
 pub enum TrackOutcome {
     Completed { track_id: String },
-    Failed { track_id: String, error_code: String, error_message: String },
+    Failed { track_id: String, error_message: String },
     Cancelled { track_id: String },
     RateLimited { track_id: String, reset_time: Option<String> },
     AuthFailed { track_id: String },
@@ -118,53 +119,98 @@ async fn execute_download<R: Runtime>(
     match result {
         Ok(_) => {
             let _ = app.emit(
-                "download-progress",
-                serde_json::json!({
-                    "trackId": track_id,
-                    "status": "complete",
-                    "percent": 1.0
-                }),
+                events::DOWNLOAD_PROGRESS,
+                DownloadProgressEvent {
+                    track_id: track_id.clone(),
+                    status: "complete".to_string(),
+                    percent: Some(1.0),
+                    downloaded_bytes: None,
+                    total_bytes: None,
+                    error: None,
+                },
             );
             TrackOutcome::Completed { track_id }
         }
-        Err(PipelineError::Download(DownloadError::Cancelled)) => {
+        Err(DownloadError::Cancelled) => {
             TrackOutcome::Cancelled { track_id }
         }
-        Err(PipelineError::Download(DownloadError::RateLimited(ref info))) => {
+        Err(DownloadError::RateLimited(ref info)) => {
             let reset_time = info.as_ref().and_then(|i| i.reset_time.clone());
             let _ = app.emit(
-                "download-progress",
-                serde_json::json!({
-                    "trackId": track_id,
-                    "status": "rate_limited",
-                }),
+                events::DOWNLOAD_PROGRESS,
+                DownloadProgressEvent {
+                    track_id: track_id.clone(),
+                    status: "rate_limited".to_string(),
+                    percent: None,
+                    downloaded_bytes: None,
+                    total_bytes: None,
+                    error: None,
+                },
             );
             TrackOutcome::RateLimited { track_id, reset_time }
         }
-        Err(PipelineError::Download(DownloadError::AuthRefreshFailed)) => {
+        Err(DownloadError::AuthRefreshFailed) => {
             TrackOutcome::AuthFailed { track_id }
         }
         Err(e) => {
             log::error!("[queue] Track {} failed: {}", track_id, e);
             let _ = app.emit(
-                "download-progress",
-                serde_json::json!({
-                    "trackId": track_id,
-                    "status": "failed",
-                    "error": {
-                        "code": e.code(),
-                        "message": e.to_string()
-                    }
-                }),
+                events::DOWNLOAD_PROGRESS,
+                DownloadProgressEvent {
+                    track_id: track_id.clone(),
+                    status: "failed".to_string(),
+                    percent: None,
+                    downloaded_bytes: None,
+                    total_bytes: None,
+                    error: Some(crate::models::ErrorResponse {
+                        code: e.code().to_string(),
+                        message: e.to_string(),
+                    }),
+                },
             );
             TrackOutcome::Failed {
                 track_id,
-                error_code: e.code().to_string(),
                 error_message: e.to_string(),
             }
         }
     }
 }
+
+// ---------------------------------------------------------------------------
+// Shared "pause and wait for user choice" pattern (#4)
+// ---------------------------------------------------------------------------
+
+/// Action to take after the user responds to a pause prompt.
+enum PauseAction {
+    /// Re-queue the track at its original index.
+    RetryTrack(usize),
+    /// Stop the queue (clear all pending).
+    Stop,
+}
+
+/// Wait for a user choice via a watch channel, or for cancellation.
+/// Returns the mapped action, or `None` if cancelled.
+async fn wait_for_user_choice<T: Copy>(
+    choice_rx: &mut watch::Receiver<Option<T>>,
+    cancel_rx: &watch::Receiver<bool>,
+    map_choice: impl Fn(T) -> PauseAction,
+) -> Option<PauseAction> {
+    loop {
+        if *cancel_rx.borrow() {
+            return None;
+        }
+        if choice_rx.changed().await.is_ok() {
+            let choice = { *choice_rx.borrow() };
+            if let Some(choice) = choice {
+                return Some(map_choice(choice));
+            }
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// DownloadQueue
+// ---------------------------------------------------------------------------
 
 /// Download queue manager for processing multiple tracks.
 pub struct DownloadQueue {
@@ -224,7 +270,7 @@ impl DownloadQueue {
                 let item = &self.items[idx];
                 if existing_ids.contains(&item.track_id) {
                     let _ = app.emit(
-                        "download-progress",
+                        events::DOWNLOAD_PROGRESS,
                         DownloadProgressEvent {
                             track_id: item.track_id.clone(),
                             status: "skipped".to_string(),
@@ -331,7 +377,7 @@ impl DownloadQueue {
             }
 
             let _ = app.emit(
-                "queue-progress",
+                events::QUEUE_PROGRESS,
                 QueueProgressEvent {
                     current: *started_count,
                     total: self.total_tracks,
@@ -346,7 +392,7 @@ impl DownloadQueue {
                 ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() },
             );
 
-            let config = self.build_pipeline_config(item, idx, &ctx.output_dir, &progress.oauth_token);
+            let config = self.build_pipeline_config(item, &ctx.output_dir, &progress.oauth_token);
             let app_clone = app.clone();
             let worker_cancel_rx = ctx.cancel_rx.clone();
             let active_procs = ctx.active_processes.clone();
@@ -362,7 +408,6 @@ impl DownloadQueue {
     fn build_pipeline_config(
         &self,
         item: &QueueItem,
-        idx: usize,
         output_dir: &PathBuf,
         oauth_token: &Option<String>,
     ) -> PipelineConfig {
@@ -403,7 +448,7 @@ impl DownloadQueue {
             if let Ok(outcome) = result {
                 match outcome {
                     TrackOutcome::Completed { .. } => progress.completed += 1,
-                    TrackOutcome::Failed { track_id, error_message, .. } => {
+                    TrackOutcome::Failed { track_id, error_message } => {
                         progress.failed += 1;
                         progress.failed_tracks.push((track_id, error_message));
                     }
@@ -424,7 +469,7 @@ impl DownloadQueue {
         if *ctx.cancel_rx.borrow() || stopped.load(Ordering::SeqCst) {
             let cancelled = self.total_tracks - progress.completed - progress.failed;
             let _ = app.emit(
-                "queue-cancelled",
+                events::QUEUE_CANCELLED,
                 QueueCancelledEvent {
                     completed: progress.completed,
                     cancelled,
@@ -433,7 +478,7 @@ impl DownloadQueue {
             );
         } else {
             let _ = app.emit(
-                "queue-complete",
+                events::QUEUE_COMPLETE,
                 QueueCompleteEvent {
                     completed: progress.completed,
                     failed: progress.failed,
@@ -469,7 +514,7 @@ impl DownloadQueue {
                 log::info!("[queue] Track {} completed", track_id);
                 progress.completed += 1;
             }
-            TrackOutcome::Failed { track_id, error_code: _, error_message } => {
+            TrackOutcome::Failed { track_id, error_message } => {
                 log::error!("[queue] Track {} failed: {}", track_id, error_message);
                 progress.failed += 1;
                 progress.failed_tracks.push((track_id, error_message));
@@ -483,7 +528,7 @@ impl DownloadQueue {
                 paused.store(true, Ordering::SeqCst);
 
                 let _ = app.emit(
-                    "download-rate-limited",
+                    events::DOWNLOAD_RATE_LIMITED,
                     DownloadRateLimitedEvent {
                         track_id: track_id.clone(),
                         track_title: track_lookup.get(&track_id)
@@ -493,39 +538,37 @@ impl DownloadQueue {
                     },
                 );
 
-                // Wait for user choice
+                let track_idx = track_lookup.get(&track_id).map(|&(idx, _)| idx);
                 let mut choice_rx = ctx.rate_limit_choice_state.subscribe();
-                loop {
-                    if *ctx.cancel_rx.borrow() {
-                        paused.store(false, Ordering::SeqCst);
-                        pause_notify.notify_waiters();
-                        break;
-                    }
-                    if choice_rx.changed().await.is_ok() {
-                        let choice = { *choice_rx.borrow() };
-                        if let Some(choice) = choice {
-                            match choice {
-                                RateLimitChoice::Retry => {
-                                    log::info!("[queue] User chose retry after rate limit");
-                                    if let Some(&(idx, _)) = track_lookup.get(&track_id) {
-                                        progress.pending.push_front(idx);
-                                    }
-                                    paused.store(false, Ordering::SeqCst);
-                                    pause_notify.notify_waiters();
-                                    break;
-                                }
-                                RateLimitChoice::Stop => {
-                                    log::info!("[queue] User chose stop after rate limit");
-                                    stopped.store(true, Ordering::SeqCst);
-                                    progress.pending.clear();
-                                    paused.store(false, Ordering::SeqCst);
-                                    pause_notify.notify_waiters();
-                                    break;
-                                }
+                let action = wait_for_user_choice(&mut choice_rx, &ctx.cancel_rx, |choice| {
+                    match choice {
+                        RateLimitChoice::Retry => {
+                            log::info!("[queue] User chose retry after rate limit");
+                            match track_idx {
+                                Some(idx) => PauseAction::RetryTrack(idx),
+                                None => PauseAction::Stop,
                             }
                         }
+                        RateLimitChoice::Stop => {
+                            log::info!("[queue] User chose stop after rate limit");
+                            PauseAction::Stop
+                        }
                     }
+                }).await;
+
+                match action {
+                    Some(PauseAction::RetryTrack(idx)) => {
+                        progress.pending.push_front(idx);
+                    }
+                    Some(PauseAction::Stop) => {
+                        stopped.store(true, Ordering::SeqCst);
+                        progress.pending.clear();
+                    }
+                    None => { /* cancelled */ }
                 }
+
+                paused.store(false, Ordering::SeqCst);
+                pause_notify.notify_waiters();
             }
             TrackOutcome::AuthFailed { track_id } => {
                 log::info!("[queue] Track {} auth failed, pausing queue", track_id);
@@ -533,7 +576,7 @@ impl DownloadQueue {
 
                 ctx.auth_choice_state.set_pending(true).await;
                 let _ = app.emit(
-                    "download-auth-needed",
+                    events::DOWNLOAD_AUTH_NEEDED,
                     DownloadAuthNeededEvent {
                         track_id: track_id.clone(),
                         track_title: track_lookup.get(&track_id)
@@ -542,42 +585,48 @@ impl DownloadQueue {
                     },
                 );
 
+                let track_idx = track_lookup.get(&track_id).map(|&(idx, _)| idx);
                 let mut choice_rx = ctx.auth_choice_state.subscribe();
-                loop {
-                    if *ctx.cancel_rx.borrow() {
-                        ctx.auth_choice_state.set_pending(false).await;
-                        paused.store(false, Ordering::SeqCst);
-                        pause_notify.notify_waiters();
-                        break;
-                    }
-                    if choice_rx.changed().await.is_ok() {
-                        let choice = { *choice_rx.borrow() };
-                        if let Some(choice) = choice {
-                            ctx.auth_choice_state.set_pending(false).await;
-                            match choice {
-                                AuthChoice::ReAuthenticated => {
-                                    log::info!("[queue] User re-authenticated, refreshing token");
-                                    progress.oauth_token = app.state::<AuthState>().get_token();
-                                    // Re-queue the failed track
-                                    if let Some(&(idx, _)) = track_lookup.get(&track_id) {
-                                        progress.pending.push_front(idx);
-                                    }
-                                }
-                                AuthChoice::ContinueStandard => {
-                                    log::info!("[queue] User chose standard quality");
-                                    ctx.auth_choice_state.set_skip_auth(true);
-                                    // Re-queue the failed track (will retry without auth)
-                                    if let Some(&(idx, _)) = track_lookup.get(&track_id) {
-                                        progress.pending.push_front(idx);
-                                    }
-                                }
+                let action = wait_for_user_choice(&mut choice_rx, &ctx.cancel_rx, |choice| {
+                    match choice {
+                        AuthChoice::ReAuthenticated => {
+                            log::info!("[queue] User re-authenticated, refreshing token");
+                            match track_idx {
+                                Some(idx) => PauseAction::RetryTrack(idx),
+                                None => PauseAction::Stop,
                             }
-                            paused.store(false, Ordering::SeqCst);
-                            pause_notify.notify_waiters();
-                            break;
+                        }
+                        AuthChoice::ContinueStandard => {
+                            log::info!("[queue] User chose standard quality");
+                            match track_idx {
+                                Some(idx) => PauseAction::RetryTrack(idx),
+                                None => PauseAction::Stop,
+                            }
                         }
                     }
+                }).await;
+
+                ctx.auth_choice_state.set_pending(false).await;
+
+                match action {
+                    Some(PauseAction::RetryTrack(idx)) => {
+                        // Refresh token if re-authenticated
+                        if matches!(
+                            *choice_rx.borrow(),
+                            Some(AuthChoice::ReAuthenticated)
+                        ) {
+                            progress.oauth_token = app.state::<AuthState>().get_token();
+                        } else {
+                            // ContinueStandard
+                            ctx.auth_choice_state.set_skip_auth(true);
+                        }
+                        progress.pending.push_front(idx);
+                    }
+                    Some(PauseAction::Stop) | None => { /* stop or cancelled */ }
                 }
+
+                paused.store(false, Ordering::SeqCst);
+                pause_notify.notify_waiters();
             }
         }
     }

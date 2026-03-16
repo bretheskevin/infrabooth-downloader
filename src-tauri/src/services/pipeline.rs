@@ -4,9 +4,9 @@ use tauri::AppHandle;
 use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::{watch, Mutex};
 
-use crate::models::error::PipelineError;
+use crate::models::error::DownloadError;
 use crate::services::metadata::{embed_metadata, TrackMetadata};
-use crate::services::downloader::{download_track_to_mp3, PlaylistContext, TrackDownloadToMp3Config};
+use crate::services::downloader::{download_track_to_mp3, PlaylistContext};
 
 /// Configuration for the full download pipeline.
 pub struct PipelineConfig {
@@ -25,7 +25,7 @@ pub struct PipelineConfig {
 /// Download a track and convert it to MP3.
 ///
 /// Resolves the stream URL via SoundCloud API v2, downloads and converts
-/// to 320kbps MP3 using ffmpeg, then embeds ID3 metadata.
+/// to MP3 using ffmpeg, then embeds ID3 metadata.
 ///
 /// Progress events are emitted via the `download-progress` event channel.
 ///
@@ -37,29 +37,17 @@ pub async fn download_and_convert<R: tauri::Runtime>(
     active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
     cancel_rx: Option<watch::Receiver<bool>>,
     active_pid: Option<Arc<Mutex<Option<u32>>>>,
-) -> Result<PathBuf, PipelineError> {
+) -> Result<PathBuf, DownloadError> {
     let playlist_context = config.playlist_context.clone();
-
-    let download_config = TrackDownloadToMp3Config {
-        track_url: config.track_url,
-        track_id: config.track_id,
-        output_dir: config.output_dir,
-        playlist_context: config.playlist_context,
-        artist: config.metadata.artist.clone(),
-        title: config.metadata.title.clone(),
-        duration_ms: config.duration_ms,
-        oauth_token: config.oauth_token,
-    };
 
     let output_path = download_track_to_mp3(
         app,
-        download_config,
+        &config,
         active_child,
         cancel_rx,
         active_pid,
     )
-    .await
-    .map_err(PipelineError::Download)?;
+    .await?;
 
     // Prefix metadata title with track number for playlist tracks
     let mut metadata = config.metadata;

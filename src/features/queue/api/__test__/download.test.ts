@@ -219,9 +219,9 @@ describe('startDownloadQueue', () => {
       maxConcurrent: 3,
       preserveOrder: true,
     };
-    const errorMessage = 'Failed to start queue';
+    const error = { code: 'DOWNLOAD_FAILED', message: 'Failed to start queue' };
 
-    mockStartDownloadQueue.mockResolvedValue({ status: 'error', error: errorMessage });
+    mockStartDownloadQueue.mockResolvedValue({ status: 'error', error });
 
     await expect(startDownloadQueue(request)).rejects.toThrow('Failed to start queue');
   });

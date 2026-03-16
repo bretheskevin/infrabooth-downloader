@@ -5,6 +5,8 @@ use specta::Type;
 use tauri::Emitter;
 use tauri::Manager;
 
+use crate::services::events;
+
 use crate::services::client_id;
 use crate::services::library::{
     fetch_all_library_pages, resolve_playlist_artwork as resolve_artwork, LibraryCache,
@@ -126,7 +128,7 @@ pub async fn get_library_playlist_tracks(
     let app_handle = app.clone();
     let on_batch = move |batch: &[TrackInfo]| {
         let _ = app_handle.emit(
-            "playlist-tracks-batch",
+            events::PLAYLIST_TRACKS_BATCH,
             PlaylistTracksBatchEvent {
                 playlist_id,
                 tracks: batch.to_vec(),
