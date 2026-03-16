@@ -2,6 +2,8 @@ import { useTranslation } from 'react-i18next';
 import { Lock } from 'lucide-react';
 import { Header } from './Header';
 import { UpdateBanner } from '@/features/update';
+import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
+import { EXPANDED_BAR_HEIGHT } from '@/features/player/components/ExpandedBar';
 
 export type AppPage = 'download' | 'library' | 'search';
 
@@ -50,11 +52,16 @@ function PageNav({ activePage, onPageChange, isSignedIn }: PageNavProps) {
 }
 
 export function AppLayout({ children, activePage, onPageChange, isSignedIn }: AppLayoutProps) {
+  const expandedBarVisible = useIsExpandedBarVisible();
+
   return (
     <div className="flex flex-col h-screen overflow-hidden gradient-subtle">
       <UpdateBanner />
       <Header />
-      <main className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6 w-full container mx-auto">
+      <main
+        className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6 w-full container mx-auto transition-[padding-bottom] duration-300 ease-in-out"
+        style={{ paddingBottom: expandedBarVisible ? EXPANDED_BAR_HEIGHT + 24 : undefined }}
+      >
         <PageNav activePage={activePage} onPageChange={onPageChange} isSignedIn={isSignedIn} />
         {children}
       </main>
