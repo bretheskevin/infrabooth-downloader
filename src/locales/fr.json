@@ -285,6 +285,7 @@
     "removeFromQueue": "Retirer de la file",
     "errorNext": "Impossible de passer à la piste suivante",
     "errorPrevious": "Impossible de revenir à la piste précédente",
-    "errorLoadTrack": "Impossible de charger la piste"
+    "errorLoadTrack": "Impossible de charger la piste",
+    "clickToExpand": "Cliquer pour agrandir le lecteur"
   }
 }
