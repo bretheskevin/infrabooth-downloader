@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { usePlayerStore } from '@/features/player';
 import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
 import { EXPANDED_BAR_HEIGHT, EXPANDED_BAR_GAP } from '@/features/player/components/ExpandedBar';
 
@@ -12,8 +13,9 @@ interface SelectionFloatingBarProps {
 export function SelectionFloatingBar({ selectedCount, onDownload }: SelectionFloatingBarProps) {
   const { t } = useTranslation();
   const expandedBarVisible = useIsExpandedBarVisible();
+  const isQueueOpen = usePlayerStore((s) => s.isQueueOpen);
 
-  if (selectedCount === 0) return null;
+  if (selectedCount === 0 || (expandedBarVisible && isQueueOpen)) return null;
 
   const bottom = expandedBarVisible ? EXPANDED_BAR_HEIGHT + EXPANDED_BAR_GAP : 24;
 
