@@ -47,19 +47,6 @@ struct StreamUrlResponse {
     url: String,
 }
 
-/// Response from the `/tracks/{urn}/streams` endpoint.
-#[derive(Debug, Deserialize)]
-struct StreamsResponse {
-    /// AAC HLS at 160kbps (preferred).
-    hls_aac_160_url: Option<String>,
-    /// AAC HLS at 96kbps (fallback).
-    hls_aac_96_url: Option<String>,
-    /// Legacy HLS MP3 (still works with hls.js).
-    hls_mp3_128_url: Option<String>,
-    /// Legacy progressive MP3 (last resort).
-    http_mp3_128_url: Option<String>,
-}
-
 /// Media section from API v2 track data.
 #[derive(Debug, Deserialize)]
 struct MediaInfo {
@@ -491,11 +478,11 @@ pub async fn resolve_stream_url(
     ))
 }
 
-/// Resolve a SoundCloud track to an HLS playback URL using the `/streams` endpoint.
+/// Resolve a SoundCloud track to an HLS playback URL via transcodings.
 ///
-/// Falls back to the legacy transcodings approach if the `/streams` endpoint
-/// fails or returns no AAC URLs. The fallback prefers HLS over progressive
-/// for instant browser streaming.
+/// Fetches track metadata, selects the best HLS transcoding, and resolves
+/// the transcoding URL to a signed CDN playlist URL. This mirrors the same
+/// approach used by SoundCloud's own web player.
 pub async fn resolve_playback_url(
     track_id: u64,
     track_url: &str,
@@ -507,25 +494,6 @@ pub async fn resolve_playback_url(
         if oauth_token.is_some() { "present" } else { "none" }
     );
 
-    match resolve_via_streams_endpoint(track_id, oauth_token).await {
-        Ok(url) => {
-            log::info!("[stream] Resolved via /streams endpoint");
-            Ok(url)
-        }
-        Err(e) => {
-            log::warn!("[stream] /streams endpoint failed ({}), falling back to transcodings", e);
-            resolve_playback_url_via_transcodings(track_id, track_url, oauth_token).await
-        }
-    }
-}
-
-/// Fallback: resolve via transcodings, preferring HLS for streaming playback.
-/// Uses /tracks/{id} directly instead of /resolve?url= to skip the resolve step.
-async fn resolve_playback_url_via_transcodings(
-    track_id: u64,
-    track_url: &str,
-    oauth_token: Option<&str>,
-) -> Result<String, DownloadError> {
     for is_first_attempt in [true, false] {
         let cid = client_id::get_client_id().await?;
 
@@ -573,7 +541,7 @@ async fn resolve_playback_url_via_transcodings(
             })?;
 
         log::info!(
-            "[stream] Streaming fallback selected: protocol={}, mime={}, quality={}",
+            "[stream] Selected transcoding: protocol={}, mime={}, quality={}",
             transcoding.format.protocol,
             transcoding.format.mime_type,
             transcoding.quality,
@@ -597,91 +565,6 @@ async fn resolve_playback_url_via_transcodings(
 
     Err(DownloadError::StreamResolutionFailed(
         "Failed after client_id refresh".to_string(),
-    ))
-}
-
-async fn resolve_via_streams_endpoint(
-    track_id: u64,
-    oauth_token: Option<&str>,
-) -> Result<String, DownloadError> {
-    let client = &*crate::services::http::HTTP_CLIENT;
-
-    for is_first_attempt in [true, false] {
-        let cid = client_id::get_client_id().await?;
-
-        // Try both the public API (api.soundcloud.com) and v2 API
-        let urls = [
-            format!(
-                "https://api.soundcloud.com/tracks/{}/streams?client_id={}",
-                track_id, cid
-            ),
-            format!(
-                "{}/tracks/{}/streams?client_id={}",
-                API_V2_BASE, track_id, cid
-            ),
-        ];
-
-        for url in &urls {
-            let response = match client
-                .get(url)
-                .with_oauth(oauth_token)
-                .send()
-                .await
-            {
-                Ok(r) => r,
-                Err(_) => continue,
-            };
-
-            let status = response.status();
-
-            if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-                return Err(crate::services::http::parse_rate_limit_response(response).await);
-            }
-            if status == reqwest::StatusCode::NOT_FOUND {
-                continue; // Try next URL
-            }
-            if (status == reqwest::StatusCode::UNAUTHORIZED
-                || status == reqwest::StatusCode::FORBIDDEN)
-                && is_first_attempt
-                && oauth_token.is_none()
-            {
-                log::warn!("[stream] Got auth error on /streams, refreshing client_id");
-                client_id::invalidate_client_id();
-                break; // Break inner loop to retry with new client_id
-            }
-            if !status.is_success() {
-                continue;
-            }
-
-            let streams: StreamsResponse = match response.json().await {
-                Ok(s) => s,
-                Err(_) => continue,
-            };
-
-            // Prefer AAC HLS > legacy HLS MP3 > progressive MP3
-            let format = if streams.hls_aac_160_url.is_some() { "aac_160" }
-                else if streams.hls_aac_96_url.is_some() { "aac_96" }
-                else if streams.hls_mp3_128_url.is_some() { "hls_mp3" }
-                else if streams.http_mp3_128_url.is_some() { "http_mp3" }
-                else { "none" };
-            if let Some(hls_url) = streams.hls_aac_160_url
-                .or(streams.hls_aac_96_url)
-                .or(streams.hls_mp3_128_url)
-                .or(streams.http_mp3_128_url)
-            {
-                let source = if url.contains("api.soundcloud.com/tracks") { "public API" } else { "v2 API" };
-                log::info!("[stream] /streams resolved via {} (format={})", source, format);
-                return Ok(hls_url);
-            }
-        }
-
-        if !is_first_attempt {
-            break;
-        }
-    }
-
-    Err(DownloadError::StreamResolutionFailed(
-        "No streaming URLs from /streams endpoint".into(),
     ))
 }
 
@@ -969,47 +852,5 @@ mod tests {
         assert_eq!(StreamCodec::from(Codec::Unknown), StreamCodec::Unknown);
     }
 
-    // --- Streams API response tests ---
 
-    #[test]
-    fn test_streams_response_deserializes_both_urls() {
-        let json = r#"{
-            "hls_aac_160_url": "https://playback.media-streaming.soundcloud.cloud/123/aac_160k/uuid/playlist.m3u8",
-            "hls_aac_96_url": "https://playback.media-streaming.soundcloud.cloud/123/aac_96k/uuid/playlist.m3u8"
-        }"#;
-        let resp: StreamsResponse = serde_json::from_str(json).unwrap();
-        assert!(resp.hls_aac_160_url.is_some());
-        assert!(resp.hls_aac_96_url.is_some());
-    }
-
-    #[test]
-    fn test_streams_response_deserializes_160_only() {
-        let json = r#"{
-            "hls_aac_160_url": "https://playback.media-streaming.soundcloud.cloud/123/aac_160k/uuid/playlist.m3u8"
-        }"#;
-        let resp: StreamsResponse = serde_json::from_str(json).unwrap();
-        assert!(resp.hls_aac_160_url.is_some());
-        assert!(resp.hls_aac_96_url.is_none());
-    }
-
-    #[test]
-    fn test_streams_response_deserializes_empty() {
-        let json = r#"{}"#;
-        let resp: StreamsResponse = serde_json::from_str(json).unwrap();
-        assert!(resp.hls_aac_160_url.is_none());
-        assert!(resp.hls_aac_96_url.is_none());
-    }
-
-    #[test]
-    fn test_streams_response_ignores_legacy_fields() {
-        let json = r#"{
-            "hls_aac_160_url": "https://example.com/aac160.m3u8",
-            "http_mp3_128_url": "https://example.com/mp3.mp3",
-            "hls_mp3_128_url": "https://example.com/mp3.m3u8",
-            "hls_opus_64_url": "https://example.com/opus.m3u8",
-            "preview_mp3_128_url": "https://example.com/preview.mp3"
-        }"#;
-        let resp: StreamsResponse = serde_json::from_str(json).unwrap();
-        assert!(resp.hls_aac_160_url.is_some());
-    }
 }
