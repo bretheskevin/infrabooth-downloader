@@ -264,6 +264,14 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
       onError: (message) => {
         console.error(`[player] Audio engine error: ${message}`);
       },
+      onFullyBuffered: () => {
+        const { queue, cursor, state } = get();
+        if (state === 'stopped') return;
+        const next = queue[cursor + 1];
+        if (next) {
+          void resolveWithCache(next.trackId, next.trackUrl).catch(() => {});
+        }
+      },
     });
   },
 
