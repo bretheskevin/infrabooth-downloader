@@ -17,22 +17,16 @@ vi.mock('../audio-engine', () => ({
   },
 }));
 
-// Mock the tauri API
-vi.mock('@/lib/tauri', () => ({
-  api: {
-    resolvePlaybackUrl: vi.fn().mockResolvedValue('https://example.com/stream.m3u8'),
-  },
-}));
-
 // Mock the url-cache so tests don't interfere via shared cache
 vi.mock('../url-cache', () => ({
   getCachedUrl: vi.fn().mockReturnValue(null),
   setCachedUrl: vi.fn(),
+  resolveWithCache: vi.fn().mockResolvedValue('https://example.com/stream.m3u8'),
 }));
 
 import { usePlayerStore } from '../store';
 import { audioEngine } from '../audio-engine';
-import { api } from '@/lib/tauri';
+import { resolveWithCache } from '../url-cache';
 import type { PlaybackItem } from '../types';
 
 const mockTrack: PlaybackItem = {
@@ -77,7 +71,7 @@ describe('playerStore', () => {
   it('play() should set loading state and resolve URL', async () => {
     const queue = [mockTrack];
     await usePlayerStore.getState().play(queue, 0);
-    expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(1, mockTrack.trackUrl);
+    expect(resolveWithCache).toHaveBeenCalledWith(1, mockTrack.trackUrl);
     expect(audioEngine.load).toHaveBeenCalledWith('https://example.com/stream.m3u8');
     expect(audioEngine.play).toHaveBeenCalled();
   });
@@ -171,7 +165,7 @@ describe('playerStore', () => {
     expect(state.cursor).toBe(1);
     expect(state.currentTrack!.trackId).toBe(3);
     expect(state.state).toBe('loading');
-    expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(3, expect.any(String));
+    expect(resolveWithCache).toHaveBeenCalledWith(3, expect.any(String));
   });
 
   it('removeFromQueue should stop when queue becomes empty', () => {
@@ -191,7 +185,7 @@ describe('playerStore', () => {
     await usePlayerStore.getState().next();
 
     expect(usePlayerStore.getState().cursor).toBe(1);
-    expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(2, queue[1]!.trackUrl);
+    expect(resolveWithCache).toHaveBeenCalledWith(2, queue[1]!.trackUrl);
     expect(audioEngine.load).toHaveBeenCalled();
   });
 
@@ -210,7 +204,7 @@ describe('playerStore', () => {
     await usePlayerStore.getState().previous();
 
     expect(usePlayerStore.getState().cursor).toBe(1);
-    expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(2, queue[1]!.trackUrl);
+    expect(resolveWithCache).toHaveBeenCalledWith(2, queue[1]!.trackUrl);
   });
 
   it('previous() at start should do nothing', async () => {
@@ -219,6 +213,6 @@ describe('playerStore', () => {
     await usePlayerStore.getState().previous();
 
     expect(usePlayerStore.getState().cursor).toBe(0);
-    expect(api.resolvePlaybackUrl).not.toHaveBeenCalled();
+    expect(resolveWithCache).not.toHaveBeenCalled();
   });
 });
