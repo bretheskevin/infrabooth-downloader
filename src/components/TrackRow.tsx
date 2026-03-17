@@ -16,6 +16,9 @@ interface TrackRowProps {
   leftSlot?: React.ReactNode;
   rightSlot: React.ReactNode;
   downloadState: DownloadState;
+  onHoverStart?: () => void;
+  onHoverEnd?: () => void;
+  onMouseDown?: () => void;
 }
 
 export function TrackRow({
@@ -29,10 +32,25 @@ export function TrackRow({
   leftSlot,
   rightSlot,
   downloadState,
+  onHoverStart,
+  onHoverEnd,
+  onMouseDown,
 }: TrackRowProps) {
   const [isRowHovered, setIsRowHovered] = useState(false);
-  const handleMouseEnter = useCallback(() => setIsRowHovered(true), []);
-  const handleMouseLeave = useCallback(() => setIsRowHovered(false), []);
+  const handleMouseEnter = useCallback(() => {
+    setIsRowHovered(true);
+    onHoverStart?.();
+  }, [onHoverStart]);
+  const handleMouseLeave = useCallback(() => {
+    setIsRowHovered(false);
+    onHoverEnd?.();
+  }, [onHoverEnd]);
+  const handleMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (e.button === 0) onMouseDown?.();
+    },
+    [onMouseDown],
+  );
 
   const progress = downloadState?.status === 'downloading' ? (downloadState.progress ?? 0) : 0;
   const dlBytes = downloadState?.status === 'downloading' ? (downloadState.downloadedBytes ?? null) : null;
@@ -54,6 +72,7 @@ export function TrackRow({
       {leftSlot}
       <div
         className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
+        onMouseDown={handleMouseDown}
         onClick={onPlayPause}
       >
         <PlayOverlay

@@ -121,7 +121,7 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
 
     await loadAndPlay(track, generation, get);
     purgeStaleCache(trackIdSet(queue));
-    preloadQueueSegments(queue, index);
+    preloadQueueSegments(queue, index + 1, 2);
   },
 
   pause: () => {
@@ -154,6 +154,7 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
       durationMs: track.durationMs,
     });
     await loadAndPlay(track, generation, get);
+    preloadQueueSegments(queue, nextCursor + 1, 2);
   },
 
   previous: async () => {
