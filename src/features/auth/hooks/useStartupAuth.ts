@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { logger } from '@/lib/logger';
 import { checkAuth } from '@/features/auth/api';
 
 /**
@@ -28,7 +29,7 @@ export function useStartupAuth(): void {
         await checkAuth();
       } catch (error) {
         if (mounted) {
-          console.error('Failed to check auth state on startup:', error);
+          void logger.error(`Failed to check auth state on startup: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
     };

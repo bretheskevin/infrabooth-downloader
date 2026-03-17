@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getVersion } from '@tauri-apps/api/app';
+import { logger } from '@/lib/logger';
 import { useChangelogStore } from '../store';
 import { parseChangelog, parseVersionEntry } from '../utils/parseChangelog';
 import type { ChangelogSection } from '../utils/parseChangelog';
@@ -51,7 +52,7 @@ export function useChangelogCheck() {
       setDate(resolvedDate);
       setShowWhatsNew(true);
     }).catch((err) => {
-      console.warn('[Changelog] Failed to get app version:', err);
+      void logger.warn(`[Changelog] Failed to get app version: ${err instanceof Error ? err.message : String(err)}`);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- i18n.language is read lazily inside async callback
   }, [hasHydrated, lastSeenVersion]);
