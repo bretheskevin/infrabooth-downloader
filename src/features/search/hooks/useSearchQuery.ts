@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useSearchStore } from '../store';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { api } from '@/lib/tauri';
 import { useDebounce } from '@/hooks';
@@ -8,7 +9,8 @@ const SEARCH_LIMIT = 20;
 const DEBOUNCE_MS = 400;
 
 export function useSearchQuery() {
-  const [inputValue, setInputValue] = useState('');
+  const inputValue = useSearchStore((s) => s.inputValue);
+  const setInputValue = useSearchStore((s) => s.setInputValue);
   const debouncedQuery = useDebounce(inputValue.trim(), DEBOUNCE_MS);
 
   const query = useInfiniteQuery({
@@ -22,8 +24,8 @@ export function useSearchQuery() {
       return lastPageParam + SEARCH_LIMIT;
     },
     enabled: debouncedQuery.length > 0,
-    gcTime: 0,
-    staleTime: 0,
+    gcTime: 5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const results: TrackInfo[] = useMemo(
