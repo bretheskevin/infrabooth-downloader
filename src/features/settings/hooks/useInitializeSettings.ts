@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useSettingsStore, useSettingsHydrated } from '@/features/settings/store';
 import { getDefaultDownloadPath, validateDownloadPath } from '@/features/settings/api/settings';
+import { logger } from '@/lib/logger';
 
 /**
  * Hook that initializes settings on app launch:
@@ -29,7 +30,7 @@ export function useInitializeSettings() {
             setDownloadPath(defaultPath);
           }
         } catch (error) {
-          console.error('Failed to get default download path:', error);
+          void logger.error(`Failed to get default download path: ${error instanceof Error ? error.message : String(error)}`);
         }
         return;
       }
@@ -37,7 +38,7 @@ export function useInitializeSettings() {
       // Subsequent launch: validate saved path
       const isValid = await validateDownloadPath(downloadPath);
       if (!isValid) {
-        console.warn('Saved download path is invalid, resetting to default:', downloadPath);
+        void logger.warn(`Saved download path is invalid, resetting to default: ${downloadPath}`);
         try {
           const defaultPath = await getDefaultDownloadPath();
           if (defaultPath) {
@@ -45,7 +46,7 @@ export function useInitializeSettings() {
             pathWasResetRef.current = true;
           }
         } catch (error) {
-          console.error('Failed to get default download path after validation failure:', error);
+          void logger.error(`Failed to get default download path after validation failure: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
     };

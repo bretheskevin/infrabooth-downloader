@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { logger } from '@/lib/logger';
 
 interface ChangelogState {
   lastSeenVersion: string | null;
@@ -30,7 +31,7 @@ export const useChangelogStore = create<ChangelogState>()(
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
-          console.error('Changelog hydration error:', error);
+          void logger.error(`Changelog hydration error: ${error instanceof Error ? error.message : String(error)}`);
         }
         state?._setHasHydrated(true);
       },

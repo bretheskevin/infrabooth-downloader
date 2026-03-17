@@ -4,6 +4,7 @@ import { CheckCircle, Info, Loader2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { open } from '@tauri-apps/plugin-shell';
+import { logger } from '@/lib/logger';
 import { useUpdateStore } from '../store';
 
 const RELEASES_BASE_URL =
@@ -41,7 +42,7 @@ export function UpdateBanner() {
 
   const handleLearnMore = () => {
     open(releaseUrl).catch(() => {
-      open(RELEASES_BASE_URL).catch((e) => console.warn('[Update] Failed to open releases URL:', e));
+      open(RELEASES_BASE_URL).catch((e) => void logger.warn(`[Update] Failed to open releases URL: ${e instanceof Error ? e.message : String(e)}`));
     });
   };
 

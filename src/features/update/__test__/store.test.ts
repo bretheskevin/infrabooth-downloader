@@ -9,7 +9,18 @@ vi.mock('@/bindings', () => ({
   },
 }));
 
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    trace: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 import { commands } from '@/bindings';
+import { logger } from '@/lib/logger';
 
 const mockCheckForUpdates = vi.mocked(commands.checkForUpdates);
 const mockInstallUpdate = vi.mocked(commands.installUpdate);
@@ -78,7 +89,6 @@ describe('updateStore', () => {
     });
 
     it('should handle errors silently', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       mockCheckForUpdates.mockRejectedValue(new Error('Network error'));
 
       await useUpdateStore.getState().checkForUpdates();
@@ -88,21 +98,15 @@ describe('updateStore', () => {
       expect(state.updateInfo).toBeNull();
       expect(state.checkInProgress).toBe(false);
       expect(state.lastChecked).toBeInstanceOf(Date);
-
-      consoleSpy.mockRestore();
     });
 
-    it('should not use console.error for failures', async () => {
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-      const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    it('should use logger.warn (not error) for check failures', async () => {
       mockCheckForUpdates.mockRejectedValue(new Error('Network error'));
 
       await useUpdateStore.getState().checkForUpdates();
 
-      expect(consoleErrorSpy).not.toHaveBeenCalled();
-
-      consoleErrorSpy.mockRestore();
-      consoleLogSpy.mockRestore();
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('[Update] Check failed:'));
+      expect(logger.error).not.toHaveBeenCalled();
     });
 
     it('should prevent concurrent checks', async () => {
@@ -165,47 +169,34 @@ describe('updateStore', () => {
     });
 
     it('should log update available message', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       const updateInfo = { version: '2.0.0', body: null, date: null };
       mockCheckForUpdates.mockResolvedValue({ status: 'ok', data: updateInfo });
 
       await useUpdateStore.getState().checkForUpdates();
 
-      expect(consoleSpy).toHaveBeenCalledWith('[Update] Checking for updates...');
-      expect(consoleSpy).toHaveBeenCalledWith('[Update] New version available: 2.0.0');
-
-      consoleSpy.mockRestore();
+      expect(logger.info).toHaveBeenCalledWith('[Update] Checking for updates...');
+      expect(logger.info).toHaveBeenCalledWith('[Update] New version available: 2.0.0');
     });
 
     it('should log up to date message', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       mockCheckForUpdates.mockResolvedValue({ status: 'ok', data: null });
 
       await useUpdateStore.getState().checkForUpdates();
 
-      expect(consoleSpy).toHaveBeenCalledWith('[Update] App is up to date');
-
-      consoleSpy.mockRestore();
+      expect(logger.info).toHaveBeenCalledWith('[Update] App is up to date');
     });
 
     it('should log failure message', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       mockCheckForUpdates.mockRejectedValue(new Error('timeout'));
 
       await useUpdateStore.getState().checkForUpdates();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[Update] Check failed:',
-        expect.any(Error)
-      );
-
-      consoleSpy.mockRestore();
+      expect(logger.warn).toHaveBeenCalledWith('[Update] Check failed: timeout');
     });
   });
 
   describe('installUpdate', () => {
     it('should set installed on success', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       mockInstallUpdate.mockResolvedValue({ status: 'ok', data: null });
 
       await useUpdateStore.getState().installUpdate();
@@ -214,12 +205,9 @@ describe('updateStore', () => {
       expect(state.installing).toBe(false);
       expect(state.installed).toBe(true);
       expect(state.installError).toBeNull();
-
-      consoleSpy.mockRestore();
     });
 
     it('should set installError on error result', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       mockInstallUpdate.mockResolvedValue({ status: 'error', error: 'Download failed' });
 
       await useUpdateStore.getState().installUpdate();
@@ -228,12 +216,9 @@ describe('updateStore', () => {
       expect(state.installing).toBe(false);
       expect(state.installed).toBe(false);
       expect(state.installError).toBe('Download failed');
-
-      consoleSpy.mockRestore();
     });
 
     it('should set installError on exception', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       mockInstallUpdate.mockRejectedValue(new Error('Network failure'));
 
       await useUpdateStore.getState().installUpdate();
@@ -242,8 +227,6 @@ describe('updateStore', () => {
       expect(state.installing).toBe(false);
       expect(state.installed).toBe(false);
       expect(state.installError).toBe('Network failure');
-
-      consoleSpy.mockRestore();
     });
 
     it('should set installing during installation', async () => {
@@ -261,7 +244,6 @@ describe('updateStore', () => {
     });
 
     it('should prevent concurrent installations', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       let resolveFirst: (value: unknown) => void;
       const firstCall = new Promise((resolve) => { resolveFirst = resolve; });
       mockInstallUpdate.mockReturnValueOnce(firstCall as never);
@@ -273,20 +255,15 @@ describe('updateStore', () => {
 
       resolveFirst!({ status: 'ok', data: null });
       await firstPromise;
-
-      consoleSpy.mockRestore();
     });
 
     it('should clear previous error on retry', async () => {
-      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       useUpdateStore.setState({ installError: 'Previous error' });
       mockInstallUpdate.mockResolvedValue({ status: 'ok', data: null });
 
       await useUpdateStore.getState().installUpdate();
 
       expect(useUpdateStore.getState().installError).toBeNull();
-
-      consoleSpy.mockRestore();
     });
   });
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { commands, type UpdateInfo } from '@/bindings';
 import { useChangelogStore } from '@/features/changelog/store';
+import { logger } from '@/lib/logger';
 
 interface UpdateState {
   updateAvailable: boolean;
@@ -31,13 +32,13 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     if (get().checkInProgress) return;
 
     set({ checkInProgress: true });
-    console.log('[Update] Checking for updates...');
+    void logger.info('[Update] Checking for updates...');
 
     try {
       const result = await commands.checkForUpdates();
 
       if (result.status === 'ok' && result.data) {
-        console.log(`[Update] New version available: ${result.data.version}`);
+        void logger.info(`[Update] New version available: ${result.data.version}`);
         useChangelogStore.getState().cacheChangelog(result.data.body ?? null, result.data.date ?? null);
         set({
           updateAvailable: true,
@@ -46,7 +47,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
           lastChecked: new Date(),
         });
       } else {
-        console.log('[Update] App is up to date');
+        void logger.info('[Update] App is up to date');
         set({
           updateAvailable: false,
           updateInfo: null,
@@ -56,7 +57,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
       }
     } catch (error) {
       // Silent failure — log but don't show to user (FR27)
-      console.log('[Update] Check failed:', error);
+      void logger.warn(`[Update] Check failed: ${error instanceof Error ? error.message : String(error)}`);
       set({
         updateAvailable: false,
         updateInfo: null,
@@ -70,21 +71,21 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     if (get().installing) return;
 
     set({ installing: true, installError: null });
-    console.log('[Update] Starting installation...');
+    void logger.info('[Update] Starting installation...');
 
     try {
       const result = await commands.installUpdate();
 
       if (result.status === 'ok') {
-        console.log('[Update] Installation successful, restart required');
+        void logger.info('[Update] Installation successful, restart required');
         set({ installing: false, installed: true });
       } else {
-        console.log('[Update] Installation failed:', result.error);
+        void logger.error(`[Update] Installation failed: ${result.error}`);
         set({ installing: false, installError: result.error });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      console.log('[Update] Installation error:', message);
+      void logger.error(`[Update] Installation error: ${message}`);
       set({ installing: false, installError: message });
     }
   },

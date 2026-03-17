@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { logger } from '@/lib/logger';
 
 /** Application theme preference */
 export type Theme = 'system' | 'light' | 'dark';
@@ -53,7 +54,7 @@ export const useSettingsStore = create<SettingsState>()(
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
-          console.error('Settings hydration error:', error);
+          void logger.error(`Settings hydration error: ${error instanceof Error ? error.message : String(error)}`);
         }
         // Mark as hydrated regardless of error
         state?._setHasHydrated(true);

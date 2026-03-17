@@ -1,5 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { logger } from '@/lib/logger';
 import en from '@/locales/en.json';
 import fr from '@/locales/fr.json';
 
@@ -19,7 +20,7 @@ function getInitialLanguage(): 'en' | 'fr' {
     }
   } catch (error) {
     // Handle corrupted localStorage or private browsing mode
-    console.warn('Failed to read language preference:', error);
+    void logger.warn(`Failed to read language preference: ${error instanceof Error ? error.message : String(error)}`);
   }
   return 'en';
 }

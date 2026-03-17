@@ -7,7 +7,18 @@ vi.mock('@/features/auth/api', () => ({
   checkAuth: vi.fn(),
 }));
 
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    trace: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 import { checkAuth } from '@/features/auth/api';
+import { logger } from '@/lib/logger';
 
 describe('useStartupAuth', () => {
   beforeEach(() => {
@@ -47,19 +58,15 @@ describe('useStartupAuth', () => {
   });
 
   it('should log error when checkAuth fails', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     vi.mocked(checkAuth).mockRejectedValue(new Error('Network error'));
 
     renderHook(() => useStartupAuth());
 
     await waitFor(() => {
-      expect(consoleSpy).toHaveBeenCalledWith(
-        'Failed to check auth state on startup:',
-        expect.any(Error)
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to check auth state on startup: Network error'
       );
     });
-
-    consoleSpy.mockRestore();
   });
 
   it('should only call checkAuth once', async () => {
@@ -78,8 +85,6 @@ describe('useStartupAuth', () => {
   });
 
   it('should not log error if component unmounts before checkAuth resolves', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-
     // Create a promise that we control
     let resolvePromise: (value: boolean) => void;
     const promise = new Promise<boolean>((resolve) => {
@@ -99,8 +104,6 @@ describe('useStartupAuth', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
 
     // Should not have logged any error
-    expect(consoleSpy).not.toHaveBeenCalled();
-
-    consoleSpy.mockRestore();
+    expect(logger.error).not.toHaveBeenCalled();
   });
 });
