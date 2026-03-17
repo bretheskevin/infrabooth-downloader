@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useSettingsStore } from '@/features/settings/store';
@@ -9,8 +9,7 @@ import { SearchBar } from '@/components/ui/search-bar';
 import { SearchFolderPicker } from './SearchFolderPicker';
 import { SearchResultList } from './SearchResultList';
 import { useSearchQuery } from '../hooks/useSearchQuery';
-import { useTrackDownload } from '../hooks/useTrackDownload';
-import type { DownloadState } from '../types';
+import { useTrackDownload, useMergedTrackState } from '@/hooks';
 
 export function SearchTab() {
   const { t } = useTranslation();
@@ -33,19 +32,21 @@ export function SearchTab() {
     hasSearched,
   } = useSearchQuery();
 
-  const { downloadTrack, getTrackState: getRawTrackState } = useTrackDownload(downloadPath);
-  const { downloadedIds } = useDownloadedTracks(results, downloadPath, results.length > 0);
+  const { downloadTrack, getTrackState: getRawTrackState, completedCount: inlineCompletedCount, reconcile } = useTrackDownload(downloadPath);
 
-  const getTrackState = useCallback(
-    (trackId: number): DownloadState => {
-      const state = getRawTrackState(trackId);
-      if (state.status === 'idle' && downloadedIds.has(trackId)) {
-        return { status: 'completed' };
-      }
-      return state;
-    },
-    [getRawTrackState, downloadedIds],
-  );
+  // Bump scan key on every input change so filesystem is re-scanned even for cached results
+  const [scanKey, setScanKey] = useState(0);
+  const prevInputRef = useRef(inputValue);
+  useEffect(() => {
+    if (prevInputRef.current !== inputValue) {
+      prevInputRef.current = inputValue;
+      setScanKey((k) => k + 1);
+    }
+  }, [inputValue]);
+
+  const { downloadedIds } = useDownloadedTracks(results, downloadPath, results.length > 0, inlineCompletedCount + scanKey);
+
+  const getTrackState = useMergedTrackState(getRawTrackState, downloadedIds, reconcile);
 
   const { playTrack } = usePlayContext(results);
 

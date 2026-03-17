@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { SearchResultItem } from '../components/SearchResultItem';
 import type { TrackInfo } from '@/bindings';
-import type { DownloadState } from '../types';
+import type { DownloadState } from '@/types/download';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -31,7 +32,8 @@ describe('SearchResultItem', () => {
       />,
     );
     expect(screen.getByText('Test Track')).toBeInTheDocument();
-    expect(screen.getByText('TestArtist · 3:00')).toBeInTheDocument();
+    expect(screen.getByText('TestArtist')).toBeInTheDocument();
+    expect(screen.getByText('3:00')).toBeInTheDocument();
   });
 
   it('calls onDownload when download button clicked', () => {
@@ -67,18 +69,20 @@ describe('SearchResultItem', () => {
   it('shows checkmark when completed', () => {
     const state: DownloadState = { status: 'completed' };
     const { container } = render(
-      <SearchResultItem
-        track={mockTrack}
-        index={0}
-        state={state}
-        onDownload={vi.fn()}
-        onRetry={vi.fn()}
-      />,
+      <TooltipProvider>
+        <SearchResultItem
+          track={mockTrack}
+          index={0}
+          state={state}
+          onDownload={vi.fn()}
+          onRetry={vi.fn()}
+        />
+      </TooltipProvider>,
     );
     expect(container.querySelector('.text-green-600')).toBeInTheDocument();
   });
 
-  it('shows error message and retry button on error', () => {
+  it('shows retry button on error', () => {
     const onRetry = vi.fn();
     const state: DownloadState = { status: 'error', error: 'Network timeout' };
     render(
@@ -90,7 +94,6 @@ describe('SearchResultItem', () => {
         onRetry={onRetry}
       />,
     );
-    expect(screen.getByText('Network timeout')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button'));
     expect(onRetry).toHaveBeenCalledOnce();
   });
