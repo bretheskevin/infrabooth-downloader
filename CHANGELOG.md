@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-03-17
+
+### Added
+
+- Built-in audio player with queue and playback controls
+- Play/pause on tracks in library and search views
+
+### Changed
+
+- Select all toggle shows contextual label in library
+
+### Fixed
+
+- Track download state not resetting on path change
+- Refresh animation triggering on unrelated actions
+
 ## [1.7.0] - 2026-03-12
 
 ### Added

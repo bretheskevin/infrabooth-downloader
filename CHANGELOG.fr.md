@@ -7,6 +7,22 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-03-17
+
+### Added
+
+- Lecteur audio intégré avec file d'attente et contrôles de lecture
+- Lecture/pause sur les pistes de la bibliothèque et de la recherche
+
+### Changed
+
+- Le bouton de sélection globale affiche un libellé contextuel dans la bibliothèque
+
+### Fixed
+
+- Pistes marquées téléchargées à tort après changement de dossier
+- Animation de rafraîchissement déclenchée par des actions non liées
+
 ## [1.7.0] - 2026-03-12
 
 ### Added
