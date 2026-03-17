@@ -1,10 +1,9 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import i18n from '@/lib/i18n';
-import { api } from '@/lib/tauri';
 import { useSettingsStore } from '@/features/settings/store';
 import { audioEngine } from './audio-engine';
-import { getCachedUrl, setCachedUrl } from './url-cache';
+import { resolveWithCache } from './url-cache';
 import type { PlaybackItem, PlaybackState } from './types';
 
 /** Max consecutive load failures before stopping instead of auto-skipping. */
@@ -57,12 +56,7 @@ async function loadAndPlay(
   get: () => PlayerStore,
 ) {
   try {
-    // Use cached URL if available (preloaded), otherwise resolve
-    let url = getCachedUrl(track.trackId);
-    if (!url) {
-      url = await api.resolvePlaybackUrl(track.trackId, track.trackUrl);
-      setCachedUrl(track.trackId, url);
-    }
+    const url = await resolveWithCache(track.trackId, track.trackUrl);
     // Check if this load is still current (user may have pressed stop/next)
     if (generation !== loadGeneration) return;
     consecutiveFailures = 0;
