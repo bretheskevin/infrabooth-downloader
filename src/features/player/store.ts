@@ -3,11 +3,13 @@ import { toast } from 'sonner';
 import i18n from '@/lib/i18n';
 import { useSettingsStore } from '@/features/settings/store';
 import { audioEngine } from './audio-engine';
-import { resolveWithCache } from './url-cache';
+import { resolveWithCache, preloadQueueSegments, purgeStaleCache } from './url-cache';
 import type { PlaybackItem, PlaybackState } from './types';
 
 /** Max consecutive load failures before stopping instead of auto-skipping. */
 const MAX_CONSECUTIVE_FAILURES = 3;
+
+const trackIdSet = (queue: PlaybackItem[]) => new Set(queue.map((t) => t.trackId));
 
 interface PlayerStore {
   state: PlaybackState;
@@ -117,6 +119,8 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
     });
 
     await loadAndPlay(track, generation, get);
+    purgeStaleCache(trackIdSet(queue));
+    preloadQueueSegments(queue, index);
   },
 
   pause: () => {
@@ -170,6 +174,7 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   stop: () => {
     ++loadGeneration; // Cancel any in-flight loader
     audioEngine.stop();
+    purgeStaleCache(new Set());
     set({
       state: 'stopped',
       currentTrack: null,
@@ -224,6 +229,7 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
 
     const newTrack = newQueue[newCursor] ?? null;
     set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack });
+    purgeStaleCache(trackIdSet(newQueue));
 
     // If we removed the currently playing track, load the new current track.
     // Fire-and-forget: errors are handled inside loadAndPlay (toast + auto-skip).
