@@ -3,6 +3,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import { useSearchQuery } from '../hooks/useSearchQuery';
+import { useSearchStore } from '../store';
 
 const mockSearchTracks = vi.fn();
 vi.mock('@/lib/tauri', () => ({
@@ -23,6 +24,7 @@ describe('useSearchQuery', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    useSearchStore.getState().setInputValue('');
   });
 
   afterEach(() => {
