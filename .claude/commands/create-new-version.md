@@ -31,6 +31,7 @@ Create a new release version for InfraBooth Downloader.
    - **Written for end users** — no component names, file paths, or internal jargon
    - **Lead with the feature/change**, not how it works
    - **Group related small changes** into a single line
+   - **Hide implementation details**: Never expose technical internals (protocols, caching strategies, preloading mechanisms, rendering techniques, etc.) in changelog entries. Describe what the user *experiences*, not how it works under the hood. Bad: "HLS preloading for smoother playback". Good: "Smoother audio playback". For new features, these details are just expected quality — only mention performance/UX improvements as "Changed" items when they improve an *existing* feature.
 8. Show the detected version bump and changelog, ask user to confirm before proceeding
 9. Update version in:
    - `package.json`
@@ -41,7 +42,7 @@ Create a new release version for InfraBooth Downloader.
 12. Run `cargo check` in src-tauri to update Cargo.lock
 13. Create a commit with message `chore: release vX.Y.Z`
 14. Create the git tag `vX.Y.Z`
-15. Tell the user to run `git push origin main --tags` to trigger the release
+15. Push the commit and tag: `git push origin main --tags`
 
 ## Arguments (Optional)
 
