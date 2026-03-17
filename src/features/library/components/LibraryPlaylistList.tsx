@@ -1,9 +1,11 @@
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { LibraryPlaylistItem } from './LibraryPlaylistItem';
+import { useLibraryStore } from '../store';
 import type { LibraryPlaylist } from '../types';
 
 interface LibraryPlaylistListProps {
@@ -46,10 +48,15 @@ function ScrollablePlaylistList({
   downloadingPlaylistId: number | null;
   animateRefresh: boolean;
 }) {
-  const { parentRef, virtualItems, totalSize } = useVirtualizedList({
+  const { parentRef, virtualItems, totalSize, getScrollOffset } = useVirtualizedList({
     count: playlists.length,
     itemHeight: PLAYLIST_ITEM_HEIGHT,
+    initialScrollOffset: useLibraryStore.getState().listScrollTop,
   });
+
+  useEffect(() => {
+    return () => { useLibraryStore.getState().setListScrollTop(getScrollOffset()); };
+  }, [getScrollOffset]);
 
   return (
     <VirtualListContainer

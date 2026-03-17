@@ -7,6 +7,7 @@ import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { DownloadState } from '@/types/download';
+import { useLibraryStore } from '../store';
 import { SORT_MODES, type SortMode } from '../types';
 import { PlaylistTrackItem } from './PlaylistTrackItem';
 
@@ -58,10 +59,15 @@ export function PlaylistTrackList({
     prevCountRef.current = tracks.length;
   }, [tracks.length]);
 
-  const { parentRef, virtualItems, totalSize } = useVirtualizedList({
+  const { parentRef, virtualItems, totalSize, getScrollOffset } = useVirtualizedList({
     count: tracks.length,
     itemHeight: TRACK_ITEM_HEIGHT,
+    initialScrollOffset: useLibraryStore.getState().detailScrollTop,
   });
+
+  useEffect(() => {
+    return () => { useLibraryStore.getState().setDetailScrollTop(getScrollOffset()); };
+  }, [getScrollOffset]);
 
   return (
     <>
