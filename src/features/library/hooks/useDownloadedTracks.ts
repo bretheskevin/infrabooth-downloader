@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { commands, type TrackInfo } from '@/bindings';
 import { logger } from '@/lib/logger';
 
@@ -8,20 +8,14 @@ export function useDownloadedTracks(
   tracks: TrackInfo[] | undefined,
   downloadPath: string | undefined,
   enabled: boolean = true,
+  refreshKey: number = 0,
 ) {
   const [downloadedIds, setDownloadedIds] = useState<Set<number>>(EMPTY_SET);
 
-  // Stable trackIds: only recompute when the actual IDs change, not on every array reference
-  const trackIds = tracks?.map((t) => String(t.id)) ?? [];
-  const trackIdsKey = trackIds.join(',');
-  const trackIdsRef = useRef(trackIds);
-  if (trackIdsRef.current.join(',') !== trackIdsKey) {
-    trackIdsRef.current = trackIds;
-  }
-  const stableTrackIds = trackIdsRef.current;
-
   useEffect(() => {
-    if (!enabled || !downloadPath || stableTrackIds.length === 0) {
+    const trackIds = tracks?.map((t) => String(t.id)) ?? [];
+
+    if (!enabled || !downloadPath || trackIds.length === 0) {
       setDownloadedIds(EMPTY_SET);
       return;
     }
@@ -29,7 +23,7 @@ export function useDownloadedTracks(
     let cancelled = false;
 
     commands
-      .scanExistingTracks(downloadPath, stableTrackIds)
+      .scanExistingTracks(downloadPath, trackIds)
       .then((found: string[]) => {
         if (!cancelled) {
           const ids = found.map(Number).filter((n) => !Number.isNaN(n));
@@ -44,7 +38,7 @@ export function useDownloadedTracks(
     return () => {
       cancelled = true;
     };
-  }, [downloadPath, stableTrackIds, enabled]);
+  }, [downloadPath, tracks, enabled, refreshKey]);
 
   return {
     downloadedIds,

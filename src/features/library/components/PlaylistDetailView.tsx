@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { useSettingsStore } from '@/features/settings';
-import { useFolderSelection } from '@/hooks';
+import { useFolderSelection, useTrackDownload, useMergedTrackState } from '@/hooks';
 import { usePlayContext, usePreloadPlaybackUrls, usePlayerStore } from '@/features/player';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
@@ -69,7 +69,11 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
   const [localPath, setLocalPath] = useState<string | undefined>(undefined);
   const effectivePath = localPath || defaultPath || undefined;
 
-  const { downloadedIds, downloadedCount } = useDownloadedTracks(tracks, effectivePath, !isStreaming);
+  const { downloadTrack, getTrackState: getRawTrackState, completedCount: inlineCompletedCount, reconcile } = useTrackDownload(effectivePath ?? '');
+
+  const { downloadedIds, downloadedCount } = useDownloadedTracks(tracks, effectivePath, !isStreaming, inlineCompletedCount);
+
+  const getTrackState = useMergedTrackState(getRawTrackState, downloadedIds, reconcile);
 
   useEffect(() => {
     setSearchQuery('');
@@ -130,9 +134,9 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
 
   const handleDownloadTrack = useCallback(
     (track: TrackInfo) => {
-      onDownloadTracks([track], playlist.title, effectivePath);
+      downloadTrack(track);
     },
-    [playlist.title, onDownloadTracks, effectivePath],
+    [downloadTrack],
   );
 
   return (
@@ -199,8 +203,8 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           onSortChange={setSortMode}
           onToggleTrack={toggleTrack}
           onToggleAll={toggleAll}
+          getTrackState={getTrackState}
           onDownloadTrack={handleDownloadTrack}
-          downloadedIds={downloadedIds}
           onPlayTrack={playTrack}
           onPauseTrack={playerPause}
           onResumeTrack={playerResume}

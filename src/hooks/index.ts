@@ -4,6 +4,8 @@ export { useAuthStateListener } from '@/features/auth/hooks/useAuthStateListener
 export { useStartupAuth } from '@/features/auth/hooks/useStartupAuth';
 export { useAppVersion } from './useAppVersion';
 export { useDebounce } from './useDebounce';
+export { useTrackDownload } from './useTrackDownload';
+export { useMergedTrackState } from './useMergedTrackState';
 export { useFolderSelection } from './useFolderSelection';
 export { useInitializeSettings } from '@/features/settings/hooks/useInitializeSettings';
 export * from '@/features/queue/hooks';
