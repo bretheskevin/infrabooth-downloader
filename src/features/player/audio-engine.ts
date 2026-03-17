@@ -7,6 +7,7 @@ export interface AudioEngineCallbacks {
   onProgress: (positionMs: number, durationMs: number) => void;
   onEnded: () => void;
   onError: (message: string) => void;
+  onFullyBuffered: () => void;
 }
 
 const DEFAULT_CALLBACKS: AudioEngineCallbacks = {
@@ -14,6 +15,7 @@ const DEFAULT_CALLBACKS: AudioEngineCallbacks = {
   onProgress: () => {},
   onEnded: () => {},
   onError: () => {},
+  onFullyBuffered: () => {},
 };
 
 let audio: HTMLAudioElement | null = null;
@@ -95,6 +97,7 @@ export const audioEngine = {
       el.load();
       // Defer progress until metadata is available (duration may be NaN before this)
       el.addEventListener('loadedmetadata', () => startProgress(), { once: true });
+      el.addEventListener('canplaythrough', () => callbacks.onFullyBuffered(), { once: true });
       return;
     }
 
@@ -102,12 +105,16 @@ export const audioEngine = {
     if (Hls.isSupported()) {
       hls = new Hls({
         startPosition: 0, // VOD content: start from beginning
-        maxBufferLength: 30,
+        maxBufferLength: 300, // 5 min forward buffer
+        backBufferLength: 30, // evict played content beyond 30s
       });
       hls.loadSource(url);
       hls.attachMedia(el);
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
         startProgress();
+      });
+      hls.on(Hls.Events.BUFFER_EOS, () => {
+        callbacks.onFullyBuffered();
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
