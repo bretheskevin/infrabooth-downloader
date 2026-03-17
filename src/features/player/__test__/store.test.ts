@@ -22,6 +22,8 @@ vi.mock('../url-cache', () => ({
   getCachedUrl: vi.fn().mockReturnValue(null),
   setCachedUrl: vi.fn(),
   resolveWithCache: vi.fn().mockResolvedValue('https://example.com/stream.m3u8'),
+  preloadQueueSegments: vi.fn(),
+  purgeStaleCache: vi.fn(),
 }));
 
 import { usePlayerStore } from '../store';
