@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { useSettingsStore } from '@/features/settings/store';
 import { usePlayContext, usePlayerStore } from '@/features/player';
-import { preloadPlaybackUrls } from '@/features/player/url-cache';
+import { preloadOnHover, preloadImmediate } from '@/features/player/url-cache';
 import { useDownloadedTracks } from '@/features/library/hooks/useDownloadedTracks';
 import { SearchBar } from '@/components/ui/search-bar';
 import { SearchFolderPicker } from './SearchFolderPicker';
@@ -50,12 +50,18 @@ export function SearchTab() {
 
   const { playTrack } = usePlayContext(results);
 
-  useEffect(() => {
-    if (results.length > 0) {
-      const items = results.map((t) => ({ trackId: t.id, trackUrl: t.permalink_url }));
-      preloadPlaybackUrls(items);
-    }
-  }, [results]);
+  const handleHoverTrack = useCallback(
+    (track: { id: number; permalink_url: string }) =>
+      preloadOnHover(track.id, track.permalink_url),
+    [],
+  );
+
+  const handleMouseDownTrack = useCallback(
+    (track: { id: number; permalink_url: string }) =>
+      preloadImmediate(track.id, track.permalink_url),
+    [],
+  );
+
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
   const playerState = usePlayerStore((s) => s.state);
   const playerPause = usePlayerStore((s) => s.pause);
@@ -82,6 +88,8 @@ export function SearchTab() {
           onResumeTrack={playerResume}
           currentlyPlayingId={currentTrackId}
           isPlayerPlaying={playerState === 'playing'}
+          onHoverTrack={handleHoverTrack}
+          onMouseDownTrack={handleMouseDownTrack}
         />
       </div>
     </div>

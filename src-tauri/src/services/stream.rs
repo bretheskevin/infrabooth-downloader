@@ -9,11 +9,46 @@
 //! 3. Select the best transcoding (AAC > Opus > MP3, progressive > HLS)
 //! 4. Resolve the transcoding URL with client_id → CDN URL
 
+use std::collections::HashMap;
+use std::sync::Mutex;
+
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 
 use crate::models::error::DownloadError;
 use crate::services::client_id;
 use crate::services::http::{validate_sc_response, RequestBuilderExt, API_V2_BASE};
+
+// ---------------------------------------------------------------------------
+// Transcodings cache — populated when tracks are fetched for display,
+// consumed by resolve_inner to skip the redundant /tracks/{id} fetch.
+// ---------------------------------------------------------------------------
+
+/// Maximum number of entries before the cache is cleared to reclaim memory.
+const MAX_CACHE_ENTRIES: usize = 500;
+
+static TRANSCODINGS_CACHE: Lazy<Mutex<HashMap<u64, Vec<Transcoding>>>> =
+    Lazy::new(|| Mutex::new(HashMap::new()));
+
+/// Cache transcodings for a track so that playback resolution can skip the
+/// track-data fetch. Called by playlist/search services after deserializing
+/// the API response.
+pub fn cache_transcodings(track_id: u64, transcodings: Vec<Transcoding>) {
+    if transcodings.is_empty() {
+        return;
+    }
+    let mut cache = TRANSCODINGS_CACHE.lock().expect("transcodings cache poisoned");
+    if cache.len() >= MAX_CACHE_ENTRIES {
+        cache.clear();
+    }
+    cache.insert(track_id, transcodings);
+}
+
+/// Take cached transcodings for a track (removes from cache to avoid staleness).
+fn take_cached_transcodings(track_id: u64) -> Option<Vec<Transcoding>> {
+    let mut cache = TRANSCODINGS_CACHE.lock().expect("transcodings cache poisoned");
+    cache.remove(&track_id)
+}
 
 /// Format info from a SoundCloud transcoding entry.
 #[derive(Debug, Clone, Deserialize)]
@@ -48,9 +83,11 @@ struct StreamUrlResponse {
 }
 
 /// Media section from API v2 track data.
-#[derive(Debug, Deserialize)]
-struct MediaInfo {
-    transcodings: Vec<Transcoding>,
+/// Reused by playlist/search services for transcodings caching.
+#[derive(Debug, Clone, Deserialize)]
+pub struct MediaInfo {
+    #[serde(default)]
+    pub transcodings: Vec<Transcoding>,
 }
 
 /// Track data from API v2 resolve endpoint.
@@ -346,51 +383,62 @@ fn is_auth_retry_error(err: &DownloadError) -> bool {
 /// Core resolve logic: fetch track data → select transcoding → resolve CDN URL.
 /// Retries once on 401/403 by invalidating client_id (only when no oauth_token).
 async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, DownloadError> {
+    // Fast path: if transcodings were cached (from playlist/search fetch), skip
+    // the track-data HTTP call entirely — go straight to transcoding resolution.
+    // `mut` so we can `.take()` on first attempt, leaving None for retry.
+    let mut cached = opts.track_id.and_then(take_cached_transcodings);
+
     for is_first_attempt in [true, false] {
         let cid = client_id::get_client_id().await?;
 
-        // Fetch track data (with optional by-id fast path)
-        let data = match opts.track_id {
-            Some(id) if is_first_attempt => {
-                match fetch_track_data_by_id(id, &cid, opts.oauth_token).await {
-                    Ok(data) => data,
-                    Err(_) => {
-                        // Fallback to resolve by URL if direct fetch fails
-                        match fetch_track_data_v2(opts.track_url, &cid, opts.oauth_token).await {
-                            Ok(data) => data,
-                            Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
-                                client_id::invalidate_client_id();
-                                continue;
+        let transcodings = cached.take().unwrap_or_default();
+        if !transcodings.is_empty() {
+            log::info!("[stream] Using cached transcodings for track (skipping fetch)");
+        }
+
+        let transcodings = if transcodings.is_empty() {
+            // Fetch track data (with optional by-id fast path)
+            let data = match opts.track_id {
+                Some(id) if is_first_attempt => {
+                    match fetch_track_data_by_id(id, &cid, opts.oauth_token).await {
+                        Ok(data) => data,
+                        Err(_) => {
+                            // Fallback to resolve by URL if direct fetch fails
+                            match fetch_track_data_v2(opts.track_url, &cid, opts.oauth_token).await {
+                                Ok(data) => data,
+                                Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
+                                    client_id::invalidate_client_id();
+                                    continue;
+                                }
+                                Err(e) => return Err(e),
                             }
-                            Err(e) => return Err(e),
                         }
                     }
                 }
-            }
-            _ => {
-                match fetch_track_data_v2(opts.track_url, &cid, opts.oauth_token).await {
-                    Ok(data) => data,
-                    Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
-                        log::warn!("[stream] Got auth error, refreshing client_id and retrying");
-                        client_id::invalidate_client_id();
-                        continue;
+                _ => {
+                    match fetch_track_data_v2(opts.track_url, &cid, opts.oauth_token).await {
+                        Ok(data) => data,
+                        Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
+                            log::warn!("[stream] Got auth error, refreshing client_id and retrying");
+                            client_id::invalidate_client_id();
+                            continue;
+                        }
+                        Err(e) => return Err(e),
                     }
-                    Err(e) => return Err(e),
                 }
+            };
+
+            // Check geo-restriction
+            if data.policy.as_deref() == Some("BLOCK") {
+                return Err(DownloadError::GeoBlocked(
+                    "Track unavailable in your region".to_string(),
+                ));
             }
+
+            data.media.map(|m| m.transcodings).unwrap_or_default()
+        } else {
+            transcodings
         };
-
-        // Check geo-restriction
-        if data.policy.as_deref() == Some("BLOCK") {
-            return Err(DownloadError::GeoBlocked(
-                "Track unavailable in your region".to_string(),
-            ));
-        }
-
-        let transcodings = data
-            .media
-            .map(|m| m.transcodings)
-            .unwrap_or_default();
 
         if transcodings.is_empty() {
             return Err(DownloadError::StreamResolutionFailed(

@@ -22,6 +22,8 @@ interface SearchResultListProps {
   onResumeTrack?: () => void;
   currentlyPlayingId?: number;
   isPlayerPlaying?: boolean;
+  onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
+  onMouseDownTrack?: (track: TrackInfo) => void;
 }
 
 export function SearchResultList({
@@ -40,6 +42,8 @@ export function SearchResultList({
   onResumeTrack,
   currentlyPlayingId,
   isPlayerPlaying,
+  onHoverTrack,
+  onMouseDownTrack,
 }: SearchResultListProps) {
   const { t } = useTranslation();
   const sentinelRef = useRef<HTMLDivElement>(null);
@@ -117,6 +121,8 @@ export function SearchResultList({
           onResume={onResumeTrack}
           isCurrentlyPlaying={track.id === currentlyPlayingId}
           isPlayerPlaying={isPlayerPlaying}
+          onHoverTrack={onHoverTrack}
+          onMouseDownTrack={onMouseDownTrack}
         />
       ))}
 

@@ -7,11 +7,11 @@ interface CachedUrl {
 }
 
 const URL_TTL_MS = 10 * 60 * 1000; // 10 minutes (SC signed URLs last ~15-30min)
-const MAX_CONCURRENT = 4;
-const PRELOAD_DEBOUNCE_MS = 150;
+const MAX_CONCURRENT = 2;
+const HOVER_PRELOAD_DELAY_MS = 300;
 const cache = new Map<number, CachedUrl>();
 const inFlight = new Map<number, Promise<string>>();
-let preloadTimer: ReturnType<typeof setTimeout> | null = null;
+const NOOP = () => {};
 
 /** Get a cached URL if it exists and hasn't expired. */
 export function getCachedUrl(trackId: number): string | null {
@@ -59,37 +59,32 @@ export async function resolveWithCache(
 }
 
 /**
- * Preload playback URLs for a list of tracks.
- * Debounced to avoid spamming during scroll. Skips already-cached and in-flight tracks.
- * Resolves up to MAX_CONCURRENT tracks in parallel.
+ * Preload a track's playback URL on hover.
+ * Waits HOVER_PRELOAD_DELAY_MS before firing the request so brief hovers are free.
+ * Returns a cancel function that clears the timer if the user leaves.
  */
-export function preloadPlaybackUrls(
-  tracks: Array<{ trackId: number; trackUrl: string }>,
-): void {
-  if (preloadTimer) {
-    clearTimeout(preloadTimer);
-  }
+export function preloadOnHover(trackId: number, trackUrl: string): () => void {
+  if (getCachedUrl(trackId) || inFlight.has(trackId)) return NOOP;
 
-  preloadTimer = setTimeout(() => {
-    const toResolve = tracks.filter(
-      (t) => !getCachedUrl(t.trackId) && !inFlight.has(t.trackId),
-    );
-    if (toResolve.length === 0) return;
+  const timer = setTimeout(() => {
+    void resolveOne(trackId, trackUrl).catch(() => {});
+  }, HOVER_PRELOAD_DELAY_MS);
 
-    const processBatch = async (batch: typeof toResolve) => {
-      await Promise.allSettled(
-        batch.map((track) => resolveOne(track.trackId, track.trackUrl)),
-      );
-    };
-
-    void (async () => {
-      for (let i = 0; i < toResolve.length; i += MAX_CONCURRENT) {
-        const batch = toResolve.slice(i, i + MAX_CONCURRENT);
-        await processBatch(batch);
-      }
-    })();
-  }, PRELOAD_DEBOUNCE_MS);
+  return () => clearTimeout(timer);
 }
+
+/**
+ * Immediately start resolving a track's playback URL (no delay).
+ * Called on mousedown so the URL is cached by the time the click handler fires.
+ */
+export function preloadImmediate(trackId: number, trackUrl: string): void {
+  if (getCachedUrl(trackId) || inFlight.has(trackId)) return;
+  void resolveOne(trackId, trackUrl).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------
+// HLS segment preloading
+// ---------------------------------------------------------------------------
 
 interface ParsedSegment {
   url: string;
@@ -155,11 +150,18 @@ async function fetchSegment(url: string): Promise<void> {
   }
 }
 
+/**
+ * Preload the next `limit` tracks in a queue starting from `fromIndex`.
+ * Resolves their playback URLs and fetches the first HLS segment of each.
+ */
 export function preloadQueueSegments(
   tracks: Array<{ trackId: number; trackUrl: string }>,
   fromIndex = 0,
+  limit = 2,
 ): void {
-  const toPreload = tracks.slice(fromIndex).filter((t) => !segmentPreloaded.has(t.trackId));
+  const toPreload = tracks
+    .slice(fromIndex, fromIndex + limit)
+    .filter((t) => !segmentPreloaded.has(t.trackId));
   if (toPreload.length === 0) return;
 
   void (async () => {

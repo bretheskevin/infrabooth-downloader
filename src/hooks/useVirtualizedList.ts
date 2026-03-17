@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface UseVirtualizedListOptions {
@@ -21,19 +21,9 @@ export function useVirtualizedList<T extends HTMLElement = HTMLDivElement>({
     overscan,
   });
 
-  const virtualItems = virtualizer.getVirtualItems();
-  const startIndex = virtualItems.length > 0 ? virtualItems[0]!.index : -1;
-  const endIndex = virtualItems.length > 0 ? virtualItems[virtualItems.length - 1]!.index : -1;
-
-  const visibleRange = useMemo(() => {
-    if (startIndex < 0) return null;
-    return { startIndex, endIndex };
-  }, [startIndex, endIndex]);
-
   return {
     parentRef,
-    virtualItems,
+    virtualItems: virtualizer.getVirtualItems(),
     totalSize: virtualizer.getTotalSize(),
-    visibleRange,
   };
 }
