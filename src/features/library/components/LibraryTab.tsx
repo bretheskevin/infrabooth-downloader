@@ -13,7 +13,7 @@ import { LibraryPlaylistList } from './LibraryPlaylistList';
 import { LibraryLockedState } from './LibraryLockedState';
 import { PlaylistDetailView } from './PlaylistDetailView';
 import type { TrackInfo } from '@/bindings';
-import type { LibraryPlaylist, LibraryView } from '../types';
+import type { LibraryPlaylist } from '../types';
 import { useLibraryStore } from '../store';
 
 interface LibraryTabProps {
@@ -27,7 +27,8 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
   const setSearchQuery = useLibraryStore((s) => s.setSearchQuery);
   const filter = useLibraryStore((s) => s.filter);
   const setFilter = useLibraryStore((s) => s.setFilter);
-  const [libraryView, setLibraryView] = useState<LibraryView>({ view: 'list' });
+  const libraryView = useLibraryStore((s) => s.libraryView);
+  const setLibraryView = useLibraryStore((s) => s.setLibraryView);
   const [slideClass, setSlideClass] = useState('');
   const [quickDownloadFailedPlaylist, setQuickDownloadFailedPlaylist] = useState<string | null>(null);
   const [downloadingPlaylistId, setDownloadingPlaylistId] = useState<number | null>(null);
@@ -70,12 +71,14 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
     });
   }, [refetch, clearCache]);
 
+  const setDetailScrollTop = useLibraryStore((s) => s.setDetailScrollTop);
   const handleOpenDetail = useCallback(
     (playlist: LibraryPlaylist) => {
       setSlideClass('library-slide-in-detail');
+      setDetailScrollTop(0);
       setLibraryView({ view: 'detail', playlist });
     },
-    [],
+    [setDetailScrollTop],
   );
 
   const handleQuickDownload = useCallback(
