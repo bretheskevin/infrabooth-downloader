@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Loader2, Search } from 'lucide-react';
 import type { TrackInfo } from '@/bindings';
 import { ApiError } from '@/lib/tauri';
-import type { DownloadState } from '../types';
+import type { DownloadState } from '@/types/download';
 import { SearchResultItem } from './SearchResultItem';
 
 interface SearchResultListProps {

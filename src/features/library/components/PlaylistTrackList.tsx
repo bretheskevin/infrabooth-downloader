@@ -6,6 +6,7 @@ import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { DownloadState } from '@/types/download';
 import { SORT_MODES, type SortMode } from '../types';
 import { PlaylistTrackItem } from './PlaylistTrackItem';
 
@@ -20,8 +21,8 @@ interface PlaylistTrackListProps {
   onSortChange?: (mode: SortMode) => void;
   onToggleTrack: (id: number) => void;
   onToggleAll: () => void;
+  getTrackState: (trackId: number) => DownloadState;
   onDownloadTrack: (track: TrackInfo) => void;
-  downloadedIds?: Set<number>;
   onPlayTrack?: (index: number) => void;
   onPauseTrack?: () => void;
   onResumeTrack?: () => void;
@@ -39,8 +40,8 @@ export function PlaylistTrackList({
   onSortChange,
   onToggleTrack,
   onToggleAll,
+  getTrackState,
   onDownloadTrack,
-  downloadedIds,
   onPlayTrack,
   onPauseTrack,
   onResumeTrack,
@@ -118,8 +119,8 @@ export function PlaylistTrackList({
                 staggerIndex={virtualItem.index}
                 animate={shouldAnimate}
                 isSelected={selectedIds.has(track.id)}
-                isDownloaded={downloadedIds?.has(track.id) ?? false}
                 onToggle={onToggleTrack}
+                downloadState={getTrackState(track.id)}
                 onDownload={onDownloadTrack}
                 onPlay={onPlayTrack}
                 onPause={onPauseTrack}
