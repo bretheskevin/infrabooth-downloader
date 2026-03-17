@@ -9,7 +9,6 @@ vi.mock('@/lib/tauri', () => ({
 import {
   getCachedUrl,
   setCachedUrl,
-  resolveWithCache,
   preloadQueueSegments,
   preloadSegmentAtTime,
   purgeStaleCache,
@@ -144,7 +143,7 @@ describe('url-cache segment preloading', () => {
 
       // Manifest fetched once (cached), seg0 fetched once (deduplicated)
       const seg0Calls = fetchMock.mock.calls.filter(
-        (c: [string]) => c[0] === 'https://cdn.example.com/seg0.ts',
+        (c) => c[0] === 'https://cdn.example.com/seg0.ts',
       );
       expect(seg0Calls).toHaveLength(1);
     });
@@ -181,7 +180,7 @@ describe('url-cache segment preloading', () => {
       await preloadSegmentAtTime(44, 5000);
 
       const seg0Calls = fetchMock.mock.calls.filter(
-        (c: [string]) => c[0] === 'https://cdn.example.com/seg0.ts',
+        (c) => c[0] === 'https://cdn.example.com/seg0.ts',
       );
       expect(seg0Calls).toHaveLength(2);
     });

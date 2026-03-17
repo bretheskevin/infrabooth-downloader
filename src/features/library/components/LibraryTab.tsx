@@ -52,16 +52,19 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
     setLibraryView({ view: 'list' });
   }, []);
 
+  const [animateRefresh, setAnimateRefresh] = useState(false);
   const refreshButtonRef = useRef<HTMLButtonElement>(null);
   const handleRefresh = useCallback(async () => {
     setLibraryView({ view: 'list' });
     const btn = refreshButtonRef.current;
-    if (btn) {
-      btn.classList.add('animate-spin');
-      setTimeout(() => btn.classList.remove('animate-spin'), 600);
-    }
+    if (btn) btn.classList.add('animate-spin');
     await clearCache();
-    refetch();
+    await refetch();
+    if (btn) btn.classList.remove('animate-spin');
+    setAnimateRefresh(true);
+    requestAnimationFrame(() => {
+      setTimeout(() => setAnimateRefresh(false), 300);
+    });
   }, [refetch, clearCache]);
 
   const handleOpenDetail = useCallback(
@@ -135,6 +138,7 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
         onDownload={handleQuickDownload}
         downloadingPlaylistId={downloadingPlaylistId}
         onRetry={handleRetry}
+        animateRefresh={animateRefresh}
       />
     </div>
   );

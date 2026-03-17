@@ -198,6 +198,10 @@
   animation: slide-in-from-left 0.25s ease-out;
 }
 
+.library-list-refresh {
+  animation: track-row-in 0.3s ease-out;
+}
+
 .track-row-stagger {
   animation: track-row-in 0.3s ease-out both;
 }
@@ -232,4 +236,13 @@
 @keyframes equalizer-bar {
   0%, 100% { transform: scaleY(0.3); }
   50% { transform: scaleY(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-slide-in-detail,
+  .library-slide-in-list,
+  .library-list-refresh,
+  .track-row-stagger {
+    animation: none;
+  }
 }
