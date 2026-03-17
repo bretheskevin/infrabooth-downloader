@@ -1,4 +1,4 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ListMusic, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn, formatDuration, getArtworkUrl } from '@/lib/utils';
 import { usePlayerStore } from '../store';
+import { preloadSegmentAtTime } from '../url-cache';
 import { ScrollingText } from './ScrollingText';
 
 export const EXPANDED_BAR_HEIGHT = 76;
@@ -28,9 +29,15 @@ export function ExpandedBar() {
   const setVolume = usePlayerStore((s) => s.setVolume);
   const toggleExpanded = usePlayerStore((s) => s.toggleExpanded);
   const toggleQueue = usePlayerStore((s) => s.toggleQueue);
+  const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
 
   const seekbarRef = useRef<HTMLDivElement>(null);
+  const preloadTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const [seekHover, setSeekHover] = useState<{ x: number; timeMs: number } | null>(null);
+
+  useEffect(() => {
+    return () => clearTimeout(preloadTimer.current);
+  }, []);
 
   const onSeekbarMouseMove = useCallback(
     (e: React.MouseEvent) => {
@@ -38,9 +45,17 @@ export function ExpandedBar() {
       if (!bar || !durationMs) return;
       const rect = bar.getBoundingClientRect();
       const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-      setSeekHover({ x, timeMs: Math.round((x / rect.width) * durationMs) });
+      const timeMs = Math.round((x / rect.width) * durationMs);
+      setSeekHover({ x, timeMs });
+
+      clearTimeout(preloadTimer.current);
+      if (currentTrackId) {
+        preloadTimer.current = setTimeout(() => {
+          void preloadSegmentAtTime(currentTrackId, timeMs);
+        }, 150);
+      }
     },
-    [durationMs],
+    [durationMs, currentTrackId],
   );
 
   const onSeekbarMouseLeave = useCallback(() => setSeekHover(null), []);
