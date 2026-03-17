@@ -8,6 +8,16 @@ vi.mock('@/features/settings/api/settings', () => ({
   validateDownloadPath: vi.fn(),
 }));
 
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    trace: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Mock the settings store
 const mockSetDownloadPath = vi.fn();
 const mockSetHasHydrated = vi.fn();
@@ -32,6 +42,7 @@ vi.mock('@/features/settings/store', () => ({
 }));
 
 import { getDefaultDownloadPath, validateDownloadPath } from '@/features/settings/api/settings';
+import { logger } from '@/lib/logger';
 
 describe('useInitializeSettings', () => {
   beforeEach(() => {
@@ -109,7 +120,6 @@ describe('useInitializeSettings', () => {
   });
 
   it('should handle getDefaultDownloadPath failure gracefully', async () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     mockStoreState._hasHydrated = true;
     mockStoreState.downloadPath = '';
     vi.mocked(getDefaultDownloadPath).mockRejectedValue(new Error('Failed'));
@@ -120,11 +130,11 @@ describe('useInitializeSettings', () => {
       expect(getDefaultDownloadPath).toHaveBeenCalled();
     });
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      'Failed to get default download path:',
-      expect.any(Error)
-    );
+    await waitFor(() => {
+      expect(logger.error).toHaveBeenCalledWith(
+        'Failed to get default download path: Failed'
+      );
+    });
     expect(mockSetDownloadPath).not.toHaveBeenCalled();
-    consoleSpy.mockRestore();
   });
 });

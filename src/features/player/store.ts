@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
 import i18n from '@/lib/i18n';
+import { logger } from '@/lib/logger';
 import { useSettingsStore } from '@/features/settings/store';
 import { audioEngine } from './audio-engine';
 import { resolveWithCache, preloadQueueSegments, purgeStaleCache } from './url-cache';
@@ -69,12 +70,12 @@ async function loadAndPlay(
     // Check if this load is still current
     if (generation !== loadGeneration) return;
     const msg = e instanceof Error ? e.message : String(e);
-    console.error(`[player] Failed to resolve track ${track.trackId}: ${msg}`);
+    void logger.error(`[player] Failed to resolve track ${track.trackId}: ${msg}`);
     toast.error(i18n.t('player.errorLoadTrack'));
 
     consecutiveFailures++;
     if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-      console.error(`[player] ${MAX_CONSECUTIVE_FAILURES} consecutive failures, stopping`);
+      void logger.error(`[player] ${MAX_CONSECUTIVE_FAILURES} consecutive failures, stopping`);
       consecutiveFailures = 0;
       get().stop();
       return;
@@ -268,7 +269,7 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
         get().next();
       },
       onError: (message) => {
-        console.error(`[player] Audio engine error: ${message}`);
+        void logger.error(`[player] Audio engine error: ${message}`);
       },
       onFullyBuffered: () => {
         const { queue, cursor, state } = get();

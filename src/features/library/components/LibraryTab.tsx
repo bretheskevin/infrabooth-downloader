@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/tauri';
+import { logger } from '@/lib/logger';
 import { useAuthStore } from '@/features/auth/store';
 import { useLibraryPlaylists } from '../hooks/useLibraryPlaylists';
 import { filterPlaylists } from '../utils/filterPlaylists';
@@ -79,7 +80,7 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
         const tracks = await api.getLibraryPlaylistTracks(playlist.id);
         onDownloadTracks(tracks, playlist.title);
       } catch (err) {
-        console.error('[LibraryTab] Quick download failed:', err);
+        void logger.error(`[LibraryTab] Quick download failed: ${err instanceof Error ? err.message : String(err)}`);
         setQuickDownloadFailedPlaylist(playlist.title);
       } finally {
         setDownloadingPlaylistId(null);

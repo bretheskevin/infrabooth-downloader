@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
+import { logger } from '@/lib/logger';
 import { useAuthStore } from '@/features/auth/store';
 
 interface AuthStatePayload {
@@ -38,7 +39,7 @@ export function useAuthStateListener(): void {
       try {
         // Listen for auth state changes
         unlistenAuthState = await listen<AuthStatePayload>('auth-state-changed', (event) => {
-          console.log('[useAuthStateListener] Received auth-state-changed:', event.payload);
+          void logger.debug(`[useAuthStateListener] Received auth-state-changed: ${JSON.stringify(event.payload)}`);
           if (mounted && event.payload) {
             setAuth(
               event.payload.isSignedIn,
@@ -57,7 +58,7 @@ export function useAuthStateListener(): void {
           }
         });
       } catch (error) {
-        console.error('Failed to setup auth listeners:', error);
+        void logger.error(`Failed to setup auth listeners: ${error instanceof Error ? error.message : String(error)}`);
       }
     };
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { commands } from '@/bindings';
+import { logger } from '@/lib/logger';
 import { refreshAuth } from '../api';
 
 interface DownloadAuthNeededEvent {
@@ -54,7 +55,7 @@ export function useAuthChoiceDialog() {
         await commands.respondToAuthChoice('continue_standard');
       }
     } catch (error) {
-      console.error('[useAuthChoiceDialog] Auth refresh failed:', error);
+      void logger.error(`[useAuthChoiceDialog] Auth refresh failed: ${error instanceof Error ? error.message : String(error)}`);
       await commands.respondToAuthChoice('continue_standard');
     }
   }, []);
