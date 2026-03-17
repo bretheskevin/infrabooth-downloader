@@ -13,7 +13,8 @@ import { LibraryPlaylistList } from './LibraryPlaylistList';
 import { LibraryLockedState } from './LibraryLockedState';
 import { PlaylistDetailView } from './PlaylistDetailView';
 import type { TrackInfo } from '@/bindings';
-import type { LibraryFilter, LibraryPlaylist, LibraryView } from '../types';
+import type { LibraryPlaylist, LibraryView } from '../types';
+import { useLibraryStore } from '../store';
 
 interface LibraryTabProps {
   onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
@@ -22,8 +23,10 @@ interface LibraryTabProps {
 export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
   const { t } = useTranslation();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<LibraryFilter>('all');
+  const searchQuery = useLibraryStore((s) => s.searchQuery);
+  const setSearchQuery = useLibraryStore((s) => s.setSearchQuery);
+  const filter = useLibraryStore((s) => s.filter);
+  const setFilter = useLibraryStore((s) => s.setFilter);
   const [libraryView, setLibraryView] = useState<LibraryView>({ view: 'list' });
   const [slideClass, setSlideClass] = useState('');
   const [quickDownloadFailedPlaylist, setQuickDownloadFailedPlaylist] = useState<string | null>(null);
