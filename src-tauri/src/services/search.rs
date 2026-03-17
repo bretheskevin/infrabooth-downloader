@@ -7,6 +7,7 @@ use url::Url;
 use crate::models::error::HasErrorCode;
 use crate::services::http::{API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::{TrackInfo, UserInfo};
+use crate::services::stream;
 
 // === Error Type ===
 
@@ -48,6 +49,7 @@ struct RawSearchTrack {
     /// SoundCloud permalink URL. Always present in API responses; `#[serde(default)]` is a safety net.
     #[serde(default)]
     permalink_url: String,
+    media: Option<stream::MediaInfo>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -73,6 +75,12 @@ pub struct SearchResponse {
 // === Mapping ===
 
 fn map_raw_track(raw: RawSearchTrack) -> TrackInfo {
+    if let Some(media) = &raw.media {
+        if !media.transcodings.is_empty() {
+            stream::cache_transcodings(raw.id, media.transcodings.clone());
+        }
+    }
+
     TrackInfo {
         id: raw.id,
         title: raw.title,
@@ -191,6 +199,7 @@ mod tests {
             artwork_url: Some("https://artwork.jpg".to_string()),
             duration: 240000,
             permalink_url: "https://soundcloud.com/artist/my-song".to_string(),
+            media: None,
         };
         let track = map_raw_track(raw);
         assert_eq!(track.id, 456);
@@ -212,6 +221,7 @@ mod tests {
             artwork_url: None,
             duration: 60000,
             permalink_url: "https://soundcloud.com/user/no-art".to_string(),
+            media: None,
         };
         let track = map_raw_track(raw);
         assert!(track.artwork_url.is_none());

@@ -3,6 +3,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { TrackRow } from '@/components/TrackRow';
 import { TrackDownloadAction } from '@/components/TrackDownloadAction';
 import { EqualizerBars } from '@/features/player/components/EqualizerBars';
+import { useHoverPreload } from '@/hooks/useHoverPreload';
 import { cn } from '@/lib/utils';
 import type { TrackInfo } from '@/bindings';
 import type { DownloadState } from '@/types/download';
@@ -21,6 +22,8 @@ interface PlaylistTrackItemProps {
   onResume?: () => void;
   isCurrentlyPlaying?: boolean;
   isPlayerPlaying?: boolean;
+  onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
+  onMouseDownTrack?: (track: TrackInfo) => void;
 }
 
 const MAX_STAGGER_ITEMS = 15;
@@ -40,9 +43,15 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
   onResume,
   isCurrentlyPlaying = false,
   isPlayerPlaying = false,
+  onHoverTrack,
+  onMouseDownTrack,
 }: PlaylistTrackItemProps) {
   const delay = animate && staggerIndex < MAX_STAGGER_ITEMS ? staggerIndex * STAGGER_DELAY_MS : 0;
   const isDownloaded = downloadState.status === 'completed';
+
+  const boundHover = useCallback(() => onHoverTrack?.(track), [onHoverTrack, track]);
+  const { onHoverStart, onHoverEnd } = useHoverPreload(boundHover);
+  const handleMouseDown = useCallback(() => onMouseDownTrack?.(track), [onMouseDownTrack, track]);
 
   const handleToggle = useCallback(() => onToggle(track.id), [onToggle, track.id]);
   const handleDownload = useCallback(() => onDownload(track), [onDownload, track]);
@@ -75,6 +84,9 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
             : 'border-transparent hover:bg-muted/50',
       )}
       downloadState={downloadState}
+      onHoverStart={onHoverStart}
+      onHoverEnd={onHoverEnd}
+      onMouseDown={handleMouseDown}
       leftSlot={
         <div
           className={cn(

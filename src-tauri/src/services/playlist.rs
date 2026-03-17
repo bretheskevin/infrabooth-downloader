@@ -20,6 +20,7 @@ use tokio::time::sleep;
 
 use crate::services::client_id;
 use crate::services::http::{RequestBuilderExt, API_V2_BASE};
+use crate::services::stream;
 
 #[derive(Debug, Deserialize)]
 struct ResolveResponse {
@@ -88,6 +89,8 @@ struct RawTrackInfo {
     /// SoundCloud permalink URL. Always present in API responses; `#[serde(default)]` is a safety net.
     #[serde(default)]
     pub permalink_url: String,
+    /// Media section with transcodings — cached for instant playback resolution.
+    pub media: Option<stream::MediaInfo>,
 }
 
 /// Track information from SoundCloud API.
@@ -104,6 +107,13 @@ pub struct TrackInfo {
 
 impl From<RawTrackInfo> for TrackInfo {
     fn from(raw: RawTrackInfo) -> Self {
+        // Cache transcodings for instant playback resolution
+        if let Some(media) = &raw.media {
+            if !media.transcodings.is_empty() {
+                stream::cache_transcodings(raw.id, media.transcodings.clone());
+            }
+        }
+
         // Use publisher_metadata.artist if available, otherwise fall back to user.username
         let artist_name = raw
             .publisher_metadata

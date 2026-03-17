@@ -28,7 +28,8 @@ interface PlaylistTrackListProps {
   onResumeTrack?: () => void;
   currentlyPlayingId?: number;
   isPlayerPlaying?: boolean;
-  onVisibleRangeChange?: (startIndex: number, endIndex: number) => void;
+  onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
+  onMouseDownTrack?: (track: TrackInfo) => void;
 }
 
 export function PlaylistTrackList({
@@ -47,7 +48,8 @@ export function PlaylistTrackList({
   onResumeTrack,
   currentlyPlayingId,
   isPlayerPlaying,
-  onVisibleRangeChange,
+  onHoverTrack,
+  onMouseDownTrack,
 }: PlaylistTrackListProps) {
   const { t } = useTranslation();
   const prevCountRef = useRef(0);
@@ -56,19 +58,10 @@ export function PlaylistTrackList({
     prevCountRef.current = tracks.length;
   }, [tracks.length]);
 
-  const { parentRef, virtualItems, totalSize, visibleRange } = useVirtualizedList({
+  const { parentRef, virtualItems, totalSize } = useVirtualizedList({
     count: tracks.length,
     itemHeight: TRACK_ITEM_HEIGHT,
   });
-
-  const onVisibleRangeChangeRef = useRef(onVisibleRangeChange);
-  onVisibleRangeChangeRef.current = onVisibleRangeChange;
-
-  useEffect(() => {
-    if (visibleRange && onVisibleRangeChangeRef.current) {
-      onVisibleRangeChangeRef.current(visibleRange.startIndex, visibleRange.endIndex);
-    }
-  }, [visibleRange?.startIndex, visibleRange?.endIndex]);
 
   return (
     <>
@@ -127,6 +120,8 @@ export function PlaylistTrackList({
                 onResume={onResumeTrack}
                 isCurrentlyPlaying={track.id === currentlyPlayingId}
                 isPlayerPlaying={isPlayerPlaying}
+                onHoverTrack={onHoverTrack}
+                onMouseDownTrack={onMouseDownTrack}
               />
             </VirtualRow>
           );
