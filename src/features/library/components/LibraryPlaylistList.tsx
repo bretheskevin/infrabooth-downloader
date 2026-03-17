@@ -16,6 +16,7 @@ interface LibraryPlaylistListProps {
   onDownload: (playlist: LibraryPlaylist) => void;
   downloadingPlaylistId: number | null;
   onRetry: () => void;
+  animateRefresh?: boolean;
 }
 
 function SkeletonRow() {
@@ -37,11 +38,13 @@ function ScrollablePlaylistList({
   onOpenDetail,
   onDownload,
   downloadingPlaylistId,
+  animateRefresh,
 }: {
   playlists: LibraryPlaylist[];
   onOpenDetail: (playlist: LibraryPlaylist) => void;
   onDownload: (playlist: LibraryPlaylist) => void;
   downloadingPlaylistId: number | null;
+  animateRefresh: boolean;
 }) {
   const { parentRef, virtualItems, totalSize } = useVirtualizedList({
     count: playlists.length,
@@ -52,7 +55,7 @@ function ScrollablePlaylistList({
     <VirtualListContainer
       parentRef={parentRef}
       totalSize={totalSize}
-      className="flex-1 min-h-0 pr-2"
+      className={`flex-1 min-h-0 pr-2${animateRefresh ? ' library-list-refresh' : ''}`}
     >
       {virtualItems.map((virtualItem) => {
         const playlist = playlists[virtualItem.index];
@@ -82,6 +85,7 @@ export function LibraryPlaylistList({
   onDownload,
   downloadingPlaylistId,
   onRetry,
+  animateRefresh = false,
 }: LibraryPlaylistListProps) {
   const { t } = useTranslation();
 
@@ -127,6 +131,7 @@ export function LibraryPlaylistList({
       onOpenDetail={onOpenDetail}
       onDownload={onDownload}
       downloadingPlaylistId={downloadingPlaylistId}
+      animateRefresh={animateRefresh}
     />
   );
 }
