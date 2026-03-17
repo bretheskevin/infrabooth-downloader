@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { useSettingsStore } from '@/features/settings/store';
 import { usePlayContext, usePlayerStore } from '@/features/player';
+import { preloadPlaybackUrls } from '@/features/player/url-cache';
 import { useDownloadedTracks } from '@/features/library/hooks/useDownloadedTracks';
 import { SearchBar } from '@/components/ui/search-bar';
 import { SearchFolderPicker } from './SearchFolderPicker';
@@ -47,6 +48,13 @@ export function SearchTab() {
   );
 
   const { playTrack } = usePlayContext(results);
+
+  useEffect(() => {
+    if (results.length > 0) {
+      const items = results.map((t) => ({ trackId: t.id, trackUrl: t.permalink_url }));
+      preloadPlaybackUrls(items);
+    }
+  }, [results]);
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
   const playerState = usePlayerStore((s) => s.state);
   const playerPause = usePlayerStore((s) => s.pause);

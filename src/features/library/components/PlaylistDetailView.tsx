@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { useSettingsStore } from '@/features/settings';
 import { useFolderSelection } from '@/hooks';
-import { usePlayContext, usePlayerStore } from '@/features/player';
+import { usePlayContext, usePreloadPlaybackUrls, usePlayerStore } from '@/features/player';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useTrackSelection } from '../hooks/useTrackSelection';
@@ -88,6 +88,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
   );
 
   const { playTrack } = usePlayContext(displayTracks);
+  const preloadVisibleTracks = usePreloadPlaybackUrls(displayTracks);
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
   const playerState = usePlayerStore((s) => s.state);
   const playerPause = usePlayerStore((s) => s.pause);
@@ -205,6 +206,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           onResumeTrack={playerResume}
           currentlyPlayingId={currentTrackId}
           isPlayerPlaying={playerState === 'playing'}
+          onVisibleRangeChange={preloadVisibleTracks}
         />
       )}
 

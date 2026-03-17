@@ -8,8 +8,10 @@ interface CachedUrl {
 
 const URL_TTL_MS = 10 * 60 * 1000; // 10 minutes (SC signed URLs last ~15-30min)
 const MAX_CONCURRENT = 4;
+const PRELOAD_DEBOUNCE_MS = 150;
 const cache = new Map<number, CachedUrl>();
-let preloadAbort: AbortController | null = null;
+const inFlight = new Map<number, Promise<string>>();
+let preloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** Get a cached URL if it exists and hasn't expired. */
 export function getCachedUrl(trackId: number): string | null {
@@ -27,48 +29,64 @@ export function setCachedUrl(trackId: number, url: string): void {
   cache.set(trackId, { url, cachedAt: Date.now() });
 }
 
+/** Resolve a single track, deduplicating concurrent requests. */
+function resolveOne(trackId: number, trackUrl: string): Promise<string> {
+  const existing = inFlight.get(trackId);
+  if (existing) return existing;
+
+  const promise = api
+    .resolvePlaybackUrl(trackId, trackUrl)
+    .then((url) => {
+      setCachedUrl(trackId, url);
+      return url;
+    })
+    .finally(() => {
+      inFlight.delete(trackId);
+    });
+
+  inFlight.set(trackId, promise);
+  return promise;
+}
+
+/** Resolve a playback URL, reusing cache or in-flight preload. */
+export async function resolveWithCache(
+  trackId: number,
+  trackUrl: string,
+): Promise<string> {
+  const cached = getCachedUrl(trackId);
+  if (cached) return cached;
+  return resolveOne(trackId, trackUrl);
+}
+
 /**
  * Preload playback URLs for a list of tracks.
+ * Debounced to avoid spamming during scroll. Skips already-cached and in-flight tracks.
  * Resolves up to MAX_CONCURRENT tracks in parallel.
- * Aborts any previous preload operation.
  */
 export function preloadPlaybackUrls(
   tracks: Array<{ trackId: number; trackUrl: string }>,
 ): void {
-  // Abort previous preload
-  if (preloadAbort) {
-    preloadAbort.abort();
+  if (preloadTimer) {
+    clearTimeout(preloadTimer);
   }
-  preloadAbort = new AbortController();
-  const signal = preloadAbort.signal;
 
-  // Filter out already-cached tracks
-  const toResolve = tracks.filter((t) => !getCachedUrl(t.trackId));
-  if (toResolve.length === 0) return;
-
-  // Process in batches of MAX_CONCURRENT
-  const processBatch = async (batch: typeof toResolve) => {
-    await Promise.allSettled(
-      batch.map(async (track) => {
-        if (signal.aborted) return;
-        try {
-          const url = await api.resolvePlaybackUrl(track.trackId, track.trackUrl);
-          if (!signal.aborted) {
-            setCachedUrl(track.trackId, url);
-          }
-        } catch {
-          // Silently ignore preload failures
-        }
-      }),
+  preloadTimer = setTimeout(() => {
+    const toResolve = tracks.filter(
+      (t) => !getCachedUrl(t.trackId) && !inFlight.has(t.trackId),
     );
-  };
+    if (toResolve.length === 0) return;
 
-  // Run batches sequentially to avoid rate limiting (fire-and-forget)
-  void (async () => {
-    for (let i = 0; i < toResolve.length; i += MAX_CONCURRENT) {
-      if (signal.aborted) return;
-      const batch = toResolve.slice(i, i + MAX_CONCURRENT);
-      await processBatch(batch);
-    }
-  })();
+    const processBatch = async (batch: typeof toResolve) => {
+      await Promise.allSettled(
+        batch.map((track) => resolveOne(track.trackId, track.trackUrl)),
+      );
+    };
+
+    void (async () => {
+      for (let i = 0; i < toResolve.length; i += MAX_CONCURRENT) {
+        const batch = toResolve.slice(i, i + MAX_CONCURRENT);
+        await processBatch(batch);
+      }
+    })();
+  }, PRELOAD_DEBOUNCE_MS);
 }

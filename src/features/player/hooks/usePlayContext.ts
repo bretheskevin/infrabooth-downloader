@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback } from 'react';
 import type { TrackInfo } from '@/bindings';
 import { usePlayerStore } from '../store';
-import { preloadPlaybackUrls } from '../url-cache';
 import type { PlaybackItem } from '../types';
 
 export function buildPlaybackQueue(tracks: TrackInfo[]): PlaybackItem[] {
@@ -17,22 +16,6 @@ export function buildPlaybackQueue(tracks: TrackInfo[]): PlaybackItem[] {
 
 export function usePlayContext(tracks: TrackInfo[]) {
   const play = usePlayerStore((s) => s.play);
-  const lastPreloadKey = useRef<string | null>(null);
-
-  // Stable identity for the track list based on IDs
-  const trackKey = useMemo(
-    () => tracks.map((t) => t.id).join(','),
-    [tracks],
-  );
-
-  // Preload playback URLs when track list changes
-  useEffect(() => {
-    if (tracks.length === 0 || trackKey === lastPreloadKey.current) return;
-    lastPreloadKey.current = trackKey;
-
-    const items = tracks.map((t) => ({ trackId: t.id, trackUrl: t.permalink_url }));
-    preloadPlaybackUrls(items);
-  }, [tracks, trackKey]);
 
   const playTrack = useCallback(
     (index: number) => {
