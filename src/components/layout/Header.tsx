@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuthContainer } from '@/features/auth/components/AuthContainer';
-import { SettingsPanel } from '@/features/settings/components/SettingsPanel';
+import { SettingsDialog } from '@/features/settings/components/SettingsDialog';
 import { useMenuSettingsListener } from '@/features/settings/hooks/useMenuSettingsListener';
 import { useAppVersion } from '@/hooks';
 
@@ -44,7 +44,7 @@ export function Header() {
         </div>
       </div>
 
-      <SettingsPanel open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
     </header>
   );
 }
