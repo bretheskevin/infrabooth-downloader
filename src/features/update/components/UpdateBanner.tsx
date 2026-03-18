@@ -1,6 +1,6 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Info, Loader2, X } from 'lucide-react';
+import { CheckCircle, Download, Info, Loader2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { open } from '@tauri-apps/plugin-shell';
@@ -97,21 +97,25 @@ export function UpdateBanner() {
           {!installed && (
             <>
               <Button
-                variant="default"
+                variant="outline"
                 size="sm"
                 onClick={installUpdate}
                 disabled={installing}
-                className="h-7 text-xs"
+                className="h-7 text-xs bg-sky-600 hover:bg-sky-700 text-white border-sky-600 hover:border-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500 dark:border-sky-600 dark:hover:border-sky-500"
               >
-                {installing && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                {installing ? (
+                  <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
+                ) : (
+                  <Download className="h-3 w-3 mr-1.5" />
+                )}
                 {installing ? t('update.installing') : t('update.updateNow')}
               </Button>
               <Button
-                variant="link"
+                variant="ghost"
                 size="sm"
                 onClick={handleLearnMore}
                 disabled={installing}
-                className="text-sky-700 hover:text-sky-900 dark:text-sky-300 dark:hover:text-sky-100"
+                className="h-7 text-xs text-sky-700 hover:text-sky-900 hover:bg-sky-100 dark:text-sky-300 dark:hover:text-sky-100 dark:hover:bg-sky-900/50"
               >
                 {t('update.learnMore')}
               </Button>
