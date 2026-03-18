@@ -6,6 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { useSettingsStore } from '@/features/settings';
 import { useFolderSelection, useTrackDownload, useMergedTrackState } from '@/hooks';
+import { useShallow } from 'zustand/react/shallow';
 import { usePlayContext, usePlayerStore } from '@/features/player';
 import { preloadOnHover, preloadImmediate } from '@/features/player/url-cache';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
@@ -93,10 +94,10 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
   );
 
   const { playTrack } = usePlayContext(displayTracks);
-  const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
-  const playerState = usePlayerStore((s) => s.state);
-  const playerPause = usePlayerStore((s) => s.pause);
-  const playerResume = usePlayerStore((s) => s.resume);
+  const { currentTrackId, playerState } = usePlayerStore(
+    useShallow((s) => ({ currentTrackId: s.currentTrack?.trackId, playerState: s.state })),
+  );
+  const playerActions = () => usePlayerStore.getState();
 
   const showSkeleton = isLoading && (!tracks || tracks.length === 0);
 
@@ -108,6 +109,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
     selectedCount,
     isAllSelected,
     selectedTracks,
+    selectableCount,
   } = useTrackSelection(displayTracks, downloadedIds);
 
   const { selectFolder: handleChangeFolder } = useFolderSelection({
@@ -209,6 +211,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           isStreaming={isStreaming}
           selectedIds={selectedIds}
           isAllSelected={isAllSelected}
+          hasSelectableTracks={selectableCount > 0}
           sortMode={sortMode}
           onSortChange={setSortMode}
           onToggleTrack={toggleTrack}
@@ -216,8 +219,8 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           getTrackState={getTrackState}
           onDownloadTrack={handleDownloadTrack}
           onPlayTrack={playTrack}
-          onPauseTrack={playerPause}
-          onResumeTrack={playerResume}
+          onPauseTrack={playerActions().pause}
+          onResumeTrack={playerActions().resume}
           currentlyPlayingId={currentTrackId}
           isPlayerPlaying={playerState === 'playing'}
           onHoverTrack={handleHoverTrack}
