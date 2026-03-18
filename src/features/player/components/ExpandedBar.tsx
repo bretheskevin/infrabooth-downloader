@@ -12,7 +12,7 @@ import { ScrollingText } from './ScrollingText';
 import { Waveform, WaveformSkeleton } from './Waveform';
 import { useWaveform } from '../hooks/useWaveform';
 
-export const EXPANDED_BAR_HEIGHT = 86;
+export const EXPANDED_BAR_HEIGHT = 90;
 
 const actions = () => usePlayerStore.getState();
 
