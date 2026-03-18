@@ -1,19 +1,15 @@
 import type { TrackInfo } from '@/bindings';
-import type { SortMode } from '../types';
+import type { SortDirection, SortField } from '../types';
 
-export function sortTracks(tracks: TrackInfo[], mode: SortMode): TrackInfo[] {
-  if (mode === 'default') return tracks;
+export function sortTracks(tracks: TrackInfo[], field: SortField, direction: SortDirection): TrackInfo[] {
+  if (field === 'default') {
+    return direction === 'asc' ? tracks : [...tracks].reverse();
+  }
 
+  const dir = direction === 'asc' ? 1 : -1;
   return [...tracks].sort((a, b) => {
-    switch (mode) {
-      case 'title-asc':
-        return a.title.localeCompare(b.title, undefined, { sensitivity: 'base' });
-      case 'title-desc':
-        return b.title.localeCompare(a.title, undefined, { sensitivity: 'base' });
-      case 'artist-asc':
-        return a.user.username.localeCompare(b.user.username, undefined, { sensitivity: 'base' });
-      case 'artist-desc':
-        return b.user.username.localeCompare(a.user.username, undefined, { sensitivity: 'base' });
-    }
+    const aVal = field === 'title' ? a.title : a.user.username;
+    const bVal = field === 'title' ? b.title : b.user.username;
+    return dir * aVal.localeCompare(bVal, undefined, { sensitivity: 'base' });
   });
 }

@@ -18,7 +18,7 @@ import { filterTracks } from '../utils/filterTracks';
 import { sortTracks } from '../utils/sortTracks';
 import { SearchBar } from '@/components/ui/search-bar';
 import { PlaylistTrackList } from './PlaylistTrackList';
-import type { SortMode } from '../types';
+import type { SortDirection, SortField } from '../types';
 import { SelectionFloatingBar } from './SelectionFloatingBar';
 
 const MIN_TRACKS_FOR_SEARCH = 5;
@@ -66,7 +66,8 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
   const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortMode, setSortMode] = useState<SortMode>('default');
+  const [sortField, setSortField] = useState<SortField>('default');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const defaultPath = useSettingsStore((s) => s.downloadPath);
   const [localPath, setLocalPath] = useState<string | undefined>(undefined);
   const effectivePath = localPath || defaultPath || undefined;
@@ -79,7 +80,8 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
 
   useEffect(() => {
     setSearchQuery('');
-    setSortMode('default');
+    setSortField('default');
+    setSortDirection('asc');
     setLocalPath(undefined);
   }, [playlist.id]);
 
@@ -89,8 +91,8 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
   );
 
   const displayTracks = useMemo(
-    () => sortTracks(filteredTracks, sortMode),
-    [filteredTracks, sortMode],
+    () => sortTracks(filteredTracks, sortField, sortDirection),
+    [filteredTracks, sortField, sortDirection],
   );
 
   const { playTrack } = usePlayContext(displayTracks);
@@ -212,8 +214,10 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           selectedIds={selectedIds}
           isAllSelected={isAllSelected}
           hasSelectableTracks={selectableCount > 0}
-          sortMode={sortMode}
-          onSortChange={setSortMode}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSortFieldChange={setSortField}
+          onSortDirectionChange={setSortDirection}
           onToggleTrack={toggleTrack}
           onToggleAll={toggleAll}
           getTrackState={getTrackState}
