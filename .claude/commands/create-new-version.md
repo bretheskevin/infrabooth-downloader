@@ -32,13 +32,14 @@ Create a new release version for InfraBooth Downloader.
    - **Lead with the feature/change**, not how it works
    - **Group related small changes** into a single line
    - **Hide implementation details**: Never expose technical internals (protocols, caching strategies, preloading mechanisms, rendering techniques, etc.) in changelog entries. Describe what the user *experiences*, not how it works under the hood. Bad: "HLS preloading for smoother playback". Good: "Smoother audio playback". For new features, these details are just expected quality — only mention performance/UX improvements as "Changed" items when they improve an *existing* feature.
+   - **Fixed items use past tense**: Describe what was wrong, not what was fixed. Bad: "Search cleared when switching tabs". Good: "Search was cleared when switching tabs".
 8. Show the detected version bump and changelog, ask user to confirm before proceeding
 9. Update version in:
    - `package.json`
    - `src-tauri/tauri.conf.json`
    - `src-tauri/Cargo.toml`
 10. Update `CHANGELOG.md` (English) with the new entry under `## [Unreleased]`
-11. Update `CHANGELOG.fr.md` (French) with the translated entry under `## [Unreleased]` — translate all changelog items to French, keeping the same structure (### Added, ### Changed, ### Fixed, ### Removed headings stay in English as they are parsed by the app). The French translation must sound natural and idiomatic — write it as a native French speaker would phrase a changelog, not as a literal translation from English. Prefer nominal forms (e.g. "Amélioration des performances" not "Meilleures performances").
+11. Update `CHANGELOG.fr.md` (French) with the translated entry under `## [Unreleased]` — translate all changelog items to French, keeping the same structure (### Added, ### Changed, ### Fixed, ### Removed headings stay in English as they are parsed by the app). The French translation must sound natural and idiomatic — write it as a native French speaker would phrase a changelog, not as a literal translation from English. Prefer nominal forms (e.g. "Amélioration des performances" not "Meilleures performances"). For **Fixed** items, use imparfait tense to describe what was wrong (e.g. "La recherche était effacée lors du changement d'onglet" not "Recherche effacée lors du changement d'onglet").
 12. Run `cargo check` in src-tauri to update Cargo.lock
 13. Create a commit with message `chore: release vX.Y.Z`
 14. Create the git tag `vX.Y.Z`

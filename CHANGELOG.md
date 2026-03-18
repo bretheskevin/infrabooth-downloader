@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-03-18
+
+### Added
+
+- OS media controls (play, pause, skip from system UI)
+
+### Changed
+
+- Faster audio loading
+
+### Fixed
+
+- Duplicate media controls were appearing on macOS
+- Library view and scroll position were lost when switching tabs
+- Search input was cleared when switching tabs
+
 ## [1.8.0] - 2026-03-17
 
 ### Added

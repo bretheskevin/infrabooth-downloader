@@ -7,6 +7,22 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-03-18
+
+### Added
+
+- Contrôles multimédia système (lecture, pause, piste suivante/précédente)
+
+### Changed
+
+- Chargement audio plus rapide
+
+### Fixed
+
+- Les contrôles multimédia apparaissaient en double sur macOS
+- La position de défilement était perdue dans la bibliothèque lors du changement d'onglet
+- La recherche était effacée lors du changement d'onglet
+
 ## [1.8.0] - 2026-03-17
 
 ### Added
