@@ -31,6 +31,7 @@ interface PlaylistTrackListProps {
   isPlayerPlaying?: boolean;
   onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
   onMouseDownTrack?: (track: TrackInfo) => void;
+  hasSelectableTracks?: boolean;
 }
 
 export function PlaylistTrackList({
@@ -51,6 +52,7 @@ export function PlaylistTrackList({
   isPlayerPlaying,
   onHoverTrack,
   onMouseDownTrack,
+  hasSelectableTracks = true,
 }: PlaylistTrackListProps) {
   const { t } = useTranslation();
   const prevCountRef = useRef(0);
@@ -72,17 +74,19 @@ export function PlaylistTrackList({
   return (
     <>
       <div className="flex items-center justify-between px-3">
-        <div className="flex items-center gap-3">
-          <Checkbox
-            checked={isAllSelected}
-            onCheckedChange={onToggleAll}
-            className="shrink-0"
-          />
-          <span className="text-xs text-muted-foreground cursor-pointer select-none" onClick={onToggleAll}>
-            {t(isAllSelected ? 'library.detail.deselectAll' : 'library.detail.selectAll')}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
+        {hasSelectableTracks && (
+          <div className="flex items-center gap-3">
+            <Checkbox
+              checked={isAllSelected}
+              onCheckedChange={onToggleAll}
+              className="shrink-0"
+            />
+            <span className="text-xs text-muted-foreground cursor-pointer select-none" onClick={onToggleAll}>
+              {t(isAllSelected ? 'library.detail.deselectAll' : 'library.detail.selectAll')}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center gap-2 ml-auto">
           {onSortChange && sortMode && (
             <Select value={sortMode} onValueChange={(v) => {
               if (SORT_MODES.includes(v as SortMode)) onSortChange(v as SortMode);
