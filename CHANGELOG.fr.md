@@ -7,6 +7,12 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.9.1] - 2026-03-18
+
+### Fixed
+
+- La lecture audio était bloquée en raison de permissions CDN manquantes
+
 ## [1.9.0] - 2026-03-18
 
 ### Added
