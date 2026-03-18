@@ -1,8 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { ProgressPanel } from '../ProgressPanel';
 import { useQueueStore } from '@/features/queue/store';
 import type { Track } from '@/features/queue/types/track';
+
+const renderWithTooltip = (ui: React.ReactElement) =>
+  render(<TooltipProvider>{ui}</TooltipProvider>);
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -58,12 +62,12 @@ describe('ProgressPanel', () => {
 
   describe('empty state', () => {
     it('should render empty state when no tracks', () => {
-      render(<ProgressPanel />);
+      renderWithTooltip(<ProgressPanel />);
       expect(screen.getByText('No tracks in queue')).toBeInTheDocument();
     });
 
     it('should not render progress bar when no tracks', () => {
-      render(<ProgressPanel />);
+      renderWithTooltip(<ProgressPanel />);
       expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
     });
   });
@@ -73,7 +77,7 @@ describe('ProgressPanel', () => {
       const mockTracks = createMockTracks(3);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<ProgressPanel />);
+      renderWithTooltip(<ProgressPanel />);
 
       // Progress bar should be visible
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
@@ -87,7 +91,7 @@ describe('ProgressPanel', () => {
       const mockTracks = createMockTracks(2);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 2 });
 
-      render(<ProgressPanel />);
+      renderWithTooltip(<ProgressPanel />);
 
       // Get the progress bar
       const progressBar = screen.getByRole('progressbar');
@@ -113,7 +117,7 @@ describe('ProgressPanel', () => {
       const mockTracks = createMockTracks(1);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 1 });
 
-      render(<ProgressPanel className="custom-panel-class" />);
+      renderWithTooltip(<ProgressPanel className="custom-panel-class" />);
 
       const panel = screen.getByTestId('progress-panel');
       expect(panel).toHaveClass('custom-panel-class');

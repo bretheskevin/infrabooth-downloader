@@ -1,8 +1,13 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { OverallProgress } from '../OverallProgress';
 import { useQueueStore } from '@/features/queue/store';
 import type { Track } from '@/features/queue/types/track';
+
+const renderWithTooltip = (ui: React.ReactElement) =>
+  render(<TooltipProvider>{ui}</TooltipProvider>);
 
 // Mock the i18n hook
 vi.mock('react-i18next', () => ({
@@ -13,11 +18,23 @@ vi.mock('react-i18next', () => ({
         'download.progressSingle': `${params?.current} of ${params?.total} track`,
         'download.progressAriaLabel': `Download progress: ${params?.current} of ${params?.total} tracks complete, ${params?.percentage}%`,
         'download.preparingTracks': 'Preparing your tracks for download',
+        'completion.openFolder': 'Open Folder',
       };
       return translations[key] || key;
     },
   }),
 }));
+
+vi.mock('@/lib/shellCommands', () => ({
+  openDownloadFolder: vi.fn(),
+}));
+
+vi.mock('@/features/settings/api/settings', () => ({
+  getDefaultDownloadPath: vi.fn().mockResolvedValue('/Users/default/Downloads'),
+}));
+
+import { openDownloadFolder } from '@/lib/shellCommands';
+import { getDefaultDownloadPath } from '@/features/settings/api/settings';
 
 const createMockTracks = (
   statuses: Array<'pending' | 'downloading' | 'converting' | 'complete' | 'failed'>
@@ -33,6 +50,7 @@ const createMockTracks = (
 
 describe('OverallProgress', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
     // Reset store before each test
     useQueueStore.setState({
       tracks: [],
@@ -42,12 +60,13 @@ describe('OverallProgress', () => {
       isComplete: false,
       completedCount: 0,
       failedCount: 0,
+      outputDir: null,
     });
   });
 
   describe('rendering', () => {
     it('should not render when no tracks in queue', () => {
-      const { container } = render(<OverallProgress />);
+      const { container } = renderWithTooltip(<OverallProgress />);
       expect(container.firstChild).toBeNull();
     });
 
@@ -55,7 +74,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
@@ -64,7 +83,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['complete', 'complete', 'downloading']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.getByText('2 of 3 tracks')).toBeInTheDocument();
     });
@@ -73,7 +92,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
       // Spinner should be present (Loader2 renders as svg)
@@ -85,7 +104,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['downloading', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.queryByText('Preparing your tracks for download')).not.toBeInTheDocument();
       expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
@@ -95,7 +114,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['complete', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
       const spinner = document.querySelector('svg.animate-spin');
@@ -106,7 +125,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['converting', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.queryByText('Preparing your tracks for download')).not.toBeInTheDocument();
       expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
@@ -118,7 +137,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar).toHaveAttribute('aria-valuenow', '0');
@@ -128,7 +147,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['complete', 'complete', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 4 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar).toHaveAttribute('aria-valuenow', '50');
@@ -138,7 +157,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['complete', 'complete', 'complete']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar).toHaveAttribute('aria-valuenow', '100');
@@ -148,7 +167,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['complete', 'complete', 'failed', 'downloading']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 4 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       // 2 complete out of 4 = 50%
       const progressBar = screen.getByRole('progressbar');
@@ -160,7 +179,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['complete', 'downloading', 'converting', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 4 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       // Only 1 complete out of 4 = 25%
       const progressBar = screen.getByRole('progressbar');
@@ -173,7 +192,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 2 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.getByRole('progressbar')).toBeInTheDocument();
     });
@@ -182,7 +201,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 1 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar).toHaveAttribute('aria-valuemin', '0');
@@ -193,7 +212,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['complete', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar).toHaveAttribute(
@@ -207,7 +226,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['complete', 'downloading']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 2 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       const liveRegion = screen.getByText('1 of 2 tracks');
       expect(liveRegion).toHaveAttribute('aria-live', 'polite');
@@ -220,7 +239,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['downloading']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 1 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       // Should use singular "track" form
       expect(screen.getByText('0 of 1 track')).toBeInTheDocument();
@@ -230,7 +249,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 1 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
     });
@@ -239,7 +258,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['failed', 'failed', 'failed']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
       const progressBar = screen.getByRole('progressbar');
@@ -252,10 +271,62 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 1 });
 
-      render(<OverallProgress className="custom-class" />);
+      renderWithTooltip(<OverallProgress className="custom-class" />);
 
       const container = screen.getByRole('progressbar').parentElement;
       expect(container).toHaveClass('custom-class');
+    });
+  });
+
+  describe('open folder button', () => {
+    it('should render the open folder button', () => {
+      const mockTracks = createMockTracks(['downloading']);
+      useQueueStore.setState({ tracks: mockTracks, totalTracks: 1 });
+
+      renderWithTooltip(<OverallProgress />);
+
+      expect(screen.getByRole('button', { name: 'Open Folder' })).toBeInTheDocument();
+    });
+
+    it('should call openDownloadFolder when clicked with outputDir from store', async () => {
+      const user = userEvent.setup();
+      const mockOpen = vi.mocked(openDownloadFolder);
+      mockOpen.mockResolvedValue(undefined);
+
+      const mockTracks = createMockTracks(['downloading']);
+      useQueueStore.setState({
+        tracks: mockTracks,
+        totalTracks: 1,
+        outputDir: '/custom/path',
+      });
+
+      renderWithTooltip(<OverallProgress />);
+
+      await user.click(screen.getByRole('button', { name: 'Open Folder' }));
+
+      expect(mockOpen).toHaveBeenCalledWith('/custom/path');
+    });
+
+    it('should fallback to default download path when outputDir is null', async () => {
+      const user = userEvent.setup();
+      const mockOpen = vi.mocked(openDownloadFolder);
+      const mockGetDefault = vi.mocked(getDefaultDownloadPath);
+      mockOpen.mockResolvedValue(undefined);
+      mockGetDefault.mockResolvedValue('/Users/default/Downloads');
+
+      const mockTracks = createMockTracks(['downloading']);
+      useQueueStore.setState({
+        tracks: mockTracks,
+        totalTracks: 1,
+        outputDir: null,
+      });
+
+      renderWithTooltip(<OverallProgress />);
+
+      await user.click(screen.getByRole('button', { name: 'Open Folder' }));
+
+      expect(mockGetDefault).toHaveBeenCalled();
+      expect(mockOpen).toHaveBeenCalledWith('/Users/default/Downloads');
     });
   });
 
@@ -264,7 +335,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 3 });
 
-      const { rerender } = render(<OverallProgress />);
+      const { rerender } = renderWithTooltip(<OverallProgress />);
 
       // Initial state - all pending, shows preparing message
       expect(screen.getByText('Preparing your tracks for download')).toBeInTheDocument();
@@ -275,7 +346,7 @@ describe('OverallProgress', () => {
         idx === 0 ? { ...track, status: 'downloading' as const } : track
       );
       useQueueStore.setState({ tracks: downloadingTracks });
-      rerender(<OverallProgress />);
+      rerender(<TooltipProvider><OverallProgress /></TooltipProvider>);
 
       expect(screen.queryByText('Preparing your tracks for download')).not.toBeInTheDocument();
       expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
@@ -287,7 +358,7 @@ describe('OverallProgress', () => {
         return track;
       });
       useQueueStore.setState({ tracks: progressTracks });
-      rerender(<OverallProgress />);
+      rerender(<TooltipProvider><OverallProgress /></TooltipProvider>);
 
       // Should now show 1 complete
       expect(screen.getByText('1 of 3 tracks')).toBeInTheDocument();
@@ -298,7 +369,7 @@ describe('OverallProgress', () => {
       const mockTracks = createMockTracks(['pending', 'pending', 'pending', 'pending', 'pending']);
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 5 });
 
-      const { rerender } = render(<OverallProgress />);
+      const { rerender } = renderWithTooltip(<OverallProgress />);
 
       // Simulate rapid status updates - always keep one track downloading until all complete
       for (let i = 0; i < 5; i++) {
@@ -307,7 +378,7 @@ describe('OverallProgress', () => {
           status: idx < i ? 'complete' as const : idx === i ? 'downloading' as const : 'pending' as const,
         }));
         useQueueStore.setState({ tracks: updatedTracks });
-        rerender(<OverallProgress />);
+        rerender(<TooltipProvider><OverallProgress /></TooltipProvider>);
       }
 
       // Final update: all complete
@@ -316,7 +387,7 @@ describe('OverallProgress', () => {
         status: 'complete' as const,
       }));
       useQueueStore.setState({ tracks: finalTracks });
-      rerender(<OverallProgress />);
+      rerender(<TooltipProvider><OverallProgress /></TooltipProvider>);
 
       // Final state should show all complete
       expect(screen.getByText('5 of 5 tracks')).toBeInTheDocument();
@@ -333,7 +404,7 @@ describe('OverallProgress', () => {
       ];
       useQueueStore.setState({ tracks: mockTracks, totalTracks: 5 });
 
-      render(<OverallProgress />);
+      renderWithTooltip(<OverallProgress />);
 
       // Only 1 track is 'complete'
       expect(screen.getByText('1 of 5 tracks')).toBeInTheDocument();
