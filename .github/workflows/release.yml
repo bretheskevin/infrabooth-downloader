@@ -245,7 +245,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           name: InfraBooth Downloader v${{ steps.version.outputs.version }}
-          draft: true
+          draft: false
           body: |
             ## What's New
 
