@@ -7,6 +7,7 @@ import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { DownloadState } from '@/types/download';
+import { useIsDownloadEnabled } from '@/features/settings';
 import { useLibraryStore } from '../store';
 import { SORT_MODES, type SortMode } from '../types';
 import { PlaylistTrackItem } from './PlaylistTrackItem';
@@ -55,6 +56,7 @@ export function PlaylistTrackList({
   hasSelectableTracks = true,
 }: PlaylistTrackListProps) {
   const { t } = useTranslation();
+  const isDownloadEnabled = useIsDownloadEnabled();
   const prevCountRef = useRef(0);
   const shouldAnimate = tracks.length > prevCountRef.current;
   useEffect(() => {
@@ -74,7 +76,7 @@ export function PlaylistTrackList({
   return (
     <>
       <div className="flex items-center justify-between px-3">
-        {hasSelectableTracks && (
+        {isDownloadEnabled && hasSelectableTracks && (
           <div className="flex items-center gap-3">
             <Checkbox
               checked={isAllSelected}
@@ -132,6 +134,7 @@ export function PlaylistTrackList({
                 isPlayerPlaying={isPlayerPlaying}
                 onHoverTrack={onHoverTrack}
                 onMouseDownTrack={onMouseDownTrack}
+                isDownloadEnabled={isDownloadEnabled}
               />
             </VirtualRow>
           );

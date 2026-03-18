@@ -3,9 +3,12 @@ import { Separator } from '@/components/ui/separator';
 import { LanguageSection } from './LanguageSection';
 import { ThemeSection } from './ThemeSection';
 import { DownloadLocationSection } from './DownloadLocationSection';
+import { StreamModeSection } from './StreamModeSection';
+import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
 
 export function GeneralSettings() {
   const { t } = useTranslation();
+  const isDownloadEnabled = useIsDownloadEnabled();
 
   return (
     <div className="space-y-6">
@@ -14,7 +17,13 @@ export function GeneralSettings() {
       <Separator />
       <ThemeSection />
       <Separator />
-      <DownloadLocationSection />
+      <StreamModeSection />
+      {isDownloadEnabled && (
+        <>
+          <Separator />
+          <DownloadLocationSection />
+        </>
+      )}
     </div>
   );
 }
