@@ -74,5 +74,6 @@ export function useTrackSelection(visibleTracks: TrackInfo[], excludeIds?: Set<n
     selectedCount,
     isAllSelected,
     selectedTracks,
+    selectableCount: selectableTracks.length,
   };
 }
