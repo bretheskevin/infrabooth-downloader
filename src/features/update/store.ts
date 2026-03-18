@@ -1,8 +1,14 @@
 import { create } from 'zustand';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { listen } from '@tauri-apps/api/event';
 import { commands, type UpdateInfo } from '@/bindings';
 import { useChangelogStore } from '@/features/changelog/store';
 import { logger } from '@/lib/logger';
+
+interface UpdateDownloadProgress {
+  downloadedBytes: number;
+  totalBytes: number | null;
+}
 
 interface UpdateState {
   updateAvailable: boolean;
@@ -13,6 +19,7 @@ interface UpdateState {
   installing: boolean;
   installError: string | null;
   installed: boolean;
+  downloadProgress: UpdateDownloadProgress | null;
   checkForUpdates: () => Promise<void>;
   installUpdate: () => Promise<void>;
   relaunchApp: () => Promise<void>;
@@ -29,6 +36,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   installing: false,
   installError: null,
   installed: false,
+  downloadProgress: null,
 
   checkForUpdates: async () => {
     if (get().checkInProgress) return;
@@ -72,7 +80,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
   installUpdate: async () => {
     if (get().installing) return;
 
-    set({ installing: true, installError: null });
+    set({ installing: true, installError: null, downloadProgress: null });
     void logger.info('[Update] Starting installation...');
 
     try {
@@ -80,15 +88,15 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 
       if (result.status === 'ok') {
         void logger.info('[Update] Installation successful, restart required');
-        set({ installing: false, installed: true });
+        set({ installing: false, installed: true, downloadProgress: null });
       } else {
         void logger.error(`[Update] Installation failed: ${result.error}`);
-        set({ installing: false, installError: result.error });
+        set({ installing: false, installError: result.error, downloadProgress: null });
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       void logger.error(`[Update] Installation error: ${message}`);
-      set({ installing: false, installError: message });
+      set({ installing: false, installError: message, downloadProgress: null });
     }
   },
 
@@ -109,3 +117,8 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
     });
   },
 }));
+
+// Set up event listener for update download progress
+listen<UpdateDownloadProgress>('update-download-progress', (event) => {
+  useUpdateStore.setState({ downloadProgress: event.payload });
+});
