@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { Pause, Play, Loader2 } from 'lucide-react';
@@ -19,6 +20,12 @@ export function MiniPill() {
     }))
   );
 
+  const [canInteract, setCanInteract] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setCanInteract(true), 200);
+    return () => clearTimeout(timer);
+  }, []);
+
   if (!currentTrack || state === 'stopped') return null;
 
   const progress = durationMs > 0 ? positionMs / durationMs : 0;
@@ -38,8 +45,12 @@ export function MiniPill() {
       <Tooltip>
         <TooltipTrigger asChild>
           <button
-            className="flex items-center gap-2 pl-1.5 pr-3 h-full rounded-l-full hover:bg-white/10 transition-colors"
+            className={cn(
+              'flex items-center gap-2 pl-1.5 pr-3 h-full rounded-l-full transition-colors',
+              canInteract ? 'hover:bg-white/10' : 'opacity-70',
+            )}
             onClick={() => actions().toggleExpanded()}
+            disabled={!canInteract}
             aria-label={t('player.expand')}
           >
             <div className="relative h-9 w-9 flex-shrink-0">
@@ -88,8 +99,12 @@ export function MiniPill() {
 
       {/* Right: play/pause (click to toggle) */}
       <button
-        className="flex items-center justify-center h-full px-3 rounded-r-full hover:bg-white/10 transition-colors border-l border-white/15"
-        onClick={() => isPlaying ? actions().pause() : actions().resume()}
+        className={cn(
+          'flex items-center justify-center h-full px-3 rounded-r-full transition-colors border-l border-white/15',
+          canInteract ? 'hover:bg-white/10' : 'opacity-70',
+        )}
+        onClick={() => (isPlaying ? actions().pause() : actions().resume())}
+        disabled={!canInteract}
         aria-label={isPlaying ? t('player.pause') : t('player.play')}
       >
         {isLoading ? (
