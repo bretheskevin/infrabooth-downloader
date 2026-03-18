@@ -12,6 +12,7 @@ interface SettingsState {
   maxConcurrentDownloads: number;
   preservePlaylistOrder: boolean;
   playerVolume: number;
+  streamMode: boolean;
   _hasHydrated: boolean;
   // Actions
   setDownloadPath: (path: string) => void;
@@ -20,6 +21,7 @@ interface SettingsState {
   setMaxConcurrentDownloads: (n: number) => void;
   setPreservePlaylistOrder: (value: boolean) => void;
   setPlayerVolume: (volume: number) => void;
+  setStreamMode: (value: boolean) => void;
   _setHasHydrated: (state: boolean) => void;
 }
 
@@ -32,6 +34,7 @@ export const useSettingsStore = create<SettingsState>()(
       maxConcurrentDownloads: 3,
       preservePlaylistOrder: true,
       playerVolume: 1.0,
+      streamMode: false,
       _hasHydrated: false,
       setDownloadPath: (path) => set({ downloadPath: path }),
       setLanguage: (lang) => set({ language: lang }),
@@ -39,6 +42,7 @@ export const useSettingsStore = create<SettingsState>()(
       setMaxConcurrentDownloads: (n) => set({ maxConcurrentDownloads: Math.min(10, Math.max(1, n)) }),
       setPreservePlaylistOrder: (value) => set({ preservePlaylistOrder: value }),
       setPlayerVolume: (volume) => set({ playerVolume: Math.min(1, Math.max(0, volume)) }),
+      setStreamMode: (value) => set({ streamMode: value }),
       _setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
@@ -51,6 +55,7 @@ export const useSettingsStore = create<SettingsState>()(
         maxConcurrentDownloads: state.maxConcurrentDownloads,
         preservePlaylistOrder: state.preservePlaylistOrder,
         playerVolume: state.playerVolume,
+        streamMode: state.streamMode,
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {

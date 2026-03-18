@@ -29,6 +29,7 @@ describe('SearchResultItem', () => {
         state={state}
         onDownload={vi.fn()}
         onRetry={vi.fn()}
+        isDownloadEnabled
       />,
     );
     expect(screen.getByText('Test Track')).toBeInTheDocument();
@@ -46,6 +47,7 @@ describe('SearchResultItem', () => {
         state={state}
         onDownload={onDownload}
         onRetry={vi.fn()}
+        isDownloadEnabled
       />,
     );
     fireEvent.click(screen.getByRole('button'));
@@ -61,6 +63,7 @@ describe('SearchResultItem', () => {
         state={state}
         onDownload={vi.fn()}
         onRetry={vi.fn()}
+        isDownloadEnabled
       />,
     );
     expect(screen.getByText('65%')).toBeInTheDocument();
@@ -76,6 +79,7 @@ describe('SearchResultItem', () => {
           state={state}
           onDownload={vi.fn()}
           onRetry={vi.fn()}
+          isDownloadEnabled
         />
       </TooltipProvider>,
     );
@@ -92,6 +96,7 @@ describe('SearchResultItem', () => {
         state={state}
         onDownload={vi.fn()}
         onRetry={onRetry}
+        isDownloadEnabled
       />,
     );
     fireEvent.click(screen.getByRole('button'));

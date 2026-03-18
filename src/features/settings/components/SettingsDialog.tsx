@@ -12,6 +12,7 @@ import { GeneralSettings } from './GeneralSettings';
 import { PlaylistsSettings } from './PlaylistsSettings';
 import { AboutSettings } from './AboutSettings';
 import type { SettingsCategory, SettingsDialogProps } from './types';
+import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
 
 const CONTENT_COMPONENTS: Record<SettingsCategory, React.ComponentType> = {
   general: GeneralSettings,
@@ -35,6 +36,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [showTopShadow, setShowTopShadow] = useState(false);
   const [showBottomShadow, setShowBottomShadow] = useState(false);
+  const isDownloadEnabled = useIsDownloadEnabled();
+
+  useEffect(() => {
+    if (!isDownloadEnabled && selectedCategory === 'playlists') {
+      setSelectedCategory('general');
+    }
+  }, [isDownloadEnabled, selectedCategory]);
 
   const updateShadows = useCallback(() => {
     const el = scrollRef.current;

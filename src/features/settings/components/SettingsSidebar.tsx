@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Settings2, Download, Info } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SettingsCategory, SettingsSidebarProps } from './types';
+import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
 
 const CATEGORIES: { id: SettingsCategory; icon: React.ElementType; labelKey: string }[] = [
   { id: 'general', icon: Settings2, labelKey: 'settings.categoryGeneral' },
@@ -12,36 +13,41 @@ const CATEGORIES: { id: SettingsCategory; icon: React.ElementType; labelKey: str
 
 export function SettingsSidebar({ selectedCategory, onSelectCategory }: SettingsSidebarProps) {
   const { t } = useTranslation();
+  const isDownloadEnabled = useIsDownloadEnabled();
+
+  const visibleCategories = useMemo(
+    () => isDownloadEnabled ? CATEGORIES : CATEGORIES.filter((c) => c.id !== 'playlists'),
+    [isDownloadEnabled]
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
-      const currentIndex = CATEGORIES.findIndex((c) => c.id === selectedCategory);
+      const currentIndex = visibleCategories.findIndex((c) => c.id === selectedCategory);
       let nextIndex = currentIndex;
 
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
         e.preventDefault();
-        nextIndex = (currentIndex + 1) % CATEGORIES.length;
+        nextIndex = (currentIndex + 1) % visibleCategories.length;
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
         e.preventDefault();
-        nextIndex = (currentIndex - 1 + CATEGORIES.length) % CATEGORIES.length;
+        nextIndex = (currentIndex - 1 + visibleCategories.length) % visibleCategories.length;
       } else if (e.key === 'Home') {
         e.preventDefault();
         nextIndex = 0;
       } else if (e.key === 'End') {
         e.preventDefault();
-        nextIndex = CATEGORIES.length - 1;
+        nextIndex = visibleCategories.length - 1;
       }
 
-      const category = CATEGORIES[nextIndex];
+      const category = visibleCategories[nextIndex];
       if (nextIndex !== currentIndex && category) {
         onSelectCategory(category.id);
-        // Focus the new tab
         const tablist = e.currentTarget;
         const tabs = tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]');
         tabs[nextIndex]?.focus();
       }
     },
-    [selectedCategory, onSelectCategory]
+    [selectedCategory, onSelectCategory, visibleCategories]
   );
 
   return (
@@ -52,7 +58,7 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
       onKeyDown={handleKeyDown}
       className="min-w-[140px] flex-shrink-0 bg-muted/50 border-r border-border p-2 pt-6 space-y-1"
     >
-      {CATEGORIES.map(({ id, icon: Icon, labelKey }) => {
+      {visibleCategories.map(({ id, icon: Icon, labelKey }) => {
         const isSelected = selectedCategory === id;
         return (
           <button
