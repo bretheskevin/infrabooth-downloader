@@ -4,15 +4,13 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { FolderOpen, RefreshCw, XCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useQueueStore } from '@/features/queue/store';
-import { openDownloadFolder } from '@/lib/shellCommands';
-import { getDefaultDownloadPath } from '@/features/settings/api/settings';
-import { logger } from '@/lib/logger';
 import { SuccessMessage } from './SuccessMessage';
 import { ErrorPanelTrigger } from './ErrorPanelTrigger';
 import { ErrorPanel } from './ErrorPanel';
 import { AnimatedCheckmark } from './AnimatedCheckmark';
 import { useFailedTracks } from '@/features/queue/hooks/useFailedTracks';
 import { useRetryTracks } from '@/features/queue/hooks/useRetryTracks';
+import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { cn } from '@/lib/utils';
 
 interface CompletionPanelProps {
@@ -39,40 +37,9 @@ export function CompletionPanel({
   const failedTracks = useFailedTracks();
   const { retryAllFailed, retrySingleTrack, isRetrying, canRetry } =
     useRetryTracks();
+  const handleOpenFolder = useOpenDownloadFolder(outputDir);
 
   const isFullSuccess = failedCount === 0 && !isCancelled;
-
-  const handleOpenFolder = async () => {
-    logger.info('[CompletionPanel] Open folder clicked');
-    logger.debug(
-      `[CompletionPanel] Output dir from queue store: "${outputDir}"`
-    );
-
-    let pathToOpen = outputDir;
-
-    if (!pathToOpen) {
-      logger.debug(
-        '[CompletionPanel] No output dir in queue store, fetching default'
-      );
-      try {
-        pathToOpen = await getDefaultDownloadPath();
-        logger.debug(`[CompletionPanel] Got default path: "${pathToOpen}"`);
-      } catch (error) {
-        logger.error(`[CompletionPanel] Failed to get default path: ${error}`);
-        return;
-      }
-    }
-
-    if (pathToOpen) {
-      try {
-        await openDownloadFolder(pathToOpen);
-      } catch (error) {
-        logger.error(`[CompletionPanel] Failed to open folder: ${error}`);
-      }
-    } else {
-      logger.warn('[CompletionPanel] No path available to open');
-    }
-  };
 
   const handleToggleErrorPanel = () => {
     setIsErrorPanelOpen((prev) => !prev);
