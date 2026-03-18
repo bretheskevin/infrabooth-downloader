@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import type { DownloadState } from '@/types/download';
 import { useIsDownloadEnabled } from '@/features/settings';
 import { useLibraryStore } from '../store';
-import { SORT_MODES, type SortMode } from '../types';
+import { SORT_FIELDS, SORT_DIRECTIONS, type SortField, type SortDirection } from '../types';
 import { PlaylistTrackItem } from './PlaylistTrackItem';
 
 const TRACK_ITEM_HEIGHT = 56;
@@ -19,8 +19,10 @@ interface PlaylistTrackListProps {
   isStreaming?: boolean;
   selectedIds: Set<number>;
   isAllSelected: boolean;
-  sortMode?: SortMode;
-  onSortChange?: (mode: SortMode) => void;
+  sortField?: SortField;
+  sortDirection?: SortDirection;
+  onSortFieldChange?: (field: SortField) => void;
+  onSortDirectionChange?: (direction: SortDirection) => void;
   onToggleTrack: (id: number) => void;
   onToggleAll: () => void;
   getTrackState: (trackId: number) => DownloadState;
@@ -40,8 +42,10 @@ export function PlaylistTrackList({
   isStreaming,
   selectedIds,
   isAllSelected,
-  sortMode,
-  onSortChange,
+  sortField,
+  sortDirection,
+  onSortFieldChange,
+  onSortDirectionChange,
   onToggleTrack,
   onToggleAll,
   getTrackState,
@@ -89,22 +93,35 @@ export function PlaylistTrackList({
           </div>
         )}
         <div className="flex items-center gap-2 ml-auto">
-          {onSortChange && sortMode && (
-            <Select value={sortMode} onValueChange={(v) => {
-              if (SORT_MODES.includes(v as SortMode)) onSortChange(v as SortMode);
-            }}>
-              <SelectTrigger className="h-7 text-xs w-auto gap-1.5 px-2">
-                <ArrowUpDown className="h-3 w-3 shrink-0" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">{t('library.detail.sortDefault')}</SelectItem>
-                <SelectItem value="title-asc">{t('library.detail.sortTitleAsc')}</SelectItem>
-                <SelectItem value="title-desc">{t('library.detail.sortTitleDesc')}</SelectItem>
-                <SelectItem value="artist-asc">{t('library.detail.sortArtistAsc')}</SelectItem>
-                <SelectItem value="artist-desc">{t('library.detail.sortArtistDesc')}</SelectItem>
-              </SelectContent>
-            </Select>
+          {onSortFieldChange && sortField && (
+            <>
+              <Select value={sortField} onValueChange={(v) => {
+                if (SORT_FIELDS.includes(v as SortField)) onSortFieldChange(v as SortField);
+              }}>
+                <SelectTrigger className="h-7 text-xs w-auto gap-1.5 px-2">
+                  <ArrowUpDown className="h-3 w-3 shrink-0" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">{t('library.detail.sortDefault')}</SelectItem>
+                  <SelectItem value="title">{t('library.detail.sortTitle')}</SelectItem>
+                  <SelectItem value="artist">{t('library.detail.sortArtist')}</SelectItem>
+                </SelectContent>
+              </Select>
+              {onSortDirectionChange && sortDirection && (
+                <Select value={sortDirection} onValueChange={(v) => {
+                  if (SORT_DIRECTIONS.includes(v as SortDirection)) onSortDirectionChange(v as SortDirection);
+                }}>
+                  <SelectTrigger className="h-7 text-xs w-auto gap-1.5 px-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="asc">{t('library.detail.sortAsc')}</SelectItem>
+                    <SelectItem value="desc">{t('library.detail.sortDesc')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+            </>
           )}
         </div>
       </div>

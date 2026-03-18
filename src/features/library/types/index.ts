@@ -9,5 +9,8 @@ export type LibraryView =
   | { view: 'list' }
   | { view: 'detail'; playlist: LibraryPlaylist };
 
-export const SORT_MODES = ['default', 'title-asc', 'title-desc', 'artist-asc', 'artist-desc'] as const;
-export type SortMode = (typeof SORT_MODES)[number];
+export const SORT_FIELDS = ['default', 'title', 'artist'] as const;
+export type SortField = (typeof SORT_FIELDS)[number];
+
+export const SORT_DIRECTIONS = ['asc', 'desc'] as const;
+export type SortDirection = (typeof SORT_DIRECTIONS)[number];
