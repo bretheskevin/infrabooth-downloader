@@ -15,20 +15,22 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 
+import { useShallow } from 'zustand/react/shallow';
 import { EXPANDED_BAR_HEIGHT } from './ExpandedBar';
 import { usePlayerStore } from '../store';
 import { QueuePanelItem } from './QueuePanelItem';
 
+const actions = () => usePlayerStore.getState();
+
 export function QueuePanel() {
   const { t } = useTranslation();
-  const queue = usePlayerStore((s) => s.queue);
-  const cursor = usePlayerStore((s) => s.cursor);
-  const playerState = usePlayerStore((s) => s.state);
-  const reorderQueue = usePlayerStore((s) => s.reorderQueue);
-  const removeFromQueue = usePlayerStore((s) => s.removeFromQueue);
-  const play = usePlayerStore((s) => s.play);
-  const pause = usePlayerStore((s) => s.pause);
-  const resume = usePlayerStore((s) => s.resume);
+  const { queue, cursor, playerState } = usePlayerStore(
+    useShallow((s) => ({
+      queue: s.queue,
+      cursor: s.cursor,
+      playerState: s.state,
+    }))
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -49,7 +51,7 @@ export function QueuePanel() {
     const fromIndex = queue.findIndex((item) => item.trackId === active.id);
     const toIndex = queue.findIndex((item) => item.trackId === over.id);
     if (fromIndex !== -1 && toIndex !== -1) {
-      reorderQueue(fromIndex, toIndex);
+      actions().reorderQueue(fromIndex, toIndex);
     }
   };
 
@@ -79,10 +81,10 @@ export function QueuePanel() {
                     item={item}
                     index={index}
                     isCurrent={index === cursor}
-                    onPlay={(i) => play(queue, i)}
-                    onPause={pause}
-                    onResume={resume}
-                    onRemove={removeFromQueue}
+                    onPlay={(i) => actions().play(queue, i)}
+                    onPause={() => actions().pause()}
+                    onResume={() => actions().resume()}
+                    onRemove={(i) => actions().removeFromQueue(i)}
                     isPlayerPlaying={playerState === 'playing'}
                   />
                 ))}

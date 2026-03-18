@@ -1,36 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { AppLayout, type AppPage } from '@/components/layout/AppLayout';
 import { DownloadPage } from '@/pages/DownloadPage';
 import { LibraryTab } from '@/features/library';
 import { SearchTab } from '@/features/search';
 import { PlayerContainer } from '@/features/player';
-import { AuthChoiceDialog } from '@/features/auth/components/AuthChoiceDialog';
-import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
-import { useAuthStore } from '@/features/auth/store';
-import { RateLimitDialog } from '@/features/queue/components/RateLimitDialog';
-import { useRateLimitDialog } from '@/features/queue/hooks/useRateLimitDialog';
-import { DownloadConflictDialog } from '@/features/queue/components/DownloadConflictDialog';
+import { AppDialogs } from '@/components/AppDialogs';
+import { AppProviders } from '@/providers/AppProviders';
 import { useLibraryDownload } from '@/features/queue';
-import { Toaster } from '@/components/ui/sonner';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { useUpdateStore } from '@/features/update';
-import { WhatsNewDialog, useChangelogCheck } from '@/features/changelog';
-import { useLanguageSync, useThemeSync, useAuthStateListener, useStartupAuth, useInitializeSettings } from '@/hooks';
+import { useIsSignedIn } from '@/features/auth/store';
 
-export function App() {
-  useLanguageSync();
-  useThemeSync();
-  useAuthStateListener();
-  useStartupAuth();
-  useInitializeSettings();
-  const { showWhatsNew, version, date, sections, dismiss } = useChangelogCheck();
-  useEffect(() => {
-    useUpdateStore.getState().checkForUpdates();
-  }, []);
-
+function AppContent() {
   const [activePage, setActivePage] = useState<AppPage>('download');
   const [initialUrl, setInitialUrl] = useState('');
-  const isSignedIn = useAuthStore((s) => s.isSignedIn);
+  const isSignedIn = useIsSignedIn();
 
   const handlePageChange = useCallback((page: AppPage) => {
     if (page === 'library') setInitialUrl('');
@@ -46,61 +28,37 @@ export function App() {
     onNavigateToDownload: () => setActivePage('download'),
   });
 
-  const {
-    isOpen: authChoiceOpen,
-    handleReAuthenticate,
-    handleContinueStandard,
-  } = useAuthChoiceDialog();
-
-  const {
-    isOpen: rateLimitOpen,
-    handleRetry: handleRateLimitRetry,
-    handleStop: handleRateLimitStop,
-  } = useRateLimitDialog();
-
   return (
-    <TooltipProvider>
-      <AppLayout
-        activePage={activePage}
-        onPageChange={handlePageChange}
-        isSignedIn={isSignedIn}
-      >
-        {activePage === 'download' ? (
-          <DownloadPage initialUrl={initialUrl} />
-        ) : activePage === 'library' ? (
-          <section className="flex-1 min-h-0 flex flex-col">
-            <LibraryTab onDownloadTracks={handleDownloadTracks} />
-          </section>
-        ) : (
-          <section className="flex-1 min-h-0 flex flex-col">
-            <SearchTab />
-          </section>
-        )}
-        <PlayerContainer />
-        <AuthChoiceDialog
-          open={authChoiceOpen}
-          onReAuthenticate={handleReAuthenticate}
-          onContinueStandard={handleContinueStandard}
-        />
-        <RateLimitDialog
-          open={rateLimitOpen}
-          onRetry={handleRateLimitRetry}
-          onStop={handleRateLimitStop}
-        />
-        <DownloadConflictDialog
-          open={pendingDownload !== null}
-          onConfirm={handleConfirmReplace}
-          onCancel={handleCancelReplace}
-        />
-        <WhatsNewDialog
-          open={showWhatsNew}
-          onDismiss={dismiss}
-          version={version}
-          date={date}
-          sections={sections}
-        />
-        <Toaster />
-      </AppLayout>
-    </TooltipProvider>
+    <AppLayout
+      activePage={activePage}
+      onPageChange={handlePageChange}
+      isSignedIn={isSignedIn}
+    >
+      {activePage === 'download' ? (
+        <DownloadPage initialUrl={initialUrl} />
+      ) : activePage === 'library' ? (
+        <section className="flex-1 min-h-0 flex flex-col">
+          <LibraryTab onDownloadTracks={handleDownloadTracks} />
+        </section>
+      ) : (
+        <section className="flex-1 min-h-0 flex flex-col">
+          <SearchTab />
+        </section>
+      )}
+      <PlayerContainer />
+      <AppDialogs
+        pendingDownload={pendingDownload}
+        onConfirmReplace={handleConfirmReplace}
+        onCancelReplace={handleCancelReplace}
+      />
+    </AppLayout>
+  );
+}
+
+export function App() {
+  return (
+    <AppProviders>
+      <AppContent />
+    </AppProviders>
   );
 }

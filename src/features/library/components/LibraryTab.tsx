@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/tauri';
@@ -16,6 +17,8 @@ import type { TrackInfo } from '@/bindings';
 import type { LibraryPlaylist } from '../types';
 import { useLibraryStore } from '../store';
 
+const libraryActions = () => useLibraryStore.getState();
+
 interface LibraryTabProps {
   onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
 }
@@ -23,12 +26,13 @@ interface LibraryTabProps {
 export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
   const { t } = useTranslation();
   const isSignedIn = useAuthStore((s) => s.isSignedIn);
-  const searchQuery = useLibraryStore((s) => s.searchQuery);
-  const setSearchQuery = useLibraryStore((s) => s.setSearchQuery);
-  const filter = useLibraryStore((s) => s.filter);
-  const setFilter = useLibraryStore((s) => s.setFilter);
-  const libraryView = useLibraryStore((s) => s.libraryView);
-  const setLibraryView = useLibraryStore((s) => s.setLibraryView);
+  const { searchQuery, filter, libraryView } = useLibraryStore(
+    useShallow((s) => ({
+      searchQuery: s.searchQuery,
+      filter: s.filter,
+      libraryView: s.libraryView,
+    }))
+  );
   const [slideClass, setSlideClass] = useState('');
   const [quickDownloadFailedPlaylist, setQuickDownloadFailedPlaylist] = useState<string | null>(null);
   const [downloadingPlaylistId, setDownloadingPlaylistId] = useState<number | null>(null);
@@ -53,13 +57,13 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
 
   const handleBackToList = useCallback(() => {
     setSlideClass('library-slide-in-list');
-    setLibraryView({ view: 'list' });
+    libraryActions().setLibraryView({ view: 'list' });
   }, []);
 
   const [animateRefresh, setAnimateRefresh] = useState(false);
   const refreshButtonRef = useRef<HTMLButtonElement>(null);
   const handleRefresh = useCallback(async () => {
-    setLibraryView({ view: 'list' });
+    libraryActions().setLibraryView({ view: 'list' });
     const btn = refreshButtonRef.current;
     if (btn) btn.classList.add('animate-spin');
     await clearCache();
@@ -71,14 +75,13 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
     });
   }, [refetch, clearCache]);
 
-  const setDetailScrollTop = useLibraryStore((s) => s.setDetailScrollTop);
   const handleOpenDetail = useCallback(
     (playlist: LibraryPlaylist) => {
       setSlideClass('library-slide-in-detail');
-      setDetailScrollTop(0);
-      setLibraryView({ view: 'detail', playlist });
+      libraryActions().setDetailScrollTop(0);
+      libraryActions().setLibraryView({ view: 'detail', playlist });
     },
-    [setDetailScrollTop],
+    [],
   );
 
   const handleQuickDownload = useCallback(
@@ -116,9 +119,9 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
 
   return (
     <div key="list" className={`flex flex-col gap-4 flex-1 min-h-0 ${slideClass}`}>
-      <SearchBar value={searchQuery} onChange={setSearchQuery} placeholder={t('library.searchPlaceholder')} autoFocus />
+      <SearchBar value={searchQuery} onChange={(v) => libraryActions().setSearchQuery(v)} placeholder={t('library.searchPlaceholder')} autoFocus />
       <div className="flex items-center justify-between">
-        <LibraryFilterChips active={filter} onChange={setFilter} />
+        <LibraryFilterChips active={filter} onChange={(f) => libraryActions().setFilter(f)} />
         <Button
           ref={refreshButtonRef}
           variant="ghost"

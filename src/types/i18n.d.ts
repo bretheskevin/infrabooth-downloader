@@ -25,4 +25,3 @@ export type TranslationNamespace =
   | 'quality'
   | 'update'
   | 'accessibility';
-

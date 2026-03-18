@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '@/features/auth/store';
 import { signOut } from '@/features/auth/api';
 import {
@@ -14,9 +15,13 @@ import { User, LogOut, ChevronDown } from 'lucide-react';
 
 export function UserMenu() {
   const { t } = useTranslation();
-  const username = useAuthStore((state) => state.username);
-  const plan = useAuthStore((state) => state.plan);
-  const avatarUrl = useAuthStore((state) => state.avatarUrl);
+  const { username, plan, avatarUrl } = useAuthStore(
+    useShallow((state) => ({
+      username: state.username,
+      plan: state.plan,
+      avatarUrl: state.avatarUrl,
+    }))
+  );
   const isGoPlus = plan != null && plan !== '' && plan !== 'Free';
 
   const handleSignOut = async () => {
