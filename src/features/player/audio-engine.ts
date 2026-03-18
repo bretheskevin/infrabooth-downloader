@@ -1,4 +1,10 @@
 import Hls from 'hls.js';
+import {
+  initWebAudio,
+  destroyWebAudio,
+  resumeAudioContext,
+  setMasterGain,
+} from './web-audio-context';
 
 export type AudioEngineState = 'idle' | 'loading' | 'playing' | 'paused';
 
@@ -27,7 +33,11 @@ let currentState: AudioEngineState = 'idle';
 function getAudio(): HTMLAudioElement {
   if (!audio) {
     audio = new Audio();
-    audio.addEventListener('playing', () => setState('playing'));
+    initWebAudio(audio);
+    audio.addEventListener('playing', () => {
+      void resumeAudioContext();
+      setState('playing');
+    });
     audio.addEventListener('pause', () => {
       if (currentState !== 'idle') setState('paused');
     });
@@ -142,7 +152,8 @@ export const audioEngine = {
   },
 
   setVolume(volume: number) {
-    getAudio().volume = Math.max(0, Math.min(1, volume));
+    getAudio().volume = 1;
+    setMasterGain(volume);
   },
 
   stop() {
@@ -170,6 +181,7 @@ export const audioEngine = {
 
   destroy() {
     audioEngine.stop();
+    destroyWebAudio();
     if (audio) {
       audio.remove();
       audio = null;
