@@ -32,8 +32,9 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
         nextIndex = CATEGORIES.length - 1;
       }
 
-      if (nextIndex !== currentIndex) {
-        onSelectCategory(CATEGORIES[nextIndex].id);
+      const category = CATEGORIES[nextIndex];
+      if (nextIndex !== currentIndex && category) {
+        onSelectCategory(category.id);
         // Focus the new tab
         const tablist = e.currentTarget;
         const tabs = tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]');
