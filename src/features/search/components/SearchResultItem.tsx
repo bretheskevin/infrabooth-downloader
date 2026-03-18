@@ -19,6 +19,7 @@ interface SearchResultItemProps {
   isPlayerPlaying?: boolean;
   onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
   onMouseDownTrack?: (track: TrackInfo) => void;
+  isDownloadEnabled: boolean;
 }
 
 export function SearchResultItem({
@@ -26,6 +27,7 @@ export function SearchResultItem({
   index, onPlay, onPause, onResume,
   isCurrentlyPlaying = false, isPlayerPlaying = false,
   onHoverTrack, onMouseDownTrack,
+  isDownloadEnabled,
 }: SearchResultItemProps) {
   const boundHover = useCallback(() => onHoverTrack?.(track), [onHoverTrack, track]);
   const { onHoverStart, onHoverEnd } = useHoverPreload(boundHover);
@@ -54,12 +56,14 @@ export function SearchResultItem({
       onHoverEnd={onHoverEnd}
       onMouseDown={handleMouseDown}
       rightSlot={
-        <TrackDownloadAction
-          state={state}
-          onDownload={onDownload}
-          onRetry={onRetry}
-          variant="filled"
-        />
+        isDownloadEnabled ? (
+          <TrackDownloadAction
+            state={state}
+            onDownload={onDownload}
+            onRetry={onRetry}
+            variant="filled"
+          />
+        ) : null
       }
     />
   );

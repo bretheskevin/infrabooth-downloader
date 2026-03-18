@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import type { LibraryPlaylist } from '@/bindings';
 import { formatTotalDuration } from '@/lib/utils';
+import { useIsDownloadEnabled } from '@/features/settings';
 
 interface PlaylistDetailHeaderProps {
   playlist: LibraryPlaylist;
@@ -33,6 +34,7 @@ export function PlaylistDetailHeader({
   showOrderToggle,
 }: PlaylistDetailHeaderProps) {
   const { t } = useTranslation();
+  const isDownloadEnabled = useIsDownloadEnabled();
 
   return (
     <div className="space-y-2">
@@ -69,7 +71,7 @@ export function PlaylistDetailHeader({
               {' · '}
               {formatTotalDuration(playlist.duration)}
             </span>
-            {folderName && (
+            {isDownloadEnabled && folderName && (
               <>
                 <span className="text-border">·</span>
                 <button
@@ -89,7 +91,7 @@ export function PlaylistDetailHeader({
                 </button>
               </>
             )}
-            {downloadedCount > 0 && (
+            {isDownloadEnabled && downloadedCount > 0 && (
               <span
                 className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-500/10 text-green-500 shrink-0"
                 aria-label={t('library.detail.downloadedCount', { count: downloadedCount })}
@@ -100,12 +102,14 @@ export function PlaylistDetailHeader({
             )}
           </p>
         </div>
-        <Button size="sm" onClick={onDownloadAll} disabled={isDownloadDisabled} className="gap-1.5 shrink-0">
-          <Download className="h-3.5 w-3.5" />
-          {t('library.detail.downloadAll')}
-        </Button>
+        {isDownloadEnabled && (
+          <Button size="sm" onClick={onDownloadAll} disabled={isDownloadDisabled} className="gap-1.5 shrink-0">
+            <Download className="h-3.5 w-3.5" />
+            {t('library.detail.downloadAll')}
+          </Button>
+        )}
       </div>
-      {showOrderToggle && (
+      {isDownloadEnabled && showOrderToggle && (
         <div className="flex justify-end">
           <PreserveOrderToggle compact />
         </div>

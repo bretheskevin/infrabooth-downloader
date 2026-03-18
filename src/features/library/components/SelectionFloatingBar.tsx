@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { usePlayerStore } from '@/features/player';
 import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
 import { EXPANDED_BAR_HEIGHT, EXPANDED_BAR_GAP } from '@/features/player/components/ExpandedBar';
+import { useIsDownloadEnabled } from '@/features/settings';
 
 interface SelectionFloatingBarProps {
   selectedCount: number;
@@ -14,7 +15,9 @@ export function SelectionFloatingBar({ selectedCount, onDownload }: SelectionFlo
   const { t } = useTranslation();
   const expandedBarVisible = useIsExpandedBarVisible();
   const isQueueOpen = usePlayerStore((s) => s.isQueueOpen);
+  const isDownloadEnabled = useIsDownloadEnabled();
 
+  if (!isDownloadEnabled) return null;
   if (selectedCount === 0 || (expandedBarVisible && isQueueOpen)) return null;
 
   const bottom = expandedBarVisible ? EXPANDED_BAR_HEIGHT + EXPANDED_BAR_GAP : 24;

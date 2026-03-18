@@ -24,6 +24,7 @@ interface PlaylistTrackItemProps {
   isPlayerPlaying?: boolean;
   onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
   onMouseDownTrack?: (track: TrackInfo) => void;
+  isDownloadEnabled: boolean;
 }
 
 const MAX_STAGGER_ITEMS = 15;
@@ -45,6 +46,7 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
   isPlayerPlaying = false,
   onHoverTrack,
   onMouseDownTrack,
+  isDownloadEnabled,
 }: PlaylistTrackItemProps) {
   const delay = animate && staggerIndex < MAX_STAGGER_ITEMS ? staggerIndex * STAGGER_DELAY_MS : 0;
   const isDownloaded = downloadState.status === 'completed';
@@ -75,7 +77,7 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
       animationDelay={delay}
       className={cn(
         'border transition-[background-color,border-color] duration-150',
-        !isDownloaded && 'group',
+        isDownloadEnabled && !isDownloaded && 'group',
         animate && 'track-row-stagger',
         isSelected
           ? 'bg-primary/5 border-primary/20'
@@ -91,29 +93,33 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
         <div
           className={cn(
             'flex items-center gap-3 shrink-0 self-stretch -my-2 py-2 -ml-3 pl-3',
-            !isDownloaded && 'cursor-pointer',
+            isDownloadEnabled && !isDownloaded && 'cursor-pointer',
           )}
-          onClick={handleToggle}
+          onClick={isDownloadEnabled ? handleToggle : undefined}
         >
-          <Checkbox
-            checked={isSelected}
-            onCheckedChange={handleToggle}
-            disabled={isDownloaded}
-            className="shrink-0"
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          />
+          {isDownloadEnabled && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={handleToggle}
+              disabled={isDownloaded}
+              className="shrink-0"
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+            />
+          )}
           <span className="w-6 text-right text-xs text-muted-foreground tabular-nums shrink-0">
             {isCurrentlyPlaying ? <EqualizerBars className="h-3 w-3 ml-auto" /> : index + 1}
           </span>
         </div>
       }
       rightSlot={
-        <TrackDownloadAction
-          state={downloadState}
-          onDownload={handleDownload}
-          onRetry={handleDownload}
-          variant="ghost"
-        />
+        isDownloadEnabled ? (
+          <TrackDownloadAction
+            state={downloadState}
+            onDownload={handleDownload}
+            onRetry={handleDownload}
+            variant="ghost"
+          />
+        ) : null
       }
     />
   );

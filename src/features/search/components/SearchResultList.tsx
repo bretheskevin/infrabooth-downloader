@@ -4,6 +4,7 @@ import { Loader2, Search } from 'lucide-react';
 import type { TrackInfo } from '@/bindings';
 import { ApiError } from '@/lib/tauri';
 import type { DownloadState } from '@/types/download';
+import { useIsDownloadEnabled } from '@/features/settings';
 import { SearchResultItem } from './SearchResultItem';
 
 interface SearchResultListProps {
@@ -46,6 +47,7 @@ export function SearchResultList({
   onMouseDownTrack,
 }: SearchResultListProps) {
   const { t } = useTranslation();
+  const isDownloadEnabled = useIsDownloadEnabled();
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   // Infinite scroll via IntersectionObserver
@@ -123,6 +125,7 @@ export function SearchResultList({
           isPlayerPlaying={isPlayerPlaying}
           onHoverTrack={onHoverTrack}
           onMouseDownTrack={onMouseDownTrack}
+          isDownloadEnabled={isDownloadEnabled}
         />
       ))}
 

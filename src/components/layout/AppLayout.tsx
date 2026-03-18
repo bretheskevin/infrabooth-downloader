@@ -4,6 +4,7 @@ import { Header } from './Header';
 import { UpdateBanner } from '@/features/update';
 import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
 import { EXPANDED_BAR_HEIGHT } from '@/features/player/components/ExpandedBar';
+import { useIsDownloadEnabled } from '@/features/settings';
 
 export type AppPage = 'download' | 'library' | 'search';
 
@@ -22,12 +23,17 @@ interface PageNavProps {
 
 function PageNav({ activePage, onPageChange, isSignedIn }: PageNavProps) {
   const { t } = useTranslation();
+  const isDownloadEnabled = useIsDownloadEnabled();
 
-  const tabs: { key: AppPage; label: string; locked: boolean }[] = [
+  const allTabs: { key: AppPage; label: string; locked: boolean }[] = [
     { key: 'download', label: t('library.pasteUrlTab'), locked: false },
     { key: 'library', label: t('library.tabLabel'), locked: !isSignedIn },
     { key: 'search', label: t('search.tabLabel'), locked: false },
   ];
+
+  const tabs = isDownloadEnabled
+    ? allTabs
+    : allTabs.filter((tab) => tab.key !== 'download');
 
   return (
     <div className="flex gap-1 rounded-lg bg-secondary/50 p-1 mb-4">

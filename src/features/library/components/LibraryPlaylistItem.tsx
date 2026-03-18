@@ -1,6 +1,7 @@
 import { Download, Loader2, Music } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
+import { useIsDownloadEnabled } from '@/features/settings';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import type { LibraryPlaylist } from '../types';
 
@@ -13,6 +14,7 @@ interface LibraryPlaylistItemProps {
 
 export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDownloading }: LibraryPlaylistItemProps) {
   const { t } = useTranslation();
+  const isDownloadEnabled = useIsDownloadEnabled();
   const needsArtwork = !playlist.artwork_url;
   const { data: resolvedArtwork } = usePlaylistArtwork(
     playlist.id,
@@ -52,23 +54,25 @@ export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDown
       <span className="text-xs text-muted-foreground flex-shrink-0">
         {t('download.trackCount', { count: playlist.track_count })}
       </span>
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative z-10 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-        aria-label={t('library.detail.download')}
-        disabled={isDownloading}
-        onClick={(e) => {
-          e.stopPropagation();
-          onDownload();
-        }}
-      >
-        {isDownloading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Download className="h-4 w-4" />
-        )}
-      </Button>
+      {isDownloadEnabled && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative z-10 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label={t('library.detail.download')}
+          disabled={isDownloading}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDownload();
+          }}
+        >
+          {isDownloading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+        </Button>
+      )}
     </div>
   );
 }
