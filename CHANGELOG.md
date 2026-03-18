@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.9.2] - 2026-03-18
+
+### Changed
+
+- Download progress displayed in MB during updates
+- Restart link after update installation
+
+### Fixed
+
+- Audio playback was broken in production builds
+
 ## [1.9.1] - 2026-03-18
 
 ### Fixed

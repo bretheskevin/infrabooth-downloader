@@ -7,6 +7,17 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.9.2] - 2026-03-18
+
+### Changed
+
+- Affichage de la progression du téléchargement en Mo pendant les mises à jour
+- Lien de redémarrage après l'installation des mises à jour
+
+### Fixed
+
+- La lecture audio ne fonctionnait pas dans les builds de production
+
 ## [1.9.1] - 2026-03-18
 
 ### Fixed
