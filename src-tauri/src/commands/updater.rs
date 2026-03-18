@@ -1,7 +1,18 @@
-use tauri::AppHandle;
+use serde::Serialize;
+use tauri::{AppHandle, Emitter};
 use tauri_plugin_updater::UpdaterExt;
 
-use crate::services::updater::{self, UpdateInfo};
+use crate::services::{
+    events,
+    updater::{self, UpdateInfo},
+};
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct UpdateDownloadProgress {
+    downloaded_bytes: usize,
+    total_bytes: Option<u64>,
+}
 
 /// Checks for available updates silently.
 ///
@@ -51,9 +62,17 @@ pub async fn install_update(app: AppHandle) -> Result<(), String> {
         Ok(Some(update)) => {
             log::info!("[updater] Downloading update v{}...", update.version);
 
+            let app_clone = app.clone();
             update
                 .download_and_install(
-                    |downloaded, total| {
+                    move |downloaded, total| {
+                        let _ = app_clone.emit(
+                            events::UPDATE_DOWNLOAD_PROGRESS,
+                            UpdateDownloadProgress {
+                                downloaded_bytes: downloaded,
+                                total_bytes: total,
+                            },
+                        );
                         if let Some(total) = total {
                             let percent = (downloaded as f64 / total as f64) * 100.0;
                             log::debug!("[updater] Download progress: {:.1}%", percent);

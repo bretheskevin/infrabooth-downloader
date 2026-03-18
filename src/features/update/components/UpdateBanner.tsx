@@ -10,6 +10,11 @@ import { useUpdateStore } from '../store';
 const RELEASES_BASE_URL =
   'https://github.com/bretheskevin/infrabooth-downloader/releases';
 
+function formatBytes(bytes: number): string {
+  const mb = bytes / (1024 * 1024);
+  return mb.toFixed(1);
+}
+
 export function UpdateBanner() {
   const { t } = useTranslation();
   const {
@@ -19,6 +24,7 @@ export function UpdateBanner() {
     installing,
     installError,
     installed,
+    downloadProgress,
     installUpdate,
     relaunchApp,
     dismissUpdate,
@@ -30,6 +36,7 @@ export function UpdateBanner() {
       installing: s.installing,
       installError: s.installError,
       installed: s.installed,
+      downloadProgress: s.downloadProgress,
       installUpdate: s.installUpdate,
       relaunchApp: s.relaunchApp,
       dismissUpdate: s.dismissUpdate,
@@ -108,7 +115,11 @@ export function UpdateBanner() {
                 ) : (
                   <Download className="h-3 w-3 mr-1.5" />
                 )}
-                {installing ? t('update.installing') : t('update.updateNow')}
+                {installing && downloadProgress?.totalBytes
+                  ? `${formatBytes(downloadProgress.downloadedBytes)} / ${formatBytes(downloadProgress.totalBytes)} MB`
+                  : installing
+                    ? t('update.installing')
+                    : t('update.updateNow')}
               </Button>
               <Button
                 variant="ghost"
