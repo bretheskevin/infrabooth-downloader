@@ -24,3 +24,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isSignedIn, username, plan, avatarUrl }),
   clearAuth: () => set({ isSignedIn: false, username: null, plan: null, avatarUrl: null }),
 }));
+
+// Single selector that's actually used (in App.tsx)
+export const useIsSignedIn = () => useAuthStore((s) => s.isSignedIn);

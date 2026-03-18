@@ -1,4 +1,4 @@
-export { useAuthStore } from './store';
+export { useAuthStore, useIsSignedIn } from './store';
 export * from './hooks/useAuthStateListener';
 export * from './hooks/useStartupAuth';
 export { AuthContainer } from './components/AuthContainer';

@@ -1,19 +1,23 @@
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 import { Pause, Play, Loader2 } from 'lucide-react';
 import { cn, getArtworkUrl } from '@/lib/utils';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { usePlayerStore } from '../store';
 import { ScrollingText } from './ScrollingText';
 
+const actions = () => usePlayerStore.getState();
+
 export function MiniPill() {
   const { t } = useTranslation();
-  const state = usePlayerStore((s) => s.state);
-  const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const positionMs = usePlayerStore((s) => s.positionMs);
-  const durationMs = usePlayerStore((s) => s.durationMs);
-  const pause = usePlayerStore((s) => s.pause);
-  const resume = usePlayerStore((s) => s.resume);
-  const toggleExpanded = usePlayerStore((s) => s.toggleExpanded);
+  const { state, currentTrack, positionMs, durationMs } = usePlayerStore(
+    useShallow((s) => ({
+      state: s.state,
+      currentTrack: s.currentTrack,
+      positionMs: s.positionMs,
+      durationMs: s.durationMs,
+    }))
+  );
 
   if (!currentTrack || state === 'stopped') return null;
 
@@ -35,7 +39,7 @@ export function MiniPill() {
         <TooltipTrigger asChild>
           <button
             className="flex items-center gap-2 pl-1.5 pr-3 h-full rounded-l-full hover:bg-white/10 transition-colors"
-            onClick={toggleExpanded}
+            onClick={() => actions().toggleExpanded()}
             aria-label={t('player.expand')}
           >
             <div className="relative h-9 w-9 flex-shrink-0">
@@ -85,7 +89,7 @@ export function MiniPill() {
       {/* Right: play/pause (click to toggle) */}
       <button
         className="flex items-center justify-center h-full px-3 rounded-r-full hover:bg-white/10 transition-colors border-l border-white/15"
-        onClick={() => isPlaying ? pause() : resume()}
+        onClick={() => isPlaying ? actions().pause() : actions().resume()}
         aria-label={isPlaying ? t('player.pause') : t('player.play')}
       >
         {isLoading ? (

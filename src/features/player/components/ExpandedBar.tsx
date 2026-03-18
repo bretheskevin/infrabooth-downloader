@@ -1,5 +1,6 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 import { Play, Pause, SkipBack, SkipForward, Volume2, ListMusic, ChevronDown, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -13,23 +14,21 @@ export const EXPANDED_BAR_HEIGHT = 76;
 /** Gap between the expanded bar top and floating elements above it. */
 export const EXPANDED_BAR_GAP = 8;
 
+const actions = () => usePlayerStore.getState();
+
 export function ExpandedBar() {
   const { t } = useTranslation();
-  const state = usePlayerStore((s) => s.state);
-  const currentTrack = usePlayerStore((s) => s.currentTrack);
-  const positionMs = usePlayerStore((s) => s.positionMs);
-  const durationMs = usePlayerStore((s) => s.durationMs);
-  const volume = usePlayerStore((s) => s.volume);
-  const isQueueOpen = usePlayerStore((s) => s.isQueueOpen);
-  const pause = usePlayerStore((s) => s.pause);
-  const resume = usePlayerStore((s) => s.resume);
-  const seek = usePlayerStore((s) => s.seek);
-  const next = usePlayerStore((s) => s.next);
-  const previous = usePlayerStore((s) => s.previous);
-  const setVolume = usePlayerStore((s) => s.setVolume);
-  const toggleExpanded = usePlayerStore((s) => s.toggleExpanded);
-  const toggleQueue = usePlayerStore((s) => s.toggleQueue);
-  const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
+  const { state, currentTrack, positionMs, durationMs, volume, isQueueOpen } = usePlayerStore(
+    useShallow((s) => ({
+      state: s.state,
+      currentTrack: s.currentTrack,
+      positionMs: s.positionMs,
+      durationMs: s.durationMs,
+      volume: s.volume,
+      isQueueOpen: s.isQueueOpen,
+    }))
+  );
+  const currentTrackId = currentTrack?.trackId;
 
   const seekbarRef = useRef<HTMLDivElement>(null);
   const preloadTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -82,7 +81,7 @@ export function ExpandedBar() {
             value={[positionMs]}
             max={durationMs || 1}
             step={1000}
-            onValueChange={([v]) => seek(v ?? 0)}
+            onValueChange={([v]) => actions().seek(v ?? 0)}
           />
           {seekHover && (
             <div
@@ -117,13 +116,13 @@ export function ExpandedBar() {
 
         {/* Transport controls */}
         <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={previous} aria-label={t('player.previous')}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => actions().previous()} aria-label={t('player.previous')}>
             <SkipBack className="h-3.5 w-3.5" />
           </Button>
           <Button
             size="icon"
             className="h-8 w-8 rounded-full"
-            onClick={() => isPlaying ? pause() : resume()}
+            onClick={() => isPlaying ? actions().pause() : actions().resume()}
             aria-label={isPlaying ? t('player.pause') : t('player.play')}
           >
             {isLoading ? (
@@ -134,7 +133,7 @@ export function ExpandedBar() {
               <Play className="h-4 w-4 fill-current" />
             )}
           </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={next} aria-label={t('player.next')}>
+          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => actions().next()} aria-label={t('player.next')}>
             <SkipForward className="h-3.5 w-3.5" />
           </Button>
         </div>
@@ -146,7 +145,7 @@ export function ExpandedBar() {
             value={[volume * 100]}
             max={100}
             step={1}
-            onValueChange={([v]) => setVolume((v ?? 0) / 100)}
+            onValueChange={([v]) => actions().setVolume((v ?? 0) / 100)}
             className="w-[60px]"
           />
         </div>
@@ -158,7 +157,7 @@ export function ExpandedBar() {
               variant="ghost"
               size="icon"
               className={cn('h-7 w-7', isQueueOpen && 'text-primary bg-primary/10')}
-              onClick={toggleQueue}
+              onClick={() => actions().toggleQueue()}
               aria-label={t('player.queue')}
             >
               <ListMusic className="h-3.5 w-3.5" />
@@ -170,7 +169,7 @@ export function ExpandedBar() {
         </Tooltip>
 
         {/* Collapse */}
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={toggleExpanded} aria-label={t('player.collapse')}>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => actions().toggleExpanded()} aria-label={t('player.collapse')}>
           <ChevronDown className="h-3.5 w-3.5" />
         </Button>
       </div>

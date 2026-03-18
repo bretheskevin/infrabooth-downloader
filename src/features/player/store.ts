@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { toast } from 'sonner';
 import i18n from '@/lib/i18n';
 import { logger } from '@/lib/logger';
@@ -287,3 +288,23 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
     audioEngine.destroy();
   },
 }));
+
+
+export const usePlayerState = () =>
+  usePlayerStore(
+    useShallow((s) => ({
+      state: s.state,
+      currentTrack: s.currentTrack,
+      positionMs: s.positionMs,
+      durationMs: s.durationMs,
+      volume: s.volume,
+    }))
+  );
+
+export const usePlayerUI = () =>
+  usePlayerStore(
+    useShallow((s) => ({
+      isExpanded: s.isExpanded,
+      isQueueOpen: s.isQueueOpen,
+    }))
+  );
