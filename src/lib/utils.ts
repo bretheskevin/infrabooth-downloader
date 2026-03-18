@@ -46,12 +46,18 @@ export function formatBytes(bytes: number): string {
 }
 
 /**
+ * Valid SoundCloud artwork sizes.
+ * SoundCloud only serves artwork at these specific dimensions.
+ */
+export type ArtworkSize = 20 | 32 | 47 | 67 | 100 | 300 | 500;
+
+/**
  * Get SoundCloud artwork URL at a specific size.
  *
  * SoundCloud serves `-large` (100x100) by default. Replace with `-t{size}x{size}`
  * to get the desired resolution.
  */
-export function getArtworkUrl(url: string | null, size: number = 67): string | null {
+export function getArtworkUrl(url: string | null, size: ArtworkSize = 67): string | null {
   if (!url) return null;
   return url.replace('-large', `-t${size}x${size}`);
 }

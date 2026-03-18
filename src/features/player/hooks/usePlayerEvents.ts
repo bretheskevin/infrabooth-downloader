@@ -1,11 +1,13 @@
 import { useEffect } from 'react';
+import { type ArtworkSize, getArtworkUrl } from '@/lib/utils';
 import { usePlayerStore } from '../store';
 
-const MEDIA_SESSION_STATE: Record<string, MediaSessionPlaybackState> = {
+const ARTWORK_SIZE: ArtworkSize = 500;
+
+const PLAYBACK_STATE_MAP: Record<string, MediaSessionPlaybackState> = {
   playing: 'playing',
   paused: 'paused',
   loading: 'playing',
-  stopped: 'none',
 };
 
 export function usePlayerEvents(): void {
@@ -21,28 +23,32 @@ export function usePlayerEvents(): void {
   useEffect(() => {
     if (!('mediaSession' in navigator)) return;
 
+    // Register action handlers
+    const store = usePlayerStore.getState;
     const handlers: Array<[MediaSessionAction, MediaSessionActionHandler]> = [
-      ['play', () => usePlayerStore.getState().resume()],
-      ['pause', () => usePlayerStore.getState().pause()],
-      ['nexttrack', () => void usePlayerStore.getState().next()],
-      ['previoustrack', () => void usePlayerStore.getState().previous()],
+      ['play', () => store().resume()],
+      ['pause', () => store().pause()],
+      ['previoustrack', () => void store().previous()],
+      ['nexttrack', () => void store().next()],
     ];
 
     for (const [action, handler] of handlers) {
       navigator.mediaSession.setActionHandler(action, handler);
     }
 
+    // Sync state changes to MediaSession
     const unsubscribe = usePlayerStore.subscribe((state, prevState) => {
       if (state.state === prevState.state && state.currentTrack === prevState.currentTrack) return;
 
       const { currentTrack, state: playbackState } = state;
 
-      navigator.mediaSession.playbackState = MEDIA_SESSION_STATE[playbackState] ?? 'none';
+      navigator.mediaSession.playbackState = PLAYBACK_STATE_MAP[playbackState] ?? 'none';
 
+      // Update metadata
       if (currentTrack) {
-        const artwork: MediaImage[] = currentTrack.artworkUrl
-          ? [{ src: currentTrack.artworkUrl }]
-          : [];
+        const artworkSrc = getArtworkUrl(currentTrack.artworkUrl, ARTWORK_SIZE);
+        const artwork: MediaImage[] = artworkSrc ? [{ src: artworkSrc }] : [];
+
         navigator.mediaSession.metadata = new MediaMetadata({
           title: currentTrack.title,
           artist: currentTrack.artist,
