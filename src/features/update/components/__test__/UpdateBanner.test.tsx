@@ -14,6 +14,8 @@ vi.mock('react-i18next', () => ({
         'update.updateNow': 'Update now',
         'update.installing': 'Installing...',
         'update.installed': 'Update installed — restart to apply',
+        'update.installedPrefix': 'Update installed —',
+        'update.restartLink': 'restart to apply',
         'update.installError': 'Update failed — click to retry',
       };
       return translations[key] ?? key;
@@ -25,6 +27,12 @@ vi.mock('react-i18next', () => ({
 const mockOpen = vi.fn().mockResolvedValue(undefined);
 vi.mock('@tauri-apps/plugin-shell', () => ({
   open: (...args: unknown[]) => mockOpen(...args),
+}));
+
+// Mock @tauri-apps/plugin-process
+const mockRelaunch = vi.fn().mockResolvedValue(undefined);
+vi.mock('@tauri-apps/plugin-process', () => ({
+  relaunch: () => mockRelaunch(),
 }));
 
 const defaultState = {
@@ -213,7 +221,8 @@ describe('UpdateBanner', () => {
     it('should show installed message', () => {
       render(<UpdateBanner />);
 
-      expect(screen.getByText('Update installed — restart to apply')).toBeInTheDocument();
+      expect(screen.getByText('Update installed —')).toBeInTheDocument();
+      expect(screen.getByText('restart to apply')).toBeInTheDocument();
     });
 
     it('should not show "Update now" button after installation', () => {
@@ -232,6 +241,28 @@ describe('UpdateBanner', () => {
       render(<UpdateBanner />);
 
       expect(screen.getByRole('button', { name: 'Dismiss' })).toBeInTheDocument();
+    });
+
+    it('should show clickable "restart to apply" link after installation', () => {
+      render(<UpdateBanner />);
+
+      expect(screen.getByRole('button', { name: 'restart to apply' })).toBeInTheDocument();
+    });
+
+    it('should call relaunchApp when "restart to apply" is clicked', () => {
+      const relaunchSpy = vi.fn();
+      useUpdateStore.setState({
+        updateAvailable: true,
+        updateInfo: { version: '2.0.0', body: null, date: null },
+        installed: true,
+        relaunchApp: relaunchSpy,
+      });
+
+      render(<UpdateBanner />);
+
+      fireEvent.click(screen.getByRole('button', { name: 'restart to apply' }));
+
+      expect(relaunchSpy).toHaveBeenCalledOnce();
     });
   });
 

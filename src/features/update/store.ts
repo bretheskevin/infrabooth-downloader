@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { relaunch } from '@tauri-apps/plugin-process';
 import { commands, type UpdateInfo } from '@/bindings';
 import { useChangelogStore } from '@/features/changelog/store';
 import { logger } from '@/lib/logger';
@@ -14,6 +15,7 @@ interface UpdateState {
   installed: boolean;
   checkForUpdates: () => Promise<void>;
   installUpdate: () => Promise<void>;
+  relaunchApp: () => Promise<void>;
   dismissUpdate: () => void;
   clearUpdateInfo: () => void;
 }
@@ -88,6 +90,11 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
       void logger.error(`[Update] Installation error: ${message}`);
       set({ installing: false, installError: message });
     }
+  },
+
+  relaunchApp: async () => {
+    void logger.info('[Update] Relaunching app to apply update...');
+    await relaunch();
   },
 
   dismissUpdate: () => {

@@ -172,6 +172,8 @@
     "updateNow": "Update now",
     "installing": "Installing...",
     "installed": "Update installed — restart to apply",
+    "installedPrefix": "Update installed —",
+    "restartLink": "restart to apply",
     "installError": "Update failed — click to retry"
   },
   "accessibility": {
