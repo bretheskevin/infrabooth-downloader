@@ -60,8 +60,8 @@ const mockPlaylist: PlaylistInfo = {
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 47,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '' },
-    { id: 2, title: 'Track 2', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 200000, permalink_url: '' },
+    { id: 1, title: 'Track 1', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null },
+    { id: 2, title: 'Track 2', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 200000, permalink_url: '', waveform_url: null },
   ],
 };
 
@@ -72,7 +72,7 @@ const mockSingleTrackPlaylist: PlaylistInfo = {
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 1,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '' },
+    { id: 1, title: 'Track 1', user: { username: 'testuser', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null },
   ],
 };
 
@@ -90,6 +90,7 @@ const mockPlaylistNoArtwork: PlaylistInfo = {
       artwork_url: null,
       duration: 180000,
       permalink_url: '',
+      waveform_url: null,
     },
   ],
 };
@@ -108,6 +109,7 @@ const mockPlaylistWithTrackArtwork: PlaylistInfo = {
       artwork_url: 'https://i1.sndcdn.com/artworks-track1-large.jpg',
       duration: 180000,
       permalink_url: '',
+      waveform_url: null,
     },
   ],
 };

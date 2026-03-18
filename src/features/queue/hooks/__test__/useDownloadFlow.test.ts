@@ -98,6 +98,7 @@ const mockPlaylist: PlaylistInfo = {
       artwork_url: null,
       duration: 180000,
       permalink_url: '',
+      waveform_url: null,
     },
   ],
 };
@@ -109,6 +110,7 @@ const mockTrack: TrackInfo = {
   artwork_url: 'https://example.com/single.jpg',
   duration: 240000,
   permalink_url: '',
+  waveform_url: null,
 };
 
 const mockQueueTracksData: Track[] = [

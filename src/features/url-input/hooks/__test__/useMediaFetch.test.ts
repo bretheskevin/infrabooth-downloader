@@ -25,7 +25,7 @@ const mockPlaylist = {
   artwork_url: 'https://example.com/art.jpg',
   track_count: 5,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'Artist1', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: 'https://soundcloud.com/artist1/track-1' },
+    { id: 1, title: 'Track 1', user: { username: 'Artist1', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: 'https://soundcloud.com/artist1/track-1', waveform_url: null },
   ],
 };
 
@@ -36,6 +36,7 @@ const mockTrack = {
   artwork_url: 'https://example.com/track-art.jpg',
   duration: 240000,
   permalink_url: 'https://soundcloud.com/testartist/test-track',
+  waveform_url: null,
 };
 
 const validTrackValidation: ValidationResult = { valid: true, urlType: 'track', error: null };

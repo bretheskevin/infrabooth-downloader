@@ -50,6 +50,7 @@ struct RawSearchTrack {
     #[serde(default)]
     permalink_url: String,
     media: Option<stream::MediaInfo>,
+    waveform_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -91,6 +92,7 @@ fn map_raw_track(raw: RawSearchTrack) -> TrackInfo {
         artwork_url: raw.artwork_url,
         duration: raw.duration,
         permalink_url: raw.permalink_url,
+        waveform_url: raw.waveform_url,
     }
 }
 
@@ -256,6 +258,7 @@ mod tests {
                 artwork_url: None,
                 duration: 100000,
                 permalink_url: "https://soundcloud.com/user/test".to_string(),
+                waveform_url: None,
             }],
             total_results: Some(1),
         };

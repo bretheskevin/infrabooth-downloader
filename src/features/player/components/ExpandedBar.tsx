@@ -9,10 +9,10 @@ import { cn, formatDuration, getArtworkUrl } from '@/lib/utils';
 import { usePlayerStore } from '../store';
 import { preloadSegmentAtTime } from '../url-cache';
 import { ScrollingText } from './ScrollingText';
+import { Waveform, WaveformSkeleton } from './Waveform';
+import { useWaveform } from '../hooks/useWaveform';
 
-export const EXPANDED_BAR_HEIGHT = 76;
-/** Gap between the expanded bar top and floating elements above it. */
-export const EXPANDED_BAR_GAP = 8;
+export const EXPANDED_BAR_HEIGHT = 86;
 
 const actions = () => usePlayerStore.getState();
 
@@ -29,6 +29,9 @@ export function ExpandedBar() {
     }))
   );
   const currentTrackId = currentTrack?.trackId;
+
+  const waveformUrl = currentTrack?.waveformUrl ?? null;
+  const { samples: waveformSamples, isLoading: isWaveformLoading } = useWaveform(waveformUrl);
 
   const seekbarRef = useRef<HTMLDivElement>(null);
   const preloadTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -65,9 +68,9 @@ export function ExpandedBar() {
   const isLoading = state === 'loading';
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t shadow-lg animate-in slide-in-from-bottom duration-300" style={{ height: `${EXPANDED_BAR_HEIGHT}px` }}>
+    <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t shadow-[0_-8px_24px_rgba(0,0,0,0.15)] animate-in slide-in-from-bottom duration-300" style={{ height: `${EXPANDED_BAR_HEIGHT}px` }}>
       {/* Seekbar */}
-      <div className="flex items-center gap-2 px-4 pt-2">
+      <div className="flex items-center gap-2 px-4 pt-3">
         <span className="text-[10px] text-muted-foreground min-w-[32px] text-right tabular-nums">
           {formatDuration(positionMs)}
         </span>
@@ -77,12 +80,22 @@ export function ExpandedBar() {
           onMouseMove={onSeekbarMouseMove}
           onMouseLeave={onSeekbarMouseLeave}
         >
-          <Slider
-            value={[positionMs]}
-            max={durationMs || 1}
-            step={1000}
-            onValueChange={([v]) => actions().seek(v ?? 0)}
-          />
+          {waveformSamples ? (
+            <Waveform
+              samples={waveformSamples}
+              progress={durationMs ? positionMs / durationMs : 0}
+              onSeek={(p) => durationMs && actions().seek(p * durationMs)}
+            />
+          ) : isWaveformLoading ? (
+            <WaveformSkeleton />
+          ) : (
+            <Slider
+              value={[positionMs]}
+              max={durationMs || 1}
+              step={1000}
+              onValueChange={([v]) => actions().seek(v ?? 0)}
+            />
+          )}
           {seekHover && (
             <div
               className="absolute bottom-full mb-1.5 -translate-x-1/2 pointer-events-none rounded-md bg-primary px-2 py-0.5 text-[10px] text-primary-foreground tabular-nums shadow-sm"
@@ -98,7 +111,7 @@ export function ExpandedBar() {
       </div>
 
       {/* Controls row */}
-      <div className="flex items-center gap-3 px-4 pb-2.5 pt-1">
+      <div className="flex items-center gap-3 px-4 pb-3.5 pt-1">
         {/* Artwork + info */}
         <div className="h-8 w-8 rounded-md bg-secondary flex-shrink-0 overflow-hidden">
           {currentTrack.artworkUrl && (

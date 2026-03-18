@@ -11,6 +11,7 @@ export function buildPlaybackQueue(tracks: TrackInfo[]): PlaybackItem[] {
     artist: track.user.username,
     artworkUrl: track.artwork_url,
     durationMs: track.duration,
+    waveformUrl: track.waveform_url,
   }));
 }
 

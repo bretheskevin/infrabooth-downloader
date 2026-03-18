@@ -38,6 +38,7 @@ const mockTrack: PlaybackItem = {
   artist: 'Test Artist',
   artworkUrl: null,
   durationMs: 180000,
+  waveformUrl: null,
 };
 
 const makeQueue = (): PlaybackItem[] => [
