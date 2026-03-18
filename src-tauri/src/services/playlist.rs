@@ -91,6 +91,8 @@ struct RawTrackInfo {
     pub permalink_url: String,
     /// Media section with transcodings — cached for instant playback resolution.
     pub media: Option<stream::MediaInfo>,
+    /// URL to fetch waveform data (JSON with samples array).
+    pub waveform_url: Option<String>,
 }
 
 /// Track information from SoundCloud API.
@@ -103,6 +105,8 @@ pub struct TrackInfo {
     /// Duration in milliseconds.
     pub duration: u64,
     pub permalink_url: String,
+    /// URL to fetch waveform data (JSON with samples array).
+    pub waveform_url: Option<String>,
 }
 
 impl From<RawTrackInfo> for TrackInfo {
@@ -134,6 +138,7 @@ impl From<RawTrackInfo> for TrackInfo {
             artwork_url: artwork,
             duration: raw.duration,
             permalink_url: raw.permalink_url,
+            waveform_url: raw.waveform_url,
         }
     }
 }
@@ -952,6 +957,7 @@ mod tests {
             artwork_url: Some("https://example.com/art.jpg".to_string()),
             duration: 180000,
             permalink_url: "https://soundcloud.com/test_artist/test-track".to_string(),
+            waveform_url: None,
         };
         let json = serde_json::to_string(&track).unwrap();
         assert!(json.contains("\"id\":123456"));
@@ -1068,6 +1074,7 @@ mod tests {
                 artwork_url: None,
                 duration: 180000,
                 permalink_url: "https://soundcloud.com/artist/track-1".to_string(),
+                waveform_url: None,
             }],
         };
         let json = serde_json::to_string(&playlist).unwrap();

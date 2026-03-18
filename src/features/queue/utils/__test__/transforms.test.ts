@@ -14,6 +14,7 @@ const mockTrack: TrackInfo = {
   artwork_url: 'https://example.com/art.jpg',
   duration: 180000,
   permalink_url: '',
+  waveform_url: null,
 };
 
 const mockTrackNoArtwork: TrackInfo = {
@@ -23,6 +24,7 @@ const mockTrackNoArtwork: TrackInfo = {
   artwork_url: null,
   duration: 120000,
   permalink_url: '',
+  waveform_url: null,
 };
 
 describe('trackInfoToQueueTrack', () => {
