@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import type { TrackInfo } from '@/bindings';
 
 export function useTrackSelection(visibleTracks: TrackInfo[], excludeIds?: Set<number>) {
@@ -21,6 +21,16 @@ export function useTrackSelection(visibleTracks: TrackInfo[], excludeIds?: Set<n
     () => excludeIds ? visibleTracks.filter((t) => !excludeIds.has(t.id)) : visibleTracks,
     [visibleTracks, excludeIds],
   );
+
+  // Only keep the not downloaded tracks
+  useEffect(() => {
+    if (!excludeIds || excludeIds.size === 0) return;
+    setSelectedIds((prev) => {
+      const hasExcluded = [...prev].some((id) => excludeIds.has(id));
+      if (!hasExcluded) return prev;
+      return new Set([...prev].filter((id) => !excludeIds.has(id)));
+    });
+  }, [excludeIds]);
 
   const toggleAll = useCallback(() => {
     setSelectedIds((prev) => {

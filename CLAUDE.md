@@ -100,6 +100,7 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 - Tests colocated in `__test__/` directories
 - Rust errors use custom types in `src-tauri/src/models/error.rs`
 - **Never use `console.log/warn/error` in frontend code.** Use `logger` from `@/lib/logger` (backed by `@tauri-apps/plugin-log`) which routes logs to the Tauri logging system. Logger methods are async — use `void logger.info(...)` for fire-and-forget calls.
+- **Never write comments unless necessary.** Code should be self-documenting. Only add comments when the logic is genuinely non-obvious and cannot be clarified through better naming or structure.
 
 ## Serena MCP — Required for All Codebase Interaction
 
