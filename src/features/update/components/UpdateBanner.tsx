@@ -20,6 +20,7 @@ export function UpdateBanner() {
     installError,
     installed,
     installUpdate,
+    relaunchApp,
     dismissUpdate,
   } = useUpdateStore(
     useShallow((s) => ({
@@ -30,6 +31,7 @@ export function UpdateBanner() {
       installError: s.installError,
       installed: s.installed,
       installUpdate: s.installUpdate,
+      relaunchApp: s.relaunchApp,
       dismissUpdate: s.dismissUpdate,
     }))
   );
@@ -78,7 +80,19 @@ export function UpdateBanner() {
     >
       <variant.Icon className={`h-4 w-4 ${variant.icon}`} />
       <AlertDescription className={`flex items-center justify-between flex-1 ${variant.text}`}>
-        <span>{variant.label}</span>
+        {installed ? (
+          <span>
+            {t('update.installedPrefix')}{' '}
+            <button
+              onClick={relaunchApp}
+              className="underline hover:no-underline font-medium cursor-pointer"
+            >
+              {t('update.restartLink')}
+            </button>
+          </span>
+        ) : (
+          <span>{variant.label}</span>
+        )}
         <div className="flex items-center gap-2">
           {!installed && (
             <>
