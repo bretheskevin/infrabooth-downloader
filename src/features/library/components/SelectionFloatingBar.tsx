@@ -3,7 +3,7 @@ import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePlayerStore } from '@/features/player';
 import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
-import { EXPANDED_BAR_HEIGHT, EXPANDED_BAR_GAP } from '@/features/player/components/ExpandedBar';
+import { EXPANDED_BAR_HEIGHT } from '@/features/player/components/ExpandedBar';
 import { useIsDownloadEnabled } from '@/features/settings';
 
 interface SelectionFloatingBarProps {
@@ -20,7 +20,7 @@ export function SelectionFloatingBar({ selectedCount, onDownload }: SelectionFlo
   if (!isDownloadEnabled) return null;
   if (selectedCount === 0 || (expandedBarVisible && isQueueOpen)) return null;
 
-  const bottom = expandedBarVisible ? EXPANDED_BAR_HEIGHT + EXPANDED_BAR_GAP : 24;
+  const bottom = expandedBarVisible ? EXPANDED_BAR_HEIGHT + 8 : 24;
 
   return (
     <div

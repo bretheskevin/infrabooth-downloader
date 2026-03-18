@@ -7,4 +7,5 @@ export interface PlaybackItem {
   artist: string;
   artworkUrl: string | null;
   durationMs: number;
+  waveformUrl: string | null;
 }

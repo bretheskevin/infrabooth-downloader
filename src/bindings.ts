@@ -305,7 +305,11 @@ export type TrackInfo = { id: number; title: string; user: UserInfo; artwork_url
 /**
  * Duration in milliseconds.
  */
-duration: number; permalink_url: string }
+duration: number; permalink_url: string; 
+/**
+ * URL to fetch waveform data (JSON with samples array).
+ */
+waveform_url: string | null }
 /**
  * Information about an available update.
  */
