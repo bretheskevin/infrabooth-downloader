@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/lib/logger';
 import type { Track, TrackStatus } from '@/features/queue/types/track';
 import { listen } from '@tauri-apps/api/event';
@@ -266,3 +267,27 @@ export function waitForQueueIdle(timeoutMs = 10_000): Promise<void> {
     });
   });
 }
+
+
+export const useQueueProgress = () =>
+  useQueueStore(
+    useShallow((s) => ({
+      isProcessing: s.isProcessing,
+      isInitializing: s.isInitializing,
+      isCancelling: s.isCancelling,
+      isRetrying: s.isRetrying,
+      currentIndex: s.currentIndex,
+      totalTracks: s.totalTracks,
+    }))
+  );
+
+export const useQueueCompletion = () =>
+  useQueueStore(
+    useShallow((s) => ({
+      isComplete: s.isComplete,
+      isCancelled: s.isCancelled,
+      completedCount: s.completedCount,
+      failedCount: s.failedCount,
+      cancelledCount: s.cancelledCount,
+    }))
+  );

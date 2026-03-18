@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { useQueueStore } from '@/features/queue/store';
 
 interface DownloadCompletionState {
@@ -12,20 +13,18 @@ interface DownloadCompletionState {
   resetQueue: () => void;
 }
 
-/**
- * Hook for accessing download completion state.
- * Derives completion status from the queueStore.
- *
- * @returns Completion state and actions
- */
 export function useDownloadCompletion(): DownloadCompletionState {
-  const isComplete = useQueueStore((state) => state.isComplete);
-  const completedCount = useQueueStore((state) => state.completedCount);
-  const failedCount = useQueueStore((state) => state.failedCount);
-  const cancelledCount = useQueueStore((state) => state.cancelledCount);
-  const isCancelled = useQueueStore((state) => state.isCancelled);
-  const totalCount = useQueueStore((state) => state.totalTracks);
-  const clearQueue = useQueueStore((state) => state.clearQueue);
+  const { isComplete, completedCount, failedCount, cancelledCount, isCancelled, totalCount } =
+    useQueueStore(
+      useShallow((state) => ({
+        isComplete: state.isComplete,
+        completedCount: state.completedCount,
+        failedCount: state.failedCount,
+        cancelledCount: state.cancelledCount,
+        isCancelled: state.isCancelled,
+        totalCount: state.totalTracks,
+      }))
+    );
 
   return {
     isComplete,
@@ -36,6 +35,6 @@ export function useDownloadCompletion(): DownloadCompletionState {
     hasFailures: failedCount > 0,
     isFullSuccess: isComplete && failedCount === 0 && !isCancelled,
     isCancelled,
-    resetQueue: clearQueue,
+    resetQueue: () => useQueueStore.getState().clearQueue(),
   };
 }
