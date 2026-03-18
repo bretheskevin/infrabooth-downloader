@@ -29,7 +29,6 @@ function getAudio(): HTMLAudioElement {
     audio = new Audio();
     audio.addEventListener('playing', () => setState('playing'));
     audio.addEventListener('pause', () => {
-      // Only emit paused if we didn't just stop
       if (currentState !== 'idle') setState('paused');
     });
     audio.addEventListener('waiting', () => {
@@ -90,18 +89,9 @@ export const audioEngine = {
     destroyHls();
     setState('loading');
 
-    // macOS Tauri (WKWebView) has native HLS support.
-    // Windows (WebView2) and Linux (WebKitGTK) fall through to hls.js.
-    if (el.canPlayType('application/vnd.apple.mpegurl')) {
-      el.src = url;
-      el.load();
-      // Defer progress until metadata is available (duration may be NaN before this)
-      el.addEventListener('loadedmetadata', () => startProgress(), { once: true });
-      el.addEventListener('canplaythrough', () => callbacks.onFullyBuffered(), { once: true });
-      return;
-    }
-
-    // All other browsers: use hls.js
+    // Always use hls.js for HLS streams (all platforms).
+    // Native HLS on macOS triggers AVPlayer which auto-registers with Now Playing,
+    // causing duplicate media control entries. hls.js decodes in JS, avoiding this.
     if (Hls.isSupported()) {
       hls = new Hls({
         startPosition: 0, // VOD content: start from beginning
