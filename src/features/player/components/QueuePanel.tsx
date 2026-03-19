@@ -81,7 +81,7 @@ export function QueuePanel() {
                     item={item}
                     index={index}
                     isCurrent={index === cursor}
-                    onPlay={(i) => actions().play(queue, i)}
+                    onPlay={(i) => void actions().skipTo(i)}
                     onPause={() => actions().pause()}
                     onResume={() => actions().resume()}
                     onRemove={(i) => actions().removeFromQueue(i)}
