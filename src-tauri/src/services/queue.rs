@@ -9,6 +9,7 @@ use tokio::sync::{watch, Mutex, Notify, Semaphore};
 use tokio::task::JoinSet;
 
 use crate::models::error::{HasErrorCode, DownloadError};
+use crate::models::TrackCore;
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeededEvent};
 use crate::services::cancellation::ActiveProcess;
 use crate::services::events;
@@ -21,14 +22,9 @@ use crate::services::storage::AuthState;
 /// An item in the download queue.
 #[derive(Clone, Debug, Type)]
 pub struct QueueItem {
-    pub track_url: String,
-    pub track_id: String,
-    pub title: String,
-    pub artist: String,
-    pub artwork_url: Option<String>,
+    #[serde(flatten)]
+    pub core: TrackCore,
     pub track_number: Option<u32>,
-    pub duration_ms: u64,
-    pub download_url: Option<String>,
 }
 
 /// Event payload for queue progress updates.
@@ -252,7 +248,7 @@ impl DownloadQueue {
         };
 
         // Pre-scan for already-downloaded tracks (blocking I/O on a dedicated thread)
-        let track_ids: Vec<String> = self.items.iter().map(|item| item.track_id.clone()).collect();
+        let track_ids: Vec<String> = self.items.iter().map(|item| item.core.track_id.clone()).collect();
         let scan_dir = ctx.output_dir.clone();
         let existing_ids = tokio::task::spawn_blocking(move || {
             scan_existing_track_ids(&scan_dir, &track_ids)
@@ -269,11 +265,11 @@ impl DownloadQueue {
             let mut new_pending = VecDeque::new();
             for idx in progress.pending.drain(..) {
                 let item = &self.items[idx];
-                if existing_ids.contains(&item.track_id) {
+                if existing_ids.contains(&item.core.track_id) {
                     let _ = app.emit(
                         events::DOWNLOAD_PROGRESS,
                         DownloadProgressEvent {
-                            track_id: item.track_id.clone(),
+                            track_id: item.core.track_id.clone(),
                             status: "skipped".to_string(),
                             percent: Some(1.0),
                             downloaded_bytes: None,
@@ -296,7 +292,7 @@ impl DownloadQueue {
         let pause_notify = Arc::new(Notify::new());
 
         let track_lookup: HashMap<String, (usize, QueueItem)> = self.items.iter().enumerate()
-            .map(|(i, item)| (item.track_id.clone(), (i, item.clone())))
+            .map(|(i, item)| (item.core.track_id.clone(), (i, item.clone())))
             .collect();
         let mut started_count = 0u32;
         let mut started_indices: std::collections::HashSet<usize> = std::collections::HashSet::new();
@@ -382,14 +378,14 @@ impl DownloadQueue {
                 QueueProgressEvent {
                     current: *started_count,
                     total: self.total_tracks,
-                    track_id: item.track_id.clone(),
+                    track_id: item.core.track_id.clone(),
                 },
             );
 
             let child_handle = Arc::new(Mutex::new(None));
             let pid_handle = Arc::new(Mutex::new(None));
             ctx.active_processes.lock().await.insert(
-                item.track_id.clone(),
+                item.core.track_id.clone(),
                 ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() },
             );
 
@@ -422,22 +418,22 @@ impl DownloadQueue {
         };
 
         PipelineConfig {
-            track_url: item.track_url.clone(),
-            track_id: item.track_id.clone(),
+            track_url: item.core.track_url.clone(),
+            track_id: item.core.track_id.clone(),
             output_dir: output_dir.clone(),
             metadata: TrackMetadata {
-                title: item.title.clone(),
-                artist: item.artist.clone(),
+                title: item.core.title.clone(),
+                artist: item.core.artist.clone(),
                 album: self.album_name.clone(),
                 track_number: item.track_number,
                 total_tracks: Some(self.total_tracks),
-                artwork_url: item.artwork_url.clone(),
-                track_id: Some(item.track_id.clone()),
+                artwork_url: item.core.artwork_url.clone(),
+                track_id: Some(item.core.track_id.clone()),
             },
             playlist_context,
-            duration_ms: item.duration_ms,
+            duration_ms: item.core.duration_ms,
             oauth_token: oauth_token.clone(),
-            download_url: item.download_url.clone(),
+            download_url: item.core.download_url.clone(),
         }
     }
 
@@ -534,7 +530,7 @@ impl DownloadQueue {
                     DownloadRateLimitedEvent {
                         track_id: track_id.clone(),
                         track_title: track_lookup.get(&track_id)
-                            .map(|(_, item)| item.title.clone())
+                            .map(|(_, item)| item.core.title.clone())
                             .unwrap_or_default(),
                         reset_time,
                     },
@@ -582,7 +578,7 @@ impl DownloadQueue {
                     DownloadAuthNeededEvent {
                         track_id: track_id.clone(),
                         track_title: track_lookup.get(&track_id)
-                            .map(|(_, item)| item.title.clone())
+                            .map(|(_, item)| item.core.title.clone())
                             .unwrap_or_default(),
                     },
                 );
@@ -641,22 +637,24 @@ mod tests {
     #[test]
     fn test_queue_item_creation() {
         let item = QueueItem {
-            track_url: "https://soundcloud.com/test/track".to_string(),
-            track_id: "123456".to_string(),
-            title: "Track Name".to_string(),
-            artist: "Artist".to_string(),
-            artwork_url: Some("https://example.com/art.jpg".to_string()),
+            core: TrackCore {
+                track_url: "https://soundcloud.com/test/track".to_string(),
+                track_id: "123456".to_string(),
+                title: "Track Name".to_string(),
+                artist: "Artist".to_string(),
+                artwork_url: Some("https://example.com/art.jpg".to_string()),
+                duration_ms: 180000,
+                download_url: None,
+            },
             track_number: Some(1),
-            duration_ms: 180000,
-            download_url: None,
         };
 
-        assert_eq!(item.track_url, "https://soundcloud.com/test/track");
-        assert_eq!(item.track_id, "123456");
-        assert_eq!(item.title, "Track Name");
-        assert_eq!(item.artist, "Artist");
+        assert_eq!(item.core.track_url, "https://soundcloud.com/test/track");
+        assert_eq!(item.core.track_id, "123456");
+        assert_eq!(item.core.title, "Track Name");
+        assert_eq!(item.core.artist, "Artist");
         assert_eq!(
-            item.artwork_url,
+            item.core.artwork_url,
             Some("https://example.com/art.jpg".to_string())
         );
         assert_eq!(item.track_number, Some(1));
@@ -665,43 +663,49 @@ mod tests {
     #[test]
     fn test_queue_item_clone() {
         let item = QueueItem {
-            track_url: "https://soundcloud.com/test/track".to_string(),
-            track_id: "123456".to_string(),
-            title: "Track".to_string(),
-            artist: "Artist".to_string(),
-            artwork_url: None,
+            core: TrackCore {
+                track_url: "https://soundcloud.com/test/track".to_string(),
+                track_id: "123456".to_string(),
+                title: "Track".to_string(),
+                artist: "Artist".to_string(),
+                artwork_url: None,
+                duration_ms: 120000,
+                download_url: None,
+            },
             track_number: None,
-            duration_ms: 120000,
-            download_url: None,
         };
 
         let cloned = item.clone();
-        assert_eq!(cloned.track_id, item.track_id);
-        assert_eq!(cloned.title, item.title);
+        assert_eq!(cloned.core.track_id, item.core.track_id);
+        assert_eq!(cloned.core.title, item.core.title);
     }
 
     #[test]
     fn test_download_queue_new() {
         let items = vec![
             QueueItem {
-                track_url: "url1".to_string(),
-                track_id: "1".to_string(),
-                title: "Track 1".to_string(),
-                artist: "Artist".to_string(),
-                artwork_url: None,
+                core: TrackCore {
+                    track_url: "url1".to_string(),
+                    track_id: "1".to_string(),
+                    title: "Track 1".to_string(),
+                    artist: "Artist".to_string(),
+                    artwork_url: None,
+                    duration_ms: 180000,
+                    download_url: None,
+                },
                 track_number: Some(1),
-                duration_ms: 180000,
-                download_url: None,
             },
             QueueItem {
-                track_url: "url2".to_string(),
-                track_id: "2".to_string(),
-                title: "Track 2".to_string(),
-                artist: "Artist".to_string(),
-                artwork_url: None,
+                core: TrackCore {
+                    track_url: "url2".to_string(),
+                    track_id: "2".to_string(),
+                    title: "Track 2".to_string(),
+                    artist: "Artist".to_string(),
+                    artwork_url: None,
+                    duration_ms: 240000,
+                    download_url: None,
+                },
                 track_number: Some(2),
-                duration_ms: 240000,
-                download_url: None,
             },
         ];
 
