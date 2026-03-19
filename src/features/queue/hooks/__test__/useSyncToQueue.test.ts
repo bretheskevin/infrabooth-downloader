@@ -17,8 +17,8 @@ const mockPlaylist: PlaylistInfo = {
   artwork_url: 'https://example.com/art.jpg',
   track_count: 2,
   tracks: [
-    { id: 1, title: 'Track 1', user: { username: 'Artist1', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null },
-    { id: 2, title: 'Track 2', user: { username: 'Artist2', avatar_url: null }, artwork_url: 'https://example.com/art2.jpg', duration: 240000, permalink_url: '', waveform_url: null },
+    { id: 1, title: 'Track 1', user: { username: 'Artist1', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+    { id: 2, title: 'Track 2', user: { username: 'Artist2', avatar_url: null }, artwork_url: 'https://example.com/art2.jpg', duration: 240000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
   ],
 };
 
@@ -29,7 +29,7 @@ const mockTrack: TrackInfo = {
   artwork_url: 'https://example.com/track-art.jpg',
   duration: 185000,
   permalink_url: '',
-  waveform_url: null,
+  waveform_url: null, downloadable: false, download_url: null,
 };
 
 describe('useSyncToQueue', () => {
@@ -55,6 +55,7 @@ describe('useSyncToQueue', () => {
         artworkUrl: null,
         durationMs: 180000,
         status: 'pending',
+        downloadUrl: null,
       },
       {
         id: '2',
@@ -63,6 +64,7 @@ describe('useSyncToQueue', () => {
         artworkUrl: 'https://example.com/art2.jpg',
         durationMs: 240000,
         status: 'pending',
+        downloadUrl: null,
       },
     ]);
   });
@@ -79,6 +81,7 @@ describe('useSyncToQueue', () => {
         artworkUrl: 'https://example.com/track-art.jpg',
         durationMs: 185000,
         status: 'pending',
+        downloadUrl: null,
       },
     ]);
   });

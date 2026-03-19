@@ -28,6 +28,7 @@ pub struct QueueItem {
     pub artwork_url: Option<String>,
     pub track_number: Option<u32>,
     pub duration_ms: u64,
+    pub download_url: Option<String>,
 }
 
 /// Event payload for queue progress updates.
@@ -436,6 +437,7 @@ impl DownloadQueue {
             playlist_context,
             duration_ms: item.duration_ms,
             oauth_token: oauth_token.clone(),
+            download_url: item.download_url.clone(),
         }
     }
 
@@ -646,6 +648,7 @@ mod tests {
             artwork_url: Some("https://example.com/art.jpg".to_string()),
             track_number: Some(1),
             duration_ms: 180000,
+            download_url: None,
         };
 
         assert_eq!(item.track_url, "https://soundcloud.com/test/track");
@@ -669,6 +672,7 @@ mod tests {
             artwork_url: None,
             track_number: None,
             duration_ms: 120000,
+            download_url: None,
         };
 
         let cloned = item.clone();
@@ -687,6 +691,7 @@ mod tests {
                 artwork_url: None,
                 track_number: Some(1),
                 duration_ms: 180000,
+                download_url: None,
             },
             QueueItem {
                 track_url: "url2".to_string(),
@@ -696,6 +701,7 @@ mod tests {
                 artwork_url: None,
                 track_number: Some(2),
                 duration_ms: 240000,
+                download_url: None,
             },
         ];
 

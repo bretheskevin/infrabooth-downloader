@@ -20,6 +20,7 @@ export interface Track {
   percent?: number;
   downloadedBytes?: number;
   totalBytes?: number;
+  downloadUrl?: string | null;
 }
 
 /** Context for playlist track numbering */

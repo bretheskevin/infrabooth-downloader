@@ -287,14 +287,14 @@ async resolvePlaybackUrl(trackId: number, trackUrl: string) : Promise<Result<str
 /** user-defined types **/
 
 export type AuthChoice = "re_authenticated" | "continue_standard"
-export type DownloadRequest = { trackUrl: string; trackId: string; title: string; artist: string; album: string | null; trackNumber: number | null; totalTracks: number | null; artworkUrl: string | null; outputDir: string | null; durationMs: number }
+export type DownloadRequest = { trackUrl: string; trackId: string; title: string; artist: string; album: string | null; trackNumber: number | null; totalTracks: number | null; artworkUrl: string | null; outputDir: string | null; durationMs: number; downloadUrl: string | null }
 export type ErrorResponse = { code: string; message: string }
 export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
 /**
  * Playlist information from SoundCloud API.
  */
 export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
-export type QueueItemRequest = { trackUrl: string; trackId: string; title: string; artist: string; artworkUrl: string | null; durationMs: number }
+export type QueueItemRequest = { trackUrl: string; trackId: string; title: string; artist: string; artworkUrl: string | null; durationMs: number; downloadUrl: string | null }
 export type RateLimitChoice = "retry" | "stop"
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type StartQueueRequest = { tracks: QueueItemRequest[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }
@@ -309,7 +309,15 @@ duration: number; permalink_url: string;
 /**
  * URL to fetch waveform data (JSON with samples array).
  */
-waveform_url: string | null }
+waveform_url: string | null; 
+/**
+ * Whether the track has free download enabled.
+ */
+downloadable: boolean; 
+/**
+ * URL to download the original file (requires OAuth token).
+ */
+download_url: string | null }
 /**
  * Information about an available update.
  */
