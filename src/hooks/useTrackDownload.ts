@@ -118,6 +118,7 @@ export function useTrackDownload(downloadPath: string) {
           artworkUrl: track.artwork_url ?? null,
           outputDir: downloadPath,
           durationMs: track.duration,
+          downloadUrl: track.download_url ?? null,
         });
       } catch (err) {
         setState((prev) => {

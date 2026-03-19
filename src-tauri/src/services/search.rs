@@ -6,7 +6,7 @@ use url::Url;
 
 use crate::models::error::HasErrorCode;
 use crate::services::http::{API_V2_BASE, HTTP_CLIENT};
-use crate::services::playlist::{TrackInfo, UserInfo};
+use crate::services::playlist::{build_download_url, TrackInfo, UserInfo};
 use crate::services::stream;
 
 // === Error Type ===
@@ -51,6 +51,9 @@ struct RawSearchTrack {
     permalink_url: String,
     media: Option<stream::MediaInfo>,
     waveform_url: Option<String>,
+    #[serde(default)]
+    downloadable: bool,
+    download_url: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -93,6 +96,8 @@ fn map_raw_track(raw: RawSearchTrack) -> TrackInfo {
         duration: raw.duration,
         permalink_url: raw.permalink_url,
         waveform_url: raw.waveform_url,
+        downloadable: raw.downloadable,
+        download_url: build_download_url(raw.downloadable, raw.download_url, raw.id),
     }
 }
 
@@ -202,6 +207,9 @@ mod tests {
             duration: 240000,
             permalink_url: "https://soundcloud.com/artist/my-song".to_string(),
             media: None,
+            waveform_url: None,
+            downloadable: false,
+            download_url: None,
         };
         let track = map_raw_track(raw);
         assert_eq!(track.id, 456);
@@ -224,6 +232,9 @@ mod tests {
             duration: 60000,
             permalink_url: "https://soundcloud.com/user/no-art".to_string(),
             media: None,
+            waveform_url: None,
+            downloadable: false,
+            download_url: None,
         };
         let track = map_raw_track(raw);
         assert!(track.artwork_url.is_none());
@@ -259,6 +270,8 @@ mod tests {
                 duration: 100000,
                 permalink_url: "https://soundcloud.com/user/test".to_string(),
                 waveform_url: None,
+                downloadable: false,
+                download_url: None,
             }],
             total_results: Some(1),
         };

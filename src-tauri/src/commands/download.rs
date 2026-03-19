@@ -31,6 +31,7 @@ pub struct DownloadRequest {
     pub artwork_url: Option<String>,
     pub output_dir: Option<String>,
     pub duration_ms: u64,
+    pub download_url: Option<String>,
 }
 
 /// Download and convert a track to MP3 with metadata embedding.
@@ -71,6 +72,7 @@ pub async fn download_track_full(
         playlist_context: None,
         duration_ms: request.duration_ms,
         oauth_token: app.state::<AuthState>().get_token(),
+        download_url: request.download_url,
     };
 
     let result_path = download_and_convert(&app, config, None, None, None)
@@ -127,6 +129,7 @@ pub struct QueueItemRequest {
     pub artist: String,
     pub artwork_url: Option<String>,
     pub duration_ms: u64,
+    pub download_url: Option<String>,
 }
 
 /// Start processing a download queue.
@@ -173,6 +176,7 @@ pub async fn start_download_queue(
                 None
             },
             duration_ms: t.duration_ms,
+            download_url: t.download_url,
         })
         .collect();
 

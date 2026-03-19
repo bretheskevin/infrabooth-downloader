@@ -37,7 +37,7 @@ describe('TrackPreview', () => {
     artwork_url: 'https://example.com/artwork.jpg',
     duration: 185000, // 3:05
     permalink_url: 'https://soundcloud.com/test-artist/test-track',
-    waveform_url: null,
+    waveform_url: null, downloadable: false, download_url: null,
   };
 
   const mockOnDownload = vi.fn();

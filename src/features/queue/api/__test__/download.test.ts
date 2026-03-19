@@ -31,6 +31,7 @@ const createDownloadRequest = (
   artworkUrl: null,
   outputDir: null,
   durationMs: 180000,
+  downloadUrl: null,
   ...partial,
 });
 
@@ -40,6 +41,7 @@ const createQueueItem = (
 ): QueueItemRequest => ({
   artworkUrl: null,
   durationMs: 180000,
+  downloadUrl: null,
   ...partial,
 });
 
