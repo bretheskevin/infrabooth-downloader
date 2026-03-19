@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useQueueStore } from '../store';
 import type { Track } from '@/features/queue/types/track';
-import type { QueueCompleteEvent } from '@/types/events';
+import type { QueueCompleteEvent } from '@/bindings';
 
 describe('queueStore', () => {
   const mockTracks: Track[] = [

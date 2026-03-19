@@ -279,6 +279,17 @@ async resolvePlaybackUrl(trackId: number, trackUrl: string) : Promise<Result<str
 /** user-defined events **/
 
 
+export const events = __makeEvents__<{
+downloadProgressEvent: DownloadProgressEvent,
+queueCancelledEvent: QueueCancelledEvent,
+queueCompleteEvent: QueueCompleteEvent,
+queueProgressEvent: QueueProgressEvent
+}>({
+downloadProgressEvent: "download-progress-event",
+queueCancelledEvent: "queue-cancelled-event",
+queueCompleteEvent: "queue-complete-event",
+queueProgressEvent: "queue-progress-event"
+})
 
 /** user-defined constants **/
 
@@ -287,6 +298,7 @@ async resolvePlaybackUrl(trackId: number, trackUrl: string) : Promise<Result<str
 /** user-defined types **/
 
 export type AuthChoice = "re_authenticated" | "continue_standard"
+export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null }
 export type DownloadRequest = ({ 
 /**
  * SoundCloud API URL for the track (e.g., `https://api.soundcloud.com/tracks/123`)
@@ -322,6 +334,18 @@ export type LibraryPlaylist = { id: number; title: string; username: string; art
  * Playlist information from SoundCloud API.
  */
 export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
+/**
+ * Event payload for queue cancellation.
+ */
+export type QueueCancelledEvent = { completed: number; cancelled: number; total: number }
+/**
+ * Event payload for queue completion.
+ */
+export type QueueCompleteEvent = { completed: number; failed: number; total: number; failedTracks: ([string, string])[] }
+/**
+ * Event payload for queue progress updates.
+ */
+export type QueueProgressEvent = { current: number; total: number; trackId: string }
 export type RateLimitChoice = "retry" | "stop"
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }

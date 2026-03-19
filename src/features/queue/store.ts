@@ -2,8 +2,9 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/lib/logger';
 import type { Track, TrackStatus } from '@/features/queue/types/track';
+import type { AppError } from '@/features/queue/types/errors';
 import { listen } from '@tauri-apps/api/event';
-import type { DownloadProgressEvent, QueueProgressEvent, QueueCancelledEvent, QueueCompleteEvent } from '@/types/events';
+import type { DownloadProgressEvent, QueueProgressEvent, QueueCancelledEvent, QueueCompleteEvent } from '@/bindings';
 
 export type { Track, TrackStatus };
 
@@ -221,7 +222,12 @@ function setupQueueEventListeners() {
     if (error) {
       logger.error(`[queueStore] Track error: ${error.code} - ${error.message}`);
     }
-    store.getState().updateTrackStatus(trackId, status, error, { percent, downloadedBytes, totalBytes });
+    store.getState().updateTrackStatus(
+      trackId,
+      status as TrackStatus,
+      error as AppError | undefined,
+      { percent: percent ?? undefined, downloadedBytes: downloadedBytes ?? undefined, totalBytes: totalBytes ?? undefined }
+    );
   });
 
   listen<QueueProgressEvent>('queue-progress', (event) => {
