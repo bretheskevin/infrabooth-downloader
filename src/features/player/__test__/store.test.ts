@@ -41,11 +41,12 @@ const mockTrack: PlaybackItem = {
   waveformUrl: null,
 };
 
-const makeQueue = (): PlaybackItem[] => [
-  { ...mockTrack, trackId: 1, title: 'Track 1' },
-  { ...mockTrack, trackId: 2, title: 'Track 2' },
-  { ...mockTrack, trackId: 3, title: 'Track 3' },
-];
+const makeQueue = (count = 3): PlaybackItem[] =>
+  Array.from({ length: count }, (_, i) => ({
+    ...mockTrack,
+    trackId: i + 1,
+    title: `Track ${i + 1}`,
+  }));
 
 describe('playerStore', () => {
   beforeEach(() => {
@@ -59,6 +60,8 @@ describe('playerStore', () => {
       volume: 1.0,
       isExpanded: false,
       isQueueOpen: false,
+      isShuffled: false,
+      originalQueue: null,
     });
     vi.clearAllMocks();
   });
@@ -217,5 +220,87 @@ describe('playerStore', () => {
 
     expect(usePlayerStore.getState().cursor).toBe(0);
     expect(resolveWithCache).not.toHaveBeenCalled();
+  });
+
+  it('toggleShuffle should shuffle queue and move current to front', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 2);
+
+    usePlayerStore.getState().toggleShuffle();
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(true);
+    expect(state.originalQueue).toEqual(queue);
+    expect(state.cursor).toBe(0);
+    expect(state.queue[0]!.trackId).toBe(queue[2]!.trackId);
+    expect(state.queue.length).toBe(5);
+  });
+
+  it('toggleShuffle should restore original queue when disabled', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 2);
+
+    usePlayerStore.getState().toggleShuffle();
+    usePlayerStore.getState().toggleShuffle();
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(false);
+    expect(state.originalQueue).toBeNull();
+    expect(state.queue).toEqual(queue);
+    expect(state.cursor).toBe(2);
+  });
+
+  it('toggleShuffle should be no-op for queue with 1 or fewer items', async () => {
+    const queue = makeQueue(1);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().toggleShuffle();
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(false);
+    expect(state.queue).toEqual(queue);
+  });
+
+  it('play() should auto-shuffle when isShuffled is true', async () => {
+    const queue1 = makeQueue(3);
+    await usePlayerStore.getState().play(queue1, 0);
+    usePlayerStore.getState().toggleShuffle();
+
+    const queue2 = makeQueue(5);
+    await usePlayerStore.getState().play(queue2, 2);
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(true);
+    expect(state.originalQueue).toEqual(queue2);
+    expect(state.cursor).toBe(0);
+    expect(state.queue[0]!.trackId).toBe(queue2[2]!.trackId);
+  });
+
+  it('stop() should reset shuffle state', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 2);
+    usePlayerStore.getState().toggleShuffle();
+
+    usePlayerStore.getState().stop();
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(false);
+    expect(state.originalQueue).toBeNull();
+  });
+
+  it('removeFromQueue should also remove from originalQueue when shuffled', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 2);
+    usePlayerStore.getState().toggleShuffle();
+
+    const stateAfterShuffle = usePlayerStore.getState();
+    const trackToRemove = stateAfterShuffle.queue[3];
+
+    usePlayerStore.getState().removeFromQueue(3);
+
+    const state = usePlayerStore.getState();
+    expect(state.queue.length).toBe(4);
+    expect(state.originalQueue?.length).toBe(4);
+    expect(state.originalQueue?.find((t) => t.trackId === trackToRemove?.trackId)).toBeUndefined();
   });
 });

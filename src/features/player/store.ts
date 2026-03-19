@@ -13,6 +13,23 @@ const MAX_CONSECUTIVE_FAILURES = 3;
 
 const trackIdSet = (queue: PlaybackItem[]) => new Set(queue.map((t) => t.trackId));
 
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const temp = result[i]!;
+    result[i] = result[j]!;
+    result[j] = temp;
+  }
+  return result;
+}
+
+function shuffleQueueWithCurrent(queue: PlaybackItem[], currentIndex: number): PlaybackItem[] {
+  const current = queue[currentIndex]!;
+  const rest = queue.filter((_, i) => i !== currentIndex);
+  return [current, ...shuffleArray(rest)];
+}
+
 interface PlayerStore {
   state: PlaybackState;
   currentTrack: PlaybackItem | null;
@@ -23,6 +40,8 @@ interface PlayerStore {
   volume: number;
   isExpanded: boolean;
   isQueueOpen: boolean;
+  isShuffled: boolean;
+  originalQueue: PlaybackItem[] | null;
 
   play: (queue: PlaybackItem[], index: number) => Promise<void>;
   pause: () => void;
@@ -37,6 +56,7 @@ interface PlayerStore {
   toggleExpanded: () => void;
   toggleQueue: () => void;
   collapse: () => void;
+  toggleShuffle: () => void;
 
   /** Called by usePlayerEvents to wire audio engine callbacks */
   _initAudioEngine: () => void;
@@ -102,6 +122,8 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   volume: 1.0,
   isExpanded: false,
   isQueueOpen: false,
+  isShuffled: false,
+  originalQueue: null,
 
   play: async (queue, index) => {
     const track = queue[index];
@@ -110,19 +132,33 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
     const generation = ++loadGeneration;
     consecutiveFailures = 0;
     const vol = useSettingsStore.getState().playerVolume;
+
+    const { isShuffled } = get();
+    let finalQueue = queue;
+    let finalIndex = index;
+
+    if (isShuffled && queue.length > 1) {
+      finalQueue = shuffleQueueWithCurrent(queue, index);
+      finalIndex = 0;
+      set({ originalQueue: queue });
+    } else {
+      set({ originalQueue: null });
+    }
+
+    const finalTrack = finalQueue[finalIndex]!;
     set({
-      queue,
-      cursor: index,
-      currentTrack: track,
+      queue: finalQueue,
+      cursor: finalIndex,
+      currentTrack: finalTrack,
       state: 'loading',
       volume: vol,
       positionMs: 0,
-      durationMs: track.durationMs,
+      durationMs: finalTrack.durationMs,
     });
 
-    await loadAndPlay(track, generation, get);
-    purgeStaleCache(trackIdSet(queue));
-    preloadQueueSegments(queue, index + 1, 2);
+    await loadAndPlay(finalTrack, generation, get);
+    purgeStaleCache(trackIdSet(finalQueue));
+    preloadQueueSegments(finalQueue, finalIndex + 1, 2);
   },
 
   pause: () => {
@@ -186,6 +222,8 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
       positionMs: 0,
       durationMs: 0,
       isQueueOpen: false,
+      isShuffled: false,
+      originalQueue: null,
     });
   },
 
@@ -214,8 +252,16 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   },
 
   removeFromQueue: (index) => {
-    const { queue, cursor } = get();
+    const { queue, cursor, originalQueue, isShuffled } = get();
     const newQueue = queue.filter((_, i) => i !== index);
+
+    let newOriginalQueue = originalQueue;
+    if (isShuffled && originalQueue) {
+      const removedTrack = queue[index];
+      if (removedTrack) {
+        newOriginalQueue = originalQueue.filter((t) => t.trackId !== removedTrack.trackId);
+      }
+    }
 
     if (newQueue.length === 0) {
       get().stop();
@@ -231,11 +277,9 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
     }
 
     const newTrack = newQueue[newCursor] ?? null;
-    set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack });
+    set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack, originalQueue: newOriginalQueue });
     purgeStaleCache(trackIdSet(newQueue));
 
-    // If we removed the currently playing track, load the new current track.
-    // Fire-and-forget: errors are handled inside loadAndPlay (toast + auto-skip).
     if (removingCurrent && newTrack) {
       const generation = ++loadGeneration;
       set({ state: 'loading', positionMs: 0, durationMs: newTrack.durationMs });
@@ -246,6 +290,34 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   toggleExpanded: () => set((s) => ({ isExpanded: !s.isExpanded })),
   toggleQueue: () => set((s) => ({ isQueueOpen: !s.isQueueOpen })),
   collapse: () => set({ isExpanded: false }),
+
+  toggleShuffle: () => {
+    const { queue, cursor, currentTrack, isShuffled, originalQueue } = get();
+
+    if (queue.length <= 1) return;
+
+    if (!isShuffled) {
+      if (!queue[cursor]) return;
+
+      set({
+        originalQueue: queue,
+        queue: shuffleQueueWithCurrent(queue, cursor),
+        cursor: 0,
+        isShuffled: true,
+      });
+    } else {
+      if (!originalQueue || !currentTrack) return;
+
+      const newCursor = originalQueue.findIndex((t) => t.trackId === currentTrack.trackId);
+
+      set({
+        queue: originalQueue,
+        cursor: newCursor >= 0 ? newCursor : 0,
+        originalQueue: null,
+        isShuffled: false,
+      });
+    }
+  },
 
   _initAudioEngine: () => {
     audioEngine.setCallbacks({
