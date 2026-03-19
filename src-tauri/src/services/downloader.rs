@@ -58,6 +58,42 @@ pub struct DownloadProgressEvent {
     pub error: Option<ErrorResponse>,
 }
 
+/// Detected format of an original download file.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OriginalFormat {
+    Wav,
+    Flac,
+    Mp3,
+    Aac,
+    Unknown,
+}
+
+/// Get output bitrate in kbps for an original format conversion.
+/// Used for accurate progress estimation during FFmpeg conversion.
+fn output_bitrate_kbps(format: OriginalFormat) -> u32 {
+    match format {
+        OriginalFormat::Wav | OriginalFormat::Flac => 320,
+        OriginalFormat::Aac | OriginalFormat::Unknown => 256,
+        OriginalFormat::Mp3 => 128, // Won't be used (MP3 is copied directly)
+    }
+}
+
+/// Detect audio format from HTTP Content-Type header.
+fn detect_format_from_content_type(content_type: &str) -> OriginalFormat {
+    let ct = content_type.to_lowercase();
+    if ct.contains("audio/wav") || ct.contains("audio/x-wav") || ct.contains("audio/vnd.wave") {
+        OriginalFormat::Wav
+    } else if ct.contains("audio/flac") || ct.contains("audio/x-flac") {
+        OriginalFormat::Flac
+    } else if ct.contains("audio/mpeg") || ct.contains("audio/mp3") {
+        OriginalFormat::Mp3
+    } else if ct.contains("audio/aac") || ct.contains("audio/mp4") || ct.contains("audio/x-m4a") {
+        OriginalFormat::Aac
+    } else {
+        OriginalFormat::Unknown
+    }
+}
+
 fn sanitize_filename(s: &str) -> String {
     s.chars()
         .map(|c| match c {
@@ -253,7 +289,6 @@ pub fn classify_ffmpeg_exit_error(stderr: &str) -> DownloadError {
 
 /// Build FFmpeg command arguments based on stream codec and output path.
 fn build_ffmpeg_args(stream_info: &StreamInfo, output_path: &Path) -> Vec<String> {
-    let output_str = output_path.to_string_lossy().to_string();
     let mut args: Vec<String> = Vec::new();
 
     // Input
@@ -285,6 +320,68 @@ fn build_ffmpeg_args(stream_info: &StreamInfo, output_path: &Path) -> Vec<String
         }
     }
 
+    append_common_ffmpeg_args(&mut args, output_path);
+    args
+}
+
+/// Build FFmpeg command arguments for converting an original download file.
+///
+/// - Lossless (WAV/FLAC) → MP3 320kbps (high quality source deserves high bitrate)
+/// - MP3 → None (just copy the file, no FFmpeg needed)
+/// - AAC/Unknown → MP3 256kbps (match transcoding behavior)
+fn build_ffmpeg_args_for_original(
+    input_path: &Path,
+    output_path: &Path,
+    format: OriginalFormat,
+) -> Option<Vec<String>> {
+    // MP3 files don't need conversion — caller should just copy/rename
+    if format == OriginalFormat::Mp3 {
+        return None;
+    }
+
+    let input_str = input_path.to_string_lossy().to_string();
+    let mut args: Vec<String> = Vec::new();
+
+    // Input
+    args.extend_from_slice(&["-i".to_string(), input_str]);
+
+    // Output codec and bitrate based on source format
+    let bitrate = format!("{}k", output_bitrate_kbps(format));
+
+    args.extend_from_slice(&[
+        "-codec:a".to_string(),
+        "libmp3lame".to_string(),
+        "-b:a".to_string(),
+        bitrate,
+    ]);
+
+    append_common_ffmpeg_args(&mut args, output_path);
+    Some(args)
+}
+
+/// Result of a successful original file download.
+struct OriginalDownload {
+    /// Path to the downloaded temp file
+    temp_path: PathBuf,
+    /// Detected audio format
+    format: OriginalFormat,
+}
+
+/// Context for FFmpeg conversion operations.
+/// Groups parameters needed for process management and cleanup.
+struct FfmpegContext<'a> {
+    cancel_rx: &'a Option<watch::Receiver<bool>>,
+    active_child: &'a Option<Arc<Mutex<Option<CommandChild>>>>,
+    active_pid: &'a Option<Arc<Mutex<Option<u32>>>>,
+    output_dir: &'a Path,
+    base_name: &'a str,
+}
+
+/// Append common FFmpeg output arguments to an args vector.
+/// These are shared between stream transcoding and original file conversion.
+fn append_common_ffmpeg_args(args: &mut Vec<String>, output_path: &Path) {
+    let output_str = output_path.to_string_lossy().to_string();
+
     // Progress reporting
     args.extend_from_slice(&["-progress".to_string(), "pipe:1".to_string()]);
 
@@ -296,8 +393,130 @@ fn build_ffmpeg_args(stream_info: &StreamInfo, output_path: &Path) -> Vec<String
 
     // Output file
     args.push(output_str);
+}
 
-    args
+/// Attempt to download the original file from SoundCloud's download endpoint.
+///
+/// Returns the downloaded file path and detected format on success.
+/// Returns None on any error — caller should fall back to transcoding.
+async fn try_original_download(
+    download_url: &str,
+    oauth_token: Option<&str>,
+    output_dir: &Path,
+    base_name: &str,
+) -> Option<OriginalDownload> {
+    let client = reqwest::Client::new();
+
+    let mut request = client.get(download_url);
+    if let Some(token) = oauth_token {
+        request = request.header("Authorization", format!("OAuth {}", token));
+    }
+
+    let response = request.send().await.ok()?;
+    if !response.status().is_success() {
+        log::info!("[downloader] Original download failed: {}", response.status());
+        return None;
+    }
+
+    // SoundCloud returns JSON with redirectUri pointing to the actual file
+    let body = response.bytes().await.ok()?;
+
+    // Try to parse as JSON redirect, otherwise treat as audio
+    let (audio_bytes, content_type) = if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&body) {
+        let redirect_uri = json.get("redirectUri")?.as_str()?;
+        log::info!("[downloader] Following redirect to CDN");
+
+        let audio_resp = client.get(redirect_uri).send().await.ok()?;
+        if !audio_resp.status().is_success() {
+            return None;
+        }
+
+        let ct = audio_resp
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .unwrap_or("")
+            .to_string();
+
+        (audio_resp.bytes().await.ok()?, ct)
+    } else {
+        log::debug!("[downloader] Original download response was not JSON redirect, skipping");
+        return None;
+    };
+
+    let format = detect_format_from_content_type(&content_type);
+
+    let extension = match format {
+        OriginalFormat::Wav => "wav",
+        OriginalFormat::Flac => "flac",
+        OriginalFormat::Mp3 => "mp3",
+        OriginalFormat::Aac => "m4a",
+        OriginalFormat::Unknown => "bin",
+    };
+
+    let temp_path = output_dir.join(format!("{}.original.{}", base_name, extension));
+    std::fs::write(&temp_path, &audio_bytes).ok()?;
+
+    log::info!(
+        "[downloader] Downloaded original: {:?} ({:?}, {} bytes)",
+        temp_path, format, audio_bytes.len()
+    );
+
+    Some(OriginalDownload { temp_path, format })
+}
+
+/// Convert an original download file to MP3, or copy if already MP3.
+///
+/// Returns the final output path on success.
+async fn convert_original_file<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    original: &OriginalDownload,
+    output_file: &Path,
+    track_id: &str,
+    duration_ms: u64,
+    ctx: &FfmpegContext<'_>,
+) -> Result<PathBuf, DownloadError> {
+    // MP3 files: just rename, no conversion needed
+    if original.format == OriginalFormat::Mp3 {
+        std::fs::rename(&original.temp_path, output_file).map_err(|e| {
+            DownloadError::ConversionFailed(format!("Failed to move MP3 file: {}", e))
+        })?;
+        log::info!("[downloader] Original MP3 copied directly: {:?}", output_file);
+        return Ok(output_file.to_path_buf());
+    }
+
+    // Build FFmpeg args for conversion
+    let args = build_ffmpeg_args_for_original(&original.temp_path, output_file, original.format)
+        .expect("Non-MP3 format should always produce args");
+
+    // Calculate bytes per ms for progress estimation based on actual output bitrate
+    let bytes_per_ms = (output_bitrate_kbps(original.format) / 8) as u64;
+
+    // Run conversion
+    let result = run_ffmpeg_sidecar(
+        app,
+        &args,
+        track_id,
+        duration_ms,
+        bytes_per_ms,
+        output_file,
+        ctx,
+    )
+    .await;
+
+    // Always clean up temp file (on success or error)
+    let _ = std::fs::remove_file(&original.temp_path);
+
+    // Propagate any error after cleanup
+    result?;
+
+    log::info!(
+        "[downloader] Converted original {:?} to MP3: {:?}",
+        original.format,
+        output_file
+    );
+
+    Ok(output_file.to_path_buf())
 }
 
 /// Check if cancellation has been requested.
@@ -329,7 +548,7 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
     rx: &mut tauri::async_runtime::Receiver<CommandEvent>,
     track_id: &str,
     duration_ms: u64,
-    codec: &StreamCodec,
+    bytes_per_ms: u64,
     cancel_rx: &Option<watch::Receiver<bool>>,
     active_child: &Option<Arc<Mutex<Option<CommandChild>>>>,
     output_dir: &Path,
@@ -340,7 +559,7 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
     let mut last_percent: f32 = 0.0;
     let mut last_downloaded_bytes: Option<u64> = None;
     let estimated_total_bytes: Option<u64> = if duration_ms > 0 {
-        Some(duration_ms * output_bytes_per_ms(codec))
+        Some(duration_ms * bytes_per_ms)
     } else {
         None
     };
@@ -433,10 +652,63 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
     Ok(())
 }
 
-/// Download a track to MP3 via ffmpeg.
-///
-/// Resolves the stream URL, builds codec-aware ffmpeg arguments,
-/// spawns the ffmpeg sidecar, and processes its output events.
+/// Spawn FFmpeg sidecar, register process handles, run event loop, and verify output.
+/// This is the shared implementation for both stream transcoding and original file conversion.
+async fn run_ffmpeg_sidecar<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    args: &[String],
+    track_id: &str,
+    duration_ms: u64,
+    bytes_per_ms: u64,
+    output_file: &Path,
+    ctx: &FfmpegContext<'_>,
+) -> Result<(), DownloadError> {
+    let shell = app.shell();
+    let (mut rx, child) = shell
+        .sidecar("ffmpeg")
+        .map_err(|_| DownloadError::BinaryNotFound)?
+        .args(args)
+        .spawn()
+        .map_err(|_| DownloadError::BinaryNotFound)?;
+
+    // Store PID for process tree killing
+    let pid = child.pid();
+    if let Some(ref active_pid_mutex) = ctx.active_pid {
+        let mut guard = active_pid_mutex.lock().await;
+        *guard = Some(pid);
+        log::debug!("[downloader] Stored PID {} for process tree killing", pid);
+    }
+
+    if let Some(ref active_child_mutex) = ctx.active_child {
+        let mut guard = active_child_mutex.lock().await;
+        *guard = Some(child);
+    }
+
+    // Run event loop
+    run_ffmpeg_event_loop(
+        app,
+        &mut rx,
+        track_id,
+        duration_ms,
+        bytes_per_ms,
+        ctx.cancel_rx,
+        ctx.active_child,
+        ctx.output_dir,
+        ctx.base_name,
+        output_file,
+    )
+    .await?;
+
+    // Verify output file exists
+    if !output_file.exists() {
+        return Err(DownloadError::ConversionFailed(
+            "Output file was not created".to_string(),
+        ));
+    }
+
+    Ok(())
+}
+
 pub async fn download_track_to_mp3<R: tauri::Runtime>(
     app: &AppHandle<R>,
     config: &PipelineConfig,
@@ -444,16 +716,6 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     cancel_rx: Option<watch::Receiver<bool>>,
     active_pid: Option<Arc<Mutex<Option<u32>>>>,
 ) -> Result<PathBuf, DownloadError> {
-    // Resolve stream URL
-    let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
-
-    log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
-    log::info!(
-        "[downloader] Encoding strategy for track {}: codec={:?}",
-        config.track_id,
-        stream_info.codec
-    );
-
     // Build output filename
     let (base_name, _display_title) =
         build_base_filename(&config.playlist_context, &config.metadata.artist, &config.metadata.title);
@@ -465,50 +727,65 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         return Ok(output_file);
     }
 
-    // Build ffmpeg args and spawn
+    // Create shared context for FFmpeg operations
+    let ctx = FfmpegContext {
+        cancel_rx: &cancel_rx,
+        active_child: &active_child,
+        active_pid: &active_pid,
+        output_dir: &config.output_dir,
+        base_name: &base_name,
+    };
+
+    // Try original download first (if available)
+    if let Some(ref download_url) = config.download_url {
+        log::info!("[downloader] Attempting original download for track {}", config.track_id);
+
+        if let Some(original) = try_original_download(
+            download_url,
+            config.oauth_token.as_deref(),
+            &config.output_dir,
+            &base_name,
+        )
+        .await
+        {
+            return convert_original_file(
+                app,
+                &original,
+                &output_file,
+                &config.track_id,
+                config.duration_ms,
+                &ctx,
+            )
+            .await;
+        }
+        // Fall through to transcoding on failure
+        log::info!("[downloader] Original download unavailable, using transcoding stream");
+    }
+
+    // Existing transcoding path
+    let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
+
+    log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
+    log::info!(
+        "[downloader] Encoding strategy for track {}: codec={:?}",
+        config.track_id,
+        stream_info.codec
+    );
+
+    // Build ffmpeg args and run conversion
     let args = build_ffmpeg_args(&stream_info, &output_file);
+    let bytes_per_ms = output_bytes_per_ms(&stream_info.codec);
 
-    let shell = app.shell();
-    let (mut rx, child) = shell
-        .sidecar("ffmpeg")
-        .map_err(|_| DownloadError::BinaryNotFound)?
-        .args(&args)
-        .spawn()
-        .map_err(|_| DownloadError::BinaryNotFound)?;
-
-    // Store PID for process tree killing
-    let pid = child.pid();
-    if let Some(ref active_pid_mutex) = active_pid {
-        let mut guard = active_pid_mutex.lock().await;
-        *guard = Some(pid);
-        log::debug!("[downloader] Stored PID {} for process tree killing", pid);
-    }
-
-    if let Some(ref active_child_mutex) = active_child {
-        let mut guard = active_child_mutex.lock().await;
-        *guard = Some(child);
-    }
-
-    // Process ffmpeg output
-    run_ffmpeg_event_loop(
+    run_ffmpeg_sidecar(
         app,
-        &mut rx,
+        &args,
         &config.track_id,
         config.duration_ms,
-        &stream_info.codec,
-        &cancel_rx,
-        &active_child,
-        &config.output_dir,
-        &base_name,
+        bytes_per_ms,
         &output_file,
-    ).await?;
-
-    // Verify output file exists
-    if !output_file.exists() {
-        return Err(DownloadError::DownloadFailed(
-            "Output file was not created".to_string(),
-        ));
-    }
+        &ctx,
+    )
+    .await?;
 
     log::info!("[downloader] Download complete: {:?}", output_file);
     Ok(output_file)
@@ -734,5 +1011,103 @@ mod tests {
     #[test]
     fn test_output_bytes_per_ms_unknown() {
         assert_eq!(output_bytes_per_ms(&StreamCodec::Unknown), 32);
+    }
+
+    // output_bitrate_kbps tests
+
+    #[test]
+    fn test_output_bitrate_kbps_lossless() {
+        assert_eq!(output_bitrate_kbps(OriginalFormat::Wav), 320);
+        assert_eq!(output_bitrate_kbps(OriginalFormat::Flac), 320);
+    }
+
+    #[test]
+    fn test_output_bitrate_kbps_lossy() {
+        assert_eq!(output_bitrate_kbps(OriginalFormat::Aac), 256);
+        assert_eq!(output_bitrate_kbps(OriginalFormat::Unknown), 256);
+    }
+
+    #[test]
+    fn test_output_bitrate_kbps_mp3() {
+        assert_eq!(output_bitrate_kbps(OriginalFormat::Mp3), 128);
+    }
+
+    #[test]
+    fn test_detect_format_from_content_type_wav() {
+        assert_eq!(detect_format_from_content_type("audio/wav"), OriginalFormat::Wav);
+        assert_eq!(detect_format_from_content_type("audio/x-wav"), OriginalFormat::Wav);
+        assert_eq!(detect_format_from_content_type("audio/vnd.wave"), OriginalFormat::Wav);
+    }
+
+    #[test]
+    fn test_detect_format_from_content_type_flac() {
+        assert_eq!(detect_format_from_content_type("audio/flac"), OriginalFormat::Flac);
+        assert_eq!(detect_format_from_content_type("audio/x-flac"), OriginalFormat::Flac);
+    }
+
+    #[test]
+    fn test_detect_format_from_content_type_mp3() {
+        assert_eq!(detect_format_from_content_type("audio/mpeg"), OriginalFormat::Mp3);
+        assert_eq!(detect_format_from_content_type("audio/mp3"), OriginalFormat::Mp3);
+    }
+
+    #[test]
+    fn test_detect_format_from_content_type_aac() {
+        assert_eq!(detect_format_from_content_type("audio/aac"), OriginalFormat::Aac);
+        assert_eq!(detect_format_from_content_type("audio/mp4"), OriginalFormat::Aac);
+        assert_eq!(detect_format_from_content_type("audio/x-m4a"), OriginalFormat::Aac);
+    }
+
+    #[test]
+    fn test_detect_format_from_content_type_unknown() {
+        assert_eq!(detect_format_from_content_type("application/octet-stream"), OriginalFormat::Unknown);
+        assert_eq!(detect_format_from_content_type("text/html"), OriginalFormat::Unknown);
+    }
+
+    #[test]
+    fn test_build_ffmpeg_args_for_original_wav() {
+        let args = build_ffmpeg_args_for_original(
+            Path::new("/tmp/input.wav"),
+            Path::new("/tmp/output.mp3"),
+            OriginalFormat::Wav,
+        );
+        assert!(args.is_some());
+        let args = args.unwrap();
+        assert!(args.contains(&"-b:a".to_string()));
+        assert!(args.contains(&"320k".to_string()));
+    }
+
+    #[test]
+    fn test_build_ffmpeg_args_for_original_flac() {
+        let args = build_ffmpeg_args_for_original(
+            Path::new("/tmp/input.flac"),
+            Path::new("/tmp/output.mp3"),
+            OriginalFormat::Flac,
+        );
+        assert!(args.is_some());
+        let args = args.unwrap();
+        assert!(args.contains(&"320k".to_string()));
+    }
+
+    #[test]
+    fn test_build_ffmpeg_args_for_original_mp3() {
+        let args = build_ffmpeg_args_for_original(
+            Path::new("/tmp/input.mp3"),
+            Path::new("/tmp/output.mp3"),
+            OriginalFormat::Mp3,
+        );
+        assert!(args.is_none());
+    }
+
+    #[test]
+    fn test_build_ffmpeg_args_for_original_aac() {
+        let args = build_ffmpeg_args_for_original(
+            Path::new("/tmp/input.m4a"),
+            Path::new("/tmp/output.mp3"),
+            OriginalFormat::Aac,
+        );
+        assert!(args.is_some());
+        let args = args.unwrap();
+        assert!(args.contains(&"256k".to_string()));
     }
 }

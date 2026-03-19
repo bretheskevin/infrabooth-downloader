@@ -91,6 +91,11 @@ struct RawTrackInfo {
     pub permalink_url: String,
     /// Media section with transcodings — cached for instant playback resolution.
     pub media: Option<stream::MediaInfo>,
+    /// Whether the track has free download enabled by the artist.
+    #[serde(default)]
+    pub downloadable: bool,
+    /// URL to download the original file (requires OAuth token).
+    pub download_url: Option<String>,
     /// URL to fetch waveform data (JSON with samples array).
     pub waveform_url: Option<String>,
 }
@@ -107,6 +112,10 @@ pub struct TrackInfo {
     pub permalink_url: String,
     /// URL to fetch waveform data (JSON with samples array).
     pub waveform_url: Option<String>,
+    /// Whether the track has free download enabled.
+    pub downloadable: bool,
+    /// URL to download the original file (requires OAuth token).
+    pub download_url: Option<String>,
 }
 
 impl From<RawTrackInfo> for TrackInfo {
@@ -139,7 +148,21 @@ impl From<RawTrackInfo> for TrackInfo {
             duration: raw.duration,
             permalink_url: raw.permalink_url,
             waveform_url: raw.waveform_url,
+            downloadable: raw.downloadable,
+            download_url: build_download_url(raw.downloadable, raw.download_url, raw.id),
         }
+    }
+}
+
+/// Build the download URL for a track if it has free download enabled.
+/// If the track is downloadable but no URL was provided, constructs the standard API endpoint.
+pub fn build_download_url(downloadable: bool, download_url: Option<String>, track_id: u64) -> Option<String> {
+    if downloadable {
+        download_url.or_else(|| {
+            Some(format!("https://api-v2.soundcloud.com/tracks/{}/download", track_id))
+        })
+    } else {
+        None
     }
 }
 
@@ -958,6 +981,8 @@ mod tests {
             duration: 180000,
             permalink_url: "https://soundcloud.com/test_artist/test-track".to_string(),
             waveform_url: None,
+            downloadable: false,
+            download_url: None,
         };
         let json = serde_json::to_string(&track).unwrap();
         assert!(json.contains("\"id\":123456"));
@@ -1075,6 +1100,8 @@ mod tests {
                 duration: 180000,
                 permalink_url: "https://soundcloud.com/artist/track-1".to_string(),
                 waveform_url: None,
+                downloadable: false,
+                download_url: None,
             }],
         };
         let json = serde_json::to_string(&playlist).unwrap();
@@ -1264,5 +1291,40 @@ mod tests {
         assert_eq!(full.len(), 1);
         assert_eq!(full[0].id, 100);
         assert_eq!(full[0].title, "Track 1");
+    }
+
+    #[test]
+    fn test_raw_track_info_deserializes_downloadable_true() {
+        let json = r#"{
+            "id": 123456,
+            "title": "Test Track",
+            "user": {"username": "test_artist"},
+            "artwork_url": null,
+            "duration": 180000,
+            "downloadable": true,
+            "download_url": "https://api-v2.soundcloud.com/tracks/123456/download"
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert!(track.downloadable);
+        assert_eq!(
+            track.download_url,
+            Some("https://api-v2.soundcloud.com/tracks/123456/download".to_string())
+        );
+    }
+
+    #[test]
+    fn test_raw_track_info_deserializes_downloadable_missing() {
+        let json = r#"{
+            "id": 123456,
+            "title": "Test Track",
+            "user": {"username": "test_artist"},
+            "artwork_url": null,
+            "duration": 180000
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert!(!track.downloadable);
+        assert!(track.download_url.is_none());
     }
 }

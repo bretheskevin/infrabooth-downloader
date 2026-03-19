@@ -13,6 +13,7 @@ export function trackInfoToQueueTrack(track: TrackInfo): Track {
     artworkUrl: track.artwork_url,
     durationMs: track.duration,
     status: 'pending',
+    downloadUrl: track.download_url,
   };
 }
 
@@ -34,5 +35,6 @@ export function queueTrackToDownloadRequest(track: Track): QueueItemRequest {
     artist: track.artist,
     artworkUrl: track.artworkUrl ?? null,
     durationMs: track.durationMs,
+    downloadUrl: track.downloadUrl ?? null,
   };
 }

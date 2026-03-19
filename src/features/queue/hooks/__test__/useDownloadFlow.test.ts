@@ -98,7 +98,7 @@ const mockPlaylist: PlaylistInfo = {
       artwork_url: null,
       duration: 180000,
       permalink_url: '',
-      waveform_url: null,
+      waveform_url: null, downloadable: false, download_url: null,
     },
   ],
 };
@@ -110,7 +110,7 @@ const mockTrack: TrackInfo = {
   artwork_url: 'https://example.com/single.jpg',
   duration: 240000,
   permalink_url: '',
-  waveform_url: null,
+  waveform_url: null, downloadable: false, download_url: null,
 };
 
 const mockQueueTracksData: Track[] = [
@@ -306,6 +306,7 @@ describe('useDownloadFlow', () => {
             artist: 'Artist1',
             artworkUrl: 'https://example.com/art1.jpg',
             durationMs: 180000,
+            downloadUrl: null,
           },
           {
             trackUrl: 'https://api.soundcloud.com/tracks/2',
@@ -314,6 +315,7 @@ describe('useDownloadFlow', () => {
             artist: 'Artist2',
             artworkUrl: null,
             durationMs: 240000,
+            downloadUrl: null,
           },
         ],
         albumName: null,
