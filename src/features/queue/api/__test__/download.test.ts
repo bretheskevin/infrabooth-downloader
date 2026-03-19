@@ -4,7 +4,7 @@ import {
   startDownloadQueue,
   type DownloadRequest,
   type StartQueueRequest,
-  type QueueItemRequest,
+  type TrackCore,
 } from '../download';
 
 // Mock the bindings module
@@ -35,10 +35,10 @@ const createDownloadRequest = (
   ...partial,
 });
 
-// Helper to create a complete QueueItemRequest
+// Helper to create a complete TrackCore
 const createQueueItem = (
-  partial: Partial<QueueItemRequest> & Pick<QueueItemRequest, 'trackUrl' | 'trackId' | 'title' | 'artist'>
-): QueueItemRequest => ({
+  partial: Partial<TrackCore> & Pick<TrackCore, 'trackUrl' | 'trackId' | 'title' | 'artist'>
+): TrackCore => ({
   artworkUrl: null,
   durationMs: 180000,
   downloadUrl: null,
