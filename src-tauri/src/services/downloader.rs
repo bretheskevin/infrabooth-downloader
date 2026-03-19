@@ -13,7 +13,7 @@ use tokio::sync::{watch, Mutex};
 use crate::models::error::DownloadError;
 use crate::models::ErrorResponse;
 use crate::services::events;
-use crate::services::pipeline::PipelineConfig;
+use crate::services::pipeline::{CancellationHandles, PipelineConfig};
 use crate::services::sidecar::bytes_to_string;
 
 use crate::services::stream::{self, StreamCodec, StreamInfo};
@@ -712,9 +712,7 @@ async fn run_ffmpeg_sidecar<R: tauri::Runtime>(
 pub async fn download_track_to_mp3<R: tauri::Runtime>(
     app: &AppHandle<R>,
     config: &PipelineConfig,
-    active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
-    cancel_rx: Option<watch::Receiver<bool>>,
-    active_pid: Option<Arc<Mutex<Option<u32>>>>,
+    cancellation: Option<CancellationHandles>,
 ) -> Result<PathBuf, DownloadError> {
     // Build output filename
     let (base_name, _display_title) =
@@ -726,6 +724,12 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         log::info!("[downloader] File already exists: {:?}", output_file);
         return Ok(output_file);
     }
+
+    // Extract references from cancellation handles (or use None)
+    let (cancel_rx, active_child, active_pid) = match &cancellation {
+        Some(c) => (Some(c.cancel_rx.clone()), Some(c.active_child.clone()), Some(c.active_pid.clone())),
+        None => (None, None, None),
+    };
 
     // Create shared context for FFmpeg operations
     let ctx = FfmpegContext {
