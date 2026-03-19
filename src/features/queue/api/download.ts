@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 export type {
   DownloadRequest,
   StartQueueRequest,
-  QueueItemRequest,
+  TrackCore,
   ErrorResponse,
 } from '@/bindings';
 

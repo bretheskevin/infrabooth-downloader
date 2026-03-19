@@ -107,7 +107,7 @@ describe('queueTrackToDownloadRequest', () => {
     status: 'pending',
   };
 
-  it('should convert queue Track to QueueItemRequest', () => {
+  it('should convert queue Track to TrackCore', () => {
     const result = queueTrackToDownloadRequest(mockQueueTrack);
 
     expect(result).toEqual({

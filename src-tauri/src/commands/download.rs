@@ -6,7 +6,7 @@ use tauri::{Emitter, State};
 
 use tauri::Manager;
 
-use crate::models::{ErrorResponse, HasErrorCode};
+use crate::models::{ErrorResponse, HasErrorCode, TrackCore};
 use crate::services::auth_choice::{AuthChoice, AuthChoiceState};
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
 use crate::services::cancellation::CancellationState;
@@ -21,17 +21,12 @@ use crate::services::downloader::DownloadProgressEvent;
 #[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadRequest {
-    pub track_url: String,
-    pub track_id: String,
-    pub title: String,
-    pub artist: String,
+    #[serde(flatten)]
+    pub core: TrackCore,
     pub album: Option<String>,
     pub track_number: Option<u32>,
     pub total_tracks: Option<u32>,
-    pub artwork_url: Option<String>,
     pub output_dir: Option<String>,
-    pub duration_ms: u64,
-    pub download_url: Option<String>,
 }
 
 /// Download and convert a track to MP3 with metadata embedding.
@@ -53,26 +48,26 @@ pub async fn download_track_full(
     };
 
     let metadata = TrackMetadata {
-        title: request.title,
-        artist: request.artist,
+        title: request.core.title.clone(),
+        artist: request.core.artist.clone(),
         album: request.album,
         track_number: request.track_number,
         total_tracks: request.total_tracks,
-        artwork_url: request.artwork_url,
-        track_id: Some(request.track_id.clone()),
+        artwork_url: request.core.artwork_url.clone(),
+        track_id: Some(request.core.track_id.clone()),
     };
 
-    let track_id = request.track_id.clone();
+    let track_id = request.core.track_id.clone();
 
     let config = PipelineConfig {
-        track_url: request.track_url,
+        track_url: request.core.track_url,
         track_id: track_id.clone(),
         output_dir: output_path,
         metadata,
         playlist_context: None,
-        duration_ms: request.duration_ms,
+        duration_ms: request.core.duration_ms,
         oauth_token: app.state::<AuthState>().get_token(),
-        download_url: request.download_url,
+        download_url: request.core.download_url,
     };
 
     let result_path = download_and_convert(&app, config, None, None, None)
@@ -120,17 +115,7 @@ pub struct StartQueueRequest {
     pub preserve_order: Option<bool>,
 }
 
-#[derive(Debug, Deserialize, Type)]
-#[serde(rename_all = "camelCase")]
-pub struct QueueItemRequest {
-    pub track_url: String,
-    pub track_id: String,
-    pub title: String,
-    pub artist: String,
-    pub artwork_url: Option<String>,
-    pub duration_ms: u64,
-    pub download_url: Option<String>,
-}
+pub type QueueItemRequest = TrackCore;
 
 /// Start processing a download queue.
 ///
@@ -164,19 +149,13 @@ pub async fn start_download_queue(
         .tracks
         .into_iter()
         .enumerate()
-        .map(|(i, t)| QueueItem {
-            track_url: t.track_url,
-            track_id: t.track_id,
-            title: t.title,
-            artist: t.artist,
-            artwork_url: t.artwork_url,
+        .map(|(i, core)| QueueItem {
+            core,
             track_number: if preserve_order {
                 Some((i + 1) as u32)
             } else {
                 None
             },
-            duration_ms: t.duration_ms,
-            download_url: t.download_url,
         })
         .collect();
 
@@ -279,18 +258,18 @@ mod tests {
         }"#;
 
         let request: DownloadRequest = serde_json::from_str(json).unwrap();
-        assert_eq!(request.track_url, "https://soundcloud.com/test/track");
-        assert_eq!(request.track_id, "123456");
-        assert_eq!(request.title, "Test Track");
-        assert_eq!(request.artist, "Test Artist");
+        assert_eq!(request.core.track_url, "https://soundcloud.com/test/track");
+        assert_eq!(request.core.track_id, "123456");
+        assert_eq!(request.core.title, "Test Track");
+        assert_eq!(request.core.artist, "Test Artist");
         assert_eq!(request.album, Some("Test Album".to_string()));
         assert_eq!(request.track_number, Some(5));
         assert_eq!(request.total_tracks, Some(10));
         assert_eq!(
-            request.artwork_url,
+            request.core.artwork_url,
             Some("https://example.com/art.jpg".to_string())
         );
-        assert_eq!(request.duration_ms, 180000);
+        assert_eq!(request.core.duration_ms, 180000);
     }
 
     #[test]
@@ -304,12 +283,12 @@ mod tests {
         }"#;
 
         let request: DownloadRequest = serde_json::from_str(json).unwrap();
-        assert_eq!(request.track_url, "https://soundcloud.com/test/track");
+        assert_eq!(request.core.track_url, "https://soundcloud.com/test/track");
         assert!(request.album.is_none());
         assert!(request.track_number.is_none());
-        assert!(request.artwork_url.is_none());
+        assert!(request.core.artwork_url.is_none());
         assert!(request.output_dir.is_none());
-        assert_eq!(request.duration_ms, 0);
+        assert_eq!(request.core.duration_ms, 0);
     }
 
     #[test]
