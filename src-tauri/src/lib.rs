@@ -128,11 +128,36 @@ pub fn run() {
                 }
             });
 
+            let log_level = if cfg!(debug_assertions) {
+                log::LevelFilter::Debug
+            } else {
+                log::LevelFilter::Info
+            };
+
             app.handle().plugin(
                 tauri_plugin_log::Builder::default()
-                    .level(log::LevelFilter::Info)
+                    .level(log_level)
+                    .filter(|metadata| {
+                        // Filter out noisy rookie debug logs
+                        !(metadata.target().starts_with("rookie")
+                            && metadata.level() > log::LevelFilter::Info)
+                    })
                     .max_file_size(1_000_000) // 1 MB per file
                     .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepOne)
+                    .format(|out, message, record| {
+                        let target = record.target();
+                        let clean_target = if target.contains("node_modules") {
+                            "webview"
+                        } else {
+                            target
+                        };
+                        out.finish(format_args!(
+                            "[{}][{}] {}",
+                            record.level(),
+                            clean_target,
+                            message
+                        ))
+                    })
                     .build(),
             )?;
 
