@@ -294,5 +294,10 @@
     "errorPrevious": "Impossible de revenir à la piste précédente",
     "errorLoadTrack": "Impossible de charger la piste",
     "clickToExpand": "Cliquer pour agrandir le lecteur"
+  },
+  "trackMenu": {
+    "copyLink": "Copier le lien",
+    "openInBrowser": "Ouvrir dans le navigateur",
+    "linkCopied": "Lien copié"
   }
 }

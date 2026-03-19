@@ -294,5 +294,10 @@
     "errorPrevious": "Failed to skip to previous track",
     "errorLoadTrack": "Failed to load track",
     "clickToExpand": "Click to expand player"
+  },
+  "trackMenu": {
+    "copyLink": "Copy link",
+    "openInBrowser": "Open in browser",
+    "linkCopied": "Link copied"
   }
 }
