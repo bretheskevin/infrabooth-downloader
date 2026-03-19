@@ -34,6 +34,11 @@ function getAudio(): HTMLAudioElement {
     audio.addEventListener('waiting', () => {
       if (currentState === 'playing') setState('loading');
     });
+    audio.addEventListener('seeked', () => {
+      if (currentState === 'loading' && !audio.paused && audio.readyState >= 3) {
+        setState('playing');
+      }
+    });
     audio.addEventListener('ended', () => {
       stopProgress();
       callbacks.onEnded();
@@ -94,9 +99,17 @@ export const audioEngine = {
     // causing duplicate media control entries. hls.js decodes in JS, avoiding this.
     if (Hls.isSupported()) {
       hls = new Hls({
-        startPosition: 0, // VOD content: start from beginning
-        maxBufferLength: 300, // 5 min forward buffer
-        backBufferLength: 30, // evict played content beyond 30s
+        startPosition: 0,
+        maxBufferLength: 300,
+        maxMaxBufferLength: 600,
+        backBufferLength: 30,
+        maxBufferHole: 0.5,
+        fragLoadingMaxRetry: 6,
+        fragLoadingRetryDelay: 1000,
+        manifestLoadingMaxRetry: 4,
+        manifestLoadingRetryDelay: 1000,
+        levelLoadingMaxRetry: 4,
+        levelLoadingRetryDelay: 1000,
       });
       hls.loadSource(url);
       hls.attachMedia(el);
@@ -108,6 +121,10 @@ export const audioEngine = {
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (data.fatal) {
+          if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+            hls?.recoverMediaError();
+            return;
+          }
           stopProgress();
           setState('idle');
           callbacks.onError(`HLS error: ${data.type} - ${data.details}`);
@@ -138,6 +155,9 @@ export const audioEngine = {
 
   seek(positionMs: number) {
     const el = getAudio();
+    if (currentState === 'playing') {
+      setState('loading');
+    }
     el.currentTime = positionMs / 1000;
   },
 
