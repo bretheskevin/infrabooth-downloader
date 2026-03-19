@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -95,11 +95,21 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
     [filteredTracks, sortField, sortDirection],
   );
 
-  const { playTrack } = usePlayContext(displayTracks);
+  const { playTrack, syncQueue } = usePlayContext(displayTracks);
   const { currentTrackId, playerState } = usePlayerStore(
     useShallow((s) => ({ currentTrackId: s.currentTrack?.trackId, playerState: s.state })),
   );
   const playerActions = () => usePlayerStore.getState();
+
+  const wasStreamingRef = useRef(false);
+  useEffect(() => {
+    const wasStreaming = wasStreamingRef.current;
+    wasStreamingRef.current = isStreaming;
+
+    if (wasStreaming && !isStreaming && currentTrackId) {
+      syncQueue();
+    }
+  }, [isStreaming, currentTrackId, syncQueue]);
 
   const showSkeleton = isLoading && (!tracks || tracks.length === 0);
 

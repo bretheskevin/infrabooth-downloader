@@ -53,6 +53,8 @@ interface PlayerStore {
   setVolume: (volume: number) => void;
   reorderQueue: (fromIndex: number, toIndex: number) => void;
   removeFromQueue: (index: number) => void;
+  skipTo: (index: number) => Promise<void>;
+  syncQueue: (newQueue: PlaybackItem[]) => void;
   toggleExpanded: () => void;
   toggleQueue: () => void;
   collapse: () => void;
@@ -290,6 +292,40 @@ export const usePlayerStore = create<PlayerStore>()((set, get) => ({
   toggleExpanded: () => set((s) => ({ isExpanded: !s.isExpanded })),
   toggleQueue: () => set((s) => ({ isQueueOpen: !s.isQueueOpen })),
   collapse: () => set({ isExpanded: false }),
+
+  skipTo: async (index) => {
+    const { queue } = get();
+    const track = queue[index];
+    if (!track) return;
+
+    consecutiveFailures = 0;
+    const generation = ++loadGeneration;
+    set({
+      cursor: index,
+      currentTrack: track,
+      state: 'loading',
+      positionMs: 0,
+      durationMs: track.durationMs,
+    });
+    await loadAndPlay(track, generation, get);
+    preloadQueueSegments(queue, index + 1, 2);
+  },
+
+  syncQueue: (newQueue) => {
+    const { currentTrack, isShuffled, originalQueue, state } = get();
+    if (!currentTrack || state === 'stopped') return;
+
+    const newCursor = newQueue.findIndex((t) => t.trackId === currentTrack.trackId);
+    if (newCursor === -1) return;
+
+    set({
+      queue: isShuffled ? shuffleQueueWithCurrent(newQueue, newCursor) : newQueue,
+      cursor: isShuffled ? 0 : newCursor,
+      originalQueue: isShuffled && originalQueue ? newQueue : originalQueue,
+    });
+
+    purgeStaleCache(trackIdSet(newQueue));
+  },
 
   toggleShuffle: () => {
     const { queue, cursor, currentTrack, isShuffled, originalQueue } = get();

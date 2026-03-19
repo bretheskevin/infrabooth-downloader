@@ -303,4 +303,84 @@ describe('playerStore', () => {
     expect(state.originalQueue?.length).toBe(4);
     expect(state.originalQueue?.find((t) => t.trackId === trackToRemove?.trackId)).toBeUndefined();
   });
+
+  it('skipTo should jump to track without reshuffling', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+    usePlayerStore.getState().toggleShuffle();
+
+    const stateAfterShuffle = usePlayerStore.getState();
+    const shuffledQueue = [...stateAfterShuffle.queue];
+
+    await usePlayerStore.getState().skipTo(3);
+
+    const state = usePlayerStore.getState();
+    expect(state.cursor).toBe(3);
+    expect(state.currentTrack?.trackId).toBe(shuffledQueue[3]?.trackId);
+    expect(state.queue).toEqual(shuffledQueue);
+    expect(state.isShuffled).toBe(true);
+  });
+
+  it('skipTo should do nothing for invalid index', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 0);
+
+    await usePlayerStore.getState().skipTo(10);
+
+    const state = usePlayerStore.getState();
+    expect(state.cursor).toBe(0);
+  });
+
+  it('syncQueue should update queue while preserving current track', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 1);
+
+    const extendedQueue = makeQueue(5);
+    usePlayerStore.getState().syncQueue(extendedQueue);
+
+    const state = usePlayerStore.getState();
+    expect(state.queue.length).toBe(5);
+    expect(state.cursor).toBe(1);
+    expect(state.currentTrack?.trackId).toBe(2);
+  });
+
+  it('syncQueue should do nothing when idle', () => {
+    const queue = makeQueue(3);
+    usePlayerStore.getState().syncQueue(queue);
+
+    const state = usePlayerStore.getState();
+    expect(state.queue.length).toBe(0);
+    expect(state.state).toBe('stopped');
+  });
+
+  it('syncQueue should do nothing when current track not in new queue', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 1);
+
+    const differentQueue = [
+      { ...mockTrack, trackId: 10, title: 'Track 10' },
+      { ...mockTrack, trackId: 11, title: 'Track 11' },
+    ];
+    usePlayerStore.getState().syncQueue(differentQueue);
+
+    const state = usePlayerStore.getState();
+    expect(state.queue.length).toBe(3);
+    expect(state.cursor).toBe(1);
+  });
+
+  it('syncQueue should reshuffle when shuffle is active', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 1);
+    usePlayerStore.getState().toggleShuffle();
+
+    const extendedQueue = makeQueue(5);
+    usePlayerStore.getState().syncQueue(extendedQueue);
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(true);
+    expect(state.originalQueue).toEqual(extendedQueue);
+    expect(state.cursor).toBe(0);
+    expect(state.queue[0]?.trackId).toBe(2);
+    expect(state.queue.length).toBe(5);
+  });
 });

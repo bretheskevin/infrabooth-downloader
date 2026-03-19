@@ -20,11 +20,26 @@ export function usePlayContext(tracks: TrackInfo[]) {
 
   const playTrack = useCallback(
     (index: number) => {
-      const queue = buildPlaybackQueue(tracks);
-      play(queue, index);
+      const track = tracks[index];
+      if (!track) return;
+
+      const { queue, skipTo } = usePlayerStore.getState();
+      const queueIndex = queue.findIndex((q) => q.trackId === track.id);
+
+      if (queueIndex !== -1) {
+        skipTo(queueIndex);
+      } else {
+        const newQueue = buildPlaybackQueue(tracks);
+        play(newQueue, index);
+      }
     },
     [tracks, play],
   );
 
-  return { playTrack };
+  const syncQueue = useCallback(() => {
+    const queue = buildPlaybackQueue(tracks);
+    usePlayerStore.getState().syncQueue(queue);
+  }, [tracks]);
+
+  return { playTrack, syncQueue };
 }
