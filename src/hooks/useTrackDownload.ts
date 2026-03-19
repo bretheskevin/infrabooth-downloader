@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { downloadTrack as downloadTrackApi } from '@/features/queue/api/download';
 import type { TrackInfo } from '@/bindings';
-import type { DownloadProgressEvent } from '@/types/events';
+import type { DownloadProgressEvent } from '@/bindings';
 import type { DownloadState } from '@/types/download';
 
 interface TrackDownloadInternalState {

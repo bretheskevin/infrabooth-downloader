@@ -43,7 +43,7 @@ pub struct DownloadProgress {
     pub downloaded_bytes: Option<u64>,
 }
 
-#[derive(Debug, Clone, serde::Serialize, specta::Type)]
+#[derive(Debug, Clone, serde::Serialize, specta::Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
 pub struct DownloadProgressEvent {
     pub track_id: String,
