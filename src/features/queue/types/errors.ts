@@ -1,3 +1,5 @@
+import type { ErrorResponse } from '@/bindings';
+
 export type ErrorCode =
   | 'INVALID_URL'
   | 'GEO_BLOCKED'
@@ -10,7 +12,4 @@ export type ErrorCode =
   | 'CANCELLED'
   | 'AUTH_REFRESH_FAILED';
 
-export interface AppError {
-  code: ErrorCode;
-  message: string;
-}
+export type AppError = ErrorResponse & { code: ErrorCode };

@@ -28,7 +28,7 @@ pub struct QueueItem {
 }
 
 /// Event payload for queue progress updates.
-#[derive(Clone, Debug, Serialize, Type)]
+#[derive(Clone, Debug, Serialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueProgressEvent {
     pub current: u32,
@@ -37,7 +37,7 @@ pub struct QueueProgressEvent {
 }
 
 /// Event payload for queue completion.
-#[derive(Clone, Debug, Serialize, Type)]
+#[derive(Clone, Debug, Serialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueCompleteEvent {
     pub completed: u32,
@@ -47,7 +47,7 @@ pub struct QueueCompleteEvent {
 }
 
 /// Event payload for queue cancellation.
-#[derive(Clone, Debug, Serialize, Type)]
+#[derive(Clone, Debug, Serialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
 pub struct QueueCancelledEvent {
     pub completed: u32,

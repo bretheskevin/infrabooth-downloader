@@ -23,11 +23,20 @@ use tauri::Emitter;
 
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
-use tauri_specta::{collect_commands, Builder};
+use tauri_specta::{collect_commands, collect_events, Builder};
+use services::downloader::DownloadProgressEvent;
+use services::queue::{QueueProgressEvent, QueueCompleteEvent, QueueCancelledEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let builder = Builder::<tauri::Wry>::new().commands(collect_commands![
+    let builder = Builder::<tauri::Wry>::new()
+        .events(collect_events![
+            DownloadProgressEvent,
+            QueueProgressEvent,
+            QueueCompleteEvent,
+            QueueCancelledEvent
+        ])
+        .commands(collect_commands![
         check_auth,
         refresh_auth,
         sign_out,

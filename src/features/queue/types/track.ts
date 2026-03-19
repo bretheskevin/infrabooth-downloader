@@ -22,11 +22,3 @@ export interface Track {
   totalBytes?: number;
   downloadUrl?: string | null;
 }
-
-/** Context for playlist track numbering */
-export interface PlaylistContext {
-  /** 1-indexed position in playlist */
-  trackPosition: number;
-  /** Total number of tracks in playlist */
-  totalTracks: number;
-}
