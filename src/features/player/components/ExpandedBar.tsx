@@ -1,7 +1,7 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
-import { Play, Pause, SkipBack, SkipForward, Volume2, ListMusic, ChevronDown, Loader2 } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, ListMusic, ChevronDown, Loader2, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -18,7 +18,7 @@ const actions = () => usePlayerStore.getState();
 
 export function ExpandedBar() {
   const { t } = useTranslation();
-  const { state, currentTrack, positionMs, durationMs, volume, isQueueOpen } = usePlayerStore(
+  const { state, currentTrack, positionMs, durationMs, volume, isQueueOpen, isShuffled } = usePlayerStore(
     useShallow((s) => ({
       state: s.state,
       currentTrack: s.currentTrack,
@@ -26,6 +26,7 @@ export function ExpandedBar() {
       durationMs: s.durationMs,
       volume: s.volume,
       isQueueOpen: s.isQueueOpen,
+      isShuffled: s.isShuffled,
     }))
   );
   const currentTrackId = currentTrack?.trackId;
@@ -150,6 +151,24 @@ export function ExpandedBar() {
             <SkipForward className="h-3.5 w-3.5" />
           </Button>
         </div>
+
+        {/* Shuffle */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('h-7 w-7', isShuffled && 'text-primary bg-primary/10')}
+              onClick={() => actions().toggleShuffle()}
+              aria-label={t('player.shuffle')}
+            >
+              <Shuffle className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('player.shuffle')}</p>
+          </TooltipContent>
+        </Tooltip>
 
         {/* Volume */}
         <div className="flex items-center gap-1.5 ml-2">
