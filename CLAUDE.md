@@ -102,6 +102,29 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 - **Never use `console.log/warn/error` in frontend code.** Use `logger` from `@/lib/logger` (backed by `@tauri-apps/plugin-log`) which routes logs to the Tauri logging system. Logger methods are async — use `void logger.info(...)` for fire-and-forget calls.
 - **Never write comments unless necessary.** Code should be self-documenting. Only add comments when the logic is genuinely non-obvious and cannot be clarified through better naming or structure.
 
+## Type & Parameter Patterns
+
+### Prefer generated bindings
+- Import types from `src/bindings.ts` instead of manually defining duplicates
+- Event payloads, error types, and request/response types should come from Rust via tauri-specta
+- Use `tauri_specta::Event` derive macro for event types to auto-generate TS bindings
+
+### Consolidate repeated fields with composition
+- When multiple structs share the same fields (e.g., `trackId`, `title`, `artist`), extract a shared `Core` type
+- Rust: Use `#[serde(flatten)]` to embed the shared type
+- TypeScript: Use intersection types (`CoreType & { extraField: string }`)
+- Example: `TrackCore` is embedded in `QueueItem`, `DownloadRequest` via flatten
+
+### Bundle related parameters
+- Functions with 4+ parameters of the same "kind" should use a parameter object
+- Look for `Option<X>, Option<Y>, Option<Z>` that always travel together
+- Example: `CancellationHandles` bundles `cancel_rx`, `active_child`, `active_pid`
+- Example: `PipelineConfig` bundles download configuration
+
+### Type aliases for semantic clarity
+- Use `pub type QueueItemRequest = TrackCore;` when types are identical but have different semantic meanings
+- Avoids duplication while preserving API clarity
+
 ## Serena MCP — Required for All Codebase Interaction
 
 This project uses **Serena MCP** for semantic code analysis and editing. All agents (including subagents dispatched by superpowers skills) **MUST** use Serena MCP tools instead of basic Read/Grep/Glob/Edit for codebase interaction.
