@@ -70,7 +70,7 @@ pub async fn download_track_full(
         download_url: request.core.download_url,
     };
 
-    let result_path = download_and_convert(&app, config, None, None, None)
+    let result_path = download_and_convert(&app, config, None)
         .await
         .map_err(|e| {
             let _ = app.emit(

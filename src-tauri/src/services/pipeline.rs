@@ -8,6 +8,14 @@ use crate::models::error::DownloadError;
 use crate::services::metadata::{embed_metadata, TrackMetadata};
 use crate::services::downloader::{download_track_to_mp3, PlaylistContext};
 
+/// Handles for cancellation support during download.
+/// Groups the cancel signal receiver and process tracking handles.
+pub struct CancellationHandles {
+    pub cancel_rx: watch::Receiver<bool>,
+    pub active_child: Arc<Mutex<Option<CommandChild>>>,
+    pub active_pid: Arc<Mutex<Option<u32>>>,
+}
+
 /// Configuration for the full download pipeline.
 pub struct PipelineConfig {
     pub track_url: String,
@@ -36,18 +44,14 @@ pub struct PipelineConfig {
 pub async fn download_and_convert<R: tauri::Runtime>(
     app: &AppHandle<R>,
     config: PipelineConfig,
-    active_child: Option<Arc<Mutex<Option<CommandChild>>>>,
-    cancel_rx: Option<watch::Receiver<bool>>,
-    active_pid: Option<Arc<Mutex<Option<u32>>>>,
+    cancellation: Option<CancellationHandles>,
 ) -> Result<PathBuf, DownloadError> {
     let playlist_context = config.playlist_context.clone();
 
     let output_path = download_track_to_mp3(
         app,
         &config,
-        active_child,
-        cancel_rx,
-        active_pid,
+        cancellation,
     )
     .await?;
 

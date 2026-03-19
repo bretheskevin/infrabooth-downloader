@@ -16,7 +16,7 @@ use crate::services::events;
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState, DownloadRateLimitedEvent};
 use crate::services::downloader::{DownloadProgressEvent, PlaylistContext};
 use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
-use crate::services::pipeline::{download_and_convert, PipelineConfig};
+use crate::services::pipeline::{download_and_convert, CancellationHandles, PipelineConfig};
 use crate::services::storage::AuthState;
 
 /// An item in the download queue.
@@ -104,9 +104,11 @@ async fn execute_download<R: Runtime>(
     let result = download_and_convert(
         &app,
         config,
-        Some(child_handle),
-        Some(cancel_rx),
-        Some(pid_handle),
+        Some(CancellationHandles {
+            cancel_rx,
+            active_child: child_handle,
+            active_pid: pid_handle,
+        }),
     ).await;
 
     // Deregister process tracking
