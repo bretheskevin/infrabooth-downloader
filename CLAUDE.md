@@ -102,6 +102,13 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 - **Never use `console.log/warn/error` in frontend code.** Use `logger` from `@/lib/logger` (backed by `@tauri-apps/plugin-log`) which routes logs to the Tauri logging system. Logger methods are async — use `void logger.info(...)` for fire-and-forget calls.
 - **Never write comments unless necessary.** Code should be self-documenting. Only add comments when the logic is genuinely non-obvious and cannot be clarified through better naming or structure.
 
+## Code Complexity
+
+- **Function length**: Keep functions under ~50 lines. Extract helpers for longer functions.
+- **Component length**: React components should generally be under ~150 lines. Extract sub-components for complex UI.
+- **Nesting depth**: Avoid more than 3 levels of nesting. Use early returns or extract helper functions.
+- **Single responsibility**: Each function/component should do one thing well. If you need "and" to describe it, split it.
+
 ## Type & Parameter Patterns
 
 ### Prefer generated bindings

@@ -6,12 +6,12 @@ import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBa
 import { EXPANDED_BAR_HEIGHT } from '@/features/player/components/ExpandedBar';
 import { useIsDownloadEnabled } from '@/features/settings';
 
-interface SelectionFloatingBarProps {
+interface PlaylistActionBarProps {
   selectedCount: number;
   onDownload: () => void;
 }
 
-export function SelectionFloatingBar({ selectedCount, onDownload }: SelectionFloatingBarProps) {
+export function PlaylistActionBar({ selectedCount, onDownload }: PlaylistActionBarProps) {
   const { t } = useTranslation();
   const expandedBarVisible = useIsExpandedBarVisible();
   const isQueueOpen = usePlayerStore((s) => s.isQueueOpen);

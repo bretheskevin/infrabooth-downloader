@@ -1,0 +1,123 @@
+import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { api } from '@/lib/tauri';
+import { logger } from '@/lib/logger';
+import { useLibraryPlaylists } from '../hooks/useLibraryPlaylists';
+import { filterPlaylists } from '../utils/filterPlaylists';
+import { SearchBar } from '@/components/ui/search-bar';
+import { LibraryFilterChips } from './LibraryFilterChips';
+import { LibraryPlaylistList } from './LibraryPlaylistList';
+import type { TrackInfo } from '@/bindings';
+import type { LibraryPlaylist, LibraryFilter } from '../types';
+import { useLibraryStore } from '../store';
+
+const libraryActions = () => useLibraryStore.getState();
+
+interface PlaylistListViewProps {
+  searchQuery: string;
+  filter: LibraryFilter;
+  onOpenDetail: (playlist: LibraryPlaylist) => void;
+  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
+}
+
+export function PlaylistListView({
+  searchQuery,
+  filter,
+  onOpenDetail,
+  onDownloadTracks,
+}: PlaylistListViewProps) {
+  const { t } = useTranslation();
+  const [quickDownloadFailedPlaylist, setQuickDownloadFailedPlaylist] = useState<string | null>(null);
+  const [downloadingPlaylistId, setDownloadingPlaylistId] = useState<number | null>(null);
+  const [animateRefresh, setAnimateRefresh] = useState(false);
+  const refreshButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!quickDownloadFailedPlaylist) return;
+    const timer = setTimeout(() => setQuickDownloadFailedPlaylist(null), 4000);
+    return () => clearTimeout(timer);
+  }, [quickDownloadFailedPlaylist]);
+
+  const { playlists, isLoading, error, refetch, clearCache } = useLibraryPlaylists(true);
+
+  const filtered = useMemo(
+    () => filterPlaylists(playlists, searchQuery, filter),
+    [playlists, searchQuery, filter],
+  );
+
+  const handleRetry = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const handleRefresh = useCallback(async () => {
+    libraryActions().setLibraryView({ view: 'list' });
+    const btn = refreshButtonRef.current;
+    if (btn) btn.classList.add('animate-spin');
+    await clearCache();
+    await refetch();
+    if (btn) btn.classList.remove('animate-spin');
+    setAnimateRefresh(true);
+    requestAnimationFrame(() => {
+      setTimeout(() => setAnimateRefresh(false), 300);
+    });
+  }, [refetch, clearCache]);
+
+  const handleQuickDownload = useCallback(
+    async (playlist: LibraryPlaylist) => {
+      if (downloadingPlaylistId) return;
+      setDownloadingPlaylistId(playlist.id);
+      try {
+        const tracks = await api.getLibraryPlaylistTracks(playlist.id);
+        onDownloadTracks(tracks, playlist.title);
+      } catch (err) {
+        void logger.error(`[PlaylistListView] Quick download failed: ${err instanceof Error ? err.message : String(err)}`);
+        setQuickDownloadFailedPlaylist(playlist.title);
+      } finally {
+        setDownloadingPlaylistId(null);
+      }
+    },
+    [onDownloadTracks, downloadingPlaylistId],
+  );
+
+  return (
+    <>
+      <SearchBar
+        value={searchQuery}
+        onChange={(v) => libraryActions().setSearchQuery(v)}
+        placeholder={t('library.searchPlaceholder')}
+        autoFocus
+      />
+      <div className="flex items-center justify-between">
+        <LibraryFilterChips active={filter} onChange={(f) => libraryActions().setFilter(f)} />
+        <Button
+          ref={refreshButtonRef}
+          variant="ghost"
+          size="icon"
+          onClick={handleRefresh}
+          className="h-8 w-8 text-muted-foreground"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+      {quickDownloadFailedPlaylist && (
+        <p className="text-sm text-destructive px-1">
+          {t('library.detail.quickDownloadFailed')} — {quickDownloadFailedPlaylist}
+        </p>
+      )}
+      <LibraryPlaylistList
+        playlists={filtered}
+        isLoading={isLoading}
+        error={error}
+        isEmpty={filtered.length === 0 && !isLoading}
+        isFiltered={searchQuery.trim() !== '' || filter !== 'all'}
+        onOpenDetail={onOpenDetail}
+        onDownload={handleQuickDownload}
+        downloadingPlaylistId={downloadingPlaylistId}
+        onRetry={handleRetry}
+        animateRefresh={animateRefresh}
+      />
+    </>
+  );
+}

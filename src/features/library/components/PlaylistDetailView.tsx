@@ -1,25 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
-import { useSettingsStore } from '@/features/settings';
-import { useFolderSelection, useTrackDownload, useMergedTrackState } from '@/hooks';
+import { useFolderSelection } from '@/hooks';
 import { useShallow } from 'zustand/react/shallow';
 import { usePlayContext, usePlayerStore } from '@/features/player';
-import { preloadOnHover, preloadImmediate } from '@/features/player/url-cache';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useTrackSelection } from '../hooks/useTrackSelection';
-import { useDownloadedTracks } from '../hooks/useDownloadedTracks';
+import { usePlaylistViewState } from '../hooks/usePlaylistViewState';
+import { useSyncQueueOnStreamEnd } from '../hooks/useSyncQueueOnStreamEnd';
+import { usePlaylistTrackHandlers } from '../hooks/usePlaylistTrackHandlers';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
-import { filterTracks } from '../utils/filterTracks';
-import { sortTracks } from '../utils/sortTracks';
+import { PlaylistLoadingState } from './PlaylistLoadingState';
+import { PlaylistErrorState } from './PlaylistErrorState';
+import { PlaylistEmptyStates } from './PlaylistEmptyStates';
 import { SearchBar } from '@/components/ui/search-bar';
 import { PlaylistTrackList } from './PlaylistTrackList';
-import type { SortDirection, SortField } from '../types';
-import { SelectionFloatingBar } from './SelectionFloatingBar';
+import { PlaylistActionBar } from './PlaylistActionBar';
 
 const MIN_TRACKS_FOR_SEARCH = 5;
 
@@ -29,100 +26,36 @@ interface PlaylistDetailViewProps {
   onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
 }
 
-function TrackSkeletonRow() {
-  return (
-    <div className="flex items-center gap-3 px-3 py-2">
-      <Skeleton className="w-8 h-8 rounded shrink-0" />
-      <div className="flex-1 space-y-1.5">
-        <Skeleton className="h-3.5 w-40" />
-        <Skeleton className="h-3 w-24" />
-      </div>
-      <Skeleton className="h-3 w-10 shrink-0" />
-    </div>
-  );
-}
-
-function getErrorMessageKey(error: Error): string {
-  const msg = error.message ?? '';
-  if (msg.includes('Authentication required') || msg.includes('AuthRequired')) {
-    return 'errors.authExpired';
-  }
-  if (msg.includes('Rate limited') || msg.includes('RateLimited')) {
-    return 'library.rateLimited';
-  }
-  return 'library.detail.errorLoading';
-}
-
 export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: PlaylistDetailViewProps) {
   const { t } = useTranslation();
   const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id);
 
   const needsArtwork = !playlist.artwork_url;
-  const { data: resolvedArtwork } = usePlaylistArtwork(
-    playlist.id,
-    playlist.secret_token,
-    needsArtwork,
-  );
+  const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secret_token, needsArtwork);
   const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
 
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<SortField>('default');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-  const defaultPath = useSettingsStore((s) => s.downloadPath);
-  const [localPath, setLocalPath] = useState<string | undefined>(undefined);
-  const effectivePath = localPath || defaultPath || undefined;
-
-  const { downloadTrack, getTrackState: getRawTrackState, completedCount: inlineCompletedCount, reconcile } = useTrackDownload(effectivePath ?? '');
-
-  const { downloadedIds, downloadedCount } = useDownloadedTracks(tracks, effectivePath, !isStreaming, inlineCompletedCount);
-
-  const getTrackState = useMergedTrackState(getRawTrackState, downloadedIds, reconcile);
-
-  useEffect(() => {
-    setSearchQuery('');
-    setSortField('default');
-    setSortDirection('asc');
-    setLocalPath(undefined);
-  }, [playlist.id]);
-
-  const filteredTracks = useMemo(
-    () => filterTracks(tracks ?? [], searchQuery),
-    [tracks, searchQuery],
-  );
-
-  const displayTracks = useMemo(
-    () => sortTracks(filteredTracks, sortField, sortDirection),
-    [filteredTracks, sortField, sortDirection],
-  );
+  const viewState = usePlaylistViewState(playlist.id, tracks, isStreaming);
+  const { displayTracks, downloadedIds, effectivePath, setLocalPath, downloadTrack } = viewState;
 
   const { playTrack, syncQueue } = usePlayContext(displayTracks);
   const { currentTrackId, playerState } = usePlayerStore(
     useShallow((s) => ({ currentTrackId: s.currentTrack?.trackId, playerState: s.state })),
   );
-  const playerActions = () => usePlayerStore.getState();
 
-  const wasStreamingRef = useRef(false);
-  useEffect(() => {
-    const wasStreaming = wasStreamingRef.current;
-    wasStreamingRef.current = isStreaming;
+  useSyncQueueOnStreamEnd(isStreaming, currentTrackId, syncQueue);
 
-    if (wasStreaming && !isStreaming && currentTrackId) {
-      syncQueue();
-    }
-  }, [isStreaming, currentTrackId, syncQueue]);
+  const selection = useTrackSelection(displayTracks, downloadedIds);
+  const { selectedIds, toggleTrack, toggleAll, clearSelection, selectedCount, isAllSelected, selectedTracks, selectableCount } = selection;
 
-  const showSkeleton = isLoading && (!tracks || tracks.length === 0);
-
-  const {
-    selectedIds,
-    toggleTrack,
-    toggleAll,
-    clearSelection,
-    selectedCount,
-    isAllSelected,
+  const handlers = usePlaylistTrackHandlers({
+    tracks,
+    playlistTitle: playlist.title,
+    effectivePath,
     selectedTracks,
-    selectableCount,
-  } = useTrackSelection(displayTracks, downloadedIds);
+    downloadTrack,
+    clearSelection,
+    onDownloadTracks,
+  });
 
   const { selectFolder: handleChangeFolder } = useFolderSelection({
     defaultPath: effectivePath,
@@ -131,37 +64,8 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
     onPermissionDenied: () => toast.error(t('library.detail.folderPermissionDenied')),
   });
 
-  const folderName = useMemo(
-    () => effectivePath ? effectivePath.split(/[/\\]/).filter(Boolean).pop() : undefined,
-    [effectivePath],
-  );
-  const isCustomFolder = Boolean(localPath && localPath !== defaultPath);
-
-  const handleDownloadAll = useCallback(() => {
-    if (tracks && tracks.length > 0) onDownloadTracks(tracks, playlist.title, effectivePath);
-  }, [tracks, playlist.title, onDownloadTracks, effectivePath]);
-
-  const handleDownloadSelected = useCallback(async () => {
-    await onDownloadTracks(selectedTracks, playlist.title, effectivePath);
-    clearSelection();
-  }, [selectedTracks, playlist.title, onDownloadTracks, clearSelection, effectivePath]);
-
-  const handleHoverTrack = useCallback(
-    (track: TrackInfo) => preloadOnHover(track.id, track.permalink_url),
-    [],
-  );
-
-  const handleMouseDownTrack = useCallback(
-    (track: TrackInfo) => preloadImmediate(track.id, track.permalink_url),
-    [],
-  );
-
-  const handleDownloadTrack = useCallback(
-    (track: TrackInfo) => {
-      downloadTrack(track);
-    },
-    [downloadTrack],
-  );
+  const showSkeleton = isLoading && (!tracks || tracks.length === 0);
+  const showSearch = tracks && tracks.length >= MIN_TRACKS_FOR_SEARCH;
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
@@ -170,52 +74,28 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
         artworkUrl={artworkUrl}
         trackCount={tracks?.length ?? playlist.track_count}
         onBack={onBack}
-        onDownloadAll={handleDownloadAll}
+        onDownloadAll={handlers.handleDownloadAll}
         isDownloadDisabled={!tracks || tracks.length === 0}
-        downloadedCount={downloadedCount}
-        folderName={folderName}
-        isCustomFolder={isCustomFolder}
+        downloadedCount={viewState.downloadedCount}
+        folderName={viewState.folderName}
+        isCustomFolder={viewState.isCustomFolder}
         onChangeFolder={handleChangeFolder}
         showOrderToggle={(tracks?.length ?? 0) > 1}
       />
 
-      {showSkeleton && (
-        <div className="space-y-1">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <TrackSkeletonRow key={i} />
-          ))}
-        </div>
-      )}
+      <PlaylistLoadingState showSkeleton={showSkeleton} />
+      <PlaylistErrorState error={error} tracks={tracks} onRetry={refetch} />
 
-      {error && !tracks && (
-        <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <p className="text-sm text-muted-foreground">{t(getErrorMessageKey(error))}</p>
-          <Button variant="ghost" size="sm" onClick={() => refetch()}>
-            {t('library.detail.retry')}
-          </Button>
-        </div>
-      )}
-
-      {tracks && tracks.length >= MIN_TRACKS_FOR_SEARCH && (
+      {showSearch && (
         <SearchBar
-          value={searchQuery}
-          onChange={setSearchQuery}
+          value={viewState.searchQuery}
+          onChange={viewState.setSearchQuery}
           placeholder={t('library.detail.filterPlaceholder')}
           autoFocus
         />
       )}
 
-      {tracks && tracks.length === 0 && !isLoading && (
-        <p className="text-center py-12 text-sm text-muted-foreground">
-          {t('library.detail.emptyPlaylist')}
-        </p>
-      )}
-
-      {tracks && tracks.length > 0 && displayTracks.length === 0 && (
-        <p className="text-center py-12 text-sm text-muted-foreground">
-          {t('library.detail.noFilterResults')}
-        </p>
-      )}
+      <PlaylistEmptyStates tracks={tracks} displayTracks={displayTracks} isLoading={isLoading} />
 
       {displayTracks.length > 0 && (
         <PlaylistTrackList
@@ -224,28 +104,25 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           selectedIds={selectedIds}
           isAllSelected={isAllSelected}
           hasSelectableTracks={selectableCount > 0}
-          sortField={sortField}
-          sortDirection={sortDirection}
-          onSortFieldChange={setSortField}
-          onSortDirectionChange={setSortDirection}
+          sortField={viewState.sortField}
+          sortDirection={viewState.sortDirection}
+          onSortFieldChange={viewState.setSortField}
+          onSortDirectionChange={viewState.setSortDirection}
           onToggleTrack={toggleTrack}
           onToggleAll={toggleAll}
-          getTrackState={getTrackState}
-          onDownloadTrack={handleDownloadTrack}
+          getTrackState={viewState.getTrackState}
+          onDownloadTrack={handlers.handleDownloadTrack}
           onPlayTrack={playTrack}
-          onPauseTrack={playerActions().pause}
-          onResumeTrack={playerActions().resume}
+          onPauseTrack={() => usePlayerStore.getState().pause()}
+          onResumeTrack={() => usePlayerStore.getState().resume()}
           currentlyPlayingId={currentTrackId}
           isPlayerPlaying={playerState === 'playing'}
-          onHoverTrack={handleHoverTrack}
-          onMouseDownTrack={handleMouseDownTrack}
+          onHoverTrack={handlers.handleHoverTrack}
+          onMouseDownTrack={handlers.handleMouseDownTrack}
         />
       )}
 
-      <SelectionFloatingBar
-        selectedCount={selectedCount}
-        onDownload={handleDownloadSelected}
-      />
+      <PlaylistActionBar selectedCount={selectedCount} onDownload={handlers.handleDownloadSelected} />
     </div>
   );
 }
