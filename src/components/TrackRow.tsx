@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { useTrackActions } from '@/hooks/useTrackActions';
+import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 import { useIsSignedIn } from '@/features/auth/store';
 import { TrackRowContent } from '@/components/TrackRowContent';
 import { TrackRowActionsContextContent, TrackRowActionsDropdown } from '@/components/TrackRowActions';
@@ -44,6 +45,28 @@ export function TrackRow({
   const [isRowHovered, setIsRowHovered] = useState(false);
   const [contextMenuKey, setContextMenuKey] = useState(0);
   const [dropdownMenuOpen, setDropdownMenuOpen] = useState(false);
+
+  const dismissSelf = useCallback(() => {
+    setDropdownMenuOpen(false);
+    setContextMenuKey((k) => k + 1);
+  }, []);
+
+  const claimMenu = useMenuExclusivity(dismissSelf);
+
+  const handleDropdownMenuOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) claimMenu();
+      setDropdownMenuOpen(open);
+    },
+    [claimMenu],
+  );
+
+  const handleContextMenuOpenChange = useCallback(
+    (open: boolean) => {
+      if (open) claimMenu();
+    },
+    [claimMenu],
+  );
   const { handleCopyLink, handleOpenInBrowser } = useTrackActions(track.permalink_url);
   const isSignedIn = useIsSignedIn();
 
@@ -74,7 +97,7 @@ export function TrackRow({
   }, [downloadState]);
 
   return (
-    <ContextMenu key={contextMenuKey}>
+    <ContextMenu key={contextMenuKey} onOpenChange={handleContextMenuOpenChange}>
       <ContextMenuTrigger asChild>
         <div
           className={cn(
@@ -104,7 +127,7 @@ export function TrackRow({
             isSignedIn={isSignedIn}
             trackId={track.id}
             dropdownMenuOpen={dropdownMenuOpen}
-            onDropdownMenuOpenChange={setDropdownMenuOpen}
+            onDropdownMenuOpenChange={handleDropdownMenuOpenChange}
             actionSlot={actionSlot}
             onRemoveFromPlaylist={onRemoveFromPlaylist}
           />
