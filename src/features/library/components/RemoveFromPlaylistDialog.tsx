@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,14 +35,18 @@ export function RemoveFromPlaylistDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>{t('trackMenu.removeFromPlaylistTitle')}</AlertDialogTitle>
           <AlertDialogDescription>
-            {t('trackMenu.removeFromPlaylistDescription', { track: trackTitle, playlist: playlistTitle })}
+            <Trans
+              i18nKey="trackMenu.removeFromPlaylistDescription"
+              values={{ track: trackTitle, playlist: playlistTitle }}
+              components={{ strong: <strong className="font-semibold text-foreground" /> }}
+            />
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onCancel} disabled={isRemoving}>
             {t('trackMenu.removeFromPlaylistCancel')}
           </AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} disabled={isRemoving}>
+          <AlertDialogAction onClick={onConfirm} disabled={isRemoving} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
             {isRemoving ? t('trackMenu.removing') : t('trackMenu.removeFromPlaylistConfirm')}
           </AlertDialogAction>
         </AlertDialogFooter>
