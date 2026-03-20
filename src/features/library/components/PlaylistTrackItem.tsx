@@ -25,6 +25,7 @@ interface PlaylistTrackItemProps {
   onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
   onMouseDownTrack?: (track: TrackInfo) => void;
   isDownloadEnabled: boolean;
+  onRemoveFromPlaylist?: () => void;
 }
 
 const MAX_STAGGER_ITEMS = 15;
@@ -47,6 +48,7 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
   onHoverTrack,
   onMouseDownTrack,
   isDownloadEnabled,
+  onRemoveFromPlaylist,
 }: PlaylistTrackItemProps) {
   const delay = animate && staggerIndex < MAX_STAGGER_ITEMS ? staggerIndex * STAGGER_DELAY_MS : 0;
   const isDownloaded = downloadState.status === 'completed';
@@ -120,6 +122,7 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
           />
         ) : undefined
       }
+      onRemoveFromPlaylist={onRemoveFromPlaylist}
     />
   );
 });

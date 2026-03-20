@@ -49,19 +49,15 @@ pub async fn get_track_info(url: String, app: tauri::AppHandle) -> Result<TrackI
     }
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn add_track_to_playlist(
+async fn modify_playlist_tracks<F>(
     playlist_id: u64,
-    track_id: u64,
-    app: tauri::AppHandle,
-) -> Result<(), String> {
-    log::info!(
-        "[add_track_to_playlist] Adding track {} to playlist {}",
-        track_id,
-        playlist_id
-    );
-
+    app: &tauri::AppHandle,
+    operation: &str,
+    modifier: F,
+) -> Result<(), String>
+where
+    F: FnOnce(Vec<u64>) -> Result<Vec<u64>, String>,
+{
     let auth_state = app.state::<AuthState>();
     let token = auth_state
         .get_token()
@@ -72,7 +68,6 @@ pub async fn add_track_to_playlist(
         .await
         .map_err(|e| format!("Failed to get client_id: {}", e))?;
 
-    // Fetch current playlist to get existing track IDs
     let client = &*crate::services::http::HTTP_CLIENT;
     let url = format!(
         "https://api-v2.soundcloud.com/playlists/{}?representation=full&client_id={}",
@@ -87,7 +82,10 @@ pub async fn add_track_to_playlist(
         .map_err(|e| format!("Failed to fetch playlist: {}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!("Failed to fetch playlist: HTTP {}", response.status()));
+        return Err(format!(
+            "Failed to fetch playlist: HTTP {}",
+            response.status()
+        ));
     }
 
     let playlist: PlaylistTracksResponse = response
@@ -95,18 +93,9 @@ pub async fn add_track_to_playlist(
         .await
         .map_err(|e| format!("Failed to parse playlist: {}", e))?;
 
-    // Extract existing track IDs
-    let mut track_ids: Vec<u64> = playlist.tracks.iter().map(|t| t.id).collect();
+    let track_ids: Vec<u64> = playlist.tracks.iter().map(|t| t.id).collect();
+    let new_track_ids = modifier(track_ids)?;
 
-    // Check for duplicate
-    if track_ids.contains(&track_id) {
-        return Err("Track already in this playlist".to_string());
-    }
-
-    // Append new track
-    track_ids.push(track_id);
-
-    // PUT updated playlist
     let put_url = format!(
         "https://api-v2.soundcloud.com/playlists/{}?client_id={}",
         playlist_id, client_id
@@ -117,28 +106,90 @@ pub async fn add_track_to_playlist(
         .with_oauth(Some(&token))
         .json(&serde_json::json!({
             "playlist": {
-                "tracks": track_ids
+                "tracks": new_track_ids
             }
         }));
 
-    // Add DataDome header if available (required for write operations)
     if let Some(ref dd) = datadome {
         put_request = put_request.header("x-datadome-clientid", dd);
     }
 
-    let put_response = put_request.send()
+    let put_response = put_request
+        .send()
         .await
         .map_err(|e| format!("Failed to update playlist: {}", e))?;
 
     if !put_response.status().is_success() {
         let status = put_response.status();
         let body = put_response.text().await.unwrap_or_default();
-        log::error!("[add_track_to_playlist] PUT failed: {} - {}", status, body);
+        log::error!("[{}] PUT failed: {} - {}", operation, status, body);
         return Err(format!("Failed to update playlist: HTTP {}", status));
     }
 
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn add_track_to_playlist(
+    playlist_id: u64,
+    track_id: u64,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    log::info!(
+        "[add_track_to_playlist] Adding track {} to playlist {}",
+        track_id,
+        playlist_id
+    );
+
+    modify_playlist_tracks(playlist_id, &app, "add_track_to_playlist", |mut ids| {
+        if ids.contains(&track_id) {
+            return Err("Track already in this playlist".to_string());
+        }
+        ids.push(track_id);
+        Ok(ids)
+    })
+    .await?;
+
     log::info!(
         "[add_track_to_playlist] Successfully added track {} to playlist {}",
+        track_id,
+        playlist_id
+    );
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn remove_track_from_playlist(
+    playlist_id: u64,
+    track_id: u64,
+    app: tauri::AppHandle,
+) -> Result<(), String> {
+    log::info!(
+        "[remove_track_from_playlist] Removing track {} from playlist {}",
+        track_id,
+        playlist_id
+    );
+
+    modify_playlist_tracks(
+        playlist_id,
+        &app,
+        "remove_track_from_playlist",
+        |ids| {
+            let original_len = ids.len();
+            let filtered: Vec<u64> = ids.into_iter().filter(|&id| id != track_id).collect();
+            if filtered.len() == original_len {
+                return Err("Track not found in playlist".to_string());
+            }
+            Ok(filtered)
+        },
+    )
+    .await?;
+
+    log::info!(
+        "[remove_track_from_playlist] Successfully removed track {} from playlist {}",
         track_id,
         playlist_id
     );

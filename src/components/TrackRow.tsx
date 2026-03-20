@@ -22,6 +22,7 @@ interface TrackRowProps {
   onHoverStart?: () => void;
   onHoverEnd?: () => void;
   onMouseDown?: () => void;
+  onRemoveFromPlaylist?: () => void;
 }
 
 export function TrackRow({
@@ -38,6 +39,7 @@ export function TrackRow({
   onHoverStart,
   onHoverEnd,
   onMouseDown,
+  onRemoveFromPlaylist,
 }: TrackRowProps) {
   const [isRowHovered, setIsRowHovered] = useState(false);
   const [contextMenuKey, setContextMenuKey] = useState(0);
@@ -104,6 +106,7 @@ export function TrackRow({
             dropdownMenuOpen={dropdownMenuOpen}
             onDropdownMenuOpenChange={setDropdownMenuOpen}
             actionSlot={actionSlot}
+            onRemoveFromPlaylist={onRemoveFromPlaylist}
           />
         </div>
       </ContextMenuTrigger>
@@ -113,6 +116,7 @@ export function TrackRow({
         isSignedIn={isSignedIn}
         trackId={track.id}
         onCloseMenu={() => setContextMenuKey((k) => k + 1)}
+        onRemoveFromPlaylist={onRemoveFromPlaylist}
       />
     </ContextMenu>
   );

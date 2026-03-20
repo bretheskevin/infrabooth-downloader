@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
@@ -10,6 +11,7 @@ import { useTrackSelection } from '../hooks/useTrackSelection';
 import { usePlaylistViewState } from '../hooks/usePlaylistViewState';
 import { useSyncQueueOnStreamEnd } from '../hooks/useSyncQueueOnStreamEnd';
 import { usePlaylistTrackHandlers } from '../hooks/usePlaylistTrackHandlers';
+import { useRemoveFromPlaylist } from '../hooks/useRemoveFromPlaylist';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
 import { PlaylistLoadingState } from './PlaylistLoadingState';
 import { PlaylistErrorState } from './PlaylistErrorState';
@@ -17,6 +19,7 @@ import { PlaylistEmptyStates } from './PlaylistEmptyStates';
 import { SearchBar } from '@/components/ui/search-bar';
 import { PlaylistTrackList } from './PlaylistTrackList';
 import { PlaylistActionBar } from './PlaylistActionBar';
+import { RemoveFromPlaylistDialog } from './RemoveFromPlaylistDialog';
 
 const MIN_TRACKS_FOR_SEARCH = 5;
 
@@ -29,6 +32,12 @@ interface PlaylistDetailViewProps {
 export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: PlaylistDetailViewProps) {
   const { t } = useTranslation();
   const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id);
+
+  const [trackToRemove, setTrackToRemove] = useState<TrackInfo | null>(null);
+  const { removeFromPlaylist, removingFromPlaylistId } = useRemoveFromPlaylist(() => {
+    setTrackToRemove(null);
+    void refetch();
+  });
 
   const needsArtwork = !playlist.artwork_url;
   const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secret_token, needsArtwork);
@@ -120,10 +129,24 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           isPlayerPlaying={playerState === 'playing'}
           onHoverTrack={handlers.handleHoverTrack}
           onMouseDownTrack={handlers.handleMouseDownTrack}
+          onRemoveFromPlaylist={playlist.is_owned ? setTrackToRemove : undefined}
         />
       )}
 
       <PlaylistActionBar selectedCount={selectedCount} onDownload={handlers.handleDownloadSelected} />
+
+      <RemoveFromPlaylistDialog
+        open={trackToRemove !== null}
+        trackTitle={trackToRemove?.title ?? ''}
+        playlistTitle={playlist.title}
+        isRemoving={removingFromPlaylistId === playlist.id}
+        onConfirm={() => {
+          if (trackToRemove) {
+            void removeFromPlaylist(playlist.id, playlist.title, trackToRemove.id);
+          }
+        }}
+        onCancel={() => setTrackToRemove(null)}
+      />
     </div>
   );
 }
