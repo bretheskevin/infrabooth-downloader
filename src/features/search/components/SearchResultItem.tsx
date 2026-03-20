@@ -2,7 +2,6 @@ import { useCallback } from 'react';
 import type { TrackInfo } from '@/bindings';
 import { getArtworkUrl } from '@/lib/utils';
 import { TrackRow } from '@/components/TrackRow';
-import { TrackRowMenu } from '@/components/TrackRowMenu';
 import { TrackDownloadAction } from '@/components/TrackDownloadAction';
 import { useHoverPreload } from '@/hooks/useHoverPreload';
 import type { DownloadState } from '@/types/download';
@@ -56,18 +55,15 @@ export function SearchResultItem({
       onHoverStart={onHoverStart}
       onHoverEnd={onHoverEnd}
       onMouseDown={handleMouseDown}
-      rightSlot={
-        <div className="flex items-center gap-1">
-          {isDownloadEnabled && (
-            <TrackDownloadAction
-              state={state}
-              onDownload={onDownload}
-              onRetry={onRetry}
-              variant="filled"
-            />
-          )}
-          <TrackRowMenu track={track} className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
+      actionSlot={
+        isDownloadEnabled ? (
+          <TrackDownloadAction
+            state={state}
+            onDownload={onDownload}
+            onRetry={onRetry}
+            variant="filled"
+          />
+        ) : undefined
       }
     />
   );

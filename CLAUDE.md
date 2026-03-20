@@ -169,3 +169,5 @@ This project uses Serena MCP for all codebase interaction. You MUST use these to
 |----------|-----------------|
 | macOS    | 10.15 (Catalina) |
 | Windows  | 10 |
+
+**Desktop only**: This app targets laptop/PC users exclusively. Touch device considerations (mobile, tablet) do not apply.

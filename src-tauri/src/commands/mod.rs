@@ -11,14 +11,14 @@ pub use download::{
     respond_to_rate_limit_choice, scan_existing_tracks, start_download_queue,
 };
 pub use ffmpeg::test_ffmpeg;
-pub use playlist::{get_playlist_info, get_track_info, validate_soundcloud_url};
+pub use playlist::{add_track_to_playlist, get_playlist_info, get_track_info, validate_soundcloud_url};
 pub use settings::{check_write_permission, get_default_download_path, validate_download_path};
 pub use updater::{check_for_updates, install_update};
 
 pub mod library;
 pub use library::{
     clear_library_cache, get_library_playlist_tracks, get_library_playlists,
-    resolve_library_artwork,
+    get_owned_playlists_for_track, resolve_library_artwork,
 };
 
 pub mod search;

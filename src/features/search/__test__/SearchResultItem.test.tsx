@@ -50,7 +50,7 @@ describe('SearchResultItem', () => {
         isDownloadEnabled
       />,
     );
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button', { name: 'library.detail.download' }));
     expect(onDownload).toHaveBeenCalledOnce();
   });
 
@@ -99,7 +99,7 @@ describe('SearchResultItem', () => {
         isDownloadEnabled
       />,
     );
-    fireEvent.click(screen.getByRole('button'));
+    fireEvent.click(screen.getByRole('button', { name: 'library.detail.retry' }));
     expect(onRetry).toHaveBeenCalledOnce();
   });
 });

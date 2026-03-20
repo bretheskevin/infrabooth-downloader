@@ -9,6 +9,8 @@ pub struct CachedAuth {
     pub username: String,
     pub plan: Option<String>,
     pub avatar_url: Option<String>,
+    /// DataDome client ID for bot protection bypass on write operations
+    pub datadome: Option<String>,
 }
 
 /// Thread-safe auth state container.
@@ -52,6 +54,14 @@ impl AuthState {
             .as_ref()
             .map(|a| a.oauth_token.clone())
     }
+
+    pub fn get_datadome(&self) -> Option<String> {
+        self.cached
+            .lock()
+            .expect("AuthState lock poisoned")
+            .as_ref()
+            .and_then(|a| a.datadome.clone())
+    }
 }
 
 #[cfg(test)]
@@ -72,6 +82,7 @@ mod tests {
             username: "testuser".to_string(),
             plan: Some("Pro".to_string()),
             avatar_url: None,
+            datadome: Some("dd_test".to_string()),
         });
         assert_eq!(state.get_token(), Some("test_token".to_string()));
     }
@@ -84,6 +95,7 @@ mod tests {
             username: "user".to_string(),
             plan: None,
             avatar_url: None,
+            datadome: None,
         });
         assert!(state.get_token().is_some());
         state.clear();
@@ -97,6 +109,7 @@ mod tests {
             username: "user".to_string(),
             plan: Some("Go+".to_string()),
             avatar_url: Some("https://example.com/avatar.jpg".to_string()),
+            datadome: Some("dd_value".to_string()),
         };
         let cloned = auth.clone();
         assert_eq!(cloned.oauth_token, "token");

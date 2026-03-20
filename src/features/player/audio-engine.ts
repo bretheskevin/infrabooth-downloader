@@ -35,7 +35,7 @@ function getAudio(): HTMLAudioElement {
       if (currentState === 'playing') setState('loading');
     });
     audio.addEventListener('seeked', () => {
-      if (currentState === 'loading' && !audio.paused && audio.readyState >= 3) {
+      if (currentState === 'loading' && audio && !audio.paused && audio.readyState >= 3) {
         setState('playing');
       }
     });

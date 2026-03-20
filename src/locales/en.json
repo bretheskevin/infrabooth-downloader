@@ -297,7 +297,16 @@
   },
   "trackMenu": {
     "copyLink": "Copy link",
+    "linkCopied": "Link copied",
     "openInBrowser": "Open in browser",
-    "linkCopied": "Link copied"
+    "addToPlaylist": "Add to playlist",
+    "searchPlaylists": "Search playlists...",
+    "noPlaylists": "No playlists yet",
+    "noResults": "No playlists match '{{query}}'",
+    "alreadyAdded": "Already added",
+    "added": "Added",
+    "checkingMembership": "Checking...",
+    "addedToPlaylist": "Added to {{playlist}}",
+    "addFailed": "Failed to add track"
   }
 }

@@ -61,6 +61,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
                 username: profile.username.clone(),
                 plan: profile.plan.clone(),
                 avatar_url: profile.avatar_url.clone(),
+                datadome: cookie.datadome,
             });
             let _ = app.emit(
                 events::AUTH_STATE_CHANGED,
