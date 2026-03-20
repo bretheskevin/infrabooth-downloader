@@ -1,4 +1,4 @@
-import { Link, ExternalLink, MoreVertical } from 'lucide-react';
+import { Link, ExternalLink, MoreVertical, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,9 +22,10 @@ interface TrackMenuItemsProps {
   trackId: number;
   variant: 'context' | 'dropdown';
   onCloseMenu?: () => void;
+  onRemoveFromPlaylist?: () => void;
 }
 
-function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackId, variant, onCloseMenu }: TrackMenuItemsProps) {
+function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist }: TrackMenuItemsProps) {
   const { t } = useTranslation();
 
   if (variant === 'context') {
@@ -42,6 +43,12 @@ function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackId, vari
           <>
             <ContextMenuSeparator />
             <PlaylistPickerSubmenu trackId={trackId} variant="context" onSuccess={onCloseMenu} />
+            {onRemoveFromPlaylist && (
+              <ContextMenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t('trackMenu.removeFromPlaylist')}
+              </ContextMenuItem>
+            )}
           </>
         )}
       </>
@@ -51,17 +58,23 @@ function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackId, vari
   return (
     <>
       <DropdownMenuItem onClick={onCopyLink}>
-        <Link className="mr-2 h-4 w-4" />
+        <Link className="h-4 w-4" />
         {t('trackMenu.copyLink')}
       </DropdownMenuItem>
       <DropdownMenuItem onClick={onOpenInBrowser}>
-        <ExternalLink className="mr-2 h-4 w-4" />
+        <ExternalLink className="h-4 w-4" />
         {t('trackMenu.openInBrowser')}
       </DropdownMenuItem>
       {isSignedIn && (
         <>
           <DropdownMenuSeparator />
           <PlaylistPickerSubmenu trackId={trackId} variant="dropdown" onSuccess={onCloseMenu} />
+          {onRemoveFromPlaylist && (
+            <DropdownMenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
+              <Trash2 className="h-4 w-4" />
+              {t('trackMenu.removeFromPlaylist')}
+            </DropdownMenuItem>
+          )}
         </>
       )}
     </>
@@ -74,6 +87,7 @@ interface TrackRowActionsContextContentProps {
   isSignedIn: boolean;
   trackId: number;
   onCloseMenu: () => void;
+  onRemoveFromPlaylist?: () => void;
 }
 
 export function TrackRowActionsContextContent({
@@ -82,6 +96,7 @@ export function TrackRowActionsContextContent({
   isSignedIn,
   trackId,
   onCloseMenu,
+  onRemoveFromPlaylist,
 }: TrackRowActionsContextContentProps) {
   return (
     <ContextMenuContent>
@@ -92,6 +107,7 @@ export function TrackRowActionsContextContent({
         trackId={trackId}
         variant="context"
         onCloseMenu={onCloseMenu}
+        onRemoveFromPlaylist={onRemoveFromPlaylist}
       />
     </ContextMenuContent>
   );
@@ -105,6 +121,7 @@ interface TrackRowActionsDropdownProps {
   dropdownMenuOpen: boolean;
   onDropdownMenuOpenChange: (open: boolean) => void;
   actionSlot?: React.ReactNode;
+  onRemoveFromPlaylist?: () => void;
 }
 
 export function TrackRowActionsDropdown({
@@ -115,6 +132,7 @@ export function TrackRowActionsDropdown({
   dropdownMenuOpen,
   onDropdownMenuOpenChange,
   actionSlot,
+  onRemoveFromPlaylist,
 }: TrackRowActionsDropdownProps) {
   return (
     <div className="flex-shrink-0 flex items-center justify-end gap-1 min-w-[32px]">
@@ -137,6 +155,7 @@ export function TrackRowActionsDropdown({
             trackId={trackId}
             variant="dropdown"
             onCloseMenu={() => onDropdownMenuOpenChange(false)}
+            onRemoveFromPlaylist={onRemoveFromPlaylist}
           />
         </DropdownMenuContent>
       </DropdownMenu>

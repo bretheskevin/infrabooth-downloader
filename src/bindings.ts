@@ -61,6 +61,14 @@ async addTrackToPlaylist(playlistId: number, trackId: number) : Promise<Result<n
     else return { status: "error", error: e  as any };
 }
 },
+async removeTrackFromPlaylist(playlistId: number, trackId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_track_from_playlist", { playlistId, trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getPlaylistInfo(url: string) : Promise<Result<PlaylistInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_playlist_info", { url }) };
