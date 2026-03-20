@@ -211,6 +211,130 @@ async fn wait_for_user_choice<T: Copy>(
 // DownloadQueue
 // ---------------------------------------------------------------------------
 
+
+/// Handle rate-limited outcome: pause queue, emit event, wait for user choice.
+async fn handle_rate_limit<R: Runtime>(
+    app: &AppHandle<R>,
+    ctx: &QueueProcessContext,
+    progress: &mut QueueProgress,
+    track_lookup: &HashMap<String, (usize, QueueItem)>,
+    paused: &Arc<AtomicBool>,
+    stopped: &Arc<AtomicBool>,
+    pause_notify: &Arc<Notify>,
+    track_id: String,
+    reset_time: Option<String>,
+) {
+    paused.store(true, Ordering::SeqCst);
+
+    let _ = app.emit(
+        events::DOWNLOAD_RATE_LIMITED,
+        DownloadRateLimitedEvent {
+            track_id: track_id.clone(),
+            track_title: track_lookup.get(&track_id)
+                .map(|(_, item)| item.core.title.clone())
+                .unwrap_or_default(),
+            reset_time,
+        },
+    );
+
+    let track_idx = track_lookup.get(&track_id).map(|&(idx, _)| idx);
+    let mut choice_rx = ctx.rate_limit_choice_state.subscribe();
+    let action = wait_for_user_choice(&mut choice_rx, &ctx.cancel_rx, |choice| {
+        match choice {
+            RateLimitChoice::Retry => {
+                log::info!("[queue] User chose retry after rate limit");
+                match track_idx {
+                    Some(idx) => PauseAction::RetryTrack(idx),
+                    None => PauseAction::Stop,
+                }
+            }
+            RateLimitChoice::Stop => {
+                log::info!("[queue] User chose stop after rate limit");
+                PauseAction::Stop
+            }
+        }
+    }).await;
+
+    match action {
+        Some(PauseAction::RetryTrack(idx)) => {
+            progress.pending.push_front(idx);
+        }
+        Some(PauseAction::Stop) => {
+            stopped.store(true, Ordering::SeqCst);
+            progress.pending.clear();
+        }
+        None => { /* cancelled */ }
+    }
+
+    paused.store(false, Ordering::SeqCst);
+    pause_notify.notify_waiters();
+}
+
+/// Handle auth-failed outcome: pause queue, emit event, wait for user choice.
+async fn handle_auth_failure<R: Runtime>(
+    app: &AppHandle<R>,
+    ctx: &QueueProcessContext,
+    progress: &mut QueueProgress,
+    track_lookup: &HashMap<String, (usize, QueueItem)>,
+    paused: &Arc<AtomicBool>,
+    pause_notify: &Arc<Notify>,
+    track_id: String,
+) {
+    paused.store(true, Ordering::SeqCst);
+
+    ctx.auth_choice_state.set_pending(true).await;
+    let _ = app.emit(
+        events::DOWNLOAD_AUTH_NEEDED,
+        DownloadAuthNeededEvent {
+            track_id: track_id.clone(),
+            track_title: track_lookup.get(&track_id)
+                .map(|(_, item)| item.core.title.clone())
+                .unwrap_or_default(),
+        },
+    );
+
+    let track_idx = track_lookup.get(&track_id).map(|&(idx, _)| idx);
+    let mut choice_rx = ctx.auth_choice_state.subscribe();
+    let action = wait_for_user_choice(&mut choice_rx, &ctx.cancel_rx, |choice| {
+        match choice {
+            AuthChoice::ReAuthenticated => {
+                log::info!("[queue] User re-authenticated, refreshing token");
+                match track_idx {
+                    Some(idx) => PauseAction::RetryTrack(idx),
+                    None => PauseAction::Stop,
+                }
+            }
+            AuthChoice::ContinueStandard => {
+                log::info!("[queue] User chose standard quality");
+                match track_idx {
+                    Some(idx) => PauseAction::RetryTrack(idx),
+                    None => PauseAction::Stop,
+                }
+            }
+        }
+    }).await;
+
+    ctx.auth_choice_state.set_pending(false).await;
+
+    match action {
+        Some(PauseAction::RetryTrack(idx)) => {
+            if matches!(
+                *choice_rx.borrow(),
+                Some(AuthChoice::ReAuthenticated)
+            ) {
+                progress.oauth_token = app.state::<AuthState>().get_token();
+            } else {
+                ctx.auth_choice_state.set_skip_auth(true);
+            }
+            progress.pending.push_front(idx);
+        }
+        Some(PauseAction::Stop) | None => { /* stop or cancelled */ }
+    }
+
+    paused.store(false, Ordering::SeqCst);
+    pause_notify.notify_waiters();
+}
+
 /// Download queue manager for processing multiple tracks.
 pub struct DownloadQueue {
     items: Vec<QueueItem>,
@@ -544,112 +668,19 @@ impl DownloadQueue {
             }
             TrackOutcome::Cancelled { track_id } => {
                 log::info!("[queue] Track {} cancelled", track_id);
-                // Counted in the final cancelled tally
             }
             TrackOutcome::RateLimited { track_id, reset_time } => {
                 log::warn!("[queue] Track {} rate limited, pausing queue", track_id);
-                paused.store(true, Ordering::SeqCst);
-
-                let _ = app.emit(
-                    events::DOWNLOAD_RATE_LIMITED,
-                    DownloadRateLimitedEvent {
-                        track_id: track_id.clone(),
-                        track_title: track_lookup.get(&track_id)
-                            .map(|(_, item)| item.core.title.clone())
-                            .unwrap_or_default(),
-                        reset_time,
-                    },
-                );
-
-                let track_idx = track_lookup.get(&track_id).map(|&(idx, _)| idx);
-                let mut choice_rx = ctx.rate_limit_choice_state.subscribe();
-                let action = wait_for_user_choice(&mut choice_rx, &ctx.cancel_rx, |choice| {
-                    match choice {
-                        RateLimitChoice::Retry => {
-                            log::info!("[queue] User chose retry after rate limit");
-                            match track_idx {
-                                Some(idx) => PauseAction::RetryTrack(idx),
-                                None => PauseAction::Stop,
-                            }
-                        }
-                        RateLimitChoice::Stop => {
-                            log::info!("[queue] User chose stop after rate limit");
-                            PauseAction::Stop
-                        }
-                    }
-                }).await;
-
-                match action {
-                    Some(PauseAction::RetryTrack(idx)) => {
-                        progress.pending.push_front(idx);
-                    }
-                    Some(PauseAction::Stop) => {
-                        stopped.store(true, Ordering::SeqCst);
-                        progress.pending.clear();
-                    }
-                    None => { /* cancelled */ }
-                }
-
-                paused.store(false, Ordering::SeqCst);
-                pause_notify.notify_waiters();
+                handle_rate_limit(
+                    app, ctx, progress, track_lookup, paused, stopped, pause_notify,
+                    track_id, reset_time,
+                ).await;
             }
             TrackOutcome::AuthFailed { track_id } => {
                 log::info!("[queue] Track {} auth failed, pausing queue", track_id);
-                paused.store(true, Ordering::SeqCst);
-
-                ctx.auth_choice_state.set_pending(true).await;
-                let _ = app.emit(
-                    events::DOWNLOAD_AUTH_NEEDED,
-                    DownloadAuthNeededEvent {
-                        track_id: track_id.clone(),
-                        track_title: track_lookup.get(&track_id)
-                            .map(|(_, item)| item.core.title.clone())
-                            .unwrap_or_default(),
-                    },
-                );
-
-                let track_idx = track_lookup.get(&track_id).map(|&(idx, _)| idx);
-                let mut choice_rx = ctx.auth_choice_state.subscribe();
-                let action = wait_for_user_choice(&mut choice_rx, &ctx.cancel_rx, |choice| {
-                    match choice {
-                        AuthChoice::ReAuthenticated => {
-                            log::info!("[queue] User re-authenticated, refreshing token");
-                            match track_idx {
-                                Some(idx) => PauseAction::RetryTrack(idx),
-                                None => PauseAction::Stop,
-                            }
-                        }
-                        AuthChoice::ContinueStandard => {
-                            log::info!("[queue] User chose standard quality");
-                            match track_idx {
-                                Some(idx) => PauseAction::RetryTrack(idx),
-                                None => PauseAction::Stop,
-                            }
-                        }
-                    }
-                }).await;
-
-                ctx.auth_choice_state.set_pending(false).await;
-
-                match action {
-                    Some(PauseAction::RetryTrack(idx)) => {
-                        // Refresh token if re-authenticated
-                        if matches!(
-                            *choice_rx.borrow(),
-                            Some(AuthChoice::ReAuthenticated)
-                        ) {
-                            progress.oauth_token = app.state::<AuthState>().get_token();
-                        } else {
-                            // ContinueStandard
-                            ctx.auth_choice_state.set_skip_auth(true);
-                        }
-                        progress.pending.push_front(idx);
-                    }
-                    Some(PauseAction::Stop) | None => { /* stop or cancelled */ }
-                }
-
-                paused.store(false, Ordering::SeqCst);
-                pause_notify.notify_waiters();
+                handle_auth_failure(
+                    app, ctx, progress, track_lookup, paused, pause_notify, track_id,
+                ).await;
             }
         }
     }
