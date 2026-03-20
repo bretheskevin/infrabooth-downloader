@@ -53,6 +53,14 @@ async signOut() : Promise<Result<null, string>> {
 async validateSoundcloudUrl(url: string) : Promise<ValidationResult> {
     return await TAURI_INVOKE("validate_soundcloud_url", { url });
 },
+async addTrackToPlaylist(playlistId: number, trackId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_track_to_playlist", { playlistId, trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getPlaylistInfo(url: string) : Promise<Result<PlaylistInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_playlist_info", { url }) };
@@ -243,6 +251,14 @@ async getLibraryPlaylistTracks(playlistId: number) : Promise<Result<TrackInfo[],
     else return { status: "error", error: e  as any };
 }
 },
+async getOwnedPlaylistsForTrack(trackId: number) : Promise<Result<PlaylistForTrackPicker[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_owned_playlists_for_track", { trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Scan the output directory for tracks already downloaded (by SoundCloud track ID in ID3 metadata).
  * 
@@ -330,6 +346,7 @@ durationMs: number;
 downloadUrl: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
 export type ErrorResponse = { code: string; message: string }
 export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
+export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }
 /**
  * Playlist information from SoundCloud API.
  */

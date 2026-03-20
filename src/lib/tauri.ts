@@ -8,6 +8,7 @@ import {
   type ValidationResult,
   type ErrorResponse,
   type SearchResponse,
+  type PlaylistForTrackPicker,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -93,6 +94,12 @@ export const api = {
 
   getLibraryPlaylistTracks: (playlistId: number): Promise<TrackInfo[]> =>
     commands.getLibraryPlaylistTracks(playlistId).then(unwrap),
+
+  addTrackToPlaylist: (playlistId: number, trackId: number): Promise<void> =>
+    commands.addTrackToPlaylist(playlistId, trackId).then(unwrap).then(() => undefined),
+
+  getOwnedPlaylistsForTrack: (trackId: number): Promise<PlaylistForTrackPicker[]> =>
+    commands.getOwnedPlaylistsForTrack(trackId).then(unwrap),
 
   // Search
   searchTracks: (query: string, limit: number, offset: number): Promise<SearchResponse> =>

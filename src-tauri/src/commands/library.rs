@@ -9,8 +9,8 @@ use crate::services::events;
 
 use crate::services::client_id;
 use crate::services::library::{
-    fetch_all_library_pages, resolve_playlist_artwork as resolve_artwork, LibraryCache,
-    LibraryError, LibraryPlaylist,
+    fetch_all_library_pages, fetch_owned_playlists_for_track, resolve_playlist_artwork as resolve_artwork,
+    LibraryCache, LibraryError, LibraryPlaylist, PlaylistForTrackPicker,
 };
 use crate::services::playlist;
 use crate::services::playlist::TrackInfo;
@@ -105,6 +105,37 @@ pub async fn resolve_library_artwork(
 
     app.state::<LibraryCache>().set_artwork(playlist_id, artwork.clone());
     Ok(artwork)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_owned_playlists_for_track(
+    track_id: u64,
+    app: tauri::AppHandle,
+) -> Result<Vec<PlaylistForTrackPicker>, String> {
+    let token = app
+        .state::<AuthState>()
+        .get_token()
+        .ok_or_else(|| LibraryError::AuthRequired.to_string())?;
+
+    let cid = client_id::get_client_id()
+        .await
+        .map_err(|e| LibraryError::FetchFailed(e.to_string()).to_string())?;
+
+    let playlists = if let Some(cached) = app.state::<LibraryCache>().get_if_complete() {
+        cached
+    } else {
+        let fetched = fetch_all_library_pages(&token, &cid)
+            .await
+            .map_err(|e| e.to_string())?;
+        app.state::<LibraryCache>().set(fetched.clone());
+        fetched
+    };
+
+    let cache = app.state::<LibraryCache>();
+    fetch_owned_playlists_for_track(&token, &cid, track_id, &playlists, &cache)
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[tauri::command]

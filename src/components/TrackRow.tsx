@@ -1,15 +1,26 @@
 import { useState, useCallback } from 'react';
-import { Music, Link, ExternalLink } from 'lucide-react';
+import { Music, Link, ExternalLink, MoreVertical } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { PlayOverlay } from '@/features/player';
+import { Button } from '@/components/ui/button';
 import {
   ContextMenu,
   ContextMenuContent,
   ContextMenuItem,
+  ContextMenuSeparator,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn, formatDuration, formatBytes } from '@/lib/utils';
 import { useTrackActions } from '@/hooks/useTrackActions';
+import { useIsSignedIn } from '@/features/auth/store';
+import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
 import type { TrackInfo } from '@/bindings';
 import type { DownloadState } from '@/types/download';
 
@@ -22,11 +33,64 @@ interface TrackRowProps {
   animationDelay?: number;
   className?: string;
   leftSlot?: React.ReactNode;
-  rightSlot: React.ReactNode;
+  actionSlot?: React.ReactNode;
   downloadState: DownloadState;
   onHoverStart?: () => void;
   onHoverEnd?: () => void;
   onMouseDown?: () => void;
+}
+
+interface TrackMenuItemsProps {
+  onCopyLink: () => void;
+  onOpenInBrowser: () => void;
+  isSignedIn: boolean;
+  trackId: number;
+  variant: 'context' | 'dropdown';
+  onCloseMenu?: () => void;
+}
+
+function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackId, variant, onCloseMenu }: TrackMenuItemsProps) {
+  const { t } = useTranslation();
+
+  if (variant === 'context') {
+    return (
+      <>
+        <ContextMenuItem onClick={onCopyLink}>
+          <Link className="mr-2 h-4 w-4" />
+          {t('trackMenu.copyLink')}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={onOpenInBrowser}>
+          <ExternalLink className="mr-2 h-4 w-4" />
+          {t('trackMenu.openInBrowser')}
+        </ContextMenuItem>
+        {isSignedIn && (
+          <>
+            <ContextMenuSeparator />
+            <PlaylistPickerSubmenu trackId={trackId} variant="context" onSuccess={onCloseMenu} />
+          </>
+        )}
+      </>
+    );
+  }
+
+  return (
+    <>
+      <DropdownMenuItem onClick={onCopyLink}>
+        <Link className="mr-2 h-4 w-4" />
+        {t('trackMenu.copyLink')}
+      </DropdownMenuItem>
+      <DropdownMenuItem onClick={onOpenInBrowser}>
+        <ExternalLink className="mr-2 h-4 w-4" />
+        {t('trackMenu.openInBrowser')}
+      </DropdownMenuItem>
+      {isSignedIn && (
+        <>
+          <DropdownMenuSeparator />
+          <PlaylistPickerSubmenu trackId={trackId} variant="dropdown" onSuccess={onCloseMenu} />
+        </>
+      )}
+    </>
+  );
 }
 
 export function TrackRow({
@@ -38,15 +102,17 @@ export function TrackRow({
   animationDelay,
   className,
   leftSlot,
-  rightSlot,
+  actionSlot,
   downloadState,
   onHoverStart,
   onHoverEnd,
   onMouseDown,
 }: TrackRowProps) {
-  const { t } = useTranslation();
   const [isRowHovered, setIsRowHovered] = useState(false);
+  const [contextMenuKey, setContextMenuKey] = useState(0);
+  const [dropdownMenuOpen, setDropdownMenuOpen] = useState(false);
   const { handleCopyLink, handleOpenInBrowser } = useTrackActions(track.permalink_url);
+  const isSignedIn = useIsSignedIn();
 
   const handleMouseEnter = useCallback(() => {
     setIsRowHovered(true);
@@ -69,7 +135,7 @@ export function TrackRow({
   const showProgress = progress > 0;
 
   return (
-    <ContextMenu>
+    <ContextMenu key={contextMenuKey}>
       <ContextMenuTrigger asChild>
         <div
           className={cn(
@@ -136,18 +202,41 @@ export function TrackRow({
               {formatDuration(track.duration)}
             </span>
           </div>
-          <div className="flex-shrink-0 flex items-center justify-end min-w-[32px]">{rightSlot}</div>
+          <div className="flex-shrink-0 flex items-center justify-end gap-1 min-w-[32px]">
+            {actionSlot}
+            <DropdownMenu open={dropdownMenuOpen} onOpenChange={setDropdownMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                >
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <TrackMenuItems
+                  onCopyLink={handleCopyLink}
+                  onOpenInBrowser={handleOpenInBrowser}
+                  isSignedIn={isSignedIn}
+                  trackId={track.id}
+                  variant="dropdown"
+                  onCloseMenu={() => setDropdownMenuOpen(false)}
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
-        <ContextMenuItem onClick={handleCopyLink}>
-          <Link className="mr-2 h-4 w-4" />
-          {t('trackMenu.copyLink')}
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInBrowser}>
-          <ExternalLink className="mr-2 h-4 w-4" />
-          {t('trackMenu.openInBrowser')}
-        </ContextMenuItem>
+        <TrackMenuItems
+          onCopyLink={handleCopyLink}
+          onOpenInBrowser={handleOpenInBrowser}
+          isSignedIn={isSignedIn}
+          trackId={track.id}
+          variant="context"
+          onCloseMenu={() => setContextMenuKey((k) => k + 1)}
+        />
       </ContextMenuContent>
     </ContextMenu>
   );

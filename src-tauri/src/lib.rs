@@ -5,12 +5,13 @@ mod services;
 use std::sync::Arc;
 
 use commands::{
-    cancel_download_queue, check_auth, check_for_updates, check_write_permission,
-    clear_library_cache, download_track_full, get_default_download_path,
-    get_library_playlist_tracks, get_library_playlists, get_playlist_info, get_track_info,
-    install_update, refresh_auth, resolve_library_artwork, resolve_playback_url,
-    respond_to_auth_choice, respond_to_rate_limit_choice, scan_existing_tracks, search_tracks,
-    sign_out, start_download_queue, test_ffmpeg, validate_download_path, validate_soundcloud_url,
+    add_track_to_playlist, cancel_download_queue, check_auth, check_for_updates,
+    check_write_permission, clear_library_cache, download_track_full, get_default_download_path,
+    get_library_playlist_tracks, get_library_playlists, get_owned_playlists_for_track,
+    get_playlist_info, get_track_info, install_update, refresh_auth, resolve_library_artwork,
+    resolve_playback_url, respond_to_auth_choice, respond_to_rate_limit_choice, scan_existing_tracks,
+    search_tracks, sign_out, start_download_queue, test_ffmpeg, validate_download_path,
+    validate_soundcloud_url,
 };
 use services::auth_choice::AuthChoiceState;
 use services::rate_limit_choice::RateLimitChoiceState;
@@ -41,6 +42,7 @@ pub fn run() {
         refresh_auth,
         sign_out,
         validate_soundcloud_url,
+        add_track_to_playlist,
         get_playlist_info,
         get_track_info,
         test_ffmpeg,
@@ -58,6 +60,7 @@ pub fn run() {
         resolve_library_artwork,
         clear_library_cache,
         get_library_playlist_tracks,
+        get_owned_playlists_for_track,
         scan_existing_tracks,
         search_tracks,
         resolve_playback_url

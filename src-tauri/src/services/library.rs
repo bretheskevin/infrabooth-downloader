@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use thiserror::Error;
 
+use crate::models::PlaylistTracksResponse;
 use crate::services::http::{API_V2_BASE, HTTP_CLIENT, RequestBuilderExt};
 
 // === Error Type ===
@@ -64,15 +65,6 @@ struct LibraryUserRaw {
     username: String,
 }
 
-#[derive(Debug, Deserialize)]
-struct FullPlaylistResponse {
-    tracks: Vec<FullPlaylistTrack>,
-}
-
-#[derive(Debug, Deserialize)]
-struct FullPlaylistTrack {
-    artwork_url: Option<String>,
-}
 
 // === Public types (exposed to frontend via specta) ===
 
@@ -88,6 +80,14 @@ pub struct LibraryPlaylist {
     pub is_owned: bool,
     pub is_public: bool,
     pub secret_token: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct PlaylistForTrackPicker {
+    pub id: u64,
+    pub title: String,
+    pub artwork_url: Option<String>,
+    pub contains_track: bool,
 }
 
 #[derive(Debug)]
@@ -253,6 +253,88 @@ pub async fn fetch_all_library_pages(
     Ok(all_playlists)
 }
 
+pub async fn fetch_owned_playlists_for_track(
+    oauth_token: &str,
+    client_id: &str,
+    track_id: u64,
+    playlists: &[LibraryPlaylist],
+    cache: &LibraryCache,
+) -> Result<Vec<PlaylistForTrackPicker>, LibraryError> {
+    use futures::future::join_all;
+
+    let owned: Vec<_> = playlists.iter().filter(|p| p.is_owned).collect();
+
+    let futures = owned.iter().map(|playlist| {
+        let oauth = oauth_token.to_string();
+        let cid = client_id.to_string();
+        let pid = playlist.id;
+        let secret = playlist.secret_token.clone();
+        let already_has_artwork = playlist.artwork_url.is_some();
+        let cached_artwork = cache.get_artwork(pid);
+
+        async move {
+            let mut url = format!(
+                "{}/playlists/{}?representation=full&client_id={}",
+                API_V2_BASE, pid, cid
+            );
+            if let Some(ref token) = secret {
+                url.push_str(&format!("&secret_token={}", token));
+            }
+
+            let response = HTTP_CLIENT
+                .get(&url)
+                .with_oauth(Some(&oauth))
+                .send()
+                .await;
+
+            match response {
+                Ok(resp) if resp.status().is_success() => {
+                    if let Ok(playlist_data) = resp.json::<PlaylistTracksResponse>().await {
+                        let contains = playlist_data.tracks.iter().any(|t| t.id == track_id);
+                        let was_cached = cached_artwork.is_some();
+                        let resolved_artwork: Option<String> = if already_has_artwork {
+                            None
+                        } else {
+                            cached_artwork.flatten().or_else(|| playlist_data.first_track_artwork())
+                        };
+                        let should_cache = !already_has_artwork && !was_cached;
+                        Ok((pid, contains, resolved_artwork, should_cache))
+                    } else {
+                        Err(pid)
+                    }
+                }
+                _ => Err(pid),
+            }
+        }
+    });
+
+    let results = join_all(futures).await;
+
+    let picker_playlists: Vec<PlaylistForTrackPicker> = owned
+        .iter()
+        .zip(results)
+        .map(|(playlist, result)| {
+            let (contains, fallback_artwork) = match &result {
+                Ok((_, contains, artwork, should_cache)) => {
+                    if *should_cache {
+                        cache.set_artwork(playlist.id, artwork.clone());
+                    }
+                    (*contains, artwork.clone())
+                }
+                Err(_) => (false, None),
+            };
+            PlaylistForTrackPicker {
+                id: playlist.id,
+                title: playlist.title.clone(),
+                artwork_url: playlist.artwork_url.clone().or(fallback_artwork),
+                contains_track: contains,
+            }
+        })
+        .collect();
+
+    Ok(picker_playlists)
+}
+
 pub async fn resolve_playlist_artwork(
     oauth_token: &str,
     client_id: &str,
@@ -281,17 +363,12 @@ pub async fn resolve_playlist_artwork(
         return Err(LibraryError::FetchFailed(format!("HTTP {}", status)));
     }
 
-    let full: FullPlaylistResponse = response
+    let playlist_data: PlaylistTracksResponse = response
         .json()
         .await
         .map_err(|_| LibraryError::InvalidResponse)?;
 
-    let artwork = full
-        .tracks
-        .iter()
-        .find_map(|t| t.artwork_url.clone());
-
-    Ok(artwork)
+    Ok(playlist_data.first_track_artwork())
 }
 
 #[cfg(test)]
