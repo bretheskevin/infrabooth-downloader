@@ -541,6 +541,84 @@ async fn cancel_and_cleanup(
     let _ = std::fs::remove_file(output_file);
 }
 
+/// Process FFmpeg stdout lines, parse progress, and emit events.
+fn process_ffmpeg_stdout<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    line_bytes: &[u8],
+    track_id: &str,
+    duration_ms: u64,
+    estimated_total_bytes: Option<u64>,
+    last_percent: &mut f32,
+    last_downloaded_bytes: &mut Option<u64>,
+) {
+    let raw_line = bytes_to_string(line_bytes);
+    for line in raw_line.lines() {
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+
+        if let Some(progress) = parse_ffmpeg_progress(line, duration_ms) {
+            if let Some(pct) = progress.percent {
+                *last_percent = pct;
+            }
+            if progress.downloaded_bytes.is_some() {
+                *last_downloaded_bytes = progress.downloaded_bytes;
+            }
+
+            if progress.percent.is_some() {
+                let _ = app.emit(
+                    events::DOWNLOAD_PROGRESS,
+                    DownloadProgressEvent {
+                        track_id: track_id.to_string(),
+                        status: "downloading".to_string(),
+                        percent: Some(*last_percent),
+                        downloaded_bytes: *last_downloaded_bytes,
+                        total_bytes: estimated_total_bytes,
+                        error: None,
+                    },
+                );
+            }
+        }
+    }
+}
+
+/// Process FFmpeg stderr lines, classify errors, and update last error buffer.
+fn process_ffmpeg_stderr(line_bytes: &[u8], last_error: &mut Option<String>) -> Option<DownloadError> {
+    let line = bytes_to_string(line_bytes);
+    log::info!("ffmpeg stderr: {}", line);
+    *last_error = Some(line.clone());
+    classify_ffmpeg_error(&line)
+}
+
+/// Handle FFmpeg process termination.
+fn handle_ffmpeg_termination(
+    exit_code: Option<i32>,
+    cancel_rx: &Option<watch::Receiver<bool>>,
+    last_error: &Option<String>,
+    output_dir: &Path,
+    base_name: &str,
+    output_file: &Path,
+) -> Result<bool, DownloadError> {
+    if exit_code == Some(0) {
+        return Ok(true);
+    }
+
+    if is_cancelled(cancel_rx) {
+        log::info!("[downloader] Download was cancelled (terminated)");
+        cleanup_partial_files(output_dir, base_name);
+        let _ = std::fs::remove_file(output_file);
+        return Err(DownloadError::Cancelled);
+    }
+
+    let error_text = last_error
+        .clone()
+        .unwrap_or_else(|| "Unknown error".to_string());
+    log::error!("ffmpeg terminated with code {:?}: {}", exit_code, error_text);
+    let _ = std::fs::remove_file(output_file);
+    Err(classify_ffmpeg_exit_error(&error_text))
+}
+
 /// Process the ffmpeg event loop: handles stdout progress, stderr errors,
 /// cancellation, and termination.
 async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
@@ -578,71 +656,35 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
 
         match event {
             Some(CommandEvent::Stdout(line_bytes)) => {
-                let raw_line = bytes_to_string(&line_bytes);
-                for line in raw_line.lines() {
-                    let line = line.trim();
-                    if line.is_empty() {
-                        continue;
-                    }
-
-                    if let Some(progress) = parse_ffmpeg_progress(line, duration_ms) {
-                        // Update tracking state
-                        if let Some(pct) = progress.percent {
-                            last_percent = pct;
-                        }
-                        if progress.downloaded_bytes.is_some() {
-                            last_downloaded_bytes = progress.downloaded_bytes;
-                        }
-
-                        // Only emit meaningful progress updates
-                        if progress.percent.is_some() {
-                            let _ = app.emit(
-                                events::DOWNLOAD_PROGRESS,
-                                DownloadProgressEvent {
-                                    track_id: track_id.to_string(),
-                                    status: "downloading".to_string(),
-                                    percent: Some(last_percent),
-                                    downloaded_bytes: last_downloaded_bytes,
-                                    total_bytes: estimated_total_bytes,
-                                    error: None,
-                                },
-                            );
-                        }
-                    }
-                }
+                process_ffmpeg_stdout(
+                    app,
+                    &line_bytes,
+                    track_id,
+                    duration_ms,
+                    estimated_total_bytes,
+                    &mut last_percent,
+                    &mut last_downloaded_bytes,
+                );
             }
             Some(CommandEvent::Stderr(line_bytes)) => {
-                let line = bytes_to_string(&line_bytes);
-                log::info!("ffmpeg stderr: {}", line);
-                last_error = Some(line.clone());
-
-                if let Some(err) = classify_ffmpeg_error(&line) {
-                    log::info!(
-                        "[downloader] Track {} error: {}",
-                        track_id,
-                        err
-                    );
+                if let Some(err) = process_ffmpeg_stderr(&line_bytes, &mut last_error) {
+                    log::info!("[downloader] Track {} error: {}", track_id, err);
                     return Err(err);
                 }
             }
             Some(CommandEvent::Terminated(payload)) => {
-                if payload.code != Some(0) {
-                    if is_cancelled(cancel_rx) {
-                        log::info!("[downloader] Download was cancelled (terminated)");
-                        cleanup_partial_files(output_dir, base_name);
-                        let _ = std::fs::remove_file(output_file);
-                        return Err(DownloadError::Cancelled);
-                    }
-                    let error_text = last_error.unwrap_or_else(|| "Unknown error".to_string());
-                    log::error!(
-                        "ffmpeg terminated with code {:?}: {}",
-                        payload.code,
-                        error_text
-                    );
-                    let _ = std::fs::remove_file(output_file);
-                    return Err(classify_ffmpeg_exit_error(&error_text));
+                match handle_ffmpeg_termination(
+                    payload.code,
+                    cancel_rx,
+                    &last_error,
+                    output_dir,
+                    base_name,
+                    output_file,
+                ) {
+                    Ok(true) => break,
+                    Ok(false) => continue,
+                    Err(e) => return Err(e),
                 }
-                break;
             }
             Some(_) => {}
             None => break,
