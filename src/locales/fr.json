@@ -310,7 +310,7 @@
     "addFailed": "Échec de l'ajout",
     "removeFromPlaylist": "Retirer de la playlist",
     "removeFromPlaylistTitle": "Retirer cette piste ?",
-    "removeFromPlaylistDescription": "« {{track}} » sera retiré de « {{playlist}} ». Cette action est irréversible.",
+    "removeFromPlaylistDescription": "<strong>{{track}}</strong> sera retiré de <strong>{{playlist}}</strong>. Cette action est irréversible.",
     "removeFromPlaylistCancel": "Annuler",
     "removeFromPlaylistConfirm": "Retirer",
     "removing": "Suppression...",

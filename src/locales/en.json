@@ -310,7 +310,7 @@
     "addFailed": "Failed to add track",
     "removeFromPlaylist": "Remove from playlist",
     "removeFromPlaylistTitle": "Remove track?",
-    "removeFromPlaylistDescription": "\"{{track}}\" will be removed from \"{{playlist}}\". This cannot be undone.",
+    "removeFromPlaylistDescription": "<strong>{{track}}</strong> will be removed from <strong>{{playlist}}</strong>. This cannot be undone.",
     "removeFromPlaylistCancel": "Cancel",
     "removeFromPlaylistConfirm": "Remove",
     "removing": "Removing...",

@@ -36,7 +36,6 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
   const [trackToRemove, setTrackToRemove] = useState<TrackInfo | null>(null);
   const { removeFromPlaylist, removingFromPlaylistId } = useRemoveFromPlaylist(() => {
     setTrackToRemove(null);
-    void refetch();
   });
 
   const needsArtwork = !playlist.artwork_url;

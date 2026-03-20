@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +8,7 @@ interface PlaylistMutationConfig {
   successKey: string;
   errorMatchers: Array<{ pattern: string; key: string }>;
   fallbackErrorKey: string;
+  optimisticUpdate?: (queryClient: QueryClient, playlistId: number, trackId: number) => Promise<() => void>;
 }
 
 export function usePlaylistMutation(config: PlaylistMutationConfig, onSuccess?: () => void) {
@@ -20,6 +21,12 @@ export function usePlaylistMutation(config: PlaylistMutationConfig, onSuccess?: 
   const mutate = useCallback(
     async (playlistId: number, playlistTitle: string, trackId: number): Promise<boolean> => {
       setMutatingPlaylistId(playlistId);
+
+      let rollback: (() => void) | undefined;
+      if (config.optimisticUpdate) {
+        rollback = await config.optimisticUpdate(queryClient, playlistId, trackId);
+      }
+
       try {
         await config.apiCall(playlistId, trackId);
         toast.success(t(config.successKey, { playlist: playlistTitle }));
@@ -30,6 +37,7 @@ export function usePlaylistMutation(config: PlaylistMutationConfig, onSuccess?: 
         ]);
         return true;
       } catch (error) {
+        rollback?.();
         const message = error instanceof Error ? error.message : String(error);
         const matchedError = config.errorMatchers.find((m) => message.includes(m.pattern));
         toast.error(t(matchedError?.key ?? config.fallbackErrorKey));
