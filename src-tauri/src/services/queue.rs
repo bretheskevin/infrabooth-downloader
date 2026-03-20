@@ -230,6 +230,42 @@ impl DownloadQueue {
         }
     }
 
+    /// Filter out already-downloaded tracks from the pending queue.
+    ///
+    /// Emits "skipped" progress events for tracks found in `existing_ids` and
+    /// returns an updated pending queue with only tracks that need downloading.
+    fn filter_already_downloaded<R: Runtime>(
+        items: &[QueueItem],
+        pending: &mut VecDeque<usize>,
+        existing_ids: &std::collections::HashSet<String>,
+        app: &AppHandle<R>,
+    ) -> (VecDeque<usize>, u32) {
+        let mut new_pending = VecDeque::new();
+        let mut skipped_count = 0u32;
+
+        for idx in pending.drain(..) {
+            let item = &items[idx];
+            if existing_ids.contains(&item.core.track_id) {
+                let _ = app.emit(
+                    events::DOWNLOAD_PROGRESS,
+                    DownloadProgressEvent {
+                        track_id: item.core.track_id.clone(),
+                        status: "skipped".to_string(),
+                        percent: Some(1.0),
+                        downloaded_bytes: None,
+                        total_bytes: None,
+                        error: None,
+                    },
+                );
+                skipped_count += 1;
+            } else {
+                new_pending.push_back(idx);
+            }
+        }
+
+        (new_pending, skipped_count)
+    }
+
     /// Process all items in the queue with parallel downloads.
     ///
     /// Uses a JoinSet + Semaphore pattern to run up to `max_concurrent` downloads
@@ -264,27 +300,14 @@ impl DownloadQueue {
                 existing_ids.len()
             );
 
-            let mut new_pending = VecDeque::new();
-            for idx in progress.pending.drain(..) {
-                let item = &self.items[idx];
-                if existing_ids.contains(&item.core.track_id) {
-                    let _ = app.emit(
-                        events::DOWNLOAD_PROGRESS,
-                        DownloadProgressEvent {
-                            track_id: item.core.track_id.clone(),
-                            status: "skipped".to_string(),
-                            percent: Some(1.0),
-                            downloaded_bytes: None,
-                            total_bytes: None,
-                            error: None,
-                        },
-                    );
-                    progress.completed += 1;
-                } else {
-                    new_pending.push_back(idx);
-                }
-            }
+            let (new_pending, skipped) = Self::filter_already_downloaded(
+                &self.items,
+                &mut progress.pending,
+                &existing_ids,
+                &app,
+            );
             progress.pending = new_pending;
+            progress.completed += skipped;
         }
 
         let semaphore = Arc::new(Semaphore::new(ctx.max_concurrent));
