@@ -33,7 +33,7 @@ Create a new release version for InfraBooth Downloader.
    - **Group related small changes** into a single line
    - **Hide implementation details**: Never expose technical internals (protocols, caching strategies, preloading mechanisms, rendering techniques, etc.) in changelog entries. Describe what the user *experiences*, not how it works under the hood. Bad: "HLS preloading for smoother playback". Good: "Smoother audio playback". For new features, these details are just expected quality — only mention performance/UX improvements as "Changed" items when they improve an *existing* feature.
    - **Fixed items use past tense**: Describe what was wrong, not what was fixed. Bad: "Search cleared when switching tabs". Good: "Search was cleared when switching tabs".
-8. Show the detected version bump and changelog, ask user to confirm before proceeding
+8. Show the detected version bump and changelog, ask user to confirm before proceeding. If the user requests changes, apply them and show the updated changelog for confirmation again. Do NOT proceed until the user explicitly confirms.
 9. Update version in:
    - `package.json`
    - `src-tauri/tauri.conf.json`
