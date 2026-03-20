@@ -314,6 +314,23 @@ async fn fetch_track_data_by_id(
     })
 }
 
+/// Fetch track data with fallback: try by ID first, then by permalink URL.
+async fn fetch_track_data_with_fallback(
+    track_id: Option<u64>,
+    permalink_url: &str,
+    cid: &str,
+    oauth_token: Option<&str>,
+) -> Result<ApiV2TrackData, DownloadError> {
+    if let Some(id) = track_id {
+        match fetch_track_data_by_id(id, cid, oauth_token).await {
+            Ok(data) => return Ok(data),
+            Err(e) => log::debug!("[stream] ID fetch failed, trying permalink: {}", e),
+        }
+    }
+
+    fetch_track_data_v2(permalink_url, cid, oauth_token).await
+}
+
 /// Resolve a transcoding URL to an actual CDN stream URL.
 async fn resolve_transcoding_url(
     transcoding: &Transcoding,
@@ -397,38 +414,24 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
         }
 
         let transcodings = if transcodings.is_empty() {
-            // Fetch track data (with optional by-id fast path)
-            let data = match opts.track_id {
-                Some(id) if is_first_attempt => {
-                    match fetch_track_data_by_id(id, &cid, opts.oauth_token).await {
-                        Ok(data) => data,
-                        Err(_) => {
-                            // Fallback to resolve by URL if direct fetch fails
-                            match fetch_track_data_v2(opts.track_url, &cid, opts.oauth_token).await {
-                                Ok(data) => data,
-                                Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
-                                    client_id::invalidate_client_id();
-                                    continue;
-                                }
-                                Err(e) => return Err(e),
-                            }
-                        }
-                    }
+            let track_id_for_fetch = if is_first_attempt { opts.track_id } else { None };
+            let data = match fetch_track_data_with_fallback(
+                track_id_for_fetch,
+                opts.track_url,
+                &cid,
+                opts.oauth_token,
+            )
+            .await
+            {
+                Ok(data) => data,
+                Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
+                    log::warn!("[stream] Got auth error, refreshing client_id and retrying");
+                    client_id::invalidate_client_id();
+                    continue;
                 }
-                _ => {
-                    match fetch_track_data_v2(opts.track_url, &cid, opts.oauth_token).await {
-                        Ok(data) => data,
-                        Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
-                            log::warn!("[stream] Got auth error, refreshing client_id and retrying");
-                            client_id::invalidate_client_id();
-                            continue;
-                        }
-                        Err(e) => return Err(e),
-                    }
-                }
+                Err(e) => return Err(e),
             };
 
-            // Check geo-restriction
             if data.policy.as_deref() == Some("BLOCK") {
                 return Err(DownloadError::GeoBlocked(
                     "Track unavailable in your region".to_string(),
@@ -451,7 +454,6 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
             transcodings.len()
         );
 
-        // Select best transcoding based on use case
         let transcoding = select_best(&transcodings, opts.prefer_hls).ok_or_else(|| {
             DownloadError::StreamResolutionFailed("No suitable transcoding found".into())
         })?;
