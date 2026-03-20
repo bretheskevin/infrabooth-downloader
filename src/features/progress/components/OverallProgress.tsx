@@ -1,9 +1,10 @@
-import { FolderOpen, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useShallow } from 'zustand/react/shallow';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Spinner } from '@/components/ui/spinner';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { OpenFolderButton } from '@/components/OpenFolderButton';
 import { cancelDownloadQueue } from '@/features/queue/api/download';
 import { cn } from '@/lib/utils';
 import { useQueueStore } from '@/features/queue/store';
@@ -93,20 +94,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
               {percentage}%
             </span>
           )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleOpenFolder}
-                className="h-8 w-8 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10"
-                aria-label={t('completion.openFolder')}
-              >
-                <FolderOpen className="h-4 w-4" aria-hidden="true" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>{t('completion.openFolder')}</TooltipContent>
-          </Tooltip>
+          <OpenFolderButton onClick={handleOpenFolder} />
           {showCancelButton && (
             <Tooltip>
               <TooltipTrigger asChild>

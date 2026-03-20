@@ -78,6 +78,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
         isDownloadDisabled={!tracks || tracks.length === 0}
         downloadedCount={viewState.downloadedCount}
         folderName={viewState.folderName}
+        folderPath={effectivePath}
         isCustomFolder={viewState.isCustomFolder}
         onChangeFolder={handleChangeFolder}
         showOrderToggle={(tracks?.length ?? 0) > 1}

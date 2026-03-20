@@ -1,7 +1,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { FolderOpen, RefreshCw, XCircle } from 'lucide-react';
+import { RefreshCw, XCircle } from 'lucide-react';
+import { OpenFolderButton } from '@/components/OpenFolderButton';
 import { useTranslation } from 'react-i18next';
 import { useQueueStore } from '@/features/queue/store';
 import { SuccessMessage } from './SuccessMessage';
@@ -121,15 +122,7 @@ export function CompletionPanel({
       </CardContent>
 
       <CardFooter className="flex flex-wrap justify-center gap-3 pt-4 pb-8">
-        <Button
-          variant="outline"
-          onClick={handleOpenFolder}
-          aria-label={t('completion.openFolder')}
-          className="gap-2 rounded-xl h-11 px-5"
-        >
-          <FolderOpen className="h-4 w-4" aria-hidden="true" />
-          {t('completion.openFolder')}
-        </Button>
+        <OpenFolderButton onClick={handleOpenFolder} showLabel />
 
         {failedCount > 0 && canRetry && (
           <Button
