@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-03-20
+
+### Added
+
+- Right-click context menu on tracks (copy link, open in browser, add/remove from playlist)
+- Shuffle mode in audio player
+- Waveform visualization in expanded player
+- Direct file download with MP3 320kbps conversion for tracks that support it
+- Stream-only mode to hide download UI
+- Open folder button in progress panel
+
+### Changed
+
+- Settings redesigned as dialog with sidebar navigation
+- Smoother playback transitions between tracks
+
+### Fixed
+
+- Downloaded tracks were not auto-deselected
+- Select-all shown when all tracks already downloaded
+
 ## [1.9.2] - 2026-03-18
 
 ### Changed

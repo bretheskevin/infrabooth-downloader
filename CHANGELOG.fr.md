@@ -7,6 +7,27 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.10.0] - 2026-03-20
+
+### Added
+
+- Menu contextuel au clic droit sur les pistes (copier le lien, ouvrir dans le navigateur, ajouter/supprimer d'une playlist)
+- Mode aléatoire dans le lecteur audio
+- Visualisation du waveform dans le lecteur
+- Téléchargement direct avec conversion en MP3 320kbps pour les pistes compatibles
+- Mode streaming pour masquer l'interface de téléchargement
+- Bouton d'ouverture du dossier dans la page de téléchargement
+
+### Changed
+
+- Revisite du design des paramètres
+- Transitions de lecture plus fluides entre les pistes
+
+### Fixed
+
+- Les pistes téléchargées n'étaient pas automatiquement désélectionnées
+- La case « tout sélectionner » s'affichait quand toutes les pistes étaient déjà téléchargées
+
 ## [1.9.2] - 2026-03-18
 
 ### Changed
