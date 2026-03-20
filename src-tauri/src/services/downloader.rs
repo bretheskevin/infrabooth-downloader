@@ -519,6 +519,61 @@ async fn convert_original_file<R: tauri::Runtime>(
     Ok(output_file.to_path_buf())
 }
 
+/// Prepares the download context by building output paths and extracting cancellation handles.
+///
+/// Returns (output_path, base_name, FfmpegContext).
+fn prepare_download_context<'a>(
+    config: &PipelineConfig,
+    cancellation: &'a Option<CancellationHandles>,
+) -> (PathBuf, String, Option<watch::Receiver<bool>>, Option<Arc<Mutex<Option<CommandChild>>>>, Option<Arc<Mutex<Option<u32>>>>) {
+    let (base_name, _display_title) =
+        build_base_filename(&config.playlist_context, &config.metadata.artist, &config.metadata.title);
+    let output_file = config.output_dir.join(format!("{}.mp3", base_name));
+
+    let (cancel_rx, active_child, active_pid) = match cancellation {
+        Some(c) => (Some(c.cancel_rx.clone()), Some(c.active_child.clone()), Some(c.active_pid.clone())),
+        None => (None, None, None),
+    };
+
+    (output_file, base_name, cancel_rx, active_child, active_pid)
+}
+
+/// Execute download via transcoding stream (the FFmpeg sidecar path).
+///
+/// Resolves the stream URL and runs FFmpeg to transcode to MP3.
+async fn execute_transcoding_download<R: tauri::Runtime>(
+    app: &AppHandle<R>,
+    config: &PipelineConfig,
+    output_file: &Path,
+    ctx: &FfmpegContext<'_>,
+) -> Result<PathBuf, DownloadError> {
+    let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
+
+    log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
+    log::info!(
+        "[downloader] Encoding strategy for track {}: codec={:?}",
+        config.track_id,
+        stream_info.codec
+    );
+
+    let args = build_ffmpeg_args(&stream_info, output_file);
+    let bytes_per_ms = output_bytes_per_ms(&stream_info.codec);
+
+    run_ffmpeg_sidecar(
+        app,
+        &args,
+        &config.track_id,
+        config.duration_ms,
+        bytes_per_ms,
+        output_file,
+        ctx,
+    )
+    .await?;
+
+    log::info!("[downloader] Download complete: {:?}", output_file);
+    Ok(output_file.to_path_buf())
+}
+
 /// Check if cancellation has been requested.
 fn is_cancelled(cancel_rx: &Option<watch::Receiver<bool>>) -> bool {
     cancel_rx.as_ref().map_or(false, |crx| *crx.borrow())
@@ -756,24 +811,14 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
     config: &PipelineConfig,
     cancellation: Option<CancellationHandles>,
 ) -> Result<PathBuf, DownloadError> {
-    // Build output filename
-    let (base_name, _display_title) =
-        build_base_filename(&config.playlist_context, &config.metadata.artist, &config.metadata.title);
-    let output_file = config.output_dir.join(format!("{}.mp3", base_name));
+    let (output_file, base_name, cancel_rx, active_child, active_pid) =
+        prepare_download_context(config, &cancellation);
 
-    // Check if already downloaded
     if output_file.exists() {
         log::info!("[downloader] File already exists: {:?}", output_file);
         return Ok(output_file);
     }
 
-    // Extract references from cancellation handles (or use None)
-    let (cancel_rx, active_child, active_pid) = match &cancellation {
-        Some(c) => (Some(c.cancel_rx.clone()), Some(c.active_child.clone()), Some(c.active_pid.clone())),
-        None => (None, None, None),
-    };
-
-    // Create shared context for FFmpeg operations
     let ctx = FfmpegContext {
         cancel_rx: &cancel_rx,
         active_child: &active_child,
@@ -804,37 +849,11 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
             )
             .await;
         }
-        // Fall through to transcoding on failure
         log::info!("[downloader] Original download unavailable, using transcoding stream");
     }
 
-    // Existing transcoding path
-    let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
-
-    log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
-    log::info!(
-        "[downloader] Encoding strategy for track {}: codec={:?}",
-        config.track_id,
-        stream_info.codec
-    );
-
-    // Build ffmpeg args and run conversion
-    let args = build_ffmpeg_args(&stream_info, &output_file);
-    let bytes_per_ms = output_bytes_per_ms(&stream_info.codec);
-
-    run_ffmpeg_sidecar(
-        app,
-        &args,
-        &config.track_id,
-        config.duration_ms,
-        bytes_per_ms,
-        &output_file,
-        &ctx,
-    )
-    .await?;
-
-    log::info!("[downloader] Download complete: {:?}", output_file);
-    Ok(output_file)
+    // Fall back to transcoding path
+    execute_transcoding_download(app, config, &output_file, &ctx).await
 }
 
 #[cfg(test)]
