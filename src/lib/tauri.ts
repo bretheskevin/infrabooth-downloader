@@ -98,6 +98,9 @@ export const api = {
   addTrackToPlaylist: (playlistId: number, trackId: number): Promise<void> =>
     commands.addTrackToPlaylist(playlistId, trackId).then(unwrap).then(() => undefined),
 
+  removeTrackFromPlaylist: (playlistId: number, trackId: number): Promise<void> =>
+    commands.removeTrackFromPlaylist(playlistId, trackId).then(unwrap).then(() => undefined),
+
   getOwnedPlaylistsForTrack: (trackId: number): Promise<PlaylistForTrackPicker[]> =>
     commands.getOwnedPlaylistsForTrack(trackId).then(unwrap),
 

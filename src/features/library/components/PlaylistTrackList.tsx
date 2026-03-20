@@ -35,6 +35,7 @@ interface PlaylistTrackListProps {
   onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
   onMouseDownTrack?: (track: TrackInfo) => void;
   hasSelectableTracks?: boolean;
+  onRemoveFromPlaylist?: (track: TrackInfo) => void;
 }
 
 export function PlaylistTrackList({
@@ -58,6 +59,7 @@ export function PlaylistTrackList({
   onHoverTrack,
   onMouseDownTrack,
   hasSelectableTracks = true,
+  onRemoveFromPlaylist,
 }: PlaylistTrackListProps) {
   const { t } = useTranslation();
   const isDownloadEnabled = useIsDownloadEnabled();
@@ -152,6 +154,7 @@ export function PlaylistTrackList({
                 onHoverTrack={onHoverTrack}
                 onMouseDownTrack={onMouseDownTrack}
                 isDownloadEnabled={isDownloadEnabled}
+                onRemoveFromPlaylist={onRemoveFromPlaylist ? () => onRemoveFromPlaylist(track) : undefined}
               />
             </VirtualRow>
           );

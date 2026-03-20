@@ -307,6 +307,15 @@
     "added": "Added",
     "checkingMembership": "Checking...",
     "addedToPlaylist": "Added to {{playlist}}",
-    "addFailed": "Failed to add track"
+    "addFailed": "Failed to add track",
+    "removeFromPlaylist": "Remove from playlist",
+    "removeFromPlaylistTitle": "Remove track?",
+    "removeFromPlaylistDescription": "\"{{track}}\" will be removed from \"{{playlist}}\". This cannot be undone.",
+    "removeFromPlaylistCancel": "Cancel",
+    "removeFromPlaylistConfirm": "Remove",
+    "removing": "Removing...",
+    "removedFromPlaylist": "Removed from {{playlist}}",
+    "notInPlaylist": "Track not in playlist",
+    "removeFailed": "Failed to remove track"
   }
 }

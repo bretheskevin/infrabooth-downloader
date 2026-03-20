@@ -307,6 +307,15 @@
     "added": "Ajouté",
     "checkingMembership": "Vérification...",
     "addedToPlaylist": "Ajouté à {{playlist}}",
-    "addFailed": "Échec de l'ajout"
+    "addFailed": "Échec de l'ajout",
+    "removeFromPlaylist": "Retirer de la playlist",
+    "removeFromPlaylistTitle": "Retirer cette piste ?",
+    "removeFromPlaylistDescription": "« {{track}} » sera retiré de « {{playlist}} ». Cette action est irréversible.",
+    "removeFromPlaylistCancel": "Annuler",
+    "removeFromPlaylistConfirm": "Retirer",
+    "removing": "Suppression...",
+    "removedFromPlaylist": "Retiré de {{playlist}}",
+    "notInPlaylist": "Piste absente de la playlist",
+    "removeFailed": "Échec de la suppression"
   }
 }
