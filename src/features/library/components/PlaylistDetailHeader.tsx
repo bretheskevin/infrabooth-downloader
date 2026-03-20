@@ -1,5 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, CheckCircle2, ChevronRight, Download, Folder, Music } from 'lucide-react';
+import { OpenFolderButton } from '@/components/OpenFolderButton';
+import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { Button } from '@/components/ui/button';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import type { LibraryPlaylist } from '@/bindings';
@@ -15,6 +17,7 @@ interface PlaylistDetailHeaderProps {
   isDownloadDisabled?: boolean;
   downloadedCount: number;
   folderName: string | undefined;
+  folderPath?: string;
   isCustomFolder: boolean;
   onChangeFolder: () => void;
   showOrderToggle?: boolean;
@@ -29,12 +32,14 @@ export function PlaylistDetailHeader({
   isDownloadDisabled,
   downloadedCount,
   folderName,
+  folderPath,
   isCustomFolder,
   onChangeFolder,
   showOrderToggle,
 }: PlaylistDetailHeaderProps) {
   const { t } = useTranslation();
   const isDownloadEnabled = useIsDownloadEnabled();
+  const handleOpenFolder = useOpenDownloadFolder(folderPath ?? null);
 
   return (
     <div className="space-y-2">
@@ -89,6 +94,7 @@ export function PlaylistDetailHeader({
                   )}
                   <ChevronRight className="h-3 w-3 shrink-0" />
                 </button>
+                <OpenFolderButton onClick={handleOpenFolder} size="sm" />
               </>
             )}
             {isDownloadEnabled && downloadedCount > 0 && (
