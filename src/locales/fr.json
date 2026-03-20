@@ -297,7 +297,16 @@
   },
   "trackMenu": {
     "copyLink": "Copier le lien",
+    "linkCopied": "Lien copié",
     "openInBrowser": "Ouvrir dans le navigateur",
-    "linkCopied": "Lien copié"
+    "addToPlaylist": "Ajouter à une playlist",
+    "searchPlaylists": "Rechercher...",
+    "noPlaylists": "Aucune playlist",
+    "noResults": "Aucune playlist pour '{{query}}'",
+    "alreadyAdded": "Déjà ajouté",
+    "added": "Ajouté",
+    "checkingMembership": "Vérification...",
+    "addedToPlaylist": "Ajouté à {{playlist}}",
+    "addFailed": "Échec de l'ajout"
   }
 }

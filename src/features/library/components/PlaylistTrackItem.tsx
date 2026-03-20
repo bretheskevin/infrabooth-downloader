@@ -1,7 +1,6 @@
 import { memo, useCallback } from 'react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TrackRow } from '@/components/TrackRow';
-import { TrackRowMenu } from '@/components/TrackRowMenu';
 import { TrackDownloadAction } from '@/components/TrackDownloadAction';
 import { EqualizerBars } from '@/features/player/components/EqualizerBars';
 import { useHoverPreload } from '@/hooks/useHoverPreload';
@@ -111,18 +110,15 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
           </span>
         </div>
       }
-      rightSlot={
-        <div className="flex items-center gap-1">
-          {isDownloadEnabled && (
-            <TrackDownloadAction
-              state={downloadState}
-              onDownload={handleDownload}
-              onRetry={handleDownload}
-              variant="ghost"
-            />
-          )}
-          <TrackRowMenu track={track} className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
+      actionSlot={
+        isDownloadEnabled ? (
+          <TrackDownloadAction
+            state={downloadState}
+            onDownload={handleDownload}
+            onRetry={handleDownload}
+            variant="ghost"
+          />
+        ) : undefined
       }
     />
   );

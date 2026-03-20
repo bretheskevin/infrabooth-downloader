@@ -3,12 +3,21 @@ use once_cell::sync::Lazy;
 /// Base URL for SoundCloud API v2.
 pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 
-/// Shared HTTP client for connection pooling across all services.
-///
-/// A single `reqwest::Client` reuses TLS sessions and TCP connections
-/// for repeated requests to the same hosts (SoundCloud API, CDN, etc.).
 pub static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
+    use reqwest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER, USER_AGENT};
+
+    let mut headers = HeaderMap::new();
+    headers.insert(
+        USER_AGENT,
+        HeaderValue::from_static(
+            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        ),
+    );
+    headers.insert(ORIGIN, HeaderValue::from_static("https://soundcloud.com"));
+    headers.insert(REFERER, HeaderValue::from_static("https://soundcloud.com/"));
+
     reqwest::Client::builder()
+        .default_headers(headers)
         .timeout(std::time::Duration::from_secs(30))
         .build()
         .expect("Failed to create HTTP client")

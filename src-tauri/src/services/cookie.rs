@@ -5,6 +5,8 @@ use log::{info, warn};
 pub struct BrowserCookie {
     pub value: String,
     pub browser: String,
+    /// DataDome client ID cookie for bot protection bypass
+    pub datadome: Option<String>,
 }
 
 /// Scan browsers for the SoundCloud `oauth_token` cookie.
@@ -54,9 +56,18 @@ pub fn scan_browser_cookies() -> Option<BrowserCookie> {
 
                 if let Some(token_cookie) = token_cookie {
                     info!("Found oauth_token in {} (domain: {})", name, token_cookie.domain);
+                    // Also look for datadome cookie
+                    let datadome = cookies
+                        .iter()
+                        .find(|c| c.name == "datadome" && !c.value.is_empty())
+                        .map(|c| {
+                            info!("Found datadome cookie in {}", name);
+                            c.value.clone()
+                        });
                     return Some(BrowserCookie {
                         value: token_cookie.value.clone(),
                         browser: name.to_string(),
+                        datadome,
                     });
                 }
             }
@@ -79,6 +90,7 @@ mod tests {
         let cookie = BrowserCookie {
             value: "test_token".to_string(),
             browser: "Firefox".to_string(),
+            datadome: Some("datadome_value".to_string()),
         };
         let cloned = cookie.clone();
         assert_eq!(cloned.value, "test_token");
@@ -90,6 +102,7 @@ mod tests {
         let cookie = BrowserCookie {
             value: "token".to_string(),
             browser: "Chrome".to_string(),
+            datadome: None,
         };
         let debug_str = format!("{:?}", cookie);
         assert!(debug_str.contains("Chrome"));
