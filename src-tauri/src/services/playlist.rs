@@ -304,6 +304,47 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
     serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)
 }
 
+/// Extracts a JSON array from HTML content starting at the given marker.
+///
+/// Uses bracket-matching to find the complete JSON array, properly handling
+/// strings and escape sequences. Returns the extracted JSON string or `None`
+/// if the marker is not found or no valid array is detected.
+fn extract_json_array_from_html(html: &str, marker: &str) -> Option<String> {
+    let start_idx = html.find(marker)?;
+    let remaining = &html[start_idx + marker.len()..];
+
+    let mut depth = 0;
+    let mut in_string = false;
+    let mut escape_next = false;
+    let mut end_idx = 0;
+
+    for (i, ch) in remaining.char_indices() {
+        if escape_next {
+            escape_next = false;
+            continue;
+        }
+        match ch {
+            '\\' if in_string => escape_next = true,
+            '"' => in_string = !in_string,
+            '[' if !in_string => depth += 1,
+            ']' if !in_string => {
+                depth -= 1;
+                if depth == 0 {
+                    end_idx = i + 1;
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+
+    if end_idx > 0 {
+        Some(remaining[..end_idx].to_string())
+    } else {
+        None
+    }
+}
+
 /// Fetches the SoundCloud web page and extracts __sc_hydration JSON data.
 ///
 /// **Note:** This function uses web scraping to extract JSON from SoundCloud's HTML.
@@ -330,47 +371,8 @@ async fn fetch_hydration_data(url: &str) -> Result<Vec<HydrationItem>, PlaylistE
 
     let html = response.text().await?;
 
-    // Extract __sc_hydration JSON from the page
-    // Find the start marker and then parse the JSON array properly
-    let start_marker = "__sc_hydration = ";
-    let start_idx = html
-        .find(start_marker)
-        .ok_or(PlaylistError::InvalidResponse)?;
-
-    let json_start = start_idx + start_marker.len();
-    let remaining = &html[json_start..];
-
-    // Find the matching closing bracket by counting brackets
-    let mut depth = 0;
-    let mut end_idx = 0;
-    let mut in_string = false;
-    let mut escape_next = false;
-
-    for (i, ch) in remaining.char_indices() {
-        if escape_next {
-            escape_next = false;
-            continue;
-        }
-        match ch {
-            '\\' if in_string => escape_next = true,
-            '"' => in_string = !in_string,
-            '[' if !in_string => depth += 1,
-            ']' if !in_string => {
-                depth -= 1;
-                if depth == 0 {
-                    end_idx = i + 1;
-                    break;
-                }
-            }
-            _ => {}
-        }
-    }
-
-    if end_idx == 0 {
-        return Err(PlaylistError::InvalidResponse);
-    }
-
-    let json_str = &remaining[..end_idx];
+    let json_str =
+        extract_json_array_from_html(&html, "__sc_hydration = ").ok_or(PlaylistError::InvalidResponse)?;
 
     // Clean control characters that might break JSON parsing
     let original_len = json_str.len();
@@ -445,26 +447,16 @@ fn extract_full_tracks_from_hydration(tracks: &[Value]) -> Vec<TrackInfo> {
         .collect()
 }
 
-/// Resolves a mixed list of track data (full objects + ID stubs) into ordered TrackInfo.
-/// Extracts full tracks from the data, batch-fetches missing ones, and sorts by original order.
-/// Calls `on_batch` with each batch of resolved tracks for progressive loading.
-async fn resolve_tracks_from_mixed<F>(
+/// Extracts full tracks from hydration data and reports them via callback.
+/// Returns the extracted tracks and a set of their IDs for deduplication.
+fn extract_and_report_full_tracks<F>(
     tracks: &[Value],
-    cid: &str,
-    oauth_token: Option<&str>,
-    on_batch: F,
-) -> Result<Vec<TrackInfo>, PlaylistError>
+    on_batch: &F,
+) -> (Vec<TrackInfo>, std::collections::HashSet<u64>)
 where
     F: Fn(&[TrackInfo]),
 {
-    let all_track_ids = extract_track_ids(tracks);
     let full_tracks = extract_full_tracks_from_hydration(tracks);
-
-    log::info!(
-        "[soundcloud] {} full tracks available, {} total IDs",
-        full_tracks.len(),
-        all_track_ids.len()
-    );
 
     if !full_tracks.is_empty() {
         on_batch(&full_tracks);
@@ -472,13 +464,26 @@ where
 
     let full_track_ids: std::collections::HashSet<u64> =
         full_tracks.iter().map(|t| t.id).collect();
-    let missing_ids: Vec<u64> = all_track_ids
-        .iter()
-        .filter(|id| !full_track_ids.contains(id))
-        .copied()
-        .collect();
 
-    let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, cid, oauth_token, &on_batch).await?;
+    (full_tracks, full_track_ids)
+}
+
+/// Fetches missing tracks in batches using batch API with parallel fallback.
+/// Returns all successfully fetched tracks.
+async fn fetch_missing_tracks_batched<F>(
+    missing_ids: Vec<u64>,
+    cid: &str,
+    oauth_token: Option<&str>,
+    on_batch: &F,
+) -> Result<Vec<TrackInfo>, PlaylistError>
+where
+    F: Fn(&[TrackInfo]),
+{
+    if missing_ids.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, cid, oauth_token, on_batch).await?;
 
     log::info!(
         "[soundcloud] Batch API returned {} of {} missing tracks",
@@ -518,6 +523,40 @@ where
             }
         }
     }
+
+    Ok(fetched_tracks)
+}
+
+/// Resolves a mixed list of track data (full objects + ID stubs) into ordered TrackInfo.
+/// Extracts full tracks from the data, batch-fetches missing ones, and sorts by original order.
+/// Calls `on_batch` with each batch of resolved tracks for progressive loading.
+async fn resolve_tracks_from_mixed<F>(
+    tracks: &[Value],
+    cid: &str,
+    oauth_token: Option<&str>,
+    on_batch: F,
+) -> Result<Vec<TrackInfo>, PlaylistError>
+where
+    F: Fn(&[TrackInfo]),
+{
+    let all_track_ids = extract_track_ids(tracks);
+
+    let (full_tracks, full_track_ids) = extract_and_report_full_tracks(tracks, &on_batch);
+
+    log::info!(
+        "[soundcloud] {} full tracks available, {} total IDs",
+        full_tracks.len(),
+        all_track_ids.len()
+    );
+
+    let missing_ids: Vec<u64> = all_track_ids
+        .iter()
+        .filter(|id| !full_track_ids.contains(id))
+        .copied()
+        .collect();
+
+    let fetched_tracks =
+        fetch_missing_tracks_batched(missing_ids, cid, oauth_token, &on_batch).await?;
 
     let mut all_tracks: Vec<TrackInfo> = full_tracks;
     all_tracks.extend(fetched_tracks);
