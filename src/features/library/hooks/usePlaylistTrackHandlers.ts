@@ -1,0 +1,55 @@
+import { useCallback } from 'react';
+import type { TrackInfo } from '@/bindings';
+import { preloadOnHover, preloadImmediate } from '@/features/player/url-cache';
+
+interface UsePlaylistTrackHandlersParams {
+  tracks: TrackInfo[] | undefined;
+  playlistTitle: string;
+  effectivePath: string | undefined;
+  selectedTracks: TrackInfo[];
+  downloadTrack: (track: TrackInfo) => void;
+  clearSelection: () => void;
+  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
+}
+
+export function usePlaylistTrackHandlers({
+  tracks,
+  playlistTitle,
+  effectivePath,
+  selectedTracks,
+  downloadTrack,
+  clearSelection,
+  onDownloadTracks,
+}: UsePlaylistTrackHandlersParams) {
+  const handleDownloadAll = useCallback(() => {
+    if (tracks && tracks.length > 0) onDownloadTracks(tracks, playlistTitle, effectivePath);
+  }, [tracks, playlistTitle, onDownloadTracks, effectivePath]);
+
+  const handleDownloadSelected = useCallback(async () => {
+    await onDownloadTracks(selectedTracks, playlistTitle, effectivePath);
+    clearSelection();
+  }, [selectedTracks, playlistTitle, onDownloadTracks, clearSelection, effectivePath]);
+
+  const handleHoverTrack = useCallback(
+    (track: TrackInfo) => preloadOnHover(track.id, track.permalink_url),
+    [],
+  );
+
+  const handleMouseDownTrack = useCallback(
+    (track: TrackInfo) => preloadImmediate(track.id, track.permalink_url),
+    [],
+  );
+
+  const handleDownloadTrack = useCallback(
+    (track: TrackInfo) => downloadTrack(track),
+    [downloadTrack],
+  );
+
+  return {
+    handleDownloadAll,
+    handleDownloadSelected,
+    handleHoverTrack,
+    handleMouseDownTrack,
+    handleDownloadTrack,
+  };
+}
