@@ -58,6 +58,68 @@ pub struct DownloadProgressEvent {
     pub error: Option<ErrorResponse>,
 }
 
+impl DownloadProgressEvent {
+    pub fn complete(track_id: String) -> Self {
+        Self {
+            track_id,
+            status: "complete".to_string(),
+            percent: Some(1.0),
+            downloaded_bytes: None,
+            total_bytes: None,
+            error: None,
+        }
+    }
+
+    pub fn failed(track_id: String, error: ErrorResponse) -> Self {
+        Self {
+            track_id,
+            status: "failed".to_string(),
+            percent: None,
+            downloaded_bytes: None,
+            total_bytes: None,
+            error: Some(error),
+        }
+    }
+
+    pub fn skipped(track_id: String) -> Self {
+        Self {
+            track_id,
+            status: "skipped".to_string(),
+            percent: Some(1.0),
+            downloaded_bytes: None,
+            total_bytes: None,
+            error: None,
+        }
+    }
+
+    pub fn rate_limited(track_id: String) -> Self {
+        Self {
+            track_id,
+            status: "rate_limited".to_string(),
+            percent: None,
+            downloaded_bytes: None,
+            total_bytes: None,
+            error: None,
+        }
+    }
+
+    pub fn downloading(
+        track_id: String,
+        percent: f32,
+        downloaded_bytes: Option<u64>,
+        total_bytes: Option<u64>,
+    ) -> Self {
+        Self {
+            track_id,
+            status: "downloading".to_string(),
+            percent: Some(percent),
+            downloaded_bytes,
+            total_bytes,
+            error: None,
+        }
+    }
+}
+
 /// Detected format of an original download file.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum OriginalFormat {
@@ -624,14 +686,12 @@ fn process_ffmpeg_stdout<R: tauri::Runtime>(
             if progress.percent.is_some() {
                 let _ = app.emit(
                     events::DOWNLOAD_PROGRESS,
-                    DownloadProgressEvent {
-                        track_id: track_id.to_string(),
-                        status: "downloading".to_string(),
-                        percent: Some(*last_percent),
-                        downloaded_bytes: *last_downloaded_bytes,
-                        total_bytes: estimated_total_bytes,
-                        error: None,
-                    },
+                    DownloadProgressEvent::downloading(
+                        track_id.to_string(),
+                        *last_percent,
+                        *last_downloaded_bytes,
+                        estimated_total_bytes,
+                    ),
                 );
             }
         }

@@ -3,6 +3,8 @@ use specta::Type;
 use std::sync::atomic::{AtomicBool, Ordering};
 use tokio::sync::{watch, Mutex};
 
+use crate::services::rate_limit_choice::ChoiceState;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
 pub enum AuthChoice {
@@ -18,25 +20,22 @@ pub struct DownloadAuthNeededEvent {
 }
 
 pub struct AuthChoiceState {
-    choice_sender: watch::Sender<Option<AuthChoice>>,
-    choice_receiver: watch::Receiver<Option<AuthChoice>>,
+    inner: ChoiceState<AuthChoice>,
     skip_auth: AtomicBool,
     pending: Mutex<bool>,
 }
 
 impl AuthChoiceState {
     pub fn new() -> Self {
-        let (sender, receiver) = watch::channel(None);
         Self {
-            choice_sender: sender,
-            choice_receiver: receiver,
+            inner: ChoiceState::new(),
             skip_auth: AtomicBool::new(false),
             pending: Mutex::new(false),
         }
     }
 
     pub fn subscribe(&self) -> watch::Receiver<Option<AuthChoice>> {
-        self.choice_receiver.clone()
+        self.inner.subscribe()
     }
 
     pub fn should_skip_auth(&self) -> bool {
@@ -53,11 +52,11 @@ impl AuthChoiceState {
     }
 
     pub fn send_choice(&self, choice: AuthChoice) {
-        let _ = self.choice_sender.send(Some(choice));
+        self.inner.send_choice(choice);
     }
 
     pub fn reset(&self) {
-        let _ = self.choice_sender.send(None);
+        self.inner.reset();
         self.skip_auth.store(false, Ordering::SeqCst);
     }
 }

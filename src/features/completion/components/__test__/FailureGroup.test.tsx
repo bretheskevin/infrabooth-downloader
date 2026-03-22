@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { FailureGroup } from '../FailureGroup';
-import type { FailedTrack } from '@/features/queue/types/download';
+import { createMockFailedTrack } from '@/test/factories';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -18,12 +18,8 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-const createMockTrack = (id: string, title: string, artist: string): FailedTrack => ({
-  id,
-  title,
-  artist,
-  error: { code: 'GEO_BLOCKED', message: 'Not available' },
-});
+const createMockTrack = (id: string, title: string, artist: string) =>
+  createMockFailedTrack({ id, title, artist, errorCode: 'GEO_BLOCKED', errorMessage: 'Not available' });
 
 describe('FailureGroup', () => {
   const mockTracks = [

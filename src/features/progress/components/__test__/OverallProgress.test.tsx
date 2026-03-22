@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { OverallProgress } from '../OverallProgress';
 import { useQueueStore } from '@/features/queue/store';
 import type { Track } from '@/features/queue/types/track';
+import { createMockTracksWithStatuses } from '@/test/factories';
 
 const renderWithTooltip = (ui: React.ReactElement) =>
   render(<TooltipProvider>{ui}</TooltipProvider>);
@@ -36,17 +37,7 @@ vi.mock('@/features/settings/api/settings', () => ({
 import { openDownloadFolder } from '@/lib/shellCommands';
 import { getDefaultDownloadPath } from '@/features/settings/api/settings';
 
-const createMockTracks = (
-  statuses: Array<'pending' | 'downloading' | 'converting' | 'complete' | 'failed'>
-): Track[] =>
-  statuses.map((status, i) => ({
-    id: `track-${i + 1}`,
-    title: `Track ${i + 1}`,
-    artist: `Artist ${i + 1}`,
-    artworkUrl: null,
-    durationMs: 180000,
-    status,
-  }));
+const createMockTracks = createMockTracksWithStatuses;
 
 describe('OverallProgress', () => {
   beforeEach(() => {

@@ -1,4 +1,5 @@
 import { memo, useCallback } from 'react';
+import { usePlayPauseToggle } from '@/hooks/usePlayPauseToggle';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TrackRow } from '@/components/TrackRow';
 import { TrackDownloadAction } from '@/components/TrackDownloadAction';
@@ -59,15 +60,9 @@ export const PlaylistTrackItem = memo(function PlaylistTrackItem({
 
   const handleToggle = useCallback(() => onToggle(track.id), [onToggle, track.id]);
   const handleDownload = useCallback(() => onDownload(track), [onDownload, track]);
-  const handlePlayPause = useCallback(() => {
-    if (isCurrentlyPlaying && isPlayerPlaying) {
-      onPause?.();
-    } else if (isCurrentlyPlaying && !isPlayerPlaying) {
-      onResume?.();
-    } else {
-      onPlay?.(index);
-    }
-  }, [isCurrentlyPlaying, isPlayerPlaying, onPause, onResume, onPlay, index]);
+  const handlePlayPause = usePlayPauseToggle({
+    isCurrentlyPlaying, isPlayerPlaying, onPlay, onPause, onResume, index,
+  });
 
   return (
     <TrackRow

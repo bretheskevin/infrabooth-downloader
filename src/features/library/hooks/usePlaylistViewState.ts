@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
+import { getFolderName } from '@/lib/utils';
 import { useSettingsStore } from '@/features/settings';
-import { useTrackDownload, useMergedTrackState } from '@/hooks';
-import { useDownloadedTracks } from './useDownloadedTracks';
+import { useTrackDownloadState } from '@/hooks/useTrackDownloadState';
 import { filterTracks } from '../utils/filterTracks';
 import { sortTracks } from '../utils/sortTracks';
 import type { TrackInfo } from '@/bindings';
@@ -19,21 +19,11 @@ export function usePlaylistViewState(
   const [localPath, setLocalPath] = useState<string | undefined>(undefined);
   const effectivePath = localPath || defaultPath || undefined;
 
-  const {
-    downloadTrack,
-    getTrackState: getRawTrackState,
-    completedCount: inlineCompletedCount,
-    reconcile,
-  } = useTrackDownload(effectivePath ?? '');
-
-  const { downloadedIds, downloadedCount } = useDownloadedTracks(
+  const { downloadTrack, getTrackState, downloadedIds, downloadedCount } = useTrackDownloadState({
     tracks,
-    effectivePath,
-    !isStreaming,
-    inlineCompletedCount,
-  );
-
-  const getTrackState = useMergedTrackState(getRawTrackState, downloadedIds, reconcile);
+    downloadPath: effectivePath ?? '',
+    enabled: !isStreaming,
+  });
 
   useEffect(() => {
     setSearchQuery('');
@@ -53,7 +43,7 @@ export function usePlaylistViewState(
   );
 
   const folderName = useMemo(
-    () => (effectivePath ? effectivePath.split(/[/\\]/).filter(Boolean).pop() : undefined),
+    () => (effectivePath ? getFolderName(effectivePath) : undefined),
     [effectivePath],
   );
   const isCustomFolder = Boolean(localPath && localPath !== defaultPath);

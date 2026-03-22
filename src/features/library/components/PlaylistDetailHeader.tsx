@@ -5,7 +5,7 @@ import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { Button } from '@/components/ui/button';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import type { LibraryPlaylist } from '@/bindings';
-import { formatTotalDuration } from '@/lib/utils';
+import { formatTotalDuration } from '@/lib/format';
 import { useIsDownloadEnabled } from '@/features/settings';
 
 interface PlaylistDetailHeaderProps {
