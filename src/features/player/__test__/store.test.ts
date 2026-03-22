@@ -7,13 +7,17 @@ vi.mock('../audio-engine', () => ({
     load: vi.fn(),
     play: vi.fn(),
     pause: vi.fn(),
-    resume: vi.fn(),
     seek: vi.fn(),
     setVolume: vi.fn(),
     stop: vi.fn(),
     destroy: vi.fn(),
     getState: vi.fn().mockReturnValue('idle'),
     getPosition: vi.fn().mockReturnValue({ positionMs: 0, durationMs: 0 }),
+    preloadNext: vi.fn(),
+    startCrossfade: vi.fn(),
+    cancelCrossfade: vi.fn(),
+    settleCrossfade: vi.fn(),
+    isCrossfading: vi.fn().mockReturnValue(false),
   },
 }));
 
@@ -27,9 +31,12 @@ vi.mock('../url-cache', () => ({
 }));
 
 import { usePlayerStore } from '../store';
+import { resetCrossfadeGeneration } from '../store/playbackSlice';
 import { audioEngine } from '../audio-engine';
-import { resolveWithCache } from '../url-cache';
+import { resolveWithCache, preloadQueueSegments } from '../url-cache';
+import { useSettingsStore } from '@/features/settings/store';
 import type { PlaybackItem } from '../types';
+import type { AudioEngineCallbacks } from '../audio-engine';
 
 const mockTrack: PlaybackItem = {
   trackId: 1,
@@ -47,6 +54,12 @@ const makeQueue = (count = 3): PlaybackItem[] =>
     trackId: i + 1,
     title: `Track ${i + 1}`,
   }));
+
+function extractCallbacks(): Partial<AudioEngineCallbacks> {
+  usePlayerStore.getState()._initAudioEngine();
+  const calls = (audioEngine.setCallbacks as ReturnType<typeof vi.fn>).mock.calls;
+  return calls[calls.length - 1]![0] as Partial<AudioEngineCallbacks>;
+}
 
 describe('playerStore', () => {
   beforeEach(() => {
@@ -98,9 +111,9 @@ describe('playerStore', () => {
     expect(audioEngine.pause).toHaveBeenCalled();
   });
 
-  it('resume() should call audio engine', () => {
+  it('resume() should call audio engine play', () => {
     usePlayerStore.getState().resume();
-    expect(audioEngine.resume).toHaveBeenCalled();
+    expect(audioEngine.play).toHaveBeenCalled();
   });
 
   it('seek() should call audio engine and update state', () => {
@@ -382,5 +395,420 @@ describe('playerStore', () => {
     expect(state.cursor).toBe(0);
     expect(state.queue[0]?.trackId).toBe(2);
     expect(state.queue.length).toBe(5);
+  });
+
+  describe('crossfade', () => {
+    beforeEach(() => {
+      resetCrossfadeGeneration();
+      useSettingsStore.setState({
+        crossfadeEnabled: true,
+        crossfadeDuration: 5,
+        playerVolume: 1.0,
+      });
+      usePlayerStore.setState({
+        crossfadePending: false,
+        crossfadingTrackId: null,
+      });
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(false);
+      vi.mocked(audioEngine.cancelCrossfade).mockClear();
+    });
+
+    it('should have crossfadePending false initially', () => {
+      expect(usePlayerStore.getState().crossfadePending).toBe(false);
+    });
+
+    it('should have crossfadingTrackId null initially', () => {
+      expect(usePlayerStore.getState().crossfadingTrackId).toBeNull();
+    });
+
+    it('onEnded should call next() when not crossfading', async () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
+
+      const cbs = extractCallbacks();
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(false);
+      cbs.onEnded!();
+
+      await vi.waitFor(() => {
+        expect(audioEngine.load).toHaveBeenCalled();
+      });
+    });
+
+    it('onEnded should NOT call next() when crossfading', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
+
+      const cbs = extractCallbacks();
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      vi.mocked(audioEngine.load).mockClear();
+      cbs.onEnded!();
+
+      expect(audioEngine.load).not.toHaveBeenCalled();
+    });
+
+    it('next() should cancel crossfade when cursor not yet advanced', async () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing', crossfadePending: true, crossfadingTrackId: 2 });
+
+      await usePlayerStore.getState().next();
+      expect(audioEngine.cancelCrossfade).toHaveBeenCalled();
+      expect(usePlayerStore.getState().cursor).toBe(1);
+      expect(usePlayerStore.getState().currentTrack?.trackId).toBe(2);
+    });
+
+    it('next() should settle crossfade when cursor already advanced', async () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(4);
+      usePlayerStore.setState({ queue, cursor: 1, currentTrack: queue[1]!, state: 'playing', crossfadePending: true, crossfadingTrackId: 2 });
+
+      await usePlayerStore.getState().next();
+      expect(audioEngine.settleCrossfade).toHaveBeenCalled();
+      expect(audioEngine.cancelCrossfade).not.toHaveBeenCalled();
+      expect(usePlayerStore.getState().cursor).toBe(2);
+      expect(usePlayerStore.getState().currentTrack?.trackId).toBe(3);
+    });
+
+    it('previous() should cancel crossfade when cursor not yet advanced', async () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 1, currentTrack: queue[1]!, state: 'playing', crossfadePending: true, crossfadingTrackId: 3 });
+
+      await usePlayerStore.getState().previous();
+      expect(audioEngine.cancelCrossfade).toHaveBeenCalled();
+      expect(usePlayerStore.getState().cursor).toBe(0);
+      expect(usePlayerStore.getState().currentTrack?.trackId).toBe(1);
+    });
+
+    it('previous() should settle crossfade when cursor already advanced', async () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(4);
+      usePlayerStore.setState({ queue, cursor: 2, currentTrack: queue[2]!, state: 'playing', crossfadePending: true, crossfadingTrackId: 3 });
+
+      await usePlayerStore.getState().previous();
+      expect(audioEngine.settleCrossfade).toHaveBeenCalled();
+      expect(audioEngine.cancelCrossfade).not.toHaveBeenCalled();
+      expect(usePlayerStore.getState().cursor).toBe(1);
+      expect(usePlayerStore.getState().currentTrack?.trackId).toBe(2);
+    });
+
+    it('skipTo() should cancel crossfade if in progress', async () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
+
+      await usePlayerStore.getState().skipTo(2);
+      expect(audioEngine.cancelCrossfade).toHaveBeenCalled();
+    });
+
+    it('seek() should settle crossfade and keep incoming track', () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      usePlayerStore.getState().seek(5000);
+      expect(audioEngine.settleCrossfade).toHaveBeenCalled();
+      expect(audioEngine.cancelCrossfade).not.toHaveBeenCalled();
+
+      const state = usePlayerStore.getState();
+      expect(state.cursor).toBe(1);
+      expect(state.currentTrack?.trackId).toBe(2);
+      expect(state.crossfadePending).toBe(false);
+    });
+
+    it('seek during crossfade should allow next crossfade to trigger', () => {
+      const queue = makeQueue(4);
+      usePlayerStore.setState({
+        queue,
+        cursor: 1,
+        currentTrack: queue[1]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+
+      usePlayerStore.getState().seek(170000);
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(false);
+
+      const cbs = extractCallbacks();
+      usePlayerStore.setState({ durationMs: 180000 });
+      cbs.onProgress!(175001, 180000);
+
+      expect(usePlayerStore.getState().crossfadePending).toBe(true);
+      expect(usePlayerStore.getState().crossfadingTrackId).toBe(3);
+    });
+
+    it('pause() should settle crossfade and keep incoming track', () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 1,
+        currentTrack: queue[1]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 3,
+      });
+
+      usePlayerStore.getState().pause();
+      expect(audioEngine.settleCrossfade).toHaveBeenCalled();
+      expect(audioEngine.cancelCrossfade).not.toHaveBeenCalled();
+
+      const state = usePlayerStore.getState();
+      expect(state.cursor).toBe(2);
+      expect(state.currentTrack?.trackId).toBe(3);
+      expect(state.crossfadePending).toBe(false);
+    });
+
+    it('should trigger crossfade when remaining time <= crossfadeDuration', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0],
+        state: 'playing',
+        durationMs: 180000,
+        crossfadePending: false,
+      });
+
+      const cbs = extractCallbacks();
+      cbs.onProgress!(175001, 180000);
+
+      expect(usePlayerStore.getState().crossfadePending).toBe(true);
+    });
+
+    it('should NOT trigger crossfade when remaining time > crossfadeDuration', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0],
+        state: 'playing',
+        durationMs: 180000,
+        crossfadePending: false,
+      });
+
+      const cbs = extractCallbacks();
+      cbs.onProgress!(170000, 180000);
+      expect(usePlayerStore.getState().crossfadePending).toBe(false);
+    });
+
+    it('should NOT trigger crossfade on last track', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 2,
+        currentTrack: queue[2],
+        state: 'playing',
+        durationMs: 180000,
+        crossfadePending: false,
+      });
+
+      const cbs = extractCallbacks();
+      cbs.onProgress!(175001, 180000);
+      expect(usePlayerStore.getState().crossfadePending).toBe(false);
+    });
+
+    it('should NOT double-trigger crossfade', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0],
+        state: 'playing',
+        durationMs: 180000,
+        crossfadePending: false,
+      });
+
+      const cbs = extractCallbacks();
+      cbs.onProgress!(175001, 180000);
+      expect(usePlayerStore.getState().crossfadePending).toBe(true);
+
+      vi.mocked(resolveWithCache).mockClear();
+      cbs.onProgress!(176000, 180000);
+      expect(resolveWithCache).not.toHaveBeenCalled();
+    });
+
+    it('should NOT trigger crossfade for track shorter than crossfade duration', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0],
+        state: 'playing',
+        durationMs: 3000,
+        crossfadePending: false,
+      });
+
+      const cbs = extractCallbacks();
+      cbs.onProgress!(2500, 3000);
+      expect(usePlayerStore.getState().crossfadePending).toBe(false);
+    });
+
+    it('play() should cancel crossfade if in progress', async () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      await usePlayerStore.getState().play(makeQueue(5), 0);
+      expect(audioEngine.cancelCrossfade).toHaveBeenCalled();
+      expect(usePlayerStore.getState().crossfadePending).toBe(false);
+    });
+
+    it('stop() should cancel crossfade if in progress', () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      usePlayerStore.getState().stop();
+      expect(audioEngine.cancelCrossfade).toHaveBeenCalled();
+      expect(usePlayerStore.getState().crossfadePending).toBe(false);
+    });
+
+    it('next() during crossfade with cursor advanced should go to track after crossfading track', async () => {
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+      const queue = makeQueue(4);
+      usePlayerStore.setState({
+        queue,
+        cursor: 1,
+        currentTrack: queue[1]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      await usePlayerStore.getState().next();
+      const state = usePlayerStore.getState();
+      expect(state.crossfadePending).toBe(false);
+      expect(state.cursor).toBe(2);
+      expect(state.currentTrack?.trackId).toBe(3);
+    });
+
+    it('onProgress should advance currentTrack when crossfade begins', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+
+      const cbs = extractCallbacks();
+      cbs.onProgress!(500, 180000);
+
+      const state = usePlayerStore.getState();
+      expect(state.cursor).toBe(1);
+      expect(state.currentTrack?.trackId).toBe(2);
+    });
+
+    it('onProgress should not re-advance cursor once already advanced', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 1,
+        currentTrack: queue[1]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
+
+      const cbs = extractCallbacks();
+      cbs.onProgress!(1000, 180000);
+
+      const state = usePlayerStore.getState();
+      expect(state.cursor).toBe(1);
+      expect(state.currentTrack?.trackId).toBe(2);
+    });
+
+    it('onCrossfadeComplete should advance cursor if not yet advanced', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      const cbs = extractCallbacks();
+      cbs.onCrossfadeComplete!();
+
+      const state = usePlayerStore.getState();
+      expect(state.cursor).toBe(1);
+      expect(state.currentTrack?.trackId).toBe(2);
+      expect(state.crossfadePending).toBe(false);
+      expect(state.crossfadingTrackId).toBeNull();
+      expect(preloadQueueSegments).toHaveBeenCalledWith(queue, 2, 2);
+    });
+
+    it('onCrossfadeComplete should clear flags when cursor already advanced', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 1,
+        currentTrack: queue[1]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      const cbs = extractCallbacks();
+      cbs.onCrossfadeComplete!();
+
+      const state = usePlayerStore.getState();
+      expect(state.cursor).toBe(1);
+      expect(state.crossfadePending).toBe(false);
+      expect(state.crossfadingTrackId).toBeNull();
+      expect(preloadQueueSegments).toHaveBeenCalledWith(queue, 2, 2);
+    });
+
+    it('onCrossfadeComplete should reset state if next track does not match', () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 99,
+      });
+
+      const cbs = extractCallbacks();
+      cbs.onCrossfadeComplete!();
+
+      const state = usePlayerStore.getState();
+      expect(state.cursor).toBe(0);
+      expect(state.crossfadePending).toBe(false);
+      expect(state.crossfadingTrackId).toBeNull();
+    });
   });
 });

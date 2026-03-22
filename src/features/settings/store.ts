@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { logger } from '@/lib/logger';
+import { clamp } from '@/lib/utils';
 
-/** Application theme preference */
 export type Theme = 'system' | 'light' | 'dark';
 
 interface SettingsState {
@@ -13,8 +13,9 @@ interface SettingsState {
   preservePlaylistOrder: boolean;
   playerVolume: number;
   streamMode: boolean;
+  crossfadeEnabled: boolean;
+  crossfadeDuration: number;
   _hasHydrated: boolean;
-  // Actions
   setDownloadPath: (path: string) => void;
   setLanguage: (lang: 'en' | 'fr') => void;
   setTheme: (theme: Theme) => void;
@@ -22,6 +23,8 @@ interface SettingsState {
   setPreservePlaylistOrder: (value: boolean) => void;
   setPlayerVolume: (volume: number) => void;
   setStreamMode: (value: boolean) => void;
+  setCrossfadeEnabled: (value: boolean) => void;
+  setCrossfadeDuration: (value: number) => void;
   _setHasHydrated: (state: boolean) => void;
 }
 
@@ -30,19 +33,23 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       downloadPath: '',
       language: 'en',
-      theme: 'system' as Theme,
+      theme: 'system',
       maxConcurrentDownloads: 3,
       preservePlaylistOrder: true,
       playerVolume: 1.0,
       streamMode: false,
+      crossfadeEnabled: false,
+      crossfadeDuration: 5,
       _hasHydrated: false,
       setDownloadPath: (path) => set({ downloadPath: path }),
       setLanguage: (lang) => set({ language: lang }),
       setTheme: (theme) => set({ theme }),
-      setMaxConcurrentDownloads: (n) => set({ maxConcurrentDownloads: Math.min(10, Math.max(1, n)) }),
+      setMaxConcurrentDownloads: (n) => set({ maxConcurrentDownloads: clamp(n, 1, 10) }),
       setPreservePlaylistOrder: (value) => set({ preservePlaylistOrder: value }),
-      setPlayerVolume: (volume) => set({ playerVolume: Math.min(1, Math.max(0, volume)) }),
+      setPlayerVolume: (volume) => set({ playerVolume: clamp(volume, 0, 1) }),
       setStreamMode: (value) => set({ streamMode: value }),
+      setCrossfadeEnabled: (value) => set({ crossfadeEnabled: value }),
+      setCrossfadeDuration: (value) => set({ crossfadeDuration: clamp(value, 1, 12) }),
       _setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
@@ -56,18 +63,18 @@ export const useSettingsStore = create<SettingsState>()(
         preservePlaylistOrder: state.preservePlaylistOrder,
         playerVolume: state.playerVolume,
         streamMode: state.streamMode,
+        crossfadeEnabled: state.crossfadeEnabled,
+        crossfadeDuration: state.crossfadeDuration,
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           void logger.error(`Settings hydration error: ${error instanceof Error ? error.message : String(error)}`);
         }
-        // Mark as hydrated regardless of error
         state?._setHasHydrated(true);
       },
     }
   )
 );
 
-// Selector for hydration status
 export const useSettingsHydrated = () =>
   useSettingsStore((state) => state._hasHydrated);

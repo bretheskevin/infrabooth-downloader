@@ -6,7 +6,7 @@ import { Slider } from '@/components/ui/slider';
 export function ConcurrentDownloadsSection() {
   const { t } = useTranslation();
   const maxConcurrentDownloads = useSettingsStore((state) => state.maxConcurrentDownloads);
-  const setMaxConcurrentDownloads = useSettingsStore((state) => state.setMaxConcurrentDownloads);
+  const setMaxConcurrentDownloads = useSettingsStore.getState().setMaxConcurrentDownloads;
 
   return (
     <div className="space-y-3">
@@ -20,6 +20,7 @@ export function ConcurrentDownloadsSection() {
       </div>
       <div className="flex items-center gap-3">
         <Slider
+          aria-label={t('settings.concurrentDownloads')}
           value={[maxConcurrentDownloads]}
           onValueChange={([v]) => v !== undefined && setMaxConcurrentDownloads(v)}
           min={1}

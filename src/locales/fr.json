@@ -133,7 +133,11 @@
     "preserveOrder": "Numéroter les pistes",
     "preserveOrderDescription": "Préfixer les noms de fichiers de playlist avec la position (ex: 01 - Artiste - Titre)",
     "categoryAbout": "À propos",
-    "viewChangelog": "Voir les nouveautés"
+    "viewChangelog": "Voir les nouveautés",
+    "crossfade": "Fondu enchaîné",
+    "crossfadeDescription": "Transition fluide entre les pistes",
+    "crossfadeDuration": "Durée",
+    "crossfadeSeconds": "{{count}}s"
   },
   "completion": {
     "title": "Téléchargement terminé !",
@@ -293,7 +297,10 @@
     "errorNext": "Impossible de passer à la piste suivante",
     "errorPrevious": "Impossible de revenir à la piste précédente",
     "errorLoadTrack": "Impossible de charger la piste",
-    "clickToExpand": "Cliquer pour agrandir le lecteur"
+    "clickToExpand": "Cliquer pour agrandir le lecteur",
+    "volume": "Volume",
+    "mute": "Couper le son",
+    "unmute": "Rétablir le son"
   },
   "trackMenu": {
     "copyLink": "Copier le lien",
