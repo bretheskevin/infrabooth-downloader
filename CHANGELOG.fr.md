@@ -7,6 +7,17 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-03-22
+
+### Added
+
+- Fondu enchaîné entre les pistes avec durée ajustable
+
+### Fixed
+
+- La barre de progression de mise à jour affichait des valeurs incorrectes
+- L'application ne pouvait pas redémarrer après l'installation d'une mise à jour
+
 ## [1.10.0] - 2026-03-20
 
 ### Added
