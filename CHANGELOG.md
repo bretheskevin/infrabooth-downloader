@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-03-22
+
+### Added
+
+- Crossfade between tracks with adjustable duration
+
+### Fixed
+
+- Update progress bar showed incorrect values
+- App couldn't restart after installing an update
+
 ## [1.10.0] - 2026-03-20
 
 ### Added
