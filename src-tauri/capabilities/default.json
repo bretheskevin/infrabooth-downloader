@@ -11,6 +11,7 @@
     "dialog:allow-open",
     "opener:allow-reveal-item-in-dir",
     "log:default",
-    "clipboard-manager:allow-read-text"
+    "clipboard-manager:allow-read-text",
+    "process:allow-restart"
   ]
 }
