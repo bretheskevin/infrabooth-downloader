@@ -6,10 +6,11 @@ import { useDownloadState } from './useDownloadState';
 import { useTrackDownloader } from './useTrackDownloader';
 import type { TrackInfo, DownloadProgressEvent } from '@/bindings';
 import type { DownloadState } from '@/types/download';
+import { buildTrackApiUrl } from '@/lib/soundcloud';
 
 function toTrackCore(track: TrackInfo) {
   return {
-    trackUrl: `https://api.soundcloud.com/tracks/${track.id}`,
+    trackUrl: buildTrackApiUrl(track.id),
     trackId: String(track.id),
     title: track.title,
     artist: track.user.username,

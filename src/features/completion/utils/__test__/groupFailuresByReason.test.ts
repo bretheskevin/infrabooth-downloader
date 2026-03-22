@@ -1,18 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { groupFailuresByReason } from '../groupFailuresByReason';
-import type { FailedTrack } from '@/features/queue/types/download';
-import type { ErrorCode } from '@/features/queue/types/errors';
+import { createMockFailedTrack } from '@/test/factories';
 
 const createMockTrack = (
   id: string,
-  errorCode: ErrorCode,
-  errorMessage: string
-): FailedTrack => ({
-  id,
-  title: `Track ${id}`,
-  artist: `Artist ${id}`,
-  error: { code: errorCode, message: errorMessage },
-});
+  errorCode: Parameters<typeof createMockFailedTrack>[0]['errorCode'],
+  errorMessage: string,
+) => createMockFailedTrack({ id, errorCode, errorMessage });
 
 describe('groupFailuresByReason', () => {
   it('should categorize GEO_BLOCKED errors as geo_blocked', () => {

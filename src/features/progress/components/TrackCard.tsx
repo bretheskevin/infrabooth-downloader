@@ -1,5 +1,6 @@
 import { memo } from 'react';
-import { cn, formatBytes } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { formatBytes } from '@/lib/format';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Music, Loader2 } from 'lucide-react';
 import { TrackStatusBadge } from './TrackStatusBadge';

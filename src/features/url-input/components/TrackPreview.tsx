@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clock } from 'lucide-react';
 import type { TrackInfo } from '@/features/url-input/types/playlist';
-import { formatDuration } from '@/lib/utils';
+import { formatDuration } from '@/lib/format';
 import { ArtworkThumbnail } from './ArtworkThumbnail';
 import { DownloadBar } from './DownloadBar';
 

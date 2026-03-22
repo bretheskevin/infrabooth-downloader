@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TrackList } from '../TrackList';
 import { useQueueStore } from '@/features/queue/store';
-import type { Track } from '@/features/queue/types/track';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -29,15 +28,7 @@ vi.mock('@tanstack/react-virtual', () => ({
   })),
 }));
 
-const createMockTracks = (count: number): Track[] =>
-  Array.from({ length: count }, (_, i) => ({
-    id: `track-${i + 1}`,
-    title: `Track ${i + 1}`,
-    artist: `Artist ${i + 1}`,
-    artworkUrl: null,
-    durationMs: 180000,
-    status: 'pending' as const,
-  }));
+import { createMockTracks } from '@/test/factories';
 
 describe('TrackList', () => {
   beforeEach(() => {

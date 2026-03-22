@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ProgressPanel } from '../ProgressPanel';
 import { useQueueStore } from '@/features/queue/store';
-import type { Track } from '@/features/queue/types/track';
+import { createMockTracks } from '@/test/factories';
 
 const renderWithTooltip = (ui: React.ReactElement) =>
   render(<TooltipProvider>{ui}</TooltipProvider>);
@@ -35,16 +35,6 @@ vi.mock('@tanstack/react-virtual', () => ({
     getTotalSize: () => count * 72,
   })),
 }));
-
-const createMockTracks = (count: number): Track[] =>
-  Array.from({ length: count }, (_, i) => ({
-    id: `track-${i + 1}`,
-    title: `Track ${i + 1}`,
-    artist: `Artist ${i + 1}`,
-    artworkUrl: null,
-    durationMs: 180000,
-    status: 'pending' as const,
-  }));
 
 describe('ProgressPanel', () => {
   beforeEach(() => {

@@ -4,6 +4,7 @@ import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { useTranslation } from 'react-i18next';
 import { useFolderSelection } from '@/hooks';
 import { useIsDownloadEnabled } from '@/features/settings';
+import { getFolderName } from '@/lib/utils';
 
 interface SearchFolderPickerProps {
   path: string;
@@ -23,7 +24,7 @@ export function SearchFolderPicker({ path, onPathChange }: SearchFolderPickerPro
 
   if (!isDownloadEnabled) return null;
 
-  const displayPath = path.split(/[/\\]/).filter(Boolean).pop() || path;
+  const displayPath = getFolderName(path);
 
   return (
     <div className="flex items-center gap-1">

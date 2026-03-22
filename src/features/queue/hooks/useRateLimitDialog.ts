@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { useCallback, useMemo } from 'react';
 import { commands } from '@/bindings';
+import { useTauriEventDialog } from '@/hooks/useTauriEventDialog';
 
 interface DownloadRateLimitedEvent {
   trackId: string;
@@ -14,49 +14,37 @@ interface RateLimitDialogState {
   resetTime: string | null;
 }
 
+const INITIAL_STATE: RateLimitDialogState = {
+  isOpen: false,
+  trackTitle: null,
+  resetTime: null,
+};
+
 export function useRateLimitDialog() {
-  const [state, setState] = useState<RateLimitDialogState>({
-    isOpen: false,
-    trackTitle: null,
-    resetTime: null,
-  });
+  const mapPayload = useMemo(
+    () => (payload: DownloadRateLimitedEvent): RateLimitDialogState => ({
+      isOpen: true,
+      trackTitle: payload.trackTitle,
+      resetTime: payload.resetTime,
+    }),
+    [],
+  );
 
-  useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
-    let mounted = true;
-
-    const setupListener = async () => {
-      unlisten = await listen<DownloadRateLimitedEvent>(
-        'download-rate-limited',
-        (event) => {
-          if (mounted && event.payload) {
-            setState({
-              isOpen: true,
-              trackTitle: event.payload.trackTitle,
-              resetTime: event.payload.resetTime,
-            });
-          }
-        }
-      );
-    };
-
-    setupListener();
-
-    return () => {
-      mounted = false;
-      unlisten?.();
-    };
-  }, []);
+  const { state, close } = useTauriEventDialog<DownloadRateLimitedEvent, RateLimitDialogState>(
+    'download-rate-limited',
+    mapPayload,
+    INITIAL_STATE,
+  );
 
   const handleRetry = useCallback(async () => {
-    setState({ isOpen: false, trackTitle: null, resetTime: null });
+    close(INITIAL_STATE);
     await commands.respondToRateLimitChoice('retry');
-  }, []);
+  }, [close]);
 
   const handleStop = useCallback(async () => {
-    setState({ isOpen: false, trackTitle: null, resetTime: null });
+    close(INITIAL_STATE);
     await commands.respondToRateLimitChoice('stop');
-  }, []);
+  }, [close]);
 
   return {
     isOpen: state.isOpen,

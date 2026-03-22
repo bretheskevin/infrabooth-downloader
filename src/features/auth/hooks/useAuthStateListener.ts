@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { logger } from '@/lib/logger';
+import { getErrorString } from '@/lib/utils';
 import { useAuthStore } from '@/features/auth/store';
 
 interface AuthStatePayload {
@@ -58,7 +59,7 @@ export function useAuthStateListener(): void {
           }
         });
       } catch (error) {
-        void logger.error(`Failed to setup auth listeners: ${error instanceof Error ? error.message : String(error)}`);
+        void logger.error(`Failed to setup auth listeners: ${getErrorString(error)}`);
       }
     };
 

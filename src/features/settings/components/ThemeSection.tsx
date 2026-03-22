@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/features/settings/store';
+import { announceToScreenReader } from '@/lib/accessibility';
 import { Monitor, Sun, Moon } from 'lucide-react';
 
 const THEME_OPTIONS = [
@@ -35,16 +36,9 @@ export function ThemeSection() {
 
     setTheme(newTheme);
 
-    const announcement = document.createElement('div');
-    announcement.setAttribute('role', 'status');
-    announcement.setAttribute('aria-live', 'polite');
-    announcement.setAttribute('aria-atomic', 'true');
-    announcement.className = 'sr-only';
-    announcement.textContent = t('accessibility.themeChanged', {
+    announceToScreenReader(t('accessibility.themeChanged', {
       theme: t(THEME_OPTIONS.find((opt) => opt.value === newTheme)?.labelKey ?? ''),
-    });
-    document.body.appendChild(announcement);
-    setTimeout(() => announcement.remove(), 1000);
+    }));
   }, [setTheme, t]);
 
   return (

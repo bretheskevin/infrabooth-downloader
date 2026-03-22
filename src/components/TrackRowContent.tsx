@@ -1,6 +1,7 @@
 import { Music } from 'lucide-react';
 import { PlayOverlay } from '@/features/player';
-import { cn, formatDuration, formatBytes } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { formatDuration, formatBytes } from '@/lib/format';
 import type { TrackInfo } from '@/bindings';
 
 interface DownloadProgress {

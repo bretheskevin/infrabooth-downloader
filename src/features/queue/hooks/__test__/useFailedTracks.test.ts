@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useFailedTracks } from '../useFailedTracks';
 import { useQueueStore } from '@/features/queue/store';
-import type { Track } from '@/features/queue/types/track';
+import { createMockTrack as createFactory } from '@/test/factories';
 
 // Mock the queue store
 vi.mock('@/features/queue/store', () => ({
@@ -13,17 +13,9 @@ const createMockTrack = (
   id: string,
   title: string,
   artist: string,
-  status: Track['status'],
-  error?: Track['error']
-): Track => ({
-  id,
-  title,
-  artist,
-  artworkUrl: null,
-  durationMs: 180000,
-  status,
-  error,
-});
+  status: Parameters<typeof createFactory>[0]['status'],
+  error?: Parameters<typeof createFactory>[0]['error'],
+) => createFactory({ id, title, artist, status, error });
 
 describe('useFailedTracks', () => {
   beforeEach(() => {

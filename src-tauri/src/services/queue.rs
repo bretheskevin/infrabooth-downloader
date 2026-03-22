@@ -119,14 +119,7 @@ async fn execute_download<R: Runtime>(
         Ok(_) => {
             let _ = app.emit(
                 events::DOWNLOAD_PROGRESS,
-                DownloadProgressEvent {
-                    track_id: track_id.clone(),
-                    status: "complete".to_string(),
-                    percent: Some(1.0),
-                    downloaded_bytes: None,
-                    total_bytes: None,
-                    error: None,
-                },
+                DownloadProgressEvent::complete(track_id.clone()),
             );
             TrackOutcome::Completed { track_id }
         }
@@ -137,14 +130,7 @@ async fn execute_download<R: Runtime>(
             let reset_time = info.as_ref().and_then(|i| i.reset_time.clone());
             let _ = app.emit(
                 events::DOWNLOAD_PROGRESS,
-                DownloadProgressEvent {
-                    track_id: track_id.clone(),
-                    status: "rate_limited".to_string(),
-                    percent: None,
-                    downloaded_bytes: None,
-                    total_bytes: None,
-                    error: None,
-                },
+                DownloadProgressEvent::rate_limited(track_id.clone()),
             );
             TrackOutcome::RateLimited { track_id, reset_time }
         }
@@ -155,17 +141,13 @@ async fn execute_download<R: Runtime>(
             log::error!("[queue] Track {} failed: {}", track_id, e);
             let _ = app.emit(
                 events::DOWNLOAD_PROGRESS,
-                DownloadProgressEvent {
-                    track_id: track_id.clone(),
-                    status: "failed".to_string(),
-                    percent: None,
-                    downloaded_bytes: None,
-                    total_bytes: None,
-                    error: Some(crate::models::ErrorResponse {
+                DownloadProgressEvent::failed(
+                    track_id.clone(),
+                    crate::models::ErrorResponse {
                         code: e.code().to_string(),
                         message: e.to_string(),
-                    }),
-                },
+                    },
+                ),
             );
             TrackOutcome::Failed {
                 track_id,
@@ -372,14 +354,7 @@ impl DownloadQueue {
             if existing_ids.contains(&item.core.track_id) {
                 let _ = app.emit(
                     events::DOWNLOAD_PROGRESS,
-                    DownloadProgressEvent {
-                        track_id: item.core.track_id.clone(),
-                        status: "skipped".to_string(),
-                        percent: Some(1.0),
-                        downloaded_bytes: None,
-                        total_bytes: None,
-                        error: None,
-                    },
+                    DownloadProgressEvent::skipped(item.core.track_id.clone()),
                 );
                 skipped_count += 1;
             } else {

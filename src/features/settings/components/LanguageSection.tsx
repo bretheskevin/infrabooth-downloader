@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/features/settings/store';
+import { announceToScreenReader } from '@/lib/accessibility';
 
 const SUPPORTED_LANGUAGES = [
   { code: 'en', labelKey: 'settings.languageEnglish' },
@@ -27,16 +28,8 @@ export function LanguageSection() {
     i18n.changeLanguage(newLanguage);
     document.documentElement.lang = newLanguage;
 
-    // Announce to screen readers using translation
-    const announcement = document.createElement('div');
-    announcement.setAttribute('role', 'status');
-    announcement.setAttribute('aria-live', 'polite');
-    announcement.setAttribute('aria-atomic', 'true');
-    announcement.className = 'sr-only';
     const languageName = newLanguage === 'en' ? 'English' : 'Français';
-    announcement.textContent = t('accessibility.languageChanged', { language: languageName });
-    document.body.appendChild(announcement);
-    setTimeout(() => announcement.remove(), 1000);
+    announceToScreenReader(t('accessibility.languageChanged', { language: languageName }));
   };
 
   return (

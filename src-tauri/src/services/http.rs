@@ -27,6 +27,41 @@ pub trait RequestBuilderExt {
     fn with_oauth(self, token: Option<&str>) -> Self;
 }
 
+#[derive(Debug)]
+pub enum ApiResponseError {
+    AuthRequired,
+    RateLimited,
+    NotFound,
+    GeoBlocked,
+    FetchFailed(String),
+}
+
+impl std::fmt::Display for ApiResponseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::AuthRequired => write!(f, "Authentication required"),
+            Self::RateLimited => write!(f, "Rate limited by SoundCloud"),
+            Self::NotFound => write!(f, "Not found"),
+            Self::GeoBlocked => write!(f, "Access forbidden"),
+            Self::FetchFailed(msg) => write!(f, "{}", msg),
+        }
+    }
+}
+
+impl std::error::Error for ApiResponseError {}
+
+pub fn validate_api_response(status: reqwest::StatusCode) -> Result<(), ApiResponseError> {
+    use reqwest::StatusCode;
+    match status {
+        StatusCode::TOO_MANY_REQUESTS => Err(ApiResponseError::RateLimited),
+        StatusCode::UNAUTHORIZED => Err(ApiResponseError::AuthRequired),
+        StatusCode::FORBIDDEN => Err(ApiResponseError::GeoBlocked),
+        StatusCode::NOT_FOUND => Err(ApiResponseError::NotFound),
+        s if !s.is_success() => Err(ApiResponseError::FetchFailed(format!("HTTP {}", s))),
+        _ => Ok(()),
+    }
+}
+
 impl RequestBuilderExt for reqwest::RequestBuilder {
     fn with_oauth(self, token: Option<&str>) -> Self {
         match token {

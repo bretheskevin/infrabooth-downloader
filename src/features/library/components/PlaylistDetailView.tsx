@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { useFolderSelection } from '@/hooks';
-import { useShallow } from 'zustand/react/shallow';
 import { usePlayContext, usePlayerStore } from '@/features/player';
+import { usePlayerControls } from '@/hooks/usePlayerControls';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useTrackSelection } from '../hooks/useTrackSelection';
@@ -46,9 +46,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
   const { displayTracks, downloadedIds, effectivePath, setLocalPath, downloadTrack } = viewState;
 
   const { playTrack, syncQueue } = usePlayContext(displayTracks);
-  const { currentTrackId, playerState } = usePlayerStore(
-    useShallow((s) => ({ currentTrackId: s.currentTrack?.trackId, playerState: s.state })),
-  );
+  const { currentTrackId, isPlaying } = usePlayerControls();
 
   useSyncQueueOnStreamEnd(isStreaming, currentTrackId, syncQueue);
 
@@ -125,7 +123,7 @@ export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: Playl
           onPauseTrack={() => usePlayerStore.getState().pause()}
           onResumeTrack={() => usePlayerStore.getState().resume()}
           currentlyPlayingId={currentTrackId}
-          isPlayerPlaying={playerState === 'playing'}
+          isPlayerPlaying={isPlaying}
           onHoverTrack={handlers.handleHoverTrack}
           onMouseDownTrack={handlers.handleMouseDownTrack}
           onRemoveFromPlaylist={playlist.is_owned ? setTrackToRemove : undefined}
