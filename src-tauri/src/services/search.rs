@@ -5,9 +5,8 @@ use thiserror::Error;
 use url::Url;
 
 use crate::models::error::HasErrorCode;
-use crate::services::http::{API_V2_BASE, HTTP_CLIENT};
-use crate::services::playlist::{build_download_url, TrackInfo, UserInfo};
-use crate::services::stream;
+use crate::services::http::{validate_api_response, API_V2_BASE, HTTP_CLIENT};
+use crate::services::playlist::{RawTrackInfo, TrackInfo};
 
 // === Error Type ===
 
@@ -19,6 +18,12 @@ pub enum SearchError {
     #[error("Rate limited by SoundCloud")]
     RateLimited,
 
+    #[error("Authentication required")]
+    AuthRequired,
+
+    #[error("Access forbidden")]
+    GeoBlocked,
+
     #[error("Network error: {0}")]
     NetworkError(#[from] reqwest::Error),
 
@@ -26,11 +31,26 @@ pub enum SearchError {
     InvalidResponse,
 }
 
+impl From<crate::services::http::ApiResponseError> for SearchError {
+    fn from(e: crate::services::http::ApiResponseError) -> Self {
+        use crate::services::http::ApiResponseError;
+        match e {
+            ApiResponseError::RateLimited => Self::RateLimited,
+            ApiResponseError::AuthRequired => Self::AuthRequired,
+            ApiResponseError::GeoBlocked => Self::GeoBlocked,
+            ApiResponseError::NotFound => Self::FetchFailed("Not found".to_string()),
+            ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
+        }
+    }
+}
+
 impl HasErrorCode for SearchError {
     fn code(&self) -> &'static str {
         match self {
             SearchError::FetchFailed(_) => "SEARCH_FAILED",
             SearchError::RateLimited => "RATE_LIMITED",
+            SearchError::AuthRequired => "AUTH_REQUIRED",
+            SearchError::GeoBlocked => "GEO_BLOCKED",
             SearchError::NetworkError(_) => "NETWORK_ERROR",
             SearchError::InvalidResponse => "SEARCH_FAILED",
         }
@@ -40,31 +60,8 @@ impl HasErrorCode for SearchError {
 // === Internal deserialization types ===
 
 #[derive(Debug, Deserialize)]
-struct RawSearchTrack {
-    id: u64,
-    title: String,
-    user: RawSearchUser,
-    artwork_url: Option<String>,
-    duration: u64,
-    /// SoundCloud permalink URL. Always present in API responses; `#[serde(default)]` is a safety net.
-    #[serde(default)]
-    permalink_url: String,
-    media: Option<stream::MediaInfo>,
-    waveform_url: Option<String>,
-    #[serde(default)]
-    downloadable: bool,
-    download_url: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RawSearchUser {
-    username: String,
-    avatar_url: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
 struct SearchApiResponse {
-    collection: Vec<RawSearchTrack>,
+    collection: Vec<RawTrackInfo>,
     total_results: Option<i64>,
 }
 
@@ -74,31 +71,6 @@ struct SearchApiResponse {
 pub struct SearchResponse {
     pub collection: Vec<TrackInfo>,
     pub total_results: Option<i64>,
-}
-
-// === Mapping ===
-
-fn map_raw_track(raw: RawSearchTrack) -> TrackInfo {
-    if let Some(media) = &raw.media {
-        if !media.transcodings.is_empty() {
-            stream::cache_transcodings(raw.id, media.transcodings.clone());
-        }
-    }
-
-    TrackInfo {
-        id: raw.id,
-        title: raw.title,
-        user: UserInfo {
-            username: raw.user.username,
-            avatar_url: raw.user.avatar_url,
-        },
-        artwork_url: raw.artwork_url,
-        duration: raw.duration,
-        permalink_url: raw.permalink_url,
-        waveform_url: raw.waveform_url,
-        downloadable: raw.downloadable,
-        download_url: build_download_url(raw.downloadable, raw.download_url, raw.id),
-    }
 }
 
 // === Service function ===
@@ -125,13 +97,7 @@ pub async fn search_tracks(
         .send()
         .await?;
 
-    let status = response.status();
-    if status == 429 {
-        return Err(SearchError::RateLimited);
-    }
-    if !status.is_success() {
-        return Err(SearchError::FetchFailed(format!("HTTP {}", status)));
-    }
+    validate_api_response(response.status())?;
 
     let api_response: SearchApiResponse = response
         .json()
@@ -141,7 +107,7 @@ pub async fn search_tracks(
     let collection = api_response
         .collection
         .into_iter()
-        .map(map_raw_track)
+        .map(TrackInfo::from)
         .collect();
 
     Ok(SearchResponse {
@@ -195,23 +161,17 @@ mod tests {
     }
 
     #[test]
-    fn test_map_raw_track() {
-        let raw = RawSearchTrack {
-            id: 456,
-            title: "My Song".to_string(),
-            user: RawSearchUser {
-                username: "Artist".to_string(),
-                avatar_url: None,
-            },
-            artwork_url: Some("https://artwork.jpg".to_string()),
-            duration: 240000,
-            permalink_url: "https://soundcloud.com/artist/my-song".to_string(),
-            media: None,
-            waveform_url: None,
-            downloadable: false,
-            download_url: None,
-        };
-        let track = map_raw_track(raw);
+    fn test_raw_track_to_track_info() {
+        let json = r#"{
+            "id": 456,
+            "title": "My Song",
+            "user": { "username": "Artist" },
+            "artwork_url": "https://artwork.jpg",
+            "duration": 240000,
+            "permalink_url": "https://soundcloud.com/artist/my-song"
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
         assert_eq!(track.id, 456);
         assert_eq!(track.title, "My Song");
         assert_eq!(track.user.username, "Artist");
@@ -220,23 +180,16 @@ mod tests {
     }
 
     #[test]
-    fn test_map_raw_track_null_artwork() {
-        let raw = RawSearchTrack {
-            id: 789,
-            title: "No Art".to_string(),
-            user: RawSearchUser {
-                username: "User".to_string(),
-                avatar_url: None,
-            },
-            artwork_url: None,
-            duration: 60000,
-            permalink_url: "https://soundcloud.com/user/no-art".to_string(),
-            media: None,
-            waveform_url: None,
-            downloadable: false,
-            download_url: None,
-        };
-        let track = map_raw_track(raw);
+    fn test_raw_track_to_track_info_null_artwork() {
+        let json = r#"{
+            "id": 789,
+            "title": "No Art",
+            "user": { "username": "User" },
+            "artwork_url": null,
+            "duration": 60000
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
         assert!(track.artwork_url.is_none());
     }
 
@@ -258,6 +211,7 @@ mod tests {
 
     #[test]
     fn test_search_response_serializes() {
+        use crate::services::playlist::UserInfo;
         let response = SearchResponse {
             collection: vec![TrackInfo {
                 id: 1,

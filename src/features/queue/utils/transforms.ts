@@ -1,6 +1,7 @@
 import type { TrackInfo } from '@/features/url-input';
 import type { Track } from '@/features/queue/types/track';
 import type { TrackCore } from '@/bindings';
+import { buildTrackApiUrl } from '@/lib/soundcloud';
 
 /**
  * Convert a single TrackInfo to a queue Track
@@ -29,7 +30,7 @@ export function playlistTracksToQueueTracks(tracks: TrackInfo[]): Track[] {
  */
 export function queueTrackToDownloadRequest(track: Track): TrackCore {
   return {
-    trackUrl: `https://api.soundcloud.com/tracks/${track.id}`,
+    trackUrl: buildTrackApiUrl(track.id),
     trackId: track.id,
     title: track.title,
     artist: track.artist,

@@ -5,7 +5,7 @@ import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import { commands } from '@/bindings';
 import type { PlaylistInfo } from '@/features/url-input/types/playlist';
 import { useSettingsStore } from '@/features/settings/store';
-import { getArtworkUrl } from '@/lib/utils';
+import { getArtworkUrl } from '@/lib/soundcloud';
 import { ArtworkThumbnail } from './ArtworkThumbnail';
 import { DownloadBar } from './DownloadBar';
 

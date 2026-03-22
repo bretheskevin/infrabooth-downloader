@@ -9,59 +9,10 @@ export function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-/**
- * Format duration in milliseconds to mm:ss
- *
- * @param ms - Duration in milliseconds
- * @returns Formatted duration string (e.g., "3:05", "61:01")
- */
-export function formatDuration(ms: number): string {
-  const totalSeconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+export function getErrorString(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
-/**
- * Format duration in milliseconds to human-readable string
- *
- * @param ms - Duration in milliseconds
- * @returns Formatted duration string (e.g., "45 min", "2h 30m")
- */
-export function formatTotalDuration(ms: number): string {
-  const totalMinutes = Math.floor(ms / 60000);
-  if (totalMinutes < 60) return `${totalMinutes} min`;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
-}
-
-/**
- * Format bytes to human readable string
- *
- * @param bytes - Number of bytes
- * @returns Formatted string (e.g., "5.2 MB", "128 KB")
- */
-export function formatBytes(bytes: number): string {
-  if (bytes < 1000) return `${bytes} B`;
-  if (bytes < 1000 * 1000) return `${(bytes / 1000).toFixed(1)} KB`;
-  if (bytes < 1000 * 1000 * 1000) return `${(bytes / (1000 * 1000)).toFixed(1)} MB`;
-  return `${(bytes / (1000 * 1000 * 1000)).toFixed(1)} GB`;
-}
-
-/**
- * Valid SoundCloud artwork sizes.
- * SoundCloud only serves artwork at these specific dimensions.
- */
-export type ArtworkSize = 20 | 32 | 47 | 67 | 100 | 300 | 500;
-
-/**
- * Get SoundCloud artwork URL at a specific size.
- *
- * SoundCloud serves `-large` (100x100) by default. Replace with `-t{size}x{size}`
- * to get the desired resolution.
- */
-export function getArtworkUrl(url: string | null, size: ArtworkSize = 67): string | null {
-  if (!url) return null;
-  return url.replace('-large', `-t${size}x${size}`);
+export function getFolderName(path: string): string {
+  return path.split(/[/\\]/).filter(Boolean).pop() ?? path;
 }

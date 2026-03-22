@@ -17,30 +17,57 @@ pub struct DownloadRateLimitedEvent {
     pub reset_time: Option<String>,
 }
 
+pub struct ChoiceState<T: Clone + Send + Sync> {
+    sender: watch::Sender<Option<T>>,
+    receiver: watch::Receiver<Option<T>>,
+}
+
+impl<T: Clone + Send + Sync> ChoiceState<T> {
+    pub fn new() -> Self {
+        let (sender, receiver) = watch::channel(None);
+        Self { sender, receiver }
+    }
+
+    pub fn subscribe(&self) -> watch::Receiver<Option<T>> {
+        self.receiver.clone()
+    }
+
+    pub fn send_choice(&self, choice: T) {
+        let _ = self.sender.send(Some(choice));
+    }
+
+    pub fn reset(&self) {
+        let _ = self.sender.send(None);
+    }
+}
+
+impl<T: Clone + Send + Sync> Default for ChoiceState<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct RateLimitChoiceState {
-    choice_sender: watch::Sender<Option<RateLimitChoice>>,
-    choice_receiver: watch::Receiver<Option<RateLimitChoice>>,
+    inner: ChoiceState<RateLimitChoice>,
 }
 
 impl RateLimitChoiceState {
     pub fn new() -> Self {
-        let (sender, receiver) = watch::channel(None);
         Self {
-            choice_sender: sender,
-            choice_receiver: receiver,
+            inner: ChoiceState::new(),
         }
     }
 
     pub fn subscribe(&self) -> watch::Receiver<Option<RateLimitChoice>> {
-        self.choice_receiver.clone()
+        self.inner.subscribe()
     }
 
     pub fn send_choice(&self, choice: RateLimitChoice) {
-        let _ = self.choice_sender.send(Some(choice));
+        self.inner.send_choice(choice);
     }
 
     pub fn reset(&self) {
-        let _ = self.choice_sender.send(None);
+        self.inner.reset();
     }
 }
 

@@ -19,7 +19,7 @@ use thiserror::Error;
 use tokio::time::sleep;
 
 use crate::services::client_id;
-use crate::services::http::{RequestBuilderExt, API_V2_BASE};
+use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE};
 use crate::services::stream;
 
 #[derive(Debug, Deserialize)]
@@ -52,16 +52,27 @@ pub enum PlaylistError {
     RateLimited,
 }
 
+impl From<crate::services::http::ApiResponseError> for PlaylistError {
+    fn from(e: crate::services::http::ApiResponseError) -> Self {
+        use crate::services::http::ApiResponseError;
+        match e {
+            ApiResponseError::AuthRequired => Self::AuthRequired,
+            ApiResponseError::RateLimited => Self::RateLimited,
+            ApiResponseError::NotFound => Self::TrackNotFound,
+            ApiResponseError::GeoBlocked => Self::GeoBlocked,
+            ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct UserInfo {
     pub username: String,
     pub avatar_url: Option<String>,
 }
 
-/// Raw user information from SoundCloud API.
-/// Used for deserializing the API response with avatar_url.
 #[derive(Debug, Clone, Deserialize)]
-struct RawUserInfo {
+pub(crate) struct RawUserInfo {
     pub username: String,
     pub avatar_url: Option<String>,
 }
@@ -77,26 +88,19 @@ pub struct PublisherMetadata {
 /// Raw track information from SoundCloud API.
 /// Used for deserializing the API response before transforming to TrackInfo.
 #[derive(Debug, Clone, Deserialize)]
-struct RawTrackInfo {
+pub(crate) struct RawTrackInfo {
     pub id: u64,
     pub title: String,
     pub user: RawUserInfo,
     pub artwork_url: Option<String>,
-    /// Duration in milliseconds.
     pub duration: u64,
-    /// Publisher metadata containing the actual artist name for label content.
     pub publisher_metadata: Option<PublisherMetadata>,
-    /// SoundCloud permalink URL. Always present in API responses; `#[serde(default)]` is a safety net.
     #[serde(default)]
     pub permalink_url: String,
-    /// Media section with transcodings — cached for instant playback resolution.
     pub media: Option<stream::MediaInfo>,
-    /// Whether the track has free download enabled by the artist.
     #[serde(default)]
     pub downloadable: bool,
-    /// URL to download the original file (requires OAuth token).
     pub download_url: Option<String>,
-    /// URL to fetch waveform data (JSON with samples array).
     pub waveform_url: Option<String>,
 }
 
@@ -223,6 +227,17 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
     }
 }
 
+pub fn build_playlist_url(id: u64, client_id: &str, secret_token: Option<&str>) -> String {
+    let mut url = format!(
+        "{}/playlists/{}?representation=full&client_id={}",
+        API_V2_BASE, id, client_id
+    );
+    if let Some(token) = secret_token {
+        url.push_str(&format!("&secret_token={}", token));
+    }
+    url
+}
+
 async fn resolve_url<T: serde::de::DeserializeOwned>(
     url: &str,
     cid: &str,
@@ -240,29 +255,9 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
 
     let response = request.send().await?;
 
-    if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
-        return Err(PlaylistError::RateLimited);
-    }
-
-    if response.status() == reqwest::StatusCode::NOT_FOUND {
-        return Err(PlaylistError::TrackNotFound);
-    }
-
-    if response.status() == reqwest::StatusCode::FORBIDDEN {
-        return Err(PlaylistError::GeoBlocked);
-    }
-
-    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-        return Err(PlaylistError::AuthRequired);
-    }
-
-    if !response.status().is_success() && response.status() != reqwest::StatusCode::FOUND {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        return Err(PlaylistError::FetchFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )));
+    let status = response.status();
+    if status != reqwest::StatusCode::FOUND {
+        validate_api_response(status)?;
     }
 
     let body = response.text().await?;
@@ -277,22 +272,7 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
                 .send()
                 .await?;
 
-            if redirect_response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
-                return Err(PlaylistError::RateLimited);
-            }
-
-            if redirect_response.status() == reqwest::StatusCode::UNAUTHORIZED {
-                return Err(PlaylistError::AuthRequired);
-            }
-
-            if !redirect_response.status().is_success() {
-                let status = redirect_response.status();
-                let body = redirect_response.text().await.unwrap_or_default();
-                return Err(PlaylistError::FetchFailed(format!(
-                    "HTTP {}: {}",
-                    status, body
-                )));
-            }
+            validate_api_response(redirect_response.status())?;
 
             return redirect_response
                 .json()
@@ -800,13 +780,7 @@ where
 {
     let cid = get_cid().await?;
 
-    let mut url = format!(
-        "{}/playlists/{}?representation=full&client_id={}",
-        API_V2_BASE, id, cid
-    );
-    if let Some(token) = secret_token {
-        url.push_str(&format!("&secret_token={}", token));
-    }
+    let url = build_playlist_url(id, &cid, secret_token);
 
     log::info!("[soundcloud] Fetching playlist by ID: {}", id);
 
@@ -816,16 +790,7 @@ where
         .send()
         .await?;
 
-    let status = response.status();
-    if status == reqwest::StatusCode::UNAUTHORIZED {
-        return Err(PlaylistError::AuthRequired);
-    }
-    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-        return Err(PlaylistError::RateLimited);
-    }
-    if !status.is_success() {
-        return Err(PlaylistError::FetchFailed(format!("HTTP {}", status)));
-    }
+    validate_api_response(response.status())?;
 
     let playlist: HydrationPlaylist = response
         .json()

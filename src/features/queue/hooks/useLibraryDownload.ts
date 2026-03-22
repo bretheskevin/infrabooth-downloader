@@ -2,9 +2,10 @@ import { useState, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { useQueueStore } from '../store';
-import { startDownloadQueue, cancelDownloadQueue } from '../api/download';
+import { cancelDownloadQueue } from '../api/download';
 import { waitForQueueIdle } from '../store';
-import { trackInfoToQueueTrack, queueTrackToDownloadRequest } from '../utils/transforms';
+import { trackInfoToQueueTrack } from '../utils/transforms';
+import { dispatchDownloadQueue } from '../utils/dispatchDownloadQueue';
 import { useSettingsStore } from '@/features/settings';
 import { logger } from '@/lib/logger';
 import type { TrackInfo } from '@/bindings';
@@ -25,8 +26,7 @@ export function useLibraryDownload({ onNavigateToDownload }: UseLibraryDownloadO
 
   const executeDownload = useCallback(
     async (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => {
-      const { isComplete, failedCount, clearQueue, enqueueTracks, setInitializing, setOutputDir } =
-        useQueueStore.getState();
+      const { isComplete, failedCount, clearQueue } = useQueueStore.getState();
       const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } =
         useSettingsStore.getState();
 
@@ -34,25 +34,24 @@ export function useLibraryDownload({ onNavigateToDownload }: UseLibraryDownloadO
       if (isComplete) clearQueue();
 
       const effectiveOutputDir = outputDir || downloadPath || null;
-
       const queueTracks = tracks.map(trackInfoToQueueTrack);
-      enqueueTracks(queueTracks);
+      const { enqueueTracks, setOutputDir, setInitializing } = useQueueStore.getState();
 
-      setOutputDir(effectiveOutputDir);
-      setInitializing(true);
       onNavigateToDownload();
 
       try {
-        await startDownloadQueue({
-          tracks: queueTracks.map(queueTrackToDownloadRequest),
+        await dispatchDownloadQueue({
+          queueTracks,
           albumName: playlistTitle,
           outputDir: effectiveOutputDir,
           maxConcurrent: maxConcurrentDownloads,
           preserveOrder: preservePlaylistOrder,
+          enqueueTracks,
+          setOutputDir,
+          setInitializing,
         });
       } catch (error) {
         logger.error(`[useLibraryDownload] Download failed: ${error}`);
-        useQueueStore.getState().setInitializing(false);
       }
     },
     [onNavigateToDownload],

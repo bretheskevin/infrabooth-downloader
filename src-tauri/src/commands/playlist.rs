@@ -1,7 +1,7 @@
 use crate::models::url::ValidationResult;
 use crate::models::PlaylistTracksResponse;
-use crate::services::client_id;
-use crate::services::http::RequestBuilderExt;
+use crate::services::http::{RequestBuilderExt, API_V2_BASE};
+use crate::services::playlist::build_playlist_url;
 use crate::services::playlist::{
     fetch_playlist_info, fetch_track_info, PlaylistInfo, TrackInfo,
 };
@@ -58,21 +58,11 @@ async fn modify_playlist_tracks<F>(
 where
     F: FnOnce(Vec<u64>) -> Result<Vec<u64>, String>,
 {
-    let auth_state = app.state::<AuthState>();
-    let token = auth_state
-        .get_token()
-        .ok_or_else(|| "Authentication required".to_string())?;
-    let datadome = auth_state.get_datadome();
-
-    let client_id = client_id::get_client_id()
-        .await
-        .map_err(|e| format!("Failed to get client_id: {}", e))?;
+    let datadome = app.state::<AuthState>().get_datadome();
+    let (token, client_id) = super::require_auth_and_cid(app).await?;
 
     let client = &*crate::services::http::HTTP_CLIENT;
-    let url = format!(
-        "https://api-v2.soundcloud.com/playlists/{}?representation=full&client_id={}",
-        playlist_id, client_id
-    );
+    let url = build_playlist_url(playlist_id, &client_id, None);
 
     let response = client
         .get(&url)
@@ -97,8 +87,8 @@ where
     let new_track_ids = modifier(track_ids)?;
 
     let put_url = format!(
-        "https://api-v2.soundcloud.com/playlists/{}?client_id={}",
-        playlist_id, client_id
+        "{}/playlists/{}?client_id={}",
+        API_V2_BASE, playlist_id, client_id
     );
 
     let mut put_request = client

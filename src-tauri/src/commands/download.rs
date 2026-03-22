@@ -75,31 +75,20 @@ pub async fn download_track_full(
         .map_err(|e| {
             let _ = app.emit(
                 events::DOWNLOAD_PROGRESS,
-                DownloadProgressEvent {
-                    track_id: track_id.clone(),
-                    status: "failed".to_string(),
-                    percent: None,
-                    downloaded_bytes: None,
-                    total_bytes: None,
-                    error: Some(ErrorResponse {
+                DownloadProgressEvent::failed(
+                    track_id.clone(),
+                    ErrorResponse {
                         code: e.code().to_string(),
                         message: e.to_string(),
-                    }),
-                },
+                    },
+                ),
             );
             ErrorResponse::from(e)
         })?;
 
     let _ = app.emit(
         events::DOWNLOAD_PROGRESS,
-        DownloadProgressEvent {
-            track_id,
-            status: "complete".to_string(),
-            percent: Some(1.0),
-            downloaded_bytes: None,
-            total_bytes: None,
-            error: None,
-        },
+        DownloadProgressEvent::complete(track_id),
     );
 
     Ok(result_path.to_str().unwrap_or_default().to_string())

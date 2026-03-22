@@ -2,12 +2,8 @@ import { useCallback } from 'react';
 import type { PlaylistInfo, TrackInfo } from '@/bindings';
 import { useQueueStore } from '../store';
 import { useSettingsStore } from '@/features/settings/store';
-import { startDownloadQueue } from '../api/download';
-import {
-  playlistTracksToQueueTracks,
-  trackInfoToQueueTrack,
-  queueTrackToDownloadRequest,
-} from '../utils/transforms';
+import { playlistTracksToQueueTracks, trackInfoToQueueTrack } from '../utils/transforms';
+import { dispatchDownloadQueue } from '../utils/dispatchDownloadQueue';
 import { isPlaylist } from '@/features/url-input';
 import { logger } from '@/lib/logger';
 
@@ -36,23 +32,21 @@ export function useDownloadInitiator() {
         `[useDownloadInitiator] Initiating download for ${queueTracks.length} tracks`
       );
 
-      enqueueTracks(queueTracks);
-      setOutputDir(outputDir);
-      setInitializing(true);
-
       const albumName = isPlaylist(mediaInfo) ? mediaInfo.title : undefined;
 
       try {
-        await startDownloadQueue({
-          tracks: queueTracks.map(queueTrackToDownloadRequest),
+        await dispatchDownloadQueue({
+          queueTracks,
           albumName: albumName ?? null,
           outputDir,
           maxConcurrent: maxConcurrentDownloads,
           preserveOrder: preservePlaylistOrder,
+          enqueueTracks,
+          setOutputDir,
+          setInitializing,
         });
       } catch (error) {
         void logger.error(`[useDownloadInitiator] Download failed: ${error}`);
-        setInitializing(false);
         throw error;
       }
     },

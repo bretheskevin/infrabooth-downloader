@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn, getArtworkUrl } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { getArtworkUrl } from '@/lib/soundcloud';
 import { api } from '@/lib/tauri';
 import { useAddToPlaylist } from '@/hooks/useAddToPlaylist';
 import { useLibraryPlaylists } from '@/features/library/hooks/useLibraryPlaylists';

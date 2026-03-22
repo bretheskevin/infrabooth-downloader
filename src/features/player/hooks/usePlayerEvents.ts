@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { type ArtworkSize, getArtworkUrl } from '@/lib/utils';
+import { type ArtworkSize, getArtworkUrl } from '@/lib/soundcloud';
 import { usePlayerStore } from '../store';
 
 const ARTWORK_SIZE: ArtworkSize = 500;

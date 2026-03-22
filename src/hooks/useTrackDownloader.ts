@@ -3,13 +3,13 @@ import { commands } from '@/bindings';
 import type { TrackCore } from '@/bindings';
 import { logger } from '@/lib/logger';
 
-interface TrackInfo {
+interface CachedTrackInfo {
   title: string;
   artist: string;
 }
 
 export function useTrackDownloader() {
-  const trackInfoCache = useRef<Map<string, TrackInfo>>(new Map());
+  const trackInfoCache = useRef<Map<string, CachedTrackInfo>>(new Map());
 
   const downloadTrack = useCallback(async (
     track: TrackCore,

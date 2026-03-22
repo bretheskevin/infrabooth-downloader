@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
+import { usePlayPauseToggle } from '@/hooks/usePlayPauseToggle';
 import type { TrackInfo } from '@/bindings';
-import { getArtworkUrl } from '@/lib/utils';
+import { getArtworkUrl } from '@/lib/soundcloud';
 import { TrackRow } from '@/components/TrackRow';
 import { TrackDownloadAction } from '@/components/TrackDownloadAction';
 import { useHoverPreload } from '@/hooks/useHoverPreload';
@@ -33,15 +34,9 @@ export function SearchResultItem({
   const { onHoverStart, onHoverEnd } = useHoverPreload(boundHover);
   const handleMouseDown = useCallback(() => onMouseDownTrack?.(track), [onMouseDownTrack, track]);
 
-  const handlePlayPause = useCallback(() => {
-    if (isCurrentlyPlaying && isPlayerPlaying) {
-      onPause?.();
-    } else if (isCurrentlyPlaying && !isPlayerPlaying) {
-      onResume?.();
-    } else {
-      onPlay?.(index);
-    }
-  }, [isCurrentlyPlaying, isPlayerPlaying, onPause, onResume, onPlay, index]);
+  const handlePlayPause = usePlayPauseToggle({
+    isCurrentlyPlaying, isPlayerPlaying, onPlay, onPause, onResume, index,
+  });
 
   return (
     <TrackRow

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { useCallback, useMemo } from 'react';
 import { commands } from '@/bindings';
 import { logger } from '@/lib/logger';
+import { getErrorString } from '@/lib/utils';
 import { refreshAuth } from '../api';
+import { useTauriEventDialog } from '@/hooks/useTauriEventDialog';
 
 interface DownloadAuthNeededEvent {
   trackTitle: string;
@@ -13,40 +14,28 @@ interface AuthChoiceDialogState {
   trackTitle: string | null;
 }
 
+const INITIAL_STATE: AuthChoiceDialogState = {
+  isOpen: false,
+  trackTitle: null,
+};
+
 export function useAuthChoiceDialog() {
-  const [state, setState] = useState<AuthChoiceDialogState>({
-    isOpen: false,
-    trackTitle: null,
-  });
+  const mapPayload = useMemo(
+    () => (payload: DownloadAuthNeededEvent): AuthChoiceDialogState => ({
+      isOpen: true,
+      trackTitle: payload.trackTitle,
+    }),
+    [],
+  );
 
-  useEffect(() => {
-    let unlisten: UnlistenFn | undefined;
-    let mounted = true;
-
-    const setupListener = async () => {
-      unlisten = await listen<DownloadAuthNeededEvent>(
-        'download-auth-needed',
-        (event) => {
-          if (mounted && event.payload) {
-            setState({
-              isOpen: true,
-              trackTitle: event.payload.trackTitle,
-            });
-          }
-        }
-      );
-    };
-
-    setupListener();
-
-    return () => {
-      mounted = false;
-      unlisten?.();
-    };
-  }, []);
+  const { state, close } = useTauriEventDialog<DownloadAuthNeededEvent, AuthChoiceDialogState>(
+    'download-auth-needed',
+    mapPayload,
+    INITIAL_STATE,
+  );
 
   const handleReAuthenticate = useCallback(async () => {
-    setState({ isOpen: false, trackTitle: null });
+    close(INITIAL_STATE);
     try {
       const success = await refreshAuth();
       if (success) {
@@ -55,15 +44,15 @@ export function useAuthChoiceDialog() {
         await commands.respondToAuthChoice('continue_standard');
       }
     } catch (error) {
-      void logger.error(`[useAuthChoiceDialog] Auth refresh failed: ${error instanceof Error ? error.message : String(error)}`);
+      void logger.error(`[useAuthChoiceDialog] Auth refresh failed: ${getErrorString(error)}`);
       await commands.respondToAuthChoice('continue_standard');
     }
-  }, []);
+  }, [close]);
 
   const handleContinueStandard = useCallback(async () => {
-    setState({ isOpen: false, trackTitle: null });
+    close(INITIAL_STATE);
     await commands.respondToAuthChoice('continue_standard');
-  }, []);
+  }, [close]);
 
   return {
     isOpen: state.isOpen,

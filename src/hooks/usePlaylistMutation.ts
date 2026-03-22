@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from 'react';
+import { getErrorString } from '@/lib/utils';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -38,7 +39,7 @@ export function usePlaylistMutation(config: PlaylistMutationConfig, onSuccess?: 
         return true;
       } catch (error) {
         rollback?.();
-        const message = error instanceof Error ? error.message : String(error);
+        const message = getErrorString(error);
         const matchedError = config.errorMatchers.find((m) => message.includes(m.pattern));
         toast.error(t(matchedError?.key ?? config.fallbackErrorKey));
         return false;

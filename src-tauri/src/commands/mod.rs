@@ -5,6 +5,24 @@ pub mod playlist;
 pub mod settings;
 pub mod updater;
 
+pub async fn require_auth_and_cid(app: &tauri::AppHandle) -> Result<(String, String), String> {
+    use tauri::Manager;
+    let token = app
+        .state::<crate::services::storage::AuthState>()
+        .get_token()
+        .ok_or_else(|| {
+            log::warn!("[require_auth_and_cid] No auth token available");
+            "Authentication required".to_string()
+        })?;
+    let cid = crate::services::client_id::get_client_id()
+        .await
+        .map_err(|e| {
+            log::error!("[require_auth_and_cid] Failed to get client_id: {}", e);
+            format!("Failed to get client_id: {}", e)
+        })?;
+    Ok((token, cid))
+}
+
 pub use auth::{check_auth, refresh_auth, sign_out};
 pub use download::{
     cancel_download_queue, download_track_full, respond_to_auth_choice,

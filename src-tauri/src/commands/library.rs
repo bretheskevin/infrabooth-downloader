@@ -7,14 +7,12 @@ use tauri::Manager;
 
 use crate::services::events;
 
-use crate::services::client_id;
 use crate::services::library::{
     fetch_all_library_pages, fetch_owned_playlists_for_track, resolve_playlist_artwork as resolve_artwork,
-    LibraryCache, LibraryError, LibraryPlaylist, PlaylistForTrackPicker,
+    LibraryCache, LibraryPlaylist, PlaylistForTrackPicker,
 };
 use crate::services::playlist;
 use crate::services::playlist::TrackInfo;
-use crate::services::storage::AuthState;
 
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -38,20 +36,7 @@ pub async fn get_library_playlists(
 
     log::info!("[get_library_playlists] Cache miss, fetching from API");
 
-    let token = app
-        .state::<AuthState>()
-        .get_token()
-        .ok_or_else(|| {
-            log::error!("[get_library_playlists] No auth token");
-            LibraryError::AuthRequired.to_string()
-        })?;
-
-    let cid = client_id::get_client_id()
-        .await
-        .map_err(|e| {
-            log::error!("[get_library_playlists] Failed to get client_id: {}", e);
-            LibraryError::FetchFailed(e.to_string()).to_string()
-        })?;
+    let (token, cid) = super::require_auth_and_cid(&app).await?;
 
     match fetch_all_library_pages(&token, &cid).await {
         Ok(playlists) => {
@@ -90,14 +75,7 @@ pub async fn resolve_library_artwork(
         return Ok(cached);
     }
 
-    let token = app
-        .state::<AuthState>()
-        .get_token()
-        .ok_or_else(|| LibraryError::AuthRequired.to_string())?;
-
-    let cid = client_id::get_client_id()
-        .await
-        .map_err(|e| LibraryError::FetchFailed(e.to_string()).to_string())?;
+    let (token, cid) = super::require_auth_and_cid(&app).await?;
 
     let artwork = resolve_artwork(&token, &cid, playlist_id, secret_token)
         .await
@@ -113,14 +91,7 @@ pub async fn get_owned_playlists_for_track(
     track_id: u64,
     app: tauri::AppHandle,
 ) -> Result<Vec<PlaylistForTrackPicker>, String> {
-    let token = app
-        .state::<AuthState>()
-        .get_token()
-        .ok_or_else(|| LibraryError::AuthRequired.to_string())?;
-
-    let cid = client_id::get_client_id()
-        .await
-        .map_err(|e| LibraryError::FetchFailed(e.to_string()).to_string())?;
+    let (token, cid) = super::require_auth_and_cid(&app).await?;
 
     let playlists = if let Some(cached) = app.state::<LibraryCache>().get_if_complete() {
         cached
@@ -144,13 +115,7 @@ pub async fn get_library_playlist_tracks(
     playlist_id: u64,
     app: tauri::AppHandle,
 ) -> Result<Vec<TrackInfo>, String> {
-    let token = app
-        .state::<AuthState>()
-        .get_token()
-        .ok_or_else(|| {
-            log::error!("[get_library_playlist_tracks] No auth token");
-            LibraryError::AuthRequired.to_string()
-        })?;
+    let (token, _cid) = super::require_auth_and_cid(&app).await?;
 
     let secret_token = app
         .state::<LibraryCache>()

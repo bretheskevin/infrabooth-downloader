@@ -9,17 +9,12 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { useSettingsStore } from '@/features/settings';
-import { cn } from '@/lib/utils';
+import { cn, getFolderName } from '@/lib/utils';
 import { useFolderSelection } from '@/hooks';
 
 interface DownloadBarProps {
   onDownload: (outputDir?: string) => void;
   isDownloading?: boolean;
-}
-
-function getFolderName(path: string): string {
-  const segments = path.split(/[/\\]/);
-  return segments[segments.length - 1] || path;
 }
 
 export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarProps) {

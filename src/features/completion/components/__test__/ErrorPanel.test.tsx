@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 import { ErrorPanel } from '../ErrorPanel';
 import type { FailedTrack } from '@/features/queue/types/download';
-import type { ErrorCode } from '@/features/queue/types/errors';
+import { createMockFailedTrack } from '@/test/factories';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -27,14 +27,9 @@ const createMockTrack = (
   id: string,
   title: string,
   artist: string,
-  errorCode: ErrorCode,
-  errorMessage: string
-): FailedTrack => ({
-  id,
-  title,
-  artist,
-  error: { code: errorCode, message: errorMessage },
-});
+  errorCode: Parameters<typeof createMockFailedTrack>[0]['errorCode'],
+  errorMessage: string,
+) => createMockFailedTrack({ id, title, artist, errorCode, errorMessage });
 
 describe('ErrorPanel', () => {
   const mockTracks: FailedTrack[] = [

@@ -8,7 +8,8 @@ use specta::Type;
 use thiserror::Error;
 
 use crate::models::PlaylistTracksResponse;
-use crate::services::http::{API_V2_BASE, HTTP_CLIENT, RequestBuilderExt};
+use crate::services::http::{validate_api_response, API_V2_BASE, HTTP_CLIENT, RequestBuilderExt};
+use crate::services::playlist::build_playlist_url;
 
 // === Error Type ===
 
@@ -28,6 +29,19 @@ pub enum LibraryError {
 
     #[error("Invalid response format")]
     InvalidResponse,
+}
+
+impl From<crate::services::http::ApiResponseError> for LibraryError {
+    fn from(e: crate::services::http::ApiResponseError) -> Self {
+        use crate::services::http::ApiResponseError;
+        match e {
+            ApiResponseError::AuthRequired => Self::AuthRequired,
+            ApiResponseError::RateLimited => Self::RateLimited,
+            ApiResponseError::NotFound => Self::FetchFailed("Not found".to_string()),
+            ApiResponseError::GeoBlocked => Self::FetchFailed("Access forbidden".to_string()),
+            ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
+        }
+    }
 }
 
 // === Internal deserialization types (not exposed to frontend) ===
@@ -204,16 +218,7 @@ async fn fetch_library_page(
         .send()
         .await?;
 
-    let status = response.status();
-    if status == 401 {
-        return Err(LibraryError::AuthRequired);
-    }
-    if status == 429 {
-        return Err(LibraryError::RateLimited);
-    }
-    if !status.is_success() {
-        return Err(LibraryError::FetchFailed(format!("HTTP {}", status)));
-    }
+    validate_api_response(response.status())?;
 
     let library_response: LibraryResponse = response
         .json()
@@ -273,13 +278,7 @@ pub async fn fetch_owned_playlists_for_track(
         let cached_artwork = cache.get_artwork(pid);
 
         async move {
-            let mut url = format!(
-                "{}/playlists/{}?representation=full&client_id={}",
-                API_V2_BASE, pid, cid
-            );
-            if let Some(ref token) = secret {
-                url.push_str(&format!("&secret_token={}", token));
-            }
+            let url = build_playlist_url(pid, &cid, secret.as_deref());
 
             let response = HTTP_CLIENT
                 .get(&url)
@@ -341,13 +340,7 @@ pub async fn resolve_playlist_artwork(
     playlist_id: u64,
     secret_token: Option<String>,
 ) -> Result<Option<String>, LibraryError> {
-    let mut url = format!(
-        "{}/playlists/{}?representation=full&client_id={}",
-        API_V2_BASE, playlist_id, client_id
-    );
-    if let Some(ref token) = secret_token {
-        url.push_str(&format!("&secret_token={}", token));
-    }
+    let url = build_playlist_url(playlist_id, client_id, secret_token.as_deref());
 
     let response = HTTP_CLIENT
         .get(&url)
@@ -355,13 +348,7 @@ pub async fn resolve_playlist_artwork(
         .send()
         .await?;
 
-    let status = response.status();
-    if status == 401 {
-        return Err(LibraryError::AuthRequired);
-    }
-    if !status.is_success() {
-        return Err(LibraryError::FetchFailed(format!("HTTP {}", status)));
-    }
+    validate_api_response(response.status())?;
 
     let playlist_data: PlaylistTracksResponse = response
         .json()

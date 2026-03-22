@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { cn, formatDuration } from '../utils';
+import { cn } from '../utils';
+import { formatDuration } from '../format';
 
 describe('cn', () => {
   it('should merge tailwind classes', () => {

@@ -4,6 +4,7 @@ import { listen } from '@tauri-apps/api/event';
 import { commands, type UpdateInfo } from '@/bindings';
 import { useChangelogStore } from '@/features/changelog/store';
 import { logger } from '@/lib/logger';
+import { getErrorString } from '@/lib/utils';
 
 interface UpdateDownloadProgress {
   downloadedBytes: number;
@@ -67,7 +68,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
       }
     } catch (error) {
       // Silent failure — log but don't show to user (FR27)
-      void logger.warn(`[Update] Check failed: ${error instanceof Error ? error.message : String(error)}`);
+      void logger.warn(`[Update] Check failed: ${getErrorString(error)}`);
       set({
         updateAvailable: false,
         updateInfo: null,
@@ -94,7 +95,7 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
         set({ installing: false, installError: result.error, downloadProgress: null });
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
+      const message = getErrorString(error);
       void logger.error(`[Update] Installation error: ${message}`);
       set({ installing: false, installError: message, downloadProgress: null });
     }
