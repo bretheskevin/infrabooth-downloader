@@ -133,7 +133,11 @@
     "preserveOrder": "Number tracks",
     "preserveOrderDescription": "Prefix playlist filenames with track position (e.g. 01 - Artist - Title)",
     "categoryAbout": "About",
-    "viewChangelog": "View changelog"
+    "viewChangelog": "View changelog",
+    "crossfade": "Crossfade",
+    "crossfadeDescription": "Smoothly transition between tracks",
+    "crossfadeDuration": "Duration",
+    "crossfadeSeconds": "{{count}}s"
   },
   "completion": {
     "title": "Download complete!",
@@ -293,7 +297,10 @@
     "errorNext": "Failed to skip to next track",
     "errorPrevious": "Failed to skip to previous track",
     "errorLoadTrack": "Failed to load track",
-    "clickToExpand": "Click to expand player"
+    "clickToExpand": "Click to expand player",
+    "volume": "Volume",
+    "mute": "Mute",
+    "unmute": "Unmute"
   },
   "trackMenu": {
     "copyLink": "Copy link",

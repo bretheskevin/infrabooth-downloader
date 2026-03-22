@@ -1,4 +1,5 @@
 import Hls from 'hls.js';
+import { clamp } from '@/lib/utils';
 
 export type AudioEngineState = 'idle' | 'loading' | 'playing' | 'paused';
 
@@ -8,6 +9,7 @@ export interface AudioEngineCallbacks {
   onEnded: () => void;
   onError: (message: string) => void;
   onFullyBuffered: () => void;
+  onCrossfadeComplete: () => void;
 }
 
 const DEFAULT_CALLBACKS: AudioEngineCallbacks = {
@@ -16,71 +18,223 @@ const DEFAULT_CALLBACKS: AudioEngineCallbacks = {
   onEnded: () => {},
   onError: () => {},
   onFullyBuffered: () => {},
+  onCrossfadeComplete: () => {},
 };
 
-let audio: HTMLAudioElement | null = null;
-let hls: Hls | null = null;
-let callbacks: AudioEngineCallbacks = { ...DEFAULT_CALLBACKS };
-let progressInterval: ReturnType<typeof setInterval> | null = null;
-let currentState: AudioEngineState = 'idle';
-
-function getAudio(): HTMLAudioElement {
-  if (!audio) {
-    audio = new Audio();
-    audio.addEventListener('playing', () => setState('playing'));
-    audio.addEventListener('pause', () => {
-      if (currentState !== 'idle') setState('paused');
-    });
-    audio.addEventListener('waiting', () => {
-      if (currentState === 'playing') setState('loading');
-    });
-    audio.addEventListener('seeked', () => {
-      if (currentState === 'loading' && audio && !audio.paused && audio.readyState >= 3) {
-        setState('playing');
-      }
-    });
-    audio.addEventListener('ended', () => {
-      stopProgress();
-      callbacks.onEnded();
-    });
-    audio.addEventListener('error', () => {
-      const msg = audio?.error?.message ?? 'Unknown audio error';
-      stopProgress();
-      setState('idle');
-      callbacks.onError(msg);
-    });
-  }
-  return audio;
+interface Slot {
+  audio: HTMLAudioElement | null;
+  hls: Hls | null;
+  progressInterval: ReturnType<typeof setInterval> | null;
+  isOutgoing: boolean;
 }
+
+function createSlot(): Slot {
+  return {
+    audio: null,
+    hls: null,
+    progressInterval: null,
+    isOutgoing: false,
+  };
+}
+
+let activeSlot: Slot = createSlot();
+let standbySlot: Slot | null = null;
+let callbacks: AudioEngineCallbacks = { ...DEFAULT_CALLBACKS };
+let currentState: AudioEngineState = 'idle';
+let crossfading = false;
+let rampId: number | null = null;
+let rampTargetVolume = 1;
+let crossfadePendingBegin: (() => void) | null = null;
 
 function setState(state: AudioEngineState) {
   currentState = state;
   callbacks.onStateChange(state);
 }
 
-function startProgress() {
-  stopProgress();
-  progressInterval = setInterval(() => {
-    if (!audio) return;
+function getSlotAudio(slot: Slot): HTMLAudioElement {
+  if (!slot.audio) {
+    const el = new Audio();
+
+    el.addEventListener('playing', () => {
+      if (!slot.isOutgoing) setState('playing');
+    });
+    el.addEventListener('pause', () => {
+      if (!slot.isOutgoing && currentState !== 'idle') setState('paused');
+    });
+    el.addEventListener('waiting', () => {
+      if (!slot.isOutgoing && currentState === 'playing') setState('loading');
+    });
+    el.addEventListener('seeked', () => {
+      if (
+        !slot.isOutgoing &&
+        currentState === 'loading' &&
+        slot.audio &&
+        !slot.audio.paused &&
+        slot.audio.readyState >= 3
+      ) {
+        setState('playing');
+      }
+    });
+    el.addEventListener('ended', () => {
+      if (!slot.isOutgoing) {
+        stopSlotProgress(slot);
+        callbacks.onEnded();
+      }
+    });
+    el.addEventListener('error', () => {
+      if (!slot.isOutgoing) {
+        const msg = slot.audio?.error?.message ?? 'Unknown audio error';
+        stopSlotProgress(slot);
+        setState('idle');
+        callbacks.onError(msg);
+      }
+    });
+
+    slot.audio = el;
+  }
+  return slot.audio;
+}
+
+const HLS_CONFIG = {
+  startPosition: 0,
+  maxBufferLength: 300,
+  maxMaxBufferLength: 600,
+  backBufferLength: 30,
+  maxBufferHole: 0.5,
+  fragLoadingMaxRetry: 6,
+  fragLoadingRetryDelay: 1000,
+  manifestLoadingMaxRetry: 4,
+  manifestLoadingRetryDelay: 1000,
+  levelLoadingMaxRetry: 4,
+  levelLoadingRetryDelay: 1000,
+} as const;
+
+function loadSlot(slot: Slot, url: string) {
+  const el = getSlotAudio(slot);
+  destroySlotHls(slot);
+
+  if (Hls.isSupported()) {
+    const hlsInstance = new Hls(HLS_CONFIG);
+    slot.hls = hlsInstance;
+    hlsInstance.loadSource(url);
+    hlsInstance.attachMedia(el);
+    hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+      if (!slot.isOutgoing) {
+        startSlotProgress(slot);
+      }
+    });
+    hlsInstance.on(Hls.Events.BUFFER_EOS, () => {
+      if (!slot.isOutgoing) {
+        callbacks.onFullyBuffered();
+      }
+    });
+    hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
+      if (data.fatal) {
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hlsInstance.recoverMediaError();
+          return;
+        }
+        if (!slot.isOutgoing) {
+          stopSlotProgress(slot);
+          setState('idle');
+          callbacks.onError(`HLS error: ${data.type} - ${data.details}`);
+        }
+      }
+    });
+    return;
+  }
+
+  el.src = url;
+  el.load();
+  if (!slot.isOutgoing) {
+    startSlotProgress(slot);
+  }
+}
+
+function destroySlotHls(slot: Slot) {
+  if (slot.hls) {
+    slot.hls.destroy();
+    slot.hls = null;
+  }
+}
+
+function resetSlotAudio(slot: Slot) {
+  if (slot.audio) {
+    slot.audio.pause();
+    slot.audio.removeAttribute('src');
+    slot.audio.load();
+  }
+}
+
+function destroySlot(slot: Slot) {
+  stopSlotProgress(slot);
+  destroySlotHls(slot);
+  resetSlotAudio(slot);
+  if (slot.audio) {
+    slot.audio.remove();
+    slot.audio = null;
+  }
+  slot.isOutgoing = false;
+}
+
+function startSlotProgress(slot: Slot) {
+  stopSlotProgress(slot);
+  slot.progressInterval = setInterval(() => {
+    if (!slot.audio) return;
     callbacks.onProgress(
-      audio.currentTime * 1000,
-      (audio.duration || 0) * 1000,
+      slot.audio.currentTime * 1000,
+      (slot.audio.duration || 0) * 1000,
     );
   }, 250);
 }
 
-function stopProgress() {
-  if (progressInterval !== null) {
-    clearInterval(progressInterval);
-    progressInterval = null;
+function stopSlotProgress(slot: Slot) {
+  if (slot.progressInterval !== null) {
+    clearInterval(slot.progressInterval);
+    slot.progressInterval = null;
   }
 }
 
-function destroyHls() {
-  if (hls) {
-    hls.destroy();
-    hls = null;
+function cancelRamp() {
+  if (rampId !== null) {
+    cancelAnimationFrame(rampId);
+    rampId = null;
   }
+}
+
+function clearStandby() {
+  if (standbySlot) {
+    destroySlot(standbySlot);
+    standbySlot = null;
+  }
+}
+
+function startRamp(outgoing: Slot, incoming: Slot, durationMs: number) {
+  const startTime = performance.now();
+
+  function tick() {
+    const elapsed = performance.now() - startTime;
+    const progress = Math.min(1, elapsed / durationMs);
+    const vol = rampTargetVolume;
+
+    const fadeIn = Math.sin(progress * Math.PI / 2);
+    const fadeOut = Math.cos(progress * Math.PI / 2);
+    if (outgoing.audio) outgoing.audio.volume = vol * fadeOut;
+    if (incoming.audio) incoming.audio.volume = vol * fadeIn;
+
+    if (progress < 1) {
+      rampId = requestAnimationFrame(tick);
+    } else {
+      crossfading = false;
+      crossfadePendingBegin = null;
+      rampId = null;
+      destroySlot(outgoing);
+      standbySlot = null;
+      callbacks.onCrossfadeComplete();
+    }
+  }
+
+  rampId = requestAnimationFrame(tick);
 }
 
 export const audioEngine = {
@@ -89,72 +243,26 @@ export const audioEngine = {
   },
 
   load(url: string) {
-    const el = getAudio();
-    stopProgress();
-    destroyHls();
+    stopSlotProgress(activeSlot);
+    destroySlotHls(activeSlot);
     setState('loading');
-
-    // Always use hls.js for HLS streams (all platforms).
-    // Native HLS on macOS triggers AVPlayer which auto-registers with Now Playing,
-    // causing duplicate media control entries. hls.js decodes in JS, avoiding this.
-    if (Hls.isSupported()) {
-      hls = new Hls({
-        startPosition: 0,
-        maxBufferLength: 300,
-        maxMaxBufferLength: 600,
-        backBufferLength: 30,
-        maxBufferHole: 0.5,
-        fragLoadingMaxRetry: 6,
-        fragLoadingRetryDelay: 1000,
-        manifestLoadingMaxRetry: 4,
-        manifestLoadingRetryDelay: 1000,
-        levelLoadingMaxRetry: 4,
-        levelLoadingRetryDelay: 1000,
-      });
-      hls.loadSource(url);
-      hls.attachMedia(el);
-      hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        startProgress();
-      });
-      hls.on(Hls.Events.BUFFER_EOS, () => {
-        callbacks.onFullyBuffered();
-      });
-      hls.on(Hls.Events.ERROR, (_event, data) => {
-        if (data.fatal) {
-          if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
-            hls?.recoverMediaError();
-            return;
-          }
-          stopProgress();
-          setState('idle');
-          callbacks.onError(`HLS error: ${data.type} - ${data.details}`);
-        }
-      });
-      return;
-    }
-
-    // Fallback: try direct (unlikely to work for HLS)
-    el.src = url;
-    el.load();
-    startProgress();
+    loadSlot(activeSlot, url);
   },
 
   play() {
-    getAudio().play().catch((e: Error) => {
-      callbacks.onError(`Play failed: ${e.message}`);
-    });
+    getSlotAudio(activeSlot)
+      .play()
+      .catch((e: Error) => {
+        callbacks.onError(`Play failed: ${e.message}`);
+      });
   },
 
   pause() {
-    getAudio().pause();
-  },
-
-  resume() {
-    audioEngine.play();
+    getSlotAudio(activeSlot).pause();
   },
 
   seek(positionMs: number) {
-    const el = getAudio();
+    const el = getSlotAudio(activeSlot);
     if (currentState === 'playing') {
       setState('loading');
     }
@@ -162,17 +270,21 @@ export const audioEngine = {
   },
 
   setVolume(volume: number) {
-    getAudio().volume = Math.max(0, Math.min(1, volume));
+    const clamped = clamp(volume, 0, 1);
+    getSlotAudio(activeSlot).volume = clamped;
+
+    if (crossfading) {
+      rampTargetVolume = clamped;
+    }
   },
 
   stop() {
-    stopProgress();
-    destroyHls();
-    if (audio) {
-      audio.pause();
-      audio.removeAttribute('src');
-      audio.load();
-    }
+    audioEngine.cancelCrossfade();
+
+    stopSlotProgress(activeSlot);
+    destroySlotHls(activeSlot);
+    resetSlotAudio(activeSlot);
+
     setState('idle');
   },
 
@@ -181,18 +293,121 @@ export const audioEngine = {
   },
 
   getPosition(): { positionMs: number; durationMs: number } {
-    if (!audio) return { positionMs: 0, durationMs: 0 };
+    if (!activeSlot.audio) return { positionMs: 0, durationMs: 0 };
     return {
-      positionMs: audio.currentTime * 1000,
-      durationMs: (audio.duration || 0) * 1000,
+      positionMs: activeSlot.audio.currentTime * 1000,
+      durationMs: (activeSlot.audio.duration || 0) * 1000,
     };
   },
 
   destroy() {
-    audioEngine.stop();
-    if (audio) {
-      audio.remove();
-      audio = null;
+    cancelRamp();
+    crossfading = false;
+    crossfadePendingBegin = null;
+
+    destroySlot(activeSlot);
+    activeSlot = createSlot();
+    clearStandby();
+
+    currentState = 'idle';
+  },
+
+  preloadNext(url: string) {
+    clearStandby();
+    standbySlot = createSlot();
+    loadSlot(standbySlot, url);
+  },
+
+  startCrossfade(durationMs: number, targetVolume: number) {
+    if (!standbySlot) return;
+
+    const incoming = standbySlot;
+    const outgoing = activeSlot;
+    let cancelled = false;
+
+    function begin() {
+      if (cancelled) return;
+      crossfadePendingBegin = null;
+
+      outgoing.isOutgoing = true;
+      stopSlotProgress(outgoing);
+
+      activeSlot = incoming;
+      standbySlot = outgoing;
+
+      if (incoming.audio) {
+        incoming.audio.volume = 0;
+        incoming.audio.play().catch((e: Error) => {
+          callbacks.onError(`Crossfade play failed: ${e.message}`);
+        });
+      }
+      startSlotProgress(incoming);
+
+      crossfading = true;
+      rampTargetVolume = targetVolume;
+      startRamp(outgoing, incoming, durationMs);
     }
+
+    const incomingAudio = getSlotAudio(incoming);
+    if (incomingAudio.readyState >= 3) {
+      begin();
+    } else {
+      incomingAudio.addEventListener('canplay', () => begin(), { once: true });
+      crossfadePendingBegin = () => { cancelled = true; };
+    }
+  },
+
+  cancelCrossfade() {
+    if (crossfadePendingBegin) {
+      crossfadePendingBegin();
+      crossfadePendingBegin = null;
+      clearStandby();
+      if (!crossfading) return;
+    }
+
+    if (!crossfading) return;
+
+    cancelRamp();
+
+    const incomingSlot = activeSlot;
+    const outgoingSlot = standbySlot;
+
+    if (!outgoingSlot?.isOutgoing) {
+      crossfading = false;
+      return;
+    }
+
+    destroySlot(incomingSlot);
+
+    outgoingSlot.isOutgoing = false;
+    activeSlot = outgoingSlot;
+    standbySlot = null;
+    crossfading = false;
+    startSlotProgress(outgoingSlot);
+  },
+
+  settleCrossfade() {
+    if (crossfadePendingBegin) {
+      crossfadePendingBegin();
+      crossfadePendingBegin = null;
+    }
+
+    if (!crossfading) {
+      clearStandby();
+      return;
+    }
+
+    cancelRamp();
+    clearStandby();
+
+    if (activeSlot.audio) {
+      activeSlot.audio.volume = rampTargetVolume;
+    }
+
+    crossfading = false;
+  },
+
+  isCrossfading(): boolean {
+    return crossfading;
   },
 };
