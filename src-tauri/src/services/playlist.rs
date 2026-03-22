@@ -200,6 +200,15 @@ struct HydrationPlaylist {
     tracks: Vec<Value>,
 }
 
+#[derive(Debug, Deserialize)]
+struct RawSystemPlaylistInfo {
+    title: String,
+    artwork_url: Option<String>,
+    calculated_artwork_url: Option<String>,
+    tracks: Vec<Value>,
+    user: Option<RawUserInfo>,
+}
+
 /// Playlist information from SoundCloud API.
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct PlaylistInfo {
@@ -671,6 +680,62 @@ fn is_valid_soundcloud_url(url: &str) -> bool {
         || url.starts_with("https://on.soundcloud.com/")
 }
 
+fn extract_system_playlist_slug(url: &str) -> Option<&str> {
+    let path = url.split("soundcloud.com/").nth(1)?;
+    let path = path.split('?').next().unwrap_or(path);
+    let path = path.split('#').next().unwrap_or(path);
+    path.strip_prefix("discover/sets/").filter(|s| !s.is_empty())
+}
+
+async fn fetch_system_playlist(
+    slug: &str,
+    oauth_token: Option<&str>,
+) -> Result<PlaylistInfo, PlaylistError> {
+    let cid = get_cid().await?;
+    let url = format!("https://soundcloud.com/discover/sets/{}", slug);
+
+    log::info!("[soundcloud] Resolving system playlist for URL: {}", url);
+
+    let raw: RawSystemPlaylistInfo = resolve_url(&url, &cid, oauth_token).await?;
+
+    let artwork = raw.artwork_url.or(raw.calculated_artwork_url);
+    let track_count = raw.tracks.len() as u32;
+    let user = raw
+        .user
+        .map(|u| UserInfo {
+            username: u.username,
+            avatar_url: u.avatar_url,
+        })
+        .unwrap_or(UserInfo {
+            username: "SoundCloud".to_string(),
+            avatar_url: None,
+        });
+
+    log::info!(
+        "[soundcloud] System playlist '{}' has {} tracks",
+        raw.title,
+        track_count
+    );
+
+    let ordered_tracks =
+        resolve_tracks_from_mixed(&raw.tracks, &cid, oauth_token, |_| {}).await?;
+
+    log::info!(
+        "[soundcloud] Final system playlist has {} of {} tracks",
+        ordered_tracks.len(),
+        track_count
+    );
+
+    Ok(PlaylistInfo {
+        id: 0,
+        title: raw.title,
+        user,
+        artwork_url: artwork,
+        track_count,
+        tracks: ordered_tracks,
+    })
+}
+
 /// Fetches playlist info using the API v2 (fallback for private playlists).
 /// This is used when web hydration fails (e.g., for private content).
 async fn fetch_playlist_info_via_api(
@@ -690,11 +755,14 @@ pub async fn fetch_playlist_info(
     url: &str,
     oauth_token: Option<&str>,
 ) -> Result<PlaylistInfo, PlaylistError> {
-    // Validate URL before making any requests
     if !is_valid_soundcloud_url(url) {
         return Err(PlaylistError::FetchFailed(
             "Invalid SoundCloud URL".to_string(),
         ));
+    }
+
+    if let Some(slug) = extract_system_playlist_slug(url) {
+        return fetch_system_playlist(slug, oauth_token).await;
     }
 
     log::info!(
@@ -702,8 +770,6 @@ pub async fn fetch_playlist_info(
         url
     );
 
-    // Step 1: Try to fetch hydration data from web page
-    // If this fails (e.g., private playlist), fall back to API
     let hydration = match fetch_hydration_data(url).await {
         Ok(h) => h,
         Err(e) => {
@@ -732,7 +798,6 @@ pub async fn fetch_playlist_info(
         playlist_data.track_count
     );
 
-    // Step 2: Resolve all tracks (fetch missing ones via API)
     let cid = get_cid().await?;
     let ordered_tracks = resolve_tracks_from_mixed(&playlist_data.tracks, &cid, oauth_token, |_| {}).await?;
 
@@ -1162,6 +1227,38 @@ mod tests {
         assert!(!is_valid_soundcloud_url("https://spotify.com/track"));
         assert!(!is_valid_soundcloud_url("http://soundcloud.com/artist/track"));
         assert!(!is_valid_soundcloud_url("not-a-url"));
+    }
+
+    #[test]
+    fn test_extract_system_playlist_slug() {
+        assert_eq!(
+            extract_system_playlist_slug("https://soundcloud.com/discover/sets/your-moods:526801914:1"),
+            Some("your-moods:526801914:1")
+        );
+        assert_eq!(
+            extract_system_playlist_slug("https://soundcloud.com/discover/sets/charts-top:all-music:us"),
+            Some("charts-top:all-music:us")
+        );
+        assert_eq!(
+            extract_system_playlist_slug("https://soundcloud.com/user/sets/my-playlist"),
+            None
+        );
+        assert_eq!(
+            extract_system_playlist_slug("https://soundcloud.com/discover"),
+            None
+        );
+        assert_eq!(
+            extract_system_playlist_slug("https://soundcloud.com/discover/sets/"),
+            None
+        );
+        assert_eq!(
+            extract_system_playlist_slug("https://soundcloud.com/discover/sets/your-moods:526801914:1?si=abc123"),
+            Some("your-moods:526801914:1")
+        );
+        assert_eq!(
+            extract_system_playlist_slug("https://soundcloud.com/discover/sets/charts-top:all-music:us#section"),
+            Some("charts-top:all-music:us")
+        );
     }
 
     // Hydration extraction tests

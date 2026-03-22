@@ -222,6 +222,20 @@ mod tests {
     }
 
     #[test]
+    fn test_discover_sets_url_accepted_as_playlist() {
+        let result = validate_url("https://soundcloud.com/discover/sets/your-moods:526801914:1");
+        assert!(result.valid);
+        assert_eq!(result.url_type, Some(UrlType::Playlist));
+    }
+
+    #[test]
+    fn test_discover_sets_charts_url_accepted() {
+        let result = validate_url("https://soundcloud.com/discover/sets/charts-top:all-music:us");
+        assert!(result.valid);
+        assert_eq!(result.url_type, Some(UrlType::Playlist));
+    }
+
+    #[test]
     fn test_sets_without_playlist_name_rejected() {
         let result = validate_url("https://soundcloud.com/user/sets");
         assert!(!result.valid);
