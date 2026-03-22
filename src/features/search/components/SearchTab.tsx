@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useShallow } from 'zustand/react/shallow';
 
 import { useSettingsStore } from '@/features/settings/store';
 import { usePlayContext, usePlayerStore } from '@/features/player';
@@ -62,10 +63,11 @@ export function SearchTab() {
     [],
   );
 
-  const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
-  const playerState = usePlayerStore((s) => s.state);
-  const playerPause = usePlayerStore((s) => s.pause);
-  const playerResume = usePlayerStore((s) => s.resume);
+  const { currentTrackId, playerState } = usePlayerStore(
+    useShallow((s) => ({ currentTrackId: s.currentTrack?.trackId, playerState: s.state }))
+  );
+  const playerPause = useCallback(() => usePlayerStore.getState().pause(), []);
+  const playerResume = useCallback(() => usePlayerStore.getState().resume(), []);
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">

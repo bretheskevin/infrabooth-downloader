@@ -6,6 +6,8 @@ export interface PlaybackSliceState {
   cursor: number;
   positionMs: number;
   durationMs: number;
+  crossfadePending: boolean;
+  crossfadingTrackId: number | null;
 }
 
 export interface QueueSliceState {

@@ -1,3 +1,4 @@
+import { useShallow } from 'zustand/react/shallow';
 import { usePlayerStore } from '../store';
 import { usePlayerEvents } from '../hooks/usePlayerEvents';
 import { MiniPill } from './MiniPill';
@@ -7,9 +8,9 @@ import { QueuePanel } from './QueuePanel';
 export function PlayerContainer() {
   usePlayerEvents();
 
-  const state = usePlayerStore((s) => s.state);
-  const isExpanded = usePlayerStore((s) => s.isExpanded);
-  const isQueueOpen = usePlayerStore((s) => s.isQueueOpen);
+  const { state, isExpanded, isQueueOpen } = usePlayerStore(
+    useShallow((s) => ({ state: s.state, isExpanded: s.isExpanded, isQueueOpen: s.isQueueOpen }))
+  );
 
   if (state === 'stopped') return null;
 

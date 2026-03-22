@@ -11,6 +11,8 @@ describe('settingsStore', () => {
       language: 'en',
       theme: 'system',
       preservePlaylistOrder: true,
+      crossfadeEnabled: false,
+      crossfadeDuration: 5,
       _hasHydrated: false,
     });
   });
@@ -176,6 +178,35 @@ describe('settingsStore', () => {
       useSettingsStore.setState({ _hasHydrated: true });
       // useSettingsHydrated is a hook, so we test the selector logic directly
       expect(useSettingsStore.getState()._hasHydrated).toBe(true);
+    });
+  });
+
+  describe('crossfade settings', () => {
+    it('should have crossfadeEnabled as false by default', () => {
+      const { crossfadeEnabled } = useSettingsStore.getState();
+      expect(crossfadeEnabled).toBe(false);
+    });
+
+    it('should have crossfadeDuration as 5 by default', () => {
+      const { crossfadeDuration } = useSettingsStore.getState();
+      expect(crossfadeDuration).toBe(5);
+    });
+
+    it('should set crossfadeEnabled', () => {
+      useSettingsStore.getState().setCrossfadeEnabled(true);
+      expect(useSettingsStore.getState().crossfadeEnabled).toBe(true);
+    });
+
+    it('should set crossfadeDuration', () => {
+      useSettingsStore.getState().setCrossfadeDuration(8);
+      expect(useSettingsStore.getState().crossfadeDuration).toBe(8);
+    });
+
+    it('should clamp crossfadeDuration to 1-12', () => {
+      useSettingsStore.getState().setCrossfadeDuration(0);
+      expect(useSettingsStore.getState().crossfadeDuration).toBe(1);
+      useSettingsStore.getState().setCrossfadeDuration(20);
+      expect(useSettingsStore.getState().crossfadeDuration).toBe(12);
     });
   });
 });

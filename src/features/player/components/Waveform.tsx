@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, clamp } from '@/lib/utils';
 
 interface WaveformProps {
   samples: number[];
@@ -88,7 +88,7 @@ export function Waveform({ samples, progress, onSeek, className }: WaveformProps
   const getProgress = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
-    return Math.max(0, Math.min(1, x / rect.width));
+    return clamp(x / rect.width, 0, 1);
   }, []);
 
   const handleClick = useCallback(
