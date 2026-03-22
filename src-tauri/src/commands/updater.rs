@@ -63,9 +63,14 @@ pub async fn install_update(app: AppHandle) -> Result<(), String> {
             log::info!("[updater] Downloading update v{}...", update.version);
 
             let app_clone = app.clone();
+            let cumulative_downloaded = std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0));
+
             update
                 .download_and_install(
-                    move |downloaded, total| {
+                    move |chunk_length, total| {
+                        let downloaded = cumulative_downloaded
+                            .fetch_add(chunk_length, std::sync::atomic::Ordering::Relaxed)
+                            + chunk_length;
                         let _ = app_clone.emit(
                             events::UPDATE_DOWNLOAD_PROGRESS,
                             UpdateDownloadProgress {
