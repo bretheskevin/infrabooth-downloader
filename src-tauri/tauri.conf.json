@@ -24,8 +24,8 @@
     "windows": [
       {
         "title": "InfraBooth Downloader",
-        "width": 700,
-        "height": 700,
+        "width": 680,
+        "height": 820,
         "minWidth": 680,
         "minHeight": 820,
         "resizable": true,

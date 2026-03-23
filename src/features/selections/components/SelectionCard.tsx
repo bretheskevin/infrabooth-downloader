@@ -10,11 +10,12 @@ import { getArtworkUrl } from '@/lib/soundcloud';
 interface SelectionCardProps {
   mix: Selection;
   index: number;
+  label?: string;
   onClick: () => void;
   onDownload: () => void;
 }
 
-export function SelectionCard({ mix, index, onClick, onDownload }: SelectionCardProps) {
+export function SelectionCard({ mix, index, label, onClick, onDownload }: SelectionCardProps) {
   const { t } = useTranslation();
   const mixNumber = index + 1;
   const artworkUrl = mix.tracks[0]?.artwork_url ?? mix.artworkUrl ?? null;
@@ -56,7 +57,7 @@ export function SelectionCard({ mix, index, onClick, onDownload }: SelectionCard
         )}
         <div className="absolute inset-x-0 bottom-0 bg-black/60 backdrop-blur-sm px-2.5 py-1 flex items-center justify-between">
           <span className="text-xs font-extrabold text-white tracking-wide">
-            {t('selections.cardLabel').toUpperCase()} {mixNumber}
+            {label ? label.toUpperCase() : `${t('selections.cardLabel').toUpperCase()} ${mixNumber}`}
           </span>
           <span className="text-[10px] text-white/70">
             {t('selections.trackCount', { count: mix.trackCount })}

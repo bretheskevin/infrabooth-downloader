@@ -305,6 +305,7 @@
   },
   "selections": {
     "sectionTitle": "Mixed for you",
+    "curatedTitle": "Fresh Picks",
     "cardLabel": "Mix",
     "trackCount": "{{count}} tracks",
     "trackCount_one": "{{count}} track",
