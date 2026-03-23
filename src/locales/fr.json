@@ -208,6 +208,7 @@
   "library": {
     "tabLabel": "Ma bibliothèque",
     "pasteUrlTab": "Coller un lien",
+    "discoverTab": "Découvrir",
     "searchPlaceholder": "Rechercher des playlists...",
     "filterAll": "Tout",
     "filterMine": "Mes playlists",
@@ -310,6 +311,10 @@
     "downloadAll": "Tout télécharger",
     "loadError": "Impossible de charger les mixes",
     "retry": "Réessayer"
+  },
+  "discover": {
+    "signInTitle": "Connectez-vous pour découvrir des mixes",
+    "signInDescription": "Connectez votre compte SoundCloud pour explorer des mixes personnalisés"
   },
   "trackMenu": {
     "copyLink": "Copier le lien",

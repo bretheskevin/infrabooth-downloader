@@ -9,6 +9,7 @@ import { ProgressPanel } from '@/features/progress/components/ProgressPanel';
 import { SelectionsSection } from '@/features/selections';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
 import { useIsSignedIn } from '@/features/auth/store';
+import { useIsDownloadEnabled } from '@/features/settings';
 import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
 
 interface DownloadPageProps {
@@ -19,6 +20,7 @@ interface DownloadPageProps {
 export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps) {
   const { t } = useTranslation();
   const isSignedIn = useIsSignedIn();
+  const isDownloadEnabled = useIsDownloadEnabled();
   const isProcessing = useQueueStore((state) => state.isProcessing);
   const isInitializing = useQueueStore((state) => state.isInitializing);
   const [selectedMix, setSelectedMix] = useState<Selection | null>(null);
@@ -127,46 +129,55 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
 
   return (
     <section key="download-main" className={`space-y-4 ${slideClass}`}>
-      <UrlInput
-        externalValue={url}
-        onUrlChange={setUrl}
-        disabled={isProcessing}
-        isValidating={!isLoading && !media && isValidating}
-        validationResult={isLoading || media ? null : displayResult}
-      />
-      <ValidationFeedback
-        result={error ? { valid: false as const, urlType: null, error: { ...error, hint: error.hint ?? null } } : validation}
-        isValidating={isValidating}
-        hideWhenMediaLoaded={media !== null || isLoading}
-      />
-      {isLoading && (
-        <div
-          className="flex items-center gap-2 text-sm text-muted-foreground mt-4"
-          data-testid="playlist-loading"
-        >
-          <Spinner className="h-4 w-4" />
-          {t('download.fetchingPlaylist')}
-        </div>
+      {isDownloadEnabled && (
+        <>
+          <UrlInput
+            externalValue={url}
+            onUrlChange={setUrl}
+            disabled={isProcessing}
+            isValidating={!isLoading && !media && isValidating}
+            validationResult={isLoading || media ? null : displayResult}
+          />
+          <ValidationFeedback
+            result={error ? { valid: false as const, urlType: null, error: { ...error, hint: error.hint ?? null } } : validation}
+            isValidating={isValidating}
+            hideWhenMediaLoaded={media !== null || isLoading}
+          />
+          {isLoading && (
+            <div
+              className="flex items-center gap-2 text-sm text-muted-foreground mt-4"
+              data-testid="playlist-loading"
+            >
+              <Spinner className="h-4 w-4" />
+              {t('download.fetchingPlaylist')}
+            </div>
+          )}
+          {media && !isLoading && isPlaylist(media) && (
+            <PlaylistPreview
+              playlist={media}
+              onDownload={handleDownload}
+              isDownloading={isProcessing}
+            />
+          )}
+          {media && !isLoading && !isPlaylist(media) && (
+            <TrackPreview
+              track={media}
+              onDownload={handleDownload}
+              isDownloading={isProcessing}
+            />
+          )}
+        </>
       )}
-      {media && !isLoading && isPlaylist(media) && (
-        <PlaylistPreview
-          playlist={media}
-          onDownload={handleDownload}
-          isDownloading={isProcessing}
-        />
-      )}
-      {media && !isLoading && !isPlaylist(media) && (
-        <TrackPreview
-          track={media}
-          onDownload={handleDownload}
-          isDownloading={isProcessing}
-        />
-      )}
-      {isSignedIn && (
+      {isSignedIn ? (
         <SelectionsSection
           onSelectMix={handleSelectMix}
           onDownloadMix={(mix) => onDownloadTracks(mix.tracks, mix.title)}
         />
+      ) : !isDownloadEnabled && (
+        <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+          <p className="text-sm font-medium">{t('discover.signInTitle')}</p>
+          <p className="text-xs text-muted-foreground">{t('discover.signInDescription')}</p>
+        </div>
       )}
     </section>
   );
