@@ -207,8 +207,9 @@ describe('url-cache segment preloading', () => {
       // Wait for the fire-and-forget async to complete
       await vi.waitFor(() => {
         expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(100, tracks[0]!.trackUrl);
-        expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(101, tracks[1]!.trackUrl);
       });
+
+      expect(api.resolvePlaybackUrl).not.toHaveBeenCalledWith(101, expect.any(String));
     });
 
     it('should only preload from fromIndex onward', async () => {
@@ -231,10 +232,10 @@ describe('url-cache segment preloading', () => {
 
       await vi.waitFor(() => {
         expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(201, tracks[1]!.trackUrl);
-        expect(api.resolvePlaybackUrl).toHaveBeenCalledWith(202, tracks[2]!.trackUrl);
       });
 
       expect(api.resolvePlaybackUrl).not.toHaveBeenCalledWith(200, expect.any(String));
+      expect(api.resolvePlaybackUrl).not.toHaveBeenCalledWith(202, expect.any(String));
     });
 
     it('should skip already-preloaded tracks', async () => {

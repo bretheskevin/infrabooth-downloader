@@ -1,4 +1,5 @@
 import { api } from '@/lib/tauri';
+import { logger } from '@/lib/logger';
 
 interface CachedUrl {
   url: string;
@@ -75,6 +76,7 @@ export async function resolveWithCache(
 ): Promise<string> {
   const cached = getCachedUrl(trackId);
   if (cached) return cached;
+  void logger.debug(`[url-cache] Cache miss for track ${trackId}, refetching URL`);
   return resolveOne(trackId, trackUrl);
 }
 
@@ -181,7 +183,13 @@ export function preloadQueueSegments(
 ): void {
   const toPreload = tracks
     .slice(fromIndex, fromIndex + limit)
-    .filter((t) => !segmentPreloaded.has(t.trackId) || !isCacheValid(t.trackId));
+    .filter((t) => {
+      const needsRefresh = segmentPreloaded.has(t.trackId) && !isCacheValid(t.trackId);
+      if (needsRefresh) {
+        void logger.debug(`[url-cache] Expired URL for track ${t.trackId}, re-preloading`);
+      }
+      return !segmentPreloaded.has(t.trackId) || needsRefresh;
+    });
   if (toPreload.length === 0) return;
 
   void (async () => {

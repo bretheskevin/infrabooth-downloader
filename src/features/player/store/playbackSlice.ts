@@ -4,7 +4,7 @@ import i18n from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { useSettingsStore } from '@/features/settings/store';
 import { audioEngine } from '../audio-engine';
-import { resolveWithCache, preloadQueueSegments, purgeStaleCache } from '../url-cache';
+import { resolveWithCache, getCachedUrl, preloadQueueSegments, purgeStaleCache } from '../url-cache';
 import type { PlaybackItem, PlaybackState } from '../types';
 import type { PlaybackSliceState, PlayerState } from './types';
 
@@ -107,25 +107,18 @@ async function startTrackLoad(set: SetFn, get: GetFn, track: PlaybackItem, curso
 }
 
 function advanceToCrossfadingTrack(set: SetFn, get: GetFn) {
-  const { crossfadingTrackId, currentTrack, cursor, queue } = get();
-  if (crossfadingTrackId && currentTrack?.trackId !== crossfadingTrackId) {
-    const nextTrack = queue[cursor + 1];
-    if (nextTrack?.trackId === crossfadingTrackId) {
-      set({ cursor: cursor + 1, currentTrack: nextTrack });
-    }
+  const { crossfadingTrackId, currentTrack, queue } = get();
+  if (!crossfadingTrackId || currentTrack?.trackId === crossfadingTrackId) return;
+
+  const idx = queue.findIndex((t) => t.trackId === crossfadingTrackId);
+  if (idx !== -1) {
+    set({ cursor: idx, currentTrack: queue[idx] });
   }
 }
 
-function cancelAnyCrossfade(set: SetFn, get: GetFn) {
-  const { crossfadingTrackId, currentTrack, cursor, queue } = get();
+function cancelAnyCrossfade(set: SetFn) {
   if (audioEngine.isCrossfading()) {
     audioEngine.cancelCrossfade();
-    if (crossfadingTrackId && currentTrack?.trackId === crossfadingTrackId) {
-      const prevTrack = queue[cursor - 1];
-      if (prevTrack) {
-        set({ cursor: cursor - 1, currentTrack: prevTrack });
-      }
-    }
   }
   set(CROSSFADE_RESET);
 }
@@ -164,11 +157,19 @@ function maybeTriggerCrossfade(set: SetFn, get: GetFn, positionMs: number, durat
 
   const remainingMs = durationMs - positionMs;
   const thresholdMs = crossfadeDuration * 1000;
-  if (remainingMs > thresholdMs) return;
   if (durationMs <= thresholdMs) return;
 
   const nextTrack = queue[cursor + 1];
   if (!nextTrack) return;
+
+  if (remainingMs > thresholdMs && remainingMs <= thresholdMs * 2) {
+    if (!getCachedUrl(nextTrack.trackId)) {
+      void resolveWithCache(nextTrack.trackId, nextTrack.trackUrl).catch(() => {});
+    }
+    return;
+  }
+
+  if (remainingMs > thresholdMs) return;
 
   set({ crossfadePending: true, crossfadingTrackId: nextTrack.trackId });
   void triggerCrossfade(set, get, nextTrack, thresholdMs, ++crossfadeGeneration);
@@ -180,7 +181,7 @@ function resolveCrossfadeForSkip(set: SetFn, get: GetFn) {
   if (currentTrack?.trackId === crossfadingTrackId) {
     settleAnyCrossfade(set, get);
   } else {
-    cancelAnyCrossfade(set, get);
+    cancelAnyCrossfade(set);
   }
 }
 
@@ -204,7 +205,7 @@ export const createPlaybackSlice: StateCreator<
     const track = queue[index];
     if (!track) return;
 
-    cancelAnyCrossfade(set, get);
+    cancelAnyCrossfade(set);
     const generation = ++loadGeneration;
     consecutiveFailures = 0;
     const vol = useSettingsStore.getState().playerVolume;
@@ -284,7 +285,7 @@ export const createPlaybackSlice: StateCreator<
   },
 
   stop: () => {
-    cancelAnyCrossfade(set, get);
+    cancelAnyCrossfade(set);
     ++loadGeneration;
     audioEngine.stop();
     purgeStaleCache(new Set());
@@ -302,7 +303,7 @@ export const createPlaybackSlice: StateCreator<
   },
 
   skipTo: async (index) => {
-    cancelAnyCrossfade(set, get);
+    cancelAnyCrossfade(set);
     const { queue } = get();
     const track = queue[index];
     if (!track) return;
