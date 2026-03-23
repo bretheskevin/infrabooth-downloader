@@ -9,12 +9,13 @@ interface PlaylistTracksBatchEvent {
   tracks: TrackInfo[];
 }
 
-export function usePlaylistTracks(playlistId: number) {
+export function usePlaylistTracks(playlistId: number, initialTracks?: TrackInfo[]) {
   const [streamedTracks, setStreamedTracks] = useState<TrackInfo[]>([]);
   const streamedRef = useRef<TrackInfo[]>([]);
+  const hasInitialTracks = !!initialTracks;
 
-  // Listen for batch events from Tauri backend
   useEffect(() => {
+    if (hasInitialTracks) return;
     let cancelled = false;
     streamedRef.current = [];
     setStreamedTracks([]);
@@ -32,11 +33,13 @@ export function usePlaylistTracks(playlistId: number) {
       cancelled = true;
       promise.then((unlisten) => unlisten());
     };
-  }, [playlistId]);
+  }, [playlistId, hasInitialTracks]);
 
   const query = useQuery<TrackInfo[]>({
     queryKey: ['playlist-tracks', playlistId],
     queryFn: () => api.getLibraryPlaylistTracks(playlistId),
+    enabled: !initialTracks,
+    initialData: initialTracks,
   });
 
   // Once the query completes, clear streamed tracks (final data is authoritative)

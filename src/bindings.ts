@@ -297,6 +297,14 @@ async resolvePlaybackUrl(trackId: number, trackUrl: string) : Promise<Result<str
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getSelections() : Promise<Result<Selection[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_selections") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -373,6 +381,7 @@ export type QueueCompleteEvent = { completed: number; failed: number; total: num
 export type QueueProgressEvent = { current: number; total: number; trackId: string }
 export type RateLimitChoice = "retry" | "stop"
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
+export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
 export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }
 /**
  * Core track data shared across all track-related types.

@@ -25,20 +25,21 @@ const MIN_TRACKS_FOR_SEARCH = 5;
 
 interface PlaylistDetailViewProps {
   playlist: LibraryPlaylist;
+  initialTracks?: TrackInfo[];
   onBack: () => void;
   onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
 }
 
-export function PlaylistDetailView({ playlist, onBack, onDownloadTracks }: PlaylistDetailViewProps) {
+export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownloadTracks }: PlaylistDetailViewProps) {
   const { t } = useTranslation();
-  const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id);
+  const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id, initialTracks);
 
   const [trackToRemove, setTrackToRemove] = useState<TrackInfo | null>(null);
   const { removeFromPlaylist, removingFromPlaylistId } = useRemoveFromPlaylist(() => {
     setTrackToRemove(null);
   });
 
-  const needsArtwork = !playlist.artwork_url;
+  const needsArtwork = !playlist.artwork_url && !initialTracks;
   const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secret_token, needsArtwork);
   const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
 
