@@ -1,3 +1,7 @@
+---
+description: Create new GitHub release and generate Changelog
+---
+
 # Create New Version
 
 Create a new release version for InfraBooth Downloader.
