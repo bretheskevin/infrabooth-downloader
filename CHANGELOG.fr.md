@@ -7,6 +7,13 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-03-23
+
+### Added
+
+- Découverte de mixes personnalisés sur la page de téléchargement
+- Prise en charge des URLs de playlists découverte et classements SoundCloud
+
 ## [1.11.0] - 2026-03-22
 
 ### Added
