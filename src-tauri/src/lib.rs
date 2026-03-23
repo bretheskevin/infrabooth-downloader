@@ -158,9 +158,11 @@ pub fn run() {
                         !(metadata.target().starts_with("rookie")
                             && metadata.level() > log::LevelFilter::Info)
                     })
-                    .max_file_size(1_000_000) // 1 MB per file
+                    .max_file_size(50_000_000) // 50 MB per file
                     .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepOne)
                     .format(|out, message, record| {
+                        let now = time::OffsetDateTime::now_local()
+                            .unwrap_or_else(|_| time::OffsetDateTime::now_utc());
                         let target = record.target();
                         let clean_target = if target.contains("node_modules") {
                             "webview"
@@ -168,7 +170,12 @@ pub fn run() {
                             target
                         };
                         out.finish(format_args!(
-                            "[{}][{}] {}",
+                            "[{:04}-{:02}-{:02} {:02}:{:02}][{}][{}] {}",
+                            now.year(),
+                            now.month() as u8,
+                            now.day(),
+                            now.hour(),
+                            now.minute(),
                             record.level(),
                             clean_target,
                             message
