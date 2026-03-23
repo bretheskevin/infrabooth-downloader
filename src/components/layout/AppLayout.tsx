@@ -25,15 +25,15 @@ function PageNav({ activePage, onPageChange, isSignedIn }: PageNavProps) {
   const { t } = useTranslation();
   const isDownloadEnabled = useIsDownloadEnabled();
 
-  const allTabs: { key: AppPage; label: string; locked: boolean }[] = [
-    { key: 'download', label: t('library.pasteUrlTab'), locked: false },
+  const tabs: { key: AppPage; label: string; locked: boolean }[] = [
+    {
+      key: 'download',
+      label: isDownloadEnabled ? t('library.pasteUrlTab') : t('library.discoverTab'),
+      locked: false,
+    },
     { key: 'library', label: t('library.tabLabel'), locked: !isSignedIn },
     { key: 'search', label: t('search.tabLabel'), locked: false },
   ];
-
-  const tabs = isDownloadEnabled
-    ? allTabs
-    : allTabs.filter((tab) => tab.key !== 'download');
 
   return (
     <div className="flex gap-1 rounded-lg bg-secondary/50 p-1 mb-4">
