@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { AlertCircle, Music } from 'lucide-react';
+import { AlertCircle, Music, Sparkles } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 import type { Selection } from '@/bindings';
@@ -8,15 +8,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SelectionCard } from './SelectionCard';
 import { useSelections } from '../hooks/useSelections';
 
+const CURATED_TITLES = ['Daily Drops', 'Weekly Wave'] as const;
+
 interface SelectionsSectionProps {
   onSelectMix: (mix: Selection) => void;
   onDownloadMix: (mix: Selection) => void;
 }
 
-function LoadingSkeleton() {
+function LoadingSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      {Array.from({ length: 3 }).map((_, i) => (
+      {Array.from({ length: count }).map((_, i) => (
         <div key={i} className="rounded-xl border border-border overflow-hidden">
           <Skeleton className="h-24 rounded-none" />
           <div className="px-2.5 py-2 space-y-1.5">
@@ -29,11 +31,66 @@ function LoadingSkeleton() {
   );
 }
 
+interface SelectionGroupProps {
+  icon: React.ReactNode;
+  title: string;
+  items: Selection[] | undefined;
+  isLoading: boolean;
+  skeletonCount?: number;
+  label?: (mix: Selection) => string | undefined;
+  onSelect: (mix: Selection) => void;
+  onDownload: (mix: Selection) => void;
+}
+
+function SelectionGroup({
+  icon,
+  title,
+  items,
+  isLoading,
+  skeletonCount = 3,
+  label,
+  onSelect,
+  onDownload,
+}: SelectionGroupProps) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2">
+        {icon}
+        <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>
+      </div>
+
+      {isLoading ? (
+        <LoadingSkeleton count={skeletonCount} />
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          {items!.map((mix, i) => (
+            <SelectionCard
+              key={mix.id}
+              mix={mix}
+              index={i}
+              label={label?.(mix)}
+              onClick={() => onSelect(mix)}
+              onDownload={() => onDownload(mix)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function SelectionsSection({ onSelectMix, onDownloadMix }: SelectionsSectionProps) {
   const { t } = useTranslation();
   const { data: allSelections, isLoading, isError, refetch } = useSelections();
   const personalMixes = useMemo(
     () => allSelections?.filter((s) => s.title.includes('Your Mix')),
+    [allSelections],
+  );
+  const curatedPicks = useMemo(
+    () =>
+      allSelections
+        ?.filter((s) => (CURATED_TITLES as readonly string[]).includes(s.title))
+        .sort((a, b) => a.title.localeCompare(b.title)),
     [allSelections],
   );
 
@@ -53,31 +110,35 @@ export function SelectionsSection({ onSelectMix, onDownloadMix }: SelectionsSect
     );
   }
 
-  if (!isLoading && (!personalMixes || personalMixes.length === 0)) return null;
+  const hasPersonal = !isLoading && personalMixes && personalMixes.length > 0;
+  const hasCurated = !isLoading && curatedPicks && curatedPicks.length > 0;
+
+  if (!isLoading && !hasPersonal && !hasCurated) return null;
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <Music className="h-4 w-4 text-primary" />
-        <h3 className="text-sm font-semibold text-muted-foreground">
-          {t('selections.sectionTitle')}
-        </h3>
-      </div>
+    <div className="space-y-6">
+      {(isLoading || hasPersonal) && (
+        <SelectionGroup
+          icon={<Music className="h-4 w-4 text-primary" />}
+          title={t('selections.sectionTitle')}
+          items={personalMixes}
+          isLoading={isLoading}
+          onSelect={onSelectMix}
+          onDownload={onDownloadMix}
+        />
+      )}
 
-      {isLoading ? (
-        <LoadingSkeleton />
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {personalMixes!.map((mix, i) => (
-            <SelectionCard
-              key={mix.id}
-              mix={mix}
-              index={i}
-              onClick={() => onSelectMix(mix)}
-              onDownload={() => onDownloadMix(mix)}
-            />
-          ))}
-        </div>
+      {(isLoading || hasCurated) && (
+        <SelectionGroup
+          icon={<Sparkles className="h-4 w-4 text-primary" />}
+          title={t('selections.curatedTitle')}
+          items={curatedPicks}
+          isLoading={isLoading}
+          skeletonCount={2}
+          label={(mix) => mix.title}
+          onSelect={onSelectMix}
+          onDownload={onDownloadMix}
+        />
       )}
     </div>
   );
