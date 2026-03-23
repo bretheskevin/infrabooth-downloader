@@ -457,16 +457,17 @@ fn append_common_ffmpeg_args(args: &mut Vec<String>, output_path: &Path) {
     args.push(output_str);
 }
 
-/// Attempt to download the original file from SoundCloud's download endpoint.
-///
-/// Returns the downloaded file path and detected format on success.
-/// Returns None on any error — caller should fall back to transcoding.
 async fn try_original_download(
     download_url: &str,
     oauth_token: Option<&str>,
     output_dir: &Path,
     base_name: &str,
+    cancel_rx: &Option<watch::Receiver<bool>>,
 ) -> Option<OriginalDownload> {
+    if is_cancelled(cancel_rx) {
+        return None;
+    }
+
     let client = reqwest::Client::new();
 
     let mut request = client.get(download_url);
@@ -488,7 +489,11 @@ async fn try_original_download(
         let redirect_uri = json.get("redirectUri")?.as_str()?;
         log::info!("[downloader] Following redirect to CDN");
 
-        let audio_resp = client.get(redirect_uri).send().await.ok()?;
+        if is_cancelled(cancel_rx) {
+            return None;
+        }
+
+        let mut audio_resp = client.get(redirect_uri).send().await.ok()?;
         if !audio_resp.status().is_success() {
             return None;
         }
@@ -500,7 +505,18 @@ async fn try_original_download(
             .unwrap_or("")
             .to_string();
 
-        (audio_resp.bytes().await.ok()?, ct)
+        // Stream in chunks with cancellation checks instead of buffering entire response
+        let capacity = audio_resp.content_length().unwrap_or(0) as usize;
+        let mut bytes = Vec::with_capacity(capacity);
+        while let Some(chunk) = audio_resp.chunk().await.ok()? {
+            if is_cancelled(cancel_rx) {
+                log::info!("[downloader] Cancellation detected during original download");
+                return None;
+            }
+            bytes.extend_from_slice(&chunk);
+        }
+
+        (bytes, ct)
     } else {
         log::debug!("[downloader] Original download response was not JSON redirect, skipping");
         return None;
@@ -879,6 +895,10 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         return Ok(output_file);
     }
 
+    if is_cancelled(&cancel_rx) {
+        return Err(DownloadError::Cancelled);
+    }
+
     let ctx = FfmpegContext {
         cancel_rx: &cancel_rx,
         active_child: &active_child,
@@ -896,6 +916,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
             config.oauth_token.as_deref(),
             &config.output_dir,
             &base_name,
+            &cancel_rx,
         )
         .await
         {
