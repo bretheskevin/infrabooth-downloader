@@ -305,6 +305,7 @@
   },
   "selections": {
     "sectionTitle": "Mixés pour vous",
+    "curatedTitle": "À ne pas manquer",
     "cardLabel": "Mix",
     "trackCount": "{{count}} pistes",
     "trackCount_one": "{{count}} piste",
