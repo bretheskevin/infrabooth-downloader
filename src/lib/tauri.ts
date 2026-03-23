@@ -9,6 +9,7 @@ import {
   type ErrorResponse,
   type SearchResponse,
   type PlaylistForTrackPicker,
+  type Selection,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -111,4 +112,8 @@ export const api = {
   // Player
   resolvePlaybackUrl: (trackId: number, trackUrl: string): Promise<string> =>
     commands.resolvePlaybackUrl(trackId, trackUrl).then(unwrap),
+
+  // Selections
+  getSelections: (): Promise<Selection[]> =>
+    commands.getSelections().then(unwrap),
 };

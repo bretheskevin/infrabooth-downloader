@@ -117,6 +117,7 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     let state = app.state::<AuthState>();
     state.clear();
     app.state::<LibraryCache>().clear();
+    app.state::<crate::services::selections::SelectionCache>().clear();
     let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload());
     info!("User signed out");
     Ok(())

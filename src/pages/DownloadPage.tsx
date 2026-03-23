@@ -1,19 +1,42 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Selection, TrackInfo } from '@/bindings';
 import { Spinner } from '@/components/ui/spinner';
 import { useQueueStore, useDownloadFlow, useDownloadCompletion } from '@/features/queue';
 import { UrlInput, ValidationFeedback, PlaylistPreview, TrackPreview, isPlaylist } from '@/features/url-input';
 import { CompletionPanel } from '@/features/completion';
 import { ProgressPanel } from '@/features/progress/components/ProgressPanel';
+import { SelectionsSection } from '@/features/selections';
+import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
+import { useIsSignedIn } from '@/features/auth/store';
+import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
 
 interface DownloadPageProps {
   initialUrl?: string;
+  onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
 }
 
-export function DownloadPage({ initialUrl }: DownloadPageProps) {
+export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps) {
   const { t } = useTranslation();
+  const isSignedIn = useIsSignedIn();
   const isProcessing = useQueueStore((state) => state.isProcessing);
   const isInitializing = useQueueStore((state) => state.isInitializing);
+  const [selectedMix, setSelectedMix] = useState<Selection | null>(null);
+  const [slideClass, setSlideClass] = useState('');
+
+  useEffect(() => {
+    if (!isSignedIn) setSelectedMix(null);
+  }, [isSignedIn]);
+
+  const handleSelectMix = useCallback((mix: Selection) => {
+    setSlideClass('library-slide-in-detail');
+    setSelectedMix(mix);
+  }, []);
+
+  const handleBackFromMix = useCallback(() => {
+    setSlideClass('library-slide-in-list');
+    setSelectedMix(null);
+  }, []);
 
   const {
     url,
@@ -72,6 +95,19 @@ export function DownloadPage({ initialUrl }: DownloadPageProps) {
     );
   }
 
+  if (selectedMix) {
+    return (
+      <section key="mix-detail" className={`space-y-4 flex-1 min-h-0 flex flex-col ${slideClass}`}>
+        <PlaylistDetailView
+          playlist={toLibraryPlaylist(selectedMix)}
+          initialTracks={selectedMix.tracks}
+          onBack={handleBackFromMix}
+          onDownloadTracks={onDownloadTracks}
+        />
+      </section>
+    );
+  }
+
   if (isPending || isInitializing) {
     return (
       <section className="space-y-4">
@@ -90,7 +126,7 @@ export function DownloadPage({ initialUrl }: DownloadPageProps) {
   }
 
   return (
-    <section className="space-y-4">
+    <section key="download-main" className={`space-y-4 ${slideClass}`}>
       <UrlInput
         externalValue={url}
         onUrlChange={setUrl}
@@ -124,6 +160,12 @@ export function DownloadPage({ initialUrl }: DownloadPageProps) {
           track={media}
           onDownload={handleDownload}
           isDownloading={isProcessing}
+        />
+      )}
+      {isSignedIn && (
+        <SelectionsSection
+          onSelectMix={handleSelectMix}
+          onDownloadMix={(mix) => onDownloadTracks(mix.tracks, mix.title)}
         />
       )}
     </section>
