@@ -197,7 +197,7 @@ function stopSlotProgress(slot: Slot) {
 
 function cancelRamp() {
   if (rampId !== null) {
-    cancelAnimationFrame(rampId);
+    window.clearInterval(rampId);
     rampId = null;
   }
 }
@@ -211,6 +211,7 @@ function clearStandby() {
 
 function startRamp(outgoing: Slot, incoming: Slot, durationMs: number) {
   const startTime = performance.now();
+  const RAMP_INTERVAL_MS = 50;
 
   function tick() {
     const elapsed = performance.now() - startTime;
@@ -222,9 +223,8 @@ function startRamp(outgoing: Slot, incoming: Slot, durationMs: number) {
     if (outgoing.audio) outgoing.audio.volume = vol * fadeOut;
     if (incoming.audio) incoming.audio.volume = vol * fadeIn;
 
-    if (progress < 1) {
-      rampId = requestAnimationFrame(tick);
-    } else {
+    if (progress >= 1) {
+      window.clearInterval(rampId!);
       crossfading = false;
       crossfadePendingBegin = null;
       rampId = null;
@@ -234,7 +234,8 @@ function startRamp(outgoing: Slot, incoming: Slot, durationMs: number) {
     }
   }
 
-  rampId = requestAnimationFrame(tick);
+  rampId = window.setInterval(tick, RAMP_INTERVAL_MS);
+  tick();
 }
 
 export const audioEngine = {
