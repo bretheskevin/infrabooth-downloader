@@ -302,6 +302,15 @@
     "mute": "Mute",
     "unmute": "Unmute"
   },
+  "selections": {
+    "sectionTitle": "Mixed for you",
+    "cardLabel": "Mix",
+    "trackCount": "{{count}} tracks",
+    "trackCount_one": "{{count}} track",
+    "downloadAll": "Download all",
+    "loadError": "Failed to load mixes",
+    "retry": "Retry"
+  },
   "trackMenu": {
     "copyLink": "Copy link",
     "linkCopied": "Link copied",

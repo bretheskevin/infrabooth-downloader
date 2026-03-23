@@ -519,7 +519,7 @@ where
 /// Resolves a mixed list of track data (full objects + ID stubs) into ordered TrackInfo.
 /// Extracts full tracks from the data, batch-fetches missing ones, and sorts by original order.
 /// Calls `on_batch` with each batch of resolved tracks for progressive loading.
-async fn resolve_tracks_from_mixed<F>(
+pub(crate) async fn resolve_tracks_from_mixed<F>(
     tracks: &[Value],
     cid: &str,
     oauth_token: Option<&str>,
@@ -667,7 +667,7 @@ async fn fetch_tracks_by_ids_parallel(
 }
 
 /// Get a SoundCloud client_id, mapping errors to `PlaylistError`.
-async fn get_cid() -> Result<String, PlaylistError> {
+pub(crate) async fn get_cid() -> Result<String, PlaylistError> {
     client_id::get_client_id()
         .await
         .map_err(|e| PlaylistError::FetchFailed(e.to_string()))

@@ -44,3 +44,6 @@ pub use search::search_tracks;
 
 pub mod player;
 pub use player::resolve_playback_url;
+
+pub mod selections;
+pub use selections::get_selections;

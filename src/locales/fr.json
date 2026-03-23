@@ -302,6 +302,15 @@
     "mute": "Couper le son",
     "unmute": "Rétablir le son"
   },
+  "selections": {
+    "sectionTitle": "Mixés pour vous",
+    "cardLabel": "Mix",
+    "trackCount": "{{count}} pistes",
+    "trackCount_one": "{{count}} piste",
+    "downloadAll": "Tout télécharger",
+    "loadError": "Impossible de charger les mixes",
+    "retry": "Réessayer"
+  },
   "trackMenu": {
     "copyLink": "Copier le lien",
     "linkCopied": "Lien copié",

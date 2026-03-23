@@ -51,7 +51,7 @@ function AppContent() {
       isSignedIn={isSignedIn}
     >
       {activePage === 'download' ? (
-        <DownloadPage initialUrl={initialUrl} />
+        <DownloadPage initialUrl={initialUrl} onDownloadTracks={handleDownloadTracks} />
       ) : activePage === 'library' ? (
         <section className="flex-1 min-h-0 flex flex-col">
           <LibraryTab onDownloadTracks={handleDownloadTracks} />
