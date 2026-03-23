@@ -6,7 +6,7 @@ import { useQueueStore, useDownloadFlow, useDownloadCompletion } from '@/feature
 import { UrlInput, ValidationFeedback, PlaylistPreview, TrackPreview, isPlaylist } from '@/features/url-input';
 import { CompletionPanel } from '@/features/completion';
 import { ProgressPanel } from '@/features/progress/components/ProgressPanel';
-import { SelectionsSection } from '@/features/selections';
+import { SelectionsSection, useSelectionsStore } from '@/features/selections';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
 import { useIsSignedIn } from '@/features/auth/store';
 import { useIsDownloadEnabled } from '@/features/settings';
@@ -23,11 +23,12 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
   const isDownloadEnabled = useIsDownloadEnabled();
   const isProcessing = useQueueStore((state) => state.isProcessing);
   const isInitializing = useQueueStore((state) => state.isInitializing);
-  const [selectedMix, setSelectedMix] = useState<Selection | null>(null);
+  const selectedMix = useSelectionsStore((s) => s.selectedMix);
+  const { setSelectedMix, clearSelectedMix } = useSelectionsStore.getState();
   const [slideClass, setSlideClass] = useState('');
 
   useEffect(() => {
-    if (!isSignedIn) setSelectedMix(null);
+    if (!isSignedIn) clearSelectedMix();
   }, [isSignedIn]);
 
   const handleSelectMix = useCallback((mix: Selection) => {
@@ -37,7 +38,7 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
 
   const handleBackFromMix = useCallback(() => {
     setSlideClass('library-slide-in-list');
-    setSelectedMix(null);
+    clearSelectedMix();
   }, []);
 
   const {
