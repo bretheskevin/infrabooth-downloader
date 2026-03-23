@@ -7,6 +7,19 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-03-23
+
+### Changed
+
+- Conservation du mix sélectionné lors du changement d'onglet
+
+### Fixed
+
+- Le crossfade ne fonctionnait plus après réorganisation de la file d'attente
+- Les URLs de streaming expiraient pendant les longues sessions d'écoute
+- Les téléchargements ne pouvaient pas être annulés pendant la récupération du fichier original (téléchargement direct)
+- La position des contrôles média était figée pendant le crossfade
+
 ## [1.12.0] - 2026-03-23
 
 ### Added
