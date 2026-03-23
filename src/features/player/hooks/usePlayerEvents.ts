@@ -38,24 +38,38 @@ export function usePlayerEvents(): void {
 
     // Sync state changes to MediaSession
     const unsubscribe = usePlayerStore.subscribe((state, prevState) => {
-      if (state.state === prevState.state && state.currentTrack === prevState.currentTrack) return;
+      const trackChanged = state.currentTrack !== prevState.currentTrack;
+      const stateChanged = state.state !== prevState.state;
+      const durationChanged = state.durationMs !== prevState.durationMs;
+      const seeked = Math.abs(state.positionMs - prevState.positionMs) > 2000;
 
-      const { currentTrack, state: playbackState } = state;
+      if (stateChanged || trackChanged) {
+        const { currentTrack, state: playbackState } = state;
 
-      navigator.mediaSession.playbackState = PLAYBACK_STATE_MAP[playbackState] ?? 'none';
+        navigator.mediaSession.playbackState = PLAYBACK_STATE_MAP[playbackState] ?? 'none';
 
-      // Update metadata
-      if (currentTrack) {
-        const artworkSrc = getArtworkUrl(currentTrack.artworkUrl, ARTWORK_SIZE);
-        const artwork: MediaImage[] = artworkSrc ? [{ src: artworkSrc }] : [];
+        if (currentTrack) {
+          const artworkSrc = getArtworkUrl(currentTrack.artworkUrl, ARTWORK_SIZE);
+          const artwork: MediaImage[] = artworkSrc ? [{ src: artworkSrc }] : [];
 
-        navigator.mediaSession.metadata = new MediaMetadata({
-          title: currentTrack.title,
-          artist: currentTrack.artist,
-          artwork,
+          navigator.mediaSession.metadata = new MediaMetadata({
+            title: currentTrack.title,
+            artist: currentTrack.artist,
+            artwork,
+          });
+        } else {
+          navigator.mediaSession.metadata = null;
+        }
+      }
+
+      if (stateChanged && state.state === 'stopped') {
+        navigator.mediaSession.setPositionState();
+      } else if ((trackChanged || stateChanged || durationChanged || seeked) && state.durationMs > 0 && state.state !== 'stopped') {
+        navigator.mediaSession.setPositionState({
+          duration: state.durationMs / 1000,
+          position: Math.min(state.positionMs / 1000, state.durationMs / 1000),
+          playbackRate: 1,
         });
-      } else {
-        navigator.mediaSession.metadata = null;
       }
     });
 
