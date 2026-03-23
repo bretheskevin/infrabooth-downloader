@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.1] - 2026-03-23
+
+### Changed
+
+- Selected mix persists across tab switches
+
+### Fixed
+
+- Crossfade broke after reordering the queue
+- Streaming URLs expired during long listening sessions
+- Downloads couldn't be cancelled during original file fetch
+- Media controls position was stale during crossfade
+
 ## [1.12.0] - 2026-03-23
 
 ### Added
