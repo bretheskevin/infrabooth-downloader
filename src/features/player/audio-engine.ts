@@ -134,7 +134,7 @@ function loadSlot(slot: Slot, url: string) {
           hlsInstance.recoverMediaError();
           return;
         }
-        if (!slot.isOutgoing) {
+        if (slot === activeSlot) {
           stopSlotProgress(slot);
           setState('idle');
           callbacks.onError(`HLS error: ${data.type} - ${data.details}`);

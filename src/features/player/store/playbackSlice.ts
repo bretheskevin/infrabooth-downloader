@@ -13,6 +13,7 @@ const MAX_CONSECUTIVE_FAILURES = 3;
 let loadGeneration = 0;
 let crossfadeGeneration = 0;
 let consecutiveFailures = 0;
+let lastPreloadRefresh = 0;
 
 const trackIdSet = (queue: PlaybackItem[]) => new Set(queue.map((t) => t.trackId));
 
@@ -49,7 +50,7 @@ async function loadAndPlay(
     if (generation !== loadGeneration) return;
     const msg = e instanceof Error ? e.message : String(e);
     void logger.error(`[player] Failed to resolve track ${track.trackId}: ${msg}`);
-    toast.error(i18n.t('player.errorLoadTrack'));
+    toast.error(`${i18n.t('player.errorLoadTrack')}: ${msg}`);
 
     consecutiveFailures++;
     if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
@@ -233,7 +234,8 @@ export const createPlaybackSlice: StateCreator<
 
     await loadAndPlay(finalTrack, generation, get);
     purgeStaleCache(trackIdSet(finalQueue));
-    preloadQueueSegments(finalQueue, finalIndex + 1, 2);
+    preloadQueueSegments(finalQueue, finalIndex + 1);
+    preloadQueueSegments(finalQueue, finalIndex - 1);
   },
 
   pause: () => {
@@ -266,7 +268,8 @@ export const createPlaybackSlice: StateCreator<
       return;
     }
     await startTrackLoad(set, get, track, nextCursor);
-    preloadQueueSegments(queue, nextCursor + 1, 2);
+    preloadQueueSegments(queue, nextCursor + 1);
+    preloadQueueSegments(queue, nextCursor - 1);
   },
 
   previous: async () => {
@@ -276,6 +279,8 @@ export const createPlaybackSlice: StateCreator<
     const track = queue[prevCursor];
     if (!track) return;
     await startTrackLoad(set, get, track, prevCursor);
+    preloadQueueSegments(queue, prevCursor - 1);
+    preloadQueueSegments(queue, prevCursor + 1);
   },
 
   stop: () => {
@@ -304,7 +309,8 @@ export const createPlaybackSlice: StateCreator<
 
     consecutiveFailures = 0;
     await startTrackLoad(set, get, track, index);
-    preloadQueueSegments(queue, index + 1, 2);
+    preloadQueueSegments(queue, index + 1);
+    preloadQueueSegments(queue, index - 1);
   },
 
   _initAudioEngine: () => {
@@ -323,6 +329,14 @@ export const createPlaybackSlice: StateCreator<
           return;
         }
 
+        const now = Date.now();
+        if (now - lastPreloadRefresh > 60_000) {
+          lastPreloadRefresh = now;
+          const { queue, cursor } = get();
+          preloadQueueSegments(queue, cursor + 1);
+          preloadQueueSegments(queue, cursor - 1);
+        }
+
         maybeTriggerCrossfade(set, get, positionMs, durationMs);
       },
       onEnded: () => {
@@ -331,6 +345,21 @@ export const createPlaybackSlice: StateCreator<
       },
       onError: (message) => {
         void logger.error(`[player] Audio engine error: ${message}`);
+        toast.error(`${i18n.t('player.errorLoadTrack')}: ${message}`);
+
+        consecutiveFailures++;
+        if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          consecutiveFailures = 0;
+          get().stop();
+          return;
+        }
+
+        const { cursor, queue } = get();
+        if (cursor + 1 < queue.length) {
+          get().next();
+        } else {
+          get().stop();
+        }
       },
       onFullyBuffered: () => {
         const { queue, cursor, state } = get();
@@ -343,7 +372,8 @@ export const createPlaybackSlice: StateCreator<
       onCrossfadeComplete: () => {
         advanceToCrossfadingTrack(set, get);
         set(CROSSFADE_RESET);
-        preloadQueueSegments(get().queue, get().cursor + 1, 2);
+        preloadQueueSegments(get().queue, get().cursor + 1);
+        preloadQueueSegments(get().queue, get().cursor - 1);
       },
     });
   },

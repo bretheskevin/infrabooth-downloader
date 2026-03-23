@@ -2,23 +2,42 @@ import { api } from '@/lib/tauri';
 
 interface CachedUrl {
   url: string;
-  /** Timestamp when cached — URLs expire after the TTL. */
-  cachedAt: number;
+  expiresAt: number;
 }
 
-const URL_TTL_MS = 10 * 60 * 1000; // 10 minutes (SC signed URLs last ~15-30min)
+const URL_TTL_MS = 3 * 60 * 1000;
+const EXPIRY_MARGIN_MS = 30_000;
 const MAX_CONCURRENT = 2;
 const HOVER_PRELOAD_DELAY_MS = 300;
 const cache = new Map<number, CachedUrl>();
 const inFlight = new Map<number, Promise<string>>();
 const NOOP = () => {};
 
-/** Get a cached URL if it exists and hasn't expired. */
+function extractUrlExpiration(url: string): number | null {
+  try {
+    const policyParam = new URL(url).searchParams.get('Policy');
+    if (!policyParam) return null;
+    const b64 = policyParam.replace(/~/g, '/').replace(/_/g, '=').replace(/-/g, '+');
+    const policy = JSON.parse(atob(b64));
+    const epoch = policy?.Statement?.[0]?.Condition?.DateLessThan?.['AWS:EpochTime'];
+    return typeof epoch === 'number' ? epoch * 1000 : null;
+  } catch {
+    return null;
+  }
+}
+
+function isCacheValid(trackId: number): boolean {
+  const entry = cache.get(trackId);
+  return !!entry && Date.now() < entry.expiresAt - EXPIRY_MARGIN_MS;
+}
+
 export function getCachedUrl(trackId: number): string | null {
   const entry = cache.get(trackId);
   if (!entry) return null;
-  if (Date.now() - entry.cachedAt > URL_TTL_MS) {
+  if (Date.now() >= entry.expiresAt - EXPIRY_MARGIN_MS) {
     cache.delete(trackId);
+    manifestCache.delete(trackId);
+    segmentPreloaded.delete(trackId);
     return null;
   }
   return entry.url;
@@ -26,7 +45,8 @@ export function getCachedUrl(trackId: number): string | null {
 
 /** Store a resolved URL in the cache. */
 export function setCachedUrl(trackId: number, url: string): void {
-  cache.set(trackId, { url, cachedAt: Date.now() });
+  const expiresAt = extractUrlExpiration(url) ?? (Date.now() + URL_TTL_MS);
+  cache.set(trackId, { url, expiresAt });
 }
 
 /** Resolve a single track, deduplicating concurrent requests. */
@@ -157,11 +177,11 @@ async function fetchSegment(url: string): Promise<void> {
 export function preloadQueueSegments(
   tracks: Array<{ trackId: number; trackUrl: string }>,
   fromIndex = 0,
-  limit = 2,
+  limit = 1,
 ): void {
   const toPreload = tracks
     .slice(fromIndex, fromIndex + limit)
-    .filter((t) => !segmentPreloaded.has(t.trackId));
+    .filter((t) => !segmentPreloaded.has(t.trackId) || !isCacheValid(t.trackId));
   if (toPreload.length === 0) return;
 
   void (async () => {
