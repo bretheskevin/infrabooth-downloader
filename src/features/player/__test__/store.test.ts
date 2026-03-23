@@ -767,7 +767,8 @@ describe('playerStore', () => {
       expect(state.currentTrack?.trackId).toBe(2);
       expect(state.crossfadePending).toBe(false);
       expect(state.crossfadingTrackId).toBeNull();
-      expect(preloadQueueSegments).toHaveBeenCalledWith(queue, 2, 2);
+      expect(preloadQueueSegments).toHaveBeenCalledWith(queue, 2);
+      expect(preloadQueueSegments).toHaveBeenCalledWith(queue, 0);
     });
 
     it('onCrossfadeComplete should clear flags when cursor already advanced', () => {
@@ -788,7 +789,33 @@ describe('playerStore', () => {
       expect(state.cursor).toBe(1);
       expect(state.crossfadePending).toBe(false);
       expect(state.crossfadingTrackId).toBeNull();
-      expect(preloadQueueSegments).toHaveBeenCalledWith(queue, 2, 2);
+      expect(preloadQueueSegments).toHaveBeenCalledWith(queue, 2);
+      expect(preloadQueueSegments).toHaveBeenCalledWith(queue, 0);
+    });
+
+    it('onCrossfadeComplete should advance to correct track after queue reorder', () => {
+      const queue = makeQueue(4);
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
+
+      // Reorder: move track 2 (index 1) to index 3
+      usePlayerStore.getState().reorderQueue(1, 3);
+
+      const cbs = extractCallbacks();
+      cbs.onCrossfadeComplete!();
+
+      const state = usePlayerStore.getState();
+      // Track 2 is now at index 3 after reorder — cursor should follow by trackId
+      expect(state.currentTrack?.trackId).toBe(2);
+      expect(state.cursor).toBe(3);
+      expect(state.crossfadePending).toBe(false);
+      expect(state.crossfadingTrackId).toBeNull();
     });
 
     it('onCrossfadeComplete should reset state if next track does not match', () => {
