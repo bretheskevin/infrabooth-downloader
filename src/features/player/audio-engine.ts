@@ -1,5 +1,6 @@
 import Hls from 'hls.js';
 import { clamp } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 export type AudioEngineState = 'idle' | 'loading' | 'playing' | 'paused';
 
@@ -45,6 +46,17 @@ let crossfading = false;
 let rampId: number | null = null;
 let rampTargetVolume = 1;
 let crossfadePendingBegin: (() => void) | null = null;
+let playWhenReady = false;
+
+function safePlay(el: HTMLAudioElement) {
+  el.play().catch((e: Error) => {
+    if (e.name === 'AbortError') {
+      void logger.debug('[audio-engine] Play aborted (track switch)');
+      return;
+    }
+    callbacks.onError(`Play failed: ${e.message}`);
+  });
+}
 
 function setState(state: AudioEngineState) {
   currentState = state;
@@ -73,6 +85,13 @@ function getSlotAudio(slot: Slot): HTMLAudioElement {
         slot.audio.readyState >= 3
       ) {
         setState('playing');
+      }
+    });
+    el.addEventListener('canplay', () => {
+      if (!slot.isOutgoing && playWhenReady && slot === activeSlot) {
+        playWhenReady = false;
+        void logger.debug(`[audio-engine] Deferred play executing (readyState=${el.readyState})`);
+        safePlay(el);
       }
     });
     el.addEventListener('ended', () => {
@@ -119,6 +138,7 @@ function loadSlot(slot: Slot, url: string) {
     hlsInstance.loadSource(url);
     hlsInstance.attachMedia(el);
     hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => {
+      void logger.debug(`[audio-engine] HLS manifest parsed (isOutgoing=${slot.isOutgoing})`);
       if (!slot.isOutgoing) {
         startSlotProgress(slot);
       }
@@ -244,18 +264,24 @@ export const audioEngine = {
   },
 
   load(url: string) {
+    playWhenReady = false;
     stopSlotProgress(activeSlot);
     destroySlotHls(activeSlot);
     setState('loading');
+    void logger.debug(`[audio-engine] Loading into active slot: ${url.slice(0, 80)}...`);
     loadSlot(activeSlot, url);
   },
 
   play() {
-    getSlotAudio(activeSlot)
-      .play()
-      .catch((e: Error) => {
-        callbacks.onError(`Play failed: ${e.message}`);
-      });
+    const el = getSlotAudio(activeSlot);
+    if (el.readyState >= 2) {
+      playWhenReady = false;
+      void logger.debug(`[audio-engine] Playing immediately (readyState=${el.readyState})`);
+      safePlay(el);
+    } else {
+      playWhenReady = true;
+      void logger.debug(`[audio-engine] Media not ready (readyState=${el.readyState}), deferring play until canplay`);
+    }
   },
 
   pause() {
@@ -280,6 +306,7 @@ export const audioEngine = {
   },
 
   stop() {
+    playWhenReady = false;
     audioEngine.cancelCrossfade();
 
     stopSlotProgress(activeSlot);
@@ -302,6 +329,7 @@ export const audioEngine = {
   },
 
   destroy() {
+    playWhenReady = false;
     cancelRamp();
     crossfading = false;
     crossfadePendingBegin = null;
