@@ -301,7 +301,8 @@
     "clickToExpand": "Click to expand player",
     "volume": "Volume",
     "mute": "Mute",
-    "unmute": "Unmute"
+    "unmute": "Unmute",
+    "trackActions": "Open menu"
   },
   "selections": {
     "sectionTitle": "Mixed for you",

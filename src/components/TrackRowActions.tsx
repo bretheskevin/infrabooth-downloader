@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { Link, ExternalLink, MoreVertical, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
 
-interface TrackMenuItemsProps {
+export interface TrackMenuItemsProps {
   onCopyLink: () => void;
   onOpenInBrowser: () => void;
   isSignedIn: boolean;
@@ -25,7 +26,7 @@ interface TrackMenuItemsProps {
   onRemoveFromPlaylist?: () => void;
 }
 
-function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist }: TrackMenuItemsProps) {
+export function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist }: TrackMenuItemsProps) {
   const { t } = useTranslation();
 
   if (variant === 'context') {
@@ -134,6 +135,8 @@ export function TrackRowActionsDropdown({
   actionSlot,
   onRemoveFromPlaylist,
 }: TrackRowActionsDropdownProps) {
+  const closeMenu = useCallback(() => onDropdownMenuOpenChange(false), [onDropdownMenuOpenChange]);
+
   return (
     <div className="flex-shrink-0 flex items-center justify-end gap-1 min-w-[32px]">
       {actionSlot}
@@ -154,7 +157,7 @@ export function TrackRowActionsDropdown({
             isSignedIn={isSignedIn}
             trackId={trackId}
             variant="dropdown"
-            onCloseMenu={() => onDropdownMenuOpenChange(false)}
+            onCloseMenu={closeMenu}
             onRemoveFromPlaylist={onRemoveFromPlaylist}
           />
         </DropdownMenuContent>

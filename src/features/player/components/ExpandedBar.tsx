@@ -11,6 +11,7 @@ import { ScrollingText } from './ScrollingText';
 import { SeekBar } from './SeekBar';
 import { TransportControls } from './TransportControls';
 import { VolumeControl } from './VolumeControl';
+import { TrackActionsDropdown } from '@/components/TrackActionsDropdown';
 
 export const EXPANDED_BAR_HEIGHT = 90;
 
@@ -81,6 +82,14 @@ export function ExpandedBar() {
             <p>{t('player.queue')}</p>
           </TooltipContent>
         </Tooltip>
+
+        <TrackActionsDropdown
+          trackId={currentTrack.trackId}
+          permalinkUrl={currentTrack.trackUrl}
+          triggerClassName="h-7 w-7"
+          contentSide="top"
+          contentAlign="end"
+        />
 
         {/* Collapse */}
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => actions().toggleExpanded()} aria-label={t('player.collapse')}>
