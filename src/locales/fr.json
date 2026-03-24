@@ -301,7 +301,8 @@
     "clickToExpand": "Cliquer pour agrandir le lecteur",
     "volume": "Volume",
     "mute": "Couper le son",
-    "unmute": "Rétablir le son"
+    "unmute": "Rétablir le son",
+    "trackActions": "Ouvrir le menu"
   },
   "selections": {
     "sectionTitle": "Mixés pour vous",
