@@ -40,9 +40,14 @@ async function loadAndPlay(
   get: () => PlayerState & PlaybackSliceActions,
 ) {
   try {
+    void logger.debug(`[player] Resolving URL for track ${track.trackId} (gen=${generation})`);
     const url = await resolveWithCache(track.trackId, track.trackUrl);
-    if (generation !== loadGeneration) return;
+    if (generation !== loadGeneration) {
+      void logger.debug(`[player] Stale generation ${generation} (current=${loadGeneration}), skipping load`);
+      return;
+    }
     consecutiveFailures = 0;
+    void logger.debug(`[player] Loading track ${track.trackId} into audio engine`);
     audioEngine.setVolume(get().volume);
     audioEngine.load(url);
     audioEngine.play();
@@ -350,12 +355,14 @@ export const createPlaybackSlice: StateCreator<
 
         consecutiveFailures++;
         if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+          void logger.error(`[player] ${MAX_CONSECUTIVE_FAILURES} consecutive failures, stopping`);
           consecutiveFailures = 0;
           get().stop();
           return;
         }
 
         const { cursor, queue } = get();
+        void logger.debug(`[player] Error recovery: cursor=${cursor}, queueLength=${queue.length}`);
         if (cursor + 1 < queue.length) {
           get().next();
         } else {
