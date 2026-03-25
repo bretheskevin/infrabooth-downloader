@@ -7,6 +7,17 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-03-25
+
+### Added
+
+- Menu d'actions sur le morceau dans le lecteur étendu
+- Section de sélections recommandées sur la page d'accueil
+
+### Fixed
+
+- L'audio ne se lançait parfois pas au changement de piste
+
 ## [1.12.1] - 2026-03-23
 
 ### Changed
