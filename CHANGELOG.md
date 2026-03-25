@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.13.0] - 2026-03-25
+
+### Added
+
+- Track actions menu in the expanded player bar
+- Curated picks section on the home page
+
+### Fixed
+
+- Audio sometimes failed to play on track switch
+
 ## [1.12.1] - 2026-03-23
 
 ### Changed
