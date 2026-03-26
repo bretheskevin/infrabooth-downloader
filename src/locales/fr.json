@@ -334,6 +334,7 @@
     "checkingMembership": "Vérification...",
     "addedToPlaylist": "Ajouté à {{playlist}}",
     "addFailed": "Échec de l'ajout",
+    "addToQueue": "Ajouter à la file d'attente",
     "removeFromPlaylist": "Retirer de la playlist",
     "removeFromPlaylistTitle": "Retirer cette piste ?",
     "removeFromPlaylistDescription": "<strong>{{track}}</strong> sera retiré de <strong>{{playlist}}</strong>. Cette action est irréversible.",
