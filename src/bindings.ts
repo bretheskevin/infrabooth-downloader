@@ -387,7 +387,7 @@ durationMs: number;
  */
 downloadUrl: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
 export type ErrorResponse = { code: string; message: string }
-export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean }
+export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean; has_original_tracks: boolean }
 export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
 export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }
 /**

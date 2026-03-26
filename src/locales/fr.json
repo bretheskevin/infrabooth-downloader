@@ -369,6 +369,7 @@
     "weeksAgo_other": "il y a {{count}} semaines",
     "monthAgo": "il y a plus d'un mois",
     "scrollLeft": "Défiler vers la gauche",
-    "scrollRight": "Défiler vers la droite"
+    "scrollRight": "Défiler vers la droite",
+    "hideReposts": "Masquer les reposts"
   }
 }

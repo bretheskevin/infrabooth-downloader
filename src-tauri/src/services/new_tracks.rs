@@ -51,9 +51,10 @@ pub struct FollowedArtist {
     pub username: String,
     pub avatar_url: Option<String>,
     pub has_new_content: bool,
+    pub has_original_tracks: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, Type)]
 pub enum ActivityType {
     Track,
     Repost,
@@ -352,6 +353,7 @@ mod tests {
             username: name.to_string(),
             avatar_url: None,
             has_new_content: true,
+            has_original_tracks: true,
         }
     }
 

@@ -5,7 +5,7 @@ import type { ActivityFilter } from './constants';
 interface NewTracksState {
   selectedArtist: FollowedArtist | null;
   activityFilter: ActivityFilter;
-  setSelectedArtist: (artist: FollowedArtist) => void;
+  setSelectedArtist: (artist: FollowedArtist, defaultFilter?: ActivityFilter) => void;
   clearSelectedArtist: () => void;
   setActivityFilter: (filter: ActivityFilter) => void;
 }
@@ -13,7 +13,7 @@ interface NewTracksState {
 export const useNewTracksStore = create<NewTracksState>((set) => ({
   selectedArtist: null,
   activityFilter: 'all',
-  setSelectedArtist: (artist) => set({ selectedArtist: artist, activityFilter: 'all' }),
+  setSelectedArtist: (artist, defaultFilter) => set({ selectedArtist: artist, activityFilter: defaultFilter ?? 'all' }),
   clearSelectedArtist: () => set({ selectedArtist: null, activityFilter: 'all' }),
   setActivityFilter: (filter) => set({ activityFilter: filter }),
 }));

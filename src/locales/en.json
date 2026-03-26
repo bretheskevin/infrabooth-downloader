@@ -369,6 +369,7 @@
     "weeksAgo_other": "{{count}} weeks ago",
     "monthAgo": "over a month ago",
     "scrollLeft": "Scroll left",
-    "scrollRight": "Scroll right"
+    "scrollRight": "Scroll right",
+    "hideReposts": "Hide reposts"
   }
 }

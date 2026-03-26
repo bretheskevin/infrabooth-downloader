@@ -10,7 +10,7 @@ import { SelectionsSection, useSelectionsStore } from '@/features/selections';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
 import { NewTracksCarousel, ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { useIsSignedIn } from '@/features/auth/store';
-import { useIsDownloadEnabled } from '@/features/settings';
+import { useIsDownloadEnabled, useSettingsStore } from '@/features/settings';
 import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
 import { cn } from '@/lib/utils';
 
@@ -50,7 +50,8 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
 
   const handleSelectArtist = useCallback((artist: FollowedArtist) => {
     setSlideClass('library-slide-in-detail');
-    setSelectedArtist(artist);
+    const hideReposts = useSettingsStore.getState().hideReposts;
+    setSelectedArtist(artist, hideReposts ? 'new' : 'all');
   }, []);
 
   const handleBackFromArtist = useCallback(() => {
