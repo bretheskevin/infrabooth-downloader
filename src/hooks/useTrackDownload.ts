@@ -1,10 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
-import { useDownloadProgressListener } from './useDownloadProgressListener';
-import { useDownloadState } from './useDownloadState';
+import { useDownloadState, useDownloadStateStore, addManagedTrack, clearManagedTracks } from './useDownloadState';
 import { useTrackDownloader } from './useTrackDownloader';
-import type { TrackInfo, DownloadProgressEvent } from '@/bindings';
+import type { TrackInfo } from '@/bindings';
 import type { DownloadState } from '@/types/download';
 import { buildTrackApiUrl } from '@/lib/soundcloud';
 
@@ -42,35 +41,37 @@ export function useTrackDownload(downloadPath: string) {
   const { downloadTrack: download, getTrackInfo } = useTrackDownloader();
   
   const toastedRef = useRef<Set<string>>(new Set());
-  const managedTracksRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     toastedRef.current.clear();
-    managedTracksRef.current.clear();
+    clearManagedTracks();
   }, [downloadPath]);
 
-  const handleProgressEvent = useCallback((event: DownloadProgressEvent) => {
-    if (!managedTracksRef.current.has(event.trackId)) return;
+  useEffect(() => {
+    const unsub = useDownloadStateStore.subscribe((state, prevState) => {
+      for (const [trackId, trackState] of state.states) {
+        const prevStatus = prevState.states.get(trackId)?.status;
 
-    updateFromEvent(event);
-
-    if (event.status === 'complete' && !toastedRef.current.has(event.trackId)) {
-      toastedRef.current.add(event.trackId);
-      const info = getTrackInfo(event.trackId);
-      if (info) {
-        toast.success(t('search.toastSuccess', { title: info.title }));
+        if (trackState.status === 'complete' && prevStatus !== 'complete'
+            && !toastedRef.current.has(trackId)) {
+          toastedRef.current.add(trackId);
+          const info = getTrackInfo(trackId);
+          if (info) {
+            toast.success(t('search.toastSuccess', { title: info.title }));
+          }
+        } else if (trackState.status === 'failed' && prevStatus !== 'failed'
+            && !toastedRef.current.has(`err:${trackId}`)) {
+          toastedRef.current.add(`err:${trackId}`);
+          toast.error(t('search.toastError', { error: trackState.error?.message ?? 'Unknown error' }));
+        }
       }
-    } else if (event.status === 'failed' && !toastedRef.current.has(`err:${event.trackId}`)) {
-      toastedRef.current.add(`err:${event.trackId}`);
-      toast.error(t('search.toastError', { error: event.error?.message ?? 'Unknown error' }));
-    }
-  }, [updateFromEvent, getTrackInfo, t]);
-
-  useDownloadProgressListener(handleProgressEvent);
+    });
+    return unsub;
+  }, [t, getTrackInfo]);
 
   const downloadTrack = useCallback(async (track: TrackInfo) => {
     const trackId = String(track.id);
-    managedTracksRef.current.add(trackId);
+    addManagedTrack(trackId);
     toastedRef.current.delete(trackId);
     toastedRef.current.delete(`err:${trackId}`);
 
@@ -97,10 +98,9 @@ export function useTrackDownload(downloadPath: string) {
           totalBytes: null,
           error: { code: 'DOWNLOAD_ERROR', message: errorMsg },
         });
-        toast.error(t('search.toastError', { error: errorMsg }));
       }
     }
-  }, [download, downloadPath, updateFromEvent, getRawState, t]);
+  }, [download, downloadPath, updateFromEvent, getRawState]);
 
   const getTrackState = useCallback((trackId: number): DownloadState => {
     return toDownloadState(getRawState(String(trackId)));

@@ -12,13 +12,16 @@ use commands::{
     resolve_playback_url, respond_to_auth_choice, respond_to_rate_limit_choice, scan_existing_tracks,
     search_tracks, sign_out, start_download_queue, test_ffmpeg, validate_download_path,
     validate_soundcloud_url, get_selections,
+    get_followed_artists, get_artist_activity, mark_artist_seen,
 };
 use services::auth_choice::AuthChoiceState;
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
 use services::selections::SelectionCache;
 use services::library::LibraryCache;
+use services::new_tracks::{NewTracksCache, SeenArtistsState};
 use services::storage::AuthState;
+use tauri::Manager;
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use services::events;
 use tauri::Emitter;
@@ -66,7 +69,10 @@ pub fn run() {
         scan_existing_tracks,
         search_tracks,
         resolve_playback_url,
-        get_selections
+        get_selections,
+        get_followed_artists,
+        get_artist_activity,
+        mark_artist_seen
     ]);
 
     // Export TypeScript bindings in debug mode
@@ -90,12 +96,16 @@ pub fn run() {
         .manage(AuthState::default())
         .manage(LibraryCache::default())
         .manage(SelectionCache::default())
+        .manage(NewTracksCache::default())
         .manage(CancellationState::default())
         .manage(Arc::new(AuthChoiceState::default()))
         .manage(Arc::new(RateLimitChoiceState::default()))
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
+
+            let seen_path = commands::new_tracks::seen_state_path(app.handle());
+            app.manage(SeenArtistsState::load(&seen_path));
 
             // Create settings menu item with Cmd+, shortcut
             let settings_item =

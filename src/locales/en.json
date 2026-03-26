@@ -4,6 +4,7 @@
     "version": "Version {{version}}"
   },
   "common": {
+    "back": "Back",
     "done": "Done"
   },
   "auth": {
@@ -220,7 +221,6 @@
     "noResults": "No playlists match your search",
     "emptyState": "No playlists found",
     "detail": {
-      "back": "Back",
       "tracks": "{{count}} tracks",
       "loadingTracks": "Loading tracks...",
       "errorLoading": "Failed to load tracks",
@@ -340,5 +340,25 @@
     "removedFromPlaylist": "Removed from {{playlist}}",
     "notInPlaylist": "Track not in playlist",
     "removeFailed": "Failed to remove track"
+  },
+  "newTracks": {
+    "title": "New releases",
+    "trackCount_one": "{{count}} new track",
+    "trackCount_other": "{{count}} new tracks",
+    "downloadAll": "Download all",
+    "newTrack": "new",
+    "repost": "reposted",
+    "empty": "No new tracks from artists you follow",
+    "error": "Failed to load new tracks",
+    "retry": "Retry",
+    "today": "today",
+    "yesterday": "yesterday",
+    "daysAgo_one": "{{count}} day ago",
+    "daysAgo_other": "{{count}} days ago",
+    "weeksAgo_one": "{{count}} week ago",
+    "weeksAgo_other": "{{count}} weeks ago",
+    "monthAgo": "over a month ago",
+    "scrollLeft": "Scroll left",
+    "scrollRight": "Scroll right"
   }
 }

@@ -19,6 +19,7 @@ interface TrackRowContentProps {
   onPlayPause: () => void;
   onMouseDown: (e: React.MouseEvent) => void;
   downloadProgress: DownloadProgress | null;
+  subtitleSlot?: React.ReactNode;
 }
 
 export function TrackRowContent({
@@ -30,6 +31,7 @@ export function TrackRowContent({
   onPlayPause,
   onMouseDown,
   downloadProgress,
+  subtitleSlot,
 }: TrackRowContentProps) {
   const showProgress = downloadProgress && downloadProgress.progress > 0;
 
@@ -67,6 +69,7 @@ export function TrackRowContent({
           {track.title}
         </p>
         <p className="text-xs text-muted-foreground truncate">{track.user.username}</p>
+        {subtitleSlot}
         {showProgress && (
           <div className="mt-1 flex items-center gap-2">
             <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">

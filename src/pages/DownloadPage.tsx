@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Selection, TrackInfo } from '@/bindings';
+import type { Selection, TrackInfo, FollowedArtist } from '@/bindings';
 import { Spinner } from '@/components/ui/spinner';
 import { useQueueStore, useDownloadFlow, useDownloadCompletion } from '@/features/queue';
 import { UrlInput, ValidationFeedback, PlaylistPreview, TrackPreview, isPlaylist } from '@/features/url-input';
@@ -8,9 +8,11 @@ import { CompletionPanel } from '@/features/completion';
 import { ProgressPanel } from '@/features/progress/components/ProgressPanel';
 import { SelectionsSection, useSelectionsStore } from '@/features/selections';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
+import { NewTracksCarousel, ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { useIsSignedIn } from '@/features/auth/store';
 import { useIsDownloadEnabled } from '@/features/settings';
 import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
+import { cn } from '@/lib/utils';
 
 interface DownloadPageProps {
   initialUrl?: string;
@@ -25,10 +27,15 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
   const isInitializing = useQueueStore((state) => state.isInitializing);
   const selectedMix = useSelectionsStore((s) => s.selectedMix);
   const { setSelectedMix, clearSelectedMix } = useSelectionsStore.getState();
+  const selectedArtist = useNewTracksStore((s) => s.selectedArtist);
+  const { setSelectedArtist, clearSelectedArtist } = useNewTracksStore.getState();
   const [slideClass, setSlideClass] = useState('');
 
   useEffect(() => {
-    if (!isSignedIn) clearSelectedMix();
+    if (!isSignedIn) {
+      clearSelectedMix();
+      clearSelectedArtist();
+    }
   }, [isSignedIn]);
 
   const handleSelectMix = useCallback((mix: Selection) => {
@@ -39,6 +46,16 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
   const handleBackFromMix = useCallback(() => {
     setSlideClass('library-slide-in-list');
     clearSelectedMix();
+  }, []);
+
+  const handleSelectArtist = useCallback((artist: FollowedArtist) => {
+    setSlideClass('library-slide-in-detail');
+    setSelectedArtist(artist);
+  }, []);
+
+  const handleBackFromArtist = useCallback(() => {
+    setSlideClass('library-slide-in-list');
+    clearSelectedArtist();
   }, []);
 
   const {
@@ -98,9 +115,21 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
     );
   }
 
+  if (selectedArtist) {
+    return (
+      <section key="artist-detail" className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <ArtistDetailView
+          artist={selectedArtist}
+          onBack={handleBackFromArtist}
+          onDownloadTracks={onDownloadTracks}
+        />
+      </section>
+    );
+  }
+
   if (selectedMix) {
     return (
-      <section key="mix-detail" className={`space-y-4 flex-1 min-h-0 flex flex-col ${slideClass}`}>
+      <section key="mix-detail" className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
         <PlaylistDetailView
           playlist={toLibraryPlaylist(selectedMix)}
           initialTracks={selectedMix.tracks}
@@ -129,7 +158,7 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
   }
 
   return (
-    <section key="download-main" className={`space-y-4 ${slideClass}`}>
+    <section key="download-main" className={cn('space-y-4', slideClass)}>
       {isDownloadEnabled && (
         <>
           <UrlInput
@@ -169,6 +198,7 @@ export function DownloadPage({ initialUrl, onDownloadTracks }: DownloadPageProps
           )}
         </>
       )}
+      {isSignedIn && <NewTracksCarousel onSelectArtist={handleSelectArtist} />}
       {isSignedIn ? (
         <SelectionsSection
           onSelectMix={handleSelectMix}
