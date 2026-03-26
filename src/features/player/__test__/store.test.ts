@@ -75,6 +75,7 @@ describe('playerStore', () => {
       isQueueOpen: false,
       isShuffled: false,
       originalQueue: null,
+      manualQueueCount: 0,
     });
     vi.clearAllMocks();
   });
@@ -378,6 +379,163 @@ describe('playerStore', () => {
     const state = usePlayerStore.getState();
     expect(state.originalQueue).toBeTruthy();
     expect(state.originalQueue![state.originalQueue!.length - 1]?.trackId).toBe(99);
+  });
+
+  it('addToQueue sets manualQueueCount to 1 on first add', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 1);
+
+    const newItem: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Added Track' };
+    usePlayerStore.getState().addToQueue(newItem);
+
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+  });
+
+  it('addToQueue stacks manual tracks in order', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 1);
+
+    const trackX: PlaybackItem = { ...mockTrack, trackId: 98, title: 'Track X' };
+    const trackY: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Track Y' };
+    usePlayerStore.getState().addToQueue(trackX);
+    usePlayerStore.getState().addToQueue(trackY);
+
+    const state = usePlayerStore.getState();
+    expect(state.manualQueueCount).toBe(2);
+    expect(state.queue[2]?.trackId).toBe(98);
+    expect(state.queue[3]?.trackId).toBe(99);
+    expect(state.queue[4]?.trackId).toBe(3);
+  });
+
+  it('addToQueue resets manualQueueCount when starting playback from stopped', () => {
+    const newItem: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Added Track' };
+    usePlayerStore.getState().addToQueue(newItem);
+
+    expect(usePlayerStore.getState().manualQueueCount).toBe(0);
+  });
+
+  it('play resets manualQueueCount', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 99 });
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+
+    await usePlayerStore.getState().play(makeQueue(5), 0);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(0);
+  });
+
+  it('next decrements manualQueueCount when advancing into manual section', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 99 });
+    expect(usePlayerStore.getState().manualQueueCount).toBe(2);
+
+    await usePlayerStore.getState().next();
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+    expect(usePlayerStore.getState().currentTrack?.trackId).toBe(98);
+
+    await usePlayerStore.getState().next();
+    expect(usePlayerStore.getState().manualQueueCount).toBe(0);
+    expect(usePlayerStore.getState().currentTrack?.trackId).toBe(99);
+  });
+
+  it('skipTo resets manualQueueCount when skipping past manual section', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 99 });
+    expect(usePlayerStore.getState().manualQueueCount).toBe(2);
+
+    await usePlayerStore.getState().skipTo(4);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(0);
+  });
+
+  it('skipTo within manual section adjusts manualQueueCount', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 99 });
+
+    await usePlayerStore.getState().skipTo(1);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+    expect(usePlayerStore.getState().currentTrack?.trackId).toBe(98);
+  });
+
+  it('removeFromQueue decrements manualQueueCount when removing manual track', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 99 });
+
+    usePlayerStore.getState().removeFromQueue(1);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+  });
+
+  it('removeFromQueue does not change manualQueueCount when removing auto track', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+
+    usePlayerStore.getState().removeFromQueue(3);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+  });
+
+  it('reorderQueue adjusts manualQueueCount when moving auto track into manual section', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+    usePlayerStore.getState().reorderQueue(3, 1);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(2);
+  });
+
+  it('reorderQueue adjusts manualQueueCount when moving manual track out of section', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+    usePlayerStore.getState().reorderQueue(1, 4);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(0);
+  });
+
+  it('previous resets manualQueueCount', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 1);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+
+    await usePlayerStore.getState().previous();
+    expect(usePlayerStore.getState().manualQueueCount).toBe(0);
+  });
+
+  it('reorderQueue resets manualQueueCount when dragging current track', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 98 });
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+
+    usePlayerStore.getState().reorderQueue(0, 3);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(0);
+  });
+
+  it('syncQueue resets manualQueueCount', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 0);
+
+    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 99 });
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+
+    usePlayerStore.getState().syncQueue(makeQueue(5));
+    expect(usePlayerStore.getState().manualQueueCount).toBe(0);
   });
 
   it('syncQueue should update queue while preserving current track', async () => {
