@@ -19,6 +19,7 @@ interface TrackActionsDropdownProps {
   triggerClassName?: string;
   contentSide?: 'top' | 'bottom';
   contentAlign?: 'start' | 'end';
+  onAddToQueue?: () => void;
 }
 
 export function TrackActionsDropdown({
@@ -27,6 +28,7 @@ export function TrackActionsDropdown({
   triggerClassName,
   contentSide = 'top',
   contentAlign = 'end',
+  onAddToQueue,
 }: TrackActionsDropdownProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -71,6 +73,7 @@ export function TrackActionsDropdown({
           trackId={trackId}
           variant="dropdown"
           onCloseMenu={closeMenu}
+          onAddToQueue={onAddToQueue}
         />
       </DropdownMenuContent>
     </DropdownMenu>

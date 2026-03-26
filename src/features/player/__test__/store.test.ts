@@ -344,6 +344,42 @@ describe('playerStore', () => {
     expect(state.cursor).toBe(0);
   });
 
+  it('addToQueue inserts after cursor when playing', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 1);
+
+    const newItem: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Added Track' };
+    usePlayerStore.getState().addToQueue(newItem);
+
+    const state = usePlayerStore.getState();
+    expect(state.queue.length).toBe(4);
+    expect(state.queue[2]?.trackId).toBe(99);
+    expect(state.cursor).toBe(1);
+  });
+
+  it('addToQueue starts playback when stopped', () => {
+    const newItem: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Added Track' };
+    usePlayerStore.getState().addToQueue(newItem);
+
+    const state = usePlayerStore.getState();
+    expect(state.queue.length).toBe(1);
+    expect(state.queue[0]?.trackId).toBe(99);
+    expect(state.state).toBe('loading');
+  });
+
+  it('addToQueue appends to originalQueue when shuffled', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 0);
+    usePlayerStore.getState().toggleShuffle();
+
+    const newItem: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Added Track' };
+    usePlayerStore.getState().addToQueue(newItem);
+
+    const state = usePlayerStore.getState();
+    expect(state.originalQueue).toBeTruthy();
+    expect(state.originalQueue![state.originalQueue!.length - 1]?.trackId).toBe(99);
+  });
+
   it('syncQueue should update queue while preserving current track', async () => {
     const queue = makeQueue(3);
     await usePlayerStore.getState().play(queue, 1);

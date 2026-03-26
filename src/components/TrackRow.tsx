@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useTrackActions } from '@/hooks/useTrackActions';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 import { useIsSignedIn } from '@/features/auth/store';
+import { usePlayerStore, buildPlaybackQueue } from '@/features/player';
 import { TrackRowContent } from '@/components/TrackRowContent';
 import { TrackRowActionsContextContent, TrackRowActionsDropdown } from '@/components/TrackRowActions';
 import type { TrackInfo } from '@/bindings';
@@ -71,6 +72,10 @@ export function TrackRow({
   );
   const { handleCopyLink, handleOpenInBrowser } = useTrackActions(track.permalink_url);
   const isSignedIn = useIsSignedIn();
+  const handleAddToQueue = useCallback(() => {
+    const [item] = buildPlaybackQueue([track]);
+    if (item) usePlayerStore.getState().addToQueue(item);
+  }, [track]);
 
   const handleMouseEnter = useCallback(() => {
     setIsRowHovered(true);
@@ -133,6 +138,7 @@ export function TrackRow({
             onDropdownMenuOpenChange={handleDropdownMenuOpenChange}
             actionSlot={actionSlot}
             onRemoveFromPlaylist={onRemoveFromPlaylist}
+            onAddToQueue={handleAddToQueue}
           />
         </div>
       </ContextMenuTrigger>
@@ -143,6 +149,7 @@ export function TrackRow({
         trackId={track.id}
         onCloseMenu={() => setContextMenuKey((k) => k + 1)}
         onRemoveFromPlaylist={onRemoveFromPlaylist}
+        onAddToQueue={handleAddToQueue}
       />
     </ContextMenu>
   );

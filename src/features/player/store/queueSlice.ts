@@ -11,6 +11,7 @@ import {
 } from './playbackSlice';
 
 export interface QueueSliceActions {
+  addToQueue: (item: PlaybackItem) => void;
   syncQueue: (newQueue: PlaybackItem[]) => void;
   reorderQueue: (fromIndex: number, toIndex: number) => void;
   removeFromQueue: (index: number) => void;
@@ -27,6 +28,23 @@ export const createQueueSlice: StateCreator<
   queue: [],
   originalQueue: null,
   isShuffled: false,
+
+  addToQueue: (item) => {
+    const { queue, cursor, state, originalQueue, isShuffled } = get();
+    if (state === 'stopped' || queue.length === 0) {
+      get().play([item], 0);
+      return;
+    }
+    const insertAt = cursor + 1;
+    const newQueue = [...queue];
+    newQueue.splice(insertAt, 0, item);
+
+    if (isShuffled && originalQueue) {
+      set({ queue: newQueue, originalQueue: [...originalQueue, item] });
+    } else {
+      set({ queue: newQueue });
+    }
+  },
 
   syncQueue: (newQueue) => {
     const { currentTrack, isShuffled, originalQueue, state } = get();
