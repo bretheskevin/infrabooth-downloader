@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { listen } from '@tauri-apps/api/event';
 import { commands, type UpdateInfo } from '@/bindings';
-import { useChangelogStore } from '@/features/changelog/store';
 import { logger } from '@/lib/logger';
 import { getErrorString } from '@/lib/utils';
 
@@ -50,7 +49,6 @@ export const useUpdateStore = create<UpdateState>((set, get) => ({
 
       if (result.status === 'ok' && result.data) {
         void logger.info(`[Update] New version available: ${result.data.version}`);
-        useChangelogStore.getState().cacheChangelog(result.data.body ?? null, result.data.date ?? null);
         set({
           updateAvailable: true,
           updateInfo: result.data,
