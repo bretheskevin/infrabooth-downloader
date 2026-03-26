@@ -1,4 +1,4 @@
-export type ArtworkSize = 20 | 32 | 47 | 67 | 300 | 500;
+export type ArtworkSize = 20 | 32 | 47 | 67 | 200 | 300 | 500;
 
 export function getArtworkUrl(url: string | null, size: ArtworkSize = 67): string | null {
   if (!url) return null;

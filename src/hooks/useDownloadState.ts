@@ -1,4 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
+import { create } from 'zustand';
+import { listen } from '@tauri-apps/api/event';
 import type { DownloadProgressEvent, ErrorResponse } from '@/bindings';
 
 interface TrackDownloadState {
@@ -7,52 +9,96 @@ interface TrackDownloadState {
   error?: ErrorResponse | null;
 }
 
-interface DownloadStateMap {
-  map: Map<string, TrackDownloadState>;
+interface DownloadStateStore {
+  states: Map<string, TrackDownloadState>;
   completedCount: number;
 }
 
-export function useDownloadState() {
-  const [state, setState] = useState<DownloadStateMap>({
-    map: new Map(),
-    completedCount: 0,
+export const useDownloadStateStore = create<DownloadStateStore>(() => ({
+  states: new Map(),
+  completedCount: 0,
+}));
+
+const managedTrackIds = new Set<string>();
+
+export function addManagedTrack(trackId: string) {
+  managedTrackIds.add(trackId);
+}
+
+export function clearManagedTracks() {
+  managedTrackIds.clear();
+}
+
+function processEvent(event: DownloadProgressEvent) {
+  if (!managedTrackIds.has(event.trackId)) return;
+
+  useDownloadStateStore.setState((prev) => {
+    const newMap = new Map(prev.states);
+    const existing = newMap.get(event.trackId);
+
+    newMap.set(event.trackId, {
+      status: event.status,
+      percent: event.percent ?? existing?.percent,
+      error: event.error,
+    });
+
+    const wasComplete = existing?.status === 'complete' || existing?.status === 'completed';
+    const isComplete = event.status === 'complete' || event.status === 'completed';
+    const newCompleted = isComplete && !wasComplete
+      ? prev.completedCount + 1
+      : prev.completedCount;
+
+    return { states: newMap, completedCount: newCompleted };
   });
+}
+
+let listenerInitialized = false;
+let unlistenFn: (() => void) | undefined;
+
+function initGlobalListener() {
+  if (listenerInitialized) return;
+  listenerInitialized = true;
+  void listen<DownloadProgressEvent>('download-progress', (event) => {
+    processEvent(event.payload);
+  }).then((unlisten) => {
+    unlistenFn = unlisten;
+  });
+}
+initGlobalListener();
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    unlistenFn?.();
+    listenerInitialized = false;
+  });
+}
+
+export function useDownloadState() {
+  const { states, completedCount } = useDownloadStateStore();
 
   const updateFromEvent = useCallback((event: DownloadProgressEvent) => {
-    setState((prev) => {
-      const newMap = new Map(prev.map);
-      const existing = newMap.get(event.trackId);
-
-      newMap.set(event.trackId, {
-        status: event.status,
-        percent: event.percent ?? existing?.percent,
-        error: event.error,
-      });
-
-      const newCompleted =
-        event.status === 'completed' && existing?.status !== 'completed'
-          ? prev.completedCount + 1
-          : prev.completedCount;
-
-      return { map: newMap, completedCount: newCompleted };
-    });
+    addManagedTrack(event.trackId);
+    processEvent(event);
   }, []);
 
   const getTrackState = useCallback(
-    (trackId: string) => state.map.get(trackId),
-    [state.map]
+    (trackId: string) => states.get(trackId),
+    [states],
   );
 
   const reconcile = useCallback((trackIds: string[]) => {
-    setState((prev) => {
+    useDownloadStateStore.setState((prev) => {
+      const diskSet = new Set(trackIds);
       const newMap = new Map<string, TrackDownloadState>();
-      for (const id of trackIds) {
-        const existing = prev.map.get(id);
-        if (existing) newMap.set(id, existing);
+      for (const [id, state] of prev.states) {
+        const isCompleted = state.status === 'complete' || state.status === 'completed';
+        if (diskSet.has(id) || !isCompleted) {
+          newMap.set(id, state);
+        }
       }
-      return { ...prev, map: newMap };
+      return { ...prev, states: newMap };
     });
   }, []);
 
-  return { completedCount: state.completedCount, updateFromEvent, getTrackState, reconcile };
+  return { completedCount, updateFromEvent, getTrackState, reconcile };
 }

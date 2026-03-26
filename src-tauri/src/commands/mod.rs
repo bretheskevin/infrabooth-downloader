@@ -47,3 +47,6 @@ pub use player::resolve_playback_url;
 
 pub mod selections;
 pub use selections::get_selections;
+
+pub mod new_tracks;
+pub use new_tracks::{get_followed_artists, get_artist_activity, mark_artist_seen};
