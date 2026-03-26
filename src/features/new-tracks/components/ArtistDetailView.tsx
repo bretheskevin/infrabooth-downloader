@@ -22,7 +22,9 @@ import { useFolderSelection } from '@/hooks/useFolderSelection';
 import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import { getFolderName } from '@/lib/utils';
-import type { FollowedArtist, TrackInfo } from '@/bindings';
+import type { ActivityItem, ActivityType, FollowedArtist, TrackInfo } from '@/bindings';
+import { useNewTracksStore } from '../store';
+import { ActivityFilterChips } from './ActivityFilterChips';
 
 interface ArtistDetailViewProps {
   artist: FollowedArtist;
@@ -33,12 +35,20 @@ interface ArtistDetailViewProps {
 export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDetailViewProps) {
   const { t } = useTranslation();
   const { items, isLoading, error, refetch } = useArtistActivity(artist.id);
+  const activityFilter = useNewTracksStore((s) => s.activityFilter);
+  const setActivityFilter = useNewTracksStore.getState().setActivityFilter;
+
+  const filteredItems = useMemo(() => {
+    if (activityFilter === 'all') return items;
+    const type: ActivityType = activityFilter === 'new' ? 'Track' : 'Repost';
+    return items.filter((item: ActivityItem) => item.activity_type === type);
+  }, [items, activityFilter]);
   const isDownloadEnabled = useIsDownloadEnabled();
   const defaultPath = useSettingsStore((s) => s.downloadPath);
   const [localPath, setLocalPath] = useState<string | undefined>(undefined);
   const effectivePath = localPath || defaultPath || undefined;
 
-  const tracks = useMemo(() => items.map((item) => item.track), [items]);
+  const tracks = useMemo(() => filteredItems.map((item) => item.track), [filteredItems]);
   const { playTrack } = usePlayContext(tracks);
   const { currentTrackId, isPlaying, pause, resume } = usePlayerControls();
 
@@ -106,7 +116,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
         subtitle={
           <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
             <span className="truncate">
-              {t('newTracks.trackCount', { count: items.length })}
+              {t('newTracks.trackCount', { count: filteredItems.length })}
             </span>
             <FolderMetadata
               folderName={folderName}
@@ -119,7 +129,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
           </p>
         }
         actions={
-          isDownloadEnabled && items.length > 0 ? (
+          isDownloadEnabled && filteredItems.length > 0 ? (
             <Button size="sm" onClick={handleDownloadAll} className="gap-1.5 shrink-0">
               <Download className="h-3.5 w-3.5" />
               {t('newTracks.downloadAll')}
@@ -127,6 +137,12 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
           ) : undefined
         }
       />
+
+      {!isLoading && items.length > 0 && (
+        <div className="px-3">
+          <ActivityFilterChips active={activityFilter} onChange={setActivityFilter} />
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex items-center justify-center py-12">
@@ -143,13 +159,13 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
         </div>
       )}
 
-      {!isLoading && !error && items.length === 0 && (
+      {!isLoading && !error && filteredItems.length === 0 && (
         <p className="text-sm text-muted-foreground text-center py-12">
-          {t('newTracks.empty')}
+          {t(items.length > 0 ? 'newTracks.emptyFilter' : 'newTracks.empty')}
         </p>
       )}
 
-      {!isLoading && !error && items.length > 0 && (
+      {!isLoading && !error && filteredItems.length > 0 && (
         <>
           {isDownloadEnabled && selectableCount > 0 && (
             <div className="flex items-center gap-3 px-3">
@@ -164,7 +180,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
             </div>
           )}
           <div className="flex flex-col gap-0.5 overflow-y-auto min-h-0">
-            {items.map((item, index) => (
+            {filteredItems.map((item, index) => (
               <ArtistTrackItem
                 key={`${item.track.id}-${item.activity_type}`}
                 item={item}
