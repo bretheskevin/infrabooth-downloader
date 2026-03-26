@@ -3,14 +3,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 import { useIsSignedIn } from '@/features/auth/store';
-import { STALE_TIME } from '../constants';
+import { FOLLOWED_ARTISTS_KEY, STALE_TIME } from '../constants';
 
 export function useFollowedArtists() {
   const isSignedIn = useIsSignedIn();
   const queryClient = useQueryClient();
 
   const query = useQuery({
-    queryKey: ['followed-artists'],
+    queryKey: [...FOLLOWED_ARTISTS_KEY],
     queryFn: async () => {
       void logger.info('[new-tracks] Fetching followed artists...');
       const result = await api.getFollowedArtists();
@@ -27,7 +27,7 @@ export function useFollowedArtists() {
   const refresh = useCallback(async () => {
     try {
       const result = await api.getFollowedArtists(true);
-      queryClient.setQueryData(['followed-artists'], result);
+      queryClient.setQueryData([...FOLLOWED_ARTISTS_KEY], result);
     } catch (error) {
       void logger.error(`[new-tracks] Failed to refresh followed artists: ${error}`);
     }
