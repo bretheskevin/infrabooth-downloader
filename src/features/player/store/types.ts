@@ -14,6 +14,7 @@ export interface QueueSliceState {
   queue: PlaybackItem[];
   originalQueue: PlaybackItem[] | null;
   isShuffled: boolean;
+  manualQueueCount: number;
 }
 
 export interface UISliceState {

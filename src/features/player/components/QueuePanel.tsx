@@ -22,14 +22,16 @@ import { usePlayerStore } from '../store';
 import { QueuePanelItem } from './QueuePanelItem';
 
 const actions = () => usePlayerStore.getState();
+const sectionHeaderClass = 'px-3 pt-3 pb-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider';
 
 export function QueuePanel({ closing }: { closing?: boolean }) {
   const { t } = useTranslation();
-  const { queue, cursor, playerState } = usePlayerStore(
+  const { queue, cursor, playerState, manualQueueCount } = usePlayerStore(
     useShallow((s) => ({
       queue: s.queue,
       cursor: s.cursor,
       playerState: s.state,
+      manualQueueCount: s.manualQueueCount,
     }))
   );
 
@@ -81,19 +83,35 @@ export function QueuePanel({ closing }: { closing?: boolean }) {
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={queue.map((i) => i.trackId)} strategy={verticalListSortingStrategy}>
               <div className="py-1">
-                {queue.map((item, index) => (
-                  <QueuePanelItem
-                    key={item.trackId}
-                    item={item}
-                    index={index}
-                    isCurrent={index === cursor}
-                    onPlay={(i) => void actions().skipTo(i)}
-                    onPause={() => actions().pause()}
-                    onResume={() => actions().resume()}
-                    onRemove={(i) => actions().removeFromQueue(i)}
-                    isPlayerPlaying={playerState === 'playing'}
-                  />
-                ))}
+                {queue.map((item, index) => {
+                  const isManualStart = manualQueueCount > 0 && index === cursor + 1;
+                  const showAutoHeader = manualQueueCount > 0 && index === cursor + 1 + manualQueueCount;
+
+                  return (
+                    <div key={item.trackId}>
+                      {isManualStart && (
+                        <div className={sectionHeaderClass}>
+                          {t('player.nextUp')}
+                        </div>
+                      )}
+                      {showAutoHeader && (
+                        <div className={sectionHeaderClass}>
+                          {t('player.queueSection')}
+                        </div>
+                      )}
+                      <QueuePanelItem
+                        item={item}
+                        index={index}
+                        isCurrent={index === cursor}
+                        onPlay={(i) => void actions().skipTo(i)}
+                        onPause={() => actions().pause()}
+                        onResume={() => actions().resume()}
+                        onRemove={(i) => actions().removeFromQueue(i)}
+                        isPlayerPlaying={playerState === 'playing'}
+                      />
+                    </div>
+                  );
+                })}
               </div>
             </SortableContext>
           </DndContext>

@@ -236,6 +236,7 @@ export const createPlaybackSlice: StateCreator<
       volume: vol,
       positionMs: 0,
       durationMs: finalTrack.durationMs,
+      manualQueueCount: 0,
     });
 
     await loadAndPlay(finalTrack, generation, get);
@@ -266,12 +267,15 @@ export const createPlaybackSlice: StateCreator<
 
   next: async () => {
     resolveCrossfadeForSkip(set, get);
-    const { queue, cursor } = get();
+    const { queue, cursor, manualQueueCount } = get();
     const nextCursor = cursor + 1;
     const track = queue[nextCursor];
     if (!track) {
       get().stop();
       return;
+    }
+    if (manualQueueCount > 0) {
+      set({ manualQueueCount: manualQueueCount - 1 });
     }
     await startTrackLoad(set, get, track, nextCursor);
     preloadQueueSegments(queue, nextCursor + 1);
@@ -280,10 +284,13 @@ export const createPlaybackSlice: StateCreator<
 
   previous: async () => {
     resolveCrossfadeForSkip(set, get);
-    const { queue, cursor } = get();
+    const { queue, cursor, manualQueueCount } = get();
     const prevCursor = cursor - 1;
     const track = queue[prevCursor];
     if (!track) return;
+    if (manualQueueCount > 0) {
+      set({ manualQueueCount: 0 });
+    }
     await startTrackLoad(set, get, track, prevCursor);
     preloadQueueSegments(queue, prevCursor - 1);
     preloadQueueSegments(queue, prevCursor + 1);
@@ -304,14 +311,22 @@ export const createPlaybackSlice: StateCreator<
       isQueueOpen: false,
       isShuffled: false,
       originalQueue: null,
+      manualQueueCount: 0,
     });
   },
 
   skipTo: async (index) => {
     cancelAnyCrossfade(set);
-    const { queue } = get();
+    const { queue, cursor, manualQueueCount } = get();
     const track = queue[index];
     if (!track) return;
+
+    const manualEnd = cursor + manualQueueCount;
+    if (index > manualEnd) {
+      set({ manualQueueCount: 0 });
+    } else if (index > cursor && index <= manualEnd) {
+      set({ manualQueueCount: manualEnd - index });
+    }
 
     consecutiveFailures = 0;
     await startTrackLoad(set, get, track, index);
