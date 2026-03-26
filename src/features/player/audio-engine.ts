@@ -239,8 +239,6 @@ function startRamp(outgoing: Slot, incoming: Slot, durationMs: number) {
     const vol = rampTargetVolume;
 
     const fadeIn = Math.sin(progress * Math.PI / 2);
-    const fadeOut = Math.cos(progress * Math.PI / 2);
-    if (outgoing.audio) outgoing.audio.volume = vol * fadeOut;
     if (incoming.audio) incoming.audio.volume = vol * fadeIn;
 
     if (progress >= 1) {
