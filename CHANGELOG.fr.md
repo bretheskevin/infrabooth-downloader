@@ -7,6 +7,16 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-03-26
+
+### Added
+
+- Consultation des nouveaux sons et reposts des artistes suivis
+
+### Changed
+
+- Amélioration de la fluidité des transitions crossfade
+
 ## [1.13.0] - 2026-03-25
 
 ### Added
