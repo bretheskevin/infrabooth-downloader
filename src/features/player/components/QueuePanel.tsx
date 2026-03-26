@@ -16,13 +16,14 @@ import {
 } from '@dnd-kit/sortable';
 
 import { useShallow } from 'zustand/react/shallow';
+import { cn } from '@/lib/utils';
 import { EXPANDED_BAR_HEIGHT } from './ExpandedBar';
 import { usePlayerStore } from '../store';
 import { QueuePanelItem } from './QueuePanelItem';
 
 const actions = () => usePlayerStore.getState();
 
-export function QueuePanel() {
+export function QueuePanel({ closing }: { closing?: boolean }) {
   const { t } = useTranslation();
   const { queue, cursor, playerState } = usePlayerStore(
     useShallow((s) => ({
@@ -57,7 +58,12 @@ export function QueuePanel() {
 
   return (
     <div
-      className="fixed left-0 right-0 z-40 bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.08)] animate-in slide-in-from-bottom duration-250 max-h-[60vh] flex flex-col"
+      className={cn(
+        "fixed left-0 right-0 z-40 bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.08)] duration-250 max-h-[60vh] flex flex-col",
+        closing
+          ? "animate-out slide-out-to-bottom fill-mode-forwards"
+          : "animate-in slide-in-from-bottom"
+      )}
       style={{ bottom: `${EXPANDED_BAR_HEIGHT}px` }}
     >
       <div className="px-4 py-2 border-b border-border/50">
