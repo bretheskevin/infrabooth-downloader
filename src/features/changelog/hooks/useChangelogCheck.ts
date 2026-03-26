@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getVersion } from '@tauri-apps/api/app';
 import { logger } from '@/lib/logger';
 import { useChangelogStore } from '../store';
-import { parseChangelog, parseVersionEntry } from '../utils/parseChangelog';
+import { parseChangelog } from '../utils/parseChangelog';
 import type { ChangelogSection } from '../utils/parseChangelog';
 import { CHANGELOGS, changelogEn } from '../utils/changelogs';
 
@@ -32,24 +32,12 @@ export function useChangelogCheck() {
       // Same version — nothing to show
       if (lastSeenVersion === currentVersion) return;
 
-      // Version changed — resolve changelog content
-      const { cachedBody, cachedDate } = useChangelogStore.getState();
-      let resolvedSections: ChangelogSection[];
-      let resolvedDate: string | null = null;
+      // Version changed — resolve changelog from bundled files (locale-aware)
+      const entries = parseChangelog(CHANGELOGS[i18n.language] ?? changelogEn);
+      const entry = entries.find((e) => e.version === currentVersion);
 
-      if (cachedBody) {
-        resolvedSections = parseVersionEntry(cachedBody);
-        resolvedDate = cachedDate;
-      } else {
-        // Fallback: parse from bundled changelog (locale-aware)
-        const entries = parseChangelog(CHANGELOGS[i18n.language] ?? changelogEn);
-        const entry = entries.find((e) => e.version === currentVersion);
-        resolvedSections = entry?.sections ?? [];
-        resolvedDate = entry?.date ?? null;
-      }
-
-      setSections(resolvedSections);
-      setDate(resolvedDate);
+      setSections(entry?.sections ?? []);
+      setDate(entry?.date ?? null);
       setShowWhatsNew(true);
     }).catch((err) => {
       void logger.warn(`[Changelog] Failed to get app version: ${err instanceof Error ? err.message : String(err)}`);
