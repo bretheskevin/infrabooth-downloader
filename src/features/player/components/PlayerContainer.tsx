@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { usePlayerStore } from '../store';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { usePlayerEvents } from '../hooks/usePlayerEvents';
 import { MiniPill } from './MiniPill';
 import { ExpandedBar } from './ExpandedBar';
@@ -10,6 +11,7 @@ const QUEUE_ANIMATION_MS = 250;
 
 export function PlayerContainer() {
   usePlayerEvents();
+  useKeyboardShortcuts();
 
   const { state, isExpanded, isQueueOpen } = usePlayerStore(
     useShallow((s) => ({ state: s.state, isExpanded: s.isExpanded, isQueueOpen: s.isQueueOpen }))
