@@ -6,8 +6,6 @@ describe('changelogStore', () => {
     localStorage.clear();
     useChangelogStore.setState({
       lastSeenVersion: null,
-      cachedBody: null,
-      cachedDate: null,
       _hasHydrated: false,
     });
   });
@@ -15,14 +13,6 @@ describe('changelogStore', () => {
   describe('initial state', () => {
     it('should have lastSeenVersion as null', () => {
       expect(useChangelogStore.getState().lastSeenVersion).toBeNull();
-    });
-
-    it('should have cachedBody as null', () => {
-      expect(useChangelogStore.getState().cachedBody).toBeNull();
-    });
-
-    it('should have cachedDate as null', () => {
-      expect(useChangelogStore.getState().cachedDate).toBeNull();
     });
   });
 
@@ -36,20 +26,6 @@ describe('changelogStore', () => {
       useChangelogStore.getState().setLastSeenVersion('1.5.0');
       useChangelogStore.getState().setLastSeenVersion('1.6.0');
       expect(useChangelogStore.getState().lastSeenVersion).toBe('1.6.0');
-    });
-  });
-
-  describe('cacheChangelog', () => {
-    it('should cache body and date', () => {
-      useChangelogStore.getState().cacheChangelog('Release notes', '2026-03-11');
-      const state = useChangelogStore.getState();
-      expect(state.cachedBody).toBe('Release notes');
-      expect(state.cachedDate).toBe('2026-03-11');
-    });
-
-    it('should accept null date', () => {
-      useChangelogStore.getState().cacheChangelog('Notes', null);
-      expect(useChangelogStore.getState().cachedDate).toBeNull();
     });
   });
 
@@ -68,14 +44,6 @@ describe('changelogStore', () => {
       const stored = localStorage.getItem('sc-downloader-changelog');
       const parsed = JSON.parse(stored!);
       expect(parsed.state._hasHydrated).toBeUndefined();
-    });
-
-    it('should not persist cachedBody or cachedDate', () => {
-      useChangelogStore.getState().cacheChangelog('Release notes', '2026-03-11');
-      const stored = localStorage.getItem('sc-downloader-changelog');
-      const parsed = JSON.parse(stored!);
-      expect(parsed.state.cachedBody).toBeUndefined();
-      expect(parsed.state.cachedDate).toBeUndefined();
     });
   });
 

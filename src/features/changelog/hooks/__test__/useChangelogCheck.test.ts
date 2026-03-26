@@ -30,8 +30,6 @@ describe('useChangelogCheck', () => {
     localStorage.clear();
     useChangelogStore.setState({
       lastSeenVersion: null,
-      cachedBody: null,
-      cachedDate: null,
       _hasHydrated: true,
     });
   });
@@ -72,29 +70,9 @@ describe('useChangelogCheck', () => {
     expect(result.current.showWhatsNew).toBe(false);
   });
 
-  it('should use cachedBody when available', async () => {
+  it('should resolve changelog from bundled files when version changed', async () => {
     useChangelogStore.setState({
       lastSeenVersion: '1.5.0',
-      cachedBody: '### Added\n\n- Cached feature\n',
-      cachedDate: '2026-03-11',
-      _hasHydrated: true,
-    });
-
-    const { result } = renderHook(() => useChangelogCheck());
-
-    await act(async () => {
-      await new Promise((r) => setTimeout(r, 50));
-    });
-
-    expect(result.current.showWhatsNew).toBe(true);
-    expect(result.current.sections.length).toBeGreaterThan(0);
-    expect(result.current.sections[0]!.items[0]).toBe('Cached feature');
-  });
-
-  it('should fall back to bundled CHANGELOG.md when cachedBody is null', async () => {
-    useChangelogStore.setState({
-      lastSeenVersion: '1.5.0',
-      cachedBody: null,
       _hasHydrated: true,
     });
 
