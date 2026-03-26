@@ -1,7 +1,8 @@
 import { useRef, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { useFollowedArtists } from '../hooks/useFollowedArtists';
 import { useNewTracksStore } from '../store';
 import { ArtistAvatar } from './ArtistAvatar';
@@ -13,7 +14,7 @@ interface NewTracksCarouselProps {
 
 export function NewTracksCarousel({ onSelectArtist }: NewTracksCarouselProps) {
   const { t } = useTranslation();
-  const { artists, isLoading, error, refetch } = useFollowedArtists();
+  const { artists, isLoading, error, refresh } = useFollowedArtists();
   const selectedArtistId = useNewTracksStore((s) => s.selectedArtist?.id);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -37,15 +38,7 @@ export function NewTracksCarousel({ onSelectArtist }: NewTracksCarouselProps) {
       <div className="space-y-2">
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold">{t('newTracks.title')}</h3>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => refetch()}
-            aria-label={t('newTracks.retry')}
-            className="h-5 w-5 text-muted-foreground"
-          >
-            <RefreshCw className="h-3 w-3" />
-          </Button>
+          <RefreshButton onRefresh={refresh} aria-label={t('newTracks.retry')} />
         </div>
       </div>
     );
@@ -63,7 +56,10 @@ export function NewTracksCarousel({ onSelectArtist }: NewTracksCarouselProps) {
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm font-semibold">{t('newTracks.title')}</h3>
+      <div className="flex items-center gap-2">
+        <h3 className="text-sm font-semibold">{t('newTracks.title')}</h3>
+        <RefreshButton onRefresh={refresh} aria-label={t('newTracks.refresh')} />
+      </div>
       <div className="relative group">
         {canScrollLeft && (
           <Button

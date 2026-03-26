@@ -218,6 +218,7 @@
     "lockedDescription": "Parcourez et téléchargez vos playlists SoundCloud",
     "rateLimited": "Limite atteinte. Cliquez pour réessayer.",
     "errorRetry": "Échec du chargement. Cliquez pour réessayer.",
+    "refresh": "Rafraîchir la bibliothèque",
     "noResults": "Aucune playlist ne correspond à votre recherche",
     "emptyState": "Aucune playlist trouvée",
     "detail": {
@@ -312,7 +313,8 @@
     "trackCount_one": "{{count}} piste",
     "downloadAll": "Tout télécharger",
     "loadError": "Impossible de charger les mixes",
-    "retry": "Réessayer"
+    "retry": "Réessayer",
+    "refresh": "Rafraîchir les mixes"
   },
   "discover": {
     "signInTitle": "Connectez-vous pour découvrir des mixes",

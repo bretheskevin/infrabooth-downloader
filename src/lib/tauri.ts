@@ -120,8 +120,8 @@ export const api = {
     commands.getSelections().then(unwrap),
 
   // New Tracks
-  getFollowedArtists: (): Promise<FollowedArtist[]> =>
-    commands.getFollowedArtists().then(unwrap),
+  getFollowedArtists: (forceRefresh = false): Promise<FollowedArtist[]> =>
+    commands.getFollowedArtists(forceRefresh).then(unwrap),
 
   getArtistActivity: (artistId: number): Promise<ActivityItem[]> =>
     commands.getArtistActivity(artistId).then(unwrap),

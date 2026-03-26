@@ -1,7 +1,6 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 import { useLibraryPlaylists } from '../hooks/useLibraryPlaylists';
@@ -32,7 +31,6 @@ export function PlaylistListView({
   const [quickDownloadFailedPlaylist, setQuickDownloadFailedPlaylist] = useState<string | null>(null);
   const [downloadingPlaylistId, setDownloadingPlaylistId] = useState<number | null>(null);
   const [animateRefresh, setAnimateRefresh] = useState(false);
-  const refreshButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!quickDownloadFailedPlaylist) return;
@@ -53,11 +51,8 @@ export function PlaylistListView({
 
   const handleRefresh = useCallback(async () => {
     libraryActions().setLibraryView({ view: 'list' });
-    const btn = refreshButtonRef.current;
-    if (btn) btn.classList.add('animate-spin');
     await clearCache();
     await refetch();
-    if (btn) btn.classList.remove('animate-spin');
     setAnimateRefresh(true);
     requestAnimationFrame(() => {
       setTimeout(() => setAnimateRefresh(false), 300);
@@ -91,15 +86,12 @@ export function PlaylistListView({
       />
       <div className="flex items-center justify-between">
         <LibraryFilterChips active={filter} onChange={(f) => libraryActions().setFilter(f)} />
-        <Button
-          ref={refreshButtonRef}
-          variant="ghost"
-          size="icon"
-          onClick={handleRefresh}
+        <RefreshButton
+          onRefresh={handleRefresh}
+          aria-label={t('library.refresh')}
           className="h-8 w-8 text-muted-foreground"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </Button>
+          iconClassName="h-3.5 w-3.5"
+        />
       </div>
       {quickDownloadFailedPlaylist && (
         <p className="text-sm text-destructive px-1">

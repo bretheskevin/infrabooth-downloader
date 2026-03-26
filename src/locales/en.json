@@ -218,6 +218,7 @@
     "lockedDescription": "Browse and download your SoundCloud playlists",
     "rateLimited": "Rate limit reached. Click to retry.",
     "errorRetry": "Failed to load library. Click to retry.",
+    "refresh": "Refresh library",
     "noResults": "No playlists match your search",
     "emptyState": "No playlists found",
     "detail": {
@@ -312,7 +313,8 @@
     "trackCount_one": "{{count}} track",
     "downloadAll": "Download all",
     "loadError": "Failed to load mixes",
-    "retry": "Retry"
+    "retry": "Retry",
+    "refresh": "Refresh mixes"
   },
   "discover": {
     "signInTitle": "Sign in to discover mixes",
