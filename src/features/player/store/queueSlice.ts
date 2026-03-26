@@ -28,21 +28,22 @@ export const createQueueSlice: StateCreator<
   queue: [],
   originalQueue: null,
   isShuffled: false,
+  manualQueueCount: 0,
 
   addToQueue: (item) => {
-    const { queue, cursor, state, originalQueue, isShuffled } = get();
+    const { queue, cursor, state, originalQueue, isShuffled, manualQueueCount } = get();
     if (state === 'stopped' || queue.length === 0) {
       get().play([item], 0);
       return;
     }
-    const insertAt = cursor + 1;
+    const insertAt = cursor + 1 + manualQueueCount;
     const newQueue = [...queue];
     newQueue.splice(insertAt, 0, item);
 
     if (isShuffled && originalQueue) {
-      set({ queue: newQueue, originalQueue: [...originalQueue, item] });
+      set({ queue: newQueue, originalQueue: [...originalQueue, item], manualQueueCount: manualQueueCount + 1 });
     } else {
-      set({ queue: newQueue });
+      set({ queue: newQueue, manualQueueCount: manualQueueCount + 1 });
     }
   },
 
@@ -57,13 +58,14 @@ export const createQueueSlice: StateCreator<
       queue: isShuffled ? shuffleQueueWithCurrent(newQueue, newCursor) : newQueue,
       cursor: isShuffled ? 0 : newCursor,
       originalQueue: isShuffled && originalQueue ? newQueue : originalQueue,
+      manualQueueCount: 0,
     });
 
     purgeStaleCache(trackIdSet(newQueue));
   },
 
   reorderQueue: (fromIndex, toIndex) => {
-    const { queue, cursor } = get();
+    const { queue, cursor, manualQueueCount } = get();
     const newQueue = [...queue];
     const [moved] = newQueue.splice(fromIndex, 1);
     newQueue.splice(toIndex, 0, moved!);
@@ -77,11 +79,24 @@ export const createQueueSlice: StateCreator<
       newCursor = cursor + 1;
     }
 
-    set({ queue: newQueue, cursor: newCursor, currentTrack: newQueue[newCursor] ?? null });
+    let newManualCount = manualQueueCount;
+    if (fromIndex === cursor) {
+      newManualCount = 0;
+    } else {
+      const wasInManual = fromIndex >= cursor + 1 && fromIndex <= cursor + manualQueueCount;
+      const nowInManual = toIndex >= newCursor + 1 && toIndex <= newCursor + manualQueueCount;
+      if (wasInManual && !nowInManual) {
+        newManualCount = manualQueueCount - 1;
+      } else if (!wasInManual && nowInManual) {
+        newManualCount = manualQueueCount + 1;
+      }
+    }
+
+    set({ queue: newQueue, cursor: newCursor, currentTrack: newQueue[newCursor] ?? null, manualQueueCount: newManualCount });
   },
 
   removeFromQueue: (index) => {
-    const { queue, cursor, originalQueue, isShuffled } = get();
+    const { queue, cursor, originalQueue, isShuffled, manualQueueCount } = get();
     const newQueue = queue.filter((_, i) => i !== index);
 
     let newOriginalQueue = originalQueue;
@@ -105,8 +120,15 @@ export const createQueueSlice: StateCreator<
       newCursor = Math.min(cursor, newQueue.length - 1);
     }
 
+    const manualStart = cursor + 1;
+    const manualEnd = cursor + manualQueueCount;
+    let newManualCount = manualQueueCount;
+    if (index >= manualStart && index <= manualEnd) {
+      newManualCount = manualQueueCount - 1;
+    }
+
     const newTrack = newQueue[newCursor] ?? null;
-    set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack, originalQueue: newOriginalQueue });
+    set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack, originalQueue: newOriginalQueue, manualQueueCount: newManualCount });
     purgeStaleCache(trackIdSet(newQueue));
 
     if (removingCurrent && newTrack) {

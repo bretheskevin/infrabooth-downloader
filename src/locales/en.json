@@ -304,7 +304,9 @@
     "volume": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
-    "trackActions": "Open menu"
+    "trackActions": "Open menu",
+    "nextUp": "Next up",
+    "queueSection": "Queue"
   },
   "selections": {
     "sectionTitle": "Mixed for you",

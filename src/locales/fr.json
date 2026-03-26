@@ -304,7 +304,9 @@
     "volume": "Volume",
     "mute": "Couper le son",
     "unmute": "Rétablir le son",
-    "trackActions": "Ouvrir le menu"
+    "trackActions": "Ouvrir le menu",
+    "nextUp": "À suivre",
+    "queueSection": "File d'attente"
   },
   "selections": {
     "sectionTitle": "Mixés pour vous",
