@@ -30,6 +30,7 @@ export function SearchTab() {
     fetchNextPage,
     error,
     hasSearched,
+    isUrlMode,
   } = useSearchQuery();
 
   const [scanKey, setScanKey] = useState(0);
@@ -65,6 +66,7 @@ export function SearchTab() {
           fetchNextPage={fetchNextPage}
           error={error}
           hasSearched={hasSearched}
+          isUrlMode={isUrlMode}
           getTrackState={getTrackState}
           onDownload={downloadTrack}
           onRetry={downloadTrack}

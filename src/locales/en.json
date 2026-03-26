@@ -259,6 +259,7 @@
     "noResults": "No tracks found",
     "emptyState": "Search for tracks on SoundCloud",
     "errorSearch": "Search failed. Please try again.",
+    "errorResolve": "Could not resolve this URL. Check the link and try again.",
     "loadingMore": "Loading more...",
     "toastSuccess": "\"{{title}}\" downloaded",
     "toastError": "Download failed: {{error}}",

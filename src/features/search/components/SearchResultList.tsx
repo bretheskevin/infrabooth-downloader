@@ -8,6 +8,7 @@ import { useIsDownloadEnabled } from '@/features/settings';
 import { SearchResultItem } from './SearchResultItem';
 
 interface SearchResultListProps {
+  isUrlMode: boolean;
   results: TrackInfo[];
   isLoading: boolean;
   isFetchingNextPage: boolean;
@@ -28,6 +29,7 @@ interface SearchResultListProps {
 }
 
 export function SearchResultList({
+  isUrlMode,
   results,
   isLoading,
   isFetchingNextPage,
@@ -90,11 +92,14 @@ export function SearchResultList({
   // Error
   if (error) {
     const isRateLimited = error instanceof ApiError && error.code === 'RATE_LIMITED';
+    const errorMessage = isRateLimited
+      ? t('search.rateLimited')
+      : isUrlMode
+        ? t('search.errorResolve')
+        : t('search.errorSearch');
     return (
       <div className="flex items-center justify-center py-16">
-        <p className="text-sm text-destructive">
-          {isRateLimited ? t('search.rateLimited') : t('search.errorSearch')}
-        </p>
+        <p className="text-sm text-destructive">{errorMessage}</p>
       </div>
     );
   }
