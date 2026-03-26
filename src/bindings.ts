@@ -306,9 +306,9 @@ async getSelections() : Promise<Result<Selection[], string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async getFollowedArtists() : Promise<Result<FollowedArtist[], string>> {
+async getFollowedArtists(forceRefresh: boolean) : Promise<Result<FollowedArtist[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_followed_artists") };
+    return { status: "ok", data: await TAURI_INVOKE("get_followed_artists", { forceRefresh }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };

@@ -14,9 +14,12 @@ pub fn seen_state_path(app: &tauri::AppHandle) -> std::path::PathBuf {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_followed_artists(app: tauri::AppHandle) -> Result<Vec<FollowedArtist>, String> {
-    log::info!("[new-tracks] get_followed_artists called");
+pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) -> Result<Vec<FollowedArtist>, String> {
+    log::info!("[new-tracks] get_followed_artists called (force_refresh={})", force_refresh);
     let cache = app.state::<NewTracksCache>();
+    if force_refresh {
+        cache.clear();
+    }
     if let Some(cached) = cache.get_artists() {
         log::info!("[new-tracks] Returning {} cached artists", cached.len());
         return Ok(cached);
