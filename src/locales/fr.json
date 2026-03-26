@@ -259,6 +259,7 @@
     "noResults": "Aucun morceau trouvé",
     "emptyState": "Recherchez des morceaux sur SoundCloud",
     "errorSearch": "La recherche a échoué. Veuillez réessayer.",
+    "errorResolve": "Impossible de résoudre cette URL. Vérifiez le lien et réessayez.",
     "loadingMore": "Chargement...",
     "toastSuccess": "\"{{title}}\" téléchargé",
     "toastError": "Échec du téléchargement : {{error}}",
