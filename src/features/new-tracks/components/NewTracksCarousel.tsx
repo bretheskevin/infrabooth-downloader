@@ -73,7 +73,7 @@ export function NewTracksCarousel({ onSelectArtist }: NewTracksCarouselProps) {
             id="hide-reposts"
             checked={hideReposts}
             onCheckedChange={(checked) => useSettingsStore.getState().setHideReposts(checked)}
-            className="h-4 w-7 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input [&_span]:h-3 [&_span]:w-3"
+            className="h-4 w-7 data-[state=checked]:bg-primary data-[state=unchecked]:bg-muted-foreground/30 [&_span]:h-3 [&_span]:w-3"
           />
           <span className="text-xs text-muted-foreground">
             {t('newTracks.hideReposts')}
