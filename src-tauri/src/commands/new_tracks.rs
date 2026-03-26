@@ -61,11 +61,16 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
                     .unwrap_or(false)
             });
 
+            let has_original_tracks = items.iter().any(|item| {
+                item.activity_type == new_tracks::ActivityType::Track
+            });
+
             Some(FollowedArtist {
                 id: raw.id,
                 username: raw.username,
                 avatar_url: raw.avatar_url,
                 has_new_content,
+                has_original_tracks,
             })
         })
         .collect();
