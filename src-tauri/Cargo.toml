@@ -44,7 +44,7 @@ uuid = { version = "1", features = ["v4"] }
 tauri-plugin-opener = "2.5.3"
 tauri-plugin-clipboard-manager = "2"
 once_cell = "1"
-time = { version = "0.3.41", features = ["formatting", "local-offset"] }
+time = { version = "0.3.41", features = ["formatting", "local-offset", "parsing"] }
 tauri-plugin-process = "2.3.1"
 
 

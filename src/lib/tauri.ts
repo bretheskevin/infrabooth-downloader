@@ -10,6 +10,8 @@ import {
   type SearchResponse,
   type PlaylistForTrackPicker,
   type Selection,
+  type FollowedArtist,
+  type ActivityItem,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -116,4 +118,14 @@ export const api = {
   // Selections
   getSelections: (): Promise<Selection[]> =>
     commands.getSelections().then(unwrap),
+
+  // New Tracks
+  getFollowedArtists: (): Promise<FollowedArtist[]> =>
+    commands.getFollowedArtists().then(unwrap),
+
+  getArtistActivity: (artistId: number): Promise<ActivityItem[]> =>
+    commands.getArtistActivity(artistId).then(unwrap),
+
+  markArtistSeen: (artistId: number): Promise<void> =>
+    commands.markArtistSeen(artistId).then(() => undefined),
 };

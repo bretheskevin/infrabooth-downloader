@@ -305,6 +305,30 @@ async getSelections() : Promise<Result<Selection[], string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getFollowedArtists() : Promise<Result<FollowedArtist[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_followed_artists") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistActivity(artistId: number) : Promise<Result<ActivityItem[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_activity", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async markArtistSeen(artistId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("mark_artist_seen", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -329,6 +353,8 @@ queueProgressEvent: "queue-progress-event"
 
 /** user-defined types **/
 
+export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
+export type ActivityType = "Track" | "Repost"
 export type AuthChoice = "re_authenticated" | "continue_standard"
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null }
 export type DownloadRequest = ({ 
@@ -361,6 +387,7 @@ durationMs: number;
  */
 downloadUrl: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
 export type ErrorResponse = { code: string; message: string }
+export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean }
 export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
 export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }
 /**

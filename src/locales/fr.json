@@ -4,6 +4,7 @@
     "version": "Version {{version}}"
   },
   "common": {
+    "back": "Retour",
     "done": "Terminé"
   },
   "auth": {
@@ -220,7 +221,6 @@
     "noResults": "Aucune playlist ne correspond à votre recherche",
     "emptyState": "Aucune playlist trouvée",
     "detail": {
-      "back": "Retour",
       "tracks": "{{count}} pistes",
       "loadingTracks": "Chargement des pistes...",
       "errorLoading": "Échec du chargement des pistes",
@@ -340,5 +340,25 @@
     "removedFromPlaylist": "Retiré de {{playlist}}",
     "notInPlaylist": "Piste absente de la playlist",
     "removeFailed": "Échec de la suppression"
+  },
+  "newTracks": {
+    "title": "Nouveautés",
+    "trackCount_one": "{{count}} nouveau morceau",
+    "trackCount_other": "{{count}} nouveaux morceaux",
+    "downloadAll": "Tout télécharger",
+    "newTrack": "nouveau",
+    "repost": "reposté",
+    "empty": "Aucune nouveauté des artistes que vous suivez",
+    "error": "Impossible de charger les nouveautés",
+    "retry": "Réessayer",
+    "today": "aujourd'hui",
+    "yesterday": "hier",
+    "daysAgo_one": "il y a {{count}} jour",
+    "daysAgo_other": "il y a {{count}} jours",
+    "weeksAgo_one": "il y a {{count}} semaine",
+    "weeksAgo_other": "il y a {{count}} semaines",
+    "monthAgo": "il y a plus d'un mois",
+    "scrollLeft": "Défiler vers la gauche",
+    "scrollRight": "Défiler vers la droite"
   }
 }

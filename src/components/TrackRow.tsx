@@ -19,7 +19,8 @@ interface TrackRowProps {
   className?: string;
   leftSlot?: React.ReactNode;
   actionSlot?: React.ReactNode;
-  downloadState: DownloadState;
+  downloadState?: DownloadState;
+  subtitleSlot?: React.ReactNode;
   onHoverStart?: () => void;
   onHoverEnd?: () => void;
   onMouseDown?: () => void;
@@ -37,6 +38,7 @@ export function TrackRow({
   leftSlot,
   actionSlot,
   downloadState,
+  subtitleSlot,
   onHoverStart,
   onHoverEnd,
   onMouseDown,
@@ -103,7 +105,7 @@ export function TrackRow({
           className={cn(
             'flex items-center gap-3 px-3 py-2 rounded-md',
             isCurrentlyPlaying && 'bg-primary/5',
-            downloadState.status === 'completed' && 'opacity-60',
+            downloadState?.status === 'completed' && 'opacity-60',
             className,
           )}
           style={animationDelay && animationDelay > 0 ? { animationDelay: `${animationDelay}ms` } : undefined}
@@ -120,6 +122,7 @@ export function TrackRow({
             onPlayPause={onPlayPause}
             onMouseDown={handleContentMouseDown}
             downloadProgress={downloadProgress}
+            subtitleSlot={subtitleSlot}
           />
           <TrackRowActionsDropdown
             onCopyLink={handleCopyLink}

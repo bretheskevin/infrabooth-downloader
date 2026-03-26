@@ -22,4 +22,5 @@ pub mod updater;
 pub mod library;
 pub mod search;
 pub mod selections;
+pub mod new_tracks;
 
