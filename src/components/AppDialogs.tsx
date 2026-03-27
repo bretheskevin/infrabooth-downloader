@@ -1,5 +1,3 @@
-import { AuthChoiceDialog } from '@/features/auth/components/AuthChoiceDialog';
-import { useAuthChoiceDialog } from '@/features/auth/hooks/useAuthChoiceDialog';
 import { RateLimitDialog } from '@/features/queue/components/RateLimitDialog';
 import { useRateLimitDialog } from '@/features/queue/hooks/useRateLimitDialog';
 import { DownloadConflictDialog } from '@/features/queue/components/DownloadConflictDialog';
@@ -24,12 +22,6 @@ export function AppDialogs({
   onCancelReplace,
 }: AppDialogsProps) {
   const {
-    isOpen: authChoiceOpen,
-    handleReAuthenticate,
-    handleContinueStandard,
-  } = useAuthChoiceDialog();
-
-  const {
     isOpen: rateLimitOpen,
     handleRetry: handleRateLimitRetry,
     handleStop: handleRateLimitStop,
@@ -39,11 +31,6 @@ export function AppDialogs({
 
   return (
     <>
-      <AuthChoiceDialog
-        open={authChoiceOpen}
-        onReAuthenticate={handleReAuthenticate}
-        onContinueStandard={handleContinueStandard}
-      />
       <RateLimitDialog
         open={rateLimitOpen}
         onRetry={handleRateLimitRetry}

@@ -146,17 +146,6 @@ async cancelDownloadQueue() : Promise<Result<null, ErrorResponse>> {
 }
 },
 /**
- * Respond to an auth choice prompt during download.
- */
-async respondToAuthChoice(choice: AuthChoice) : Promise<Result<null, ErrorResponse>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("respond_to_auth_choice", { choice }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
-/**
  * Respond to a rate limit choice prompt during download.
  */
 async respondToRateLimitChoice(choice: RateLimitChoice) : Promise<Result<null, ErrorResponse>> {
@@ -329,6 +318,14 @@ async markArtistSeen(artistId: number) : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async fetchRelatedTracks(trackId: number, limit: number) : Promise<Result<TrackInfo[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("fetch_related_tracks", { trackId, limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -355,7 +352,6 @@ queueProgressEvent: "queue-progress-event"
 
 export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
 export type ActivityType = "Track" | "Repost"
-export type AuthChoice = "re_authenticated" | "continue_standard"
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null }
 export type DownloadRequest = ({ 
 /**

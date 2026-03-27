@@ -90,9 +90,6 @@ pub enum DownloadError {
     #[error("Download cancelled")]
     Cancelled,
 
-    #[error("Authentication refresh failed")]
-    AuthRefreshFailed,
-
     #[error("Stream resolution failed: {0}")]
     StreamResolutionFailed(String),
 }
@@ -109,7 +106,6 @@ impl HasErrorCode for DownloadError {
             DownloadError::ConversionFailed(_) => "CONVERSION_FAILED",
             DownloadError::AuthRequired(_) => "AUTH_REQUIRED",
             DownloadError::Cancelled => "CANCELLED",
-            DownloadError::AuthRefreshFailed => "AUTH_REFRESH_FAILED",
             DownloadError::StreamResolutionFailed(_) => "STREAM_RESOLUTION_FAILED",
         }
     }

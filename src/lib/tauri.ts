@@ -115,6 +115,9 @@ export const api = {
   resolvePlaybackUrl: (trackId: number, trackUrl: string): Promise<string> =>
     commands.resolvePlaybackUrl(trackId, trackUrl).then(unwrap),
 
+  fetchRelatedTracks: (trackId: number, limit: number): Promise<TrackInfo[]> =>
+    commands.fetchRelatedTracks(trackId, limit).then(unwrap),
+
   // Selections
   getSelections: (): Promise<Selection[]> =>
     commands.getSelections().then(unwrap),

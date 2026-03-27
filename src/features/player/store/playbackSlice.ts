@@ -4,9 +4,11 @@ import i18n from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { useSettingsStore } from '@/features/settings/store';
 import { audioEngine } from '../audio-engine';
+import { fetchStationTracks, fetchStationTracksWithRetry } from '../utils/autoplay';
 import { resolveWithCache, getCachedUrl, preloadQueueSegments, purgeStaleCache } from '../url-cache';
 import type { PlaybackItem, PlaybackState } from '../types';
-import type { PlaybackSliceState, PlayerState } from './types';
+import type { AutoplaySliceState, PlaybackSliceState, PlayerState } from './types';
+import type { AutoplaySliceActions } from './autoplaySlice';
 
 const MAX_CONSECUTIVE_FAILURES = 3;
 
@@ -32,6 +34,71 @@ function shuffleQueueWithCurrent(queue: PlaybackItem[], currentIndex: number): P
   const current = queue[currentIndex]!;
   const rest = queue.filter((_, i) => i !== currentIndex);
   return [current, ...shuffleArray(rest)];
+}
+
+const STATION_PREFETCH_THRESHOLD = 3;
+
+async function handleAutoplay(set: SetFn, get: GetFn, nextCursor: number) {
+  if (get().autoplayInFlight) {
+    get().stop();
+    return;
+  }
+  set({ autoplayInFlight: true });
+  try {
+    const currentTrack = get().currentTrack;
+    if (!currentTrack) {
+      get().stop();
+      return;
+    }
+
+    const items = await fetchStationTracksWithRetry(currentTrack.trackId);
+    if (!items || items.length === 0) {
+      get().stop();
+      return;
+    }
+
+    get().appendStationTracks(items);
+    const nextTrack = get().queue[nextCursor];
+    if (!nextTrack) {
+      get().stop();
+      return;
+    }
+    await startTrackLoad(set, get, nextTrack, nextCursor);
+    preloadQueueSegments(get().queue, nextCursor + 1);
+  } finally {
+    set({ autoplayInFlight: false });
+  }
+}
+
+function prefetchStationSilent(get: GetFn, seedTrackId: number) {
+  void fetchStationTracks(seedTrackId).then((newItems) => {
+    if (newItems.length > 0) {
+      get().appendStationTracks(newItems);
+    }
+  }).catch((e) => {
+    void logger.debug(`[player] Station prefetch failed (non-fatal): ${e}`);
+  });
+}
+
+function maybePrefetchStation(get: GetFn) {
+  const { queue, cursor, currentTrack, stationQueueCount } = get();
+  const remaining = queue.length - cursor - 1;
+  if (remaining > STATION_PREFETCH_THRESHOLD) return;
+
+  const seedTrack = stationQueueCount > 0
+    ? queue[queue.length - 1]
+    : currentTrack;
+  if (!seedTrack) return;
+
+  prefetchStationSilent(get, seedTrack.trackId);
+}
+
+function prefetchStationOnInit(get: GetFn) {
+  const { queue } = get();
+  const seedTrack = queue[queue.length - 1];
+  if (!seedTrack) return;
+
+  prefetchStationSilent(get, seedTrack.trackId);
 }
 
 async function loadAndPlay(
@@ -87,8 +154,8 @@ export interface PlaybackSliceActions {
   _destroyAudioEngine: () => void;
 }
 
-type SetFn = (state: Partial<PlaybackSliceState>) => void;
-type GetFn = () => PlayerState & PlaybackSliceActions;
+type SetFn = (state: Partial<PlaybackSliceState & AutoplaySliceState>) => void;
+type GetFn = () => PlayerState & PlaybackSliceActions & AutoplaySliceActions;
 
 const ENGINE_STATE_MAP: Record<string, PlaybackState> = {
   idle: 'stopped',
@@ -193,7 +260,7 @@ function resolveCrossfadeForSkip(set: SetFn, get: GetFn) {
 export type PlaybackSlice = PlaybackSliceState & PlaybackSliceActions;
 
 export const createPlaybackSlice: StateCreator<
-  PlayerState & PlaybackSliceActions,
+  PlayerState & PlaybackSliceActions & AutoplaySliceActions,
   [],
   [],
   PlaybackSlice
@@ -237,12 +304,15 @@ export const createPlaybackSlice: StateCreator<
       positionMs: 0,
       durationMs: finalTrack.durationMs,
       manualQueueCount: 0,
+      stationQueueCount: 0,
+      autoplayInFlight: false,
     });
 
     await loadAndPlay(finalTrack, generation, get);
     purgeStaleCache(trackIdSet(finalQueue));
     preloadQueueSegments(finalQueue, finalIndex + 1);
     preloadQueueSegments(finalQueue, finalIndex - 1);
+    prefetchStationOnInit(get);
   },
 
   pause: () => {
@@ -270,10 +340,14 @@ export const createPlaybackSlice: StateCreator<
     const { queue, cursor, manualQueueCount } = get();
     const nextCursor = cursor + 1;
     const track = queue[nextCursor];
+
     if (!track) {
-      get().stop();
+      await handleAutoplay(set, get, nextCursor);
       return;
     }
+
+    maybePrefetchStation(get);
+
     if (manualQueueCount > 0) {
       set({ manualQueueCount: manualQueueCount - 1 });
     }
@@ -312,6 +386,8 @@ export const createPlaybackSlice: StateCreator<
       isShuffled: false,
       originalQueue: null,
       manualQueueCount: 0,
+      stationQueueCount: 0,
+      autoplayInFlight: false,
     });
   },
 

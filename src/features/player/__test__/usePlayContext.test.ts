@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildPlaybackQueue } from '../hooks/usePlayContext';
+import { buildPlaybackQueue } from '../utils/buildPlaybackQueue';
 import type { TrackInfo } from '@/bindings';
 
 const mockTracks: TrackInfo[] = [

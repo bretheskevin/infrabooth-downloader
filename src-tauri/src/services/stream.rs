@@ -72,7 +72,6 @@ pub struct Transcoding {
 #[derive(Debug, Clone)]
 pub struct StreamInfo {
     pub url: String,
-    pub is_hls: bool,
     pub codec: StreamCodec,
 }
 
@@ -235,12 +234,6 @@ pub fn select_best_transcoding(transcodings: &[Transcoding]) -> Option<&Transcod
     select_best(transcodings, false)
 }
 
-/// Select the best transcoding for streaming playback (prefers HLS for instant start).
-#[cfg(test)]
-pub fn select_best_transcoding_for_streaming(transcodings: &[Transcoding]) -> Option<&Transcoding> {
-    select_best(transcodings, true)
-}
-
 fn select_best(transcodings: &[Transcoding], prefer_hls: bool) -> Option<&Transcoding> {
     if transcodings.is_empty() {
         return None;
@@ -388,7 +381,6 @@ struct ResolveOptions<'a> {
 /// Resolved transcoding result from the shared core.
 struct ResolvedTranscoding {
     cdn_url: String,
-    is_hls: bool,
     codec: StreamCodec,
 }
 
@@ -458,8 +450,6 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
             DownloadError::StreamResolutionFailed("No suitable transcoding found".into())
         })?;
 
-        let protocol = normalize_protocol(&transcoding.format.protocol, &transcoding.url);
-
         log::info!(
             "[stream] Selected transcoding: protocol={}, mime={}, quality={}, preset={}",
             transcoding.format.protocol,
@@ -467,8 +457,6 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
             transcoding.quality,
             transcoding.preset
         );
-
-        let is_hls = matches!(protocol, Protocol::Hls | Protocol::HlsAes);
 
         let cdn_url = match resolve_transcoding_url(transcoding, &cid, opts.oauth_token).await {
             Ok(url) => url,
@@ -489,7 +477,6 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 
         return Ok(ResolvedTranscoding {
             cdn_url,
-            is_hls,
             codec,
         });
     }
@@ -526,7 +513,6 @@ pub async fn resolve_stream_url(
 
     Ok(StreamInfo {
         url: resolved.cdn_url,
-        is_hls: resolved.is_hls,
         codec: resolved.codec,
     })
 }
