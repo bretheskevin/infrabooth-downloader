@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings2, Download, Info } from 'lucide-react';
+import { Settings2, Download, Info, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SettingsCategory, SettingsSidebarProps } from './types';
 import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
@@ -56,8 +56,9 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
       aria-label={t('settings.title')}
       aria-orientation="vertical"
       onKeyDown={handleKeyDown}
-      className="min-w-[140px] flex-shrink-0 bg-muted/50 border-r border-border p-2 pt-6 space-y-1"
+      className="min-w-[140px] flex-shrink-0 bg-muted/50 border-r border-border p-2 pt-6 flex flex-col"
     >
+      <div className="space-y-1">
       {visibleCategories.map(({ id, icon: Icon, labelKey }) => {
         const isSelected = selectedCategory === id;
         return (
@@ -82,6 +83,12 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
           </button>
         );
       })}
+      </div>
+      <div className="mt-auto flex items-center justify-center gap-1 pb-2 text-[10px] text-muted-foreground">
+        <span>{t('settings.madeWith')}</span>
+        <Heart className="h-2.5 w-2.5 fill-red-500 text-red-500" />
+        <span>{t('settings.madeBy')}</span>
+      </div>
     </nav>
   );
 }
