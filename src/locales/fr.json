@@ -135,6 +135,8 @@
     "preserveOrderDescription": "Préfixer les noms de fichiers de playlist avec la position (ex: 01 - Artiste - Titre)",
     "categoryAbout": "À propos",
     "viewChangelog": "Voir les nouveautés",
+    "madeWith": "Fait avec",
+    "madeBy": "par Kandid",
     "crossfade": "Fondu enchaîné",
     "crossfadeDescription": "Transition fluide entre les pistes",
     "crossfadeDuration": "Durée",
