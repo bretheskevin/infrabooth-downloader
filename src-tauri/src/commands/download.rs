@@ -7,7 +7,6 @@ use tauri::{Emitter, State};
 use tauri::Manager;
 
 use crate::models::{ErrorResponse, HasErrorCode, TrackCore};
-use crate::services::auth_choice::{AuthChoice, AuthChoiceState};
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
 use crate::services::cancellation::CancellationState;
 use crate::services::events;
@@ -120,11 +119,9 @@ pub async fn start_download_queue(
     request: StartQueueRequest,
     app: tauri::AppHandle,
     cancel_state: State<'_, CancellationState>,
-    auth_choice_state: State<'_, Arc<AuthChoiceState>>,
     rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
 ) -> Result<(), ErrorResponse> {
     cancel_state.reset();
-    auth_choice_state.reset();
     rate_limit_choice_state.reset();
 
     let output_dir = match request.output_dir {
@@ -154,7 +151,6 @@ pub async fn start_download_queue(
         output_dir,
         cancel_rx: cancel_state.subscribe(),
         active_processes: cancel_state.active_processes(),
-        auth_choice_state: Arc::clone(&auth_choice_state),
         rate_limit_choice_state: Arc::clone(&rate_limit_choice_state),
         max_concurrent: request.max_concurrent.unwrap_or(3).clamp(1, 10) as usize,
     };
@@ -180,18 +176,6 @@ pub async fn cancel_download_queue(
     log::info!("[download] Cancelling download queue");
     cancel_state.cancel();
     cancel_state.kill_active_processes().await;
-    Ok(())
-}
-
-/// Respond to an auth choice prompt during download.
-#[tauri::command]
-#[specta::specta]
-pub async fn respond_to_auth_choice(
-    choice: AuthChoice,
-    auth_choice_state: State<'_, Arc<AuthChoiceState>>,
-) -> Result<(), ErrorResponse> {
-    log::info!("[download] Auth choice received: {:?}", choice);
-    auth_choice_state.send_choice(choice);
     Ok(())
 }
 

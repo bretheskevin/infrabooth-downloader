@@ -3,14 +3,19 @@ use tokio::sync::Mutex as AsyncMutex;
 
 /// Cached auth state, held in Tauri managed state.
 /// Re-populated from browser cookies on each app launch.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct CachedAuth {
     pub oauth_token: String,
-    pub username: String,
-    pub plan: Option<String>,
-    pub avatar_url: Option<String>,
-    /// DataDome client ID for bot protection bypass on write operations
     pub datadome: Option<String>,
+}
+
+impl std::fmt::Debug for CachedAuth {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CachedAuth")
+            .field("oauth_token", &"[redacted]")
+            .field("datadome", &self.datadome)
+            .finish()
+    }
 }
 
 /// Thread-safe auth state container.
@@ -79,9 +84,6 @@ mod tests {
         let state = AuthState::default();
         state.set(CachedAuth {
             oauth_token: "test_token".to_string(),
-            username: "testuser".to_string(),
-            plan: Some("Pro".to_string()),
-            avatar_url: None,
             datadome: Some("dd_test".to_string()),
         });
         assert_eq!(state.get_token(), Some("test_token".to_string()));
@@ -92,9 +94,6 @@ mod tests {
         let state = AuthState::default();
         state.set(CachedAuth {
             oauth_token: "token".to_string(),
-            username: "user".to_string(),
-            plan: None,
-            avatar_url: None,
             datadome: None,
         });
         assert!(state.get_token().is_some());
@@ -106,18 +105,21 @@ mod tests {
     fn test_cached_auth_clone() {
         let auth = CachedAuth {
             oauth_token: "token".to_string(),
-            username: "user".to_string(),
-            plan: Some("Go+".to_string()),
-            avatar_url: Some("https://example.com/avatar.jpg".to_string()),
             datadome: Some("dd_value".to_string()),
         };
         let cloned = auth.clone();
         assert_eq!(cloned.oauth_token, "token");
-        assert_eq!(cloned.username, "user");
-        assert_eq!(cloned.plan, Some("Go+".to_string()));
-        assert_eq!(
-            cloned.avatar_url,
-            Some("https://example.com/avatar.jpg".to_string())
-        );
+        assert_eq!(cloned.datadome, Some("dd_value".to_string()));
+    }
+
+    #[test]
+    fn test_cached_auth_debug_redacts_token() {
+        let auth = CachedAuth {
+            oauth_token: "secret_token".to_string(),
+            datadome: Some("dd_value".to_string()),
+        };
+        let debug = format!("{:?}", auth);
+        assert!(!debug.contains("secret_token"));
+        assert!(debug.contains("[redacted]"));
     }
 }

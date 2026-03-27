@@ -30,6 +30,12 @@ vi.mock('../url-cache', () => ({
   purgeStaleCache: vi.fn(),
 }));
 
+vi.mock('@/lib/tauri', () => ({
+  api: {
+    fetchRelatedTracks: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 import { usePlayerStore } from '../store';
 import { resetCrossfadeGeneration } from '../store/playbackSlice';
 import { audioEngine } from '../audio-engine';
@@ -76,6 +82,8 @@ describe('playerStore', () => {
       isShuffled: false,
       originalQueue: null,
       manualQueueCount: 0,
+      stationQueueCount: 0,
+      autoplayInFlight: false,
     });
     vi.clearAllMocks();
   });

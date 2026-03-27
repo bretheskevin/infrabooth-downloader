@@ -25,7 +25,7 @@ pub async fn require_auth_and_cid(app: &tauri::AppHandle) -> Result<(String, Str
 
 pub use auth::{check_auth, refresh_auth, sign_out};
 pub use download::{
-    cancel_download_queue, download_track_full, respond_to_auth_choice,
+    cancel_download_queue, download_track_full,
     respond_to_rate_limit_choice, scan_existing_tracks, start_download_queue,
 };
 pub use ffmpeg::test_ffmpeg;
@@ -50,3 +50,6 @@ pub use selections::get_selections;
 
 pub mod new_tracks;
 pub use new_tracks::{get_followed_artists, get_artist_activity, mark_artist_seen};
+
+pub mod related;
+pub use related::fetch_related_tracks;

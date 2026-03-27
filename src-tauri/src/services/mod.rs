@@ -1,3 +1,4 @@
+#[cfg(test)]
 pub mod auth_choice;
 pub mod events;
 pub mod rate_limit_choice;
@@ -23,4 +24,5 @@ pub mod library;
 pub mod search;
 pub mod selections;
 pub mod new_tracks;
+pub mod related;
 

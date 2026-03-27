@@ -300,13 +300,15 @@
     "errorNext": "Impossible de passer à la piste suivante",
     "errorPrevious": "Impossible de revenir à la piste précédente",
     "errorLoadTrack": "Impossible de charger la piste",
+    "autoplayError": "Impossible de charger les pistes similaires",
     "clickToExpand": "Cliquer pour agrandir le lecteur",
     "volume": "Volume",
     "mute": "Couper le son",
     "unmute": "Rétablir le son",
     "trackActions": "Ouvrir le menu",
     "nextUp": "À suivre",
-    "queueSection": "File d'attente"
+    "queueSection": "File d'attente",
+    "stationSection": "Lecture automatique"
   },
   "selections": {
     "sectionTitle": "Mixés pour vous",

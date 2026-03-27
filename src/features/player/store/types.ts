@@ -23,4 +23,9 @@ export interface UISliceState {
   volume: number;
 }
 
-export type PlayerState = PlaybackSliceState & QueueSliceState & UISliceState;
+export interface AutoplaySliceState {
+  stationQueueCount: number;
+  autoplayInFlight: boolean;
+}
+
+export type PlayerState = PlaybackSliceState & QueueSliceState & UISliceState & AutoplaySliceState;

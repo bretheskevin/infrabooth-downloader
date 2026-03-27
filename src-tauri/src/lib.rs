@@ -9,12 +9,12 @@ use commands::{
     check_write_permission, clear_library_cache, download_track_full, get_default_download_path,
     get_library_playlist_tracks, get_library_playlists, get_owned_playlists_for_track,
     get_playlist_info, get_track_info, install_update, refresh_auth, resolve_library_artwork,
-    resolve_playback_url, respond_to_auth_choice, respond_to_rate_limit_choice, scan_existing_tracks,
+    resolve_playback_url, respond_to_rate_limit_choice, scan_existing_tracks,
     search_tracks, sign_out, start_download_queue, test_ffmpeg, validate_download_path,
     validate_soundcloud_url, get_selections,
     get_followed_artists, get_artist_activity, mark_artist_seen,
+    fetch_related_tracks,
 };
-use services::auth_choice::AuthChoiceState;
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
 use services::selections::SelectionCache;
@@ -54,7 +54,6 @@ pub fn run() {
         download_track_full,
         start_download_queue,
         cancel_download_queue,
-        respond_to_auth_choice,
         respond_to_rate_limit_choice,
         check_write_permission,
         get_default_download_path,
@@ -72,7 +71,8 @@ pub fn run() {
         get_selections,
         get_followed_artists,
         get_artist_activity,
-        mark_artist_seen
+        mark_artist_seen,
+        fetch_related_tracks
     ]);
 
     // Export TypeScript bindings in debug mode
@@ -98,7 +98,6 @@ pub fn run() {
         .manage(SelectionCache::default())
         .manage(NewTracksCache::default())
         .manage(CancellationState::default())
-        .manage(Arc::new(AuthChoiceState::default()))
         .manage(Arc::new(RateLimitChoiceState::default()))
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {

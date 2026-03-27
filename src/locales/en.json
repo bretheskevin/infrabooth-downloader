@@ -300,13 +300,15 @@
     "errorNext": "Failed to skip to next track",
     "errorPrevious": "Failed to skip to previous track",
     "errorLoadTrack": "Failed to load track",
+    "autoplayError": "Failed to load related tracks",
     "clickToExpand": "Click to expand player",
     "volume": "Volume",
     "mute": "Mute",
     "unmute": "Unmute",
     "trackActions": "Open menu",
     "nextUp": "Next up",
-    "queueSection": "Queue"
+    "queueSection": "Queue",
+    "stationSection": "Autoplay Station"
   },
   "selections": {
     "sectionTitle": "Mixed for you",

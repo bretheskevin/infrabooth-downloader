@@ -26,15 +26,17 @@ const sectionHeaderClass = 'px-3 pt-3 pb-1 text-[10px] font-medium text-muted-fo
 
 export function QueuePanel({ closing }: { closing?: boolean }) {
   const { t } = useTranslation();
-  const { queue, cursor, playerState, manualQueueCount } = usePlayerStore(
+  const { queue, cursor, playerState, manualQueueCount, stationQueueCount } = usePlayerStore(
     useShallow((s) => ({
       queue: s.queue,
       cursor: s.cursor,
       playerState: s.state,
       manualQueueCount: s.manualQueueCount,
+      stationQueueCount: s.stationQueueCount,
     }))
   );
 
+  const stationStartIdx = stationQueueCount > 0 ? queue.length - stationQueueCount : -1;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -86,6 +88,7 @@ export function QueuePanel({ closing }: { closing?: boolean }) {
                 {queue.map((item, index) => {
                   const isManualStart = manualQueueCount > 0 && index === cursor + 1;
                   const showAutoHeader = manualQueueCount > 0 && index === cursor + 1 + manualQueueCount;
+                  const isStationStart = index === stationStartIdx;
 
                   return (
                     <div key={item.trackId}>
@@ -94,9 +97,14 @@ export function QueuePanel({ closing }: { closing?: boolean }) {
                           {t('player.nextUp')}
                         </div>
                       )}
-                      {showAutoHeader && (
+                      {showAutoHeader && !isStationStart && (
                         <div className={sectionHeaderClass}>
                           {t('player.queueSection')}
+                        </div>
+                      )}
+                      {isStationStart && (
+                        <div className={sectionHeaderClass}>
+                          {t('player.stationSection')}
                         </div>
                       )}
                       <QueuePanelItem

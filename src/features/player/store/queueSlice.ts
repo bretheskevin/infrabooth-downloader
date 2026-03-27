@@ -127,8 +127,14 @@ export const createQueueSlice: StateCreator<
       newManualCount = manualQueueCount - 1;
     }
 
+    let newStationCount = get().stationQueueCount;
+    const stationStart = queue.length - newStationCount;
+    if (newStationCount > 0 && index >= stationStart) {
+      newStationCount = newStationCount - 1;
+    }
+
     const newTrack = newQueue[newCursor] ?? null;
-    set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack, originalQueue: newOriginalQueue, manualQueueCount: newManualCount });
+    set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack, originalQueue: newOriginalQueue, manualQueueCount: newManualCount, stationQueueCount: newStationCount });
     purgeStaleCache(trackIdSet(newQueue));
 
     if (removingCurrent && newTrack) {

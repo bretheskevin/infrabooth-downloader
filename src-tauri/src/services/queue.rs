@@ -10,7 +10,6 @@ use tokio::task::JoinSet;
 
 use crate::models::error::{HasErrorCode, DownloadError};
 use crate::models::TrackCore;
-use crate::services::auth_choice::{AuthChoice, AuthChoiceState, DownloadAuthNeededEvent};
 use crate::services::cancellation::ActiveProcess;
 use crate::services::events;
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState, DownloadRateLimitedEvent};
@@ -76,7 +75,6 @@ pub enum TrackOutcome {
     Failed { track_id: String, error_message: String },
     Cancelled { track_id: String },
     RateLimited { track_id: String, reset_time: Option<String> },
-    AuthFailed { track_id: String },
 }
 
 /// Context for queue processing containing all shared state.
@@ -84,7 +82,6 @@ pub struct QueueProcessContext {
     pub output_dir: PathBuf,
     pub cancel_rx: watch::Receiver<bool>,
     pub active_processes: Arc<Mutex<HashMap<String, ActiveProcess>>>,
-    pub auth_choice_state: Arc<AuthChoiceState>,
     pub rate_limit_choice_state: Arc<RateLimitChoiceState>,
     pub max_concurrent: usize,
 }
@@ -133,9 +130,6 @@ async fn execute_download<R: Runtime>(
                 DownloadProgressEvent::rate_limited(track_id.clone()),
             );
             TrackOutcome::RateLimited { track_id, reset_time }
-        }
-        Err(DownloadError::AuthRefreshFailed) => {
-            TrackOutcome::AuthFailed { track_id }
         }
         Err(e) => {
             log::error!("[queue] Track {} failed: {}", track_id, e);
@@ -246,71 +240,6 @@ async fn handle_rate_limit<R: Runtime>(
             progress.pending.clear();
         }
         None => { /* cancelled */ }
-    }
-
-    paused.store(false, Ordering::SeqCst);
-    pause_notify.notify_waiters();
-}
-
-/// Handle auth-failed outcome: pause queue, emit event, wait for user choice.
-async fn handle_auth_failure<R: Runtime>(
-    app: &AppHandle<R>,
-    ctx: &QueueProcessContext,
-    progress: &mut QueueProgress,
-    track_lookup: &HashMap<String, (usize, QueueItem)>,
-    paused: &Arc<AtomicBool>,
-    pause_notify: &Arc<Notify>,
-    track_id: String,
-) {
-    paused.store(true, Ordering::SeqCst);
-
-    ctx.auth_choice_state.set_pending(true).await;
-    let _ = app.emit(
-        events::DOWNLOAD_AUTH_NEEDED,
-        DownloadAuthNeededEvent {
-            track_id: track_id.clone(),
-            track_title: track_lookup.get(&track_id)
-                .map(|(_, item)| item.core.title.clone())
-                .unwrap_or_default(),
-        },
-    );
-
-    let track_idx = track_lookup.get(&track_id).map(|&(idx, _)| idx);
-    let mut choice_rx = ctx.auth_choice_state.subscribe();
-    let action = wait_for_user_choice(&mut choice_rx, &ctx.cancel_rx, |choice| {
-        match choice {
-            AuthChoice::ReAuthenticated => {
-                log::info!("[queue] User re-authenticated, refreshing token");
-                match track_idx {
-                    Some(idx) => PauseAction::RetryTrack(idx),
-                    None => PauseAction::Stop,
-                }
-            }
-            AuthChoice::ContinueStandard => {
-                log::info!("[queue] User chose standard quality");
-                match track_idx {
-                    Some(idx) => PauseAction::RetryTrack(idx),
-                    None => PauseAction::Stop,
-                }
-            }
-        }
-    }).await;
-
-    ctx.auth_choice_state.set_pending(false).await;
-
-    match action {
-        Some(PauseAction::RetryTrack(idx)) => {
-            if matches!(
-                *choice_rx.borrow(),
-                Some(AuthChoice::ReAuthenticated)
-            ) {
-                progress.oauth_token = app.state::<AuthState>().get_token();
-            } else {
-                ctx.auth_choice_state.set_skip_auth(true);
-            }
-            progress.pending.push_front(idx);
-        }
-        Some(PauseAction::Stop) | None => { /* stop or cancelled */ }
     }
 
     paused.store(false, Ordering::SeqCst);
@@ -649,12 +578,6 @@ impl DownloadQueue {
                 handle_rate_limit(
                     app, ctx, progress, track_lookup, paused, stopped, pause_notify,
                     track_id, reset_time,
-                ).await;
-            }
-            TrackOutcome::AuthFailed { track_id } => {
-                log::info!("[queue] Track {} auth failed, pausing queue", track_id);
-                handle_auth_failure(
-                    app, ctx, progress, track_lookup, paused, pause_notify, track_id,
                 ).await;
             }
         }

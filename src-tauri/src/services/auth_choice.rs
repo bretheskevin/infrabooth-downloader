@@ -50,15 +50,6 @@ impl AuthChoiceState {
         let mut guard = self.pending.lock().await;
         *guard = pending;
     }
-
-    pub fn send_choice(&self, choice: AuthChoice) {
-        self.inner.send_choice(choice);
-    }
-
-    pub fn reset(&self) {
-        self.inner.reset();
-        self.skip_auth.store(false, Ordering::SeqCst);
-    }
 }
 
 impl Default for AuthChoiceState {
