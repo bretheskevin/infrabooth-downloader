@@ -14,6 +14,7 @@ import {
   type ActivityItem,
   type ArtistProfile,
   type ArtistTracksResponse,
+  type UserSearchResponse,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -112,6 +113,9 @@ export const api = {
   // Search
   searchTracks: (query: string, limit: number, offset: number): Promise<SearchResponse> =>
     commands.searchTracks(query, limit, offset).then(unwrap),
+
+  searchUsers: (query: string, limit: number, offset: number): Promise<UserSearchResponse> =>
+    commands.searchUsers(query, limit, offset).then(unwrap),
 
   // Player
   resolvePlaybackUrl: (trackId: number, trackUrl: string): Promise<string> =>
