@@ -63,14 +63,14 @@ const mockUseMediaInfoFetcher = vi.mocked(useMediaInfoFetcher);
 const mockPlaylist: PlaylistInfo = {
   id: 123,
   title: 'Test Playlist',
-  user: { username: 'TestUser', avatar_url: null },
+  user: { id: 0, username: 'TestUser', avatar_url: null },
   artwork_url: 'https://example.com/art.jpg',
   track_count: 2,
   tracks: [
     {
       id: 1,
       title: 'Track 1',
-      user: { username: 'Artist1', avatar_url: null },
+      user: { id: 0, username: 'Artist1', avatar_url: null },
       artwork_url: null,
       duration: 180000,
       permalink_url: '',
@@ -84,7 +84,7 @@ const mockPlaylist: PlaylistInfo = {
 const mockTrack: TrackInfo = {
   id: 456,
   title: 'Single Track',
-  user: { username: 'Artist2', avatar_url: null },
+  user: { id: 0, username: 'Artist2', avatar_url: null },
   artwork_url: 'https://example.com/single.jpg',
   duration: 240000,
   permalink_url: '',

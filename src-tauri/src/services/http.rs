@@ -3,6 +3,11 @@ use once_cell::sync::Lazy;
 /// Base URL for SoundCloud API v2.
 pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 
+/// SoundCloud web-app version sent as `app_version` query parameter.
+/// Extracted from the SoundCloud web app bundle (look for `app_version` in network requests).
+/// May need periodic updating if SoundCloud rejects older versions.
+pub const SC_APP_VERSION: &str = "1774492604";
+
 pub static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
     use reqwest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER, USER_AGENT};
 

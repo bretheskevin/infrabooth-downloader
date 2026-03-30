@@ -49,6 +49,7 @@ const mockTrack: PlaybackItem = {
   trackUrl: 'https://soundcloud.com/test/track-1',
   title: 'Test Track',
   artist: 'Test Artist',
+  artistId: 1,
   artworkUrl: null,
   durationMs: 180000,
   waveformUrl: null,

@@ -1,3 +1,4 @@
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { ListMusic, ChevronDown } from 'lucide-react';
@@ -12,6 +13,7 @@ import { SeekBar } from './SeekBar';
 import { TransportControls } from './TransportControls';
 import { VolumeControl } from './VolumeControl';
 import { TrackActionsDropdown } from '@/components/TrackActionsDropdown';
+import { useArtistProfileStore } from '@/features/artist-profile';
 
 export const EXPANDED_BAR_HEIGHT = 90;
 
@@ -19,6 +21,15 @@ const actions = () => usePlayerStore.getState();
 
 export function ExpandedBar() {
   const { t } = useTranslation();
+
+  const handleArtistClick = useCallback(() => {
+    const track = usePlayerStore.getState().currentTrack;
+    if (track && track.artistId > 0) {
+      actions().toggleExpanded();
+      useArtistProfileStore.getState().openProfile(track.artistId, track.artist);
+    }
+  }, []);
+
   const { state, currentTrack, positionMs, durationMs, isQueueOpen } = usePlayerStore(
     useShallow((s) => ({
       state: s.state,
@@ -56,7 +67,17 @@ export function ExpandedBar() {
         </div>
         <div className="flex-1 min-w-0">
           <ScrollingText text={currentTrack.title} className="text-xs font-semibold" />
-          <div className="text-[10px] text-muted-foreground truncate">{currentTrack.artist}</div>
+          {currentTrack.artistId > 0 ? (
+            <Button
+              variant="link"
+              className="text-[10px] text-muted-foreground truncate hover:text-foreground h-auto p-0 block max-w-full text-left"
+              onClick={handleArtistClick}
+            >
+              {currentTrack.artist}
+            </Button>
+          ) : (
+            <div className="text-[10px] text-muted-foreground truncate">{currentTrack.artist}</div>
+          )}
         </div>
 
         {/* Transport controls */}

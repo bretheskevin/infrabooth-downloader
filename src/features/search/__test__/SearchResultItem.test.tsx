@@ -1,105 +1,95 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { SearchResultItem } from '../components/SearchResultItem';
+import { TrackListProvider, InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 import type { TrackInfo } from '@/bindings';
-import type { DownloadState } from '@/types/download';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
   initReactI18next: { type: '3rdParty', init: () => {} },
 }));
 
+vi.mock('@/features/player/url-cache', () => ({
+  preloadOnHover: vi.fn(),
+  preloadImmediate: vi.fn(),
+}));
+
+vi.mock('@/features/player/store', () => {
+  const { create } = require('zustand');
+  const store = create(() => ({
+    currentTrack: null,
+    state: 'idle',
+    pause: vi.fn(),
+    resume: vi.fn(),
+  }));
+  return { usePlayerStore: store };
+});
+
+vi.mock('@/hooks/useDownloadState', () => {
+  const { create } = require('zustand');
+  const store = create(() => ({
+    states: new Map(),
+    completedCount: 0,
+  }));
+  return { useDownloadStateStore: store };
+});
+
 const mockTrack: TrackInfo = {
   id: 123,
   title: 'Test Track',
-  user: { username: 'TestArtist', avatar_url: null },
+  user: { id: 0, username: 'TestArtist', avatar_url: null },
   artwork_url: null,
   duration: 180000,
-  permalink_url: '',
+  permalink_url: 'https://soundcloud.com/test/track',
 } as TrackInfo;
 
-describe('SearchResultItem', () => {
+const defaultProviderProps = {
+  playTrack: vi.fn(),
+  downloadTrack: vi.fn(),
+  isDownloadEnabled: true,
+  downloadVariant: 'filled' as const,
+  downloadedIds: new Set<number>(),
+};
+
+function renderSearchResult(overrides = {}) {
+  const props = { ...defaultProviderProps, ...overrides };
+  return render(
+    <TooltipProvider>
+      <TrackListProvider {...props}>
+        <InteractiveTrackRow
+          track={mockTrack}
+          index={0}
+          className="border-b border-border/50 last:border-b-0"
+        />
+      </TrackListProvider>
+    </TooltipProvider>,
+  );
+}
+
+describe('Search track row (InteractiveTrackRow)', () => {
+  beforeEach(() => vi.clearAllMocks());
+
   it('renders track info in idle state', () => {
-    const state: DownloadState = { status: 'idle' };
-    render(
-      <SearchResultItem
-        track={mockTrack}
-        index={0}
-        state={state}
-        onDownload={vi.fn()}
-        onRetry={vi.fn()}
-        isDownloadEnabled
-      />,
-    );
+    renderSearchResult();
     expect(screen.getByText('Test Track')).toBeInTheDocument();
     expect(screen.getByText('TestArtist')).toBeInTheDocument();
     expect(screen.getByText('3:00')).toBeInTheDocument();
   });
 
-  it('calls onDownload when download button clicked', () => {
-    const onDownload = vi.fn();
-    const state: DownloadState = { status: 'idle' };
-    render(
-      <SearchResultItem
-        track={mockTrack}
-        index={0}
-        state={state}
-        onDownload={onDownload}
-        onRetry={vi.fn()}
-        isDownloadEnabled
-      />,
-    );
+  it('calls downloadTrack when download button clicked', () => {
+    const downloadTrack = vi.fn();
+    renderSearchResult({ downloadTrack });
     fireEvent.click(screen.getByRole('button', { name: 'library.detail.download' }));
-    expect(onDownload).toHaveBeenCalledOnce();
+    expect(downloadTrack).toHaveBeenCalledWith(mockTrack);
   });
 
-  it('shows progress percentage when downloading', () => {
-    const state: DownloadState = { status: 'downloading', progress: 0.65 };
-    render(
-      <SearchResultItem
-        track={mockTrack}
-        index={0}
-        state={state}
-        onDownload={vi.fn()}
-        onRetry={vi.fn()}
-        isDownloadEnabled
-      />,
-    );
-    expect(screen.getByText('65%')).toBeInTheDocument();
-  });
-
-  it('shows checkmark when completed', () => {
-    const state: DownloadState = { status: 'completed' };
-    const { container } = render(
-      <TooltipProvider>
-        <SearchResultItem
-          track={mockTrack}
-          index={0}
-          state={state}
-          onDownload={vi.fn()}
-          onRetry={vi.fn()}
-          isDownloadEnabled
-        />
-      </TooltipProvider>,
-    );
+  it('shows completed state for downloaded tracks', () => {
+    const { container } = renderSearchResult({ downloadedIds: new Set([123]) });
     expect(container.querySelector('.text-green-600')).toBeInTheDocument();
   });
 
-  it('shows retry button on error', () => {
-    const onRetry = vi.fn();
-    const state: DownloadState = { status: 'error', error: 'Network timeout' };
-    render(
-      <SearchResultItem
-        track={mockTrack}
-        index={0}
-        state={state}
-        onDownload={vi.fn()}
-        onRetry={onRetry}
-        isDownloadEnabled
-      />,
-    );
-    fireEvent.click(screen.getByRole('button', { name: 'library.detail.retry' }));
-    expect(onRetry).toHaveBeenCalledOnce();
+  it('hides download button when disabled', () => {
+    renderSearchResult({ isDownloadEnabled: false });
+    expect(screen.queryByRole('button', { name: 'library.detail.download' })).not.toBeInTheDocument();
   });
 });

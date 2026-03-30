@@ -108,7 +108,7 @@ export function TrackRow({
       <ContextMenuTrigger asChild>
         <div
           className={cn(
-            'flex items-center gap-3 px-3 py-2 rounded-md',
+            'group flex items-center gap-3 px-3 py-2 rounded-md',
             isCurrentlyPlaying && 'bg-primary/5',
             downloadState?.status === 'completed' && 'opacity-60',
             className,

@@ -7,6 +7,7 @@ export function buildPlaybackQueue(tracks: TrackInfo[]): PlaybackItem[] {
     trackUrl: track.permalink_url,
     title: track.title,
     artist: track.user.username,
+    artistId: track.user.id,
     artworkUrl: track.artwork_url,
     durationMs: track.duration,
     waveformUrl: track.waveform_url,

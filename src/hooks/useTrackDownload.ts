@@ -19,7 +19,7 @@ function toTrackCore(track: TrackInfo) {
   };
 }
 
-function toDownloadState(state: { status: string; percent?: number; error?: { message: string } | null } | undefined): DownloadState {
+export function toDownloadState(state: { status: string; percent?: number; error?: { message: string } | null } | undefined): DownloadState {
   if (!state) return { status: 'idle' };
   
   switch (state.status) {

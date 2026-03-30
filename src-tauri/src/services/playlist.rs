@@ -67,12 +67,14 @@ impl From<crate::services::http::ApiResponseError> for PlaylistError {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct UserInfo {
+    pub id: u64,
     pub username: String,
     pub avatar_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 pub(crate) struct RawUserInfo {
+    pub id: u64,
     pub username: String,
     pub avatar_url: Option<String>,
 }
@@ -145,6 +147,7 @@ impl From<RawTrackInfo> for TrackInfo {
             id: raw.id,
             title: raw.title,
             user: UserInfo {
+                id: raw.user.id,
                 username: artist_name,
                 avatar_url: None,
             },
@@ -226,6 +229,7 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
             id: raw.id,
             title: raw.title,
             user: UserInfo {
+                id: raw.user.id,
                 username: raw.user.username,
                 avatar_url: raw.user.avatar_url,
             },
@@ -703,10 +707,13 @@ async fn fetch_system_playlist(
     let user = raw
         .user
         .map(|u| UserInfo {
+            id: u.id,
             username: u.username,
             avatar_url: u.avatar_url,
         })
         .unwrap_or(UserInfo {
+            // id: 0 signals "no real user" — the frontend uses `artistId > 0` to gate profile links
+            id: 0,
             username: "SoundCloud".to_string(),
             avatar_url: None,
         });
@@ -811,6 +818,7 @@ pub async fn fetch_playlist_info(
         id: playlist_data.id,
         title: playlist_data.title,
         user: UserInfo {
+            id: playlist_data.user.id,
             username: playlist_data.user.username,
             avatar_url: playlist_data.user.avatar_url,
         },
@@ -897,6 +905,7 @@ mod tests {
     #[test]
     fn test_user_info_serializes_correctly() {
         let user = UserInfo {
+            id: 1,
             username: "test_artist".to_string(),
             avatar_url: None,
         };
@@ -1043,6 +1052,7 @@ mod tests {
             id: 123456,
             title: "Test Track".to_string(),
             user: UserInfo {
+                id: 1,
                 username: "test_artist".to_string(),
                 avatar_url: None,
             },
@@ -1153,6 +1163,7 @@ mod tests {
             id: 999,
             title: "My Playlist".to_string(),
             user: UserInfo {
+                id: 1,
                 username: "owner".to_string(),
                 avatar_url: None,
             },
@@ -1162,6 +1173,7 @@ mod tests {
                 id: 1,
                 title: "Track 1".to_string(),
                 user: UserInfo {
+                    id: 1,
                     username: "artist".to_string(),
                     avatar_url: None,
                 },

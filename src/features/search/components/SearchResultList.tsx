@@ -1,11 +1,9 @@
-import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Search } from 'lucide-react';
 import type { TrackInfo } from '@/bindings';
 import { ApiError } from '@/lib/tauri';
-import type { DownloadState } from '@/types/download';
-import { useIsDownloadEnabled } from '@/features/settings';
-import { SearchResultItem } from './SearchResultItem';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 
 interface SearchResultListProps {
   isUrlMode: boolean;
@@ -16,16 +14,6 @@ interface SearchResultListProps {
   fetchNextPage: () => void;
   error: Error | null;
   hasSearched: boolean;
-  getTrackState: (trackId: number) => DownloadState;
-  onDownload: (track: TrackInfo) => void;
-  onRetry: (track: TrackInfo) => void;
-  onPlayTrack?: (index: number) => void;
-  onPauseTrack?: () => void;
-  onResumeTrack?: () => void;
-  currentlyPlayingId?: number;
-  isPlayerPlaying?: boolean;
-  onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
-  onMouseDownTrack?: (track: TrackInfo) => void;
 }
 
 export function SearchResultList({
@@ -37,38 +25,9 @@ export function SearchResultList({
   fetchNextPage,
   error,
   hasSearched,
-  getTrackState,
-  onDownload,
-  onRetry,
-  onPlayTrack,
-  onPauseTrack,
-  onResumeTrack,
-  currentlyPlayingId,
-  isPlayerPlaying,
-  onHoverTrack,
-  onMouseDownTrack,
 }: SearchResultListProps) {
   const { t } = useTranslation();
-  const isDownloadEnabled = useIsDownloadEnabled();
-  const sentinelRef = useRef<HTMLDivElement>(null);
-
-  // Infinite scroll via IntersectionObserver
-  useEffect(() => {
-    const sentinel = sentinelRef.current;
-    if (!sentinel) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 },
-    );
-
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const { sentinelRef } = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   // Empty state — no search yet
   if (!hasSearched) {
@@ -116,21 +75,11 @@ export function SearchResultList({
   return (
     <div>
       {results.map((track, index) => (
-        <SearchResultItem
+        <InteractiveTrackRow
           key={track.id}
           track={track}
           index={index}
-          state={getTrackState(track.id)}
-          onDownload={() => onDownload(track)}
-          onRetry={() => onRetry(track)}
-          onPlay={onPlayTrack}
-          onPause={onPauseTrack}
-          onResume={onResumeTrack}
-          isCurrentlyPlaying={track.id === currentlyPlayingId}
-          isPlayerPlaying={isPlayerPlaying}
-          onHoverTrack={onHoverTrack}
-          onMouseDownTrack={onMouseDownTrack}
-          isDownloadEnabled={isDownloadEnabled}
+          className="border-b border-border/50 last:border-b-0"
         />
       ))}
 

@@ -80,7 +80,7 @@ describe('useSearchQuery', () => {
   });
 
   it('resolves SoundCloud URL instead of searching', async () => {
-    const mockTrack = { id: 1, title: 'Test Track', user: { username: 'artist' } };
+    const mockTrack = { id: 1, title: 'Test Track', user: { id: 0, username: 'artist' } };
     mockGetTrackInfo.mockResolvedValue(mockTrack);
     const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 

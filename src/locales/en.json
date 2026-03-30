@@ -375,5 +375,15 @@
     "scrollLeft": "Scroll left",
     "scrollRight": "Scroll right",
     "hideReposts": "Hide reposts"
+  },
+  "artistProfile": {
+    "back": "Back",
+    "followers": "followers",
+    "tracks": "tracks",
+    "downloadAll": "Download all",
+    "sortRecent": "Recent",
+    "sortPopular": "Popular",
+    "noTracks": "This artist has no public tracks",
+    "error": "Failed to load artist profile"
   }
 }

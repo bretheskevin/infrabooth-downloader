@@ -14,6 +14,7 @@ use commands::{
     validate_soundcloud_url, get_selections,
     get_followed_artists, get_artist_activity, mark_artist_seen,
     fetch_related_tracks,
+    get_artist_profile, get_artist_tracks,
 };
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
@@ -72,7 +73,9 @@ pub fn run() {
         get_followed_artists,
         get_artist_activity,
         mark_artist_seen,
-        fetch_related_tracks
+        fetch_related_tracks,
+        get_artist_profile,
+        get_artist_tracks
     ]);
 
     // Export TypeScript bindings in debug mode

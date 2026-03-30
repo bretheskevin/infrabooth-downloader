@@ -375,5 +375,15 @@
     "scrollLeft": "Défiler vers la gauche",
     "scrollRight": "Défiler vers la droite",
     "hideReposts": "Masquer les reposts"
+  },
+  "artistProfile": {
+    "back": "Retour",
+    "followers": "abonnés",
+    "tracks": "titres",
+    "downloadAll": "Tout télécharger",
+    "sortRecent": "Récents",
+    "sortPopular": "Populaires",
+    "noTracks": "Cet artiste n'a aucun titre public",
+    "error": "Impossible de charger le profil de l'artiste"
   }
 }

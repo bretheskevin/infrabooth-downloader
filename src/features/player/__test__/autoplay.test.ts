@@ -53,6 +53,7 @@ const mockTrack: PlaybackItem = {
   trackUrl: 'https://soundcloud.com/test/track-1',
   title: 'Test Track',
   artist: 'Test Artist',
+  artistId: 1,
   artworkUrl: null,
   durationMs: 180000,
   waveformUrl: null,
@@ -69,7 +70,7 @@ const makeRelatedTracks = (count: number, startId = 100) =>
   Array.from({ length: count }, (_, i) => ({
     id: startId + i,
     title: `Related Track ${startId + i}`,
-    user: { username: 'Related Artist', avatar_url: null },
+    user: { id: 0, username: 'Related Artist', avatar_url: null },
     artwork_url: null,
     duration: 200000,
     permalink_url: `https://soundcloud.com/related/track-${startId + i}`,

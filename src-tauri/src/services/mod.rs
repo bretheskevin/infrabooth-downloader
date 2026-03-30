@@ -25,4 +25,5 @@ pub mod search;
 pub mod selections;
 pub mod new_tracks;
 pub mod related;
+pub mod artist;
 

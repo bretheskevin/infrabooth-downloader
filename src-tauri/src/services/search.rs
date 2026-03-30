@@ -217,6 +217,7 @@ mod tests {
                 id: 1,
                 title: "Test".to_string(),
                 user: UserInfo {
+                    id: 1,
                     username: "user".to_string(),
                     avatar_url: None,
                 },

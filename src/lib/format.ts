@@ -13,6 +13,12 @@ export function formatTotalDuration(ms: number): string {
   return minutes > 0 ? `${hours}h ${minutes}m` : `${hours}h`;
 }
 
+export function formatCount(count: number): string {
+  if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`;
+  if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`;
+  return count.toString();
+}
+
 export function formatBytes(bytes: number): string {
   if (bytes < 1000) return `${bytes} B`;
   if (bytes < 1000 * 1000) return `${(bytes / 1000).toFixed(1)} KB`;
