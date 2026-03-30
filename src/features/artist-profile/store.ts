@@ -10,6 +10,9 @@ interface ArtistProfileState {
 export const useArtistProfileStore = create<ArtistProfileState>((set) => ({
   profileArtistId: null,
   profileArtistName: null,
-  openProfile: (artistId, artistName) => set({ profileArtistId: artistId, profileArtistName: artistName }),
+  openProfile: (artistId, artistName) => {
+    if (artistId <= 0) return;
+    set({ profileArtistId: artistId, profileArtistName: artistName });
+  },
   closeProfile: () => set({ profileArtistId: null, profileArtistName: null }),
 }));

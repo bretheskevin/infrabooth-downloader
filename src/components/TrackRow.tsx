@@ -7,6 +7,7 @@ import { useIsSignedIn } from '@/features/auth/store';
 import { usePlayerStore, buildPlaybackQueue } from '@/features/player';
 import { TrackRowContent } from '@/components/TrackRowContent';
 import { TrackRowActionsContextContent, TrackRowActionsDropdown } from '@/components/TrackRowActions';
+import { useArtistProfileStore } from '@/features/artist-profile';
 import type { TrackInfo } from '@/bindings';
 import type { DownloadState } from '@/types/download';
 
@@ -77,6 +78,10 @@ export function TrackRow({
     if (item) usePlayerStore.getState().addToQueue(item);
   }, [track]);
 
+  const handleArtistClick = useCallback(() => {
+    useArtistProfileStore.getState().openProfile(track.user.id, track.user.username);
+  }, [track.user.id, track.user.username]);
+
   const handleMouseEnter = useCallback(() => {
     setIsRowHovered(true);
     onHoverStart?.();
@@ -126,6 +131,7 @@ export function TrackRow({
             isRowHovered={isRowHovered}
             onPlayPause={onPlayPause}
             onMouseDown={handleContentMouseDown}
+            onArtistClick={track.user.id > 0 ? handleArtistClick : undefined}
             downloadProgress={downloadProgress}
             subtitleSlot={subtitleSlot}
           />

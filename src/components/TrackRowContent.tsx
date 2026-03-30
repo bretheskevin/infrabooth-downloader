@@ -1,4 +1,5 @@
 import { Music } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { PlayOverlay } from '@/features/player';
 import { cn } from '@/lib/utils';
 import { formatDuration, formatBytes } from '@/lib/format';
@@ -18,6 +19,7 @@ interface TrackRowContentProps {
   isRowHovered: boolean;
   onPlayPause: () => void;
   onMouseDown: (e: React.MouseEvent) => void;
+  onArtistClick?: () => void;
   downloadProgress: DownloadProgress | null;
   subtitleSlot?: React.ReactNode;
 }
@@ -30,6 +32,7 @@ export function TrackRowContent({
   isRowHovered,
   onPlayPause,
   onMouseDown,
+  onArtistClick,
   downloadProgress,
   subtitleSlot,
 }: TrackRowContentProps) {
@@ -68,7 +71,18 @@ export function TrackRowContent({
         <p className={cn('text-sm font-medium truncate', isCurrentlyPlaying && 'text-primary')}>
           {track.title}
         </p>
-        <p className="text-xs text-muted-foreground truncate">{track.user.username}</p>
+        {onArtistClick ? (
+          <Button
+            variant="ghost"
+            className="text-xs text-muted-foreground truncate hover:text-foreground hover:bg-transparent h-auto p-0 block max-w-full text-left"
+            onClick={(e) => { e.stopPropagation(); onArtistClick(); }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            {track.user.username}
+          </Button>
+        ) : (
+          <p className="text-xs text-muted-foreground truncate">{track.user.username}</p>
+        )}
         {subtitleSlot}
         {showProgress && (
           <div className="mt-1 flex items-center gap-2">
