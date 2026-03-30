@@ -1,6 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { PlayerState } from './types';
-import { shuffleQueueWithCurrent } from './playbackSlice';
+import { shuffleQueueWithCurrent, splitStationTracks } from './playbackSlice';
 
 export interface ShuffleSliceActions {
   toggleShuffle: () => void;
@@ -15,16 +15,18 @@ export const createShuffleSlice: StateCreator<
   ShuffleSlice
 > = (set, get) => ({
   toggleShuffle: () => {
-    const { queue, cursor, currentTrack, isShuffled, originalQueue } = get();
+    const { queue, cursor, currentTrack, isShuffled, originalQueue, stationQueueCount } = get();
 
     if (queue.length <= 1) return;
 
     if (!isShuffled) {
       if (!queue[cursor]) return;
 
+      const { userTracks, stationTracks } = splitStationTracks(queue, stationQueueCount);
+
       set({
         originalQueue: queue,
-        queue: shuffleQueueWithCurrent(queue, cursor),
+        queue: [...shuffleQueueWithCurrent(userTracks, cursor), ...stationTracks],
         cursor: 0,
         isShuffled: true,
       });
