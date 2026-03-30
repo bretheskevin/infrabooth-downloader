@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useIsDownloadEnabled } from '@/features/settings';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
-import type { LibraryPlaylist } from '../types';
+import type { LibraryPlaylist } from '@/bindings';
 
 interface LibraryPlaylistItemProps {
   playlist: LibraryPlaylist;

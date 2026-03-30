@@ -4,8 +4,7 @@ import { useAuthStore } from '@/features/auth/store';
 import { LibraryLockedState } from './LibraryLockedState';
 import { PlaylistDetailView } from './PlaylistDetailView';
 import { PlaylistListView } from './PlaylistListView';
-import type { TrackInfo } from '@/bindings';
-import type { LibraryPlaylist } from '../types';
+import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { useLibraryStore } from '../store';
 
 const libraryActions = () => useLibraryStore.getState();

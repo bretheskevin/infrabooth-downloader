@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { filterPlaylists } from '../filterPlaylists';
-import type { LibraryPlaylist } from '../../types';
+import type { LibraryPlaylist } from '@/bindings';
 
 const makePlaylists = (): LibraryPlaylist[] => [
   {

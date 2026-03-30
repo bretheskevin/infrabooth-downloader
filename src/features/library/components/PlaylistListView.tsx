@@ -8,8 +8,8 @@ import { filterPlaylists } from '../utils/filterPlaylists';
 import { SearchBar } from '@/components/ui/search-bar';
 import { LibraryFilterChips } from './LibraryFilterChips';
 import { LibraryPlaylistList } from './LibraryPlaylistList';
-import type { TrackInfo } from '@/bindings';
-import type { LibraryPlaylist, LibraryFilter } from '../types';
+import type { LibraryPlaylist, TrackInfo } from '@/bindings';
+import type { LibraryFilter } from '../types';
 import { useLibraryStore } from '../store';
 
 const libraryActions = () => useLibraryStore.getState();
