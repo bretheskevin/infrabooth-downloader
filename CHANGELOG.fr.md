@@ -7,6 +7,21 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-03-30
+
+### Added
+
+- Pages de profil artiste avec liste de pistes
+- Station autoplay avec pistes similaires à la fin de la file d'attente
+- Action « Ajouter à la file d'attente » dans les menus
+- Raccourci espace pour lecture/pause
+- Support des URL SoundCloud dans la recherche
+- Possibilité de masquer les reposts dans les nouvelles pistes
+
+### Fixed
+
+- Le dialogue « Nouveautés » apparaissait même quand l'application n'était pas à jour
+
 ## [1.14.0] - 2026-03-26
 
 ### Added
