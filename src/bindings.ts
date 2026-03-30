@@ -335,9 +335,9 @@ async getArtistProfile(artistId: number) : Promise<Result<ArtistProfile, string>
     else return { status: "error", error: e  as any };
 }
 },
-async getArtistTracks(artistId: number, sort: SortOption, limit: number, offset: number) : Promise<Result<ArtistTracksResponse, string>> {
+async getArtistTracks(artistId: number, limit: number, offset: number) : Promise<Result<ArtistTracksResponse, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_artist_tracks", { artistId, sort, limit, offset }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_tracks", { artistId, limit, offset }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -423,7 +423,6 @@ export type QueueProgressEvent = { current: number; total: number; trackId: stri
 export type RateLimitChoice = "retry" | "stop"
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
-export type SortOption = "recent" | "popular"
 export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }
 /**
  * Core track data shared across all track-related types.

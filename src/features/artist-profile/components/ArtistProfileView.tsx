@@ -16,7 +16,8 @@ import { ArtistProfileHeader } from './ArtistProfileHeader';
 import { ArtistTrackList } from './ArtistTrackList';
 import { SearchBar } from '@/components/ui/search-bar';
 import type { SortDirection } from '@/lib/sort';
-import type { TrackInfo, SortOption } from '@/bindings';
+import type { TrackInfo } from '@/bindings';
+import type { SortOption } from '../types';
 
 const MIN_TRACKS_FOR_SEARCH = 5;
 
@@ -45,12 +46,15 @@ export function ArtistProfileView({
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
-  } = useArtistTracks(artistId, sort);
+  } = useArtistTracks(artistId);
 
-  const tracks = useMemo(
-    () => tracksData?.pages.flatMap((page) => page.tracks) ?? [],
-    [tracksData],
-  );
+  const tracks = useMemo(() => {
+    const all = tracksData?.pages.flatMap((page) => page.tracks) ?? [];
+    if (sort === 'recent') {
+      return [...all].sort((a, b) => b.id - a.id);
+    }
+    return all;
+  }, [tracksData, sort]);
 
   const { searchQuery, setSearchQuery, filteredTracks } = useSearchFilter(tracks);
 
