@@ -268,7 +268,14 @@
     "toastSuccess": "\"{{title}}\" downloaded",
     "toastError": "Download failed: {{error}}",
     "folderLabel": "Download folder",
-    "rateLimited": "Rate limit reached. Try again later."
+    "rateLimited": "Rate limit reached. Try again later.",
+    "tabTracks": "Tracks",
+    "tabArtists": "Artists",
+    "placeholderArtists": "Search for artists...",
+    "emptyStateArtists": "Search for artists on SoundCloud",
+    "noArtistResults": "No artists found",
+    "followers": "{{value}} followers",
+    "tracks": "{{value}} tracks"
   },
   "changelog": {
     "whatsNew": "What's new in v{{version}}",

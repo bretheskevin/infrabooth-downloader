@@ -268,7 +268,14 @@
     "toastSuccess": "\"{{title}}\" téléchargé",
     "toastError": "Échec du téléchargement : {{error}}",
     "folderLabel": "Dossier de téléchargement",
-    "rateLimited": "Limite atteinte. Réessayez plus tard."
+    "rateLimited": "Limite atteinte. Réessayez plus tard.",
+    "tabTracks": "Titres",
+    "tabArtists": "Artistes",
+    "placeholderArtists": "Rechercher des artistes...",
+    "emptyStateArtists": "Recherchez des artistes sur SoundCloud",
+    "noArtistResults": "Aucun artiste trouvé",
+    "followers": "{{value}} abonnés",
+    "tracks": "{{value}} titres"
   },
   "changelog": {
     "whatsNew": "Nouveautés de la v{{version}}",

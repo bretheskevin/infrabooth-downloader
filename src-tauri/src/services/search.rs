@@ -60,8 +60,8 @@ impl HasErrorCode for SearchError {
 // === Internal deserialization types ===
 
 #[derive(Debug, Deserialize)]
-struct SearchApiResponse {
-    collection: Vec<RawTrackInfo>,
+struct ApiSearchResponse<T> {
+    collection: Vec<T>,
     total_results: Option<i64>,
 }
 
@@ -73,16 +73,64 @@ pub struct SearchResponse {
     pub total_results: Option<i64>,
 }
 
-// === Service function ===
+// === User search internal deserialization types ===
 
-pub async fn search_tracks(
+#[derive(Debug, Deserialize)]
+struct RawUserInfo {
+    id: u64,
+    username: String,
+    avatar_url: Option<String>,
+    followers_count: Option<u64>,
+    track_count: Option<u64>,
+    permalink_url: Option<String>,
+}
+
+// === Public user search types ===
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct UserSearchResult {
+    pub id: u64,
+    pub username: String,
+    pub avatar_url: Option<String>,
+    pub followers_count: u64,
+    pub track_count: u64,
+    pub permalink_url: String,
+}
+
+impl From<RawUserInfo> for UserSearchResult {
+    fn from(raw: RawUserInfo) -> Self {
+        Self {
+            id: raw.id,
+            username: raw.username,
+            avatar_url: raw.avatar_url,
+            followers_count: raw.followers_count.unwrap_or(0),
+            track_count: raw.track_count.unwrap_or(0),
+            permalink_url: raw.permalink_url.unwrap_or_default(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct UserSearchResponse {
+    pub collection: Vec<UserSearchResult>,
+    pub total_results: Option<i64>,
+}
+
+// === Service functions ===
+
+async fn search_api<Raw, Out>(
     client_id: &str,
     query: &str,
     limit: u32,
     offset: u32,
-) -> Result<SearchResponse, SearchError> {
+    endpoint: &str,
+) -> Result<(Vec<Out>, Option<i64>), SearchError>
+where
+    Raw: serde::de::DeserializeOwned,
+    Out: From<Raw>,
+{
     let url = Url::parse_with_params(
-        &format!("{}/search/tracks", API_V2_BASE),
+        &format!("{}/search/{}", API_V2_BASE, endpoint),
         &[
             ("q", query),
             ("client_id", client_id),
@@ -92,14 +140,10 @@ pub async fn search_tracks(
     )
     .map_err(|e| SearchError::FetchFailed(e.to_string()))?;
 
-    let response = HTTP_CLIENT
-        .get(url)
-        .send()
-        .await?;
-
+    let response = HTTP_CLIENT.get(url).send().await?;
     validate_api_response(response.status())?;
 
-    let api_response: SearchApiResponse = response
+    let api_response: ApiSearchResponse<Raw> = response
         .json()
         .await
         .map_err(|_| SearchError::InvalidResponse)?;
@@ -107,13 +151,32 @@ pub async fn search_tracks(
     let collection = api_response
         .collection
         .into_iter()
-        .map(TrackInfo::from)
+        .map(Out::from)
         .collect();
 
-    Ok(SearchResponse {
-        collection,
-        total_results: api_response.total_results,
-    })
+    Ok((collection, api_response.total_results))
+}
+
+pub async fn search_tracks(
+    client_id: &str,
+    query: &str,
+    limit: u32,
+    offset: u32,
+) -> Result<SearchResponse, SearchError> {
+    let (collection, total_results) =
+        search_api::<RawTrackInfo, TrackInfo>(client_id, query, limit, offset, "tracks").await?;
+    Ok(SearchResponse { collection, total_results })
+}
+
+pub async fn search_users(
+    client_id: &str,
+    query: &str,
+    limit: u32,
+    offset: u32,
+) -> Result<UserSearchResponse, SearchError> {
+    let (collection, total_results) =
+        search_api::<RawUserInfo, UserSearchResult>(client_id, query, limit, offset, "users").await?;
+    Ok(UserSearchResponse { collection, total_results })
 }
 
 #[cfg(test)]
@@ -127,14 +190,14 @@ mod tests {
                 {
                     "id": 123,
                     "title": "Test Track",
-                    "user": { "username": "TestUser" },
+                    "user": { "id": 10, "username": "TestUser" },
                     "artwork_url": "https://i1.sndcdn.com/artworks-abc.jpg",
                     "duration": 180000
                 }
             ],
             "total_results": 42
         }"#;
-        let response: SearchApiResponse = serde_json::from_str(json).unwrap();
+        let response: ApiSearchResponse<RawTrackInfo> = serde_json::from_str(json).unwrap();
         assert_eq!(response.collection.len(), 1);
         assert_eq!(response.collection[0].title, "Test Track");
         assert_eq!(response.total_results, Some(42));
@@ -146,7 +209,7 @@ mod tests {
             "collection": [],
             "total_results": null
         }"#;
-        let response: SearchApiResponse = serde_json::from_str(json).unwrap();
+        let response: ApiSearchResponse<RawTrackInfo> = serde_json::from_str(json).unwrap();
         assert!(response.collection.is_empty());
         assert!(response.total_results.is_none());
     }
@@ -156,7 +219,7 @@ mod tests {
         let json = r#"{
             "collection": []
         }"#;
-        let response: SearchApiResponse = serde_json::from_str(json).unwrap();
+        let response: ApiSearchResponse<RawTrackInfo> = serde_json::from_str(json).unwrap();
         assert!(response.total_results.is_none());
     }
 
@@ -165,7 +228,7 @@ mod tests {
         let json = r#"{
             "id": 456,
             "title": "My Song",
-            "user": { "username": "Artist" },
+            "user": { "id": 20, "username": "Artist" },
             "artwork_url": "https://artwork.jpg",
             "duration": 240000,
             "permalink_url": "https://soundcloud.com/artist/my-song"
@@ -184,7 +247,7 @@ mod tests {
         let json = r#"{
             "id": 789,
             "title": "No Art",
-            "user": { "username": "User" },
+            "user": { "id": 30, "username": "User" },
             "artwork_url": null,
             "duration": 60000
         }"#;
@@ -227,6 +290,83 @@ mod tests {
                 waveform_url: None,
                 downloadable: false,
                 download_url: None,
+            }],
+            total_results: Some(1),
+        };
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("\"id\":1"));
+        assert!(json.contains("\"total_results\":1"));
+    }
+
+    #[test]
+    fn test_user_search_api_response_deserializes() {
+        let json = r#"{
+            "collection": [
+                {
+                    "id": 456,
+                    "username": "TestArtist",
+                    "avatar_url": "https://i1.sndcdn.com/avatars-abc.jpg",
+                    "followers_count": 1200,
+                    "track_count": 42,
+                    "permalink_url": "https://soundcloud.com/testartist"
+                }
+            ],
+            "total_results": 10
+        }"#;
+        let response: ApiSearchResponse<RawUserInfo> = serde_json::from_str(json).unwrap();
+        assert_eq!(response.collection.len(), 1);
+        assert_eq!(response.collection[0].username, "TestArtist");
+        assert_eq!(response.total_results, Some(10));
+    }
+
+    #[test]
+    fn test_user_search_api_response_handles_missing_fields() {
+        let json = r#"{
+            "collection": [
+                {
+                    "id": 789,
+                    "username": "MinimalUser"
+                }
+            ],
+            "total_results": null
+        }"#;
+        let response: ApiSearchResponse<RawUserInfo> = serde_json::from_str(json).unwrap();
+        let user = UserSearchResult::from(response.collection.into_iter().next().unwrap());
+        assert_eq!(user.id, 789);
+        assert_eq!(user.username, "MinimalUser");
+        assert!(user.avatar_url.is_none());
+        assert_eq!(user.followers_count, 0);
+        assert_eq!(user.track_count, 0);
+        assert_eq!(user.permalink_url, "");
+    }
+
+    #[test]
+    fn test_raw_user_to_user_search_result() {
+        let raw = RawUserInfo {
+            id: 100,
+            username: "Artist".to_string(),
+            avatar_url: Some("https://avatar.jpg".to_string()),
+            followers_count: Some(5000),
+            track_count: Some(20),
+            permalink_url: Some("https://soundcloud.com/artist".to_string()),
+        };
+        let result = UserSearchResult::from(raw);
+        assert_eq!(result.id, 100);
+        assert_eq!(result.followers_count, 5000);
+        assert_eq!(result.track_count, 20);
+        assert_eq!(result.permalink_url, "https://soundcloud.com/artist");
+    }
+
+    #[test]
+    fn test_user_search_response_serializes() {
+        let response = UserSearchResponse {
+            collection: vec![UserSearchResult {
+                id: 1,
+                username: "user".to_string(),
+                avatar_url: None,
+                followers_count: 100,
+                track_count: 5,
+                permalink_url: "https://soundcloud.com/user".to_string(),
             }],
             total_results: Some(1),
         };

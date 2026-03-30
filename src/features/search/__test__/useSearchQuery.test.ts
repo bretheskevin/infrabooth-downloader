@@ -42,9 +42,9 @@ describe('useSearchQuery', () => {
 
   it('debounces input before searching', async () => {
     mockSearchTracks.mockResolvedValue({ collection: [], total_results: 0 });
-    const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
+    renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('test'));
+    act(() => useSearchStore.getState().setInputValue('test'));
     expect(mockSearchTracks).not.toHaveBeenCalled();
 
     // Advance past the 400ms debounce
@@ -58,9 +58,9 @@ describe('useSearchQuery', () => {
 
   it('trims whitespace from query', async () => {
     mockSearchTracks.mockResolvedValue({ collection: [], total_results: 0 });
-    const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
+    renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('  hello  '));
+    act(() => useSearchStore.getState().setInputValue('  hello  '));
     act(() => vi.advanceTimersByTime(400));
     vi.useRealTimers();
 
@@ -72,7 +72,7 @@ describe('useSearchQuery', () => {
   it('does not search for empty string', () => {
     const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange(''));
+    act(() => useSearchStore.getState().setInputValue(''));
     act(() => vi.advanceTimersByTime(400));
 
     expect(mockSearchTracks).not.toHaveBeenCalled();
@@ -84,7 +84,7 @@ describe('useSearchQuery', () => {
     mockGetTrackInfo.mockResolvedValue(mockTrack);
     const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('https://soundcloud.com/artist/track-name'));
+    act(() => useSearchStore.getState().setInputValue('https://soundcloud.com/artist/track-name'));
     act(() => vi.advanceTimersByTime(400));
     vi.useRealTimers();
 
@@ -102,9 +102,9 @@ describe('useSearchQuery', () => {
   it('resolves on.soundcloud.com short links', async () => {
     const mockTrack = { id: 2, title: 'Short Link Track' };
     mockGetTrackInfo.mockResolvedValue(mockTrack);
-    const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
+    renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('https://on.soundcloud.com/abc123'));
+    act(() => useSearchStore.getState().setInputValue('https://on.soundcloud.com/abc123'));
     act(() => vi.advanceTimersByTime(400));
     vi.useRealTimers();
 
@@ -117,9 +117,9 @@ describe('useSearchQuery', () => {
   it('resolves www.soundcloud.com URLs', async () => {
     const mockTrack = { id: 3, title: 'WWW Track' };
     mockGetTrackInfo.mockResolvedValue(mockTrack);
-    const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
+    renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('https://www.soundcloud.com/artist/track'));
+    act(() => useSearchStore.getState().setInputValue('https://www.soundcloud.com/artist/track'));
     act(() => vi.advanceTimersByTime(400));
     vi.useRealTimers();
 
@@ -131,9 +131,9 @@ describe('useSearchQuery', () => {
   it('handles URL with query parameters', async () => {
     const mockTrack = { id: 4, title: 'Param Track' };
     mockGetTrackInfo.mockResolvedValue(mockTrack);
-    const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
+    renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('https://soundcloud.com/artist/track?ref=clipboard&si=abc'));
+    act(() => useSearchStore.getState().setInputValue('https://soundcloud.com/artist/track?ref=clipboard&si=abc'));
     act(() => vi.advanceTimersByTime(400));
     vi.useRealTimers();
 
@@ -147,7 +147,7 @@ describe('useSearchQuery', () => {
     mockSearchTracks.mockResolvedValue({ collection: [], total_results: 0 });
     const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('some artist name'));
+    act(() => useSearchStore.getState().setInputValue('some artist name'));
     act(() => vi.advanceTimersByTime(400));
     vi.useRealTimers();
 
@@ -162,7 +162,7 @@ describe('useSearchQuery', () => {
     mockGetTrackInfo.mockResolvedValue({ id: 1, title: 'Track' });
     const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('https://soundcloud.com/artist/track'));
+    act(() => useSearchStore.getState().setInputValue('https://soundcloud.com/artist/track'));
     act(() => vi.advanceTimersByTime(400));
     vi.useRealTimers();
 
@@ -177,7 +177,7 @@ describe('useSearchQuery', () => {
     mockGetTrackInfo.mockRejectedValue(new Error('Track not found'));
     const { result } = renderHook(() => useSearchQuery(), { wrapper: createWrapper() });
 
-    act(() => result.current.handleInputChange('https://soundcloud.com/artist/deleted-track'));
+    act(() => useSearchStore.getState().setInputValue('https://soundcloud.com/artist/deleted-track'));
     act(() => vi.advanceTimersByTime(400));
     vi.useRealTimers();
 

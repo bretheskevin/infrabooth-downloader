@@ -272,6 +272,14 @@ async searchTracks(query: string, limit: number, offset: number) : Promise<Resul
     else return { status: "error", error: e  as any };
 }
 },
+async searchUsers(query: string, limit: number, offset: number) : Promise<Result<UserSearchResponse, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_users", { query, limit, offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 /**
  * Resolve a track ID to an HLS playback URL.
  * 
@@ -486,6 +494,8 @@ download_url: string | null }
 export type UpdateInfo = { version: string; body: string | null; date: string | null }
 export type UrlType = "playlist" | "track"
 export type UserInfo = { id: number; username: string; avatar_url: string | null }
+export type UserSearchResponse = { collection: UserSearchResult[]; total_results: number | null }
+export type UserSearchResult = { id: number; username: string; avatar_url: string | null; followers_count: number; track_count: number; permalink_url: string }
 export type ValidationError = { code: string; message: string; hint: string | null }
 export type ValidationResult = { valid: boolean; urlType: UrlType | null; error: ValidationError | null }
 export type VisualItem = { visual_url: string }
