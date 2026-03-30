@@ -5,7 +5,7 @@ import { Download } from 'lucide-react';
 import { FolderMetadata } from '@/components/FolderMetadata';
 import { Button } from '@/components/ui/button';
 import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
-import { Spinner } from '@/components/ui/spinner';
+import { TrackRowSkeletonList } from '@/components/TrackRowSkeleton';
 import { DetailHeader } from '@/components/DetailHeader';
 import { SelectionActionBar } from '@/components/SelectionActionBar';
 import { useDownloadSelected } from '@/hooks/useDownloadSelected';
@@ -140,11 +140,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
         </div>
       )}
 
-      {isLoading && (
-        <div className="flex items-center justify-center py-12">
-          <Spinner className="h-8 w-8 text-primary" />
-        </div>
-      )}
+      {isLoading && <TrackRowSkeletonList count={5} />}
 
       {error && !isLoading && (
         <div className="flex flex-col items-center gap-3 py-12 text-center">

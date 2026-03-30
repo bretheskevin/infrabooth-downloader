@@ -3,7 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
 import { SortDirectionSelect } from '@/components/SortDirectionSelect';
-import { Skeleton } from '@/components/ui/skeleton';
+import { TrackRowSkeletonList } from '@/components/TrackRowSkeleton';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
@@ -56,13 +56,7 @@ export function ArtistTrackList({
   const { sentinelRef } = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   if (isLoading && tracks.length === 0) {
-    return (
-      <div className="space-y-1 px-1">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-md" />
-        ))}
-      </div>
-    );
+    return <TrackRowSkeletonList count={5} />;
   }
 
   if (!isLoading && tracks.length === 0) {
