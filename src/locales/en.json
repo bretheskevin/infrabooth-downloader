@@ -5,7 +5,9 @@
   },
   "common": {
     "back": "Back",
-    "done": "Done"
+    "done": "Done",
+    "selected": "{{count}} selected",
+    "download": "Download"
   },
   "auth": {
     "signIn": "Sign In",
