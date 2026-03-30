@@ -74,6 +74,7 @@ function AppContent() {
 
   const handlePageChange = useCallback((page: AppPage) => {
     if (page === 'library') setInitialUrl('');
+    useArtistProfileStore.getState().closeProfile();
     setActivePage(page);
   }, []);
 
