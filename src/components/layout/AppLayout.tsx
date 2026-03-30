@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Lock } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Header } from './Header';
 import { UpdateBanner } from '@/features/update';
 import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
@@ -36,26 +37,24 @@ function PageNav({ activePage, onPageChange, isSignedIn }: PageNavProps) {
   ];
 
   return (
-    <div className="flex gap-1 rounded-lg bg-secondary/50 p-1 mb-4">
-      {tabs.map((tab) => (
-        <button
-          key={tab.key}
-          type="button"
-          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors flex items-center justify-center gap-1.5 ${
-            activePage === tab.key
-              ? 'bg-background text-foreground shadow-sm'
-              : 'text-muted-foreground hover:text-foreground'
-          } ${tab.locked ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={() => onPageChange(tab.key)}
-          disabled={tab.locked}
-        >
-          {tab.locked && <Lock className="h-3 w-3" />}
-          {tab.label}
-        </button>
-      ))}
-    </div>
+    <Tabs value={activePage} onValueChange={(v) => onPageChange(v as AppPage)}>
+      <TabsList className="w-full mb-4">
+        {tabs.map((tab) => (
+          <TabsTrigger
+            key={tab.key}
+            value={tab.key}
+            disabled={tab.locked}
+            className="flex-1 gap-1.5"
+          >
+            {tab.locked && <Lock className="h-3 w-3" />}
+            {tab.label}
+          </TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
   );
 }
+
 
 export function AppLayout({ children, activePage, onPageChange, isSignedIn }: AppLayoutProps) {
   const expandedBarVisible = useIsExpandedBarVisible();
