@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
 import { Spinner } from '@/components/ui/spinner';
 import { DetailHeader } from '@/components/DetailHeader';
-import { PlaylistActionBar } from '@/features/library/components/PlaylistActionBar';
+import { SelectionActionBar } from '@/components/SelectionActionBar';
+import { useDownloadSelected } from '@/hooks/useDownloadSelected';
 import { useArtistActivity } from '../hooks/useArtistActivity';
 import { TrackListProvider, InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 import { ArtistAvatarImage } from './ArtistAvatarImage';
@@ -74,10 +75,9 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
     onDownloadTracks(tracks, artist.username, effectivePath);
   }, [tracks, onDownloadTracks, artist.username, effectivePath]);
 
-  const handleDownloadSelected = useCallback(async () => {
-    await onDownloadTracks(selectedTracks, artist.username, effectivePath);
-    clearSelection();
-  }, [selectedTracks, artist.username, onDownloadTracks, clearSelection, effectivePath]);
+  const handleDownloadSelected = useDownloadSelected(
+    selectedTracks, clearSelection, onDownloadTracks, artist.username, effectivePath,
+  );
 
   const handleDownloadTrack = useCallback(
     (track: TrackInfo) => downloadTrack(track),
@@ -193,7 +193,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
         </>
       )}
 
-      <PlaylistActionBar selectedCount={selectedCount} onDownload={handleDownloadSelected} />
+      <SelectionActionBar selectedCount={selectedCount} onDownload={handleDownloadSelected} />
     </div>
   );
 }

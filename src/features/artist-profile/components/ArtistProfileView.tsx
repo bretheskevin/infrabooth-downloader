@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TrackListProvider } from '@/components/InteractiveTrackRow';
+import { SelectionActionBar } from '@/components/SelectionActionBar';
 import { useTrackSelection } from '@/features/library/hooks/useTrackSelection';
+import { useDownloadSelected } from '@/hooks/useDownloadSelected';
 import { usePlayContext } from '@/features/player';
 import { useIsDownloadEnabled } from '@/features/settings';
 import { useSettingsStore } from '@/features/settings/store';
@@ -75,7 +77,7 @@ export function ArtistProfileView({
     enabled: !isTracksLoading && tracks.length > 0,
   });
 
-  const { selectedIds, toggleTrack, toggleAll, isAllSelected, selectedTracks } =
+  const { selectedIds, toggleTrack, toggleAll, isAllSelected, selectedTracks, selectedCount, clearSelection } =
     useTrackSelection(displayTracks, downloadedIds);
 
   const { playTrack } = usePlayContext(displayTracks);
@@ -86,6 +88,10 @@ export function ArtistProfileView({
       onDownloadTracks(tracksToDownload, profile?.username ?? artistName);
     }
   }, [selectedTracks, tracks, profile, artistName, onDownloadTracks]);
+
+  const handleDownloadSelected = useDownloadSelected(
+    selectedTracks, clearSelection, onDownloadTracks, profile?.username ?? artistName,
+  );
 
   const { t } = useTranslation();
 
@@ -139,6 +145,8 @@ export function ArtistProfileView({
           onToggleAll={toggleAll}
         />
       </TrackListProvider>
+
+      <SelectionActionBar selectedCount={selectedCount} onDownload={handleDownloadSelected} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import type { TrackInfo } from '@/bindings';
+import { useDownloadSelected } from '@/hooks/useDownloadSelected';
 
 interface UsePlaylistTrackHandlersParams {
   tracks: TrackInfo[] | undefined;
@@ -24,10 +25,9 @@ export function usePlaylistTrackHandlers({
     if (tracks && tracks.length > 0) onDownloadTracks(tracks, playlistTitle, effectivePath);
   }, [tracks, playlistTitle, onDownloadTracks, effectivePath]);
 
-  const handleDownloadSelected = useCallback(async () => {
-    await onDownloadTracks(selectedTracks, playlistTitle, effectivePath);
-    clearSelection();
-  }, [selectedTracks, playlistTitle, onDownloadTracks, clearSelection, effectivePath]);
+  const handleDownloadSelected = useDownloadSelected(
+    selectedTracks, clearSelection, onDownloadTracks, playlistTitle, effectivePath,
+  );
 
   const handleDownloadTrack = useCallback(
     (track: TrackInfo) => downloadTrack(track),

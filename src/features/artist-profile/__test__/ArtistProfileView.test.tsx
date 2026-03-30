@@ -85,13 +85,27 @@ vi.mock('@/features/library/hooks/useTrackSelection', () => ({
     selectedIds: new Set<number>(),
     toggleTrack: vi.fn(),
     toggleAll: vi.fn(),
+    clearSelection: vi.fn(),
+    selectedCount: 0,
     isAllSelected: false,
     selectedTracks: [],
+    selectableCount: 0,
   }),
 }));
 
 vi.mock('@/features/player', () => ({
   usePlayContext: () => ({ playTrack: vi.fn() }),
+  usePlayerStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
+    selector({ isQueueOpen: false }),
+  ),
+}));
+
+vi.mock('@/features/player/hooks/useIsExpandedBarVisible', () => ({
+  useIsExpandedBarVisible: () => false,
+}));
+
+vi.mock('@/features/player/components/ExpandedBar', () => ({
+  EXPANDED_BAR_HEIGHT: 64,
 }));
 
 describe('useArtistProfileStore', () => {

@@ -5,7 +5,9 @@
   },
   "common": {
     "back": "Retour",
-    "done": "Terminé"
+    "done": "Terminé",
+    "selected": "{{count}} sélectionnés",
+    "download": "Télécharger"
   },
   "auth": {
     "signIn": "Se connecter",

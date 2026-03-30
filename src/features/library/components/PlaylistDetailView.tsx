@@ -19,7 +19,7 @@ import { PlaylistErrorState } from './PlaylistErrorState';
 import { PlaylistEmptyStates } from './PlaylistEmptyStates';
 import { SearchBar } from '@/components/ui/search-bar';
 import { PlaylistTrackList } from './PlaylistTrackList';
-import { PlaylistActionBar } from './PlaylistActionBar';
+import { SelectionActionBar } from '@/components/SelectionActionBar';
 import { RemoveFromPlaylistDialog } from './RemoveFromPlaylistDialog';
 
 const MIN_TRACKS_FOR_SEARCH = 5;
@@ -138,7 +138,7 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
         </TrackListProvider>
       )}
 
-      <PlaylistActionBar selectedCount={selectedCount} onDownload={handlers.handleDownloadSelected} />
+      <SelectionActionBar selectedCount={selectedCount} onDownload={handlers.handleDownloadSelected} />
 
       <RemoveFromPlaylistDialog
         open={trackToRemove !== null}

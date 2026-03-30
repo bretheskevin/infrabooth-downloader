@@ -6,12 +6,12 @@ import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBa
 import { EXPANDED_BAR_HEIGHT } from '@/features/player/components/ExpandedBar';
 import { useIsDownloadEnabled } from '@/features/settings';
 
-interface PlaylistActionBarProps {
+interface SelectionActionBarProps {
   selectedCount: number;
   onDownload: () => void;
 }
 
-export function PlaylistActionBar({ selectedCount, onDownload }: PlaylistActionBarProps) {
+export function SelectionActionBar({ selectedCount, onDownload }: SelectionActionBarProps) {
   const { t } = useTranslation();
   const expandedBarVisible = useIsExpandedBarVisible();
   const isQueueOpen = usePlayerStore((s) => s.isQueueOpen);
@@ -29,11 +29,11 @@ export function PlaylistActionBar({ selectedCount, onDownload }: PlaylistActionB
     >
       <div className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-background/80 backdrop-blur-xl border shadow-lg whitespace-nowrap">
         <span className="text-sm font-medium">
-          {t('library.detail.selected', { count: selectedCount })}
+          {t('common.selected', { count: selectedCount })}
         </span>
         <Button size="sm" onClick={onDownload} className="gap-1.5">
           <Download className="h-3.5 w-3.5" />
-          {t('library.detail.download')}
+          {t('common.download')}
         </Button>
       </div>
     </div>
