@@ -282,16 +282,32 @@ export const createPlaybackSlice: StateCreator<
     consecutiveFailures = 0;
     const vol = useSettingsStore.getState().playerVolume;
 
-    const { isShuffled } = get();
+    const {
+      isShuffled,
+      queue: prevQueue,
+      cursor: prevCursor,
+      manualQueueCount: prevManualCount,
+    } = get();
+    const manualTracks =
+      prevManualCount > 0
+        ? prevQueue.slice(prevCursor + 1, prevCursor + 1 + prevManualCount)
+        : [];
+
     let finalQueue = queue;
     let finalIndex = index;
 
     if (isShuffled && queue.length > 1) {
       finalQueue = shuffleQueueWithCurrent(queue, index);
       finalIndex = 0;
-      set({ originalQueue: queue });
+      const orig = manualTracks.length > 0 ? [...queue, ...manualTracks] : queue;
+      set({ originalQueue: orig });
     } else {
       set({ originalQueue: null });
+    }
+
+    if (manualTracks.length > 0) {
+      finalQueue = [...finalQueue];
+      finalQueue.splice(finalIndex + 1, 0, ...manualTracks);
     }
 
     const finalTrack = finalQueue[finalIndex]!;
@@ -303,7 +319,7 @@ export const createPlaybackSlice: StateCreator<
       volume: vol,
       positionMs: 0,
       durationMs: finalTrack.durationMs,
-      manualQueueCount: 0,
+      manualQueueCount: manualTracks.length,
       stationQueueCount: 0,
       autoplayInFlight: false,
     });
