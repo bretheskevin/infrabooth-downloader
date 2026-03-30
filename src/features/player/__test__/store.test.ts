@@ -423,15 +423,71 @@ describe('playerStore', () => {
     expect(usePlayerStore.getState().manualQueueCount).toBe(0);
   });
 
-  it('play resets manualQueueCount', async () => {
+  it('play preserves manually queued tracks in the new queue', async () => {
     const queue = makeQueue(3);
     await usePlayerStore.getState().play(queue, 0);
 
-    usePlayerStore.getState().addToQueue({ ...mockTrack, trackId: 99 });
+    const manualTrack: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Manual Track' };
+    usePlayerStore.getState().addToQueue(manualTrack);
     expect(usePlayerStore.getState().manualQueueCount).toBe(1);
 
+    const newQueue = makeQueue(5);
+    await usePlayerStore.getState().play(newQueue, 2);
+
+    const state = usePlayerStore.getState();
+    expect(state.manualQueueCount).toBe(1);
+    expect(state.cursor).toBe(2);
+    expect(state.queue[3]?.trackId).toBe(99);
+    expect(state.queue.length).toBe(6);
+  });
+
+  it('play with no manual tracks sets manualQueueCount to 0', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 0);
     await usePlayerStore.getState().play(makeQueue(5), 0);
     expect(usePlayerStore.getState().manualQueueCount).toBe(0);
+  });
+
+  it('play preserves multiple manual tracks in order', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 1);
+
+    const trackX: PlaybackItem = { ...mockTrack, trackId: 98, title: 'Track X' };
+    const trackY: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Track Y' };
+    usePlayerStore.getState().addToQueue(trackX);
+    usePlayerStore.getState().addToQueue(trackY);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(2);
+
+    const newQueue = makeQueue(3);
+    await usePlayerStore.getState().play(newQueue, 0);
+
+    const state = usePlayerStore.getState();
+    expect(state.manualQueueCount).toBe(2);
+    expect(state.queue[1]?.trackId).toBe(98);
+    expect(state.queue[2]?.trackId).toBe(99);
+    expect(state.queue[0]?.trackId).toBe(1);
+    expect(state.queue.length).toBe(5);
+  });
+
+  it('play with shuffle preserves manual tracks and includes them in originalQueue', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 0);
+    usePlayerStore.getState().toggleShuffle();
+
+    const manualTrack: PlaybackItem = { ...mockTrack, trackId: 99, title: 'Manual Track' };
+    usePlayerStore.getState().addToQueue(manualTrack);
+    expect(usePlayerStore.getState().manualQueueCount).toBe(1);
+
+    const newQueue = makeQueue(5);
+    await usePlayerStore.getState().play(newQueue, 2);
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(true);
+    expect(state.manualQueueCount).toBe(1);
+    expect(state.queue[0]!.trackId).toBe(newQueue[2]!.trackId);
+    expect(state.queue[1]?.trackId).toBe(99);
+    expect(state.originalQueue).toBeTruthy();
+    expect(state.originalQueue!.some((t) => t.trackId === 99)).toBe(true);
   });
 
   it('next decrements manualQueueCount when advancing into manual section', async () => {
