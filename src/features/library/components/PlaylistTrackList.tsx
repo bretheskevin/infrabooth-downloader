@@ -1,39 +1,27 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpDown, Loader2 } from 'lucide-react';
 import type { TrackInfo } from '@/bindings';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
-import { Checkbox } from '@/components/ui/checkbox';
+import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { DownloadState } from '@/types/download';
-import { useIsDownloadEnabled } from '@/features/settings';
+import { InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 import { useLibraryStore } from '../store';
 import { SORT_FIELDS, SORT_DIRECTIONS, type SortField, type SortDirection } from '../types';
-import { PlaylistTrackItem } from './PlaylistTrackItem';
 
 const TRACK_ITEM_HEIGHT = 56;
 
 interface PlaylistTrackListProps {
   tracks: TrackInfo[];
   isStreaming?: boolean;
-  selectedIds: Set<number>;
   isAllSelected: boolean;
+  isDownloadEnabled: boolean;
   sortField?: SortField;
   sortDirection?: SortDirection;
   onSortFieldChange?: (field: SortField) => void;
   onSortDirectionChange?: (direction: SortDirection) => void;
-  onToggleTrack: (id: number) => void;
   onToggleAll: () => void;
-  getTrackState: (trackId: number) => DownloadState;
-  onDownloadTrack: (track: TrackInfo) => void;
-  onPlayTrack?: (index: number) => void;
-  onPauseTrack?: () => void;
-  onResumeTrack?: () => void;
-  currentlyPlayingId?: number;
-  isPlayerPlaying?: boolean;
-  onHoverTrack?: (track: TrackInfo) => (() => void) | undefined;
-  onMouseDownTrack?: (track: TrackInfo) => void;
   hasSelectableTracks?: boolean;
   onRemoveFromPlaylist?: (track: TrackInfo) => void;
 }
@@ -41,33 +29,17 @@ interface PlaylistTrackListProps {
 export function PlaylistTrackList({
   tracks,
   isStreaming,
-  selectedIds,
   isAllSelected,
+  isDownloadEnabled,
   sortField,
   sortDirection,
   onSortFieldChange,
   onSortDirectionChange,
-  onToggleTrack,
   onToggleAll,
-  getTrackState,
-  onDownloadTrack,
-  onPlayTrack,
-  onPauseTrack,
-  onResumeTrack,
-  currentlyPlayingId,
-  isPlayerPlaying,
-  onHoverTrack,
-  onMouseDownTrack,
   hasSelectableTracks = true,
   onRemoveFromPlaylist,
 }: PlaylistTrackListProps) {
   const { t } = useTranslation();
-  const isDownloadEnabled = useIsDownloadEnabled();
-  const prevCountRef = useRef(0);
-  const shouldAnimate = tracks.length > prevCountRef.current;
-  useEffect(() => {
-    prevCountRef.current = tracks.length;
-  }, [tracks.length]);
 
   const { parentRef, virtualItems, totalSize, getScrollOffset } = useVirtualizedList({
     count: tracks.length,
@@ -83,16 +55,7 @@ export function PlaylistTrackList({
     <>
       <div className="flex items-center justify-between px-3">
         {isDownloadEnabled && hasSelectableTracks && (
-          <div className="flex items-center gap-3">
-            <Checkbox
-              checked={isAllSelected}
-              onCheckedChange={onToggleAll}
-              className="shrink-0"
-            />
-            <span className="text-xs text-muted-foreground cursor-pointer select-none" onClick={onToggleAll}>
-              {t(isAllSelected ? 'library.detail.deselectAll' : 'library.detail.selectAll')}
-            </span>
-          </div>
+          <SelectAllCheckbox isAllSelected={isAllSelected} onToggleAll={onToggleAll} />
         )}
         <div className="flex items-center gap-2 ml-auto">
           {onSortFieldChange && sortField && (
@@ -137,23 +100,9 @@ export function PlaylistTrackList({
           if (!track) return null;
           return (
             <VirtualRow key={track.id} size={virtualItem.size} start={virtualItem.start}>
-              <PlaylistTrackItem
+              <InteractiveTrackRow
                 track={track}
                 index={virtualItem.index}
-                staggerIndex={virtualItem.index}
-                animate={shouldAnimate}
-                isSelected={selectedIds.has(track.id)}
-                onToggle={onToggleTrack}
-                downloadState={getTrackState(track.id)}
-                onDownload={onDownloadTrack}
-                onPlay={onPlayTrack}
-                onPause={onPauseTrack}
-                onResume={onResumeTrack}
-                isCurrentlyPlaying={track.id === currentlyPlayingId}
-                isPlayerPlaying={isPlayerPlaying}
-                onHoverTrack={onHoverTrack}
-                onMouseDownTrack={onMouseDownTrack}
-                isDownloadEnabled={isDownloadEnabled}
                 onRemoveFromPlaylist={onRemoveFromPlaylist ? () => onRemoveFromPlaylist(track) : undefined}
               />
             </VirtualRow>

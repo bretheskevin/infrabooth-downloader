@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import type { TrackInfo } from '@/bindings';
-import { useTrackPreloadHandlers } from '@/hooks/useTrackPreloadHandlers';
 
 interface UsePlaylistTrackHandlersParams {
   tracks: TrackInfo[] | undefined;
@@ -30,8 +29,6 @@ export function usePlaylistTrackHandlers({
     clearSelection();
   }, [selectedTracks, playlistTitle, onDownloadTracks, clearSelection, effectivePath]);
 
-  const { handlePreloadOnHover: handleHoverTrack, handlePreloadImmediate: handleMouseDownTrack } = useTrackPreloadHandlers();
-
   const handleDownloadTrack = useCallback(
     (track: TrackInfo) => downloadTrack(track),
     [downloadTrack],
@@ -40,8 +37,6 @@ export function usePlaylistTrackHandlers({
   return {
     handleDownloadAll,
     handleDownloadSelected,
-    handleHoverTrack,
-    handleMouseDownTrack,
     handleDownloadTrack,
   };
 }

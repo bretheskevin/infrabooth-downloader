@@ -363,6 +363,7 @@ mod tests {
                 id: 1,
                 title: title.to_string(),
                 user: UserInfo {
+                    id: 1,
                     username: "artist".to_string(),
                     avatar_url: None,
                 },

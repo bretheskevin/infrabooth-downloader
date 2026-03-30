@@ -326,6 +326,22 @@ async fetchRelatedTracks(trackId: number, limit: number) : Promise<Result<TrackI
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async getArtistProfile(artistId: number) : Promise<Result<ArtistProfile, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_profile", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistTracks(artistId: number, sort: SortOption, limit: number, offset: number) : Promise<Result<ArtistTracksResponse, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_tracks", { artistId, sort, limit, offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -352,6 +368,8 @@ queueProgressEvent: "queue-progress-event"
 
 export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
 export type ActivityType = "Track" | "Repost"
+export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
+export type ArtistTracksResponse = { tracks: TrackInfo[]; has_more: boolean; next_offset: number }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null }
 export type DownloadRequest = ({ 
 /**
@@ -405,6 +423,7 @@ export type QueueProgressEvent = { current: number; total: number; trackId: stri
 export type RateLimitChoice = "retry" | "stop"
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
+export type SortOption = "recent" | "popular"
 export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }
 /**
  * Core track data shared across all track-related types.
@@ -467,9 +486,14 @@ download_url: string | null }
  */
 export type UpdateInfo = { version: string; body: string | null; date: string | null }
 export type UrlType = "playlist" | "track"
-export type UserInfo = { username: string; avatar_url: string | null }
+export type UserInfo = { id: number; username: string; avatar_url: string | null }
 export type ValidationError = { code: string; message: string; hint: string | null }
 export type ValidationResult = { valid: boolean; urlType: UrlType | null; error: ValidationError | null }
+export type VisualItem = { visual_url: string }
+/**
+ * API shape: `{ visuals: { visuals: [{ visual_url: "..." }] } }`
+ */
+export type VisualsWrapper = { visuals: VisualItem[] }
 
 /** tauri-specta globals **/
 

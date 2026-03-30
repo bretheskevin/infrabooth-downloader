@@ -10,7 +10,7 @@ import type { Track } from '@/features/queue/types/track';
 const mockTrack: TrackInfo = {
   id: 123456,
   title: 'Test Track',
-  user: { username: 'TestArtist', avatar_url: null },
+  user: { id: 0, username: 'TestArtist', avatar_url: null },
   artwork_url: 'https://example.com/art.jpg',
   duration: 180000,
   permalink_url: '',
@@ -20,7 +20,7 @@ const mockTrack: TrackInfo = {
 const mockTrackNoArtwork: TrackInfo = {
   id: 789,
   title: 'No Art Track',
-  user: { username: 'Artist2', avatar_url: null },
+  user: { id: 0, username: 'Artist2', avatar_url: null },
   artwork_url: null,
   duration: 120000,
   permalink_url: '',

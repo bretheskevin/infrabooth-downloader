@@ -3,10 +3,10 @@ import { filterTracks } from '../filterTracks';
 import type { TrackInfo } from '@/bindings';
 
 const makeTracks = (): TrackInfo[] => [
-  { id: 1, title: 'Acid Rain', user: { username: 'DJ Kandid', avatar_url: null }, artwork_url: null, duration: 240000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
-  { id: 2, title: 'Tekno Drive', user: { username: 'Anetha', avatar_url: null }, artwork_url: null, duration: 300000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
-  { id: 3, title: 'Hard Pulse', user: { username: 'SPFDJ', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
-  { id: 4, title: 'Night Acid', user: { username: 'Anetha', avatar_url: null }, artwork_url: null, duration: 420000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+  { id: 1, title: 'Acid Rain', user: { id: 0, username: 'DJ Kandid', avatar_url: null }, artwork_url: null, duration: 240000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+  { id: 2, title: 'Tekno Drive', user: { id: 0, username: 'Anetha', avatar_url: null }, artwork_url: null, duration: 300000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+  { id: 3, title: 'Hard Pulse', user: { id: 0, username: 'SPFDJ', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+  { id: 4, title: 'Night Acid', user: { id: 0, username: 'Anetha', avatar_url: null }, artwork_url: null, duration: 420000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
 ];
 
 describe('filterTracks', () => {

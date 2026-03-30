@@ -12,6 +12,9 @@ import {
   type Selection,
   type FollowedArtist,
   type ActivityItem,
+  type ArtistProfile,
+  type ArtistTracksResponse,
+  type SortOption,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -131,4 +134,10 @@ export const api = {
 
   markArtistSeen: (artistId: number): Promise<void> =>
     commands.markArtistSeen(artistId).then(() => undefined),
+
+  getArtistProfile: (artistId: number): Promise<ArtistProfile> =>
+    commands.getArtistProfile(artistId).then(unwrap),
+
+  getArtistTracks: (artistId: number, sort: SortOption, limit: number, offset: number): Promise<ArtistTracksResponse> =>
+    commands.getArtistTracks(artistId, sort, limit, offset).then(unwrap),
 };

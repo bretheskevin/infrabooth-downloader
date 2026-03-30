@@ -4,20 +4,19 @@ import { toast } from 'sonner';
 import { Download } from 'lucide-react';
 import { FolderMetadata } from '@/components/FolderMetadata';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
+import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
 import { Spinner } from '@/components/ui/spinner';
 import { DetailHeader } from '@/components/DetailHeader';
 import { PlaylistActionBar } from '@/features/library/components/PlaylistActionBar';
 import { useArtistActivity } from '../hooks/useArtistActivity';
-import { ArtistTrackItem } from './ArtistTrackItem';
+import { TrackListProvider, InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 import { ArtistAvatarImage } from './ArtistAvatarImage';
+import { ActivityBadge } from './ActivityBadge';
 import { useIsDownloadEnabled } from '@/features/settings/hooks/useIsDownloadEnabled';
 import { useSettingsStore } from '@/features/settings';
 import { usePlayContext } from '@/features/player';
-import { usePlayerControls } from '@/hooks/usePlayerControls';
 import { useTrackDownloadState } from '@/hooks/useTrackDownloadState';
 import { useTrackSelection } from '@/features/library/hooks/useTrackSelection';
-import { useTrackPreloadHandlers } from '@/hooks/useTrackPreloadHandlers';
 import { useFolderSelection } from '@/hooks/useFolderSelection';
 import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { getArtworkUrl } from '@/lib/soundcloud';
@@ -50,9 +49,8 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
 
   const tracks = useMemo(() => filteredItems.map((item) => item.track), [filteredItems]);
   const { playTrack } = usePlayContext(tracks);
-  const { currentTrackId, isPlaying, pause, resume } = usePlayerControls();
 
-  const { downloadTrack, getTrackState, downloadedIds, downloadedCount } = useTrackDownloadState({
+  const { downloadTrack, downloadedIds, downloadedCount } = useTrackDownloadState({
     tracks: tracks.length > 0 ? tracks : undefined,
     downloadPath: effectivePath ?? '',
     enabled: !isLoading,
@@ -62,8 +60,6 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
     selectedIds, toggleTrack, toggleAll, clearSelection,
     selectedCount, isAllSelected, selectedTracks, selectableCount,
   } = useTrackSelection(tracks, downloadedIds);
-
-  const { handlePreloadOnHover: handleHoverTrack, handlePreloadImmediate: handleMouseDownTrack } = useTrackPreloadHandlers();
 
   const { selectFolder: handleChangeFolder } = useFolderSelection({
     defaultPath: effectivePath,
@@ -168,40 +164,32 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
       {!isLoading && !error && filteredItems.length > 0 && (
         <>
           {isDownloadEnabled && selectableCount > 0 && (
-            <div className="flex items-center gap-3 px-3">
-              <Checkbox
-                checked={isAllSelected}
-                onCheckedChange={toggleAll}
-                className="shrink-0"
-              />
-              <span className="text-xs text-muted-foreground cursor-pointer select-none" onClick={toggleAll}>
-                {t(isAllSelected ? 'library.detail.deselectAll' : 'library.detail.selectAll')}
-              </span>
-            </div>
+            <SelectAllCheckbox isAllSelected={isAllSelected} onToggleAll={toggleAll} className="px-3" />
           )}
-          <div className="flex flex-col gap-0.5 overflow-y-auto min-h-0">
-            {filteredItems.map((item, index) => (
-              <ArtistTrackItem
-                key={`${item.track.id}-${item.activity_type}`}
-                item={item}
-                index={index}
-                staggerIndex={index}
-                animate={shouldAnimate}
-                isSelected={selectedIds.has(item.track.id)}
-                onToggle={toggleTrack}
-                downloadState={getTrackState(item.track.id)}
-                onDownload={handleDownloadTrack}
-                onPlay={playTrack}
-                onPause={pause}
-                onResume={resume}
-                isCurrentlyPlaying={currentTrackId === item.track.id}
-                isPlayerPlaying={isPlaying}
-                onHoverTrack={handleHoverTrack}
-                onMouseDownTrack={handleMouseDownTrack}
-                isDownloadEnabled={isDownloadEnabled}
-              />
-            ))}
-          </div>
+          <TrackListProvider
+            playTrack={playTrack}
+            downloadTrack={handleDownloadTrack}
+            isDownloadEnabled={isDownloadEnabled}
+            downloadedIds={downloadedIds}
+            selection={{ selectedIds, toggleTrack }}
+            animate={shouldAnimate}
+          >
+            <div className="flex flex-col gap-0.5 overflow-y-auto min-h-0">
+              {filteredItems.map((item, index) => (
+                <InteractiveTrackRow
+                  key={`${item.track.id}-${item.activity_type}`}
+                  track={item.track}
+                  index={index}
+                  subtitleSlot={
+                    <ActivityBadge
+                      activityType={item.activity_type}
+                      createdAt={item.created_at}
+                    />
+                  }
+                />
+              ))}
+            </div>
+          </TrackListProvider>
         </>
       )}
 

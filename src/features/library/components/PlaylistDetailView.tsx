@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import { useFolderSelection } from '@/hooks';
 import { usePlayContext, usePlayerStore } from '@/features/player';
-import { usePlayerControls } from '@/hooks/usePlayerControls';
+import { useIsDownloadEnabled } from '@/features/settings';
+import { TrackListProvider } from '@/components/InteractiveTrackRow';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useTrackSelection } from '../hooks/useTrackSelection';
@@ -47,8 +48,15 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
   const { displayTracks, downloadedIds, effectivePath, setLocalPath, downloadTrack } = viewState;
 
   const { playTrack, syncQueue } = usePlayContext(displayTracks);
-  const { currentTrackId, isPlaying } = usePlayerControls();
+  const isDownloadEnabled = useIsDownloadEnabled();
 
+  const prevCountRef = useRef(0);
+  const shouldAnimate = (displayTracks?.length ?? 0) > prevCountRef.current;
+  useEffect(() => {
+    prevCountRef.current = displayTracks?.length ?? 0;
+  }, [displayTracks?.length]);
+
+  const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
   useSyncQueueOnStreamEnd(isStreaming, currentTrackId, syncQueue);
 
   const selection = useTrackSelection(displayTracks, downloadedIds);
@@ -106,29 +114,28 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
       <PlaylistEmptyStates tracks={tracks} displayTracks={displayTracks} isLoading={isLoading} />
 
       {displayTracks.length > 0 && (
-        <PlaylistTrackList
-          tracks={displayTracks}
-          isStreaming={isStreaming}
-          selectedIds={selectedIds}
-          isAllSelected={isAllSelected}
-          hasSelectableTracks={selectableCount > 0}
-          sortField={viewState.sortField}
-          sortDirection={viewState.sortDirection}
-          onSortFieldChange={viewState.setSortField}
-          onSortDirectionChange={viewState.setSortDirection}
-          onToggleTrack={toggleTrack}
-          onToggleAll={toggleAll}
-          getTrackState={viewState.getTrackState}
-          onDownloadTrack={handlers.handleDownloadTrack}
-          onPlayTrack={playTrack}
-          onPauseTrack={() => usePlayerStore.getState().pause()}
-          onResumeTrack={() => usePlayerStore.getState().resume()}
-          currentlyPlayingId={currentTrackId}
-          isPlayerPlaying={isPlaying}
-          onHoverTrack={handlers.handleHoverTrack}
-          onMouseDownTrack={handlers.handleMouseDownTrack}
-          onRemoveFromPlaylist={playlist.is_owned ? setTrackToRemove : undefined}
-        />
+        <TrackListProvider
+          playTrack={playTrack}
+          downloadTrack={handlers.handleDownloadTrack}
+          isDownloadEnabled={isDownloadEnabled}
+          downloadedIds={downloadedIds}
+          selection={{ selectedIds, toggleTrack }}
+          animate={shouldAnimate}
+        >
+          <PlaylistTrackList
+            tracks={displayTracks}
+            isStreaming={isStreaming}
+            isAllSelected={isAllSelected}
+            isDownloadEnabled={isDownloadEnabled}
+            hasSelectableTracks={selectableCount > 0}
+            sortField={viewState.sortField}
+            sortDirection={viewState.sortDirection}
+            onSortFieldChange={viewState.setSortField}
+            onSortDirectionChange={viewState.setSortDirection}
+            onToggleAll={toggleAll}
+            onRemoveFromPlaylist={playlist.is_owned ? setTrackToRemove : undefined}
+          />
+        </TrackListProvider>
       )}
 
       <PlaylistActionBar selectedCount={selectedCount} onDownload={handlers.handleDownloadSelected} />

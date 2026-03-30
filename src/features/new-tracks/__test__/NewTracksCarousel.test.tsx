@@ -61,8 +61,8 @@ describe('NewTracksCarousel', () => {
 
   it('toggles hideReposts when checkbox is clicked', () => {
     render(<NewTracksCarousel onSelectArtist={vi.fn()} />);
-    const checkbox = screen.getByRole('checkbox');
-    fireEvent.click(checkbox);
+    const toggle = screen.getByRole('switch');
+    fireEvent.click(toggle);
     expect(useSettingsStore.getState().hideReposts).toBe(true);
   });
 });
