@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-03-30
+
+### Added
+
+- Artist profile pages with track listing
+- Autoplay station with related tracks
+- "Add to queue" action in track menus
+- Space bar shortcut to play/pause
+- SoundCloud URL support in search
+- Hide reposts toggle in new tracks
+
+### Fixed
+
+- "What's New" dialog appeared even when app was not up to date
+
 ## [1.14.0] - 2026-03-26
 
 ### Added
