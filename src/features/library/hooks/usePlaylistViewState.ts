@@ -2,17 +2,18 @@ import { useState, useMemo, useEffect } from 'react';
 import { getFolderName } from '@/lib/utils';
 import { useSettingsStore } from '@/features/settings';
 import { useTrackDownloadState } from '@/hooks/useTrackDownloadState';
-import { filterTracks } from '../utils/filterTracks';
+import { useSearchFilter } from '@/hooks/useSearchFilter';
 import { sortTracks } from '../utils/sortTracks';
 import type { TrackInfo } from '@/bindings';
-import type { SortDirection, SortField } from '../types';
+import type { SortField } from '../types';
+import type { SortDirection } from '@/lib/sort';
 
 export function usePlaylistViewState(
   playlistId: number,
   tracks: TrackInfo[] | undefined,
   isStreaming: boolean,
 ) {
-  const [searchQuery, setSearchQuery] = useState('');
+  const { searchQuery, setSearchQuery, filteredTracks } = useSearchFilter(tracks ?? []);
   const [sortField, setSortField] = useState<SortField>('default');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
   const defaultPath = useSettingsStore((s) => s.downloadPath);
@@ -30,12 +31,7 @@ export function usePlaylistViewState(
     setSortField('default');
     setSortDirection('asc');
     setLocalPath(undefined);
-  }, [playlistId]);
-
-  const filteredTracks = useMemo(
-    () => filterTracks(tracks ?? [], searchQuery),
-    [tracks, searchQuery],
-  );
+  }, [playlistId, setSearchQuery]);
 
   const displayTracks = useMemo(
     () => sortTracks(filteredTracks, sortField, sortDirection),

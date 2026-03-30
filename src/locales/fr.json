@@ -383,6 +383,7 @@
     "downloadAll": "Tout télécharger",
     "sortRecent": "Récents",
     "sortPopular": "Populaires",
+    "filterPlaceholder": "Filtrer les titres...",
     "noTracks": "Cet artiste n'a aucun titre public",
     "error": "Impossible de charger le profil de l'artiste"
   }

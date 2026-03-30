@@ -383,6 +383,7 @@
     "downloadAll": "Download all",
     "sortRecent": "Recent",
     "sortPopular": "Popular",
+    "filterPlaceholder": "Filter tracks...",
     "noTracks": "This artist has no public tracks",
     "error": "Failed to load artist profile"
   }

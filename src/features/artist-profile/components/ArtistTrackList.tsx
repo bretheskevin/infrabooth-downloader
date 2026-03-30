@@ -2,12 +2,14 @@ import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
+import { SortDirectionSelect } from '@/components/SortDirectionSelect';
 import { Skeleton } from '@/components/ui/skeleton';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import type { TrackInfo, SortOption } from '@/bindings';
+import type { SortDirection } from '@/lib/sort';
 
 interface ArtistTrackListProps {
   tracks: TrackInfo[];
@@ -19,6 +21,8 @@ interface ArtistTrackListProps {
   onSortChange: (sort: SortOption) => void;
   isAllSelected: boolean;
   onToggleAll: () => void;
+  sortDirection: SortDirection;
+  onSortDirectionChange: (direction: SortDirection) => void;
 }
 
 const TRACK_ITEM_HEIGHT = 56;
@@ -38,6 +42,8 @@ export function ArtistTrackList({
   onSortChange,
   isAllSelected,
   onToggleAll,
+  sortDirection,
+  onSortDirectionChange,
 }: ArtistTrackListProps) {
   const { t } = useTranslation();
 
@@ -68,18 +74,21 @@ export function ArtistTrackList({
 
   return (
     <div className="flex flex-col gap-2 flex-1 min-h-0">
-      <div className="flex gap-2 px-1">
-        {SORT_OPTIONS.map(({ key, labelKey }) => (
-          <Button
-            key={key}
-            variant={sort === key ? 'default' : 'secondary'}
-            size="sm"
-            className="rounded-full px-3.5"
-            onClick={() => onSortChange(key)}
-          >
-            {t(labelKey)}
-          </Button>
-        ))}
+      <div className="flex items-center justify-between px-1">
+        <div className="flex gap-2">
+          {SORT_OPTIONS.map(({ key, labelKey }) => (
+            <Button
+              key={key}
+              variant={sort === key ? 'default' : 'secondary'}
+              size="sm"
+              className="rounded-full px-3.5"
+              onClick={() => onSortChange(key)}
+            >
+              {t(labelKey)}
+            </Button>
+          ))}
+        </div>
+        <SortDirectionSelect value={sortDirection} onChange={onSortDirectionChange} />
       </div>
 
       <SelectAllCheckbox isAllSelected={isAllSelected && tracks.length > 0} onToggleAll={onToggleAll} className="px-3 py-1" />

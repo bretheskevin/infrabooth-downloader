@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { useMemo, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,17 @@ import { usePlayContext } from '@/features/player';
 import { useIsDownloadEnabled } from '@/features/settings';
 import { useSettingsStore } from '@/features/settings/store';
 import { useTrackDownloadState } from '@/hooks/useTrackDownloadState';
+import { useSearchFilter } from '@/hooks/useSearchFilter';
 
 import { useArtistProfile } from '../hooks/useArtistProfile';
 import { useArtistTracks } from '../hooks/useArtistTracks';
 import { ArtistProfileHeader } from './ArtistProfileHeader';
 import { ArtistTrackList } from './ArtistTrackList';
+import { SearchBar } from '@/components/ui/search-bar';
+import type { SortDirection } from '@/lib/sort';
 import type { TrackInfo, SortOption } from '@/bindings';
+
+const MIN_TRACKS_FOR_SEARCH = 5;
 
 interface ArtistProfileViewProps {
   artistId: number;
@@ -29,6 +34,7 @@ export function ArtistProfileView({
   onDownloadTracks,
 }: ArtistProfileViewProps) {
   const [sort, setSort] = useState<SortOption>('recent');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const isDownloadEnabled = useIsDownloadEnabled();
   const downloadPath = useSettingsStore((s) => s.downloadPath);
 
@@ -46,6 +52,19 @@ export function ArtistProfileView({
     [tracksData],
   );
 
+  const { searchQuery, setSearchQuery, filteredTracks } = useSearchFilter(tracks);
+
+  useEffect(() => {
+    setSearchQuery('');
+    setSortDirection('desc');
+    setSort('recent');
+  }, [artistId, setSearchQuery]);
+
+  const displayTracks = useMemo(
+    () => sortDirection === 'asc' ? [...filteredTracks].reverse() : filteredTracks,
+    [filteredTracks, sortDirection],
+  );
+
   const { downloadTrack, downloadedIds } = useTrackDownloadState({
     tracks: tracks.length > 0 ? tracks : undefined,
     downloadPath,
@@ -53,9 +72,9 @@ export function ArtistProfileView({
   });
 
   const { selectedIds, toggleTrack, toggleAll, isAllSelected, selectedTracks } =
-    useTrackSelection(tracks, downloadedIds);
+    useTrackSelection(displayTracks, downloadedIds);
 
-  const { playTrack } = usePlayContext(tracks);
+  const { playTrack } = usePlayContext(displayTracks);
 
   const handleDownloadAll = useCallback(() => {
     const tracksToDownload = selectedTracks.length > 0 ? selectedTracks : tracks;
@@ -83,7 +102,17 @@ export function ArtistProfileView({
         isLoading={isProfileLoading}
         onDownloadAll={handleDownloadAll}
         hasDownloadableTracks={tracks.length > 0}
+        isDownloadEnabled={isDownloadEnabled}
+        showOrderToggle={tracks.length > 1}
       />
+
+      {tracks.length >= MIN_TRACKS_FOR_SEARCH && (
+        <SearchBar
+          value={searchQuery}
+          onChange={setSearchQuery}
+          placeholder={t('artistProfile.filterPlaceholder')}
+        />
+      )}
 
       <TrackListProvider
         playTrack={playTrack}
@@ -93,13 +122,15 @@ export function ArtistProfileView({
         selection={{ selectedIds, toggleTrack }}
       >
         <ArtistTrackList
-          tracks={tracks}
+          tracks={displayTracks}
           isLoading={isTracksLoading}
           hasNextPage={hasNextPage ?? false}
           isFetchingNextPage={isFetchingNextPage}
           fetchNextPage={fetchNextPage}
           sort={sort}
           onSortChange={setSort}
+          sortDirection={sortDirection}
+          onSortDirectionChange={setSortDirection}
           isAllSelected={isAllSelected}
           onToggleAll={toggleAll}
         />

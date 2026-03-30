@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArtistAvatarImage } from '@/features/new-tracks/components/ArtistAvatarImage';
 import { formatCount } from '@/lib/format';
 import { getArtworkUrl } from '@/lib/soundcloud';
+import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import type { ArtistProfile } from '@/bindings';
 
 interface ArtistProfileHeaderProps {
@@ -12,6 +13,8 @@ interface ArtistProfileHeaderProps {
   isLoading: boolean;
   onDownloadAll: () => void;
   hasDownloadableTracks: boolean;
+  isDownloadEnabled?: boolean;
+  showOrderToggle?: boolean;
 }
 
 export function ArtistProfileHeader({
@@ -19,6 +22,8 @@ export function ArtistProfileHeader({
   isLoading,
   onDownloadAll,
   hasDownloadableTracks,
+  isDownloadEnabled = false,
+  showOrderToggle = false,
 }: ArtistProfileHeaderProps) {
   const { t } = useTranslation();
 
@@ -86,6 +91,11 @@ export function ArtistProfileHeader({
             </Button>
           )}
         </div>
+        {isDownloadEnabled && showOrderToggle && (
+          <div className="flex justify-end">
+            <PreserveOrderToggle compact />
+          </div>
+        )}
       </div>
     </div>
   );
