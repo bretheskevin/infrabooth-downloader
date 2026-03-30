@@ -6,7 +6,7 @@ import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { LibraryPlaylistItem } from './LibraryPlaylistItem';
 import { useLibraryStore } from '../store';
-import type { LibraryPlaylist } from '../types';
+import type { LibraryPlaylist } from '@/bindings';
 
 interface LibraryPlaylistListProps {
   playlists: LibraryPlaylist[];

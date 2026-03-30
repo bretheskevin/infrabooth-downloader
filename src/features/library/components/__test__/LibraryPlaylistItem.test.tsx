@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LibraryPlaylistItem } from '../LibraryPlaylistItem';
-import type { LibraryPlaylist } from '../../types';
+import type { LibraryPlaylist } from '@/bindings';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

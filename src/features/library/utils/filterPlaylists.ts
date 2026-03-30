@@ -1,4 +1,5 @@
-import type { LibraryPlaylist, LibraryFilter } from '../types';
+import type { LibraryPlaylist } from '@/bindings';
+import type { LibraryFilter } from '../types';
 
 export function filterPlaylists(
   playlists: LibraryPlaylist[],
