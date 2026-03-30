@@ -62,6 +62,11 @@ const makeQueue = (count = 3): PlaybackItem[] =>
     title: `Track ${i + 1}`,
   }));
 
+const mockStationTracks: PlaybackItem[] = [
+  { ...mockTrack, trackId: 101, title: 'Station 1' },
+  { ...mockTrack, trackId: 102, title: 'Station 2' },
+];
+
 function extractCallbacks(): Partial<AudioEngineCallbacks> {
   usePlayerStore.getState()._initAudioEngine();
   const calls = (audioEngine.setCallbacks as ReturnType<typeof vi.fn>).mock.calls;
@@ -654,6 +659,59 @@ describe('playerStore', () => {
     expect(state.cursor).toBe(0);
     expect(state.queue[0]?.trackId).toBe(2);
     expect(state.queue.length).toBe(5);
+  });
+
+  it('toggleShuffle should not shuffle station tracks', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 1);
+
+    usePlayerStore.getState().appendStationTracks(mockStationTracks);
+    expect(usePlayerStore.getState().stationQueueCount).toBe(2);
+
+    usePlayerStore.getState().toggleShuffle();
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(true);
+    expect(state.cursor).toBe(0);
+    expect(state.queue[0]!.trackId).toBe(queue[1]!.trackId);
+    expect(state.queue[state.queue.length - 2]!.trackId).toBe(101);
+    expect(state.queue[state.queue.length - 1]!.trackId).toBe(102);
+    expect(state.queue.length).toBe(7);
+  });
+
+  it('toggleShuffle unshuffle should restore original queue with station tracks', async () => {
+    const queue = makeQueue(5);
+    await usePlayerStore.getState().play(queue, 1);
+
+    usePlayerStore.getState().appendStationTracks(mockStationTracks);
+
+    usePlayerStore.getState().toggleShuffle();
+    usePlayerStore.getState().toggleShuffle();
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(false);
+    expect(state.queue.length).toBe(7);
+    expect(state.queue[state.queue.length - 2]!.trackId).toBe(101);
+    expect(state.queue[state.queue.length - 1]!.trackId).toBe(102);
+  });
+
+  it('syncQueue should not shuffle station tracks when shuffle is active', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 1);
+    usePlayerStore.getState().toggleShuffle();
+
+    usePlayerStore.getState().appendStationTracks(mockStationTracks);
+
+    const extendedQueue = [...makeQueue(5), ...mockStationTracks];
+    usePlayerStore.setState({ stationQueueCount: 2 });
+    usePlayerStore.getState().syncQueue(extendedQueue);
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(true);
+    expect(state.cursor).toBe(0);
+    expect(state.queue[0]?.trackId).toBe(2);
+    expect(state.queue[state.queue.length - 2]!.trackId).toBe(101);
+    expect(state.queue[state.queue.length - 1]!.trackId).toBe(102);
   });
 
   describe('crossfade', () => {

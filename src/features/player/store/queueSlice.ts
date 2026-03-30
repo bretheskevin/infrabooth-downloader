@@ -4,6 +4,7 @@ import type { PlaybackItem } from '../types';
 import type { QueueSliceState, PlayerState } from './types';
 import {
   shuffleQueueWithCurrent,
+  splitStationTracks,
   trackIdSet,
   loadAndPlay,
   incrementLoadGeneration,
@@ -48,18 +49,30 @@ export const createQueueSlice: StateCreator<
   },
 
   syncQueue: (newQueue) => {
-    const { currentTrack, isShuffled, originalQueue, state } = get();
+    const { currentTrack, isShuffled, originalQueue, state, stationQueueCount } = get();
     if (!currentTrack || state === 'stopped') return;
 
     const newCursor = newQueue.findIndex((t) => t.trackId === currentTrack.trackId);
     if (newCursor === -1) return;
 
-    set({
-      queue: isShuffled ? shuffleQueueWithCurrent(newQueue, newCursor) : newQueue,
-      cursor: isShuffled ? 0 : newCursor,
-      originalQueue: isShuffled && originalQueue ? newQueue : originalQueue,
-      manualQueueCount: 0,
-    });
+    if (isShuffled) {
+      const { userTracks, stationTracks } = splitStationTracks(newQueue, stationQueueCount);
+      const userCursor = userTracks.findIndex((t) => t.trackId === currentTrack.trackId);
+
+      set({
+        queue: [...shuffleQueueWithCurrent(userTracks, userCursor >= 0 ? userCursor : newCursor), ...stationTracks],
+        cursor: 0,
+        originalQueue: originalQueue ? newQueue : originalQueue,
+        manualQueueCount: 0,
+      });
+    } else {
+      set({
+        queue: newQueue,
+        cursor: newCursor,
+        originalQueue: originalQueue,
+        manualQueueCount: 0,
+      });
+    }
 
     purgeStaleCache(trackIdSet(newQueue));
   },

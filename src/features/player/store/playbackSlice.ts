@@ -36,6 +36,12 @@ function shuffleQueueWithCurrent(queue: PlaybackItem[], currentIndex: number): P
   return [current, ...shuffleArray(rest)];
 }
 
+function splitStationTracks(queue: PlaybackItem[], stationQueueCount: number) {
+  const userTracks = stationQueueCount > 0 ? queue.slice(0, -stationQueueCount) : queue;
+  const stationTracks = stationQueueCount > 0 ? queue.slice(-stationQueueCount) : [];
+  return { userTracks, stationTracks };
+}
+
 const STATION_PREFETCH_THRESHOLD = 3;
 
 async function handleAutoplay(set: SetFn, get: GetFn, nextCursor: number) {
@@ -498,6 +504,6 @@ export const createPlaybackSlice: StateCreator<
   },
 });
 
-export { shuffleQueueWithCurrent, trackIdSet, loadAndPlay };
+export { shuffleQueueWithCurrent, splitStationTracks, trackIdSet, loadAndPlay };
 export const incrementLoadGeneration = () => ++loadGeneration;
 export const resetCrossfadeGeneration = () => { crossfadeGeneration = 0; };
