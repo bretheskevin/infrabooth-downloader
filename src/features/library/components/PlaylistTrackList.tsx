@@ -5,10 +5,12 @@ import type { TrackInfo } from '@/bindings';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
+import { SortDirectionSelect } from '@/components/SortDirectionSelect';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 import { useLibraryStore } from '../store';
-import { SORT_FIELDS, SORT_DIRECTIONS, type SortField, type SortDirection } from '../types';
+import { SORT_FIELDS, type SortField } from '../types';
+import type { SortDirection } from '@/lib/sort';
 
 const TRACK_ITEM_HEIGHT = 56;
 
@@ -74,17 +76,7 @@ export function PlaylistTrackList({
                 </SelectContent>
               </Select>
               {onSortDirectionChange && sortDirection && (
-                <Select value={sortDirection} onValueChange={(v) => {
-                  if (SORT_DIRECTIONS.includes(v as SortDirection)) onSortDirectionChange(v as SortDirection);
-                }}>
-                  <SelectTrigger className="h-7 text-xs w-auto gap-1.5 px-2">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="asc">{t('library.detail.sortAsc')}</SelectItem>
-                    <SelectItem value="desc">{t('library.detail.sortDesc')}</SelectItem>
-                  </SelectContent>
-                </Select>
+                <SortDirectionSelect value={sortDirection} onChange={onSortDirectionChange} showIcon={false} />
               )}
             </>
           )}

@@ -1,5 +1,6 @@
 import type { TrackInfo } from '@/bindings';
-import type { SortDirection, SortField } from '../types';
+import type { SortField } from '../types';
+import type { SortDirection } from '@/lib/sort';
 
 export function sortTracks(tracks: TrackInfo[], field: SortField, direction: SortDirection): TrackInfo[] {
   if (field === 'default') {
