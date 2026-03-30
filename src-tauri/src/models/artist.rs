@@ -4,14 +4,6 @@ use specta::Type;
 use crate::services::playlist::TrackInfo;
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
-pub enum SortOption {
-    #[serde(rename = "recent")]
-    Recent,
-    #[serde(rename = "popular")]
-    Popular,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ArtistProfile {
     pub id: u64,
     pub username: String,

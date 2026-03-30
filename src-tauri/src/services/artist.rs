@@ -1,6 +1,6 @@
 use reqwest::Url;
 
-use crate::models::artist::{ArtistProfile, ArtistTracksResponse, SortOption};
+use crate::models::artist::{ArtistProfile, ArtistTracksResponse};
 use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
 use crate::services::playlist::{RawTrackInfo, TrackInfo};
 
@@ -43,31 +43,26 @@ pub async fn fetch_artist_tracks(
     token: &str,
     datadome: Option<&str>,
     artist_id: u64,
-    sort: &SortOption,
     limit: u64,
     offset: u64,
 ) -> Result<ArtistTracksResponse, String> {
     let limit_str = limit.to_string();
     let offset_str = offset.to_string();
 
-    let endpoint = match sort {
-        SortOption::Popular => format!("{}/users/{}/toptracks", API_V2_BASE, artist_id),
-        SortOption::Recent => format!("{}/users/{}/tracks", API_V2_BASE, artist_id),
-    };
+    let url = Url::parse_with_params(
+        &format!("{}/users/{}/toptracks", API_V2_BASE, artist_id),
+        &[
+            ("client_id", client_id),
+            ("limit", &limit_str),
+            ("offset", &offset_str),
+            ("linked_partitioning", "1"),
+            ("app_version", SC_APP_VERSION),
+            ("app_locale", "en"),
+        ],
+    )
+    .map_err(|e| format!("Failed to build URL: {}", e))?;
 
-    let params: Vec<(&str, &str)> = vec![
-        ("client_id", client_id),
-        ("limit", &limit_str),
-        ("offset", &offset_str),
-        ("linked_partitioning", "1"),
-        ("app_version", SC_APP_VERSION),
-        ("app_locale", "en"),
-    ];
-
-    let url = Url::parse_with_params(&endpoint, &params)
-        .map_err(|e| format!("Failed to build URL: {}", e))?;
-
-    log::info!("[artist] Fetching tracks for user {}, sort={:?}, offset={}", artist_id, sort, offset);
+    log::info!("[artist] Fetching tracks for user {}, offset={}", artist_id, offset);
 
     let mut request = HTTP_CLIENT.get(url).with_oauth(Some(token));
 

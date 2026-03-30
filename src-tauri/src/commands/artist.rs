@@ -1,4 +1,4 @@
-use crate::models::artist::{ArtistProfile, ArtistTracksResponse, SortOption};
+use crate::models::artist::{ArtistProfile, ArtistTracksResponse};
 use crate::services::artist;
 use crate::services::storage::AuthState;
 use tauri::Manager;
@@ -21,12 +21,11 @@ pub async fn get_artist_profile(
 pub async fn get_artist_tracks(
     app: tauri::AppHandle,
     artist_id: u64,
-    sort: SortOption,
     limit: u64,
     offset: u64,
 ) -> Result<ArtistTracksResponse, String> {
     let datadome = app.state::<AuthState>().get_datadome();
     let (token, client_id) = require_auth_and_cid(&app).await?;
 
-    artist::fetch_artist_tracks(&client_id, &token, datadome.as_deref(), artist_id, &sort, limit, offset).await
+    artist::fetch_artist_tracks(&client_id, &token, datadome.as_deref(), artist_id, limit, offset).await
 }

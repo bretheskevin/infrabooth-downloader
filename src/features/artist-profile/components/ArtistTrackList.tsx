@@ -8,7 +8,8 @@ import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { InteractiveTrackRow } from '@/components/InteractiveTrackRow';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import type { TrackInfo, SortOption } from '@/bindings';
+import type { TrackInfo } from '@/bindings';
+import type { SortOption } from '../types';
 import type { SortDirection } from '@/lib/sort';
 
 interface ArtistTrackListProps {
