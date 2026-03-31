@@ -42,7 +42,7 @@ export function ChangelogDialog({ open, onOpenChange }: ChangelogDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[80vh] flex flex-col">
+      <DialogContent className="sm:max-w-xl max-h-[80vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>{t('changelog.title')}</DialogTitle>
           <DialogDescription className="sr-only">{t('changelog.description')}</DialogDescription>
