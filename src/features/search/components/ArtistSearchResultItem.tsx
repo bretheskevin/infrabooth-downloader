@@ -18,7 +18,7 @@ export function ArtistSearchResultItem({ artist }: ArtistSearchResultItemProps) 
     <button
       type="button"
       onClick={handleClick}
-      className="flex items-center gap-3 w-full px-2 py-2.5 text-left border-b border-border/50 last:border-b-0 hover:bg-secondary/50 transition-colors"
+      className="flex items-center gap-3 w-full px-3 py-2 text-left border-b border-border/50 last:border-b-0 hover:bg-secondary/50 transition-colors"
     >
       {artist.avatar_url ? (
         <img
