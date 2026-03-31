@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSettingsStore } from '@/features/settings/store';
 import { useTranslation } from 'react-i18next';
 import { useFolderSelection } from '@/hooks';
@@ -17,12 +18,19 @@ export function FolderPicker() {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
-        <span
-          className="flex-1 truncate text-sm text-muted-foreground"
-          aria-label={t('settings.currentPath', { path: downloadPath })}
-        >
-          {downloadPath || t('settings.notSet')}
-        </span>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <span
+              className="flex-1 truncate text-sm text-muted-foreground"
+              aria-label={t('settings.currentPath', { path: downloadPath })}
+            >
+              {downloadPath || t('settings.notSet')}
+            </span>
+          </TooltipTrigger>
+          <TooltipContent className="max-w-sm break-all">
+            {downloadPath || t('settings.notSet')}
+          </TooltipContent>
+        </Tooltip>
         <Button
           variant="outline"
           onClick={selectFolder}

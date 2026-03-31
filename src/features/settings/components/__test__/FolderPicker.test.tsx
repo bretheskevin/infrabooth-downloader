@@ -1,5 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { FolderPicker } from '../FolderPicker';
 
 // Mock Tauri dialog plugin
@@ -50,13 +51,13 @@ describe('FolderPicker', () => {
   });
 
   it('renders current download path', () => {
-    render(<FolderPicker />);
+    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
 
     expect(screen.getByText('/Users/test/Downloads')).toBeInTheDocument();
   });
 
   it('renders browse button with correct label', () => {
-    render(<FolderPicker />);
+    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     expect(browseButton).toBeInTheDocument();
@@ -67,7 +68,7 @@ describe('FolderPicker', () => {
     vi.mocked(open).mockResolvedValue('/Users/test/NewFolder');
     vi.mocked(invoke).mockResolvedValue(true);
 
-    render(<FolderPicker />);
+    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     fireEvent.click(browseButton);
@@ -85,7 +86,7 @@ describe('FolderPicker', () => {
     vi.mocked(open).mockResolvedValue('/Users/test/NewFolder');
     vi.mocked(invoke).mockResolvedValue(true);
 
-    render(<FolderPicker />);
+    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     fireEvent.click(browseButton);
@@ -102,7 +103,7 @@ describe('FolderPicker', () => {
     vi.mocked(open).mockResolvedValue('/Users/test/ReadOnlyFolder');
     vi.mocked(invoke).mockResolvedValue(false);
 
-    render(<FolderPicker />);
+    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     fireEvent.click(browseButton);
@@ -119,7 +120,7 @@ describe('FolderPicker', () => {
   it('does not update store when user cancels dialog', async () => {
     vi.mocked(open).mockResolvedValue(null);
 
-    render(<FolderPicker />);
+    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     fireEvent.click(browseButton);
@@ -133,7 +134,7 @@ describe('FolderPicker', () => {
   });
 
   it('has accessible aria labels', () => {
-    render(<FolderPicker />);
+    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     expect(browseButton).toHaveAttribute('aria-label', 'Select download folder');
@@ -143,7 +144,7 @@ describe('FolderPicker', () => {
   });
 
   it('is keyboard navigable', () => {
-    render(<FolderPicker />);
+    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     browseButton.focus();
