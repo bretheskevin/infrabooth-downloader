@@ -19,13 +19,8 @@ use thiserror::Error;
 use tokio::time::sleep;
 
 use crate::services::client_id;
-use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE};
+use crate::services::http::{resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE};
 use crate::services::stream;
-
-#[derive(Debug, Deserialize)]
-struct ResolveResponse {
-    location: Option<String>,
-}
 
 /// Errors that can occur during playlist operations.
 #[derive(Debug, Error)]
@@ -61,6 +56,7 @@ impl From<crate::services::http::ApiResponseError> for PlaylistError {
             ApiResponseError::NotFound => Self::TrackNotFound,
             ApiResponseError::GeoBlocked => Self::GeoBlocked,
             ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
+            ApiResponseError::InvalidResponse(_) => Self::InvalidResponse,
         }
     }
 }
@@ -256,45 +252,7 @@ async fn resolve_url<T: serde::de::DeserializeOwned>(
     cid: &str,
     oauth_token: Option<&str>,
 ) -> Result<T, PlaylistError> {
-    let client = &*crate::services::http::HTTP_CLIENT;
-    let resolve_url = format!(
-        "{}/resolve?url={}&client_id={}",
-        API_V2_BASE,
-        urlencoding::encode(url),
-        cid,
-    );
-
-    let request = client.get(&resolve_url).with_oauth(oauth_token);
-
-    let response = request.send().await?;
-
-    let status = response.status();
-    if status != reqwest::StatusCode::FOUND {
-        validate_api_response(status)?;
-    }
-
-    let body = response.text().await?;
-
-    if let Ok(redirect) = serde_json::from_str::<ResolveResponse>(&body) {
-        if let Some(location) = redirect.location {
-            log::info!("[soundcloud] Following redirect to: {}", location);
-
-            let redirect_response = client
-                .get(&location)
-                .with_oauth(oauth_token)
-                .send()
-                .await?;
-
-            validate_api_response(redirect_response.status())?;
-
-            return redirect_response
-                .json()
-                .await
-                .map_err(|_| PlaylistError::InvalidResponse);
-        }
-    }
-
-    serde_json::from_str(&body).map_err(|_| PlaylistError::InvalidResponse)
+    Ok(resolve_sc_url(url, cid, oauth_token).await?)
 }
 
 /// Extracts a JSON array from HTML content starting at the given marker.

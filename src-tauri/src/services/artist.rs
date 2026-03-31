@@ -1,7 +1,7 @@
 use reqwest::Url;
 
 use crate::models::artist::{ArtistProfile, ArtistTracksResponse};
-use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
+use crate::services::http::{resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
 use crate::services::playlist::{RawTrackInfo, TrackInfo};
 
 pub async fn fetch_artist_profile(
@@ -101,6 +101,28 @@ pub async fn fetch_artist_tracks(
         has_more: api_response.next_href.is_some(),
         next_offset: offset + track_count,
     })
+}
+
+pub async fn resolve_user(
+    client_id: &str,
+    token: &str,
+    permalink: &str,
+) -> Result<ArtistProfile, String> {
+    if permalink.is_empty()
+        || permalink.contains('/')
+        || permalink.contains('?')
+        || permalink.contains('#')
+    {
+        return Err("Invalid permalink".to_string());
+    }
+
+    let sc_url = format!("https://soundcloud.com/{}", permalink);
+
+    log::debug!("[artist] Resolving user permalink: {}", permalink);
+
+    resolve_sc_url::<ArtistProfile>(&sc_url, client_id, Some(token))
+        .await
+        .map_err(|e| e.to_string())
 }
 
 #[derive(serde::Deserialize)]

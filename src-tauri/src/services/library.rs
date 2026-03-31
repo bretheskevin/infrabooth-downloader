@@ -40,6 +40,7 @@ impl From<crate::services::http::ApiResponseError> for LibraryError {
             ApiResponseError::NotFound => Self::FetchFailed("Not found".to_string()),
             ApiResponseError::GeoBlocked => Self::FetchFailed("Access forbidden".to_string()),
             ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
+            ApiResponseError::InvalidResponse(_) => Self::InvalidResponse,
         }
     }
 }

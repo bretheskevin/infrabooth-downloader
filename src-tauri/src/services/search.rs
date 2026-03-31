@@ -40,6 +40,7 @@ impl From<crate::services::http::ApiResponseError> for SearchError {
             ApiResponseError::GeoBlocked => Self::GeoBlocked,
             ApiResponseError::NotFound => Self::FetchFailed("Not found".to_string()),
             ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
+            ApiResponseError::InvalidResponse(_) => Self::InvalidResponse,
         }
     }
 }
