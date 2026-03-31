@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-03-31
+
+### Added
+
+- Artist search in search tab
+- Clickable @mentions and links in artist profiles
+
+### Changed
+
+- Redesigned search navigation tabs
+
+### Fixed
+
+- Some tracks could not be played due to blocked CDN domain
+
 ## [1.15.0] - 2026-03-30
 
 ### Added

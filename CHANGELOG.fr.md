@@ -7,6 +7,21 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.16.0] - 2026-03-31
+
+### Added
+
+- Recherche d'artistes dans l'onglet recherche
+- Mentions @ et liens cliquables dans les profils d'artistes
+
+### Changed
+
+- Refonte des onglets de navigation de la recherche
+
+### Fixed
+
+- Certains morceaux ne pouvaient pas être écoutés à cause d'un domaine CDN bloqué
+
 ## [1.15.0] - 2026-03-30
 
 ### Added
