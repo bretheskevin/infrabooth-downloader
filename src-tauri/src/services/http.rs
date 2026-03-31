@@ -39,6 +39,7 @@ pub enum ApiResponseError {
     NotFound,
     GeoBlocked,
     FetchFailed(String),
+    InvalidResponse(String),
 }
 
 impl std::fmt::Display for ApiResponseError {
@@ -49,6 +50,7 @@ impl std::fmt::Display for ApiResponseError {
             Self::NotFound => write!(f, "Not found"),
             Self::GeoBlocked => write!(f, "Access forbidden"),
             Self::FetchFailed(msg) => write!(f, "{}", msg),
+            Self::InvalidResponse(msg) => write!(f, "Invalid response: {}", msg),
         }
     }
 }
@@ -65,6 +67,69 @@ pub fn validate_api_response(status: reqwest::StatusCode) -> Result<(), ApiRespo
         s if !s.is_success() => Err(ApiResponseError::FetchFailed(format!("HTTP {}", s))),
         _ => Ok(()),
     }
+}
+
+pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(
+    url: &str,
+    client_id: &str,
+    oauth_token: Option<&str>,
+) -> Result<T, ApiResponseError> {
+    let resolve_url = format!(
+        "{}/resolve?url={}&client_id={}",
+        API_V2_BASE,
+        urlencoding::encode(url),
+        client_id,
+    );
+
+    let response = HTTP_CLIENT
+        .get(&resolve_url)
+        .with_oauth(oauth_token)
+        .send()
+        .await
+        .map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
+
+    let status = response.status();
+    if status != reqwest::StatusCode::FOUND {
+        validate_api_response(status)?;
+    }
+
+    let body = response
+        .text()
+        .await
+        .map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
+
+    #[derive(serde::Deserialize)]
+    struct ResolveRedirect {
+        location: Option<String>,
+    }
+
+    if let Ok(redirect) = serde_json::from_str::<ResolveRedirect>(&body) {
+        if let Some(location) = redirect.location {
+            if !location.starts_with(API_V2_BASE) {
+                return Err(ApiResponseError::InvalidResponse(
+                    "Unexpected redirect domain".to_string(),
+                ));
+            }
+
+            log::info!("[http] Following resolve redirect to: {}", location);
+
+            let redirect_response = HTTP_CLIENT
+                .get(&location)
+                .with_oauth(oauth_token)
+                .send()
+                .await
+                .map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
+
+            validate_api_response(redirect_response.status())?;
+
+            return redirect_response
+                .json()
+                .await
+                .map_err(|e| ApiResponseError::FetchFailed(e.to_string()));
+        }
+    }
+
+    serde_json::from_str(&body).map_err(|e| ApiResponseError::InvalidResponse(e.to_string()))
 }
 
 impl RequestBuilderExt for reqwest::RequestBuilder {

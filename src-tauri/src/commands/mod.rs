@@ -55,4 +55,4 @@ pub mod related;
 pub use related::fetch_related_tracks;
 
 pub mod artist;
-pub use artist::{get_artist_profile, get_artist_tracks};
+pub use artist::{get_artist_profile, get_artist_tracks, resolve_user};

@@ -7,6 +7,17 @@ use super::require_auth_and_cid;
 
 #[tauri::command]
 #[specta::specta]
+pub async fn resolve_user(
+    app: tauri::AppHandle,
+    permalink: String,
+) -> Result<ArtistProfile, String> {
+    let (token, client_id) = require_auth_and_cid(&app).await?;
+
+    artist::resolve_user(&client_id, &token, &permalink).await
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_artist_profile(
     app: tauri::AppHandle,
     artist_id: u64,

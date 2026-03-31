@@ -17,7 +17,7 @@ use serde::Deserialize;
 
 use crate::models::error::DownloadError;
 use crate::services::client_id;
-use crate::services::http::{validate_sc_response, RequestBuilderExt, API_V2_BASE};
+use crate::services::http::{resolve_sc_url, validate_sc_response, ApiResponseError, RequestBuilderExt, API_V2_BASE};
 
 // ---------------------------------------------------------------------------
 // Transcodings cache — populated when tracks are fetched for display,
@@ -255,28 +255,22 @@ async fn fetch_track_data_v2(
     client_id: &str,
     oauth_token: Option<&str>,
 ) -> Result<ApiV2TrackData, DownloadError> {
-    let client = &*crate::services::http::HTTP_CLIENT;
-    let url = format!(
-        "{}/resolve?url={}&client_id={}",
-        API_V2_BASE,
-        urlencoding::encode(track_url),
-        client_id
-    );
-
-    let response = client
-        .get(&url)
-        .with_oauth(oauth_token)
-        .send()
+    resolve_sc_url(track_url, client_id, oauth_token)
         .await
-        .map_err(|e| {
-            DownloadError::StreamResolutionFailed(format!("Network error: {}", e))
-        })?;
-
-    let response = validate_sc_response(response, None).await?;
-
-    response.json().await.map_err(|e| {
-        DownloadError::StreamResolutionFailed(format!("Invalid API response: {}", e))
-    })
+        .map_err(|e| match e {
+            ApiResponseError::RateLimited => DownloadError::RateLimited(None),
+            ApiResponseError::NotFound => DownloadError::TrackUnavailable("Not found".to_string()),
+            ApiResponseError::AuthRequired => {
+                DownloadError::StreamResolutionFailed("HTTP 401".to_string())
+            }
+            ApiResponseError::GeoBlocked => {
+                DownloadError::StreamResolutionFailed("HTTP 403".to_string())
+            }
+            ApiResponseError::FetchFailed(msg) => DownloadError::StreamResolutionFailed(msg),
+            ApiResponseError::InvalidResponse(msg) => {
+                DownloadError::StreamResolutionFailed(format!("Invalid API response: {}", msg))
+            }
+        })
 }
 
 /// Fetch track data directly by numeric ID (skips the resolve redirect).

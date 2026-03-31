@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ArtistAvatarImage } from '@/features/new-tracks/components/ArtistAvatarImage';
 import { formatCount } from '@/lib/format';
 import { getArtworkUrl } from '@/lib/soundcloud';
+import { cn } from '@/lib/utils';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
+import { linkifyDescription } from './LinkifiedDescription';
 import type { ArtistProfile } from '@/bindings';
 
 interface ArtistProfileHeaderProps {
@@ -26,6 +29,7 @@ export function ArtistProfileHeader({
   showOrderToggle = false,
 }: ArtistProfileHeaderProps) {
   const { t } = useTranslation();
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   if (isLoading) {
     return (
@@ -68,8 +72,17 @@ export function ArtistProfileHeader({
           <div className="min-w-0">
             <h2 className="text-lg font-bold truncate">{profile.username}</h2>
             {profile.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                {profile.description}
+              <p
+                onClick={() => {
+                  if (window.getSelection()?.toString()) return;
+                  setIsDescriptionExpanded((prev) => !prev);
+                }}
+                className={cn(
+                  'text-xs text-muted-foreground mt-0.5 cursor-pointer hover:text-foreground/80 transition-colors whitespace-pre-line',
+                  !isDescriptionExpanded && 'line-clamp-2',
+                )}
+              >
+                {linkifyDescription(profile.description)}
               </p>
             )}
             <div className="flex gap-4 mt-1.5 text-xs text-muted-foreground">
