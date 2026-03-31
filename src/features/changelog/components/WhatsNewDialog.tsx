@@ -31,7 +31,7 @@ export function WhatsNewDialog({ open, onDismiss, version, date, sections }: Wha
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onDismiss(); }}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('changelog.whatsNew', { version })}</DialogTitle>
           <DialogDescription>
