@@ -1,5 +1,6 @@
-import { Folder } from 'lucide-react';
-import { OpenFolderButton } from '@/components/OpenFolderButton';
+import { ExternalLink, Folder } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { useTranslation } from 'react-i18next';
 import { useFolderSelection } from '@/hooks';
@@ -27,17 +28,34 @@ export function SearchFolderPicker({ path, onPathChange }: SearchFolderPickerPro
   const displayPath = getFolderName(path);
 
   return (
-    <div className="flex items-center gap-1">
-      <button
-        type="button"
-        onClick={selectFolder}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded-md hover:bg-secondary/50"
-        title={path}
-      >
-        <Folder className="h-3 w-3" />
-        <span className="truncate max-w-[200px]">{displayPath}</span>
-      </button>
-      <OpenFolderButton onClick={handleOpenFolder} size="sm" />
+    <div className="flex items-center h-7 rounded-md border border-border/50 bg-secondary/30 overflow-hidden">
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={selectFolder}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors px-2 h-full hover:bg-secondary/50"
+          >
+            <Folder className="h-3 w-3 shrink-0" />
+            <span className="truncate max-w-[150px]">{displayPath}</span>
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{path}</TooltipContent>
+      </Tooltip>
+      <Separator orientation="vertical" className="h-3.5" />
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            onClick={handleOpenFolder}
+            className="flex items-center justify-center h-full px-1.5 text-muted-foreground hover:text-foreground transition-colors hover:bg-secondary/50"
+            aria-label={t('completion.openFolder')}
+          >
+            <ExternalLink className="h-3 w-3" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>{t('completion.openFolder')}</TooltipContent>
+      </Tooltip>
     </div>
   );
 }

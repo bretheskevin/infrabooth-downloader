@@ -61,12 +61,12 @@ export function SearchTab() {
         onValueChange={(v) => setSearchType(v as SearchType)}
         className="flex flex-col flex-1 min-h-0 gap-3"
       >
-        <div className="flex items-center gap-1">
-          <TabsList className="h-auto p-0.5">
-            <TabsTrigger value="tracks" className="text-xs px-3 py-1">
+        <div className="flex items-center justify-between pr-3">
+          <TabsList variant="underline">
+            <TabsTrigger value="tracks" className="text-xs px-2 py-1">
               {t('search.tabTracks')}
             </TabsTrigger>
-            <TabsTrigger value="artists" className="text-xs px-3 py-1">
+            <TabsTrigger value="artists" className="text-xs px-2 py-1">
               {t('search.tabArtists')}
             </TabsTrigger>
           </TabsList>
@@ -74,7 +74,7 @@ export function SearchTab() {
             <SearchFolderPicker path={downloadPath} onPathChange={setDownloadPath} />
           )}
         </div>
-        <div className="flex-1 min-h-0 overflow-y-auto pr-8">
+        <div className="flex-1 min-h-0 overflow-y-auto">
           <TabsContent value="tracks" className="mt-0">
             <TrackListProvider
               playTrack={playTrack}
