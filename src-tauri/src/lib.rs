@@ -14,7 +14,7 @@ use commands::{
     validate_soundcloud_url, get_selections,
     get_followed_artists, get_artist_activity, mark_artist_seen,
     fetch_related_tracks,
-    get_artist_profile, get_artist_tracks, resolve_user,
+    get_artist_profile, get_all_artist_tracks, resolve_user,
 };
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
@@ -31,6 +31,7 @@ use tauri::Emitter;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder};
 use services::downloader::DownloadProgressEvent;
+use services::events::TracksBatchEvent;
 use services::queue::{QueueProgressEvent, QueueCompleteEvent, QueueCancelledEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -40,7 +41,8 @@ pub fn run() {
             DownloadProgressEvent,
             QueueProgressEvent,
             QueueCompleteEvent,
-            QueueCancelledEvent
+            QueueCancelledEvent,
+            TracksBatchEvent
         ])
         .commands(collect_commands![
         check_auth,
@@ -76,7 +78,7 @@ pub fn run() {
         mark_artist_seen,
         fetch_related_tracks,
         get_artist_profile,
-        get_artist_tracks,
+        get_all_artist_tracks,
         resolve_user
     ]);
 

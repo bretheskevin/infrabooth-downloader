@@ -1,8 +1,11 @@
 use reqwest::Url;
 
-use crate::models::artist::{ArtistProfile, ArtistTracksResponse};
+use crate::models::artist::ArtistProfile;
 use crate::services::http::{resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
 use crate::services::playlist::{RawTrackInfo, TrackInfo};
+
+const PAGE_SIZE: usize = 20;
+const PAGE_SIZE_STR: &str = "20";
 
 pub async fn fetch_artist_profile(
     client_id: &str,
@@ -38,23 +41,21 @@ pub async fn fetch_artist_profile(
     Ok(profile)
 }
 
-pub async fn fetch_artist_tracks(
+pub async fn fetch_all_artist_tracks<F>(
     client_id: &str,
     token: &str,
     datadome: Option<&str>,
     artist_id: u64,
-    limit: u64,
-    offset: u64,
-) -> Result<ArtistTracksResponse, String> {
-    let limit_str = limit.to_string();
-    let offset_str = offset.to_string();
-
-    let url = Url::parse_with_params(
+    on_batch: F,
+) -> Result<Vec<TrackInfo>, String>
+where
+    F: Fn(&[TrackInfo]),
+{
+    let initial_url = Url::parse_with_params(
         &format!("{}/users/{}/toptracks", API_V2_BASE, artist_id),
         &[
             ("client_id", client_id),
-            ("limit", &limit_str),
-            ("offset", &offset_str),
+            ("limit", PAGE_SIZE_STR),
             ("linked_partitioning", "1"),
             ("app_version", SC_APP_VERSION),
             ("app_locale", "en"),
@@ -62,45 +63,52 @@ pub async fn fetch_artist_tracks(
     )
     .map_err(|e| format!("Failed to build URL: {}", e))?;
 
-    log::info!("[artist] Fetching tracks for user {}, offset={}", artist_id, offset);
+    let mut all_tracks = Vec::new();
+    let mut next_url: Option<String> = Some(initial_url.to_string());
 
-    let mut request = HTTP_CLIENT.get(url).with_oauth(Some(token));
+    while let Some(url) = next_url.take() {
+        log::info!("[artist] Fetching tracks for user {}, page {}", artist_id, (all_tracks.len() / PAGE_SIZE) + 1);
 
-    if let Some(dd) = datadome {
-        request = request.header("x-datadome-clientid", dd);
+        let mut request = HTTP_CLIENT.get(&url).with_oauth(Some(token));
+
+        if let Some(dd) = datadome {
+            request = request.header("x-datadome-clientid", dd);
+        }
+
+        let response = request
+            .send()
+            .await
+            .map_err(|e| format!("Failed to fetch artist tracks: {}", e))?;
+
+        validate_api_response(response.status()).map_err(|e| e.to_string())?;
+
+        let body = response
+            .text()
+            .await
+            .map_err(|e| format!("Failed to read response body: {}", e))?;
+
+        let api_response: ApiTracksResponse = serde_json::from_str(&body)
+            .map_err(|e| {
+                let preview = body.get(..200).unwrap_or(&body);
+                log::error!("[artist] Parse error: {} — body preview: {}", e, preview);
+                format!("Failed to parse artist tracks: {}", e)
+            })?;
+
+        let tracks: Vec<TrackInfo> = api_response.collection.into_iter().map(TrackInfo::from).collect();
+
+        log::info!("[artist] Fetched {} tracks, has_more={}", tracks.len(), api_response.next_href.is_some());
+
+        if !tracks.is_empty() {
+            on_batch(&tracks);
+            all_tracks.extend(tracks);
+        }
+
+        next_url = api_response.next_href;
     }
 
-    let response = request
-        .send()
-        .await
-        .map_err(|e| format!("Failed to fetch artist tracks: {}", e))?;
+    log::info!("[artist] Completed: {} total tracks for user {}", all_tracks.len(), artist_id);
 
-    log::debug!("[artist] Response status: {}", response.status());
-
-    validate_api_response(response.status()).map_err(|e| e.to_string())?;
-
-    let body = response
-        .text()
-        .await
-        .map_err(|e| format!("Failed to read response body: {}", e))?;
-
-    let api_response: ApiTracksResponse = serde_json::from_str(&body)
-        .map_err(|e| {
-            let preview = body.get(..200).unwrap_or(&body);
-            log::error!("[artist] Parse error: {} — body preview: {}", e, preview);
-            format!("Failed to parse artist tracks: {}", e)
-        })?;
-
-    let tracks: Vec<TrackInfo> = api_response.collection.into_iter().map(TrackInfo::from).collect();
-    let track_count = tracks.len() as u64;
-
-    log::info!("[artist] Fetched {} tracks, has_more={}", track_count, api_response.next_href.is_some());
-
-    Ok(ArtistTracksResponse {
-        tracks,
-        has_more: api_response.next_href.is_some(),
-        next_offset: offset + track_count,
-    })
+    Ok(all_tracks)
 }
 
 pub async fn resolve_user(

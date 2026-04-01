@@ -57,9 +57,7 @@ vi.mock('../hooks/useArtistTracks', () => ({
   useArtistTracks: () => ({
     data: undefined,
     isLoading: false,
-    hasNextPage: false,
-    isFetchingNextPage: false,
-    fetchNextPage: vi.fn(),
+    isStreaming: false,
   }),
 }));
 

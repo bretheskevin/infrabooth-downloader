@@ -48,13 +48,11 @@ export function ArtistProfileView({
   const {
     data: tracksData,
     isLoading: isTracksLoading,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
+    isStreaming,
   } = useArtistTracks(artistId);
 
   const tracks = useMemo(() => {
-    const all = tracksData?.pages.flatMap((page) => page.tracks) ?? [];
+    const all = tracksData ?? [];
     if (sort === 'recent') {
       return [...all].sort((a, b) => b.id - a.id);
     }
@@ -162,9 +160,7 @@ export function ArtistProfileView({
         <ArtistTrackList
           tracks={displayTracks}
           isLoading={isTracksLoading}
-          hasNextPage={hasNextPage ?? false}
-          isFetchingNextPage={isFetchingNextPage}
-          fetchNextPage={fetchNextPage}
+          isStreaming={isStreaming}
           sort={sort}
           onSortChange={setSort}
           sortDirection={sortDirection}
