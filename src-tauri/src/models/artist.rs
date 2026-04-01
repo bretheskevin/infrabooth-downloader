@@ -1,8 +1,6 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::services::playlist::TrackInfo;
-
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ArtistProfile {
     pub id: u64,
@@ -25,11 +23,4 @@ pub struct VisualsWrapper {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct VisualItem {
     pub visual_url: String,
-}
-
-#[derive(Debug, Clone, Serialize, Type)]
-pub struct ArtistTracksResponse {
-    pub tracks: Vec<TrackInfo>,
-    pub has_more: bool,
-    pub next_offset: u64,
 }

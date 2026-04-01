@@ -343,9 +343,9 @@ async getArtistProfile(artistId: number) : Promise<Result<ArtistProfile, string>
     else return { status: "error", error: e  as any };
 }
 },
-async getArtistTracks(artistId: number, limit: number, offset: number) : Promise<Result<ArtistTracksResponse, string>> {
+async getAllArtistTracks(artistId: number) : Promise<Result<TrackInfo[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_artist_tracks", { artistId, limit, offset }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_all_artist_tracks", { artistId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -368,12 +368,14 @@ export const events = __makeEvents__<{
 downloadProgressEvent: DownloadProgressEvent,
 queueCancelledEvent: QueueCancelledEvent,
 queueCompleteEvent: QueueCompleteEvent,
-queueProgressEvent: QueueProgressEvent
+queueProgressEvent: QueueProgressEvent,
+tracksBatchEvent: TracksBatchEvent
 }>({
 downloadProgressEvent: "download-progress-event",
 queueCancelledEvent: "queue-cancelled-event",
 queueCompleteEvent: "queue-complete-event",
-queueProgressEvent: "queue-progress-event"
+queueProgressEvent: "queue-progress-event",
+tracksBatchEvent: "tracks-batch-event"
 })
 
 /** user-defined constants **/
@@ -385,7 +387,6 @@ queueProgressEvent: "queue-progress-event"
 export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
 export type ActivityType = "Track" | "Repost"
 export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
-export type ArtistTracksResponse = { tracks: TrackInfo[]; has_more: boolean; next_offset: number }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null }
 export type DownloadRequest = ({ 
 /**
@@ -496,6 +497,7 @@ downloadable: boolean;
  * URL to download the original file (requires OAuth token).
  */
 download_url: string | null }
+export type TracksBatchEvent = { entityId: number; tracks: TrackInfo[] }
 /**
  * Information about an available update.
  */

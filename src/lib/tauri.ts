@@ -13,7 +13,6 @@ import {
   type FollowedArtist,
   type ActivityItem,
   type ArtistProfile,
-  type ArtistTracksResponse,
   type UserSearchResponse,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
@@ -141,6 +140,6 @@ export const api = {
   getArtistProfile: (artistId: number): Promise<ArtistProfile> =>
     commands.getArtistProfile(artistId).then(unwrap),
 
-  getArtistTracks: (artistId: number, limit: number, offset: number): Promise<ArtistTracksResponse> =>
-    commands.getArtistTracks(artistId, limit, offset).then(unwrap),
+  getAllArtistTracks: (artistId: number): Promise<TrackInfo[]> =>
+    commands.getAllArtistTracks(artistId).then(unwrap),
 };
