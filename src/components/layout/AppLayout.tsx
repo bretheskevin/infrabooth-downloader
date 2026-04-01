@@ -14,6 +14,7 @@ interface AppLayoutProps {
   activePage: AppPage;
   onPageChange: (page: AppPage) => void;
   isSignedIn: boolean;
+  hideTabs?: boolean;
 }
 
 interface PageNavProps {
@@ -56,7 +57,7 @@ function PageNav({ activePage, onPageChange, isSignedIn }: PageNavProps) {
 }
 
 
-export function AppLayout({ children, activePage, onPageChange, isSignedIn }: AppLayoutProps) {
+export function AppLayout({ children, activePage, onPageChange, isSignedIn, hideTabs }: AppLayoutProps) {
   const expandedBarVisible = useIsExpandedBarVisible();
 
   return (
@@ -67,7 +68,7 @@ export function AppLayout({ children, activePage, onPageChange, isSignedIn }: Ap
         className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6 w-full container mx-auto transition-[padding-bottom] duration-300 ease-in-out"
         style={{ paddingBottom: expandedBarVisible ? EXPANDED_BAR_HEIGHT + 16 : undefined }}
       >
-        <PageNav activePage={activePage} onPageChange={onPageChange} isSignedIn={isSignedIn} />
+        {!hideTabs && <PageNav activePage={activePage} onPageChange={onPageChange} isSignedIn={isSignedIn} />}
         {children}
       </main>
     </div>
