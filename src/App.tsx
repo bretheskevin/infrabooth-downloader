@@ -145,11 +145,14 @@ function AppContent() {
     onNavigateToDownload: () => handlePageChange('download'),
   });
 
+  const profileArtistId = useArtistProfileStore((s) => s.profileArtistId);
+
   return (
     <AppLayout
       activePage={activePage}
       onPageChange={handlePageChange}
       isSignedIn={isSignedIn}
+      hideTabs={!!profileArtistId}
     >
       <PageContent
         activePage={activePage}
