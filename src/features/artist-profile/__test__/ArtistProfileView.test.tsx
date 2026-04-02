@@ -78,7 +78,7 @@ vi.mock('@/hooks/useTrackDownloadState', () => ({
   }),
 }));
 
-vi.mock('@/features/library/hooks/useTrackSelection', () => ({
+vi.mock('@/hooks/useTrackSelection', () => ({
   useTrackSelection: () => ({
     selectedIds: new Set<number>(),
     toggleTrack: vi.fn(),

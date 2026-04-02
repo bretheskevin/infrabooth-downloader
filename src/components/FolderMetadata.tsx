@@ -30,7 +30,7 @@ export function FolderMetadata({
             type="button"
             onClick={onChangeFolder}
             className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border border-border/50 bg-muted/30 hover:bg-muted transition-colors shrink-0 max-w-[200px]"
-            aria-label={t('library.detail.changeFolder')}
+            aria-label={t('common.changeFolder')}
           >
             <Folder className="h-3 w-3 shrink-0" />
             <span className="truncate">{folderName}</span>

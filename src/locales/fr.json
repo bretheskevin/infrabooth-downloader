@@ -7,7 +7,15 @@
     "back": "Retour",
     "done": "Terminé",
     "selected": "{{count}} sélectionnés",
-    "download": "Télécharger"
+    "download": "Télécharger",
+    "downloadAll": "Tout télécharger",
+    "error": "Une erreur est survenue",
+    "retry": "Réessayer",
+    "noResults": "Aucun résultat",
+    "filterPlaceholder": "Filtrer les titres...",
+    "loadingTracks": "Chargement des pistes...",
+    "changeFolder": "Changer le dossier",
+    "folderPermissionDenied": "Impossible d'écrire dans ce dossier. Veuillez choisir un autre emplacement."
   },
   "auth": {
     "signIn": "Se connecter",
@@ -227,11 +235,8 @@
     "emptyState": "Aucune playlist trouvée",
     "detail": {
       "tracks": "{{count}} pistes",
-      "loadingTracks": "Chargement des pistes...",
       "errorLoading": "Échec du chargement des pistes",
-      "retry": "Réessayer",
       "emptyPlaylist": "Cette playlist n'a aucune piste",
-      "downloadAll": "Tout télécharger",
       "download": "Télécharger",
       "selectAll": "Tout sélectionner",
       "deselectAll": "Tout désélectionner",
@@ -242,8 +247,6 @@
       "conflictConfirm": "Annuler et démarrer",
       "conflictCancel": "Garder l'actuel",
       "conflictError": "Échec de l'annulation du téléchargement en cours",
-      "filterPlaceholder": "Filtrer les pistes...",
-      "noFilterResults": "Aucune piste ne correspond à votre recherche",
       "sortDefault": "Ordre de la playlist",
       "sortTitle": "Titre",
       "sortArtist": "Artiste",
@@ -251,10 +254,8 @@
       "sortDesc": "Desc",
       "downloadedCount_one": "{{count}} téléchargé",
       "downloadedCount_other": "{{count}} téléchargés",
-      "changeFolder": "Changer le dossier",
       "customFolder": "personnalisé",
-      "alreadyDownloaded": "Déjà téléchargé",
-      "folderPermissionDenied": "Impossible d'écrire dans ce dossier. Veuillez choisir un autre emplacement."
+      "alreadyDownloaded": "Déjà téléchargé"
     }
   },
   "search": {
@@ -368,7 +369,6 @@
     "filterNew": "Nouveaux",
     "filterReposted": "Repostés",
     "emptyFilter": "Aucun titre ne correspond à ce filtre",
-    "downloadAll": "Tout télécharger",
     "newTrack": "nouveau",
     "repost": "reposté",
     "empty": "Aucune nouveauté des artistes que vous suivez",
@@ -389,10 +389,8 @@
     "back": "Retour",
     "followers": "abonnés",
     "tracks": "titres",
-    "downloadAll": "Tout télécharger",
     "sortRecent": "Récents",
     "sortPopular": "Populaires",
-    "filterPlaceholder": "Filtrer les titres...",
     "noTracks": "Cet artiste n'a aucun titre public",
     "error": "Impossible de charger le profil de l'artiste"
   }

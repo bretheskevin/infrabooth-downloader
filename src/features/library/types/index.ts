@@ -6,5 +6,4 @@ export type LibraryView =
   | { view: 'list' }
   | { view: 'detail'; playlist: LibraryPlaylist };
 
-export const SORT_FIELDS = ['default', 'title', 'artist'] as const;
-export type SortField = (typeof SORT_FIELDS)[number];
+export type SortField = 'default' | 'title' | 'artist';

@@ -83,7 +83,7 @@ export function TrackDownloadAction({
       <button
         type="button"
         onClick={onRetry}
-        aria-label={t('library.detail.retry')}
+        aria-label={t('common.retry')}
         className="h-8 w-8 rounded-md bg-destructive/10 hover:bg-destructive/20 flex items-center justify-center text-destructive transition-colors"
       >
         <RotateCw className="h-4 w-4" />

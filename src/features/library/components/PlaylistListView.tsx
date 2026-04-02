@@ -6,7 +6,7 @@ import { logger } from '@/lib/logger';
 import { useLibraryPlaylists } from '../hooks/useLibraryPlaylists';
 import { filterPlaylists } from '../utils/filterPlaylists';
 import { SearchBar } from '@/components/ui/search-bar';
-import { LibraryFilterChips } from './LibraryFilterChips';
+import { FilterChips } from '@/components/FilterChips';
 import { LibraryPlaylistList } from './LibraryPlaylistList';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import type { LibraryFilter } from '../types';
@@ -85,7 +85,15 @@ export function PlaylistListView({
         autoFocus
       />
       <div className="flex items-center justify-between">
-        <LibraryFilterChips active={filter} onChange={(f) => libraryActions().setFilter(f)} />
+        <FilterChips<LibraryFilter>
+          options={[
+            { key: 'all', label: 'library.filterAll' },
+            { key: 'mine', label: 'library.filterMine' },
+            { key: 'liked', label: 'library.filterLiked' },
+          ]}
+          active={filter}
+          onChange={(f) => libraryActions().setFilter(f)}
+        />
         <RefreshButton
           onRefresh={handleRefresh}
           aria-label={t('library.refresh')}
