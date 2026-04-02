@@ -9,3 +9,5 @@ export { useMergedTrackState } from './useMergedTrackState';
 export { useFolderSelection } from './useFolderSelection';
 export { useInitializeSettings } from '@/features/settings/hooks/useInitializeSettings';
 export * from '@/features/queue/hooks';
+export { useTrackSelection } from './useTrackSelection';
+export { useFolderPath } from './useFolderPath';

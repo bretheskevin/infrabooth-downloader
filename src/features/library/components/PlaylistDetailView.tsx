@@ -1,28 +1,22 @@
-import { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
-import { useFolderSelection } from '@/hooks';
-import { usePlayContext, usePlayerStore } from '@/features/player';
-import { useIsDownloadEnabled } from '@/features/settings';
-import { TrackListProvider } from '@/components/InteractiveTrackRow';
+import { DetailViewLayout } from '@/components/detail-view/DetailViewLayout';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
-import { useTrackSelection } from '../hooks/useTrackSelection';
-import { usePlaylistViewState } from '../hooks/usePlaylistViewState';
-import { useSyncQueueOnStreamEnd } from '../hooks/useSyncQueueOnStreamEnd';
-import { usePlaylistTrackHandlers } from '../hooks/usePlaylistTrackHandlers';
 import { useRemoveFromPlaylist } from '../hooks/useRemoveFromPlaylist';
+import { useLibraryStore } from '../store';
+import { sortTracks } from '../utils/sortTracks';
+import { getErrorMessageKey } from '@/lib/getErrorMessageKey';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
-import { PlaylistLoadingState } from './PlaylistLoadingState';
-import { PlaylistErrorState } from './PlaylistErrorState';
-import { PlaylistEmptyStates } from './PlaylistEmptyStates';
-import { SearchBar } from '@/components/ui/search-bar';
-import { PlaylistTrackList } from './PlaylistTrackList';
-import { SelectionActionBar } from '@/components/SelectionActionBar';
 import { RemoveFromPlaylistDialog } from './RemoveFromPlaylistDialog';
+import type { SortField } from '../types';
+import type { SortDirection } from '@/lib/sort';
 
-const MIN_TRACKS_FOR_SEARCH = 5;
+const PLAYLIST_SORT_OPTIONS = [
+  { key: 'default', label: 'library.detail.sortDefault' },
+  { key: 'title', label: 'library.detail.sortTitle' },
+  { key: 'artist', label: 'library.detail.sortArtist' },
+] as const satisfies readonly { key: SortField; label: string }[];
 
 interface PlaylistDetailViewProps {
   playlist: LibraryPlaylist;
@@ -32,113 +26,87 @@ interface PlaylistDetailViewProps {
 }
 
 export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownloadTracks }: PlaylistDetailViewProps) {
-  const { t } = useTranslation();
   const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id, initialTracks);
+
+  const [sortField, setSortField] = useState<SortField>('default');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
+
+  useEffect(() => {
+    setSortField('default');
+    setSortDirection('asc');
+  }, [playlist.id]);
+
+  const sortedTracks = useMemo(
+    () => (tracks ? sortTracks(tracks, sortField, sortDirection) : []),
+    [tracks, sortField, sortDirection],
+  );
+
+  const needsArtwork = !playlist.artwork_url && !initialTracks;
+  const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secret_token, needsArtwork);
+  const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
 
   const [trackToRemove, setTrackToRemove] = useState<TrackInfo | null>(null);
   const { removeFromPlaylist, removingFromPlaylistId } = useRemoveFromPlaylist(() => {
     setTrackToRemove(null);
   });
 
-  const needsArtwork = !playlist.artwork_url && !initialTracks;
-  const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secret_token, needsArtwork);
-  const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
+  const errorMessageKey = useMemo(
+    () => (error ? getErrorMessageKey(error, 'library.detail.errorLoading') : undefined),
+    [error],
+  );
 
-  const viewState = usePlaylistViewState(playlist.id, tracks, isStreaming);
-  const { displayTracks, downloadedIds, effectivePath, setLocalPath, downloadTrack } = viewState;
-
-  const { playTrack, syncQueue } = usePlayContext(displayTracks);
-  const isDownloadEnabled = useIsDownloadEnabled();
-
-  const prevCountRef = useRef(0);
-  const shouldAnimate = (displayTracks?.length ?? 0) > prevCountRef.current;
-  useEffect(() => {
-    prevCountRef.current = displayTracks?.length ?? 0;
-  }, [displayTracks?.length]);
-
-  const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
-  useSyncQueueOnStreamEnd(isStreaming, currentTrackId, syncQueue);
-
-  const selection = useTrackSelection(displayTracks, downloadedIds);
-  const { selectedIds, toggleTrack, toggleAll, clearSelection, selectedCount, isAllSelected, selectedTracks, selectableCount } = selection;
-
-  const handlers = usePlaylistTrackHandlers({
-    tracks,
-    playlistTitle: playlist.title,
-    effectivePath,
-    selectedTracks,
-    downloadTrack,
-    clearSelection,
-    onDownloadTracks,
-  });
-
-  const { selectFolder: handleChangeFolder } = useFolderSelection({
-    defaultPath: effectivePath,
-    dialogTitle: t('library.detail.changeFolder'),
-    onSelected: setLocalPath,
-    onPermissionDenied: () => toast.error(t('library.detail.folderPermissionDenied')),
-  });
-
-  const showSkeleton = isLoading && (!tracks || tracks.length === 0);
-  const showSearch = tracks && tracks.length >= MIN_TRACKS_FOR_SEARCH;
+  const initialScrollOffset = useLibraryStore.getState().detailScrollTop;
+  const saveScrollOffset = useCallback((offset: number) => {
+    useLibraryStore.getState().setDetailScrollTop(offset);
+  }, []);
 
   return (
-    <div className="flex flex-col gap-3 flex-1 min-h-0">
-      <PlaylistDetailHeader
-        playlist={playlist}
-        artworkUrl={artworkUrl}
-        trackCount={tracks?.length ?? playlist.track_count}
-        onBack={onBack}
-        onDownloadAll={handlers.handleDownloadAll}
-        isDownloadDisabled={!tracks || tracks.length === 0}
-        downloadedCount={viewState.downloadedCount}
-        folderName={viewState.folderName}
-        folderPath={effectivePath}
-        isCustomFolder={viewState.isCustomFolder}
-        onChangeFolder={handleChangeFolder}
-        showOrderToggle={(tracks?.length ?? 0) > 1}
-      />
-
-      <PlaylistLoadingState showSkeleton={showSkeleton} />
-      <PlaylistErrorState error={error} tracks={tracks} onRetry={refetch} />
-
-      {showSearch && (
-        <SearchBar
-          value={viewState.searchQuery}
-          onChange={viewState.setSearchQuery}
-          placeholder={t('library.detail.filterPlaceholder')}
-          autoFocus
-        />
-      )}
-
-      <PlaylistEmptyStates tracks={tracks} displayTracks={displayTracks} isLoading={isLoading} />
-
-      {displayTracks.length > 0 && (
-        <TrackListProvider
-          playTrack={playTrack}
-          downloadTrack={handlers.handleDownloadTrack}
-          isDownloadEnabled={isDownloadEnabled}
-          downloadedIds={downloadedIds}
-          selection={{ selectedIds, toggleTrack }}
-          animate={shouldAnimate}
-        >
-          <PlaylistTrackList
-            tracks={displayTracks}
-            isStreaming={isStreaming}
-            isAllSelected={isAllSelected}
-            isDownloadEnabled={isDownloadEnabled}
-            hasSelectableTracks={selectableCount > 0}
-            sortField={viewState.sortField}
-            sortDirection={viewState.sortDirection}
-            onSortFieldChange={viewState.setSortField}
-            onSortDirectionChange={viewState.setSortDirection}
-            onToggleAll={toggleAll}
-            onRemoveFromPlaylist={playlist.is_owned ? setTrackToRemove : undefined}
+    <>
+      <DetailViewLayout
+        tracks={sortedTracks}
+        isLoading={isLoading}
+        isStreaming={isStreaming}
+        error={error}
+        onRetry={refetch}
+        title={playlist.title}
+        resetKey={playlist.id}
+        header={({ downloadedCount, downloadAllAction, folder }) => (
+          <PlaylistDetailHeader
+            playlist={playlist}
+            artworkUrl={artworkUrl}
+            trackCount={tracks?.length ?? playlist.track_count}
+            onBack={onBack}
+            downloadedCount={downloadedCount}
+            folderName={folder.folderName}
+            isCustomFolder={folder.isCustomFolder}
+            onChangeFolder={folder.handleChangeFolder}
+            onOpenFolder={folder.handleOpenFolder}
+            showOrderToggle={(tracks?.length ?? 0) > 1}
+            actions={downloadAllAction}
           />
-        </TrackListProvider>
-      )}
-
-      <SelectionActionBar selectedCount={selectedCount} onDownload={handlers.handleDownloadSelected} />
+        )}
+        folder
+        download={{ onDownloadTracks }}
+        sort={{
+          options: PLAYLIST_SORT_OPTIONS,
+          active: sortField,
+          onChange: setSortField,
+          direction: sortDirection,
+          onDirectionChange: setSortDirection,
+          variant: 'select',
+        }}
+        trackList={{
+          virtualized: true,
+          searchThreshold: 5,
+          onRemoveFromPlaylist: playlist.is_owned ? setTrackToRemove : undefined,
+          initialScrollOffset,
+          onScrollOffsetChange: saveScrollOffset,
+        }}
+        messages={{
+          empty: 'library.detail.emptyPlaylist',
+          error: errorMessageKey,
+        }}
+      />
 
       <RemoveFromPlaylistDialog
         open={trackToRemove !== null}
@@ -152,6 +120,6 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
         }}
         onCancel={() => setTrackToRemove(null)}
       />
-    </div>
+    </>
   );
 }

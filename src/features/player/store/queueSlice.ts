@@ -49,32 +49,35 @@ export const createQueueSlice: StateCreator<
   },
 
   syncQueue: (newQueue) => {
-    const { currentTrack, isShuffled, originalQueue, state, stationQueueCount } = get();
+    const { currentTrack, isShuffled, originalQueue, state, stationQueueCount, queue: currentQueue } = get();
     if (!currentTrack || state === 'stopped') return;
 
-    const newCursor = newQueue.findIndex((t) => t.trackId === currentTrack.trackId);
+    const { stationTracks } = splitStationTracks(currentQueue, stationQueueCount);
+    const stationIds = new Set(stationTracks.map((t) => t.trackId));
+    const userQueue = newQueue.filter((t) => !stationIds.has(t.trackId));
+
+    const newCursor = userQueue.findIndex((t) => t.trackId === currentTrack.trackId);
     if (newCursor === -1) return;
 
-    if (isShuffled) {
-      const { userTracks, stationTracks } = splitStationTracks(newQueue, stationQueueCount);
-      const userCursor = userTracks.findIndex((t) => t.trackId === currentTrack.trackId);
+    const fullQueue = [...userQueue, ...stationTracks];
 
+    if (isShuffled) {
       set({
-        queue: [...shuffleQueueWithCurrent(userTracks, userCursor >= 0 ? userCursor : newCursor), ...stationTracks],
+        queue: [...shuffleQueueWithCurrent(userQueue, newCursor), ...stationTracks],
         cursor: 0,
-        originalQueue: originalQueue ? newQueue : originalQueue,
+        originalQueue: originalQueue ? fullQueue : originalQueue,
         manualQueueCount: 0,
       });
     } else {
       set({
-        queue: newQueue,
+        queue: fullQueue,
         cursor: newCursor,
         originalQueue: originalQueue,
         manualQueueCount: 0,
       });
     }
 
-    purgeStaleCache(trackIdSet(newQueue));
+    purgeStaleCache(trackIdSet(fullQueue));
   },
 
   reorderQueue: (fromIndex, toIndex) => {

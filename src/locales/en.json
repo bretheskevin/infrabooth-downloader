@@ -7,7 +7,15 @@
     "back": "Back",
     "done": "Done",
     "selected": "{{count}} selected",
-    "download": "Download"
+    "download": "Download",
+    "downloadAll": "Download all",
+    "error": "Something went wrong",
+    "retry": "Retry",
+    "noResults": "No results found",
+    "filterPlaceholder": "Filter tracks...",
+    "loadingTracks": "Loading tracks...",
+    "changeFolder": "Change download folder",
+    "folderPermissionDenied": "Cannot write to this folder. Please choose another location."
   },
   "auth": {
     "signIn": "Sign In",
@@ -227,11 +235,8 @@
     "emptyState": "No playlists found",
     "detail": {
       "tracks": "{{count}} tracks",
-      "loadingTracks": "Loading tracks...",
       "errorLoading": "Failed to load tracks",
-      "retry": "Retry",
       "emptyPlaylist": "This playlist has no tracks",
-      "downloadAll": "Download All",
       "download": "Download",
       "selectAll": "Select all",
       "deselectAll": "Deselect all",
@@ -242,8 +247,6 @@
       "conflictConfirm": "Cancel & Start New",
       "conflictCancel": "Keep Current",
       "conflictError": "Failed to cancel the current download",
-      "filterPlaceholder": "Filter tracks...",
-      "noFilterResults": "No tracks match your search",
       "sortDefault": "Playlist order",
       "sortTitle": "Title",
       "sortArtist": "Artist",
@@ -251,10 +254,8 @@
       "sortDesc": "Desc",
       "downloadedCount_one": "{{count}} downloaded",
       "downloadedCount_other": "{{count}} downloaded",
-      "changeFolder": "Change download folder",
       "customFolder": "custom",
-      "alreadyDownloaded": "Already downloaded",
-      "folderPermissionDenied": "Cannot write to this folder. Please choose another location."
+      "alreadyDownloaded": "Already downloaded"
     }
   },
   "search": {
@@ -368,7 +369,6 @@
     "filterNew": "New",
     "filterReposted": "Reposted",
     "emptyFilter": "No tracks match this filter",
-    "downloadAll": "Download all",
     "newTrack": "new",
     "repost": "reposted",
     "empty": "No new tracks from artists you follow",
@@ -389,10 +389,8 @@
     "back": "Back",
     "followers": "followers",
     "tracks": "tracks",
-    "downloadAll": "Download all",
     "sortRecent": "Recent",
     "sortPopular": "Popular",
-    "filterPlaceholder": "Filter tracks...",
     "noTracks": "This artist has no public tracks",
     "error": "Failed to load artist profile"
   }

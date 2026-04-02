@@ -702,9 +702,7 @@ describe('playerStore', () => {
 
     usePlayerStore.getState().appendStationTracks(mockStationTracks);
 
-    const extendedQueue = [...makeQueue(5), ...mockStationTracks];
-    usePlayerStore.setState({ stationQueueCount: 2 });
-    usePlayerStore.getState().syncQueue(extendedQueue);
+    usePlayerStore.getState().syncQueue(makeQueue(5));
 
     const state = usePlayerStore.getState();
     expect(state.isShuffled).toBe(true);
@@ -712,6 +710,23 @@ describe('playerStore', () => {
     expect(state.queue[0]?.trackId).toBe(2);
     expect(state.queue[state.queue.length - 2]!.trackId).toBe(101);
     expect(state.queue[state.queue.length - 1]!.trackId).toBe(102);
+  });
+
+  it('syncQueue should preserve station tracks when receiving only playlist tracks', async () => {
+    const queue = makeQueue(3);
+    await usePlayerStore.getState().play(queue, 1);
+
+    usePlayerStore.getState().appendStationTracks(mockStationTracks);
+    expect(usePlayerStore.getState().stationQueueCount).toBe(2);
+
+    usePlayerStore.getState().syncQueue(makeQueue(5));
+
+    const state = usePlayerStore.getState();
+    expect(state.queue).toHaveLength(7);
+    expect(state.stationQueueCount).toBe(2);
+    expect(state.queue[state.queue.length - 2]!.trackId).toBe(101);
+    expect(state.queue[state.queue.length - 1]!.trackId).toBe(102);
+    expect(state.cursor).toBe(1);
   });
 
   describe('crossfade', () => {

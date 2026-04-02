@@ -22,7 +22,6 @@ export function useTrackSelection(visibleTracks: TrackInfo[], excludeIds?: Set<n
     [visibleTracks, excludeIds],
   );
 
-  // Only keep the not downloaded tracks
   useEffect(() => {
     if (!excludeIds || excludeIds.size === 0) return;
     setSelectedIds((prev) => {

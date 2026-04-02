@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next';
-import { Download, Music } from 'lucide-react';
+import { Music } from 'lucide-react';
 import { FolderMetadata } from '@/components/FolderMetadata';
-import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
-import { Button } from '@/components/ui/button';
 import { DetailHeader } from '@/components/DetailHeader';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import type { LibraryPlaylist } from '@/bindings';
@@ -14,14 +12,13 @@ interface PlaylistDetailHeaderProps {
   artworkUrl: string | null;
   trackCount: number;
   onBack: () => void;
-  onDownloadAll: () => void;
-  isDownloadDisabled?: boolean;
   downloadedCount: number;
   folderName: string | undefined;
-  folderPath?: string;
   isCustomFolder: boolean;
   onChangeFolder: () => void;
+  onOpenFolder: () => void;
   showOrderToggle?: boolean;
+  actions?: React.ReactNode;
 }
 
 export function PlaylistDetailHeader({
@@ -29,18 +26,16 @@ export function PlaylistDetailHeader({
   artworkUrl,
   trackCount,
   onBack,
-  onDownloadAll,
-  isDownloadDisabled,
   downloadedCount,
   folderName,
-  folderPath,
   isCustomFolder,
   onChangeFolder,
+  onOpenFolder,
   showOrderToggle,
+  actions,
 }: PlaylistDetailHeaderProps) {
   const { t } = useTranslation();
   const isDownloadEnabled = useIsDownloadEnabled();
-  const handleOpenFolder = useOpenDownloadFolder(folderPath ?? null);
 
   return (
     <DetailHeader
@@ -76,18 +71,11 @@ export function PlaylistDetailHeader({
             downloadedCount={downloadedCount}
             isDownloadEnabled={isDownloadEnabled}
             onChangeFolder={onChangeFolder}
-            onOpenFolder={handleOpenFolder}
+            onOpenFolder={onOpenFolder}
           />
         </p>
       }
-      actions={
-        isDownloadEnabled ? (
-          <Button size="sm" onClick={onDownloadAll} disabled={isDownloadDisabled} className="gap-1.5 shrink-0">
-            <Download className="h-3.5 w-3.5" />
-            {t('library.detail.downloadAll')}
-          </Button>
-        ) : undefined
-      }
+      actions={actions}
     >
       {isDownloadEnabled && showOrderToggle && (
         <div className="flex justify-end">
