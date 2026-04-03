@@ -23,9 +23,12 @@ use services::library::LibraryCache;
 use services::new_tracks::{NewTracksCache, SeenArtistsState};
 use services::storage::AuthState;
 use tauri::Manager;
+#[cfg(target_os = "macos")]
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 use services::events;
+#[cfg(target_os = "macos")]
 use tauri::Emitter;
+use tauri_plugin_log::{Target, TargetKind};
 
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
@@ -113,52 +116,52 @@ pub fn run() {
             let seen_path = commands::new_tracks::seen_state_path(app.handle());
             app.manage(SeenArtistsState::load(&seen_path));
 
-            // Create settings menu item with Cmd+, shortcut
-            let settings_item =
-                MenuItem::with_id(app, "settings", "Settings...", true, Some("CmdOrCtrl+,"))?;
+            #[cfg(target_os = "macos")]
+            {
+                let settings_item =
+                    MenuItem::with_id(app, "settings", "Settings...", true, Some("CmdOrCtrl+,"))?;
 
-            // Create minimal app menu (required for macOS keyboard shortcuts)
-            let app_menu = Submenu::with_items(
-                app,
-                "InfraBooth Downloader",
-                true,
-                &[
-                    &PredefinedMenuItem::about(app, Some("About InfraBooth Downloader"), None)?,
-                    &PredefinedMenuItem::separator(app)?,
-                    &settings_item,
-                    &PredefinedMenuItem::separator(app)?,
-                    &PredefinedMenuItem::hide(app, Some("Hide"))?,
-                    &PredefinedMenuItem::hide_others(app, Some("Hide Others"))?,
-                    &PredefinedMenuItem::show_all(app, Some("Show All"))?,
-                    &PredefinedMenuItem::separator(app)?,
-                    &PredefinedMenuItem::quit(app, Some("Quit"))?,
-                ],
-            )?;
+                let app_menu = Submenu::with_items(
+                    app,
+                    "InfraBooth Downloader",
+                    true,
+                    &[
+                        &PredefinedMenuItem::about(app, Some("About InfraBooth Downloader"), None)?,
+                        &PredefinedMenuItem::separator(app)?,
+                        &settings_item,
+                        &PredefinedMenuItem::separator(app)?,
+                        &PredefinedMenuItem::hide(app, Some("Hide"))?,
+                        &PredefinedMenuItem::hide_others(app, Some("Hide Others"))?,
+                        &PredefinedMenuItem::show_all(app, Some("Show All"))?,
+                        &PredefinedMenuItem::separator(app)?,
+                        &PredefinedMenuItem::quit(app, Some("Quit"))?,
+                    ],
+                )?;
 
-            let edit_menu = Submenu::with_items(
-                app,
-                "Edit",
-                true,
-                &[
-                    &PredefinedMenuItem::undo(app, Some("Undo"))?,
-                    &PredefinedMenuItem::redo(app, Some("Redo"))?,
-                    &PredefinedMenuItem::separator(app)?,
-                    &PredefinedMenuItem::cut(app, Some("Cut"))?,
-                    &PredefinedMenuItem::copy(app, Some("Copy"))?,
-                    &PredefinedMenuItem::paste(app, Some("Paste"))?,
-                    &PredefinedMenuItem::select_all(app, Some("Select All"))?,
-                ],
-            )?;
+                let edit_menu = Submenu::with_items(
+                    app,
+                    "Edit",
+                    true,
+                    &[
+                        &PredefinedMenuItem::undo(app, Some("Undo"))?,
+                        &PredefinedMenuItem::redo(app, Some("Redo"))?,
+                        &PredefinedMenuItem::separator(app)?,
+                        &PredefinedMenuItem::cut(app, Some("Cut"))?,
+                        &PredefinedMenuItem::copy(app, Some("Copy"))?,
+                        &PredefinedMenuItem::paste(app, Some("Paste"))?,
+                        &PredefinedMenuItem::select_all(app, Some("Select All"))?,
+                    ],
+                )?;
 
-            let menu = Menu::with_items(app, &[&app_menu, &edit_menu])?;
-            app.set_menu(menu)?;
+                let menu = Menu::with_items(app, &[&app_menu, &edit_menu])?;
+                app.set_menu(menu)?;
 
-            // Handle custom menu events
-            app.on_menu_event(move |app_handle, event| {
-                if event.id() == settings_item.id() {
-                    let _ = app_handle.emit(events::OPEN_SETTINGS, ());
-                }
-            });
+                app.on_menu_event(move |app_handle, event| {
+                    if event.id() == settings_item.id() {
+                        let _ = app_handle.emit(events::OPEN_SETTINGS, ());
+                    }
+                });
+            }
 
             let log_level = if cfg!(debug_assertions) {
                 log::LevelFilter::Debug
@@ -167,7 +170,12 @@ pub fn run() {
             };
 
             app.handle().plugin(
-                tauri_plugin_log::Builder::default()
+                tauri_plugin_log::Builder::new()
+                    .targets([
+                        Target::new(TargetKind::Stdout),
+                        Target::new(TargetKind::Webview),
+                        Target::new(TargetKind::LogDir { file_name: Some("infrabooth".into()) }),
+                    ])
                     .level(log_level)
                     .filter(|metadata| {
                         // Filter out noisy rookie debug logs
@@ -199,6 +207,10 @@ pub fn run() {
                     })
                     .build(),
             )?;
+
+            if let Ok(log_dir) = app.path().app_log_dir() {
+                log::info!("Log directory: {}", log_dir.display());
+            }
 
             Ok(())
         })
