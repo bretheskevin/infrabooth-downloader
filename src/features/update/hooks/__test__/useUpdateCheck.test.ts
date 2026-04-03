@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useUpdateCheck } from '../useUpdateCheck';
 import { useUpdateStore } from '../../store';
@@ -10,8 +10,11 @@ vi.mock('@/bindings', () => ({
   },
 }));
 
+const POLL_INTERVAL_MS = 10 * 60 * 1000;
+
 describe('useUpdateCheck', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
     vi.clearAllMocks();
     useUpdateStore.setState({
       updateAvailable: false,
@@ -62,5 +65,49 @@ describe('useUpdateCheck', () => {
     rerender();
 
     expect(checkSpy).toHaveBeenCalledTimes(1);
+  });
+
+  describe('polling', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should poll for updates every 10 minutes', () => {
+      const checkSpy = vi.spyOn(useUpdateStore.getState(), 'checkForUpdates');
+
+      renderHook(() => useUpdateCheck());
+      expect(checkSpy).toHaveBeenCalledTimes(1);
+
+      vi.advanceTimersByTime(POLL_INTERVAL_MS);
+      expect(checkSpy).toHaveBeenCalledTimes(2);
+
+      vi.advanceTimersByTime(POLL_INTERVAL_MS);
+      expect(checkSpy).toHaveBeenCalledTimes(3);
+    });
+
+    it('should stop polling when update is available', () => {
+      const checkSpy = vi.spyOn(useUpdateStore.getState(), 'checkForUpdates');
+
+      const { rerender } = renderHook(() => useUpdateCheck());
+      expect(checkSpy).toHaveBeenCalledTimes(1);
+
+      useUpdateStore.setState({ updateAvailable: true });
+      rerender();
+
+      vi.advanceTimersByTime(POLL_INTERVAL_MS);
+      expect(checkSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should clean up interval on unmount', () => {
+      const checkSpy = vi.spyOn(useUpdateStore.getState(), 'checkForUpdates');
+
+      const { unmount } = renderHook(() => useUpdateCheck());
+      expect(checkSpy).toHaveBeenCalledTimes(1);
+
+      unmount();
+
+      vi.advanceTimersByTime(POLL_INTERVAL_MS);
+      expect(checkSpy).toHaveBeenCalledTimes(1);
+    });
   });
 });
