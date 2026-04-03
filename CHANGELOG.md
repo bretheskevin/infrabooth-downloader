@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.16.1] - 2026-04-03
+
+### Changed
+
+- Cleaner artist profile view with hidden navigation tabs
+- Wider "What's New" dialog for better readability
+
+### Fixed
+
+- Download all button was visible in streaming-only mode
+
 ## [1.16.0] - 2026-03-31
 
 ### Added
