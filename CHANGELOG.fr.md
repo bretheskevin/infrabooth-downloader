@@ -7,6 +7,17 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.16.1] - 2026-04-03
+
+### Changed
+
+- Vue artiste épurée avec masquage des onglets de navigation
+- Fenêtre « Nouveautés » élargie pour une meilleure lisibilité
+
+### Fixed
+
+- Le bouton « Tout télécharger » était visible lorsque le mode streaming était activé
+
 ## [1.16.0] - 2026-03-31
 
 ### Added
