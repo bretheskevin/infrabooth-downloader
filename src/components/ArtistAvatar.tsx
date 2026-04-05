@@ -8,10 +8,12 @@ interface ArtistAvatarProps {
   artist: FollowedArtist;
   isSelected?: boolean;
   onClick: () => void;
+  hasNew?: boolean;
 }
 
-export function ArtistAvatar({ artist, isSelected, onClick }: ArtistAvatarProps) {
+export function ArtistAvatar({ artist, isSelected, onClick, hasNew }: ArtistAvatarProps) {
   const avatarUrl = getArtworkUrl(artist.avatar_url, 200);
+  const showNew = hasNew ?? artist.has_new_content;
 
   return (
     <Button
@@ -29,7 +31,7 @@ export function ArtistAvatar({ artist, isSelected, onClick }: ArtistAvatarProps)
             isSelected ? 'ring-primary' : 'ring-transparent',
           )}
         />
-        {artist.has_new_content && (
+        {showNew && (
           <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full border-2 border-background" />
         )}
       </div>

@@ -14,6 +14,7 @@ import {
   type ActivityItem,
   type ArtistProfile,
   type UserSearchResponse,
+  type ReleaseActivityItem,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -142,4 +143,13 @@ export const api = {
 
   getAllArtistTracks: (artistId: number): Promise<TrackInfo[]> =>
     commands.getAllArtistTracks(artistId).then(unwrap),
+
+  getArtistReleases: (artistId: number): Promise<ReleaseActivityItem[]> =>
+    commands.getArtistReleases(artistId).then(unwrap),
+
+  getReleaseTracks: (releaseId: number): Promise<TrackInfo[]> =>
+    commands.getReleaseTracks(releaseId).then(unwrap),
+
+  markArtistReleasesSeen: (artistId: number): Promise<void> =>
+    commands.markArtistReleasesSeen(artistId).then(() => undefined),
 };

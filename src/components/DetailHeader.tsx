@@ -3,8 +3,9 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface DetailHeaderProps {
-  onBack: () => void;
+  onBack?: () => void;
   backLabel?: string;
+  navigation?: React.ReactNode;
   artwork: React.ReactNode;
   title: string;
   subtitle?: React.ReactNode;
@@ -15,6 +16,7 @@ interface DetailHeaderProps {
 export function DetailHeader({
   onBack,
   backLabel,
+  navigation,
   artwork,
   title,
   subtitle,
@@ -25,15 +27,17 @@ export function DetailHeader({
 
   return (
     <div className="space-y-2">
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onBack}
-        className="gap-1.5 -ml-2 h-7 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        {backLabel ?? t('common.back')}
-      </Button>
+      {navigation ?? (onBack && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onBack}
+          className="gap-1.5 -ml-2 h-7 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          {backLabel ?? t('common.back')}
+        </Button>
+      ))}
       <div className="flex items-center gap-3">
         {artwork}
         <div className="min-w-0 flex-1">

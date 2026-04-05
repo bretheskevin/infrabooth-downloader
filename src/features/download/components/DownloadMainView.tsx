@@ -5,6 +5,7 @@ import { useIsSignedIn } from '@/features/auth/store';
 import { useIsDownloadEnabled, useSettingsStore } from '@/features/settings';
 import { UrlInput, ValidationFeedback, PlaylistPreview, TrackPreview, isPlaylist } from '@/features/url-input';
 import { NewTracksCarousel, useNewTracksStore } from '@/features/new-tracks';
+import { NewReleasesCarousel } from '@/features/new-releases';
 import { SelectionsSection, useSelectionsStore } from '@/features/selections';
 import { Spinner } from '@/components/ui/spinner';
 import type { DownloadFlow } from '../hooks/useDownloadPipeline';
@@ -99,6 +100,7 @@ export function DownloadMainView({ flow, onDownloadTracks }: DownloadMainViewPro
         </>
       )}
       {isSignedIn && <NewTracksCarousel onSelectArtist={handleSelectArtist} />}
+      {isSignedIn && <NewReleasesCarousel />}
       {isSignedIn ? (
         <SelectionsSection
           onSelectMix={handleSelectMix}

@@ -2,14 +2,15 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FolderMetadata } from '@/components/FolderMetadata';
 import { DetailHeader } from '@/components/DetailHeader';
+import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { DetailViewLayout } from '@/components/detail-view/DetailViewLayout';
 import { useArtistActivity } from '../hooks/useArtistActivity';
-import { ArtistAvatarImage } from './ArtistAvatarImage';
+import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { ActivityBadge } from './ActivityBadge';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import type { ActivityItem, ActivityType, FollowedArtist, TrackInfo } from '@/bindings';
 import { useNewTracksStore } from '../store';
-import type { ActivityFilter } from '../constants';
+import type { ActivityFilter } from '../store';
 
 const ACTIVITY_FILTERS = [
   { key: 'all', label: 'newTracks.filterAll' },
@@ -54,8 +55,10 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
       resetKey={artist.id}
       header={({ downloadedCount, downloadAllAction, isDownloadEnabled, folder }) => (
         <DetailHeader
-          onBack={onBack}
-          title={artist.username}
+          navigation={<Breadcrumb items={[
+            { label: t('newTracks.title'), onClick: onBack },
+            { label: artist.username },
+          ]} />}
           artwork={
             <ArtistAvatarImage
               avatarUrl={avatarUrl}
@@ -63,6 +66,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
               className="w-12 h-12 shrink-0"
             />
           }
+          title={artist.username}
           subtitle={
             <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
               <span className="truncate">

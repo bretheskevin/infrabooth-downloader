@@ -16,6 +16,7 @@ interface SettingsState {
   crossfadeEnabled: boolean;
   crossfadeDuration: number;
   hideReposts: boolean;
+  hideReleasesReposts: boolean;
   _hasHydrated: boolean;
   setDownloadPath: (path: string) => void;
   setLanguage: (lang: 'en' | 'fr') => void;
@@ -27,6 +28,7 @@ interface SettingsState {
   setCrossfadeEnabled: (value: boolean) => void;
   setCrossfadeDuration: (value: number) => void;
   setHideReposts: (value: boolean) => void;
+  setHideReleasesReposts: (value: boolean) => void;
   _setHasHydrated: (state: boolean) => void;
 }
 
@@ -43,6 +45,7 @@ export const useSettingsStore = create<SettingsState>()(
       crossfadeEnabled: false,
       crossfadeDuration: 5,
       hideReposts: false,
+      hideReleasesReposts: false,
       _hasHydrated: false,
       setDownloadPath: (path) => set({ downloadPath: path }),
       setLanguage: (lang) => set({ language: lang }),
@@ -54,6 +57,7 @@ export const useSettingsStore = create<SettingsState>()(
       setCrossfadeEnabled: (value) => set({ crossfadeEnabled: value }),
       setCrossfadeDuration: (value) => set({ crossfadeDuration: clamp(value, 1, 12) }),
       setHideReposts: (value) => set({ hideReposts: value }),
+      setHideReleasesReposts: (value) => set({ hideReleasesReposts: value }),
       _setHasHydrated: (state) => set({ _hasHydrated: state }),
     }),
     {
@@ -70,6 +74,7 @@ export const useSettingsStore = create<SettingsState>()(
         crossfadeEnabled: state.crossfadeEnabled,
         crossfadeDuration: state.crossfadeDuration,
         hideReposts: state.hideReposts,
+        hideReleasesReposts: state.hideReleasesReposts,
       }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {

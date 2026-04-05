@@ -11,6 +11,7 @@ import { useLibraryDownload } from '@/features/queue';
 import { useIsSignedIn } from '@/features/auth/store';
 import { ArtistProfileView, useArtistProfileStore } from '@/features/artist-profile';
 import { ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
+import { ArtistReleasesView, ReleaseTracklistView, useNewReleasesStore } from '@/features/new-releases';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
 import { useSelectionsStore } from '@/features/selections';
 import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
@@ -20,6 +21,7 @@ import type { TrackInfo } from '@/bindings';
 function clearDetailOverlays() {
   useNewTracksStore.getState().clearSelectedArtist();
   useSelectionsStore.getState().clearSelectedMix();
+  useNewReleasesStore.getState().goBackToCarousel();
 }
 
 function PageContent({
@@ -35,10 +37,11 @@ function PageContent({
   );
   const selectedArtist = useNewTracksStore((s) => s.selectedArtist);
   const selectedMix = useSelectionsStore((s) => s.selectedMix);
+  const newReleasesView = useNewReleasesStore((s) => s.viewState);
 
   const [slideClass, setSlideClass] = useState('');
   const prevHasOverlayRef = useRef(false);
-  const hasOverlay = !!(selectedArtist || selectedMix || profileArtistId);
+  const hasOverlay = !!(selectedArtist || selectedMix || profileArtistId || newReleasesView.view !== 'carousel');
 
   useLayoutEffect(() => {
     if (hasOverlay && !prevHasOverlayRef.current) {
@@ -63,6 +66,14 @@ function PageContent({
 
   const handleBackFromMix = useCallback(() => {
     useSelectionsStore.getState().clearSelectedMix();
+  }, []);
+
+  const handleBackToReleasesCarousel = useCallback(() => {
+    useNewReleasesStore.getState().goBackToCarousel();
+  }, []);
+
+  const handleBackToReleases = useCallback(() => {
+    useNewReleasesStore.getState().goBackToReleases();
   }, []);
 
   if (profileArtistId && profileArtistName) {
@@ -98,6 +109,32 @@ function PageContent({
           initialTracks={selectedMix.tracks}
           onBack={handleBackFromMix}
           onDownloadTracks={handleDownloadTracks}
+        />
+      </section>
+    );
+  }
+
+  if (newReleasesView.view === 'tracklist') {
+    return (
+      <section key="release-tracklist" className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <ReleaseTracklistView
+          artist={newReleasesView.artist}
+          release={newReleasesView.release}
+          onBackToReleases={handleBackToReleases}
+          onBackToCarousel={handleBackToReleasesCarousel}
+          onDownloadTracks={handleDownloadTracks}
+        />
+      </section>
+    );
+  }
+
+  if (newReleasesView.view === 'releases') {
+    return (
+      <section key="release-detail" className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <ArtistReleasesView
+          artist={newReleasesView.artist}
+          filter={newReleasesView.filter}
+          onBack={handleBackToReleasesCarousel}
         />
       </section>
     );

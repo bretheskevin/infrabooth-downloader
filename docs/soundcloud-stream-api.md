@@ -599,23 +599,6 @@ All collection endpoints accept the same `client_id`, `limit`, `linked_partition
 
 ---
 
-## Streaming Format Deprecation Warning
-
-SoundCloud is deprecating old transcoding formats (deadline extended to December 31, 2025):
-
-**Being removed:**
-- Progressive HTTP MP3 (`mp3_1_0` / `progressive`)
-- HLS MP3 (`mp3_1_0` / `hls`)
-- HLS Opus (`opus_0_0` / `hls`)
-
-**New formats** (from `GET /tracks/{urn}/streams`):
-- `hls_aac_160_url` — HLS AAC 160kbps (standard)
-- `hls_aac_96_url` — HLS AAC 96kbps (fallback)
-
-The `media.transcodings` array may already include AAC entries. Verify current behavior.
-
----
-
 ## `set_type` Reference
 
 | `set_type` value | `is_album` | Meaning     |
