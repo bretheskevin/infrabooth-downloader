@@ -49,7 +49,10 @@ pub mod selections;
 pub use selections::get_selections;
 
 pub mod new_tracks;
-pub use new_tracks::{get_followed_artists, get_artist_activity, mark_artist_seen};
+pub use new_tracks::{
+    get_followed_artists, get_artist_activity, get_artist_releases, get_release_tracks,
+    mark_artist_seen, mark_artist_releases_seen,
+};
 
 pub mod related;
 pub use related::fetch_related_tracks;

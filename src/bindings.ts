@@ -319,9 +319,33 @@ async getArtistActivity(artistId: number) : Promise<Result<ActivityItem[], strin
     else return { status: "error", error: e  as any };
 }
 },
+async getArtistReleases(artistId: number) : Promise<Result<ReleaseActivityItem[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_releases", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getReleaseTracks(releaseId: number) : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_release_tracks", { releaseId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async markArtistSeen(artistId: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("mark_artist_seen", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async markArtistReleasesSeen(artistId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("mark_artist_releases_seen", { artistId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -418,7 +442,7 @@ durationMs: number;
  */
 downloadUrl: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
 export type ErrorResponse = { code: string; message: string }
-export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean; has_original_tracks: boolean }
+export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean; has_original_tracks: boolean; has_new_releases: boolean; has_original_releases: boolean }
 export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
 export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }
 /**
@@ -438,6 +462,10 @@ export type QueueCompleteEvent = { completed: number; failed: number; total: num
  */
 export type QueueProgressEvent = { current: number; total: number; trackId: string }
 export type RateLimitChoice = "retry" | "stop"
+export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: ReleaseActivityType; created_at: string }
+export type ReleaseActivityType = "New" | "Repost"
+export type ReleaseInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; permalink_url: string; release_type: ReleaseType }
+export type ReleaseType = "Album" | "EP" | "Single" | "Compilation" | "Playlist"
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
 export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }

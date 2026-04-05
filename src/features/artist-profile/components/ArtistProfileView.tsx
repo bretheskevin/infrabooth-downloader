@@ -4,7 +4,7 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DetailViewLayout } from '@/components/detail-view/DetailViewLayout';
-import { ArtistAvatarImage } from '@/features/new-tracks/components/ArtistAvatarImage';
+import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { getArtworkUrl } from '@/lib/soundcloud';
 
 import { useArtistProfile } from '../hooks/useArtistProfile';

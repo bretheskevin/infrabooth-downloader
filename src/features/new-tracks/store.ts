@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { FollowedArtist } from '@/bindings';
-import type { ActivityFilter } from './constants';
+
+export type ActivityFilter = 'all' | 'new' | 'reposted';
 
 interface NewTracksState {
   selectedArtist: FollowedArtist | null;

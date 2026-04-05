@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 import { useIsSignedIn } from '@/features/auth/store';
-import { FOLLOWED_ARTISTS_KEY, STALE_TIME } from '../constants';
+import { FOLLOWED_ARTISTS_KEY, DEFAULT_STALE_TIME } from '@/lib/query';
 
 export function useFollowedArtists() {
   const isSignedIn = useIsSignedIn();
@@ -18,7 +18,7 @@ export function useFollowedArtists() {
       return result;
     },
     enabled: isSignedIn,
-    staleTime: STALE_TIME,
+    staleTime: DEFAULT_STALE_TIME,
     retry: false,
   });
 
