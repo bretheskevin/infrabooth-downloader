@@ -26,6 +26,13 @@ export async function getDefaultDownloadPath(): Promise<string> {
   return result;
 }
 
+export async function getAppDataPath(): Promise<string> {
+  logger.debug(`[settings] Getting app data path`);
+  const result = await api.getAppDataPath();
+  logger.debug(`[settings] App data path: ${result}`);
+  return result;
+}
+
 /**
  * Validates if a path exists and is a directory.
  * Unlike checkWritePermission, this only checks existence, not write access.

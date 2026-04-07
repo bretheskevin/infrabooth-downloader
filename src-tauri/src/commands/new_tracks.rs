@@ -4,10 +4,10 @@ use crate::commands::require_auth_and_cid;
 use crate::services::new_tracks::{
     self, ActivityItem, FollowedArtist, NewTracksCache, ReleaseActivityItem, SeenArtistsState,
 };
+use crate::services::paths::get_app_data_dir;
 
 pub fn seen_state_path(app: &tauri::AppHandle) -> std::path::PathBuf {
-    app.path()
-        .app_data_dir()
+    get_app_data_dir(app)
         .unwrap_or_else(|_| std::path::PathBuf::from("."))
         .join("seen_artists.json")
 }

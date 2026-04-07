@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use commands::{
     add_track_to_playlist, remove_track_from_playlist, cancel_download_queue, check_auth, check_for_updates,
-    check_write_permission, clear_library_cache, download_track_full, get_default_download_path,
+    check_write_permission, clear_library_cache, download_track_full, get_app_data_path, get_default_download_path,
     get_library_playlist_tracks, get_library_playlists, get_owned_playlists_for_track,
     get_playlist_info, get_track_info, install_update, refresh_auth, resolve_library_artwork,
     resolve_playback_url, respond_to_rate_limit_choice, scan_existing_tracks,
@@ -63,6 +63,7 @@ pub fn run() {
         cancel_download_queue,
         respond_to_rate_limit_choice,
         check_write_permission,
+        get_app_data_path,
         get_default_download_path,
         validate_download_path,
         check_for_updates,
