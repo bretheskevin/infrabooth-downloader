@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-04-07
+
+### Added
+
+- New albums and playlists from followed artists
+- Follow and unfollow artists from profiles
+- Shortcuts to application folders
+
+### Fixed
+
+- Duplicate tracks appeared in activity streams
+
 ## [1.16.1] - 2026-04-03
 
 ### Changed
