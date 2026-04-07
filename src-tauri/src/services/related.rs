@@ -1,4 +1,4 @@
-use reqwest::{Client, Url};
+use rquest::{Client, Url};
 use serde::Deserialize;
 
 use crate::models::error::DownloadError;

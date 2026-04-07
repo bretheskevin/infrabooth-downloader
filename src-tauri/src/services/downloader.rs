@@ -468,7 +468,7 @@ async fn try_original_download(
         return None;
     }
 
-    let client = reqwest::Client::new();
+    let client = rquest::Client::new();
 
     let mut request = client.get(download_url);
     if let Some(token) = oauth_token {
@@ -500,7 +500,7 @@ async fn try_original_download(
 
         let ct = audio_resp
             .headers()
-            .get(reqwest::header::CONTENT_TYPE)
+            .get(rquest::header::CONTENT_TYPE)
             .and_then(|v| v.to_str().ok())
             .unwrap_or("")
             .to_string();

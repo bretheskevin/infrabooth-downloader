@@ -1,4 +1,4 @@
-use reqwest::Url;
+use rquest::Url;
 
 use crate::models::artist::ArtistProfile;
 use crate::services::http::{resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};

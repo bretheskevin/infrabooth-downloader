@@ -99,7 +99,9 @@ async fn download_artwork(url: &str) -> Result<Vec<u8>, MetadataError> {
     // Use higher resolution artwork (500x500 for quality without excessive size)
     let hq_url = url.replace("-large", "-t500x500");
 
-    let response = reqwest::get(&hq_url)
+    let response = super::http::HTTP_CLIENT
+        .get(&hq_url)
+        .send()
         .await
         .map_err(|e| MetadataError::ArtworkFailed(e.to_string()))?;
 
