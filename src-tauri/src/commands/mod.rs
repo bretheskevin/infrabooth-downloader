@@ -30,7 +30,7 @@ pub use download::{
 };
 pub use ffmpeg::test_ffmpeg;
 pub use playlist::{add_track_to_playlist, get_playlist_info, get_track_info, remove_track_from_playlist, validate_soundcloud_url};
-pub use settings::{check_write_permission, get_default_download_path, validate_download_path};
+pub use settings::{check_write_permission, get_app_data_path, get_default_download_path, validate_download_path};
 pub use updater::{check_for_updates, install_update};
 
 pub mod library;

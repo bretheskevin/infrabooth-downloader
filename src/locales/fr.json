@@ -155,6 +155,8 @@
     "preserveOrderDescription": "Préfixer les noms de fichiers de playlist avec la position (ex: 01 - Artiste - Titre)",
     "categoryAbout": "À propos",
     "viewChangelog": "Voir les nouveautés",
+    "appDataFolder": "Données de l'application",
+    "openFolder": "Ouvrir",
     "madeWith": "Fait avec",
     "madeBy": "par Kandid",
     "crossfade": "Fondu enchaîné",

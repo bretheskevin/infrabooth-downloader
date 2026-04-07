@@ -1,13 +1,31 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ChangelogDialog } from '@/features/changelog';
 import { useAppVersion } from '@/hooks';
+import { getAppDataPath } from '@/features/settings/api/settings';
+import { logger } from '@/lib/logger';
+import { openDownloadFolder } from '@/lib/shellCommands';
 
 export function AboutSettings() {
   const { t } = useTranslation();
   const appVersion = useAppVersion();
   const [changelogOpen, setChangelogOpen] = useState(false);
+  const [appDataPath, setAppDataPath] = useState('');
+
+  useEffect(() => {
+    getAppDataPath().then(setAppDataPath).catch((e) => { void logger.error(`[AboutSettings] Failed to get app data path: ${e}`); });
+  }, []);
+
+  const handleOpenAppData = async () => {
+    if (appDataPath) {
+      try {
+        await openDownloadFolder(appDataPath);
+      } catch (error) {
+        void logger.error(`[AboutSettings] Failed to open app data folder: ${error}`);
+      }
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -23,6 +41,22 @@ export function AboutSettings() {
           {t('settings.viewChangelog')}
         </Button>
       </div>
+      {appDataPath && (
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <span className="text-sm">{t('settings.appDataFolder')}</span>
+            <p className="text-[10px] text-muted-foreground">{appDataPath}</p>
+          </div>
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto shrink-0 p-0 text-xs text-muted-foreground hover:text-foreground"
+            onClick={handleOpenAppData}
+          >
+            {t('settings.openFolder')}
+          </Button>
+        </div>
+      )}
       <ChangelogDialog open={changelogOpen} onOpenChange={setChangelogOpen} />
     </div>
   );

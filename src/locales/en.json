@@ -155,6 +155,8 @@
     "preserveOrderDescription": "Prefix playlist filenames with track position (e.g. 01 - Artist - Title)",
     "categoryAbout": "About",
     "viewChangelog": "View changelog",
+    "appDataFolder": "App data folder",
+    "openFolder": "Open",
     "madeWith": "Made with",
     "madeBy": "by Kandid",
     "crossfade": "Crossfade",

@@ -81,6 +81,9 @@ export const api = {
   getDefaultDownloadPath: (): Promise<string> =>
     commands.getDefaultDownloadPath().then(unwrap),
 
+  getAppDataPath: (): Promise<string> =>
+    commands.getAppDataPath().then(unwrap),
+
   validateDownloadPath: (path: string): Promise<boolean> =>
     commands.validateDownloadPath(path).then(unwrap),
 
