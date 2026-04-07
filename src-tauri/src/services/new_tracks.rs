@@ -17,7 +17,7 @@ pub enum NewTracksError {
     #[error("Failed to fetch: {0}")]
     FetchFailed(String),
     #[error("Network error: {0}")]
-    NetworkError(#[from] reqwest::Error),
+    NetworkError(#[from] rquest::Error),
     #[error("Invalid response")]
     InvalidResponse,
 }

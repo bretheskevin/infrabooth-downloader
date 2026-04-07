@@ -1,4 +1,5 @@
 use once_cell::sync::Lazy;
+use rquest_util::Emulation;
 
 /// Base URL for SoundCloud API v2.
 pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
@@ -6,22 +7,17 @@ pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 /// SoundCloud web-app version sent as `app_version` query parameter.
 /// Extracted from the SoundCloud web app bundle (look for `app_version` in network requests).
 /// May need periodic updating if SoundCloud rejects older versions.
-pub const SC_APP_VERSION: &str = "1774492604";
+pub const SC_APP_VERSION: &str = "1775080930";
 
-pub static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
-    use reqwest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER, USER_AGENT};
+pub static HTTP_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
+    use rquest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER};
 
     let mut headers = HeaderMap::new();
-    headers.insert(
-        USER_AGENT,
-        HeaderValue::from_static(
-            "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        ),
-    );
     headers.insert(ORIGIN, HeaderValue::from_static("https://soundcloud.com"));
     headers.insert(REFERER, HeaderValue::from_static("https://soundcloud.com/"));
 
-    reqwest::Client::builder()
+    rquest::Client::builder()
+        .emulation(Emulation::Chrome136)
         .default_headers(headers)
         .timeout(std::time::Duration::from_secs(30))
         .build()
@@ -58,8 +54,8 @@ impl std::fmt::Display for ApiResponseError {
 
 impl std::error::Error for ApiResponseError {}
 
-pub fn validate_api_response(status: reqwest::StatusCode) -> Result<(), ApiResponseError> {
-    use reqwest::StatusCode;
+pub fn validate_api_response(status: rquest::StatusCode) -> Result<(), ApiResponseError> {
+    use rquest::StatusCode;
     match status {
         StatusCode::TOO_MANY_REQUESTS => Err(ApiResponseError::RateLimited),
         StatusCode::UNAUTHORIZED => Err(ApiResponseError::AuthRequired),
@@ -90,7 +86,7 @@ pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(
         .map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
 
     let status = response.status();
-    if status != reqwest::StatusCode::FOUND {
+    if status != rquest::StatusCode::FOUND {
         validate_api_response(status)?;
     }
 
@@ -133,7 +129,7 @@ pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(
     serde_json::from_str(&body).map_err(|e| ApiResponseError::InvalidResponse(e.to_string()))
 }
 
-impl RequestBuilderExt for reqwest::RequestBuilder {
+impl RequestBuilderExt for rquest::RequestBuilder {
     fn with_oauth(self, token: Option<&str>) -> Self {
         match token {
             Some(t) => self.header("Authorization", format!("OAuth {}", t)),
@@ -149,7 +145,7 @@ impl RequestBuilderExt for reqwest::RequestBuilder {
     }
 }
 
-pub async fn parse_rate_limit_response(response: reqwest::Response) -> crate::models::error::DownloadError {
+pub async fn parse_rate_limit_response(response: rquest::Response) -> crate::models::error::DownloadError {
     let info = response
         .json::<crate::models::error::RateLimitInfo>()
         .await
@@ -166,23 +162,23 @@ pub async fn parse_rate_limit_response(response: reqwest::Response) -> crate::mo
 /// - `None`: treated as StreamResolutionFailed (default for track data fetches)
 /// - `Some(f)`: custom mapping (e.g. GeoBlocked for transcoding URL resolution)
 pub async fn validate_sc_response(
-    response: reqwest::Response,
+    response: rquest::Response,
     map_403: Option<fn() -> crate::models::error::DownloadError>,
-) -> Result<reqwest::Response, crate::models::error::DownloadError> {
+) -> Result<rquest::Response, crate::models::error::DownloadError> {
     use crate::models::error::DownloadError;
 
     let status = response.status();
 
-    if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+    if status == rquest::StatusCode::TOO_MANY_REQUESTS {
         return Err(parse_rate_limit_response(response).await);
     }
-    if status == reqwest::StatusCode::NOT_FOUND {
+    if status == rquest::StatusCode::NOT_FOUND {
         return Err(DownloadError::TrackUnavailable("Not found".to_string()));
     }
-    if status == reqwest::StatusCode::UNAUTHORIZED {
+    if status == rquest::StatusCode::UNAUTHORIZED {
         return Err(DownloadError::StreamResolutionFailed(format!("HTTP {}", status)));
     }
-    if status == reqwest::StatusCode::FORBIDDEN {
+    if status == rquest::StatusCode::FORBIDDEN {
         return Err(match map_403 {
             Some(f) => f(),
             None => DownloadError::StreamResolutionFailed(format!("HTTP {}", status)),

@@ -18,7 +18,7 @@ pub enum SelectionError {
     #[error("Failed to fetch selections: {0}")]
     FetchFailed(String),
     #[error("Network error: {0}")]
-    NetworkError(#[from] reqwest::Error),
+    NetworkError(#[from] rquest::Error),
 }
 
 impl From<crate::services::http::ApiResponseError> for SelectionError {

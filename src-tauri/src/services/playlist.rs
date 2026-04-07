@@ -29,7 +29,7 @@ pub enum PlaylistError {
     FetchFailed(String),
 
     #[error("Network error: {0}")]
-    NetworkError(#[from] reqwest::Error),
+    NetworkError(#[from] rquest::Error),
 
     #[error("Invalid response format")]
     InvalidResponse,
@@ -559,7 +559,7 @@ where
 
         let response = client.get(&url).with_oauth(oauth_token).send().await?;
 
-        if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+        if response.status() == rquest::StatusCode::TOO_MANY_REQUESTS {
             return Err(PlaylistError::RateLimited);
         }
 

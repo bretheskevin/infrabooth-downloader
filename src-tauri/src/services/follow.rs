@@ -1,17 +1,21 @@
-use reqwest::Url;
+use rquest::Url;
 
 use crate::models::error::FollowError;
-use crate::services::http::{RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
+use crate::services::http::{RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
 
 fn follow_url(user_id: u64, client_id: &str) -> Result<Url, FollowError> {
     Url::parse_with_params(
         &format!("{}/me/followings/{}", API_V2_BASE, user_id),
-        &[("client_id", client_id)],
+        &[
+            ("client_id", client_id),
+            ("app_version", SC_APP_VERSION),
+            ("app_locale", "en"),
+        ],
     )
     .map_err(|e| FollowError::NetworkError(format!("Failed to build URL: {}", e)))
 }
 
-async fn check_api_success(response: reqwest::Response, user_id: u64, action: &str) -> Result<(), FollowError> {
+async fn check_api_success(response: rquest::Response, user_id: u64, action: &str) -> Result<(), FollowError> {
     if response.status().is_success() {
         log::info!("[follow] Successfully {} user {}", action, user_id);
         Ok(())
@@ -78,7 +82,7 @@ pub async fn check_follow_status(
     let status = response.status();
     if status.is_success() {
         Ok(true)
-    } else if status == reqwest::StatusCode::NOT_FOUND {
+    } else if status == rquest::StatusCode::NOT_FOUND {
         Ok(false)
     } else {
         let code = status.as_u16();

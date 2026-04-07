@@ -120,7 +120,7 @@ pub enum AuthError {
     VerificationFailed(String),
 
     #[error("Network error: {0}")]
-    NetworkError(#[from] reqwest::Error),
+    NetworkError(#[from] rquest::Error),
 
     #[error("Profile fetch failed: {0}")]
     ProfileFetchFailed(String),
@@ -161,8 +161,8 @@ impl HasErrorCode for FollowError {
     }
 }
 
-impl From<reqwest::Error> for FollowError {
-    fn from(e: reqwest::Error) -> Self {
+impl From<rquest::Error> for FollowError {
+    fn from(e: rquest::Error) -> Self {
         FollowError::NetworkError(e.to_string())
     }
 }
