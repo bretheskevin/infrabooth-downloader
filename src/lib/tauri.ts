@@ -84,6 +84,9 @@ export const api = {
   getAppDataPath: (): Promise<string> =>
     commands.getAppDataPath().then(unwrap),
 
+  getLogPath: (): Promise<string> =>
+    commands.getLogPath().then(unwrap),
+
   validateDownloadPath: (path: string): Promise<boolean> =>
     commands.validateDownloadPath(path).then(unwrap),
 
