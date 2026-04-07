@@ -414,6 +414,10 @@
     "sortRecent": "Recent",
     "sortPopular": "Popular",
     "noTracks": "This artist has no public tracks",
-    "error": "Failed to load artist profile"
+    "error": "Failed to load artist profile",
+    "follow": "Follow",
+    "following": "Following",
+    "followError": "Failed to follow this artist",
+    "unfollowError": "Failed to unfollow this artist"
   }
 }

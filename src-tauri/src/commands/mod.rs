@@ -59,3 +59,6 @@ pub use related::fetch_related_tracks;
 
 pub mod artist;
 pub use artist::{get_artist_profile, get_all_artist_tracks, resolve_user};
+
+pub mod follow;
+pub use follow::{follow_user, unfollow_user, check_follow_status};

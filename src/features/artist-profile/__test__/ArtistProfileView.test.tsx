@@ -71,6 +71,21 @@ vi.mock('@/features/settings/store', () => ({
   ),
 }));
 
+vi.mock('../hooks/useFollowArtist', () => ({
+  useFollowArtist: () => ({
+    isFollowing: false,
+    isLoading: false,
+    isChecking: false,
+    toggle: vi.fn(),
+  }),
+}));
+
+vi.mock('@/features/auth/store', () => ({
+  useIsSignedIn: () => false,
+  useAuthStore: (selector: (s: Record<string, unknown>) => unknown) =>
+    selector({ isSignedIn: false, username: null }),
+}));
+
 vi.mock('@/hooks/useTrackDownloadState', () => ({
   useTrackDownloadState: () => ({
     downloadTrack: vi.fn(),

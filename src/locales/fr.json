@@ -414,6 +414,10 @@
     "sortRecent": "Récents",
     "sortPopular": "Populaires",
     "noTracks": "Cet artiste n'a aucun titre public",
-    "error": "Impossible de charger le profil de l'artiste"
+    "error": "Impossible de charger le profil de l'artiste",
+    "follow": "Suivre",
+    "following": "Suivi",
+    "followError": "Impossible de suivre cet artiste",
+    "unfollowError": "Impossible de se désabonner de cet artiste"
   }
 }
