@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
@@ -437,6 +437,11 @@ fn resolve_release_type(is_album: bool, set_type: &Option<String>) -> ReleaseTyp
     }
 }
 
+fn dedup_by_id<T>(items: &mut Vec<T>, get_id: impl Fn(&T) -> u64) {
+    let mut seen = HashSet::new();
+    items.retain(|item| seen.insert(get_id(item)));
+}
+
 pub struct StreamData {
     pub tracks: HashMap<u64, Vec<ActivityItem>>,
     pub releases: HashMap<u64, Vec<ReleaseActivityItem>>,
@@ -508,10 +513,12 @@ pub async fn fetch_stream(
 
     for items in all_tracks.values_mut() {
         sort_by_created_at_desc(items, |i| &i.created_at);
+        dedup_by_id(items, |i| i.track.id);
     }
 
     for items in all_releases.values_mut() {
         sort_by_created_at_desc(items, |i| &i.created_at);
+        dedup_by_id(items, |i| i.release.id);
     }
 
     Ok(StreamData {
@@ -810,6 +817,27 @@ mod tests {
         let json = serde_json::to_value(&item).unwrap();
         assert_eq!(json["activity_type"], "Repost");
         assert_eq!(json["track"]["title"], "Test Track");
+    }
+
+    #[test]
+    fn test_dedup_by_track_id() {
+        let mut item1 = make_activity_item("Track A", ActivityType::Track);
+        item1.track.id = 100;
+
+        let mut item2 = make_activity_item("Track A", ActivityType::Repost);
+        item2.track.id = 100;
+        item2.created_at = "2026-03-19T12:00:00Z".to_string();
+
+        let mut item3 = make_activity_item("Track B", ActivityType::Track);
+        item3.track.id = 200;
+        item3.created_at = "2026-03-18T12:00:00Z".to_string();
+
+        let mut items = vec![item1, item2, item3];
+        dedup_by_id(&mut items, |i| i.track.id);
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].track.id, 100);
+        assert_eq!(items[0].activity_type, ActivityType::Track);
+        assert_eq!(items[1].track.id, 200);
     }
 
     #[test]
