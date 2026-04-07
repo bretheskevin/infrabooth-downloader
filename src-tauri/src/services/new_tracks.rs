@@ -340,37 +340,11 @@ pub async fn fetch_followed_artists_page(
         .map_err(|_| NewTracksError::InvalidResponse)
 }
 
-async fn resolve_user_id(
-    oauth_token: &str,
-    client_id: &str,
-) -> Result<u64, NewTracksError> {
-    #[derive(Deserialize)]
-    struct MeResponse {
-        id: u64,
-    }
-
-    let url = format!("{}/me?client_id={}", API_V2_BASE, client_id);
-    let response = HTTP_CLIENT
-        .get(&url)
-        .with_oauth(Some(oauth_token))
-        .send()
-        .await?;
-
-    validate_api_response(response.status())?;
-
-    let me: MeResponse = response
-        .json()
-        .await
-        .map_err(|_| NewTracksError::InvalidResponse)?;
-
-    Ok(me.id)
-}
-
 pub async fn fetch_all_followed_artists(
     oauth_token: &str,
     client_id: &str,
+    user_id: u64,
 ) -> Result<Vec<RawFollowedArtist>, NewTracksError> {
-    let user_id = resolve_user_id(oauth_token, client_id).await?;
 
     let mut all_artists = Vec::new();
     let mut url = format!(

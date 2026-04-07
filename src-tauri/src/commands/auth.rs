@@ -59,6 +59,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
             state.set(CachedAuth {
                 oauth_token: cookie.value,
                 datadome: cookie.datadome,
+                user_id: profile.id,
             });
             let _ = app.emit(
                 events::AUTH_STATE_CHANGED,

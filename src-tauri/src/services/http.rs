@@ -8,13 +8,15 @@ pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 /// Extracted from the SoundCloud web app bundle (look for `app_version` in network requests).
 /// May need periodic updating if SoundCloud rejects older versions.
 pub const SC_APP_VERSION: &str = "1775080930";
+pub const CHROME_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
 pub static HTTP_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
-    use rquest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER};
+    use rquest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER, USER_AGENT};
 
     let mut headers = HeaderMap::new();
     headers.insert(ORIGIN, HeaderValue::from_static("https://soundcloud.com"));
     headers.insert(REFERER, HeaderValue::from_static("https://soundcloud.com/"));
+    headers.insert(USER_AGENT, HeaderValue::from_static(CHROME_USER_AGENT));
 
     rquest::Client::builder()
         .emulation(Emulation::Chrome136)

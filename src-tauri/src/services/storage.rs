@@ -7,6 +7,7 @@ use tokio::sync::Mutex as AsyncMutex;
 pub struct CachedAuth {
     pub oauth_token: String,
     pub datadome: Option<String>,
+    pub user_id: u64,
 }
 
 impl std::fmt::Debug for CachedAuth {
@@ -14,6 +15,7 @@ impl std::fmt::Debug for CachedAuth {
         f.debug_struct("CachedAuth")
             .field("oauth_token", &"[redacted]")
             .field("datadome", &self.datadome)
+            .field("user_id", &self.user_id)
             .finish()
     }
 }
@@ -67,6 +69,14 @@ impl AuthState {
             .as_ref()
             .and_then(|a| a.datadome.clone())
     }
+
+    pub fn get_user_id(&self) -> Option<u64> {
+        self.cached
+            .lock()
+            .expect("AuthState lock poisoned")
+            .as_ref()
+            .map(|a| a.user_id)
+    }
 }
 
 #[cfg(test)]
@@ -85,6 +95,7 @@ mod tests {
         state.set(CachedAuth {
             oauth_token: "test_token".to_string(),
             datadome: Some("dd_test".to_string()),
+            user_id: 0,
         });
         assert_eq!(state.get_token(), Some("test_token".to_string()));
     }
@@ -95,6 +106,7 @@ mod tests {
         state.set(CachedAuth {
             oauth_token: "token".to_string(),
             datadome: None,
+            user_id: 0,
         });
         assert!(state.get_token().is_some());
         state.clear();
@@ -106,6 +118,7 @@ mod tests {
         let auth = CachedAuth {
             oauth_token: "token".to_string(),
             datadome: Some("dd_value".to_string()),
+            user_id: 0,
         };
         let cloned = auth.clone();
         assert_eq!(cloned.oauth_token, "token");
@@ -117,6 +130,7 @@ mod tests {
         let auth = CachedAuth {
             oauth_token: "secret_token".to_string(),
             datadome: Some("dd_value".to_string()),
+            user_id: 0,
         };
         let debug = format!("{:?}", auth);
         assert!(!debug.contains("secret_token"));

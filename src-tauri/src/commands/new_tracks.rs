@@ -1,6 +1,6 @@
 use tauri::Manager;
 
-use crate::commands::require_auth_and_cid;
+use crate::commands::{require_auth_and_cid, require_user_id};
 use crate::services::new_tracks::{
     self, ActivityItem, FollowedArtist, NewTracksCache, ReleaseActivityItem, SeenArtistsState,
 };
@@ -26,11 +26,12 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
     }
 
     let (token, client_id) = require_auth_and_cid(&app).await?;
+    let user_id = require_user_id(&app)?;
     log::info!("[new-tracks] Fetching followed artists and stream concurrently...");
     let seen = app.state::<SeenArtistsState>();
 
     let (raw_result, stream_result) = tokio::join!(
-        new_tracks::fetch_all_followed_artists(&token, &client_id),
+        new_tracks::fetch_all_followed_artists(&token, &client_id, user_id),
         new_tracks::fetch_stream(&token),
     );
 

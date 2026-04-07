@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 import { FOLLOWED_ARTISTS_KEY, FOLLOW_STATUS_KEY } from '@/lib/query';
-import type { FollowedArtist } from '@/bindings';
+import { useIsSignedIn } from '@/features/auth/store';
 
 interface UseFollowArtistResult {
   isFollowing: boolean;
@@ -17,24 +17,30 @@ interface UseFollowArtistResult {
 export function useFollowArtist(artistId: number): UseFollowArtistResult {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const isSignedIn = useIsSignedIn();
 
-  const cachedArtists = queryClient.getQueryData<FollowedArtist[]>([...FOLLOWED_ARTISTS_KEY]);
-  const cachedIsFollowing = cachedArtists?.some((a) => a.id === artistId) ?? false;
-
-  const { data: isFollowing = cachedIsFollowing, isLoading: isChecking } = useQuery({
+  const followStatusQuery = useQuery({
     queryKey: [FOLLOW_STATUS_KEY, artistId],
     queryFn: () => api.checkFollowStatus(artistId),
-    staleTime: 30 * 1000,
+    enabled: isSignedIn,
+    staleTime: 60_000,
   });
+
+  const isFollowing = followStatusQuery.data ?? false;
 
   const followMutation = useMutation({
     mutationFn: () => api.followUser(artistId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: [FOLLOW_STATUS_KEY, artistId] });
+      queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], true);
+    },
     onSuccess: () => {
       queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], true);
       void queryClient.invalidateQueries({ queryKey: [...FOLLOWED_ARTISTS_KEY] });
       void logger.info(`[follow] Followed user ${artistId}`);
     },
     onError: (err) => {
+      queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], false);
       toast.error(t('artistProfile.followError'));
       void logger.error(`[follow] Failed to follow user ${artistId}: ${err}`);
     },
@@ -42,12 +48,17 @@ export function useFollowArtist(artistId: number): UseFollowArtistResult {
 
   const unfollowMutation = useMutation({
     mutationFn: () => api.unfollowUser(artistId),
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: [FOLLOW_STATUS_KEY, artistId] });
+      queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], false);
+    },
     onSuccess: () => {
       queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], false);
       void queryClient.invalidateQueries({ queryKey: [...FOLLOWED_ARTISTS_KEY] });
       void logger.info(`[follow] Unfollowed user ${artistId}`);
     },
     onError: (err) => {
+      queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], true);
       toast.error(t('artistProfile.unfollowError'));
       void logger.error(`[follow] Failed to unfollow user ${artistId}: ${err}`);
     },
@@ -65,7 +76,7 @@ export function useFollowArtist(artistId: number): UseFollowArtistResult {
   return {
     isFollowing,
     isLoading: followMutation.isPending || unfollowMutation.isPending,
-    isChecking,
+    isChecking: followStatusQuery.isLoading,
     toggle,
   };
 }

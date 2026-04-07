@@ -22,11 +22,11 @@ export function FollowButton({ artistId, artistUsername }: FollowButtonProps) {
 
   return (
     <Button
-      variant={isFollowing ? 'default' : 'outline'}
-      size="sm"
+      variant={isFollowing ? 'default' : 'secondary'}
+      size="pill"
       onClick={toggle}
       disabled={showSpinner}
-      className="gap-1.5 h-7 text-xs shrink-0"
+      className="shadow-none"
     >
       {showSpinner ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" />

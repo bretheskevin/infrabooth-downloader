@@ -6,6 +6,7 @@ use serde::Deserialize;
 /// User profile response from SoundCloud `/me` endpoint (API v2).
 #[derive(Debug, Deserialize)]
 pub struct UserProfile {
+    pub id: u64,
     pub username: String,
     pub avatar_url: Option<String>,
     /// SoundCloud subscription plan (e.g. "Pro Unlimited").
@@ -59,6 +60,7 @@ mod tests {
     #[test]
     fn test_user_profile_deserializes_with_all_fields() {
         let json = r#"{
+            "id": 12345,
             "username": "test_user",
             "avatar_url": "https://example.com/avatar.jpg",
             "plan": "Pro Unlimited"
@@ -75,6 +77,7 @@ mod tests {
     #[test]
     fn test_user_profile_deserializes_with_consumer_plan_alias() {
         let json = r#"{
+            "id": 12345,
             "username": "test_user",
             "consumer_plan": "Go+"
         }"#;
@@ -85,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_user_profile_deserializes_with_optional_fields_missing() {
-        let json = r#"{"username": "minimal_user"}"#;
+        let json = r#"{"id": 12345, "username": "minimal_user"}"#;
         let profile: UserProfile = serde_json::from_str(json).unwrap();
         assert_eq!(profile.username, "minimal_user");
         assert!(profile.avatar_url.is_none());
@@ -95,6 +98,7 @@ mod tests {
     #[test]
     fn test_user_profile_deserializes_with_null_optional_fields() {
         let json = r#"{
+            "id": 12345,
             "username": "null_user",
             "avatar_url": null,
             "plan": null
