@@ -155,4 +155,14 @@ export const api = {
 
   markArtistReleasesSeen: (artistId: number): Promise<void> =>
     commands.markArtistReleasesSeen(artistId).then(() => undefined),
+
+  // Follow
+  followUser: (userId: number): Promise<void> =>
+    commands.followUser(userId).then(unwrap).then(() => undefined),
+
+  unfollowUser: (userId: number): Promise<void> =>
+    commands.unfollowUser(userId).then(unwrap).then(() => undefined),
+
+  checkFollowStatus: (userId: number): Promise<boolean> =>
+    commands.checkFollowStatus(userId).then(unwrap),
 };

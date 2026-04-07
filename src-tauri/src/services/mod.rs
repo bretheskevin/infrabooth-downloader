@@ -26,4 +26,5 @@ pub mod selections;
 pub mod new_tracks;
 pub mod related;
 pub mod artist;
+pub mod follow;
 

@@ -69,13 +69,9 @@ where
     while let Some(url) = next_url.take() {
         log::info!("[artist] Fetching tracks for user {}, page {}", artist_id, (all_tracks.len() / PAGE_SIZE) + 1);
 
-        let mut request = HTTP_CLIENT.get(&url).with_oauth(Some(token));
-
-        if let Some(dd) = datadome {
-            request = request.header("x-datadome-clientid", dd);
-        }
-
-        let response = request
+        let response = HTTP_CLIENT.get(&url)
+            .with_oauth(Some(token))
+            .with_datadome(datadome)
             .send()
             .await
             .map_err(|e| format!("Failed to fetch artist tracks: {}", e))?;

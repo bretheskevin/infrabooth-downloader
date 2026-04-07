@@ -143,7 +143,35 @@ impl From<AuthError> for String {
     }
 }
 
+#[derive(Debug, Error, Serialize)]
+pub enum FollowError {
+    #[error("Follow API error ({0}): {1}")]
+    ApiError(u16, String),
 
+    #[error("Network error: {0}")]
+    NetworkError(String),
+}
+
+impl HasErrorCode for FollowError {
+    fn code(&self) -> &'static str {
+        match self {
+            FollowError::ApiError(_, _) => "FOLLOW_API_ERROR",
+            FollowError::NetworkError(_) => "NETWORK_ERROR",
+        }
+    }
+}
+
+impl From<reqwest::Error> for FollowError {
+    fn from(e: reqwest::Error) -> Self {
+        FollowError::NetworkError(e.to_string())
+    }
+}
+
+impl From<FollowError> for String {
+    fn from(err: FollowError) -> Self {
+        err.to_string()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -343,5 +371,30 @@ mod tests {
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "ARTWORK_DOWNLOAD_FAILED");
         assert!(response.message.contains("Failed to download artwork"));
+    }
+
+    #[test]
+    fn test_follow_api_error_message() {
+        let err = FollowError::ApiError(403, "Forbidden".to_string());
+        assert_eq!(err.to_string(), "Follow API error (403): Forbidden");
+    }
+
+    #[test]
+    fn test_follow_network_error_message() {
+        let err = FollowError::NetworkError("timeout".to_string());
+        assert_eq!(err.to_string(), "Network error: timeout");
+    }
+
+    #[test]
+    fn test_follow_error_codes() {
+        assert_eq!(FollowError::ApiError(500, "err".to_string()).code(), "FOLLOW_API_ERROR");
+        assert_eq!(FollowError::NetworkError("err".to_string()).code(), "NETWORK_ERROR");
+    }
+
+    #[test]
+    fn test_error_response_from_follow_api_error() {
+        let err = FollowError::ApiError(403, "Forbidden".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "FOLLOW_API_ERROR");
     }
 }

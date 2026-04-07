@@ -30,6 +30,7 @@ pub static HTTP_CLIENT: Lazy<reqwest::Client> = Lazy::new(|| {
 
 pub trait RequestBuilderExt {
     fn with_oauth(self, token: Option<&str>) -> Self;
+    fn with_datadome(self, datadome: Option<&str>) -> Self;
 }
 
 #[derive(Debug)]
@@ -136,6 +137,13 @@ impl RequestBuilderExt for reqwest::RequestBuilder {
     fn with_oauth(self, token: Option<&str>) -> Self {
         match token {
             Some(t) => self.header("Authorization", format!("OAuth {}", t)),
+            None => self,
+        }
+    }
+
+    fn with_datadome(self, datadome: Option<&str>) -> Self {
+        match datadome {
+            Some(dd) => self.header("x-datadome-clientid", dd),
             None => self,
         }
     }

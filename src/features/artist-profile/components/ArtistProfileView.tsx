@@ -10,6 +10,7 @@ import { getArtworkUrl } from '@/lib/soundcloud';
 import { useArtistProfile } from '../hooks/useArtistProfile';
 import { useArtistTracks } from '../hooks/useArtistTracks';
 import { ArtistProfileHeader } from './ArtistProfileHeader';
+import { FollowButton } from './FollowButton';
 import type { SortDirection } from '@/lib/sort';
 import type { TrackInfo } from '@/bindings';
 import type { SortOption } from '../types';
@@ -114,7 +115,12 @@ export function ArtistProfileView({
             isLoading={isProfileLoading}
             isDownloadEnabled={isDownloadEnabled}
             showOrderToggle={(tracksData?.length ?? 0) > 1}
-            actions={downloadAllAction}
+            actions={
+              <div className="flex items-center gap-2">
+                <FollowButton artistId={artistId} artistUsername={profile?.username} />
+                {downloadAllAction}
+              </div>
+            }
           />
         </div>
       )}

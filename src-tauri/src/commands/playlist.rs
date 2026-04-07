@@ -100,9 +100,7 @@ where
             }
         }));
 
-    if let Some(ref dd) = datadome {
-        put_request = put_request.header("x-datadome-clientid", dd);
-    }
+    put_request = put_request.with_datadome(datadome.as_deref());
 
     let put_response = put_request
         .send()
