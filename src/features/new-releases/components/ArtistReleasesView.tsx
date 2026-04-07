@@ -75,7 +75,7 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
       {error && !isLoading && (
         <div className="flex flex-col items-center gap-2 py-12">
           <p className="text-sm text-muted-foreground">{t('newReleases.error')}</p>
-          <RefreshButton onRefresh={refetch} />
+          <RefreshButton onRefresh={refetch} aria-label={t('common.refresh')} />
         </div>
       )}
 
