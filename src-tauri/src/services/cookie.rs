@@ -70,6 +70,20 @@ pub fn scan_browser_cookies() -> Option<BrowserCookie> {
                         datadome,
                     });
                 }
+
+                // Detect cookies with names but empty values (Chrome App-Bound Encryption on Windows)
+                let empty_token_count = cookies
+                    .iter()
+                    .filter(|c| c.name == "oauth_token" && c.value.is_empty())
+                    .count();
+                if empty_token_count > 0 {
+                    warn!(
+                        "Found {} oauth_token cookie(s) in {} but value is empty — \
+                         on Windows, Chromium browsers (v130+) require the app to run \
+                         as administrator to decrypt cookies",
+                        empty_token_count, name
+                    );
+                }
             }
             Err(e) => {
                 warn!("Failed to read cookies from {}: {}", name, e);

@@ -33,6 +33,13 @@ export async function getAppDataPath(): Promise<string> {
   return result;
 }
 
+export async function getLogPath(): Promise<string> {
+  logger.debug(`[settings] Getting log path`);
+  const result = await api.getLogPath();
+  logger.debug(`[settings] Log path: ${result}`);
+  return result;
+}
+
 /**
  * Validates if a path exists and is a directory.
  * Unlike checkWritePermission, this only checks existence, not write access.

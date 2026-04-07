@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use commands::{
     add_track_to_playlist, remove_track_from_playlist, cancel_download_queue, check_auth, check_for_updates,
-    check_write_permission, clear_library_cache, download_track_full, get_app_data_path, get_default_download_path,
+    check_write_permission, clear_library_cache, download_track_full, get_app_data_path, get_default_download_path, get_log_path,
     get_library_playlist_tracks, get_library_playlists, get_owned_playlists_for_track,
     get_playlist_info, get_track_info, install_update, refresh_auth, resolve_library_artwork,
     resolve_playback_url, respond_to_rate_limit_choice, scan_existing_tracks,
@@ -66,6 +66,7 @@ pub fn run() {
         check_write_permission,
         get_app_data_path,
         get_default_download_path,
+        get_log_path,
         validate_download_path,
         check_for_updates,
         install_update,
@@ -178,12 +179,17 @@ pub fn run() {
                 log::LevelFilter::Info
             };
 
+            let log_dir = app.path().app_data_dir()
+                .expect("failed to resolve app data dir")
+                .join("logs");
+            std::fs::create_dir_all(&log_dir).ok();
+
             app.handle().plugin(
                 tauri_plugin_log::Builder::new()
                     .targets([
                         Target::new(TargetKind::Stdout),
                         Target::new(TargetKind::Webview),
-                        Target::new(TargetKind::LogDir { file_name: Some("infrabooth".into()) }),
+                        Target::new(TargetKind::Folder { path: log_dir, file_name: Some("infrabooth".into()) }),
                     ])
                     .level(log_level)
                     .filter(|metadata| {
