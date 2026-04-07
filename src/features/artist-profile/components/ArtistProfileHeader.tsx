@@ -13,6 +13,7 @@ interface ArtistProfileHeaderProps {
   isDownloadEnabled?: boolean;
   showOrderToggle?: boolean;
   actions?: React.ReactNode;
+  followButton?: React.ReactNode;
 }
 
 export function ArtistProfileHeader({
@@ -21,6 +22,7 @@ export function ArtistProfileHeader({
   isDownloadEnabled = false,
   showOrderToggle = false,
   actions,
+  followButton,
 }: ArtistProfileHeaderProps) {
   const { t } = useTranslation();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
@@ -55,7 +57,7 @@ export function ArtistProfileHeader({
               {linkifyDescription(profile.description)}
             </p>
           )}
-          <div className="flex gap-4 mt-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
             <span>
               <strong className="text-foreground">{formatCount(profile.followers_count)}</strong>{' '}
               {t('artistProfile.followers')}
@@ -64,6 +66,7 @@ export function ArtistProfileHeader({
               <strong className="text-foreground">{formatCount(profile.track_count)}</strong>{' '}
               {t('artistProfile.tracks')}
             </span>
+            {followButton}
           </div>
         </div>
         {actions}

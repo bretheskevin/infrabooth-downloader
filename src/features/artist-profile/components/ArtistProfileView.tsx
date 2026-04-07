@@ -115,12 +115,8 @@ export function ArtistProfileView({
             isLoading={isProfileLoading}
             isDownloadEnabled={isDownloadEnabled}
             showOrderToggle={(tracksData?.length ?? 0) > 1}
-            actions={
-              <div className="flex items-center gap-2">
-                <FollowButton artistId={artistId} artistUsername={profile?.username} />
-                {downloadAllAction}
-              </div>
-            }
+            actions={downloadAllAction}
+            followButton={<FollowButton artistId={artistId} artistUsername={profile?.username} />}
           />
         </div>
       )}

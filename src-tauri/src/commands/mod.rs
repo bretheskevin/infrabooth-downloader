@@ -5,6 +5,13 @@ pub mod playlist;
 pub mod settings;
 pub mod updater;
 
+pub fn require_user_id(app: &tauri::AppHandle) -> Result<u64, String> {
+    use tauri::Manager;
+    app.state::<crate::services::storage::AuthState>()
+        .get_user_id()
+        .ok_or_else(|| "User ID not available — re-authenticate".to_string())
+}
+
 pub async fn require_auth_and_cid(app: &tauri::AppHandle) -> Result<(String, String), String> {
     use tauri::Manager;
     let token = app
