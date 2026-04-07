@@ -7,6 +7,18 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.17.0] - 2026-04-07
+
+### Added
+
+- Nouveaux albums et playlists des artistes suivis
+- Abonnement et désabonnement aux artistes depuis leur profil
+- Accès aux dossiers de l'application
+
+### Fixed
+
+- Des morceaux en double apparaissaient dans le flux d'activité
+
 ## [1.16.1] - 2026-04-03
 
 ### Changed
