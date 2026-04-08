@@ -1,17 +1,18 @@
 import { create } from 'zustand';
 
-interface AuthState {
+export const WARNING_APPBOUND_ENCRYPTION = 'appbound_encryption';
+
+export interface AuthData {
   isSignedIn: boolean;
   username: string | null;
   plan: string | null;
   avatarUrl: string | null;
-  // Actions
-  setAuth: (
-    isSignedIn: boolean,
-    username: string | null,
-    plan: string | null,
-    avatarUrl: string | null
-  ) => void;
+  cookieWarning?: string | null;
+}
+
+interface AuthState extends Omit<AuthData, 'cookieWarning'> {
+  cookieWarning: string | null;
+  setAuth: (data: AuthData) => void;
   clearAuth: () => void;
 }
 
@@ -20,10 +21,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   username: null,
   plan: null,
   avatarUrl: null,
-  setAuth: (isSignedIn, username, plan, avatarUrl) =>
-    set({ isSignedIn, username, plan, avatarUrl }),
-  clearAuth: () => set({ isSignedIn: false, username: null, plan: null, avatarUrl: null }),
+  cookieWarning: null,
+  setAuth: ({ isSignedIn, username, plan, avatarUrl, cookieWarning = null }) =>
+    set({ isSignedIn, username, plan, avatarUrl, cookieWarning }),
+  clearAuth: () => set({ isSignedIn: false, username: null, plan: null, avatarUrl: null, cookieWarning: null }),
 }));
 
-// Single selector that's actually used (in App.tsx)
 export const useIsSignedIn = () => useAuthStore((s) => s.isSignedIn);
+export const useCookieWarning = () => useAuthStore((s) => s.cookieWarning);

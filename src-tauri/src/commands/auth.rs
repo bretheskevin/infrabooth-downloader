@@ -7,7 +7,6 @@ use serde::Serialize;
 use specta::Type;
 use tauri::{AppHandle, Emitter, Manager};
 
-/// Auth state payload emitted to the frontend.
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
 pub struct AuthStatePayload {
@@ -15,26 +14,21 @@ pub struct AuthStatePayload {
     pub username: Option<String>,
     pub plan: Option<String>,
     pub avatar_url: Option<String>,
+    pub cookie_warning: Option<String>,
 }
 
 use crate::services::events;
 
-fn signed_out_payload() -> AuthStatePayload {
+fn signed_out_payload(cookie_warning: Option<String>) -> AuthStatePayload {
     AuthStatePayload {
         is_signed_in: false,
         username: None,
         plan: None,
         avatar_url: None,
+        cookie_warning,
     }
 }
 
-/// Scans browser cookies for a SoundCloud oauth_token, verifies it
-/// against the API, and caches the result. Emits an auth state event.
-///
-/// # Returns
-/// * `Ok(true)` - A valid token was found and verified
-/// * `Ok(false)` - No valid token found (not signed in)
-/// * `Err(String)` - Error during the check
 #[tauri::command]
 #[specta::specta]
 pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
@@ -44,13 +38,13 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
     // Other callers wait here until the first one finishes.
     let _guard = state.lock_refresh().await;
 
-    let result = tokio::task::spawn_blocking(|| scan_browser_cookies())
+    let scan = tokio::task::spawn_blocking(|| scan_browser_cookies())
         .await
         .map_err(|e| e.to_string())?;
 
-    let Some(cookie) = result else {
+    let Some(cookie) = scan.cookie else {
         state.clear();
-        let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload());
+        let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(scan.warning));
         return Ok(false);
     };
 
@@ -68,6 +62,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
                     username: Some(profile.username),
                     plan: profile.plan,
                     avatar_url: profile.avatar_url,
+                    cookie_warning: None,
                 },
             );
             info!("Authenticated via {} browser cookie", cookie.browser);
@@ -76,7 +71,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
         Err(e) => {
             warn!("Cookie verification failed: {}", e);
             state.clear();
-            let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload());
+            let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(None));
             Ok(false)
         }
     }
@@ -117,9 +112,75 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     app.state::<LibraryCache>().clear();
     app.state::<crate::services::selections::SelectionCache>().clear();
     app.state::<crate::services::new_tracks::NewTracksCache>().clear();
-    let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload());
+    let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(None));
     info!("User signed out");
     Ok(())
+}
+
+/// Restarts the application with administrator privileges (Windows only).
+/// Uses `ShellExecuteW` with the "runas" verb to trigger a UAC elevation prompt,
+/// then exits the current (non-elevated) process.
+#[tauri::command]
+#[specta::specta]
+pub async fn restart_as_admin(app: AppHandle) -> Result<(), String> {
+    #[cfg(target_os = "windows")]
+    {
+        use std::ffi::OsStr;
+        use std::os::windows::ffi::OsStrExt;
+
+        #[link(name = "shell32")]
+        extern "system" {
+            fn ShellExecuteW(
+                hwnd: isize,
+                lpOperation: *const u16,
+                lpFile: *const u16,
+                lpParameters: *const u16,
+                lpDirectory: *const u16,
+                nShowCmd: i32,
+            ) -> isize;
+        }
+
+        fn to_wide(s: &str) -> Vec<u16> {
+            OsStr::new(s).encode_wide().chain(std::iter::once(0)).collect()
+        }
+
+        let exe_path = std::env::current_exe()
+            .map_err(|e| format!("Failed to get executable path: {e}"))?;
+        let exe_str = exe_path.to_string_lossy();
+
+        let operation = to_wide("runas");
+        let file = to_wide(&exe_str);
+
+        const SHELL_EXECUTE_ERROR_THRESHOLD: usize = 32;
+
+        // SAFETY: All pointer arguments are valid, null-terminated wide strings
+        // produced by `to_wide`, or null pointers for unused params. The function
+        // is called with no parent window (hwnd = 0) and only reads these pointers
+        // during the call — they remain alive on the stack for its duration.
+        let result = unsafe {
+            ShellExecuteW(
+                0,
+                operation.as_ptr(),
+                file.as_ptr(),
+                std::ptr::null(),
+                std::ptr::null(),
+                1, // SW_SHOWNORMAL
+            )
+        };
+
+        if result as usize <= SHELL_EXECUTE_ERROR_THRESHOLD {
+            return Err("UAC elevation was cancelled or failed".to_string());
+        }
+
+        app.exit(0);
+        Ok(())
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = app;
+        Err("restart_as_admin is only available on Windows".to_string())
+    }
 }
 
 #[cfg(test)]
@@ -133,6 +194,7 @@ mod tests {
             username: Some("testuser".to_string()),
             plan: Some("Pro Unlimited".to_string()),
             avatar_url: Some("https://i1.sndcdn.com/avatars-xxx.jpg".to_string()),
+            cookie_warning: None,
         };
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":true"));
@@ -148,6 +210,7 @@ mod tests {
             username: Some("testuser".to_string()),
             plan: None,
             avatar_url: None,
+            cookie_warning: None,
         };
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":true"));
@@ -157,11 +220,12 @@ mod tests {
 
     #[test]
     fn test_signed_out_payload_is_correct() {
-        let payload = signed_out_payload();
+        let payload = signed_out_payload(None);
         let json = serde_json::to_string(&payload).unwrap();
         assert!(json.contains("\"isSignedIn\":false"));
         assert!(json.contains("\"username\":null"));
         assert!(json.contains("\"plan\":null"));
         assert!(json.contains("\"avatarUrl\":null"));
+        assert!(json.contains("\"cookieWarning\":null"));
     }
 }

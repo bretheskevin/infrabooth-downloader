@@ -37,7 +37,10 @@
     "sessionExpiredDescription": "Your SoundCloud session has expired. Please log in to SoundCloud in your browser.",
     "signInAgain": "Refresh",
     "continueStandard": "Continue at standard quality",
-    "qualityBadge": "Go+ 256kbps"
+    "qualityBadge": "Go+ 256kbps",
+    "cookieWarningAppbound": "Chrome/Edge cookies can't be read without admin privileges on Windows",
+    "restartAsAdmin": "Restart as admin",
+    "useFirefoxHint": "Or sign in via Firefox"
   },
   "download": {
     "button": "Download",

@@ -33,3 +33,7 @@ export async function refreshAuth(): Promise<boolean> {
 export async function signOut(): Promise<void> {
   await api.signOut();
 }
+
+export async function restartAsAdmin(): Promise<void> {
+  await api.restartAsAdmin();
+}

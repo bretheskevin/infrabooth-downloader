@@ -2,12 +2,15 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Loader2, RefreshCw } from 'lucide-react';
-import { checkAuth } from '@/features/auth/api';
+import { Loader2, RefreshCw, ShieldAlert } from 'lucide-react';
+import { checkAuth, restartAsAdmin } from '@/features/auth/api';
+import { useCookieWarning, WARNING_APPBOUND_ENCRYPTION } from '@/features/auth/store';
+import { logger } from '@/lib/logger';
 
 export function SignInButton() {
   const { t } = useTranslation();
   const [isChecking, setIsChecking] = useState(false);
+  const cookieWarning = useCookieWarning();
 
   const handleCheck = async () => {
     setIsChecking(true);
@@ -19,6 +22,36 @@ export function SignInButton() {
       setIsChecking(false);
     }
   };
+
+  const handleRestartAsAdmin = async () => {
+    try {
+      await restartAsAdmin();
+    } catch (e) {
+      void logger.warn(`UAC elevation failed: ${e}`);
+    }
+  };
+
+  if (cookieWarning === WARNING_APPBOUND_ENCRYPTION) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRestartAsAdmin}
+            className="rounded-xl"
+          >
+            <ShieldAlert className="mr-2 h-4 w-4" />
+            {t('auth.restartAsAdmin')}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent className="max-w-xs mr-2">
+          <p>{t('auth.cookieWarningAppbound')}</p>
+          <p className="mt-1 text-muted-foreground">{t('auth.useFirefoxHint')}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
 
   return (
     <Tooltip>

@@ -1,21 +1,34 @@
 use log::{info, warn};
 
-/// Result of a browser cookie scan.
-#[derive(Debug, Clone)]
+pub const WARNING_APPBOUND_ENCRYPTION: &str = "appbound_encryption";
+
+#[derive(Clone)]
 pub struct BrowserCookie {
     pub value: String,
     pub browser: String,
-    /// DataDome client ID cookie for bot protection bypass
     pub datadome: Option<String>,
 }
 
-/// Scan browsers for the SoundCloud `oauth_token` cookie.
-///
-/// Firefox first (no Keychain/admin friction on macOS), then Chromium browsers.
-/// Safari excluded (requires Full Disk Access).
-///
-/// Returns `Some(BrowserCookie)` if a non-empty token is found, `None` otherwise.
-pub fn scan_browser_cookies() -> Option<BrowserCookie> {
+impl std::fmt::Debug for BrowserCookie {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("BrowserCookie")
+            .field("value", &"[redacted]")
+            .field("browser", &self.browser)
+            .field("datadome", &self.datadome)
+            .finish()
+    }
+}
+
+/// Result of scanning all browsers for cookies.
+#[derive(Debug, Clone)]
+pub struct CookieScanResult {
+    pub cookie: Option<BrowserCookie>,
+    /// A warning key for the frontend (e.g. "appbound_encryption") when cookies
+    /// could not be read due to a platform-specific restriction.
+    pub warning: Option<String>,
+}
+
+pub fn scan_browser_cookies() -> CookieScanResult {
     let domains = Some(vec![
         "soundcloud.com".to_string(),
         ".soundcloud.com".to_string(),
@@ -38,6 +51,8 @@ pub fn scan_browser_cookies() -> Option<BrowserCookie> {
 
     #[cfg(target_os = "macos")]
     browsers.push(("Arc", rookie::arc));
+
+    let mut appbound_hit = false;
 
     for (name, extract_fn) in &browsers {
         match extract_fn(domains.clone()) {
@@ -64,11 +79,14 @@ pub fn scan_browser_cookies() -> Option<BrowserCookie> {
                             info!("Found datadome cookie in {}", name);
                             c.value.clone()
                         });
-                    return Some(BrowserCookie {
-                        value: token_cookie.value.clone(),
-                        browser: name.to_string(),
-                        datadome,
-                    });
+                    return CookieScanResult {
+                        cookie: Some(BrowserCookie {
+                            value: token_cookie.value.clone(),
+                            browser: name.to_string(),
+                            datadome,
+                        }),
+                        warning: None,
+                    };
                 }
 
                 // Detect cookies with names but empty values (Chrome App-Bound Encryption on Windows)
@@ -83,16 +101,29 @@ pub fn scan_browser_cookies() -> Option<BrowserCookie> {
                          as administrator to decrypt cookies",
                         empty_token_count, name
                     );
+                    appbound_hit = true;
                 }
             }
             Err(e) => {
-                warn!("Failed to read cookies from {}: {}", name, e);
+                let err_msg = e.to_string();
+                warn!("Failed to read cookies from {}: {}", name, err_msg);
+                let lower = err_msg.to_lowercase();
+                if lower.contains("appbound") || lower.contains("app-bound") || lower.contains("app_bound") {
+                    appbound_hit = true;
+                }
             }
         }
     }
 
     info!("No SoundCloud oauth_token found in any browser");
-    None
+    CookieScanResult {
+        cookie: None,
+        warning: if appbound_hit {
+            Some(WARNING_APPBOUND_ENCRYPTION.to_string())
+        } else {
+            None
+        },
+    }
 }
 
 #[cfg(test)]
@@ -112,14 +143,15 @@ mod tests {
     }
 
     #[test]
-    fn test_browser_cookie_debug() {
+    fn test_browser_cookie_debug_redacts_value() {
         let cookie = BrowserCookie {
-            value: "token".to_string(),
+            value: "secret_oauth_token".to_string(),
             browser: "Chrome".to_string(),
             datadome: None,
         };
         let debug_str = format!("{:?}", cookie);
         assert!(debug_str.contains("Chrome"));
-        assert!(debug_str.contains("token"));
+        assert!(debug_str.contains("[redacted]"));
+        assert!(!debug_str.contains("secret_oauth_token"));
     }
 }
