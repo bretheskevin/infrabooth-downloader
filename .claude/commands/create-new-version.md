@@ -48,7 +48,7 @@ Create a new release version for InfraBooth Downloader.
 12. Run `cargo check` in src-tauri to update Cargo.lock
 13. Create a commit with message `chore: release vX.Y.Z`
 14. Create the git tag `vX.Y.Z`
-15. Push the commit and tag: `git push origin main --tags`
+15. Push the commit and the new tag only: `git push origin main v<VERSION>`
 
 ## Arguments (Optional)
 
