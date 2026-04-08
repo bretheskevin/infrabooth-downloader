@@ -1,14 +1,21 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore } from '../store';
 
+const signedInData = {
+  isSignedIn: true,
+  username: 'testuser',
+  plan: 'Pro Unlimited',
+  avatarUrl: 'https://example.com/avatar.jpg',
+} as const;
+
 describe('authStore', () => {
   beforeEach(() => {
-    // Reset store to initial state before each test
     useAuthStore.setState({
       isSignedIn: false,
       username: null,
       plan: null,
       avatarUrl: null,
+      cookieWarning: null,
     });
   });
 
@@ -32,7 +39,7 @@ describe('authStore', () => {
   describe('setAuth', () => {
     it('should set isSignedIn to true when signed in', () => {
       const { setAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser', 'Pro Unlimited', 'https://example.com/avatar.jpg');
+      setAuth(signedInData);
 
       const { isSignedIn } = useAuthStore.getState();
       expect(isSignedIn).toBe(true);
@@ -40,7 +47,7 @@ describe('authStore', () => {
 
     it('should set username when signed in', () => {
       const { setAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser', 'Pro Unlimited', 'https://example.com/avatar.jpg');
+      setAuth(signedInData);
 
       const { username } = useAuthStore.getState();
       expect(username).toBe('testuser');
@@ -48,7 +55,7 @@ describe('authStore', () => {
 
     it('should set avatarUrl when signed in', () => {
       const { setAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser', 'Pro Unlimited', 'https://example.com/avatar.jpg');
+      setAuth(signedInData);
 
       const { avatarUrl } = useAuthStore.getState();
       expect(avatarUrl).toBe('https://example.com/avatar.jpg');
@@ -56,8 +63,8 @@ describe('authStore', () => {
 
     it('should set isSignedIn to false with null username when signed out', () => {
       const { setAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser', 'Pro Unlimited', 'https://example.com/avatar.jpg');
-      setAuth(false, null, null, null);
+      setAuth(signedInData);
+      setAuth({ isSignedIn: false, username: null, plan: null, avatarUrl: null });
 
       const { isSignedIn, username, avatarUrl } = useAuthStore.getState();
       expect(isSignedIn).toBe(false);
@@ -69,7 +76,7 @@ describe('authStore', () => {
   describe('clearAuth', () => {
     it('should reset isSignedIn to false', () => {
       const { setAuth, clearAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser', 'Pro Unlimited', 'https://example.com/avatar.jpg');
+      setAuth(signedInData);
       clearAuth();
 
       const { isSignedIn } = useAuthStore.getState();
@@ -78,7 +85,7 @@ describe('authStore', () => {
 
     it('should reset username to null', () => {
       const { setAuth, clearAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser', 'Pro Unlimited', 'https://example.com/avatar.jpg');
+      setAuth(signedInData);
       clearAuth();
 
       const { username } = useAuthStore.getState();
@@ -87,7 +94,7 @@ describe('authStore', () => {
 
     it('should reset avatarUrl to null', () => {
       const { setAuth, clearAuth } = useAuthStore.getState();
-      setAuth(true, 'testuser', 'Pro Unlimited', 'https://example.com/avatar.jpg');
+      setAuth(signedInData);
       clearAuth();
 
       const { avatarUrl } = useAuthStore.getState();

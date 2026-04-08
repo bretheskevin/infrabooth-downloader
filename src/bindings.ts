@@ -5,15 +5,6 @@
 
 
 export const commands = {
-/**
- * Scans browser cookies for a SoundCloud oauth_token, verifies it
- * against the API, and caches the result. Emits an auth state event.
- * 
- * # Returns
- * * `Ok(true)` - A valid token was found and verified
- * * `Ok(false)` - No valid token found (not signed in)
- * * `Err(String)` - Error during the check
- */
 async checkAuth() : Promise<Result<boolean, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("check_auth") };
@@ -418,6 +409,19 @@ async unfollowUser(userId: number) : Promise<Result<null, string>> {
 async checkFollowStatus(userId: number) : Promise<Result<boolean, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("check_follow_status", { userId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Restarts the application with administrator privileges (Windows only).
+ * Uses `ShellExecuteW` with the "runas" verb to trigger a UAC elevation prompt,
+ * then exits the current (non-elevated) process.
+ */
+async restartAsAdmin() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("restart_as_admin") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
