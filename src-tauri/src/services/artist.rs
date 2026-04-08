@@ -9,7 +9,7 @@ const PAGE_SIZE_STR: &str = "20";
 
 pub async fn fetch_artist_profile(
     client_id: &str,
-    token: &str,
+    token: Option<&str>,
     artist_id: u64,
 ) -> Result<ArtistProfile, String> {
     let url = Url::parse_with_params(
@@ -22,7 +22,7 @@ pub async fn fetch_artist_profile(
 
     let response = HTTP_CLIENT
         .get(url)
-        .with_oauth(Some(token))
+        .with_oauth(token)
         .send()
         .await
         .map_err(|e| format!("Failed to fetch artist profile: {}", e))?;
@@ -43,7 +43,7 @@ pub async fn fetch_artist_profile(
 
 pub async fn fetch_all_artist_tracks<F>(
     client_id: &str,
-    token: &str,
+    token: Option<&str>,
     datadome: Option<&str>,
     artist_id: u64,
     on_batch: F,
@@ -70,7 +70,7 @@ where
         log::info!("[artist] Fetching tracks for user {}, page {}", artist_id, (all_tracks.len() / PAGE_SIZE) + 1);
 
         let response = HTTP_CLIENT.get(&url)
-            .with_oauth(Some(token))
+            .with_oauth(token)
             .with_datadome(datadome)
             .send()
             .await
@@ -109,7 +109,7 @@ where
 
 pub async fn resolve_user(
     client_id: &str,
-    token: &str,
+    token: Option<&str>,
     permalink: &str,
 ) -> Result<ArtistProfile, String> {
     if permalink.is_empty()
@@ -124,7 +124,7 @@ pub async fn resolve_user(
 
     log::debug!("[artist] Resolving user permalink: {}", permalink);
 
-    resolve_sc_url::<ArtistProfile>(&sc_url, client_id, Some(token))
+    resolve_sc_url::<ArtistProfile>(&sc_url, client_id, token)
         .await
         .map_err(|e| e.to_string())
 }
