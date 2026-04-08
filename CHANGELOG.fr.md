@@ -7,6 +7,12 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.17.1] - 2026-04-08
+
+### Fixed
+
+- On ne pouvait pas consulter la page d'un artiste sans être connecté
+
 ## [1.17.0] - 2026-04-07
 
 ### Added
