@@ -17,7 +17,7 @@ use commands::{
     fetch_related_tracks,
     get_artist_profile, get_all_artist_tracks, resolve_user,
     follow_user, unfollow_user, check_follow_status,
-    restart_as_admin,
+    check_firefox_installed, open_in_firefox,
 };
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
@@ -94,7 +94,7 @@ pub fn run() {
         follow_user,
         unfollow_user,
         check_follow_status,
-        restart_as_admin
+        check_firefox_installed, open_in_firefox
     ]);
 
     // Export TypeScript bindings in debug mode

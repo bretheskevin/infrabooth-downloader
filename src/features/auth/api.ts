@@ -34,6 +34,10 @@ export async function signOut(): Promise<void> {
   await api.signOut();
 }
 
-export async function restartAsAdmin(): Promise<void> {
-  await api.restartAsAdmin();
+export function checkFirefoxInstalled(): Promise<boolean> {
+  return api.checkFirefoxInstalled();
+}
+
+export async function openInFirefox(): Promise<void> {
+  await api.openInFirefox();
 }

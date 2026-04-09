@@ -97,8 +97,8 @@ pub fn scan_browser_cookies() -> CookieScanResult {
                 if empty_token_count > 0 {
                     warn!(
                         "Found {} oauth_token cookie(s) in {} but value is empty — \
-                         on Windows, Chromium browsers (v130+) require the app to run \
-                         as administrator to decrypt cookies",
+                         Chromium browsers (v130+) use App-Bound Encryption on Windows. \
+                         Use Firefox to sign in instead",
                         empty_token_count, name
                     );
                     appbound_hit = true;

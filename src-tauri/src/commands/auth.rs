@@ -1,4 +1,5 @@
 use crate::services::cookie::scan_browser_cookies;
+use crate::services::http::SOUNDCLOUD_URL;
 use crate::services::library::LibraryCache;
 use crate::services::oauth::verify_token;
 use crate::services::storage::{AuthState, CachedAuth};
@@ -117,70 +118,80 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-/// Restarts the application with administrator privileges (Windows only).
-/// Uses `ShellExecuteW` with the "runas" verb to trigger a UAC elevation prompt,
-/// then exits the current (non-elevated) process.
+
+#[cfg(target_os = "windows")]
+const WINDOWS_FIREFOX_FALLBACK_PATHS: &[&str] = &[
+    r"C:\Program Files\Mozilla Firefox\firefox.exe",
+    r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe",
+];
+
+#[cfg(target_os = "windows")]
+fn firefox_exe_from_registry() -> Option<String> {
+    let output = std::process::Command::new("reg")
+        .args(["query", r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\firefox.exe", "/ve"])
+        .output()
+        .ok()?;
+    if !output.status.success() { return None; }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    stdout.lines()
+        .find_map(|line| line.split("REG_SZ").nth(1))
+        .map(|s| s.trim().to_string())
+        .filter(|path| std::path::Path::new(path).exists())
+}
+
+#[cfg(target_os = "windows")]
+fn find_firefox_exe() -> Option<String> {
+    firefox_exe_from_registry().or_else(|| {
+        WINDOWS_FIREFOX_FALLBACK_PATHS.iter()
+            .find(|p| std::path::Path::new(p).exists())
+            .map(|p| p.to_string())
+    })
+}
+
+#[cfg(target_os = "macos")]
+fn is_firefox_installed_macos() -> bool {
+    let home = std::env::var("HOME").unwrap_or_default();
+    std::path::Path::new("/Applications/Firefox.app").exists()
+        || std::path::Path::new(&format!("{home}/Applications/Firefox.app")).exists()
+}
+
 #[tauri::command]
 #[specta::specta]
-pub async fn restart_as_admin(app: AppHandle) -> Result<(), String> {
+pub fn check_firefox_installed() -> bool {
+    #[cfg(target_os = "windows")]
+    { return find_firefox_exe().is_some(); }
+
+    #[cfg(target_os = "macos")]
+    { return is_firefox_installed_macos(); }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    { false }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn open_in_firefox() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
-        use std::ffi::OsStr;
-        use std::os::windows::ffi::OsStrExt;
-
-        #[link(name = "shell32")]
-        extern "system" {
-            fn ShellExecuteW(
-                hwnd: isize,
-                lpOperation: *const u16,
-                lpFile: *const u16,
-                lpParameters: *const u16,
-                lpDirectory: *const u16,
-                nShowCmd: i32,
-            ) -> isize;
-        }
-
-        fn to_wide(s: &str) -> Vec<u16> {
-            OsStr::new(s).encode_wide().chain(std::iter::once(0)).collect()
-        }
-
-        let exe_path = std::env::current_exe()
-            .map_err(|e| format!("Failed to get executable path: {e}"))?;
-        let exe_str = exe_path.to_string_lossy();
-
-        let operation = to_wide("runas");
-        let file = to_wide(&exe_str);
-
-        const SHELL_EXECUTE_ERROR_THRESHOLD: usize = 32;
-
-        // SAFETY: All pointer arguments are valid, null-terminated wide strings
-        // produced by `to_wide`, or null pointers for unused params. The function
-        // is called with no parent window (hwnd = 0) and only reads these pointers
-        // during the call — they remain alive on the stack for its duration.
-        let result = unsafe {
-            ShellExecuteW(
-                0,
-                operation.as_ptr(),
-                file.as_ptr(),
-                std::ptr::null(),
-                std::ptr::null(),
-                1, // SW_SHOWNORMAL
-            )
-        };
-
-        if result as usize <= SHELL_EXECUTE_ERROR_THRESHOLD {
-            return Err("UAC elevation was cancelled or failed".to_string());
-        }
-
-        app.exit(0);
-        Ok(())
+        let firefox = find_firefox_exe().ok_or_else(|| "Firefox not found".to_string())?;
+        std::process::Command::new(firefox)
+            .arg(SOUNDCLOUD_URL)
+            .spawn()
+            .map_err(|e| format!("Failed to launch Firefox: {e}"))?;
+        return Ok(());
     }
 
-    #[cfg(not(target_os = "windows"))]
+    #[cfg(target_os = "macos")]
     {
-        let _ = app;
-        Err("restart_as_admin is only available on Windows".to_string())
+        std::process::Command::new("open")
+            .args(["-a", "Firefox", SOUNDCLOUD_URL])
+            .spawn()
+            .map_err(|e| format!("Failed to launch Firefox: {e}"))?;
+        return Ok(());
     }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    { Err("Unsupported platform".to_string()) }
 }
 
 #[cfg(test)]

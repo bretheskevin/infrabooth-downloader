@@ -1,6 +1,8 @@
 use once_cell::sync::Lazy;
 use rquest_util::Emulation;
 
+pub const SOUNDCLOUD_URL: &str = "https://soundcloud.com/";
+
 /// Base URL for SoundCloud API v2.
 pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 
