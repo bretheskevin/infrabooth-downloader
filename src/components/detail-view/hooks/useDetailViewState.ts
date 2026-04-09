@@ -63,14 +63,27 @@ export function useDetailViewState(config: UseDetailViewStateConfig) {
     selectableCount,
   } = useTrackSelection(filteredTracks, downloadedIds);
 
-  const { playTrack, syncQueue } = usePlayContext(filteredTracks);
+  const { playTrack: rawPlayTrack, syncQueue } = usePlayContext(filteredTracks);
+
+  const playedFromHereRef = useRef(false);
+  useEffect(() => {
+    playedFromHereRef.current = false;
+  }, [config.resetKey]);
+
+  const playTrack = useCallback(
+    (index: number) => {
+      playedFromHereRef.current = true;
+      rawPlayTrack(index);
+    },
+    [rawPlayTrack],
+  );
 
   const wasStreamingRef = useRef(false);
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
   useEffect(() => {
     const wasStreaming = wasStreamingRef.current;
     wasStreamingRef.current = config.isStreaming ?? false;
-    if (wasStreaming && !config.isStreaming && currentTrackId) {
+    if (wasStreaming && !config.isStreaming && currentTrackId && playedFromHereRef.current) {
       syncQueue();
     }
   }, [config.isStreaming, currentTrackId, syncQueue]);
