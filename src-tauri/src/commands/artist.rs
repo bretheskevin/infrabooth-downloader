@@ -1,6 +1,6 @@
 use tauri::Manager;
 
-use crate::models::artist::ArtistProfile;
+use crate::models::artist::{ArtistProfile, SortOption};
 use crate::services::artist;
 use crate::services::events;
 use crate::services::playlist::TrackInfo;
@@ -35,11 +35,12 @@ pub async fn get_artist_profile(
 pub async fn get_all_artist_tracks(
     app: tauri::AppHandle,
     artist_id: u64,
+    sort: SortOption,
 ) -> Result<Vec<TrackInfo>, String> {
     let datadome = app.state::<AuthState>().get_datadome();
     let (token, client_id) = get_optional_auth_and_cid(&app).await?;
 
     let on_batch = events::make_batch_emitter(&app, events::ARTIST_TRACKS_BATCH, artist_id);
 
-    artist::fetch_all_artist_tracks(&client_id, token.as_deref(), datadome.as_deref(), artist_id, on_batch).await
+    artist::fetch_all_artist_tracks(&client_id, token.as_deref(), datadome.as_deref(), artist_id, &sort, on_batch).await
 }

@@ -24,3 +24,10 @@ pub struct VisualsWrapper {
 pub struct VisualItem {
     pub visual_url: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(rename_all = "lowercase")]
+pub enum SortOption {
+    Recent,
+    Popular,
+}
