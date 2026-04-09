@@ -9,14 +9,13 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 
 use crate::models::error::DownloadError;
+use crate::services::http::SOUNDCLOUD_URL;
 
 static CLIENT_ID_CACHE: Lazy<Mutex<Option<String>>> = Lazy::new(|| Mutex::new(None));
 static SCRIPT_URL_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r#"<script[^>]+src="([^"]+)""#).unwrap());
 static CLIENT_ID_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r#"client_id\s*:\s*"([0-9a-zA-Z]{32})""#).unwrap());
-
-const SOUNDCLOUD_URL: &str = "https://soundcloud.com/";
 const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36";
 
 /// Extract `<script src="...">` URLs from HTML.

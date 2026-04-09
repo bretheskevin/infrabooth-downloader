@@ -53,8 +53,11 @@ export const api = {
   signOut: (): Promise<void> =>
     commands.signOut().then(unwrap).then(() => undefined),
 
-  restartAsAdmin: (): Promise<void> =>
-    commands.restartAsAdmin().then(unwrap).then(() => undefined),
+  checkFirefoxInstalled: (): Promise<boolean> =>
+    commands.checkFirefoxInstalled(),
+
+  openInFirefox: (): Promise<void> =>
+    commands.openInFirefox().then(unwrap).then(() => undefined),
 
   // Media info
   getPlaylistInfo: (url: string): Promise<PlaylistInfo> =>

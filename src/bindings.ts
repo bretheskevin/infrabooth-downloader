@@ -414,14 +414,12 @@ async checkFollowStatus(userId: number) : Promise<Result<boolean, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-/**
- * Restarts the application with administrator privileges (Windows only).
- * Uses `ShellExecuteW` with the "runas" verb to trigger a UAC elevation prompt,
- * then exits the current (non-elevated) process.
- */
-async restartAsAdmin() : Promise<Result<null, string>> {
+async checkFirefoxInstalled() : Promise<boolean> {
+    return await TAURI_INVOKE("check_firefox_installed");
+},
+async openInFirefox() : Promise<Result<null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("restart_as_admin") };
+    return { status: "ok", data: await TAURI_INVOKE("open_in_firefox") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };

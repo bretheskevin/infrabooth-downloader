@@ -33,7 +33,7 @@ pub async fn require_auth_and_cid(app: &tauri::AppHandle) -> Result<(String, Str
     Ok((token, cid))
 }
 
-pub use auth::{check_auth, refresh_auth, restart_as_admin, sign_out};
+pub use auth::{check_auth, check_firefox_installed, open_in_firefox, refresh_auth, sign_out};
 pub use download::{
     cancel_download_queue, download_track_full,
     respond_to_rate_limit_choice, scan_existing_tracks, start_download_queue,

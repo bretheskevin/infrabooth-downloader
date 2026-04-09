@@ -38,9 +38,12 @@
     "signInAgain": "Actualiser",
     "continueStandard": "Continuer en qualité standard",
     "qualityBadge": "Go+ 256kbps",
-    "cookieWarningAppbound": "Les cookies Chrome/Edge ne sont pas lisibles sans privilèges admin sous Windows",
-    "restartAsAdmin": "Relancer en admin",
-    "useFirefoxHint": "Ou connectez-vous via Firefox"
+    "cookieWarningAppbound": "Les navigateurs Chromium bloquent l'accès aux cookies",
+    "openInFirefox": "Ouvrir SoundCloud dans Firefox",
+    "downloadFirefox": "Télécharger Firefox",
+    "retrySignIn": "Réessayer",
+    "firefoxHint": "Connectez-vous à SoundCloud dans Firefox, puis réessayez ici",
+    "firefoxOpenError": "Impossible d'ouvrir Firefox"
   },
   "download": {
     "button": "Télécharger",

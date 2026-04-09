@@ -1,8 +1,12 @@
 import { useEffect } from 'react';
 import type { TrackInfo } from '@/bindings';
+import { cn } from '@/lib/utils';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { InteractiveTrackRow } from '@/components/InteractiveTrackRow';
+import { useIsMiniPillVisible } from '@/features/player/hooks/useIsMiniPillVisible';
+
+const MINI_PILL_BOTTOM_PADDING = 'pb-10';
 
 interface DetailViewTrackListProps {
   tracks: TrackInfo[];
@@ -23,6 +27,8 @@ export function DetailViewTrackList({
   initialScrollOffset,
   onScrollOffsetChange,
 }: DetailViewTrackListProps) {
+  const miniPillVisible = useIsMiniPillVisible();
+
   if (virtualized) {
     return (
       <VirtualizedTrackList
@@ -37,7 +43,7 @@ export function DetailViewTrackList({
   }
 
   return (
-    <div className="flex flex-col gap-0.5 overflow-y-auto min-h-0">
+    <div className={cn('flex flex-col gap-0.5 overflow-y-auto min-h-0', miniPillVisible && MINI_PILL_BOTTOM_PADDING)}>
       {tracks.map((track, index) => (
         <InteractiveTrackRow
           key={track.id}
@@ -61,6 +67,7 @@ function VirtualizedTrackList({
   initialScrollOffset,
   onScrollOffsetChange,
 }: Omit<DetailViewTrackListProps, 'virtualized'>) {
+  const miniPillVisible = useIsMiniPillVisible();
   const { parentRef, virtualItems, totalSize, getScrollOffset } = useVirtualizedList({
     count: tracks.length,
     itemHeight,
@@ -78,7 +85,7 @@ function VirtualizedTrackList({
     <VirtualListContainer
       parentRef={parentRef}
       totalSize={totalSize}
-      className="flex-1 min-h-0 pr-2"
+      className={cn('flex-1 min-h-0 pr-2', miniPillVisible && MINI_PILL_BOTTOM_PADDING)}
     >
       {virtualItems.map((virtualItem) => {
         const track = tracks[virtualItem.index];
