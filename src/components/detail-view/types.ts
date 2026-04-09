@@ -9,7 +9,7 @@ export interface SortConfig<T extends string = string> {
   onChange: (key: T) => void;
   direction: 'asc' | 'desc';
   onDirectionChange: (dir: 'asc' | 'desc') => void;
-  variant?: 'chips' | 'select';
+  variant?: 'chips' | 'select' | 'tabs';
 }
 
 export interface TrackListConfig {
