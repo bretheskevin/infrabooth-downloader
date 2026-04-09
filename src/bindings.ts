@@ -390,6 +390,14 @@ async resolveUser(permalink: string) : Promise<Result<ArtistProfile, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async resolveSoundcloudLink(url: string) : Promise<Result<ResolvedLink, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("resolve_soundcloud_link", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getArtistPlaylists(artistId: number) : Promise<Result<ArtistPlaylist[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_artist_playlists", { artistId }) };
@@ -525,6 +533,7 @@ export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: Release
 export type ReleaseActivityType = "New" | "Repost"
 export type ReleaseInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; permalink_url: string; release_type: ReleaseType }
 export type ReleaseType = "Album" | "EP" | "Single" | "Compilation" | "Playlist"
+export type ResolvedLink = { kind: string; user_id: number | null; username: string | null }
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
 export type SortOption = "recent" | "popular"

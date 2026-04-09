@@ -41,3 +41,10 @@ pub struct ArtistPlaylist {
     pub created_at: String,
     pub permalink_url: String,
 }
+
+#[derive(Debug, Clone, Serialize, Type)]
+pub struct ResolvedLink {
+    pub kind: String,
+    pub user_id: Option<u64>,
+    pub username: Option<String>,
+}
