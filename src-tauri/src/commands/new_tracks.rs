@@ -47,6 +47,7 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
     })?;
     log::info!("[new-tracks] Fetched stream: {} artists with tracks, {} with releases", stream_data.tracks.len(), stream_data.releases.len());
 
+    let mut seen_times = std::collections::HashMap::<u64, i64>::new();
     let mut artists: Vec<FollowedArtist> = raw_artists
         .into_iter()
         .filter_map(|raw| {
@@ -78,6 +79,8 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
                 items.iter().any(|item| item.activity_type == new_tracks::ReleaseActivityType::New)
             });
 
+            seen_times.insert(raw.id, track_last_seen.max(release_last_seen));
+
             Some(FollowedArtist {
                 id: raw.id,
                 username: raw.username,
@@ -90,17 +93,15 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
         })
         .collect();
 
-    let seen_times: std::collections::HashMap<u64, i64> = artists
-        .iter()
-        .filter_map(|a| seen.get_track_seen(a.id).map(|ts| (a.id, ts)))
-        .collect();
 
     artists.sort_by(|a, b| {
-        match b.has_new_content.cmp(&a.has_new_content) {
+        let a_has_new = a.has_new_content || a.has_new_releases;
+        let b_has_new = b.has_new_content || b.has_new_releases;
+        match b_has_new.cmp(&a_has_new) {
             std::cmp::Ordering::Equal => {
                 let a_seen = seen_times.get(&a.id).copied().unwrap_or(0);
                 let b_seen = seen_times.get(&b.id).copied().unwrap_or(0);
-                if a.has_new_content {
+                if a_has_new {
                     a_seen.cmp(&b_seen)
                 } else {
                     b_seen.cmp(&a_seen)
