@@ -508,9 +508,9 @@ export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: Release
 export type ReleaseActivityType = "New" | "Repost"
 export type ReleaseInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; permalink_url: string; release_type: ReleaseType }
 export type ReleaseType = "Album" | "EP" | "Single" | "Compilation" | "Playlist"
-export type SortOption = "recent" | "popular"
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
+export type SortOption = "recent" | "popular"
 export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }
 /**
  * Core track data shared across all track-related types.
