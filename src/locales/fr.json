@@ -425,6 +425,12 @@
     "follow": "Suivre",
     "following": "Suivi",
     "followError": "Impossible de suivre cet artiste",
-    "unfollowError": "Impossible de se désabonner de cet artiste"
+    "unfollowError": "Impossible de se désabonner de cet artiste",
+    "playlists": "Playlists",
+    "playlistsError": "Impossible de charger les playlists",
+    "noPlaylists": "Cet artiste n'a aucune playlist publique",
+    "playlistTrackCount": "{{count}} titre",
+    "playlistTrackCount_other": "{{count}} titres",
+    "noPlaylistTracks": "Cette playlist ne contient aucun titre"
   }
 }

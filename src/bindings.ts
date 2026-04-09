@@ -390,6 +390,22 @@ async resolveUser(permalink: string) : Promise<Result<ArtistProfile, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getArtistPlaylists(artistId: number) : Promise<Result<ArtistPlaylist[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_playlists", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistPlaylistTracks(playlistId: number) : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_playlist_tracks", { playlistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async followUser(userId: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("follow_user", { userId }) };
@@ -452,6 +468,7 @@ tracksBatchEvent: "tracks-batch-event"
 
 export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
 export type ActivityType = "Track" | "Repost"
+export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string }
 export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null }
 export type DownloadRequest = ({ 

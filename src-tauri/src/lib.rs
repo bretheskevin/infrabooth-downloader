@@ -16,6 +16,7 @@ use commands::{
     mark_artist_seen, mark_artist_releases_seen,
     fetch_related_tracks,
     get_artist_profile, get_all_artist_tracks, resolve_user,
+    get_artist_playlists, get_artist_playlist_tracks,
     follow_user, unfollow_user, check_follow_status,
     check_firefox_installed, open_in_firefox,
 };
@@ -91,6 +92,8 @@ pub fn run() {
         get_artist_profile,
         get_all_artist_tracks,
         resolve_user,
+        get_artist_playlists,
+        get_artist_playlist_tracks,
         follow_user,
         unfollow_user,
         check_follow_status,

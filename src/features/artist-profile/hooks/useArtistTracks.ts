@@ -1,5 +1,6 @@
 import { api } from '@/lib/tauri';
 import { useStreamedQuery } from '@/hooks/useStreamedQuery';
+import { DEFAULT_STALE_TIME, DEFAULT_GC_TIME } from '@/lib/query';
 import type { SortOption } from '@/bindings';
 
 export function useArtistTracks(artistId: number | null, sort: SortOption) {
@@ -9,7 +10,7 @@ export function useArtistTracks(artistId: number | null, sort: SortOption) {
     queryKey: ['artist-tracks', artistId, sort],
     queryFn: () => api.getAllArtistTracks(artistId!, sort),
     enabled: artistId !== null,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
+    staleTime: DEFAULT_STALE_TIME,
+    gcTime: DEFAULT_GC_TIME,
   });
 }

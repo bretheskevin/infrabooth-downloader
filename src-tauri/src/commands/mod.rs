@@ -68,7 +68,7 @@ pub mod related;
 pub use related::fetch_related_tracks;
 
 pub mod artist;
-pub use artist::{get_artist_profile, get_all_artist_tracks, resolve_user};
+pub use artist::{get_artist_profile, get_all_artist_tracks, resolve_user, get_artist_playlists, get_artist_playlist_tracks};
 
 pub mod follow;
 pub use follow::{follow_user, unfollow_user, check_follow_status};

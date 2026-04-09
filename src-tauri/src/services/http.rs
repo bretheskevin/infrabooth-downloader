@@ -12,6 +12,9 @@ pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 pub const SC_APP_VERSION: &str = "1775080930";
 pub const CHROME_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
+pub const DEFAULT_PAGE_SIZE: usize = 20;
+pub const DEFAULT_PAGE_SIZE_STR: &str = "20";
+
 pub static HTTP_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
     use rquest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER, USER_AGENT};
 
@@ -147,6 +150,80 @@ impl RequestBuilderExt for rquest::RequestBuilder {
             None => self,
         }
     }
+}
+
+pub fn build_sc_paginated_url(base_url: &str, client_id: &str) -> Result<rquest::Url, String> {
+    rquest::Url::parse_with_params(
+        base_url,
+        &[
+            ("client_id", client_id),
+            ("limit", DEFAULT_PAGE_SIZE_STR),
+            ("linked_partitioning", "1"),
+            ("app_version", SC_APP_VERSION),
+            ("app_locale", "en"),
+        ],
+    )
+    .map_err(|e| format!("Failed to build URL: {}", e))
+}
+
+#[derive(serde::Deserialize)]
+pub struct PaginatedResponse<T> {
+    pub collection: Vec<T>,
+    pub next_href: Option<String>,
+}
+
+pub async fn fetch_all_pages<Raw, T, F, M>(
+    initial_url: String,
+    token: Option<&str>,
+    datadome: Option<&str>,
+    label: &str,
+    page_size: usize,
+    map_item: M,
+    on_batch: F,
+) -> Result<Vec<T>, String>
+where
+    Raw: serde::de::DeserializeOwned,
+    M: Fn(Raw) -> T,
+    F: Fn(&[T]),
+{
+    let mut all_items = Vec::new();
+    let mut next_url: Option<String> = Some(initial_url);
+
+    while let Some(url) = next_url.take() {
+        log::info!("[{}] Fetching page {}", label, (all_items.len() / page_size) + 1);
+
+        let response = HTTP_CLIENT
+            .get(&url)
+            .with_oauth(token)
+            .with_datadome(datadome)
+            .send()
+            .await
+            .map_err(|e| format!("Failed to fetch {}: {}", label, e))?;
+
+        validate_api_response(response.status()).map_err(|e| e.to_string())?;
+
+        let body = response.text().await.map_err(|e| format!("Failed to read response body: {}", e))?;
+
+        let api_response: PaginatedResponse<Raw> = serde_json::from_str(&body).map_err(|e| {
+            let preview = body.get(..200).unwrap_or(&body);
+            log::error!("[{}] Parse error: {} — body preview: {}", label, e, preview);
+            format!("Failed to parse {}: {}", label, e)
+        })?;
+
+        log::info!("[{}] Fetched {} items, has_more={}", label, api_response.collection.len(), api_response.next_href.is_some());
+
+        if !api_response.collection.is_empty() {
+            let items: Vec<T> = api_response.collection.into_iter().map(&map_item).collect();
+            on_batch(&items);
+            all_items.extend(items);
+        }
+
+        next_url = api_response.next_href;
+    }
+
+    log::info!("[{}] Completed: {} total items", label, all_items.len());
+
+    Ok(all_items)
 }
 
 pub async fn parse_rate_limit_response(response: rquest::Response) -> crate::models::error::DownloadError {
