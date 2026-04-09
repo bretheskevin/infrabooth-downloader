@@ -1,8 +1,29 @@
 import { useState, useEffect, type ReactNode } from 'react';
+import { open } from '@tauri-apps/plugin-shell';
 import { commands } from '@/bindings';
 import { useArtistProfileStore } from '../store';
 
-const LINKIFY_REGEX = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(https?:\/\/soundcloud\.com\/([\w][\w-]*[\w]|[\w])(?=[^\w/-]|$))|(@[\w][\w-]*[\w]|@[\w])/g;
+const LINKIFY_REGEX = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(https?:\/\/soundcloud\.com\/([\w][\w-]*[\w]|[\w])(?=[^\w/-]|$))|(https?:\/\/[^\s<>"{}|\\^`\[\]]+[^\s<>"{}|\\^`\[\].,;:!?)'\]])|(@[\w][\w-]*[\w]|@[\w])/g;
+
+function isHttpUrl(url: string): boolean {
+  return url.startsWith('http://') || url.startsWith('https://');
+}
+
+function handleOpenExternal(url: string) {
+  return (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isHttpUrl(url)) void open(url);
+  };
+}
+
+function ExternalLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <a href={href} onClick={handleOpenExternal(href)} className="underline hover:text-foreground">
+      {children}
+    </a>
+  );
+}
 
 const MAX_CACHE_SIZE = 200;
 const CONCURRENCY_LIMIT = 3;
@@ -123,7 +144,7 @@ export function linkifyDescription(text: string): ReactNode[] {
       parts.push(text.slice(lastIndex, index));
     }
 
-    const [full, email, , scUrlUsername] = match;
+    const [full, email, , scUrlUsername, genericUrl] = match;
     if (email) {
       parts.push(
         <a
@@ -135,20 +156,14 @@ export function linkifyDescription(text: string): ReactNode[] {
           {email}
         </a>,
       );
+    } else if (genericUrl) {
+      parts.push(<ExternalLink key={index} href={genericUrl}>{genericUrl}</ExternalLink>);
     } else if (scUrlUsername && scUrlUsername.length >= 3) {
       parts.push(<MentionLink key={index} username={scUrlUsername} />);
     } else if (scUrlUsername) {
+      const scUrl = `https://soundcloud.com/${scUrlUsername}`;
       parts.push(
-        <a
-          key={index}
-          href={`https://soundcloud.com/${scUrlUsername}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          className="underline hover:text-foreground"
-        >
-          soundcloud.com/{scUrlUsername}
-        </a>,
+        <ExternalLink key={index} href={scUrl}>soundcloud.com/{scUrlUsername}</ExternalLink>,
       );
     } else {
       const username = full.slice(1);
