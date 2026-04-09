@@ -3,6 +3,7 @@ import { ArrowUpDown, Loader2 } from 'lucide-react';
 import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
 import { SortDirectionSelect } from '@/components/SortDirectionSelect';
 import { FilterChips } from '@/components/FilterChips';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { SortConfig } from './types';
 
@@ -23,15 +24,36 @@ export function DetailViewToolbar<S extends string = string>({
   sort,
   isStreaming,
 }: DetailViewToolbarProps<S>) {
+  const { t } = useTranslation();
   const showSelectAll = isDownloadEnabled && hasSelectableTracks;
   const isSelectVariant = sort?.variant === 'select';
-  const showChipsRow = sort && !isSelectVariant;
+  const showChipsRow = sort && (!sort.variant || sort.variant === 'chips');
+  const showTabsRow = sort && sort.variant === 'tabs';
   const showSecondRow = showSelectAll || isSelectVariant || (!sort && isStreaming);
 
-  if (!showChipsRow && !showSecondRow) return null;
+  if (!showChipsRow && !showTabsRow && !showSecondRow) return null;
 
   return (
     <div className="flex flex-col gap-2">
+      {showTabsRow && (
+        <div className="flex items-center justify-between px-1 pb-2">
+          <Tabs value={sort.active} onValueChange={(v) => sort.onChange(v as S)}>
+            <TabsList variant="underline">
+              {sort.options.map(({ key, label }) => (
+                <TabsTrigger key={key} value={key} className="text-xs px-2">
+                  {t(label)}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </Tabs>
+          <div className="flex items-center gap-2">
+            {isStreaming && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            )}
+            <SortDirectionSelect value={sort.direction} onChange={sort.onDirectionChange} />
+          </div>
+        </div>
+      )}
       {showChipsRow && (
         <div className="flex items-center justify-between px-1">
           <div className="flex items-center gap-2">

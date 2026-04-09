@@ -124,6 +124,7 @@ export function ArtistProfileView({
         onChange: setSort,
         direction: sortDirection,
         onDirectionChange: setSortDirection,
+        variant: 'tabs',
       }}
       trackList={{
         virtualized: true,
