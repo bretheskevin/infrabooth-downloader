@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDetailViewState } from '../hooks/useDetailViewState';
 import type { TrackInfo } from '@/bindings';

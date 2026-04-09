@@ -374,9 +374,9 @@ async getArtistProfile(artistId: number) : Promise<Result<ArtistProfile, string>
     else return { status: "error", error: e  as any };
 }
 },
-async getAllArtistTracks(artistId: number) : Promise<Result<TrackInfo[], string>> {
+async getAllArtistTracks(artistId: number, sort: SortOption) : Promise<Result<TrackInfo[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_all_artist_tracks", { artistId }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_all_artist_tracks", { artistId, sort }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -508,6 +508,7 @@ export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: Release
 export type ReleaseActivityType = "New" | "Repost"
 export type ReleaseInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; permalink_url: string; release_type: ReleaseType }
 export type ReleaseType = "Album" | "EP" | "Single" | "Compilation" | "Playlist"
+export type SortOption = "recent" | "popular"
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
 export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }

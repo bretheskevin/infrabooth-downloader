@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import { ArtistProfileHeader } from './ArtistProfileHeader';
 import { FollowButton } from './FollowButton';
 import type { SortDirection } from '@/lib/sort';
 import type { TrackInfo } from '@/bindings';
-import type { SortOption } from '../types';
+import type { SortOption } from '@/bindings';
 
 const ARTIST_SORT_OPTIONS = [
   { key: 'recent', label: 'artistProfile.sortRecent' },
@@ -36,6 +36,13 @@ export function ArtistProfileView({
   const { t } = useTranslation();
   const [sort, setSort] = useState<SortOption>('recent');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [prevArtistId, setPrevArtistId] = useState(artistId);
+
+  if (prevArtistId !== artistId) {
+    setPrevArtistId(artistId);
+    setSort('recent');
+    setSortDirection('desc');
+  }
 
   const { data: profile, isLoading: isProfileLoading } = useArtistProfile(artistId);
   const {
@@ -44,20 +51,9 @@ export function ArtistProfileView({
     isStreaming,
     error: tracksError,
     refetch: refetchTracks,
-  } = useArtistTracks(artistId);
+  } = useArtistTracks(artistId, sort);
 
-  useEffect(() => {
-    setSortDirection('desc');
-    setSort('recent');
-  }, [artistId]);
-
-  const tracks = useMemo(() => {
-    const all = tracksData ?? [];
-    if (sort === 'recent') {
-      return [...all].sort((a, b) => b.id - a.id);
-    }
-    return all;
-  }, [tracksData, sort]);
+  const tracks = useMemo(() => tracksData ?? [], [tracksData]);
 
   const sortedTracks = useMemo(
     () => (sortDirection === 'asc' ? [...tracks].reverse() : tracks),

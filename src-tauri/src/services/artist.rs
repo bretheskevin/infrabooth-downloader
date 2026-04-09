@@ -1,6 +1,6 @@
 use rquest::Url;
 
-use crate::models::artist::ArtistProfile;
+use crate::models::artist::{ArtistProfile, SortOption};
 use crate::services::http::{resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
 use crate::services::playlist::{RawTrackInfo, TrackInfo};
 
@@ -46,13 +46,19 @@ pub async fn fetch_all_artist_tracks<F>(
     token: Option<&str>,
     datadome: Option<&str>,
     artist_id: u64,
+    sort: &SortOption,
     on_batch: F,
 ) -> Result<Vec<TrackInfo>, String>
 where
     F: Fn(&[TrackInfo]),
 {
+    let base_url = match sort {
+        SortOption::Recent => format!("{}/users/{}/tracks", API_V2_BASE, artist_id),
+        SortOption::Popular => format!("{}/users/{}/toptracks", API_V2_BASE, artist_id),
+    };
+
     let initial_url = Url::parse_with_params(
-        &format!("{}/users/{}/toptracks", API_V2_BASE, artist_id),
+        &base_url,
         &[
             ("client_id", client_id),
             ("limit", PAGE_SIZE_STR),
@@ -67,7 +73,7 @@ where
     let mut next_url: Option<String> = Some(initial_url.to_string());
 
     while let Some(url) = next_url.take() {
-        log::info!("[artist] Fetching tracks for user {}, page {}", artist_id, (all_tracks.len() / PAGE_SIZE) + 1);
+        log::info!("[artist] Fetching tracks for user {} (sort={:?}), page {}", artist_id, sort, (all_tracks.len() / PAGE_SIZE) + 1);
 
         let response = HTTP_CLIENT.get(&url)
             .with_oauth(token)
