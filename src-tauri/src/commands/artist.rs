@@ -1,8 +1,10 @@
 use tauri::Manager;
 
-use crate::models::artist::{ArtistProfile, SortOption};
+use crate::models::artist::{ArtistPlaylist, ArtistProfile, SortOption};
 use crate::services::artist;
+use crate::services::artist_playlists;
 use crate::services::events;
+use crate::services::playlist;
 use crate::services::playlist::TrackInfo;
 use crate::services::storage::AuthState;
 
@@ -43,4 +45,31 @@ pub async fn get_all_artist_tracks(
     let on_batch = events::make_batch_emitter(&app, events::ARTIST_TRACKS_BATCH, artist_id);
 
     artist::fetch_all_artist_tracks(&client_id, token.as_deref(), datadome.as_deref(), artist_id, &sort, on_batch).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_artist_playlists(
+    app: tauri::AppHandle,
+    artist_id: u64,
+) -> Result<Vec<ArtistPlaylist>, String> {
+    let datadome = app.state::<AuthState>().get_datadome();
+    let (token, client_id) = get_optional_auth_and_cid(&app).await?;
+
+    artist_playlists::fetch_artist_playlists(&client_id, token.as_deref(), datadome.as_deref(), artist_id, |_| {}).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_artist_playlist_tracks(
+    app: tauri::AppHandle,
+    playlist_id: u64,
+) -> Result<Vec<TrackInfo>, String> {
+    let (token, _client_id) = get_optional_auth_and_cid(&app).await?;
+
+    let on_batch = events::make_batch_emitter(&app, events::ARTIST_PLAYLIST_TRACKS_BATCH, playlist_id);
+
+    playlist::fetch_playlist_by_id(playlist_id, None, token.as_deref(), on_batch)
+        .await
+        .map_err(|e| e.to_string())
 }

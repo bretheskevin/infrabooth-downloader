@@ -31,3 +31,13 @@ pub enum SortOption {
     Recent,
     Popular,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct ArtistPlaylist {
+    pub id: u64,
+    pub title: String,
+    pub artwork_url: Option<String>,
+    pub track_count: u32,
+    pub created_at: String,
+    pub permalink_url: String,
+}

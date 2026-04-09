@@ -1,11 +1,8 @@
 use rquest::Url;
 
 use crate::models::artist::{ArtistProfile, SortOption};
-use crate::services::http::{resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
-use crate::services::playlist::{RawTrackInfo, TrackInfo};
-
-const PAGE_SIZE: usize = 20;
-const PAGE_SIZE_STR: &str = "20";
+use crate::services::http::{build_sc_paginated_url, fetch_all_pages, resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, DEFAULT_PAGE_SIZE, HTTP_CLIENT};
+use crate::services::playlist::TrackInfo;
 
 pub async fn fetch_artist_profile(
     client_id: &str,
@@ -57,60 +54,18 @@ where
         SortOption::Popular => format!("{}/users/{}/toptracks", API_V2_BASE, artist_id),
     };
 
-    let initial_url = Url::parse_with_params(
-        &base_url,
-        &[
-            ("client_id", client_id),
-            ("limit", PAGE_SIZE_STR),
-            ("linked_partitioning", "1"),
-            ("app_version", SC_APP_VERSION),
-            ("app_locale", "en"),
-        ],
+    let initial_url = build_sc_paginated_url(&base_url, client_id)?;
+
+    fetch_all_pages(
+        initial_url.to_string(),
+        token,
+        datadome,
+        &format!("artist_tracks:user_{}:{:?}", artist_id, sort),
+        DEFAULT_PAGE_SIZE,
+        |raw: crate::services::playlist::RawTrackInfo| TrackInfo::from(raw),
+        on_batch,
     )
-    .map_err(|e| format!("Failed to build URL: {}", e))?;
-
-    let mut all_tracks = Vec::new();
-    let mut next_url: Option<String> = Some(initial_url.to_string());
-
-    while let Some(url) = next_url.take() {
-        log::info!("[artist] Fetching tracks for user {} (sort={:?}), page {}", artist_id, sort, (all_tracks.len() / PAGE_SIZE) + 1);
-
-        let response = HTTP_CLIENT.get(&url)
-            .with_oauth(token)
-            .with_datadome(datadome)
-            .send()
-            .await
-            .map_err(|e| format!("Failed to fetch artist tracks: {}", e))?;
-
-        validate_api_response(response.status()).map_err(|e| e.to_string())?;
-
-        let body = response
-            .text()
-            .await
-            .map_err(|e| format!("Failed to read response body: {}", e))?;
-
-        let api_response: ApiTracksResponse = serde_json::from_str(&body)
-            .map_err(|e| {
-                let preview = body.get(..200).unwrap_or(&body);
-                log::error!("[artist] Parse error: {} — body preview: {}", e, preview);
-                format!("Failed to parse artist tracks: {}", e)
-            })?;
-
-        let tracks: Vec<TrackInfo> = api_response.collection.into_iter().map(TrackInfo::from).collect();
-
-        log::info!("[artist] Fetched {} tracks, has_more={}", tracks.len(), api_response.next_href.is_some());
-
-        if !tracks.is_empty() {
-            on_batch(&tracks);
-            all_tracks.extend(tracks);
-        }
-
-        next_url = api_response.next_href;
-    }
-
-    log::info!("[artist] Completed: {} total tracks for user {}", all_tracks.len(), artist_id);
-
-    Ok(all_tracks)
+    .await
 }
 
 pub async fn resolve_user(
@@ -133,10 +88,4 @@ pub async fn resolve_user(
     resolve_sc_url::<ArtistProfile>(&sc_url, client_id, token)
         .await
         .map_err(|e| e.to_string())
-}
-
-#[derive(serde::Deserialize)]
-struct ApiTracksResponse {
-    collection: Vec<RawTrackInfo>,
-    next_href: Option<String>,
 }

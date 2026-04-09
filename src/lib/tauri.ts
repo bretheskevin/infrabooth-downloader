@@ -16,6 +16,7 @@ import {
   type UserSearchResponse,
   type ReleaseActivityItem,
   type SortOption,
+  type ArtistPlaylist,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -156,6 +157,12 @@ export const api = {
 
   getAllArtistTracks: (artistId: number, sort: SortOption): Promise<TrackInfo[]> =>
     commands.getAllArtistTracks(artistId, sort).then(unwrap),
+
+  getArtistPlaylists: (artistId: number): Promise<ArtistPlaylist[]> =>
+    commands.getArtistPlaylists(artistId).then(unwrap),
+
+  getArtistPlaylistTracks: (playlistId: number): Promise<TrackInfo[]> =>
+    commands.getArtistPlaylistTracks(playlistId).then(unwrap),
 
   getArtistReleases: (artistId: number): Promise<ReleaseActivityItem[]> =>
     commands.getArtistReleases(artistId).then(unwrap),

@@ -16,6 +16,7 @@ pub const QUEUE_CANCELLED: &str = "queue-cancelled";
 pub const DOWNLOAD_RATE_LIMITED: &str = "download-rate-limited";
 pub const PLAYLIST_TRACKS_BATCH: &str = "playlist-tracks-batch";
 pub const ARTIST_TRACKS_BATCH: &str = "artist-tracks-batch";
+pub const ARTIST_PLAYLIST_TRACKS_BATCH: &str = "artist-playlist-tracks-batch";
 pub const AUTH_STATE_CHANGED: &str = "auth-state-changed";
 pub const AUTH_REAUTH_NEEDED: &str = "auth-reauth-needed";
 pub const OPEN_SETTINGS: &str = "open-settings";
