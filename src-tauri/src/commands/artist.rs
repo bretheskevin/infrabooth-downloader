@@ -1,6 +1,6 @@
 use tauri::Manager;
 
-use crate::models::artist::{ArtistPlaylist, ArtistProfile, SortOption};
+use crate::models::artist::{ArtistPlaylist, ArtistProfile, ResolvedLink, SortOption};
 use crate::services::artist;
 use crate::services::artist_playlists;
 use crate::services::events;
@@ -19,6 +19,17 @@ pub async fn resolve_user(
     let (token, client_id) = get_optional_auth_and_cid(&app).await?;
 
     artist::resolve_user(&client_id, token.as_deref(), &permalink).await
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn resolve_soundcloud_link(
+    app: tauri::AppHandle,
+    url: String,
+) -> Result<ResolvedLink, String> {
+    let (token, client_id) = get_optional_auth_and_cid(&app).await?;
+
+    artist::resolve_soundcloud_link(&client_id, token.as_deref(), &url).await
 }
 
 #[tauri::command]

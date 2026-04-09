@@ -3,7 +3,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { commands } from '@/bindings';
 import { useArtistProfileStore } from '../store';
 
-const LINKIFY_REGEX = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(https?:\/\/soundcloud\.com\/([\w][\w-]*[\w]|[\w])(?=[^\w/-]|$))|(https?:\/\/[^\s<>"{}|\\^`\[\]]+[^\s<>"{}|\\^`\[\].,;:!?)'\]])|(@[\w][\w-]*[\w]|@[\w])/g;
+const LINKIFY_REGEX = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(https?:\/\/soundcloud\.com\/([\w][\w-]*[\w]|[\w])(?=[^\w/-]|$))|(https?:\/\/on\.soundcloud\.com\/[a-zA-Z0-9]+)|(https?:\/\/[^\s<>"{}|\\^`\[\]]+[^\s<>"{}|\\^`\[\].,;:!?)'\]])|(@[\w][\w-]*[\w]|@[\w])/g;
 
 function isHttpUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
@@ -134,6 +134,38 @@ function MentionLink({ username }: { username: string }) {
   );
 }
 
+function ShortLink({ url }: { url: string }) {
+  const openProfile = useArtistProfileStore((s) => s.openProfile);
+  const [resolving, setResolving] = useState(false);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResolving(true);
+    commands.resolveSoundcloudLink(url).then((result) => {
+      if (result.status === 'ok' && result.data.kind === 'user' && result.data.user_id && result.data.username) {
+        openProfile(result.data.user_id, result.data.username);
+      } else if (isHttpUrl(url)) {
+        void open(url);
+      }
+    }).catch(() => {
+      if (isHttpUrl(url)) void open(url);
+    }).finally(() => {
+      setResolving(false);
+    });
+  };
+
+  return (
+    <a
+      href={url}
+      onClick={handleClick}
+      className={`underline hover:text-foreground ${resolving ? 'opacity-50 pointer-events-none' : ''}`}
+    >
+      {url}
+    </a>
+  );
+}
+
 export function linkifyDescription(text: string): ReactNode[] {
   const parts: ReactNode[] = [];
   let lastIndex = 0;
@@ -144,7 +176,7 @@ export function linkifyDescription(text: string): ReactNode[] {
       parts.push(text.slice(lastIndex, index));
     }
 
-    const [full, email, , scUrlUsername, genericUrl] = match;
+    const [full, email, , scUrlUsername, scShortUrl, genericUrl] = match;
     if (email) {
       parts.push(
         <a
@@ -156,6 +188,8 @@ export function linkifyDescription(text: string): ReactNode[] {
           {email}
         </a>,
       );
+    } else if (scShortUrl) {
+      parts.push(<ShortLink key={index} url={scShortUrl} />);
     } else if (genericUrl) {
       parts.push(<ExternalLink key={index} href={genericUrl}>{genericUrl}</ExternalLink>);
     } else if (scUrlUsername && scUrlUsername.length >= 3) {
