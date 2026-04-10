@@ -7,6 +7,18 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-04-10
+
+### Added
+
+- Accès direct aux playlists des artistes depuis leur profil
+- Les liens de la description des profils sont maintenant cliquables
+- Support des liens SoundCloud raccourcis
+
+### Fixed
+
+- La file d'attente se synchronisait mal pendant la lecture
+
 ## [1.17.1] - 2026-04-08
 
 ### Fixed
