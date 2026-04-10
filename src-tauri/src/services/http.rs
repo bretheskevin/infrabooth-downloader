@@ -15,9 +15,16 @@ pub const CHROME_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_1
 pub const DEFAULT_PAGE_SIZE: usize = 20;
 pub const DEFAULT_PAGE_SIZE_STR: &str = "20";
 
+fn skip_tls_verify() -> bool {
+    std::env::var("DANGER_SKIP_TLS_VERIFY")
+        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
+        .unwrap_or(false)
+}
+
 static NO_REDIRECT_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
     rquest::Client::builder()
         .redirect(rquest::redirect::Policy::none())
+        .cert_verification(!skip_tls_verify())
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .expect("Failed to create no-redirect HTTP client")
@@ -65,6 +72,7 @@ pub static HTTP_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
     rquest::Client::builder()
         .emulation(Emulation::Chrome136)
         .default_headers(headers)
+        .cert_verification(!skip_tls_verify())
         .timeout(std::time::Duration::from_secs(30))
         .build()
         .expect("Failed to create HTTP client")
