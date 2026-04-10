@@ -10,6 +10,7 @@ import { RefreshButton } from '@/components/ui/refresh-button';
 import { useArtistReleases } from '../hooks/useArtistReleases';
 import { useNewReleasesStore } from '../store';
 import { ReleaseCard } from './ReleaseCard';
+import { useArtistProfileStore } from '@/features/artist-profile';
 import type { FollowedArtist, ReleaseType } from '@/bindings';
 import type { ReleaseFilter } from '../constants';
 
@@ -45,7 +46,7 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
       <DetailHeader
         navigation={<Breadcrumb items={[
           { label: t('newReleases.title'), onClick: onBack },
-          { label: artist.username },
+          { label: artist.username, onClick: () => useArtistProfileStore.getState().openProfile(artist.id, artist.username) },
         ]} />}
         artwork={
           <ArtistAvatarImage

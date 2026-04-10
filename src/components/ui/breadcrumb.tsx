@@ -14,8 +14,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
     <nav className="flex items-center gap-1 text-xs" aria-label="Breadcrumb">
       {items.map((item, index) => {
         const isFirst = index === 0;
-        const isLast = index === items.length - 1;
-        const isClickable = !isLast && !!item.onClick;
+        const isClickable = !!item.onClick;
 
         return (
           <span key={item.label} className="flex items-center gap-1">

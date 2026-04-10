@@ -9,6 +9,7 @@ import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { ActivityBadge } from './ActivityBadge';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import type { ActivityItem, ActivityType, FollowedArtist, TrackInfo } from '@/bindings';
+import { useArtistProfileStore } from '@/features/artist-profile';
 import { useNewTracksStore } from '../store';
 import type { ActivityFilter } from '../store';
 
@@ -57,7 +58,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
         <DetailHeader
           navigation={<Breadcrumb items={[
             { label: t('newTracks.title'), onClick: onBack },
-            { label: artist.username },
+            { label: artist.username, onClick: () => useArtistProfileStore.getState().openProfile(artist.id, artist.username) },
           ]} />}
           artwork={
             <ArtistAvatarImage
