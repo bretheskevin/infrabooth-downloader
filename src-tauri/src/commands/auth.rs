@@ -43,6 +43,9 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
         .await
         .map_err(|e| e.to_string())?;
 
+    // Always store datadome — it's needed for all API calls, even without auth
+    state.set_datadome(scan.datadome);
+
     let Some(cookie) = scan.cookie else {
         state.clear();
         let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(scan.warning));

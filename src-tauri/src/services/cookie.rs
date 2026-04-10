@@ -23,6 +23,9 @@ impl std::fmt::Debug for BrowserCookie {
 #[derive(Debug, Clone)]
 pub struct CookieScanResult {
     pub cookie: Option<BrowserCookie>,
+    /// Datadome cookie found in any browser, even without an oauth_token.
+    /// Required by SoundCloud's API for all requests (authenticated or not).
+    pub datadome: Option<String>,
     /// A warning key for the frontend (e.g. "appbound_encryption") when cookies
     /// could not be read due to a platform-specific restriction.
     pub warning: Option<String>,
@@ -53,10 +56,18 @@ pub fn scan_browser_cookies() -> CookieScanResult {
     browsers.push(("Arc", rookie::arc));
 
     let mut appbound_hit = false;
+    let mut standalone_datadome: Option<String> = None;
 
     for (name, extract_fn) in &browsers {
         match extract_fn(domains.clone()) {
             Ok(cookies) => {
+                if standalone_datadome.is_none() {
+                    if let Some(dd) = cookies.iter().find(|c| c.name == "datadome" && !c.value.is_empty()) {
+                        info!("Found datadome cookie in {}", name);
+                        standalone_datadome = Some(dd.value.clone());
+                    }
+                }
+
                 // Filter to oauth_token cookies only, preferring the main
                 // soundcloud.com domain over subdomains (e.g. artists.soundcloud.com)
                 let token_cookie = cookies
@@ -71,20 +82,13 @@ pub fn scan_browser_cookies() -> CookieScanResult {
 
                 if let Some(token_cookie) = token_cookie {
                     info!("Found oauth_token in {} (domain: {})", name, token_cookie.domain);
-                    // Also look for datadome cookie
-                    let datadome = cookies
-                        .iter()
-                        .find(|c| c.name == "datadome" && !c.value.is_empty())
-                        .map(|c| {
-                            info!("Found datadome cookie in {}", name);
-                            c.value.clone()
-                        });
                     return CookieScanResult {
                         cookie: Some(BrowserCookie {
                             value: token_cookie.value.clone(),
                             browser: name.to_string(),
-                            datadome,
+                            datadome: standalone_datadome.clone(),
                         }),
+                        datadome: standalone_datadome,
                         warning: None,
                     };
                 }
@@ -118,6 +122,7 @@ pub fn scan_browser_cookies() -> CookieScanResult {
     info!("No SoundCloud oauth_token found in any browser");
     CookieScanResult {
         cookie: None,
+        datadome: standalone_datadome,
         warning: if appbound_hit {
             Some(WARNING_APPBOUND_ENCRYPTION.to_string())
         } else {
