@@ -14,6 +14,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
     <nav className="flex items-center gap-1 text-xs" aria-label="Breadcrumb">
       {items.map((item, index) => {
         const isFirst = index === 0;
+        const isLast = index === items.length - 1;
         const isClickable = !!item.onClick;
 
         return (
@@ -25,11 +26,12 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
                 type="button"
                 onClick={item.onClick}
                 className="truncate max-w-[200px] text-primary hover:underline cursor-pointer"
+                aria-current={isLast ? "page" : undefined}
               >
                 {item.label}
               </button>
             ) : (
-              <span className="truncate max-w-[200px] text-foreground font-medium" aria-current="page">
+              <span className="truncate max-w-[200px] text-foreground font-medium" aria-current={isLast ? "page" : undefined}>
                 {item.label}
               </span>
             )}
