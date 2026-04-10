@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-04-10
+
+### Added
+
+- Right-click "Show in folder" for downloaded tracks
+- Context menu on artist profile banner
+
+### Fixed
+
+- Some features required login unnecessarily
+- Large playlists could fail to load
+
 ## [1.18.0] - 2026-04-10
 
 ### Added
