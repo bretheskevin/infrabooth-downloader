@@ -7,6 +7,18 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.19.0] - 2026-04-10
+
+### Added
+
+- Action « Afficher dans le dossier » au clic droit sur les pistes téléchargées
+- Menu contextuel sur la bannière de profil d'artiste
+
+### Fixed
+
+- On ne pouvait pas utiliser certaines fonctionnalités sans être connecté
+- Les grandes playlists ne se chargeaient pas entièrement
+
 ## [1.18.0] - 2026-04-10
 
 ### Added
