@@ -94,6 +94,7 @@ export function ArtistProfileView({
           bannerUrl={bannerUrl}
           avatarUrl={avatarUrl}
           username={username}
+          permalinkUrl={profile?.permalink_url}
         />
         <ArtistProfileHeader
           profile={profile}

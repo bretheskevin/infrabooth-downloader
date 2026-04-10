@@ -28,20 +28,29 @@ export interface TrackMenuItemsProps {
   onAddToQueue?: () => void;
 }
 
+export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLink: () => void; onOpenInBrowser: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <ContextMenuItem onClick={onCopyLink}>
+        <Link className="mr-2 h-4 w-4" />
+        {t('trackMenu.copyLink')}
+      </ContextMenuItem>
+      <ContextMenuItem onClick={onOpenInBrowser}>
+        <ExternalLink className="mr-2 h-4 w-4" />
+        {t('trackMenu.openInBrowser')}
+      </ContextMenuItem>
+    </>
+  );
+}
+
 export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue }: TrackMenuItemsProps) {
   const { t } = useTranslation();
 
   if (variant === 'context') {
     return (
       <>
-        <ContextMenuItem onClick={onCopyLink}>
-          <Link className="mr-2 h-4 w-4" />
-          {t('trackMenu.copyLink')}
-        </ContextMenuItem>
-        <ContextMenuItem onClick={onOpenInBrowser}>
-          <ExternalLink className="mr-2 h-4 w-4" />
-          {t('trackMenu.openInBrowser')}
-        </ContextMenuItem>
+        <LinkContextMenuItems onCopyLink={onCopyLink} onOpenInBrowser={onOpenInBrowser} />
         {onOpenFileLocation && (
           <ContextMenuItem onClick={onOpenFileLocation}>
             <FolderOpen className="mr-2 h-4 w-4" />

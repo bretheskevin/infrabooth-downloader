@@ -13,13 +13,30 @@ vi.mock('@/lib/soundcloud', () => ({
   getArtworkUrl: (url: string | null) => url,
 }));
 
+vi.mock('sonner', () => ({
+  toast: { success: vi.fn() },
+}));
+
+const mockOpen = vi.fn().mockResolvedValue(undefined);
+vi.mock('@tauri-apps/plugin-shell', () => ({
+  open: (...args: unknown[]) => mockOpen(...args),
+}));
+
 describe('ProfileBanner', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    Object.assign(navigator, {
+      clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+    });
+  });
+
   const defaults = {
     onBack: vi.fn(),
     isLoading: false,
     bannerUrl: 'https://example.com/banner.jpg',
     avatarUrl: 'https://example.com/avatar.jpg',
     username: 'Test Artist',
+    permalinkUrl: 'https://soundcloud.com/test-artist',
   };
 
   it('renders back button', () => {
@@ -54,5 +71,27 @@ describe('ProfileBanner', () => {
     const { container } = render(<ProfileBanner {...defaults} bannerUrl={null} />);
     expect(container.querySelector('[class*="bg-gradient"]')).toBeInTheDocument();
     expect(screen.queryByAltText('')).not.toBeInTheDocument();
+  });
+
+  it('shows context menu with open in browser on right-click', async () => {
+    render(<ProfileBanner {...defaults} />);
+    const artistName = screen.getByText('Test Artist');
+    await userEvent.pointer({ keys: '[MouseRight]', target: artistName });
+    expect(await screen.findByText('trackMenu.openInBrowser')).toBeInTheDocument();
+    expect(screen.getByText('trackMenu.copyLink')).toBeInTheDocument();
+  });
+
+  it('opens browser when "Open in browser" is clicked', async () => {
+    render(<ProfileBanner {...defaults} />);
+    await userEvent.pointer({ keys: '[MouseRight]', target: screen.getByText('Test Artist') });
+    await userEvent.click(await screen.findByText('trackMenu.openInBrowser'));
+    expect(mockOpen).toHaveBeenCalledWith('https://soundcloud.com/test-artist');
+  });
+
+  it('copies link when "Copy link" is clicked', async () => {
+    render(<ProfileBanner {...defaults} />);
+    await userEvent.pointer({ keys: '[MouseRight]', target: screen.getByText('Test Artist') });
+    await userEvent.click(await screen.findByText('trackMenu.copyLink'));
+    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://soundcloud.com/test-artist');
   });
 });
