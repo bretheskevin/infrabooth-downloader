@@ -2,7 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
+import { LinkContextMenuItems } from '@/components/TrackRowActions';
+import { useTrackActions } from '@/hooks/useTrackActions';
 
 interface ProfileBannerProps {
   onBack: () => void;
@@ -10,10 +13,19 @@ interface ProfileBannerProps {
   bannerUrl: string | null;
   avatarUrl: string | null;
   username: string;
+  permalinkUrl?: string;
 }
 
-export function ProfileBanner({ onBack, isLoading, bannerUrl, avatarUrl, username }: ProfileBannerProps) {
+export function ProfileBanner({ onBack, isLoading, bannerUrl, avatarUrl, username, permalinkUrl }: ProfileBannerProps) {
   const { t } = useTranslation();
+  const { handleCopyLink, handleOpenInBrowser } = useTrackActions(permalinkUrl ?? '');
+
+  const badge = (
+    <div className="flex items-center gap-2.5 backdrop-blur-sm bg-black/50 rounded-lg px-4 py-1.5 ml-3 cursor-default">
+      <ArtistAvatarImage avatarUrl={avatarUrl} username={username} className="w-9 h-9 ring-2 ring-white/20 shrink-0" />
+      <h2 className="text-sm font-bold text-white truncate drop-shadow-sm max-w-56">{username}</h2>
+    </div>
+  );
 
   return (
     <>
@@ -35,16 +47,14 @@ export function ProfileBanner({ onBack, isLoading, bannerUrl, avatarUrl, usernam
             <img src={bannerUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
           )}
           <div className="absolute inset-0 flex items-center">
-            <div className="flex items-center gap-2.5 backdrop-blur-sm bg-black/50 rounded-lg px-4 py-1.5 ml-3">
-              <ArtistAvatarImage
-                avatarUrl={avatarUrl}
-                username={username}
-                className="w-9 h-9 ring-2 ring-white/20 shrink-0"
-              />
-              <h2 className="text-sm font-bold text-white truncate drop-shadow-sm max-w-56">
-                {username}
-              </h2>
-            </div>
+            {permalinkUrl ? (
+              <ContextMenu>
+                <ContextMenuTrigger asChild>{badge}</ContextMenuTrigger>
+                <ContextMenuContent>
+                  <LinkContextMenuItems onCopyLink={handleCopyLink} onOpenInBrowser={handleOpenInBrowser} />
+                </ContextMenuContent>
+              </ContextMenu>
+            ) : badge}
           </div>
         </div>
       )}
