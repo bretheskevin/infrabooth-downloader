@@ -20,6 +20,7 @@ interface TrackActionsDropdownProps {
   contentSide?: 'top' | 'bottom';
   contentAlign?: 'start' | 'end';
   onAddToQueue?: () => void;
+  onOpenFileLocation?: () => void;
 }
 
 export function TrackActionsDropdown({
@@ -29,6 +30,7 @@ export function TrackActionsDropdown({
   contentSide = 'top',
   contentAlign = 'end',
   onAddToQueue,
+  onOpenFileLocation,
 }: TrackActionsDropdownProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -69,6 +71,7 @@ export function TrackActionsDropdown({
         <TrackMenuItems
           onCopyLink={handleCopyLink}
           onOpenInBrowser={handleOpenInBrowser}
+          onOpenFileLocation={onOpenFileLocation}
           isSignedIn={isSignedIn}
           trackId={trackId}
           variant="dropdown"

@@ -11,6 +11,7 @@ import { usePlayPauseToggle } from '@/hooks/usePlayPauseToggle';
 import { useHoverPreload } from '@/hooks/useHoverPreload';
 import { preloadOnHover, preloadImmediate } from '@/features/player/url-cache';
 import { getArtworkUrl } from '@/lib/soundcloud';
+import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { cn } from '@/lib/utils';
 import type { TrackInfo } from '@/bindings';
 
@@ -100,6 +101,9 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
     return storeState;
   }, [rawStoreState, ctx.downloadedIds, track.id]);
 
+  const filePath = rawStoreState?.filePath;
+  const handleOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
+
   // Play/pause/resume
   const handlePlayPause = usePlayPauseToggle({
     isCurrentlyPlaying,
@@ -169,6 +173,7 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
       onMouseDown={handleMouseDown}
       subtitleSlot={subtitleSlot}
       onRemoveFromPlaylist={onRemoveFromPlaylist}
+      onOpenFileLocation={filePath ? handleOpenFileLocation : undefined}
       leftSlot={
         selection ? (
           <div

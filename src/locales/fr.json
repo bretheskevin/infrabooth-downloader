@@ -378,7 +378,8 @@
     "removing": "Suppression...",
     "removedFromPlaylist": "Retiré de {{playlist}}",
     "notInPlaylist": "Piste absente de la playlist",
-    "removeFailed": "Échec de la suppression"
+    "removeFailed": "Échec de la suppression",
+    "openFileLocation": "Afficher dans le dossier"
   },
   "newTracks": {
     "title": "Nouveautés",

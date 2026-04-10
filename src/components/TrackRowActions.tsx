@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Link, ExternalLink, ListPlus, MoreVertical, Trash2 } from 'lucide-react';
+import { Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +19,7 @@ import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
 export interface TrackMenuItemsProps {
   onCopyLink: () => void;
   onOpenInBrowser: () => void;
+  onOpenFileLocation?: () => void;
   isSignedIn: boolean;
   trackId: number;
   variant: 'context' | 'dropdown';
@@ -27,7 +28,7 @@ export interface TrackMenuItemsProps {
   onAddToQueue?: () => void;
 }
 
-export function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue }: TrackMenuItemsProps) {
+export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue }: TrackMenuItemsProps) {
   const { t } = useTranslation();
 
   if (variant === 'context') {
@@ -41,6 +42,12 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackI
           <ExternalLink className="mr-2 h-4 w-4" />
           {t('trackMenu.openInBrowser')}
         </ContextMenuItem>
+        {onOpenFileLocation && (
+          <ContextMenuItem onClick={onOpenFileLocation}>
+            <FolderOpen className="mr-2 h-4 w-4" />
+            {t('trackMenu.openFileLocation')}
+          </ContextMenuItem>
+        )}
         {isSignedIn && (
           <>
             <ContextMenuSeparator />
@@ -73,6 +80,12 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackI
         <ExternalLink className="h-4 w-4" />
         {t('trackMenu.openInBrowser')}
       </DropdownMenuItem>
+      {onOpenFileLocation && (
+        <DropdownMenuItem onClick={onOpenFileLocation}>
+          <FolderOpen className="h-4 w-4" />
+          {t('trackMenu.openFileLocation')}
+        </DropdownMenuItem>
+      )}
       {isSignedIn && (
         <>
           <DropdownMenuSeparator />
@@ -98,6 +111,7 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, isSignedIn, trackI
 interface TrackRowActionsContextContentProps {
   onCopyLink: () => void;
   onOpenInBrowser: () => void;
+  onOpenFileLocation?: () => void;
   isSignedIn: boolean;
   trackId: number;
   onCloseMenu: () => void;
@@ -108,6 +122,7 @@ interface TrackRowActionsContextContentProps {
 export function TrackRowActionsContextContent({
   onCopyLink,
   onOpenInBrowser,
+  onOpenFileLocation,
   isSignedIn,
   trackId,
   onCloseMenu,
@@ -119,6 +134,7 @@ export function TrackRowActionsContextContent({
       <TrackMenuItems
         onCopyLink={onCopyLink}
         onOpenInBrowser={onOpenInBrowser}
+        onOpenFileLocation={onOpenFileLocation}
         isSignedIn={isSignedIn}
         trackId={trackId}
         variant="context"
@@ -133,6 +149,7 @@ export function TrackRowActionsContextContent({
 interface TrackRowActionsDropdownProps {
   onCopyLink: () => void;
   onOpenInBrowser: () => void;
+  onOpenFileLocation?: () => void;
   isSignedIn: boolean;
   trackId: number;
   dropdownMenuOpen: boolean;
@@ -145,6 +162,7 @@ interface TrackRowActionsDropdownProps {
 export function TrackRowActionsDropdown({
   onCopyLink,
   onOpenInBrowser,
+  onOpenFileLocation,
   isSignedIn,
   trackId,
   dropdownMenuOpen,
@@ -172,6 +190,7 @@ export function TrackRowActionsDropdown({
           <TrackMenuItems
             onCopyLink={onCopyLink}
             onOpenInBrowser={onOpenInBrowser}
+            onOpenFileLocation={onOpenFileLocation}
             isSignedIn={isSignedIn}
             trackId={trackId}
             variant="dropdown"

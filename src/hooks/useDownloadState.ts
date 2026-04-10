@@ -7,6 +7,7 @@ interface TrackDownloadState {
   status: string;
   percent?: number;
   error?: ErrorResponse | null;
+  filePath?: string | null;
 }
 
 interface DownloadStateStore {
@@ -29,6 +30,16 @@ export function clearManagedTracks() {
   managedTrackIds.clear();
 }
 
+export function seedFilePath(trackId: string, filePath: string) {
+  useDownloadStateStore.setState((prev) => {
+    const existing = prev.states.get(trackId);
+    if (existing?.filePath) return prev;
+    const newMap = new Map(prev.states);
+    newMap.set(trackId, { ...existing, status: existing?.status ?? 'completed', filePath });
+    return { ...prev, states: newMap };
+  });
+}
+
 function processEvent(event: DownloadProgressEvent) {
   if (!managedTrackIds.has(event.trackId)) return;
 
@@ -40,6 +51,7 @@ function processEvent(event: DownloadProgressEvent) {
       status: event.status,
       percent: event.percent ?? existing?.percent,
       error: event.error,
+      filePath: event.filePath ?? existing?.filePath,
     });
 
     const wasComplete = existing?.status === 'complete' || existing?.status === 'completed';

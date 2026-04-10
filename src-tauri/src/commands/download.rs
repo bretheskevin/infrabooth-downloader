@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use specta::Type;
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
 use tauri::{Emitter, State};
@@ -85,12 +86,10 @@ pub async fn download_track_full(
             ErrorResponse::from(e)
         })?;
 
-    let _ = app.emit(
-        events::DOWNLOAD_PROGRESS,
-        DownloadProgressEvent::complete(track_id),
-    );
+    let result_str = result_path.to_string_lossy().to_string();
+    let _ = app.emit(events::DOWNLOAD_PROGRESS, DownloadProgressEvent::complete(track_id, result_str.clone()));
 
-    Ok(result_path.to_str().unwrap_or_default().to_string())
+    Ok(result_str)
 }
 
 #[derive(Debug, Deserialize, Type)]
@@ -198,18 +197,17 @@ fn get_download_path(app: &tauri::AppHandle) -> Result<PathBuf, ErrorResponse> {
     })
 }
 
-/// Scan the output directory for tracks already downloaded (by SoundCloud track ID in ID3 metadata).
-///
-/// Returns the list of track IDs that already exist in the output directory.
 #[tauri::command]
 #[specta::specta]
-pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>) -> Vec<String> {
+pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>) -> HashMap<String, String> {
     let dir = PathBuf::from(&output_dir);
     if !dir.exists() {
-        return vec![];
+        return HashMap::new();
     }
-    let found = scan_existing_track_ids(&dir, &track_ids);
-    found.into_iter().collect()
+    scan_existing_track_ids(&dir, &track_ids)
+        .into_iter()
+        .map(|(id, path)| (id, path.to_string_lossy().to_string()))
+        .collect()
 }
 
 #[cfg(test)]

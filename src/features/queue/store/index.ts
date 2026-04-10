@@ -28,7 +28,7 @@ function setupQueueEventListeners() {
   const store = useQueueStore;
 
   listen<DownloadProgressEvent>('download-progress', (event) => {
-    const { status, error, trackId, percent, downloadedBytes, totalBytes } = event.payload;
+    const { status, error, trackId, percent, downloadedBytes, totalBytes, filePath } = event.payload;
     void logger.debug(`[queueStore] download-progress: trackId=${trackId}, status=${status}`);
     if (error) {
       void logger.error(`[queueStore] Track error: ${error.code} - ${error.message}`);
@@ -41,6 +41,7 @@ function setupQueueEventListeners() {
         percent: percent ?? undefined,
         downloadedBytes: downloadedBytes ?? undefined,
         totalBytes: totalBytes ?? undefined,
+        filePath: filePath ?? undefined,
       }
     );
   });
