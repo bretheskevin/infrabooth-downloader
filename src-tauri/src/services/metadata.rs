@@ -1,7 +1,7 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use id3::{frame::Picture, Tag, TagLike, Version};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use crate::models::error::MetadataError;
 
@@ -120,13 +120,9 @@ async fn download_artwork(url: &str) -> Result<Vec<u8>, MetadataError> {
     Ok(bytes.to_vec())
 }
 
-/// Scan MP3 files in a directory for SOUNDCLOUD_TRACK_ID TXXX frames.
-///
-/// Returns the subset of `track_ids` that were found in existing files.
-/// Errors reading individual files are logged and skipped.
-pub fn scan_existing_track_ids(output_dir: &Path, track_ids: &[String]) -> HashSet<String> {
+pub fn scan_existing_track_ids(output_dir: &Path, track_ids: &[String]) -> HashMap<String, PathBuf> {
     let wanted: HashSet<&str> = track_ids.iter().map(|s| s.as_str()).collect();
-    let mut found = HashSet::new();
+    let mut found = HashMap::new();
 
     let entries = match std::fs::read_dir(output_dir) {
         Ok(e) => e,
@@ -148,7 +144,7 @@ pub fn scan_existing_track_ids(output_dir: &Path, track_ids: &[String]) -> HashS
                     if frame.description == "SOUNDCLOUD_TRACK_ID"
                         && wanted.contains(frame.value.as_str())
                     {
-                        found.insert(frame.value.clone());
+                        found.insert(frame.value.clone(), path.clone());
                     }
                 }
             }
@@ -289,8 +285,8 @@ mod tests {
 
         let result =
             scan_existing_track_ids(dir.path(), &["12345".to_string(), "99999".to_string()]);
-        assert!(result.contains("12345"));
-        assert!(!result.contains("99999"));
+        assert!(result.contains_key("12345"));
+        assert!(!result.contains_key("99999"));
         assert_eq!(result.len(), 1);
     }
 

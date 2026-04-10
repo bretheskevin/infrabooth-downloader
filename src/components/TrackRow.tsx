@@ -27,6 +27,7 @@ interface TrackRowProps {
   onHoverEnd?: () => void;
   onMouseDown?: () => void;
   onRemoveFromPlaylist?: () => void;
+  onOpenFileLocation?: () => void;
 }
 
 export function TrackRow({
@@ -45,6 +46,7 @@ export function TrackRow({
   onHoverEnd,
   onMouseDown,
   onRemoveFromPlaylist,
+  onOpenFileLocation,
 }: TrackRowProps) {
   const [isRowHovered, setIsRowHovered] = useState(false);
   const [contextMenuKey, setContextMenuKey] = useState(0);
@@ -138,6 +140,7 @@ export function TrackRow({
           <TrackRowActionsDropdown
             onCopyLink={handleCopyLink}
             onOpenInBrowser={handleOpenInBrowser}
+            onOpenFileLocation={onOpenFileLocation}
             isSignedIn={isSignedIn}
             trackId={track.id}
             dropdownMenuOpen={dropdownMenuOpen}
@@ -151,6 +154,7 @@ export function TrackRow({
       <TrackRowActionsContextContent
         onCopyLink={handleCopyLink}
         onOpenInBrowser={handleOpenInBrowser}
+        onOpenFileLocation={onOpenFileLocation}
         isSignedIn={isSignedIn}
         trackId={track.id}
         onCloseMenu={() => setContextMenuKey((k) => k + 1)}

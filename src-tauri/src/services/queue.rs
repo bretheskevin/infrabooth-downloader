@@ -1,6 +1,6 @@
 use serde::Serialize;
 use specta::Type;
-use std::collections::{HashMap, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -113,10 +113,10 @@ async fn execute_download<R: Runtime>(
     drop(permit);
 
     match result {
-        Ok(_) => {
+        Ok(output_path) => {
             let _ = app.emit(
                 events::DOWNLOAD_PROGRESS,
-                DownloadProgressEvent::complete(track_id.clone()),
+                DownloadProgressEvent::complete(track_id.clone(), output_path.to_string_lossy().to_string()),
             );
             TrackOutcome::Completed { track_id }
         }
@@ -316,11 +316,13 @@ impl DownloadQueue {
         // Pre-scan for already-downloaded tracks (blocking I/O on a dedicated thread)
         let track_ids: Vec<String> = self.items.iter().map(|item| item.core.track_id.clone()).collect();
         let scan_dir = ctx.output_dir.clone();
-        let existing_ids = tokio::task::spawn_blocking(move || {
+        let existing_ids: HashSet<String> = tokio::task::spawn_blocking(move || {
             scan_existing_track_ids(&scan_dir, &track_ids)
         })
         .await
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .into_keys()
+        .collect();
 
         if !existing_ids.is_empty() {
             log::info!(

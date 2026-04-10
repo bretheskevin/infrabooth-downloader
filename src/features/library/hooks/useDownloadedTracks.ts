@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { commands, type TrackInfo } from '@/bindings';
 import { logger } from '@/lib/logger';
+import { seedFilePath } from '@/hooks/useDownloadState';
 
 const EMPTY_SET = new Set<number>();
 
@@ -24,9 +25,16 @@ export function useDownloadedTracks(
 
     commands
       .scanExistingTracks(downloadPath, trackIds)
-      .then((found: string[]) => {
+      .then((found) => {
         if (!cancelled) {
-          const ids = found.map(Number).filter((n) => !Number.isNaN(n));
+          const ids: number[] = [];
+          for (const [trackId, filePath] of Object.entries(found)) {
+            const num = Number(trackId);
+            if (!Number.isNaN(num)) {
+              ids.push(num);
+              if (filePath) seedFilePath(String(num), filePath);
+            }
+          }
           setDownloadedIds(new Set(ids));
         }
       })

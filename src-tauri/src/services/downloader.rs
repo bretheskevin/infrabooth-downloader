@@ -56,67 +56,41 @@ pub struct DownloadProgressEvent {
     pub total_bytes: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub error: Option<ErrorResponse>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub file_path: Option<String>,
 }
 
 impl DownloadProgressEvent {
-    pub fn complete(track_id: String) -> Self {
+    fn base(track_id: String, status: &str) -> Self {
         Self {
             track_id,
-            status: "complete".to_string(),
-            percent: Some(1.0),
+            status: status.to_string(),
+            percent: None,
             downloaded_bytes: None,
             total_bytes: None,
             error: None,
+            file_path: None,
         }
+    }
+
+    pub fn complete(track_id: String, file_path: String) -> Self {
+        Self { percent: Some(1.0), file_path: Some(file_path), ..Self::base(track_id, "complete") }
     }
 
     pub fn failed(track_id: String, error: ErrorResponse) -> Self {
-        Self {
-            track_id,
-            status: "failed".to_string(),
-            percent: None,
-            downloaded_bytes: None,
-            total_bytes: None,
-            error: Some(error),
-        }
+        Self { error: Some(error), ..Self::base(track_id, "failed") }
     }
 
     pub fn skipped(track_id: String) -> Self {
-        Self {
-            track_id,
-            status: "skipped".to_string(),
-            percent: Some(1.0),
-            downloaded_bytes: None,
-            total_bytes: None,
-            error: None,
-        }
+        Self { percent: Some(1.0), ..Self::base(track_id, "skipped") }
     }
 
     pub fn rate_limited(track_id: String) -> Self {
-        Self {
-            track_id,
-            status: "rate_limited".to_string(),
-            percent: None,
-            downloaded_bytes: None,
-            total_bytes: None,
-            error: None,
-        }
+        Self::base(track_id, "rate_limited")
     }
 
-    pub fn downloading(
-        track_id: String,
-        percent: f32,
-        downloaded_bytes: Option<u64>,
-        total_bytes: Option<u64>,
-    ) -> Self {
-        Self {
-            track_id,
-            status: "downloading".to_string(),
-            percent: Some(percent),
-            downloaded_bytes,
-            total_bytes,
-            error: None,
-        }
+    pub fn downloading(track_id: String, percent: f32, downloaded_bytes: Option<u64>, total_bytes: Option<u64>) -> Self {
+        Self { percent: Some(percent), downloaded_bytes, total_bytes, ..Self::base(track_id, "downloading") }
     }
 }
 

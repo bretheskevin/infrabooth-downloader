@@ -184,6 +184,30 @@ describe('queueStore', () => {
       expect(tracks[0]?.status).toBe('pending');
       expect(tracks[1]?.status).toBe('pending');
     });
+
+    it('should persist filePath when provided in progress', () => {
+      const { enqueueTracks, updateTrackStatus } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
+      updateTrackStatus('track-1', 'complete', undefined, {
+        filePath: '/downloads/track-1.mp3',
+      });
+
+      const { tracks } = useQueueStore.getState();
+      expect(tracks[0]?.status).toBe('complete');
+      expect(tracks[0]?.filePath).toBe('/downloads/track-1.mp3');
+    });
+
+    it('should preserve filePath across status updates without filePath', () => {
+      const { enqueueTracks, updateTrackStatus } = useQueueStore.getState();
+      enqueueTracks(mockTracks);
+      updateTrackStatus('track-1', 'complete', undefined, {
+        filePath: '/downloads/track-1.mp3',
+      });
+      updateTrackStatus('track-1', 'complete', undefined, { percent: 1 });
+
+      const { tracks } = useQueueStore.getState();
+      expect(tracks[0]?.filePath).toBe('/downloads/track-1.mp3');
+    });
   });
 
   describe('setQueueProgress', () => {

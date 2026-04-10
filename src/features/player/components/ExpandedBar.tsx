@@ -7,7 +7,9 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/lib/format';
 import { getArtworkUrl } from '@/lib/soundcloud';
+import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { usePlayerStore } from '../store';
+import { useDownloadStateStore } from '@/hooks/useDownloadState';
 import { ScrollingText } from './ScrollingText';
 import { SeekBar } from './SeekBar';
 import { TransportControls } from './TransportControls';
@@ -39,6 +41,9 @@ export function ExpandedBar() {
       isQueueOpen: s.isQueueOpen,
     }))
   );
+
+  const filePath = useDownloadStateStore((s) => s.states.get(String(currentTrack?.trackId ?? ''))?.filePath);
+  const handleOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
 
   if (!currentTrack || state === 'stopped') return null;
 
@@ -110,6 +115,7 @@ export function ExpandedBar() {
           triggerClassName="h-7 w-7"
           contentSide="top"
           contentAlign="end"
+          onOpenFileLocation={filePath ? handleOpenFileLocation : undefined}
         />
 
         {/* Collapse */}

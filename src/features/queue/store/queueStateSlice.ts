@@ -36,6 +36,7 @@ export const createQueueStateSlice: StateCreator<QueueState, [], [], QueueStateS
               percent: progress?.percent ?? track.percent,
               downloadedBytes: progress?.downloadedBytes ?? track.downloadedBytes,
               totalBytes: Math.max(progress?.totalBytes ?? 0, track.totalBytes ?? 0) || undefined,
+              filePath: progress?.filePath ?? track.filePath,
             }
           : track
       ),

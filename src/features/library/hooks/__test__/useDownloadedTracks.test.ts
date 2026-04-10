@@ -10,6 +10,11 @@ vi.mock('@/bindings', () => ({
   },
 }));
 
+const mockSeedFilePath = vi.fn();
+vi.mock('@/hooks/useDownloadState', () => ({
+  seedFilePath: (...args: unknown[]) => mockSeedFilePath(...args),
+}));
+
 function makeTrack(id: number): TrackInfo {
   return {
     id,
@@ -24,7 +29,7 @@ function makeTrack(id: number): TrackInfo {
 describe('useDownloadedTracks', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockScanExistingTracks.mockResolvedValue([]);
+    mockScanExistingTracks.mockResolvedValue({});
   });
 
   it('returns empty set when no download path', () => {
@@ -44,7 +49,7 @@ describe('useDownloadedTracks', () => {
   });
 
   it('scans and returns downloaded track IDs', async () => {
-    mockScanExistingTracks.mockResolvedValue(['1', '3']);
+    mockScanExistingTracks.mockResolvedValue({ '1': '/downloads/track-1.mp3', '3': '/downloads/track-3.mp3' });
     const tracks = [makeTrack(1), makeTrack(2), makeTrack(3)];
 
     const { result } = renderHook(() => useDownloadedTracks(tracks, '/downloads'));
@@ -57,6 +62,8 @@ describe('useDownloadedTracks', () => {
     expect(result.current.downloadedIds.has(2)).toBe(false);
     expect(result.current.downloadedIds.has(3)).toBe(true);
     expect(mockScanExistingTracks).toHaveBeenCalledWith('/downloads', ['1', '2', '3']);
+    expect(mockSeedFilePath).toHaveBeenCalledWith('1', '/downloads/track-1.mp3');
+    expect(mockSeedFilePath).toHaveBeenCalledWith('3', '/downloads/track-3.mp3');
   });
 
   it('returns empty set on scan error', async () => {
@@ -74,7 +81,7 @@ describe('useDownloadedTracks', () => {
   });
 
   it('re-scans when download path changes', async () => {
-    mockScanExistingTracks.mockResolvedValue(['1']);
+    mockScanExistingTracks.mockResolvedValue({ '1': '/downloads/track-1.mp3' });
     const tracks = [makeTrack(1), makeTrack(2)];
 
     const { result, rerender } = renderHook(
@@ -86,7 +93,7 @@ describe('useDownloadedTracks', () => {
       expect(result.current.downloadedCount).toBe(1);
     });
 
-    mockScanExistingTracks.mockResolvedValue(['1', '2']);
+    mockScanExistingTracks.mockResolvedValue({ '1': '/downloads/track-1.mp3', '2': '/downloads/track-2.mp3' });
     rerender({ path: '/path-b' });
 
     await waitFor(() => {

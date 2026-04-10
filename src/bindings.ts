@@ -263,12 +263,7 @@ async getOwnedPlaylistsForTrack(trackId: number) : Promise<Result<PlaylistForTra
     else return { status: "error", error: e  as any };
 }
 },
-/**
- * Scan the output directory for tracks already downloaded (by SoundCloud track ID in ID3 metadata).
- * 
- * Returns the list of track IDs that already exist in the output directory.
- */
-async scanExistingTracks(outputDir: string, trackIds: string[]) : Promise<string[]> {
+async scanExistingTracks(outputDir: string, trackIds: string[]) : Promise<Partial<{ [key in string]: string }>> {
     return await TAURI_INVOKE("scan_existing_tracks", { outputDir, trackIds });
 },
 async searchTracks(query: string, limit: number, offset: number) : Promise<Result<SearchResponse, ErrorResponse>> {
@@ -478,7 +473,7 @@ export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; crea
 export type ActivityType = "Track" | "Repost"
 export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string }
 export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
-export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null }
+export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null; filePath?: string | null }
 export type DownloadRequest = ({ 
 /**
  * SoundCloud API URL for the track (e.g., `https://api.soundcloud.com/tracks/123`)
