@@ -19,7 +19,7 @@ use thiserror::Error;
 use tokio::time::sleep;
 
 use crate::services::client_id;
-use crate::services::http::{resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE};
+use crate::services::http::{expand_short_link, resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE};
 use crate::services::stream;
 
 /// Errors that can occur during playlist operations.
@@ -720,13 +720,15 @@ pub async fn fetch_playlist_info(
     url: &str,
     oauth_token: Option<&str>,
 ) -> Result<PlaylistInfo, PlaylistError> {
-    if !is_valid_soundcloud_url(url) {
+    let url = expand_short_link(url).await.map_err(PlaylistError::FetchFailed)?;
+
+    if !is_valid_soundcloud_url(&url) {
         return Err(PlaylistError::FetchFailed(
             "Invalid SoundCloud URL".to_string(),
         ));
     }
 
-    if let Some(slug) = extract_system_playlist_slug(url) {
+    if let Some(slug) = extract_system_playlist_slug(&url) {
         return fetch_system_playlist(slug, oauth_token).await;
     }
 
@@ -735,14 +737,14 @@ pub async fn fetch_playlist_info(
         url
     );
 
-    let hydration = match fetch_hydration_data(url).await {
+    let hydration = match fetch_hydration_data(&url).await {
         Ok(h) => h,
         Err(e) => {
             log::warn!(
                 "[soundcloud] Web hydration failed: {}, falling back to API v2",
                 e
             );
-            return fetch_playlist_info_via_api(url, oauth_token).await;
+            return fetch_playlist_info_via_api(&url, oauth_token).await;
         }
     };
 
@@ -753,7 +755,7 @@ pub async fn fetch_playlist_info(
                 "[soundcloud] Failed to extract playlist from hydration: {}, falling back to API v2",
                 e
             );
-            return fetch_playlist_info_via_api(url, oauth_token).await;
+            return fetch_playlist_info_via_api(&url, oauth_token).await;
         }
     };
 
@@ -790,9 +792,10 @@ pub async fn fetch_track_info(
     url: &str,
     oauth_token: Option<&str>,
 ) -> Result<TrackInfo, PlaylistError> {
+    let url = expand_short_link(url).await.map_err(PlaylistError::FetchFailed)?;
     let cid = get_cid().await?;
     log::info!("[soundcloud] Fetching track info for URL: {}", url);
-    let raw: RawTrackInfo = resolve_url(url, &cid, oauth_token).await?;
+    let raw: RawTrackInfo = resolve_url(&url, &cid, oauth_token).await?;
     Ok(TrackInfo::from(raw))
 }
 

@@ -15,6 +15,45 @@ pub const CHROME_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_1
 pub const DEFAULT_PAGE_SIZE: usize = 20;
 pub const DEFAULT_PAGE_SIZE_STR: &str = "20";
 
+static NO_REDIRECT_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
+    rquest::Client::builder()
+        .redirect(rquest::redirect::Policy::none())
+        .timeout(std::time::Duration::from_secs(10))
+        .build()
+        .expect("Failed to create no-redirect HTTP client")
+});
+
+pub async fn expand_short_link(url: &str) -> Result<String, String> {
+    let normalized = if !url.starts_with("http://") && !url.starts_with("https://") {
+        format!("https://{}", url)
+    } else {
+        url.to_string()
+    };
+    let parsed = rquest::Url::parse(&normalized).map_err(|e| format!("Invalid URL: {}", e))?;
+    if parsed.host_str() != Some("on.soundcloud.com") {
+        return Ok(normalized);
+    }
+
+    let response = NO_REDIRECT_CLIENT
+        .head(normalized.as_str())
+        .send()
+        .await
+        .map_err(|e| format!("Failed to resolve short link: {}", e))?;
+
+    let location = response
+        .headers()
+        .get("location")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_string());
+
+    log::debug!("[http] Short link {} resolved to: {:?}", url, location);
+
+    match location {
+        Some(loc) => Ok(loc.split('?').next().unwrap_or(&loc).to_string()),
+        None => Err("Short link did not redirect".to_string()),
+    }
+}
+
 pub static HTTP_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
     use rquest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER, USER_AGENT};
 
