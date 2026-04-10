@@ -234,6 +234,10 @@ where
     F: Fn(&[T]),
 {
     let mut all_items = Vec::new();
+    let initial_params: Vec<(String, String)> = rquest::Url::parse(&initial_url)
+        .map(|u| u.query_pairs().map(|(k, v)| (k.into_owned(), v.into_owned())).collect())
+        .unwrap_or_default();
+
     let mut next_url: Option<String> = Some(initial_url);
 
     while let Some(url) = next_url.take() {
@@ -247,7 +251,14 @@ where
             .await
             .map_err(|e| format!("Failed to fetch {}: {}", label, e))?;
 
-        validate_api_response(response.status()).map_err(|e| e.to_string())?;
+        match validate_api_response(response.status()) {
+            Err(ApiResponseError::AuthRequired) if !all_items.is_empty() => {
+                log::info!("[{}] Auth required for next page, returning {} items collected so far", label, all_items.len());
+                break;
+            }
+            Err(e) => return Err(e.to_string()),
+            Ok(()) => {}
+        }
 
         let body = response.text().await.map_err(|e| format!("Failed to read response body: {}", e))?;
 
@@ -265,7 +276,20 @@ where
             all_items.extend(items);
         }
 
-        next_url = api_response.next_href;
+        next_url = api_response.next_href.map(|href| {
+            let mut parsed = rquest::Url::parse(&href).expect("SoundCloud returned invalid next_href URL");
+            let existing_keys: std::collections::HashSet<String> =
+                parsed.query_pairs().map(|(k, _)| k.into_owned()).collect();
+            {
+                let mut pairs = parsed.query_pairs_mut();
+                for (k, v) in &initial_params {
+                    if !existing_keys.contains(k.as_str()) {
+                        pairs.append_pair(k, v);
+                    }
+                }
+            }
+            parsed.to_string()
+        });
     }
 
     log::info!("[{}] Completed: {} total items", label, all_items.len());

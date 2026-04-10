@@ -27,6 +27,8 @@ impl std::fmt::Debug for CachedAuth {
 /// (prevents redundant scans when multiple downloads hit 401/403).
 pub struct AuthState {
     pub(crate) cached: Mutex<Option<CachedAuth>>,
+    /// Datadome cookie stored independently of auth — needed for all API calls.
+    datadome: Mutex<Option<String>>,
     refresh_guard: AsyncMutex<()>,
 }
 
@@ -34,6 +36,7 @@ impl Default for AuthState {
     fn default() -> Self {
         Self {
             cached: Mutex::new(None),
+            datadome: Mutex::new(None),
             refresh_guard: AsyncMutex::new(()),
         }
     }
@@ -63,11 +66,12 @@ impl AuthState {
     }
 
     pub fn get_datadome(&self) -> Option<String> {
-        self.cached
-            .lock()
-            .expect("AuthState lock poisoned")
-            .as_ref()
-            .and_then(|a| a.datadome.clone())
+        let cached = self.cached.lock().expect("AuthState lock poisoned").as_ref().and_then(|a| a.datadome.clone());
+        cached.or_else(|| self.datadome.lock().expect("AuthState datadome lock poisoned").clone())
+    }
+
+    pub fn set_datadome(&self, datadome: Option<String>) {
+        *self.datadome.lock().expect("AuthState datadome lock poisoned") = datadome;
     }
 
     pub fn get_user_id(&self) -> Option<u64> {

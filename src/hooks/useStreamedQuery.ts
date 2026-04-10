@@ -54,6 +54,7 @@ export function useStreamedQuery({
     queryFn,
     enabled: enabled && !initialData,
     initialData,
+    retry: false,
     staleTime,
     gcTime,
   });
