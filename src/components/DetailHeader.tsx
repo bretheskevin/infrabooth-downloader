@@ -8,6 +8,7 @@ interface DetailHeaderProps {
   navigation?: React.ReactNode;
   artwork: React.ReactNode;
   title: string;
+  onTitleClick?: () => void;
   subtitle?: React.ReactNode;
   actions?: React.ReactNode;
   children?: React.ReactNode;
@@ -19,6 +20,7 @@ export function DetailHeader({
   navigation,
   artwork,
   title,
+  onTitleClick,
   subtitle,
   actions,
   children,
@@ -41,7 +43,13 @@ export function DetailHeader({
       <div className="flex items-center gap-3">
         {artwork}
         <div className="min-w-0 flex-1">
-          <h2 className="text-base font-semibold truncate leading-tight">{title}</h2>
+          <h2 className="text-base font-semibold truncate leading-tight">
+            {onTitleClick ? (
+              <button type="button" onClick={onTitleClick} className="hover:underline cursor-pointer text-left">
+                {title}
+              </button>
+            ) : title}
+          </h2>
           {subtitle}
         </div>
         {actions}

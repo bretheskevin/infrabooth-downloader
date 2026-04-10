@@ -46,7 +46,7 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
       <DetailHeader
         navigation={<Breadcrumb items={[
           { label: t('newReleases.title'), onClick: onBack },
-          { label: artist.username, onClick: () => useArtistProfileStore.getState().openProfile(artist.id, artist.username) },
+          { label: artist.username },
         ]} />}
         artwork={
           <ArtistAvatarImage
@@ -56,6 +56,7 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
           />
         }
         title={artist.username}
+        onTitleClick={() => useArtistProfileStore.getState().openProfile(artist.id, artist.username)}
         subtitle={
           <p className="text-xs text-muted-foreground">
             {t('newReleases.releasesCount', { count: filteredItems.length })}

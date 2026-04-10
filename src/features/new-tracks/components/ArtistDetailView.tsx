@@ -58,7 +58,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
         <DetailHeader
           navigation={<Breadcrumb items={[
             { label: t('newTracks.title'), onClick: onBack },
-            { label: artist.username, onClick: () => useArtistProfileStore.getState().openProfile(artist.id, artist.username) },
+            { label: artist.username },
           ]} />}
           artwork={
             <ArtistAvatarImage
@@ -68,6 +68,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
             />
           }
           title={artist.username}
+          onTitleClick={() => useArtistProfileStore.getState().openProfile(artist.id, artist.username)}
           subtitle={
             <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
               <span className="truncate">

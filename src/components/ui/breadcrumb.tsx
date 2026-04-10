@@ -15,7 +15,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
       {items.map((item, index) => {
         const isFirst = index === 0;
         const isLast = index === items.length - 1;
-        const isClickable = !!item.onClick;
+        const isClickable = !isLast && !!item.onClick;
 
         return (
           <span key={item.label} className="flex items-center gap-1">
