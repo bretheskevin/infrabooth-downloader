@@ -1,9 +1,7 @@
 use rquest::Url;
 
-use once_cell::sync::Lazy;
-
 use crate::models::artist::{ArtistProfile, ResolvedLink, SortOption};
-use crate::services::http::{build_sc_paginated_url, fetch_all_pages, resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, DEFAULT_PAGE_SIZE, HTTP_CLIENT};
+use crate::services::http::{build_sc_paginated_url, expand_short_link, fetch_all_pages, resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, DEFAULT_PAGE_SIZE, HTTP_CLIENT};
 use crate::services::playlist::TrackInfo;
 
 pub async fn fetch_artist_profile(
@@ -97,37 +95,7 @@ pub async fn resolve_soundcloud_link(
     token: Option<&str>,
     url: &str,
 ) -> Result<ResolvedLink, String> {
-    static NO_REDIRECT_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
-        rquest::Client::builder()
-            .redirect(rquest::redirect::Policy::none())
-            .timeout(std::time::Duration::from_secs(10))
-            .build()
-            .expect("Failed to create no-redirect HTTP client")
-    });
-
-    let parsed = Url::parse(url).map_err(|e| format!("Invalid URL: {}", e))?;
-    let canonical_url = if parsed.host_str() == Some("on.soundcloud.com") {
-        let response = NO_REDIRECT_CLIENT
-            .head(url)
-            .send()
-            .await
-            .map_err(|e| format!("Failed to resolve short link: {}", e))?;
-
-        let location = response
-            .headers()
-            .get("location")
-            .and_then(|v| v.to_str().ok())
-            .map(|s| s.to_string());
-
-        log::debug!("[artist] Short link {} resolved to: {:?}", url, location);
-
-        match location {
-            Some(loc) => loc.split('?').next().unwrap_or(&loc).to_string(),
-            None => return Err("Short link did not redirect".to_string()),
-        }
-    } else {
-        url.to_string()
-    };
+    let canonical_url = expand_short_link(url).await?;
 
     log::debug!("[artist] Resolving canonical URL: {}", canonical_url);
 
