@@ -12,9 +12,7 @@ pub async fn get_selections(app: AppHandle) -> Result<Vec<Selection>, String> {
     }
 
     let (token, client_id) = require_auth_and_cid(&app).await?;
-    let selections = fetch_selections(&token, &client_id)
-        .await
-        .map_err(|e| e.to_string())?;
+    let selections = fetch_selections(&token, &client_id).await.map_err(|e| e.to_string())?;
 
     cache.set(selections.clone());
     Ok(selections)

@@ -9,11 +9,7 @@ pub fn validate_url(input: &str) -> ValidationResult {
         return ValidationResult {
             valid: false,
             url_type: None,
-            error: Some(ValidationError {
-                code: "INVALID_FORMAT".to_string(),
-                message: "Invalid URL format".to_string(),
-                hint: None,
-            }),
+            error: Some(ValidationError { code: "INVALID_FORMAT".to_string(), message: "Invalid URL format".to_string(), hint: None }),
         };
     }
 
@@ -67,31 +63,17 @@ pub fn validate_url(input: &str) -> ValidationResult {
 
     match segments.as_slice() {
         // Private playlist: /user/sets/playlist-name/s-secrettoken
-        [_user, "sets", _playlist, secret] if secret.starts_with("s-") => ValidationResult {
-            valid: true,
-            url_type: Some(UrlType::Playlist),
-            error: None,
-        },
+        [_user, "sets", _playlist, secret] if secret.starts_with("s-") => {
+            ValidationResult { valid: true, url_type: Some(UrlType::Playlist), error: None }
+        }
         // Regular playlist: /user/sets/playlist-name
-        [_user, "sets", _playlist] => ValidationResult {
-            valid: true,
-            url_type: Some(UrlType::Playlist),
-            error: None,
-        },
+        [_user, "sets", _playlist] => ValidationResult { valid: true, url_type: Some(UrlType::Playlist), error: None },
         // Private track: /user/track-name/s-secrettoken
         [_user, track, secret] if *track != "sets" && secret.starts_with("s-") => {
-            ValidationResult {
-                valid: true,
-                url_type: Some(UrlType::Track),
-                error: None,
-            }
+            ValidationResult { valid: true, url_type: Some(UrlType::Track), error: None }
         }
         // Regular track: /user/track-name (2 segments, not "sets")
-        [_user, track] if *track != "sets" => ValidationResult {
-            valid: true,
-            url_type: Some(UrlType::Track),
-            error: None,
-        },
+        [_user, track] if *track != "sets" => ValidationResult { valid: true, url_type: Some(UrlType::Track), error: None },
         // Profile: /user (1 segment only)
         [_user] => ValidationResult {
             valid: false,
@@ -111,11 +93,7 @@ fn invalid_format_error() -> ValidationResult {
     ValidationResult {
         valid: false,
         url_type: None,
-        error: Some(ValidationError {
-            code: "INVALID_FORMAT".to_string(),
-            message: "Invalid URL format".to_string(),
-            hint: None,
-        }),
+        error: Some(ValidationError { code: "INVALID_FORMAT".to_string(), message: "Invalid URL format".to_string(), hint: None }),
     }
 }
 
@@ -243,17 +221,14 @@ mod tests {
 
     #[test]
     fn test_private_playlist_url() {
-        let result =
-            validate_url("https://soundcloud.com/kandid_rl/sets/set-acidcore-4/s-rW47Pe4rQWc");
+        let result = validate_url("https://soundcloud.com/kandid_rl/sets/set-acidcore-4/s-rW47Pe4rQWc");
         assert!(result.valid);
         assert_eq!(result.url_type, Some(UrlType::Playlist));
     }
 
     #[test]
     fn test_private_playlist_url_with_query_params() {
-        let result = validate_url(
-            "https://soundcloud.com/user/sets/playlist/s-abc123?si=xyz&utm_source=clipboard",
-        );
+        let result = validate_url("https://soundcloud.com/user/sets/playlist/s-abc123?si=xyz&utm_source=clipboard");
         assert!(result.valid);
         assert_eq!(result.url_type, Some(UrlType::Playlist));
     }
@@ -283,8 +258,7 @@ mod tests {
 
     #[test]
     fn test_short_link_url_with_query_params() {
-        let result =
-            validate_url("https://on.soundcloud.com/abc123XYZ?si=123&utm_source=clipboard");
+        let result = validate_url("https://on.soundcloud.com/abc123XYZ?si=123&utm_source=clipboard");
         assert!(result.valid);
         assert_eq!(result.url_type, None);
     }

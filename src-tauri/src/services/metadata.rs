@@ -32,10 +32,7 @@ pub struct TrackMetadata {
 /// # Graceful Degradation
 /// This function is designed for graceful degradation - callers should
 /// log errors but not fail the overall download if metadata embedding fails.
-pub async fn embed_metadata(
-    file_path: &Path,
-    metadata: TrackMetadata,
-) -> Result<(), MetadataError> {
+pub async fn embed_metadata(file_path: &Path, metadata: TrackMetadata) -> Result<(), MetadataError> {
     let mut tag = Tag::new();
 
     // Set basic metadata
@@ -75,10 +72,7 @@ pub async fn embed_metadata(
 
     // Embed SoundCloud track ID for deduplication
     if let Some(track_id) = &metadata.track_id {
-        tag.add_frame(id3::frame::ExtendedText {
-            description: "SOUNDCLOUD_TRACK_ID".to_string(),
-            value: track_id.clone(),
-        });
+        tag.add_frame(id3::frame::ExtendedText { description: "SOUNDCLOUD_TRACK_ID".to_string(), value: track_id.clone() });
     }
 
     // Write tag to file
@@ -106,16 +100,10 @@ async fn download_artwork(url: &str) -> Result<Vec<u8>, MetadataError> {
         .map_err(|e| MetadataError::ArtworkFailed(e.to_string()))?;
 
     if !response.status().is_success() {
-        return Err(MetadataError::ArtworkFailed(format!(
-            "HTTP {}",
-            response.status()
-        )));
+        return Err(MetadataError::ArtworkFailed(format!("HTTP {}", response.status())));
     }
 
-    let bytes = response
-        .bytes()
-        .await
-        .map_err(|e| MetadataError::ArtworkFailed(e.to_string()))?;
+    let bytes = response.bytes().await.map_err(|e| MetadataError::ArtworkFailed(e.to_string()))?;
 
     Ok(bytes.to_vec())
 }
@@ -141,9 +129,7 @@ pub fn scan_existing_track_ids(output_dir: &Path, track_ids: &[String]) -> HashM
         match Tag::read_from_path(&path) {
             Ok(tag) => {
                 for frame in tag.extended_texts() {
-                    if frame.description == "SOUNDCLOUD_TRACK_ID"
-                        && wanted.contains(frame.value.as_str())
-                    {
+                    if frame.description == "SOUNDCLOUD_TRACK_ID" && wanted.contains(frame.value.as_str()) {
                         found.insert(frame.value.clone(), path.clone());
                     }
                 }
@@ -277,14 +263,10 @@ mod tests {
         // Write a tag with SOUNDCLOUD_TRACK_ID
         let mut tag = Tag::new();
         tag.set_title("Test");
-        tag.add_frame(id3::frame::ExtendedText {
-            description: "SOUNDCLOUD_TRACK_ID".to_string(),
-            value: "12345".to_string(),
-        });
+        tag.add_frame(id3::frame::ExtendedText { description: "SOUNDCLOUD_TRACK_ID".to_string(), value: "12345".to_string() });
         tag.write_to_path(&file_path, Version::Id3v24).unwrap();
 
-        let result =
-            scan_existing_track_ids(dir.path(), &["12345".to_string(), "99999".to_string()]);
+        let result = scan_existing_track_ids(dir.path(), &["12345".to_string(), "99999".to_string()]);
         assert!(result.contains_key("12345"));
         assert!(!result.contains_key("99999"));
         assert_eq!(result.len(), 1);
@@ -309,8 +291,7 @@ mod tests {
 
     #[test]
     fn test_scan_existing_track_ids_nonexistent_dir() {
-        let result =
-            scan_existing_track_ids(Path::new("/nonexistent/dir"), &["12345".to_string()]);
+        let result = scan_existing_track_ids(Path::new("/nonexistent/dir"), &["12345".to_string()]);
         assert!(result.is_empty());
     }
 }

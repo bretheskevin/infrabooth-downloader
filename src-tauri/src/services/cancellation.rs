@@ -18,11 +18,7 @@ pub struct CancellationState {
 impl CancellationState {
     pub fn new() -> Self {
         let (sender, receiver) = watch::channel(false);
-        Self {
-            sender,
-            receiver,
-            active_processes: Arc::new(Mutex::new(HashMap::new())),
-        }
+        Self { sender, receiver, active_processes: Arc::new(Mutex::new(HashMap::new())) }
     }
 
     pub fn subscribe(&self) -> watch::Receiver<bool> {
@@ -40,8 +36,6 @@ impl CancellationState {
     pub fn active_processes(&self) -> Arc<Mutex<HashMap<String, ActiveProcess>>> {
         self.active_processes.clone()
     }
-
-
 
     pub async fn kill_active_processes(&self) {
         let mut processes = self.active_processes.lock().await;
@@ -75,17 +69,12 @@ fn kill_process_tree(pid: u32) {
         use std::process::Command;
 
         // Try pkill to kill all child processes first
-        let _ = Command::new("pkill")
-            .args(["-9", "-P", &pid.to_string()])
-            .output();
+        let _ = Command::new("pkill").args(["-9", "-P", &pid.to_string()]).output();
 
         // Then kill the main process
         let _ = Command::new("kill").args(["-9", &pid.to_string()]).output();
 
-        log::info!(
-            "[cancellation] Sent SIGKILL to process {} and children",
-            pid
-        );
+        log::info!("[cancellation] Sent SIGKILL to process {} and children", pid);
     }
 
     #[cfg(windows)]
@@ -93,13 +82,8 @@ fn kill_process_tree(pid: u32) {
         use std::process::Command;
 
         // On Windows, use taskkill with /T to kill the process tree
-        let _ = Command::new("taskkill")
-            .args(["/F", "/T", "/PID", &pid.to_string()])
-            .output();
+        let _ = Command::new("taskkill").args(["/F", "/T", "/PID", &pid.to_string()]).output();
 
-        log::info!(
-            "[cancellation] Sent taskkill to process {} and children",
-            pid
-        );
+        log::info!("[cancellation] Sent taskkill to process {} and children", pid);
     }
 }

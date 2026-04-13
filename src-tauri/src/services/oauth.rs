@@ -1,6 +1,6 @@
 use crate::models::error::AuthError;
 use crate::services::client_id::get_client_id;
-use crate::services::http::{RequestBuilderExt, HTTP_CLIENT, API_V2_BASE};
+use crate::services::http::{RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 use serde::Deserialize;
 
 /// User profile response from SoundCloud `/me` endpoint (API v2).
@@ -28,9 +28,7 @@ pub struct UserProfile {
 /// * `Ok(UserProfile)` - Verified profile data
 /// * `Err(AuthError)` - If token is invalid or request fails
 pub async fn verify_token(oauth_token: &str) -> Result<UserProfile, AuthError> {
-    let client_id = get_client_id()
-        .await
-        .map_err(|e| AuthError::VerificationFailed(e.to_string()))?;
+    let client_id = get_client_id().await.map_err(|e| AuthError::VerificationFailed(e.to_string()))?;
 
     let client = &*HTTP_CLIENT;
     let url = format!("{}/me", API_V2_BASE);
@@ -42,15 +40,10 @@ pub async fn verify_token(oauth_token: &str) -> Result<UserProfile, AuthError> {
         .await?;
 
     if !resp.status().is_success() {
-        return Err(AuthError::VerificationFailed(format!(
-            "API returned {}",
-            resp.status()
-        )));
+        return Err(AuthError::VerificationFailed(format!("API returned {}", resp.status())));
     }
 
-    resp.json()
-        .await
-        .map_err(|e| AuthError::ProfileFetchFailed(e.to_string()))
+    resp.json().await.map_err(|e| AuthError::ProfileFetchFailed(e.to_string()))
 }
 
 #[cfg(test)]
@@ -67,10 +60,7 @@ mod tests {
         }"#;
         let profile: UserProfile = serde_json::from_str(json).unwrap();
         assert_eq!(profile.username, "test_user");
-        assert_eq!(
-            profile.avatar_url,
-            Some("https://example.com/avatar.jpg".to_string())
-        );
+        assert_eq!(profile.avatar_url, Some("https://example.com/avatar.jpg".to_string()));
         assert_eq!(profile.plan, Some("Pro Unlimited".to_string()));
     }
 

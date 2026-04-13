@@ -2,9 +2,7 @@ use crate::models::url::ValidationResult;
 use crate::models::PlaylistTracksResponse;
 use crate::services::http::{RequestBuilderExt, API_V2_BASE};
 use crate::services::playlist::build_playlist_url;
-use crate::services::playlist::{
-    fetch_playlist_info, fetch_track_info, PlaylistInfo, TrackInfo,
-};
+use crate::services::playlist::{fetch_playlist_info, fetch_track_info, PlaylistInfo, TrackInfo};
 use crate::services::storage::AuthState;
 use crate::services::url_validator::validate_url;
 use tauri::Manager;
@@ -49,12 +47,7 @@ pub async fn get_track_info(url: String, app: tauri::AppHandle) -> Result<TrackI
     }
 }
 
-async fn modify_playlist_tracks<F>(
-    playlist_id: u64,
-    app: &tauri::AppHandle,
-    operation: &str,
-    modifier: F,
-) -> Result<(), String>
+async fn modify_playlist_tracks<F>(playlist_id: u64, app: &tauri::AppHandle, operation: &str, modifier: F) -> Result<(), String>
 where
     F: FnOnce(Vec<u64>) -> Result<Vec<u64>, String>,
 {
@@ -72,40 +65,25 @@ where
         .map_err(|e| format!("Failed to fetch playlist: {}", e))?;
 
     if !response.status().is_success() {
-        return Err(format!(
-            "Failed to fetch playlist: HTTP {}",
-            response.status()
-        ));
+        return Err(format!("Failed to fetch playlist: HTTP {}", response.status()));
     }
 
-    let playlist: PlaylistTracksResponse = response
-        .json()
-        .await
-        .map_err(|e| format!("Failed to parse playlist: {}", e))?;
+    let playlist: PlaylistTracksResponse = response.json().await.map_err(|e| format!("Failed to parse playlist: {}", e))?;
 
     let track_ids: Vec<u64> = playlist.tracks.iter().map(|t| t.id).collect();
     let new_track_ids = modifier(track_ids)?;
 
-    let put_url = format!(
-        "{}/playlists/{}?client_id={}",
-        API_V2_BASE, playlist_id, client_id
-    );
+    let put_url = format!("{}/playlists/{}?client_id={}", API_V2_BASE, playlist_id, client_id);
 
-    let mut put_request = client
-        .put(&put_url)
-        .with_oauth(Some(&token))
-        .json(&serde_json::json!({
-            "playlist": {
-                "tracks": new_track_ids
-            }
-        }));
+    let mut put_request = client.put(&put_url).with_oauth(Some(&token)).json(&serde_json::json!({
+        "playlist": {
+            "tracks": new_track_ids
+        }
+    }));
 
     put_request = put_request.with_datadome(datadome.as_deref());
 
-    let put_response = put_request
-        .send()
-        .await
-        .map_err(|e| format!("Failed to update playlist: {}", e))?;
+    let put_response = put_request.send().await.map_err(|e| format!("Failed to update playlist: {}", e))?;
 
     if !put_response.status().is_success() {
         let status = put_response.status();
@@ -119,16 +97,8 @@ where
 
 #[tauri::command]
 #[specta::specta]
-pub async fn add_track_to_playlist(
-    playlist_id: u64,
-    track_id: u64,
-    app: tauri::AppHandle,
-) -> Result<(), String> {
-    log::info!(
-        "[add_track_to_playlist] Adding track {} to playlist {}",
-        track_id,
-        playlist_id
-    );
+pub async fn add_track_to_playlist(playlist_id: u64, track_id: u64, app: tauri::AppHandle) -> Result<(), String> {
+    log::info!("[add_track_to_playlist] Adding track {} to playlist {}", track_id, playlist_id);
 
     modify_playlist_tracks(playlist_id, &app, "add_track_to_playlist", |mut ids| {
         if ids.contains(&track_id) {
@@ -150,30 +120,21 @@ pub async fn add_track_to_playlist(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn remove_track_from_playlist(
-    playlist_id: u64,
-    track_id: u64,
-    app: tauri::AppHandle,
-) -> Result<(), String> {
+pub async fn remove_track_from_playlist(playlist_id: u64, track_id: u64, app: tauri::AppHandle) -> Result<(), String> {
     log::info!(
         "[remove_track_from_playlist] Removing track {} from playlist {}",
         track_id,
         playlist_id
     );
 
-    modify_playlist_tracks(
-        playlist_id,
-        &app,
-        "remove_track_from_playlist",
-        |ids| {
-            let original_len = ids.len();
-            let filtered: Vec<u64> = ids.into_iter().filter(|&id| id != track_id).collect();
-            if filtered.len() == original_len {
-                return Err("Track not found in playlist".to_string());
-            }
-            Ok(filtered)
-        },
-    )
+    modify_playlist_tracks(playlist_id, &app, "remove_track_from_playlist", |ids| {
+        let original_len = ids.len();
+        let filtered: Vec<u64> = ids.into_iter().filter(|&id| id != track_id).collect();
+        if filtered.len() == original_len {
+            return Err("Track not found in playlist".to_string());
+        }
+        Ok(filtered)
+    })
     .await?;
 
     log::info!(

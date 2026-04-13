@@ -12,11 +12,10 @@ use crate::models::error::DownloadError;
 use crate::services::http::SOUNDCLOUD_URL;
 
 static CLIENT_ID_CACHE: Lazy<Mutex<Option<String>>> = Lazy::new(|| Mutex::new(None));
-static SCRIPT_URL_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"<script[^>]+src="([^"]+)""#).unwrap());
-static CLIENT_ID_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r#"client_id\s*:\s*"([0-9a-zA-Z]{32})""#).unwrap());
-const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36";
+static SCRIPT_URL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"<script[^>]+src="([^"]+)""#).unwrap());
+static CLIENT_ID_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"client_id\s*:\s*"([0-9a-zA-Z]{32})""#).unwrap());
+const USER_AGENT: &str =
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36";
 
 /// Extract `<script src="...">` URLs from HTML.
 fn extract_script_urls(html: &str) -> Vec<String> {
@@ -29,9 +28,7 @@ fn extract_script_urls(html: &str) -> Vec<String> {
 /// Extract client_id from a JavaScript source string.
 /// Looks for: `client_id:"<32 alphanumeric chars>"` or `client_id: "<32 chars>"`
 fn extract_client_id_from_script(script: &str) -> Option<String> {
-    CLIENT_ID_RE
-        .captures(script)
-        .map(|cap| cap[1].to_string())
+    CLIENT_ID_RE.captures(script).map(|cap| cap[1].to_string())
 }
 
 /// Scrape a fresh client_id from SoundCloud's homepage JS bundles.
@@ -53,12 +50,7 @@ async fn scrape_client_id() -> Result<String, DownloadError> {
     script_urls.reverse();
 
     for url in &script_urls {
-        let script = match client
-            .get(url)
-            .header("User-Agent", USER_AGENT)
-            .send()
-            .await
-        {
+        let script = match client.get(url).header("User-Agent", USER_AGENT).send().await {
             Ok(resp) => match resp.text().await {
                 Ok(text) => text,
                 Err(_) => continue,

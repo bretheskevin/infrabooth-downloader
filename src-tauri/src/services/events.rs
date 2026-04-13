@@ -29,19 +29,9 @@ pub struct TracksBatchEvent {
     pub tracks: Vec<TrackInfo>,
 }
 
-pub fn make_batch_emitter(
-    app: &tauri::AppHandle,
-    event_name: &'static str,
-    entity_id: u64,
-) -> impl Fn(&[TrackInfo]) {
+pub fn make_batch_emitter(app: &tauri::AppHandle, event_name: &'static str, entity_id: u64) -> impl Fn(&[TrackInfo]) {
     let app = app.clone();
     move |batch: &[TrackInfo]| {
-        let _ = app.emit(
-            event_name,
-            TracksBatchEvent {
-                entity_id,
-                tracks: batch.to_vec(),
-            },
-        );
+        let _ = app.emit(event_name, TracksBatchEvent { entity_id, tracks: batch.to_vec() });
     }
 }

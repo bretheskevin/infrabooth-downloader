@@ -120,11 +120,7 @@ pub struct UserSearchResponse {
 // === Service functions ===
 
 async fn search_api<Raw, Out>(
-    client_id: &str,
-    query: &str,
-    limit: u32,
-    offset: u32,
-    endpoint: &str,
+    client_id: &str, query: &str, limit: u32, offset: u32, endpoint: &str,
 ) -> Result<(Vec<Out>, Option<i64>), SearchError>
 where
     Raw: serde::de::DeserializeOwned,
@@ -144,39 +140,20 @@ where
     let response = HTTP_CLIENT.get(url).send().await?;
     validate_api_response(response.status())?;
 
-    let api_response: ApiSearchResponse<Raw> = response
-        .json()
-        .await
-        .map_err(|_| SearchError::InvalidResponse)?;
+    let api_response: ApiSearchResponse<Raw> = response.json().await.map_err(|_| SearchError::InvalidResponse)?;
 
-    let collection = api_response
-        .collection
-        .into_iter()
-        .map(Out::from)
-        .collect();
+    let collection = api_response.collection.into_iter().map(Out::from).collect();
 
     Ok((collection, api_response.total_results))
 }
 
-pub async fn search_tracks(
-    client_id: &str,
-    query: &str,
-    limit: u32,
-    offset: u32,
-) -> Result<SearchResponse, SearchError> {
-    let (collection, total_results) =
-        search_api::<RawTrackInfo, TrackInfo>(client_id, query, limit, offset, "tracks").await?;
+pub async fn search_tracks(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<SearchResponse, SearchError> {
+    let (collection, total_results) = search_api::<RawTrackInfo, TrackInfo>(client_id, query, limit, offset, "tracks").await?;
     Ok(SearchResponse { collection, total_results })
 }
 
-pub async fn search_users(
-    client_id: &str,
-    query: &str,
-    limit: u32,
-    offset: u32,
-) -> Result<UserSearchResponse, SearchError> {
-    let (collection, total_results) =
-        search_api::<RawUserInfo, UserSearchResult>(client_id, query, limit, offset, "users").await?;
+pub async fn search_users(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<UserSearchResponse, SearchError> {
+    let (collection, total_results) = search_api::<RawUserInfo, UserSearchResult>(client_id, query, limit, offset, "users").await?;
     Ok(UserSearchResponse { collection, total_results })
 }
 
@@ -259,18 +236,12 @@ mod tests {
 
     #[test]
     fn test_search_error_messages() {
-        assert_eq!(
-            SearchError::RateLimited.to_string(),
-            "Rate limited by SoundCloud"
-        );
+        assert_eq!(SearchError::RateLimited.to_string(), "Rate limited by SoundCloud");
         assert_eq!(
             SearchError::FetchFailed("HTTP 500".to_string()).to_string(),
             "Search failed: HTTP 500"
         );
-        assert_eq!(
-            SearchError::InvalidResponse.to_string(),
-            "Invalid response format"
-        );
+        assert_eq!(SearchError::InvalidResponse.to_string(), "Invalid response format");
     }
 
     #[test]
@@ -280,11 +251,7 @@ mod tests {
             collection: vec![TrackInfo {
                 id: 1,
                 title: "Test".to_string(),
-                user: UserInfo {
-                    id: 1,
-                    username: "user".to_string(),
-                    avatar_url: None,
-                },
+                user: UserInfo { id: 1, username: "user".to_string(), avatar_url: None },
                 artwork_url: None,
                 duration: 100000,
                 permalink_url: "https://soundcloud.com/user/test".to_string(),

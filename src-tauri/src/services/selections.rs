@@ -6,7 +6,7 @@ use serde_json::Value;
 use specta::Type;
 use thiserror::Error;
 
-use crate::services::http::{validate_api_response, API_V2_BASE, HTTP_CLIENT, RequestBuilderExt};
+use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::{self, TrackInfo};
 
 #[derive(Debug, Error)]
@@ -79,9 +79,7 @@ pub struct SelectionCache {
 
 impl Default for SelectionCache {
     fn default() -> Self {
-        Self {
-            inner: Mutex::new(None),
-        }
+        Self { inner: Mutex::new(None) }
     }
 }
 
@@ -99,20 +97,13 @@ impl SelectionCache {
     }
 }
 
-pub async fn fetch_selections(
-    oauth_token: &str,
-    client_id: &str,
-) -> Result<Vec<Selection>, SelectionError> {
+pub async fn fetch_selections(oauth_token: &str, client_id: &str) -> Result<Vec<Selection>, SelectionError> {
     let url = format!(
         "{}/mixed-selections?client_id={}&limit=50&linked_partitioning=1",
         API_V2_BASE, client_id
     );
 
-    let response = HTTP_CLIENT
-        .get(&url)
-        .with_oauth(Some(oauth_token))
-        .send()
-        .await?;
+    let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
 
     validate_api_response(response.status())?;
     let body: MixedSelectionsResponse = response.json().await?;
@@ -140,10 +131,7 @@ pub async fn fetch_selections(
             let tracks_raw = item.tracks.take().unwrap_or_default();
             let cid = client_id.to_owned();
             let token = oauth_token.to_owned();
-            async move {
-                playlist::resolve_tracks_from_mixed(&tracks_raw, &cid, Some(&token), |_| {})
-                    .await
-            }
+            async move { playlist::resolve_tracks_from_mixed(&tracks_raw, &cid, Some(&token), |_| {}).await }
         })
         .collect();
 
@@ -165,10 +153,7 @@ pub async fn fetch_selections(
         selections.push(Selection {
             id: item.urn.clone().unwrap_or_default(),
             short_title: item.short_title.clone().unwrap_or_else(|| title.clone()),
-            artwork_url: item
-                .artwork_url
-                .clone()
-                .or_else(|| item.calculated_artwork_url.clone()),
+            artwork_url: item.artwork_url.clone().or_else(|| item.calculated_artwork_url.clone()),
             track_count: tracks.len() as u32,
             title,
             tracks,

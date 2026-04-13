@@ -4,14 +4,8 @@ use crate::services::search::{self, SearchResponse, UserSearchResponse};
 
 #[tauri::command]
 #[specta::specta]
-pub async fn search_tracks(
-    query: String,
-    limit: u32,
-    offset: u32,
-) -> Result<SearchResponse, ErrorResponse> {
-    let client_id = client_id::get_client_id()
-        .await
-        .map_err(ErrorResponse::from)?;
+pub async fn search_tracks(query: String, limit: u32, offset: u32) -> Result<SearchResponse, ErrorResponse> {
+    let client_id = client_id::get_client_id().await.map_err(ErrorResponse::from)?;
 
     search::search_tracks(&client_id, &query, limit, offset)
         .await
@@ -20,14 +14,8 @@ pub async fn search_tracks(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn search_users(
-    query: String,
-    limit: u32,
-    offset: u32,
-) -> Result<UserSearchResponse, ErrorResponse> {
-    let client_id = client_id::get_client_id()
-        .await
-        .map_err(ErrorResponse::from)?;
+pub async fn search_users(query: String, limit: u32, offset: u32) -> Result<UserSearchResponse, ErrorResponse> {
+    let client_id = client_id::get_client_id().await.map_err(ErrorResponse::from)?;
 
     search::search_users(&client_id, &query, limit, offset)
         .await
