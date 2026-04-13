@@ -443,6 +443,54 @@ async openInFirefox() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async detectRekordbox() : Promise<Result<RekordboxStatus, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("detect_rekordbox") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportToRekordbox(tracks: ExportTrackRequest[], playlistName: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_to_rekordbox", { tracks, playlistName }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listRekordboxPlaylists() : Promise<Result<RekordboxPlaylistInfo[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_rekordbox_playlists") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteRekordboxPlaylist(playlistId: string) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_rekordbox_playlist", { playlistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listRekordboxBackups() : Promise<Result<BackupInfo[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_rekordbox_backups") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async restoreRekordboxBackup(backupPath: string) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("restore_rekordbox_backup", { backupPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -473,6 +521,7 @@ export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; crea
 export type ActivityType = "Track" | "Repost"
 export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string }
 export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
+export type BackupInfo = { path: string; timestamp: string; sizeMb: number }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null; filePath?: string | null }
 export type DownloadRequest = ({ 
 /**
@@ -504,6 +553,8 @@ durationMs: number;
  */
 downloadUrl: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
 export type ErrorResponse = { code: string; message: string }
+export type ExportResult = { exportedCount: number; skippedCount: number; playlistName: string; errors: string[] }
+export type ExportTrackRequest = { sourcePath: string }
 export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean; has_original_tracks: boolean; has_new_releases: boolean; has_original_releases: boolean }
 export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
 export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }
@@ -524,6 +575,8 @@ export type QueueCompleteEvent = { completed: number; failed: number; total: num
  */
 export type QueueProgressEvent = { current: number; total: number; trackId: string }
 export type RateLimitChoice = "retry" | "stop"
+export type RekordboxPlaylistInfo = { id: string; name: string; trackCount: number }
+export type RekordboxStatus = { found: boolean; version: string | null; dbPath: string | null; isRunning: boolean }
 export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: ReleaseActivityType; created_at: string }
 export type ReleaseActivityType = "New" | "Repost"
 export type ReleaseInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; permalink_url: string; release_type: ReleaseType }

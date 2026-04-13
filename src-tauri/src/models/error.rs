@@ -173,6 +173,44 @@ impl From<FollowError> for String {
     }
 }
 
+#[derive(Debug, Error, Serialize)]
+pub enum RekordboxError {
+    #[error("Rekordbox not found: {0}")]
+    NotFound(String),
+
+    #[error("Rekordbox is running — close it before making changes")]
+    RekordboxRunning,
+
+    #[error("Database error: {0}")]
+    DatabaseError(String),
+
+    #[error("Backup failed: {0}")]
+    BackupFailed(String),
+
+    #[error("Restore failed: {0}")]
+    RestoreFailed(String),
+
+    #[error("File operation failed: {0}")]
+    FileError(String),
+
+    #[error("XML sync failed: {0}")]
+    XmlError(String),
+}
+
+impl HasErrorCode for RekordboxError {
+    fn code(&self) -> &'static str {
+        match self {
+            RekordboxError::NotFound(_) => "REKORDBOX_NOT_FOUND",
+            RekordboxError::RekordboxRunning => "REKORDBOX_RUNNING",
+            RekordboxError::DatabaseError(_) => "REKORDBOX_DB_ERROR",
+            RekordboxError::BackupFailed(_) => "REKORDBOX_BACKUP_FAILED",
+            RekordboxError::RestoreFailed(_) => "REKORDBOX_RESTORE_FAILED",
+            RekordboxError::FileError(_) => "REKORDBOX_FILE_ERROR",
+            RekordboxError::XmlError(_) => "REKORDBOX_XML_ERROR",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

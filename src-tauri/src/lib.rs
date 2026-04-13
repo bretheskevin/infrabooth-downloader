@@ -19,6 +19,8 @@ use commands::{
     get_artist_playlists, get_artist_playlist_tracks,
     follow_user, unfollow_user, check_follow_status,
     check_firefox_installed, open_in_firefox,
+    detect_rekordbox, export_to_rekordbox, list_rekordbox_playlists,
+    delete_rekordbox_playlist, list_rekordbox_backups, restore_rekordbox_backup,
 };
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
@@ -98,7 +100,9 @@ pub fn run() {
         follow_user,
         unfollow_user,
         check_follow_status,
-        check_firefox_installed, open_in_firefox
+        check_firefox_installed, open_in_firefox,
+        detect_rekordbox, export_to_rekordbox, list_rekordbox_playlists,
+        delete_rekordbox_playlist, list_rekordbox_backups, restore_rekordbox_backup,
     ]);
 
     // Export TypeScript bindings in debug mode
