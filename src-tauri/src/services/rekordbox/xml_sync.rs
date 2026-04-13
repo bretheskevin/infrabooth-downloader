@@ -32,6 +32,15 @@ struct XmlNode {
 }
 
 impl PlaylistXml {
+    pub fn read_if_exists(db_dir: &Path) -> Result<Option<Self>, RekordboxError> {
+        let xml_path = db_dir.join("masterPlaylists6.xml");
+        if !xml_path.exists() {
+            return Ok(None);
+        }
+
+        Self::read(db_dir).map(Some)
+    }
+
     pub fn read(db_dir: &Path) -> Result<Self, RekordboxError> {
         let xml_path = db_dir.join("masterPlaylists6.xml");
         let content = fs::read_to_string(&xml_path)
@@ -110,24 +119,6 @@ impl PlaylistXml {
         Ok(())
     }
 
-    #[cfg(test)]
-    pub fn update_timestamp(
-        &mut self,
-        playlist_id: &str,
-        timestamp_ms: i64,
-    ) -> Result<(), RekordboxError> {
-        let hex_id = decimal_to_hex(playlist_id);
-        let node = self.document.find_node_mut(&hex_id).ok_or_else(|| {
-            RekordboxError::XmlError(format!(
-                "Playlist {} ({}) not found in XML",
-                playlist_id, hex_id
-            ))
-        })?;
-        node.timestamp = timestamp_ms.to_string();
-        self.modified = true;
-        Ok(())
-    }
-
     pub fn save(&self, db_dir: &Path) -> Result<(), RekordboxError> {
         if !self.modified {
             return Ok(());
@@ -140,11 +131,6 @@ impl PlaylistXml {
             .map_err(|e| RekordboxError::XmlError(format!("Cannot write XML: {}", e)))?;
         log::info!("Saved masterPlaylists6.xml");
         Ok(())
-    }
-
-    #[cfg(test)]
-    pub fn is_modified(&self) -> bool {
-        self.modified
     }
 }
 
@@ -179,13 +165,6 @@ impl XmlDocument {
         self.segments
             .retain(|segment| !matches!(segment, InnerSegment::Node(node) if node.id == id));
         self.segments.len() != initial_len
-    }
-
-    fn find_node_mut(&mut self, id: &str) -> Option<&mut XmlNode> {
-        self.segments.iter_mut().find_map(|segment| match segment {
-            InnerSegment::Node(node) if node.id == id => Some(node),
-            _ => None,
-        })
     }
 
     fn render(&self) -> String {

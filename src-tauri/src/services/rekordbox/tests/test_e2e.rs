@@ -48,7 +48,8 @@ fn test_e2e_export_fixtures_to_rekordbox() {
     backup::rotate_backups(&app_dir, 5).expect("Rotation failed");
 
     let mut db = database::RekordboxDatabase::open(&rb_config).expect("Cannot open Rekordbox DB");
-    let mut xml = xml_sync::PlaylistXml::read(&rb_config.db_dir).ok();
+    let mut xml = xml_sync::PlaylistXml::read_if_exists(&rb_config.db_dir)
+        .expect("XML read failed");
 
     let folder = playlist::find_or_create_infrabooth_folder(&mut db).expect("Folder creation failed");
     if let Some(ref mut x) = xml {

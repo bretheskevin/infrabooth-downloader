@@ -27,6 +27,13 @@ fn test_read_playlist_xml() {
 }
 
 #[test]
+fn test_read_if_exists_returns_none_for_missing_xml() {
+    let tmp = TempDir::new().unwrap();
+    let xml = PlaylistXml::read_if_exists(tmp.path()).expect("Optional read failed");
+    assert!(xml.is_none());
+}
+
+#[test]
 fn test_add_playlist_to_xml() {
     let tmp = setup_xml_dir();
     let mut xml = PlaylistXml::read(tmp.path()).expect("Read failed");

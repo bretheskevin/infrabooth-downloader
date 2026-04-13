@@ -178,6 +178,9 @@ pub enum RekordboxError {
     #[error("Rekordbox not found: {0}")]
     NotFound(String),
 
+    #[error("Invalid Rekordbox playlist: {0}")]
+    InvalidPlaylist(String),
+
     #[error("Rekordbox is running — close it before making changes")]
     RekordboxRunning,
 
@@ -201,6 +204,7 @@ impl HasErrorCode for RekordboxError {
     fn code(&self) -> &'static str {
         match self {
             RekordboxError::NotFound(_) => "REKORDBOX_NOT_FOUND",
+            RekordboxError::InvalidPlaylist(_) => "REKORDBOX_INVALID_PLAYLIST",
             RekordboxError::RekordboxRunning => "REKORDBOX_RUNNING",
             RekordboxError::DatabaseError(_) => "REKORDBOX_DB_ERROR",
             RekordboxError::BackupFailed(_) => "REKORDBOX_BACKUP_FAILED",

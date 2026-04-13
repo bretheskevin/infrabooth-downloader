@@ -74,6 +74,60 @@ fn test_add_to_playlist() {
 }
 
 #[test]
+fn test_add_to_playlist_tracks_shifted_rows_for_usn() {
+    let (_tmp, mut db) = setup_test_db();
+    let folder = playlist::find_or_create_infrabooth_folder(&mut db).unwrap();
+    let pl = playlist::create_playlist(&mut db, "Test", &folder.id).unwrap();
+
+    let now = crate::services::rekordbox::database::now_timestamp();
+    db.conn()
+        .execute(
+            "INSERT INTO djmdContent (ID, UUID, FolderPath, FileNameL, FileType, FileSize, \
+             Analysed, DateCreated, StockDate, ContentLink, MasterDBID, MasterSongID, \
+             rb_file_id, DeviceID, HotCueAutoLoad, rb_data_status, rb_local_data_status, \
+             rb_local_deleted, rb_local_synced, created_at, updated_at) \
+             VALUES ('100', 'uuid-100', '/fake-1.mp3', 'fake-1.mp3', 1, 1000, 0, \
+             '2026-04-11', '2026-04-11', 100, 'MDB', '100', '200', '1', 'on', \
+             0, 0, 0, 0, ?1, ?2)",
+            rusqlite::params![now, now],
+        )
+        .unwrap();
+    db.conn()
+        .execute(
+            "INSERT INTO djmdContent (ID, UUID, FolderPath, FileNameL, FileType, FileSize, \
+             Analysed, DateCreated, StockDate, ContentLink, MasterDBID, MasterSongID, \
+             rb_file_id, DeviceID, HotCueAutoLoad, rb_data_status, rb_local_data_status, \
+             rb_local_deleted, rb_local_synced, created_at, updated_at) \
+             VALUES ('101', 'uuid-101', '/fake-2.mp3', 'fake-2.mp3', 1, 1000, 0, \
+             '2026-04-11', '2026-04-11', 100, 'MDB', '101', '201', '1', 'on', \
+             0, 0, 0, 0, ?1, ?2)",
+            rusqlite::params![now, now],
+        )
+        .unwrap();
+
+    let first_song = playlist::add_to_playlist(&mut db, &pl.id, "100", None).unwrap();
+    db.flush_usn_and_commit().unwrap();
+    let initial_usn = db.get_local_usn().unwrap();
+
+    let inserted_song = playlist::add_to_playlist(&mut db, &pl.id, "101", Some(1)).unwrap();
+    db.flush_usn_and_commit().unwrap();
+
+    let updated_usn = db.get_local_usn().unwrap();
+    assert_eq!(inserted_song.track_no, 1);
+    assert_eq!(updated_usn, initial_usn + 2);
+
+    let shifted_track_no: i32 = db
+        .conn()
+        .query_row(
+            "SELECT TrackNo FROM djmdSongPlaylist WHERE ContentID = ?1",
+            rusqlite::params![first_song.content_id],
+            |row| row.get(0),
+        )
+        .unwrap();
+    assert_eq!(shifted_track_no, 2);
+}
+
+#[test]
 fn test_list_playlists_in_folder() {
     let (_tmp, mut db) = setup_test_db();
     let folder = playlist::find_or_create_infrabooth_folder(&mut db).unwrap();

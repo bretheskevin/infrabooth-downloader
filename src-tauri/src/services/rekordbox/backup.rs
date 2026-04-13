@@ -121,6 +121,13 @@ pub fn restore_backup(backup_path: &Path, db_dir: &Path) -> Result<(), Rekordbox
         fs::copy(&xml_backup, db_dir.join("masterPlaylists6.xml")).map_err(|e| {
             RekordboxError::RestoreFailed(format!("Cannot restore XML: {}", e))
         })?;
+    } else {
+        let xml_target = db_dir.join("masterPlaylists6.xml");
+        if xml_target.exists() {
+            fs::remove_file(&xml_target).map_err(|e| {
+                RekordboxError::RestoreFailed(format!("Cannot remove XML during restore: {}", e))
+            })?;
+        }
     }
 
     log::info!("Backup restored from: {}", backup_path.display());

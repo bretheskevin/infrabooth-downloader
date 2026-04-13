@@ -57,6 +57,25 @@ fn test_restore_backup() {
 }
 
 #[test]
+fn test_restore_backup_removes_xml_when_snapshot_has_none() {
+    let db_dir = TempDir::new().unwrap();
+    fs::write(db_dir.path().join("master.db"), b"fake-db-content").unwrap();
+    fs::write(db_dir.path().join("masterPlaylists6.xml"), b"<current/>").unwrap();
+
+    let backup_root = TempDir::new().unwrap();
+    let backup_path = backup_root.path().join("rekordbox-backups/2026-04-11_120000");
+    fs::create_dir_all(&backup_path).unwrap();
+    fs::write(backup_path.join("master.db"), b"fake-db-content").unwrap();
+
+    backup::restore_backup(&backup_path, db_dir.path()).expect("Restore failed");
+
+    assert!(
+        !db_dir.path().join("masterPlaylists6.xml").exists(),
+        "XML should be removed when it was absent from the backup snapshot"
+    );
+}
+
+#[test]
 fn test_list_backups() {
     let backup_root = TempDir::new().unwrap();
     let backups_dir = backup_root.path().join("rekordbox-backups");
