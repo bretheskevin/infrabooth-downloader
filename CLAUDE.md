@@ -94,6 +94,8 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 
 **When writing superpowers design docs or specs, NEVER ask for confirmation.** Write the document directly without prompting the user to approve the content first.
 
+**Use Claude Sonnet for plan execution.** When implementing a plan that clearly specifies the code to write (e.g., superpowers agent output, detailed implementation plans), dispatch coding subagents with `model: "sonnet"`. Opus is for exploration, planning, and ambiguous tasks — Sonnet is sufficient and faster for mechanical code production from explicit instructions.
+
 ## Conventions
 
 - Use existing shadcn/ui components from `src/components/ui/`
@@ -133,44 +135,6 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 ### Type aliases for semantic clarity
 - Use `pub type QueueItemRequest = TrackCore;` when types are identical but have different semantic meanings
 - Avoids duplication while preserving API clarity
-
-## Serena MCP — Required for All Codebase Interaction
-
-This project uses **Serena MCP** for semantic code analysis and editing. All agents (including subagents dispatched by superpowers skills) **MUST** use Serena MCP tools instead of basic Read/Grep/Glob/Edit for codebase interaction.
-
-### When dispatching subagents (Agent tool), ALWAYS include this block in the prompt:
-
-```
-## MANDATORY: Use Serena MCP Tools
-
-This project uses Serena MCP for all codebase interaction. You MUST use these tools:
-
-**Reading/exploring code:**
-- `mcp__plugin_serena_serena__get_symbols_overview` — Get high-level view of symbols in a file (start here for new files)
-- `mcp__plugin_serena_serena__find_symbol` — Find symbols by name path, optionally include body/info
-- `mcp__plugin_serena_serena__find_referencing_symbols` — Find references to a symbol
-- `mcp__plugin_serena_serena__search_for_pattern` — Regex search across codebase (flexible file filtering)
-- `mcp__plugin_serena_serena__list_dir` — List directory contents
-- `mcp__plugin_serena_serena__find_file` — Find files by name/mask
-- `mcp__plugin_serena_serena__read_file` — Read file contents (use sparingly, prefer symbolic tools)
-
-**Editing code:**
-- `mcp__plugin_serena_serena__replace_symbol_body` — Replace an entire symbol's body
-- `mcp__plugin_serena_serena__insert_after_symbol` — Insert code after a symbol
-- `mcp__plugin_serena_serena__insert_before_symbol` — Insert code before a symbol
-- `mcp__plugin_serena_serena__replace_content` — Regex-based content replacement in files
-- `mcp__plugin_serena_serena__rename_symbol` — Rename a symbol across the codebase
-- `mcp__plugin_serena_serena__create_text_file` — Create new files
-
-**DO NOT use basic Read/Grep/Glob/Edit tools for code interaction. Use Serena MCP equivalents.**
-```
-
-### Serena workflow principles:
-- Use `get_symbols_overview` first when exploring a new file
-- Use `find_symbol` with `include_body=True` only for symbols you need to understand
-- Use `replace_symbol_body` for whole-symbol edits, `replace_content` with regex for partial edits
-- Use `find_referencing_symbols` before renaming/modifying to check impact
-- Pass `relative_path` to restrict searches to specific files/directories
 
 ## System Requirements
 
