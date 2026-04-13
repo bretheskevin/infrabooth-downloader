@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { useArtistProfileStore } from '../store';
 import type { ArtistProfile } from '@/bindings';
+import { ArtistProfileView } from '../components/ArtistProfileView';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -165,10 +166,9 @@ describe('ArtistProfileView', () => {
     mockProfileState.isLoading = false;
   });
 
-  it('renders loading skeletons when profile is loading', async () => {
+  it('renders loading skeletons when profile is loading', () => {
     mockProfileState.isLoading = true;
 
-    const { ArtistProfileView } = await import('../components/ArtistProfileView');
     const { container } = render(
       <ArtistProfileView
         artistId={42}
@@ -182,10 +182,9 @@ describe('ArtistProfileView', () => {
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it('renders artist name in header when profile is loaded', async () => {
+  it('renders artist name in header when profile is loaded', () => {
     mockProfileState.data = mockProfile;
 
-    const { ArtistProfileView } = await import('../components/ArtistProfileView');
     render(
       <ArtistProfileView
         artistId={42}
@@ -198,10 +197,9 @@ describe('ArtistProfileView', () => {
     expect(screen.getAllByText('DJ Test').length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders follower and track counts when profile is loaded', async () => {
+  it('renders follower and track counts when profile is loaded', () => {
     mockProfileState.data = mockProfile;
 
-    const { ArtistProfileView } = await import('../components/ArtistProfileView');
     render(
       <ArtistProfileView
         artistId={42}
@@ -217,10 +215,9 @@ describe('ArtistProfileView', () => {
     expect(screen.getByText('artistProfile.tracks')).toBeInTheDocument();
   });
 
-  it('renders description when profile has one', async () => {
+  it('renders description when profile has one', () => {
     mockProfileState.data = mockProfile;
 
-    const { ArtistProfileView } = await import('../components/ArtistProfileView');
     render(
       <ArtistProfileView
         artistId={42}
