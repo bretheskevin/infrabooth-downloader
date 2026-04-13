@@ -33,7 +33,7 @@ export function PlaylistPreview({
     const trackIds = playlist.tracks.map((track) => String(track.id));
     commands
       .scanExistingTracks(downloadPath, trackIds)
-      .then((result) => setExistingCount(result.length))
+      .then((result) => setExistingCount(Object.keys(result).length))
       .catch(() => setExistingCount(0));
   }, [downloadPath, playlist.id, playlist.tracks]);
 
