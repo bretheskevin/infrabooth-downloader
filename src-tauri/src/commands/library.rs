@@ -5,22 +5,17 @@ use tauri::Manager;
 use crate::services::events;
 
 use crate::services::library::{
-    fetch_all_library_pages, fetch_owned_playlists_for_track, resolve_playlist_artwork as resolve_artwork,
-    LibraryCache, LibraryPlaylist, PlaylistForTrackPicker,
+    fetch_all_library_pages, fetch_owned_playlists_for_track, resolve_playlist_artwork as resolve_artwork, LibraryCache, LibraryPlaylist,
+    PlaylistForTrackPicker,
 };
 use crate::services::playlist;
 use crate::services::playlist::TrackInfo;
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_library_playlists(
-    app: tauri::AppHandle,
-) -> Result<Vec<LibraryPlaylist>, String> {
+pub async fn get_library_playlists(app: tauri::AppHandle) -> Result<Vec<LibraryPlaylist>, String> {
     if let Some(cached) = app.state::<LibraryCache>().get_if_complete() {
-        log::info!(
-            "[get_library_playlists] Returning {} cached playlists",
-            cached.len()
-        );
+        log::info!("[get_library_playlists] Returning {} cached playlists", cached.len());
         return Ok(cached);
     }
 
@@ -30,10 +25,7 @@ pub async fn get_library_playlists(
 
     match fetch_all_library_pages(&token, &cid).await {
         Ok(playlists) => {
-            log::info!(
-                "[get_library_playlists] Fetched {} playlists from API",
-                playlists.len()
-            );
+            log::info!("[get_library_playlists] Fetched {} playlists from API", playlists.len());
             app.state::<LibraryCache>().set(playlists.clone());
             Ok(playlists)
         }
@@ -46,9 +38,7 @@ pub async fn get_library_playlists(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn clear_library_cache(
-    app: tauri::AppHandle,
-) -> Result<(), String> {
+pub async fn clear_library_cache(app: tauri::AppHandle) -> Result<(), String> {
     log::info!("[clear_library_cache] Clearing library cache");
     app.state::<LibraryCache>().clear();
     Ok(())
@@ -57,9 +47,7 @@ pub async fn clear_library_cache(
 #[tauri::command]
 #[specta::specta]
 pub async fn resolve_library_artwork(
-    playlist_id: u64,
-    secret_token: Option<String>,
-    app: tauri::AppHandle,
+    playlist_id: u64, secret_token: Option<String>, app: tauri::AppHandle,
 ) -> Result<Option<String>, String> {
     if let Some(cached) = app.state::<LibraryCache>().get_artwork(playlist_id) {
         return Ok(cached);
@@ -77,18 +65,13 @@ pub async fn resolve_library_artwork(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_owned_playlists_for_track(
-    track_id: u64,
-    app: tauri::AppHandle,
-) -> Result<Vec<PlaylistForTrackPicker>, String> {
+pub async fn get_owned_playlists_for_track(track_id: u64, app: tauri::AppHandle) -> Result<Vec<PlaylistForTrackPicker>, String> {
     let (token, cid) = super::require_auth_and_cid(&app).await?;
 
     let playlists = if let Some(cached) = app.state::<LibraryCache>().get_if_complete() {
         cached
     } else {
-        let fetched = fetch_all_library_pages(&token, &cid)
-            .await
-            .map_err(|e| e.to_string())?;
+        let fetched = fetch_all_library_pages(&token, &cid).await.map_err(|e| e.to_string())?;
         app.state::<LibraryCache>().set(fetched.clone());
         fetched
     };
@@ -101,26 +84,14 @@ pub async fn get_owned_playlists_for_track(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_library_playlist_tracks(
-    playlist_id: u64,
-    app: tauri::AppHandle,
-) -> Result<Vec<TrackInfo>, String> {
+pub async fn get_library_playlist_tracks(playlist_id: u64, app: tauri::AppHandle) -> Result<Vec<TrackInfo>, String> {
     let (token, _cid) = super::require_auth_and_cid(&app).await?;
 
-    let secret_token = app
-        .state::<LibraryCache>()
-        .get_secret_token(playlist_id);
+    let secret_token = app.state::<LibraryCache>().get_secret_token(playlist_id);
 
     let on_batch = events::make_batch_emitter(&app, events::PLAYLIST_TRACKS_BATCH, playlist_id);
 
-    match playlist::fetch_playlist_by_id(
-        playlist_id,
-        secret_token.as_deref(),
-        Some(&token),
-        on_batch,
-    )
-    .await
-    {
+    match playlist::fetch_playlist_by_id(playlist_id, secret_token.as_deref(), Some(&token), on_batch).await {
         Ok(tracks) => {
             log::info!(
                 "[get_library_playlist_tracks] Returning {} tracks for playlist {}",

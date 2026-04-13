@@ -1,7 +1,11 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::services::rekordbox::{backup, config, content, database::{self, timestamp_ms}, file_manager, playlist, xml_sync};
+use crate::services::rekordbox::{
+    backup, config, content,
+    database::{self, timestamp_ms},
+    file_manager, playlist, xml_sync,
+};
 
 fn app_data_dir() -> PathBuf {
     #[cfg(target_os = "macos")]
@@ -48,16 +52,14 @@ fn test_e2e_export_fixtures_to_rekordbox() {
     backup::rotate_backups(&app_dir, 5).expect("Rotation failed");
 
     let mut db = database::RekordboxDatabase::open(&rb_config).expect("Cannot open Rekordbox DB");
-    let mut xml = xml_sync::PlaylistXml::read_if_exists(&rb_config.db_dir)
-        .expect("XML read failed");
+    let mut xml = xml_sync::PlaylistXml::read_if_exists(&rb_config.db_dir).expect("XML read failed");
 
     let folder = playlist::find_or_create_infrabooth_folder(&mut db).expect("Folder creation failed");
     if let Some(ref mut x) = xml {
         x.add_playlist(&folder.id, "root", 1, timestamp_ms());
     }
 
-    let pl = playlist::create_playlist(&mut db, "Test Fixtures", &folder.id)
-        .expect("Playlist creation failed");
+    let pl = playlist::create_playlist(&mut db, "Test Fixtures", &folder.id).expect("Playlist creation failed");
     if let Some(ref mut x) = xml {
         x.add_playlist(&pl.id, &folder.id, 0, timestamp_ms());
     }
@@ -67,10 +69,7 @@ fn test_e2e_export_fixtures_to_rekordbox() {
 
     for mp3 in &mp3s {
         let metadata = content::read_track_metadata(mp3).expect("Metadata read failed");
-        let dest = file_manager::copy_track_to_rekordbox(
-            mp3, &metadata.artist, &metadata.title, &tracks_dir,
-        )
-        .expect("Copy failed");
+        let dest = file_manager::copy_track_to_rekordbox(mp3, &metadata.artist, &metadata.title, &tracks_dir).expect("Copy failed");
 
         let content_id = content::add_content(&mut db, &dest, &metadata).expect("Content add failed");
         playlist::add_to_playlist(&mut db, &pl.id, &content_id, None).expect("Playlist add failed");
@@ -85,7 +84,8 @@ fn test_e2e_export_fixtures_to_rekordbox() {
 
     log::info!(
         "E2E done: {} tracks exported to playlist '{}'. Open Rekordbox to verify.",
-        exported, pl.name
+        exported,
+        pl.name
     );
     assert_eq!(exported, mp3s.len());
 }

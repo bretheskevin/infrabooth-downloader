@@ -5,43 +5,36 @@ mod services;
 use std::sync::Arc;
 
 use commands::{
-    add_track_to_playlist, remove_track_from_playlist, cancel_download_queue, check_auth, check_for_updates,
-    check_write_permission, clear_library_cache, download_track_full, get_app_data_path, get_default_download_path, get_log_path,
-    get_library_playlist_tracks, get_library_playlists, get_owned_playlists_for_track,
-    get_playlist_info, get_track_info, install_update, refresh_auth, resolve_library_artwork,
-    resolve_playback_url, respond_to_rate_limit_choice, scan_existing_tracks,
-    search_tracks, search_users, sign_out, start_download_queue, test_ffmpeg, validate_download_path,
-    validate_soundcloud_url, get_selections,
-    get_followed_artists, get_artist_activity, get_artist_releases, get_release_tracks,
-    mark_artist_seen, mark_artist_releases_seen,
-    fetch_related_tracks,
-    get_artist_profile, get_all_artist_tracks, resolve_user, resolve_soundcloud_link,
-    get_artist_playlists, get_artist_playlist_tracks,
-    follow_user, unfollow_user, check_follow_status,
-    check_firefox_installed, open_in_firefox,
-    detect_rekordbox, export_to_rekordbox, list_rekordbox_playlists,
-    delete_rekordbox_playlist, list_rekordbox_backups, restore_rekordbox_backup,
+    add_track_to_playlist, cancel_download_queue, check_auth, check_firefox_installed, check_follow_status, check_for_updates,
+    check_write_permission, clear_library_cache, delete_rekordbox_playlist, detect_rekordbox, download_track_full, export_to_rekordbox,
+    fetch_related_tracks, follow_user, get_all_artist_tracks, get_app_data_path, get_artist_activity, get_artist_playlist_tracks,
+    get_artist_playlists, get_artist_profile, get_artist_releases, get_default_download_path, get_followed_artists,
+    get_library_playlist_tracks, get_library_playlists, get_log_path, get_owned_playlists_for_track, get_playlist_info, get_release_tracks,
+    get_selections, get_track_info, install_update, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen,
+    mark_artist_seen, open_in_firefox, refresh_auth, remove_track_from_playlist, resolve_library_artwork, resolve_playback_url,
+    resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_tracks,
+    search_users, sign_out, start_download_queue, test_ffmpeg, unfollow_user, validate_download_path, validate_soundcloud_url,
 };
-use services::rate_limit_choice::RateLimitChoiceState;
 use services::cancellation::CancellationState;
-use services::selections::SelectionCache;
+use services::events;
 use services::library::LibraryCache;
 use services::new_tracks::{NewTracksCache, SeenArtistsState};
+use services::rate_limit_choice::RateLimitChoiceState;
+use services::selections::SelectionCache;
 use services::storage::AuthState;
-use tauri::Manager;
 #[cfg(target_os = "macos")]
 use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-use services::events;
 #[cfg(target_os = "macos")]
 use tauri::Emitter;
+use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
 
+use services::downloader::DownloadProgressEvent;
+use services::events::TracksBatchEvent;
+use services::queue::{QueueCancelledEvent, QueueCompleteEvent, QueueProgressEvent};
 #[cfg(debug_assertions)]
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder};
-use services::downloader::DownloadProgressEvent;
-use services::events::TracksBatchEvent;
-use services::queue::{QueueProgressEvent, QueueCompleteEvent, QueueCancelledEvent};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -54,64 +47,67 @@ pub fn run() {
             TracksBatchEvent
         ])
         .commands(collect_commands![
-        check_auth,
-        refresh_auth,
-        sign_out,
-        validate_soundcloud_url,
-        add_track_to_playlist,
-        remove_track_from_playlist,
-        get_playlist_info,
-        get_track_info,
-        test_ffmpeg,
-        download_track_full,
-        start_download_queue,
-        cancel_download_queue,
-        respond_to_rate_limit_choice,
-        check_write_permission,
-        get_app_data_path,
-        get_default_download_path,
-        get_log_path,
-        validate_download_path,
-        check_for_updates,
-        install_update,
-        get_library_playlists,
-        resolve_library_artwork,
-        clear_library_cache,
-        get_library_playlist_tracks,
-        get_owned_playlists_for_track,
-        scan_existing_tracks,
-        search_tracks,
-        search_users,
-        resolve_playback_url,
-        get_selections,
-        get_followed_artists,
-        get_artist_activity,
-        get_artist_releases,
-        get_release_tracks,
-        mark_artist_seen,
-        mark_artist_releases_seen,
-        fetch_related_tracks,
-        get_artist_profile,
-        get_all_artist_tracks,
-        resolve_user,
-        resolve_soundcloud_link,
-        get_artist_playlists,
-        get_artist_playlist_tracks,
-        follow_user,
-        unfollow_user,
-        check_follow_status,
-        check_firefox_installed, open_in_firefox,
-        detect_rekordbox, export_to_rekordbox, list_rekordbox_playlists,
-        delete_rekordbox_playlist, list_rekordbox_backups, restore_rekordbox_backup,
-    ]);
+            check_auth,
+            refresh_auth,
+            sign_out,
+            validate_soundcloud_url,
+            add_track_to_playlist,
+            remove_track_from_playlist,
+            get_playlist_info,
+            get_track_info,
+            test_ffmpeg,
+            download_track_full,
+            start_download_queue,
+            cancel_download_queue,
+            respond_to_rate_limit_choice,
+            check_write_permission,
+            get_app_data_path,
+            get_default_download_path,
+            get_log_path,
+            validate_download_path,
+            check_for_updates,
+            install_update,
+            get_library_playlists,
+            resolve_library_artwork,
+            clear_library_cache,
+            get_library_playlist_tracks,
+            get_owned_playlists_for_track,
+            scan_existing_tracks,
+            search_tracks,
+            search_users,
+            resolve_playback_url,
+            get_selections,
+            get_followed_artists,
+            get_artist_activity,
+            get_artist_releases,
+            get_release_tracks,
+            mark_artist_seen,
+            mark_artist_releases_seen,
+            fetch_related_tracks,
+            get_artist_profile,
+            get_all_artist_tracks,
+            resolve_user,
+            resolve_soundcloud_link,
+            get_artist_playlists,
+            get_artist_playlist_tracks,
+            follow_user,
+            unfollow_user,
+            check_follow_status,
+            check_firefox_installed,
+            open_in_firefox,
+            detect_rekordbox,
+            export_to_rekordbox,
+            list_rekordbox_playlists,
+            delete_rekordbox_playlist,
+            list_rekordbox_backups,
+            restore_rekordbox_backup,
+        ]);
 
     // Export TypeScript bindings in debug mode
     #[cfg(debug_assertions)]
     builder
         .export(
-            Typescript::default()
-                .bigint(BigIntExportBehavior::Number)
-                .header("// @ts-nocheck"),
+            Typescript::default().bigint(BigIntExportBehavior::Number).header("// @ts-nocheck"),
             "../src/bindings.ts",
         )
         .expect("Failed to export typescript bindings");
@@ -138,8 +134,7 @@ pub fn run() {
 
             #[cfg(target_os = "macos")]
             {
-                let settings_item =
-                    MenuItem::with_id(app, "settings", "Settings...", true, Some("CmdOrCtrl+,"))?;
+                let settings_item = MenuItem::with_id(app, "settings", "Settings...", true, Some("CmdOrCtrl+,"))?;
 
                 let app_menu = Submenu::with_items(
                     app,
@@ -189,9 +184,7 @@ pub fn run() {
                 log::LevelFilter::Info
             };
 
-            let log_dir = app.path().app_data_dir()
-                .expect("failed to resolve app data dir")
-                .join("logs");
+            let log_dir = app.path().app_data_dir().expect("failed to resolve app data dir").join("logs");
             std::fs::create_dir_all(&log_dir).ok();
 
             app.handle().plugin(
@@ -204,20 +197,14 @@ pub fn run() {
                     .level(log_level)
                     .filter(|metadata| {
                         // Filter out noisy rookie debug logs
-                        !(metadata.target().starts_with("rookie")
-                            && metadata.level() > log::LevelFilter::Info)
+                        !(metadata.target().starts_with("rookie") && metadata.level() > log::LevelFilter::Info)
                     })
                     .max_file_size(50_000_000) // 50 MB per file
                     .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepOne)
                     .format(|out, message, record| {
-                        let now = time::OffsetDateTime::now_local()
-                            .unwrap_or_else(|_| time::OffsetDateTime::now_utc());
+                        let now = time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc());
                         let target = record.target();
-                        let clean_target = if target.contains("node_modules") {
-                            "webview"
-                        } else {
-                            target
-                        };
+                        let clean_target = if target.contains("node_modules") { "webview" } else { target };
                         out.finish(format_args!(
                             "[{:04}-{:02}-{:02} {:02}:{:02}][{}][{}] {}",
                             now.year(),

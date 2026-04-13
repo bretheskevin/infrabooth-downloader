@@ -5,8 +5,8 @@ use tauri_plugin_shell::process::CommandChild;
 use tokio::sync::{watch, Mutex};
 
 use crate::models::error::DownloadError;
-use crate::services::metadata::{embed_metadata, TrackMetadata};
 use crate::services::downloader::{download_track_to_mp3, PlaylistContext};
+use crate::services::metadata::{embed_metadata, TrackMetadata};
 
 /// Handles for cancellation support during download.
 /// Groups the cancel signal receiver and process tracking handles.
@@ -42,18 +42,11 @@ pub struct PipelineConfig {
 /// # Returns
 /// The path to the final MP3 file on success.
 pub async fn download_and_convert<R: tauri::Runtime>(
-    app: &AppHandle<R>,
-    config: PipelineConfig,
-    cancellation: Option<CancellationHandles>,
+    app: &AppHandle<R>, config: PipelineConfig, cancellation: Option<CancellationHandles>,
 ) -> Result<PathBuf, DownloadError> {
     let playlist_context = config.playlist_context.clone();
 
-    let output_path = download_track_to_mp3(
-        app,
-        &config,
-        cancellation,
-    )
-    .await?;
+    let output_path = download_track_to_mp3(app, &config, cancellation).await?;
 
     // Prefix metadata title with track number for playlist tracks
     let mut metadata = config.metadata;
@@ -131,10 +124,7 @@ mod tests {
 
             output_dir: PathBuf::from("/tmp/output"),
             metadata,
-            playlist_context: Some(PlaylistContext {
-                track_position: 5,
-                total_tracks: 20,
-            }),
+            playlist_context: Some(PlaylistContext { track_position: 5, total_tracks: 20 }),
             duration_ms: 240000,
             oauth_token: None,
             download_url: None,

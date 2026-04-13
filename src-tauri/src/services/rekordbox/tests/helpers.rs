@@ -12,8 +12,7 @@ pub fn setup_test_db() -> (TempDir, RekordboxDatabase) {
     seed_data(&conn);
     drop(conn);
 
-    let db = RekordboxDatabase::open_unencrypted(&db_path, tmp_dir.path().to_path_buf())
-        .expect("Failed to open test DB");
+    let db = RekordboxDatabase::open_unencrypted(&db_path, tmp_dir.path().to_path_buf()).expect("Failed to open test DB");
     (tmp_dir, db)
 }
 

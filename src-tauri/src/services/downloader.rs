@@ -21,10 +21,10 @@ use crate::services::stream::{self, StreamCodec, StreamInfo};
 /// Estimate bytes per millisecond for the output MP3 based on source codec.
 fn output_bytes_per_ms(codec: &StreamCodec) -> u64 {
     match codec {
-        StreamCodec::Mp3 => 16,      // ~128kbps (SC serves MP3 at 128k), stream-copied
-        StreamCodec::Aac => 32,      // 256kbps target output
-        StreamCodec::Opus => 16,     // 128kbps target output
-        StreamCodec::Unknown => 32,  // 256kbps fallback
+        StreamCodec::Mp3 => 16,     // ~128kbps (SC serves MP3 at 128k), stream-copied
+        StreamCodec::Aac => 32,     // 256kbps target output
+        StreamCodec::Opus => 16,    // 128kbps target output
+        StreamCodec::Unknown => 32, // 256kbps fallback
     }
 }
 
@@ -130,11 +130,7 @@ fn detect_format_from_content_type(content_type: &str) -> OriginalFormat {
     }
 }
 
-pub fn build_base_filename(
-    playlist_context: &Option<PlaylistContext>,
-    artist: &str,
-    title: &str,
-) -> (String, String) {
+pub fn build_base_filename(playlist_context: &Option<PlaylistContext>, artist: &str, title: &str) -> (String, String) {
     let safe_artist = super::filename::sanitize_path_component(artist);
     let safe_title = super::filename::sanitize_path_component(title);
 
@@ -176,11 +172,7 @@ fn cleanup_partial_files(output_dir: &Path, base_name: &str) {
             if name.starts_with(base_name) && extensions.iter().any(|ext| name.ends_with(ext)) {
                 log::info!("[downloader] Cleaning up partial file: {:?}", path);
                 if let Err(e) = std::fs::remove_file(&path) {
-                    log::warn!(
-                        "[downloader] Failed to remove partial file {:?}: {}",
-                        path,
-                        e
-                    );
+                    log::warn!("[downloader] Failed to remove partial file {:?}: {}", path, e);
                 }
             }
         }
@@ -197,13 +189,7 @@ pub fn parse_ffmpeg_progress(line: &str, duration_ms: u64) -> Option<DownloadPro
     let line = line.trim();
 
     if line.starts_with("progress=end") {
-        return Some(DownloadProgress {
-            percent: Some(1.0),
-            speed: None,
-            eta: None,
-            total_bytes: None,
-            downloaded_bytes: None,
-        });
+        return Some(DownloadProgress { percent: Some(1.0), speed: None, eta: None, total_bytes: None, downloaded_bytes: None });
     }
 
     if line.starts_with("out_time_us=") {
@@ -214,26 +200,14 @@ pub fn parse_ffmpeg_progress(line: &str, duration_ms: u64) -> Option<DownloadPro
             }
             let out_ms = out_us as f64 / 1000.0;
             let percent = (out_ms / duration_ms as f64).min(1.0) as f32;
-            return Some(DownloadProgress {
-                percent: Some(percent),
-                speed: None,
-                eta: None,
-                total_bytes: None,
-                downloaded_bytes: None,
-            });
+            return Some(DownloadProgress { percent: Some(percent), speed: None, eta: None, total_bytes: None, downloaded_bytes: None });
         }
     }
 
     if line.starts_with("total_size=") {
         let size_str = line.trim_start_matches("total_size=");
         if let Ok(bytes) = size_str.parse::<u64>() {
-            return Some(DownloadProgress {
-                percent: None,
-                speed: None,
-                eta: None,
-                total_bytes: None,
-                downloaded_bytes: Some(bytes),
-            });
+            return Some(DownloadProgress { percent: None, speed: None, eta: None, total_bytes: None, downloaded_bytes: Some(bytes) });
         }
     }
 
@@ -268,24 +242,16 @@ pub fn classify_ffmpeg_error(stderr: &str) -> Option<DownloadError> {
         return Some(DownloadError::RateLimited(None));
     }
     if lower.contains("404 not found") || lower.contains("server returned 404") {
-        return Some(DownloadError::TrackUnavailable(
-            "Stream not found (404)".to_string(),
-        ));
+        return Some(DownloadError::TrackUnavailable("Stream not found (404)".to_string()));
     }
     if lower.contains("401 unauthorized") || lower.contains("server returned 401") {
-        return Some(DownloadError::AuthRequired(
-            "Authentication required".to_string(),
-        ));
+        return Some(DownloadError::AuthRequired("Authentication required".to_string()));
     }
     if lower.contains("connection timed out") || lower.contains("timeout") {
-        return Some(DownloadError::NetworkError(
-            "Connection timed out".to_string(),
-        ));
+        return Some(DownloadError::NetworkError("Connection timed out".to_string()));
     }
     if lower.contains("connection refused") {
-        return Some(DownloadError::NetworkError(
-            "Connection refused".to_string(),
-        ));
+        return Some(DownloadError::NetworkError("Connection refused".to_string()));
     }
     if lower.contains("no space left") || lower.contains("disk full") {
         return Some(DownloadError::ConversionFailed("Disk is full".to_string()));
@@ -326,21 +292,11 @@ fn build_ffmpeg_args(stream_info: &StreamInfo, output_path: &Path) -> Vec<String
         }
         StreamCodec::Aac | StreamCodec::Unknown => {
             // AAC 256kbps source or unknown: transcode to MP3 256kbps
-            args.extend_from_slice(&[
-                "-codec:a".to_string(),
-                "libmp3lame".to_string(),
-                "-b:a".to_string(),
-                "256k".to_string(),
-            ]);
+            args.extend_from_slice(&["-codec:a".to_string(), "libmp3lame".to_string(), "-b:a".to_string(), "256k".to_string()]);
         }
         StreamCodec::Opus => {
             // Opus ~64kbps: transcode to MP3 128kbps (2x for perceptual parity)
-            args.extend_from_slice(&[
-                "-codec:a".to_string(),
-                "libmp3lame".to_string(),
-                "-b:a".to_string(),
-                "128k".to_string(),
-            ]);
+            args.extend_from_slice(&["-codec:a".to_string(), "libmp3lame".to_string(), "-b:a".to_string(), "128k".to_string()]);
         }
     }
 
@@ -353,11 +309,7 @@ fn build_ffmpeg_args(stream_info: &StreamInfo, output_path: &Path) -> Vec<String
 /// - Lossless (WAV/FLAC) → MP3 320kbps (high quality source deserves high bitrate)
 /// - MP3 → None (just copy the file, no FFmpeg needed)
 /// - AAC/Unknown → MP3 256kbps (match transcoding behavior)
-fn build_ffmpeg_args_for_original(
-    input_path: &Path,
-    output_path: &Path,
-    format: OriginalFormat,
-) -> Option<Vec<String>> {
+fn build_ffmpeg_args_for_original(input_path: &Path, output_path: &Path, format: OriginalFormat) -> Option<Vec<String>> {
     // MP3 files don't need conversion — caller should just copy/rename
     if format == OriginalFormat::Mp3 {
         return None;
@@ -372,12 +324,7 @@ fn build_ffmpeg_args_for_original(
     // Output codec and bitrate based on source format
     let bitrate = format!("{}k", output_bitrate_kbps(format));
 
-    args.extend_from_slice(&[
-        "-codec:a".to_string(),
-        "libmp3lame".to_string(),
-        "-b:a".to_string(),
-        bitrate,
-    ]);
+    args.extend_from_slice(&["-codec:a".to_string(), "libmp3lame".to_string(), "-b:a".to_string(), bitrate]);
 
     append_common_ffmpeg_args(&mut args, output_path);
     Some(args)
@@ -420,11 +367,7 @@ fn append_common_ffmpeg_args(args: &mut Vec<String>, output_path: &Path) {
 }
 
 async fn try_original_download(
-    download_url: &str,
-    oauth_token: Option<&str>,
-    output_dir: &Path,
-    base_name: &str,
-    cancel_rx: &Option<watch::Receiver<bool>>,
+    download_url: &str, oauth_token: Option<&str>, output_dir: &Path, base_name: &str, cancel_rx: &Option<watch::Receiver<bool>>,
 ) -> Option<OriginalDownload> {
     if is_cancelled(cancel_rx) {
         return None;
@@ -499,7 +442,9 @@ async fn try_original_download(
 
     log::info!(
         "[downloader] Downloaded original: {:?} ({:?}, {} bytes)",
-        temp_path, format, audio_bytes.len()
+        temp_path,
+        format,
+        audio_bytes.len()
     );
 
     Some(OriginalDownload { temp_path, format })
@@ -509,18 +454,12 @@ async fn try_original_download(
 ///
 /// Returns the final output path on success.
 async fn convert_original_file<R: tauri::Runtime>(
-    app: &AppHandle<R>,
-    original: &OriginalDownload,
-    output_file: &Path,
-    track_id: &str,
-    duration_ms: u64,
-    ctx: &FfmpegContext<'_>,
+    app: &AppHandle<R>, original: &OriginalDownload, output_file: &Path, track_id: &str, duration_ms: u64, ctx: &FfmpegContext<'_>,
 ) -> Result<PathBuf, DownloadError> {
     // MP3 files: just rename, no conversion needed
     if original.format == OriginalFormat::Mp3 {
-        std::fs::rename(&original.temp_path, output_file).map_err(|e| {
-            DownloadError::ConversionFailed(format!("Failed to move MP3 file: {}", e))
-        })?;
+        std::fs::rename(&original.temp_path, output_file)
+            .map_err(|e| DownloadError::ConversionFailed(format!("Failed to move MP3 file: {}", e)))?;
         log::info!("[downloader] Original MP3 copied directly: {:?}", output_file);
         return Ok(output_file.to_path_buf());
     }
@@ -533,16 +472,7 @@ async fn convert_original_file<R: tauri::Runtime>(
     let bytes_per_ms = (output_bitrate_kbps(original.format) / 8) as u64;
 
     // Run conversion
-    let result = run_ffmpeg_sidecar(
-        app,
-        &args,
-        track_id,
-        duration_ms,
-        bytes_per_ms,
-        output_file,
-        ctx,
-    )
-    .await;
+    let result = run_ffmpeg_sidecar(app, &args, track_id, duration_ms, bytes_per_ms, output_file, ctx).await;
 
     // Always clean up temp file (on success or error)
     let _ = std::fs::remove_file(&original.temp_path);
@@ -550,11 +480,7 @@ async fn convert_original_file<R: tauri::Runtime>(
     // Propagate any error after cleanup
     result?;
 
-    log::info!(
-        "[downloader] Converted original {:?} to MP3: {:?}",
-        original.format,
-        output_file
-    );
+    log::info!("[downloader] Converted original {:?} to MP3: {:?}", original.format, output_file);
 
     Ok(output_file.to_path_buf())
 }
@@ -563,11 +489,15 @@ async fn convert_original_file<R: tauri::Runtime>(
 ///
 /// Returns (output_path, base_name, FfmpegContext).
 fn prepare_download_context<'a>(
-    config: &PipelineConfig,
-    cancellation: &'a Option<CancellationHandles>,
-) -> (PathBuf, String, Option<watch::Receiver<bool>>, Option<Arc<Mutex<Option<CommandChild>>>>, Option<Arc<Mutex<Option<u32>>>>) {
-    let (base_name, _display_title) =
-        build_base_filename(&config.playlist_context, &config.metadata.artist, &config.metadata.title);
+    config: &PipelineConfig, cancellation: &'a Option<CancellationHandles>,
+) -> (
+    PathBuf,
+    String,
+    Option<watch::Receiver<bool>>,
+    Option<Arc<Mutex<Option<CommandChild>>>>,
+    Option<Arc<Mutex<Option<u32>>>>,
+) {
+    let (base_name, _display_title) = build_base_filename(&config.playlist_context, &config.metadata.artist, &config.metadata.title);
     let output_file = config.output_dir.join(format!("{}.mp3", base_name));
 
     let (cancel_rx, active_child, active_pid) = match cancellation {
@@ -582,10 +512,7 @@ fn prepare_download_context<'a>(
 ///
 /// Resolves the stream URL and runs FFmpeg to transcode to MP3.
 async fn execute_transcoding_download<R: tauri::Runtime>(
-    app: &AppHandle<R>,
-    config: &PipelineConfig,
-    output_file: &Path,
-    ctx: &FfmpegContext<'_>,
+    app: &AppHandle<R>, config: &PipelineConfig, output_file: &Path, ctx: &FfmpegContext<'_>,
 ) -> Result<PathBuf, DownloadError> {
     let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
 
@@ -599,16 +526,7 @@ async fn execute_transcoding_download<R: tauri::Runtime>(
     let args = build_ffmpeg_args(&stream_info, output_file);
     let bytes_per_ms = output_bytes_per_ms(&stream_info.codec);
 
-    run_ffmpeg_sidecar(
-        app,
-        &args,
-        &config.track_id,
-        config.duration_ms,
-        bytes_per_ms,
-        output_file,
-        ctx,
-    )
-    .await?;
+    run_ffmpeg_sidecar(app, &args, &config.track_id, config.duration_ms, bytes_per_ms, output_file, ctx).await?;
 
     log::info!("[downloader] Download complete: {:?}", output_file);
     Ok(output_file.to_path_buf())
@@ -621,10 +539,7 @@ fn is_cancelled(cancel_rx: &Option<watch::Receiver<bool>>) -> bool {
 
 /// Kill the active child process and clean up partial files.
 async fn cancel_and_cleanup(
-    active_child: &Option<Arc<Mutex<Option<CommandChild>>>>,
-    output_dir: &Path,
-    base_name: &str,
-    output_file: &Path,
+    active_child: &Option<Arc<Mutex<Option<CommandChild>>>>, output_dir: &Path, base_name: &str, output_file: &Path,
 ) {
     if let Some(ref active_child_mutex) = active_child {
         let mut guard = active_child_mutex.lock().await;
@@ -638,12 +553,7 @@ async fn cancel_and_cleanup(
 
 /// Process FFmpeg stdout lines, parse progress, and emit events.
 fn process_ffmpeg_stdout<R: tauri::Runtime>(
-    app: &AppHandle<R>,
-    line_bytes: &[u8],
-    track_id: &str,
-    duration_ms: u64,
-    estimated_total_bytes: Option<u64>,
-    last_percent: &mut f32,
+    app: &AppHandle<R>, line_bytes: &[u8], track_id: &str, duration_ms: u64, estimated_total_bytes: Option<u64>, last_percent: &mut f32,
     last_downloaded_bytes: &mut Option<u64>,
 ) {
     let raw_line = bytes_to_string(line_bytes);
@@ -664,12 +574,7 @@ fn process_ffmpeg_stdout<R: tauri::Runtime>(
             if progress.percent.is_some() {
                 let _ = app.emit(
                     events::DOWNLOAD_PROGRESS,
-                    DownloadProgressEvent::downloading(
-                        track_id.to_string(),
-                        *last_percent,
-                        *last_downloaded_bytes,
-                        estimated_total_bytes,
-                    ),
+                    DownloadProgressEvent::downloading(track_id.to_string(), *last_percent, *last_downloaded_bytes, estimated_total_bytes),
                 );
             }
         }
@@ -686,11 +591,7 @@ fn process_ffmpeg_stderr(line_bytes: &[u8], last_error: &mut Option<String>) -> 
 
 /// Handle FFmpeg process termination.
 fn handle_ffmpeg_termination(
-    exit_code: Option<i32>,
-    cancel_rx: &Option<watch::Receiver<bool>>,
-    last_error: &Option<String>,
-    output_dir: &Path,
-    base_name: &str,
+    exit_code: Option<i32>, cancel_rx: &Option<watch::Receiver<bool>>, last_error: &Option<String>, output_dir: &Path, base_name: &str,
     output_file: &Path,
 ) -> Result<bool, DownloadError> {
     if exit_code == Some(0) {
@@ -704,9 +605,7 @@ fn handle_ffmpeg_termination(
         return Err(DownloadError::Cancelled);
     }
 
-    let error_text = last_error
-        .clone()
-        .unwrap_or_else(|| "Unknown error".to_string());
+    let error_text = last_error.clone().unwrap_or_else(|| "Unknown error".to_string());
     log::error!("ffmpeg terminated with code {:?}: {}", exit_code, error_text);
     let _ = std::fs::remove_file(output_file);
     Err(classify_ffmpeg_exit_error(&error_text))
@@ -715,25 +614,14 @@ fn handle_ffmpeg_termination(
 /// Process the ffmpeg event loop: handles stdout progress, stderr errors,
 /// cancellation, and termination.
 async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
-    app: &AppHandle<R>,
-    rx: &mut tauri::async_runtime::Receiver<CommandEvent>,
-    track_id: &str,
-    duration_ms: u64,
-    bytes_per_ms: u64,
-    cancel_rx: &Option<watch::Receiver<bool>>,
-    active_child: &Option<Arc<Mutex<Option<CommandChild>>>>,
-    output_dir: &Path,
-    base_name: &str,
+    app: &AppHandle<R>, rx: &mut tauri::async_runtime::Receiver<CommandEvent>, track_id: &str, duration_ms: u64, bytes_per_ms: u64,
+    cancel_rx: &Option<watch::Receiver<bool>>, active_child: &Option<Arc<Mutex<Option<CommandChild>>>>, output_dir: &Path, base_name: &str,
     output_file: &Path,
 ) -> Result<(), DownloadError> {
     let mut last_error: Option<String> = None;
     let mut last_percent: f32 = 0.0;
     let mut last_downloaded_bytes: Option<u64> = None;
-    let estimated_total_bytes: Option<u64> = if duration_ms > 0 {
-        Some(duration_ms * bytes_per_ms)
-    } else {
-        None
-    };
+    let estimated_total_bytes: Option<u64> = if duration_ms > 0 { Some(duration_ms * bytes_per_ms) } else { None };
 
     loop {
         if is_cancelled(cancel_rx) {
@@ -766,14 +654,7 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
                 }
             }
             Some(CommandEvent::Terminated(payload)) => {
-                match handle_ffmpeg_termination(
-                    payload.code,
-                    cancel_rx,
-                    &last_error,
-                    output_dir,
-                    base_name,
-                    output_file,
-                ) {
+                match handle_ffmpeg_termination(payload.code, cancel_rx, &last_error, output_dir, base_name, output_file) {
                     Ok(true) => break,
                     Ok(false) => continue,
                     Err(e) => return Err(e),
@@ -790,13 +671,7 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
 /// Spawn FFmpeg sidecar, register process handles, run event loop, and verify output.
 /// This is the shared implementation for both stream transcoding and original file conversion.
 async fn run_ffmpeg_sidecar<R: tauri::Runtime>(
-    app: &AppHandle<R>,
-    args: &[String],
-    track_id: &str,
-    duration_ms: u64,
-    bytes_per_ms: u64,
-    output_file: &Path,
-    ctx: &FfmpegContext<'_>,
+    app: &AppHandle<R>, args: &[String], track_id: &str, duration_ms: u64, bytes_per_ms: u64, output_file: &Path, ctx: &FfmpegContext<'_>,
 ) -> Result<(), DownloadError> {
     let shell = app.shell();
     let (mut rx, child) = shell
@@ -836,21 +711,16 @@ async fn run_ffmpeg_sidecar<R: tauri::Runtime>(
 
     // Verify output file exists
     if !output_file.exists() {
-        return Err(DownloadError::ConversionFailed(
-            "Output file was not created".to_string(),
-        ));
+        return Err(DownloadError::ConversionFailed("Output file was not created".to_string()));
     }
 
     Ok(())
 }
 
 pub async fn download_track_to_mp3<R: tauri::Runtime>(
-    app: &AppHandle<R>,
-    config: &PipelineConfig,
-    cancellation: Option<CancellationHandles>,
+    app: &AppHandle<R>, config: &PipelineConfig, cancellation: Option<CancellationHandles>,
 ) -> Result<PathBuf, DownloadError> {
-    let (output_file, base_name, cancel_rx, active_child, active_pid) =
-        prepare_download_context(config, &cancellation);
+    let (output_file, base_name, cancel_rx, active_child, active_pid) = prepare_download_context(config, &cancellation);
 
     if output_file.exists() {
         log::info!("[downloader] File already exists: {:?}", output_file);
@@ -882,15 +752,7 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         )
         .await
         {
-            return convert_original_file(
-                app,
-                &original,
-                &output_file,
-                &config.track_id,
-                config.duration_ms,
-                &ctx,
-            )
-            .await;
+            return convert_original_file(app, &original, &output_file, &config.track_id, config.duration_ms, &ctx).await;
         }
         log::info!("[downloader] Original download unavailable, using transcoding stream");
     }
@@ -1044,10 +906,7 @@ mod tests {
 
     #[test]
     fn test_build_base_filename_playlist_single_digit() {
-        let ctx = Some(PlaylistContext {
-            track_position: 1,
-            total_tracks: 5,
-        });
+        let ctx = Some(PlaylistContext { track_position: 1, total_tracks: 5 });
         let (base, display) = build_base_filename(&ctx, "Artist", "Title");
         assert_eq!(base, "1 - Artist - Title");
         assert_eq!(display, "1 - Title");
@@ -1055,10 +914,7 @@ mod tests {
 
     #[test]
     fn test_build_base_filename_playlist_double_digit() {
-        let ctx = Some(PlaylistContext {
-            track_position: 5,
-            total_tracks: 47,
-        });
+        let ctx = Some(PlaylistContext { track_position: 5, total_tracks: 47 });
         let (base, display) = build_base_filename(&ctx, "Artist", "Title");
         assert_eq!(base, "05 - Artist - Title");
         assert_eq!(display, "05 - Title");
@@ -1066,10 +922,7 @@ mod tests {
 
     #[test]
     fn test_build_base_filename_playlist_triple_digit() {
-        let ctx = Some(PlaylistContext {
-            track_position: 1,
-            total_tracks: 150,
-        });
+        let ctx = Some(PlaylistContext { track_position: 1, total_tracks: 150 });
         let (base, display) = build_base_filename(&ctx, "Artist", "Title");
         assert_eq!(base, "001 - Artist - Title");
         assert_eq!(display, "001 - Title");
@@ -1150,11 +1003,7 @@ mod tests {
 
     #[test]
     fn test_build_ffmpeg_args_for_original_wav() {
-        let args = build_ffmpeg_args_for_original(
-            Path::new("/tmp/input.wav"),
-            Path::new("/tmp/output.mp3"),
-            OriginalFormat::Wav,
-        );
+        let args = build_ffmpeg_args_for_original(Path::new("/tmp/input.wav"), Path::new("/tmp/output.mp3"), OriginalFormat::Wav);
         assert!(args.is_some());
         let args = args.unwrap();
         assert!(args.contains(&"-b:a".to_string()));
@@ -1163,11 +1012,7 @@ mod tests {
 
     #[test]
     fn test_build_ffmpeg_args_for_original_flac() {
-        let args = build_ffmpeg_args_for_original(
-            Path::new("/tmp/input.flac"),
-            Path::new("/tmp/output.mp3"),
-            OriginalFormat::Flac,
-        );
+        let args = build_ffmpeg_args_for_original(Path::new("/tmp/input.flac"), Path::new("/tmp/output.mp3"), OriginalFormat::Flac);
         assert!(args.is_some());
         let args = args.unwrap();
         assert!(args.contains(&"320k".to_string()));
@@ -1175,21 +1020,13 @@ mod tests {
 
     #[test]
     fn test_build_ffmpeg_args_for_original_mp3() {
-        let args = build_ffmpeg_args_for_original(
-            Path::new("/tmp/input.mp3"),
-            Path::new("/tmp/output.mp3"),
-            OriginalFormat::Mp3,
-        );
+        let args = build_ffmpeg_args_for_original(Path::new("/tmp/input.mp3"), Path::new("/tmp/output.mp3"), OriginalFormat::Mp3);
         assert!(args.is_none());
     }
 
     #[test]
     fn test_build_ffmpeg_args_for_original_aac() {
-        let args = build_ffmpeg_args_for_original(
-            Path::new("/tmp/input.m4a"),
-            Path::new("/tmp/output.mp3"),
-            OriginalFormat::Aac,
-        );
+        let args = build_ffmpeg_args_for_original(Path::new("/tmp/input.m4a"), Path::new("/tmp/output.mp3"), OriginalFormat::Aac);
         assert!(args.is_some());
         let args = args.unwrap();
         assert!(args.contains(&"256k".to_string()));

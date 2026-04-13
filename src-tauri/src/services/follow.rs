@@ -1,9 +1,7 @@
 use rquest::Url;
 
 use crate::models::error::FollowError;
-use crate::services::http::{
-    RequestBuilderExt, API_V2_BASE, CHROME_USER_AGENT, HTTP_CLIENT, SC_APP_VERSION,
-};
+use crate::services::http::{RequestBuilderExt, API_V2_BASE, CHROME_USER_AGENT, HTTP_CLIENT, SC_APP_VERSION};
 
 /// Extracted from SoundCloud's JS bundle — may need periodic updating (like SC_APP_VERSION).
 const FOLLOWS_SIGNATURE_SECRET: &str = "5Dpr3ubBw8LFtbvQcd4Hx6hU";
@@ -17,13 +15,7 @@ fn follow_signature(current_user_id: u64, target_user_id: u64, client_id: &str) 
 
     let input = format!(
         "{}{}{}{}{}{}{}",
-        FOLLOWS_SIGNATURE_VERSION,
-        FOLLOWS_SIGNATURE_SECRET,
-        client_id,
-        FOLLOWS_SIGNATURE_SECRET,
-        target_user_id,
-        current_user_id,
-        ua_token,
+        FOLLOWS_SIGNATURE_VERSION, FOLLOWS_SIGNATURE_SECRET, client_id, FOLLOWS_SIGNATURE_SECRET, target_user_id, current_user_id, ua_token,
     );
 
     let bytes = input.as_bytes();
@@ -65,11 +57,7 @@ async fn check_api_success(response: rquest::Response, user_id: u64, action: &st
 }
 
 pub async fn follow_user(
-    oauth_token: &str,
-    client_id: &str,
-    datadome: Option<&str>,
-    current_user_id: u64,
-    target_user_id: u64,
+    oauth_token: &str, client_id: &str, datadome: Option<&str>, current_user_id: u64, target_user_id: u64,
 ) -> Result<(), FollowError> {
     log::info!("[follow] Following user {}", target_user_id);
 
@@ -85,11 +73,7 @@ pub async fn follow_user(
 }
 
 pub async fn unfollow_user(
-    oauth_token: &str,
-    client_id: &str,
-    datadome: Option<&str>,
-    current_user_id: u64,
-    target_user_id: u64,
+    oauth_token: &str, client_id: &str, datadome: Option<&str>, current_user_id: u64, target_user_id: u64,
 ) -> Result<(), FollowError> {
     log::info!("[follow] Unfollowing user {}", target_user_id);
 
@@ -104,11 +88,7 @@ pub async fn unfollow_user(
 }
 
 pub async fn check_follow_status(
-    oauth_token: &str,
-    client_id: &str,
-    datadome: Option<&str>,
-    current_user_id: u64,
-    target_user_id: u64,
+    oauth_token: &str, client_id: &str, datadome: Option<&str>, current_user_id: u64, target_user_id: u64,
 ) -> Result<bool, FollowError> {
     log::debug!("[follow] Checking follow status for user {}", target_user_id);
 
@@ -143,7 +123,11 @@ pub async fn check_follow_status(
         .map_err(|e| FollowError::NetworkError(format!("Failed to parse followings: {}", e)))?;
 
     let is_following = data.collection.contains(&target_user_id);
-    log::debug!("[follow] User {} is{}followed", target_user_id, if is_following { " " } else { " NOT " });
+    log::debug!(
+        "[follow] User {} is{}followed",
+        target_user_id,
+        if is_following { " " } else { " NOT " }
+    );
     Ok(is_following)
 }
 

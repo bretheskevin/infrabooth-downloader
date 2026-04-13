@@ -11,19 +11,11 @@ struct RelatedTracksResponse {
 }
 
 pub async fn fetch_related_tracks(
-    client: &Client,
-    track_id: i64,
-    client_id: &str,
-    oauth_token: Option<&str>,
-    limit: u16,
+    client: &Client, track_id: i64, client_id: &str, oauth_token: Option<&str>, limit: u16,
 ) -> Result<Vec<TrackInfo>, DownloadError> {
     let url = Url::parse_with_params(
         &format!("{}/tracks/{}/related", API_V2_BASE, track_id),
-        &[
-            ("client_id", client_id),
-            ("limit", &limit.to_string()),
-            ("linked_partitioning", "1"),
-        ],
+        &[("client_id", client_id), ("limit", &limit.to_string()), ("linked_partitioning", "1")],
     )
     .map_err(|e| DownloadError::StreamResolutionFailed(e.to_string()))?;
 

@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 use thiserror::Error;
 
-use crate::services::http::{ApiResponseError, API_V2_BASE, HTTP_CLIENT, RequestBuilderExt, validate_api_response};
+use crate::services::http::{validate_api_response, ApiResponseError, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::TrackInfo;
 
 #[derive(Debug, Error)]
@@ -144,9 +144,9 @@ struct RawStreamPlaylistTrack {
 
 impl RawStreamPlaylist {
     fn resolved_artwork_url(&self) -> Option<String> {
-        self.artwork_url.clone().or_else(|| {
-            self.tracks.iter().find_map(|t| t.artwork_url.clone())
-        })
+        self.artwork_url
+            .clone()
+            .or_else(|| self.tracks.iter().find_map(|t| t.artwork_url.clone()))
     }
 }
 
@@ -158,11 +158,7 @@ struct NewTracksCacheInner {
 
 impl Default for NewTracksCacheInner {
     fn default() -> Self {
-        Self {
-            artists: None,
-            activity: HashMap::new(),
-            releases: HashMap::new(),
-        }
+        Self { artists: None, activity: HashMap::new(), releases: HashMap::new() }
     }
 }
 
@@ -248,19 +244,12 @@ impl SeenArtistsState {
         };
 
         if let Ok(namespaced) = serde_json::from_str::<SeenArtistsInner>(&data) {
-            return SeenArtistsState {
-                inner: Mutex::new(namespaced),
-            };
+            return SeenArtistsState { inner: Mutex::new(namespaced) };
         }
 
         if let Ok(flat) = serde_json::from_str::<HashMap<u64, i64>>(&data) {
             log::info!("[new-tracks] Migrating flat seen-artists format to namespaced");
-            return SeenArtistsState {
-                inner: Mutex::new(SeenArtistsInner {
-                    tracks: flat,
-                    releases: HashMap::new(),
-                }),
-            };
+            return SeenArtistsState { inner: Mutex::new(SeenArtistsInner { tracks: flat, releases: HashMap::new() }) };
         }
 
         SeenArtistsState::default()
@@ -283,19 +272,16 @@ impl SeenArtistsState {
     }
 
     pub fn to_json(&self) -> Result<String, String> {
-        serde_json::to_string(&*self.lock())
-            .map_err(|e| format!("Failed to serialize seen state: {}", e))
+        serde_json::to_string(&*self.lock()).map_err(|e| format!("Failed to serialize seen state: {}", e))
     }
 
     #[cfg(test)]
     pub fn save(&self, path: &std::path::Path) -> Result<(), String> {
         let json = self.to_json()?;
         if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
+            std::fs::create_dir_all(parent).map_err(|e| format!("Failed to create directory: {}", e))?;
         }
-        std::fs::write(path, json)
-            .map_err(|e| format!("Failed to write seen state: {}", e))?;
+        std::fs::write(path, json).map_err(|e| format!("Failed to write seen state: {}", e))?;
         Ok(())
     }
 }
@@ -322,15 +308,8 @@ fn is_within_30_days(created_at: &str) -> bool {
         .unwrap_or(false)
 }
 
-pub async fn fetch_followed_artists_page(
-    oauth_token: &str,
-    url: &str,
-) -> Result<FollowingsResponse, NewTracksError> {
-    let response = HTTP_CLIENT
-        .get(url)
-        .with_oauth(Some(oauth_token))
-        .send()
-        .await?;
+pub async fn fetch_followed_artists_page(oauth_token: &str, url: &str) -> Result<FollowingsResponse, NewTracksError> {
+    let response = HTTP_CLIENT.get(url).with_oauth(Some(oauth_token)).send().await?;
 
     validate_api_response(response.status())?;
 
@@ -341,11 +320,8 @@ pub async fn fetch_followed_artists_page(
 }
 
 pub async fn fetch_all_followed_artists(
-    oauth_token: &str,
-    client_id: &str,
-    user_id: u64,
+    oauth_token: &str, client_id: &str, user_id: u64,
 ) -> Result<Vec<RawFollowedArtist>, NewTracksError> {
-
     let mut all_artists = Vec::new();
     let mut url = format!(
         "{}/users/{}/followings?client_id={}&limit=200&linked_partitioning=1",
@@ -365,22 +341,12 @@ pub async fn fetch_all_followed_artists(
     Ok(all_artists)
 }
 
-async fn fetch_stream_page(
-    oauth_token: &str,
-    url: &str,
-) -> Result<StreamResponse, NewTracksError> {
-    let response = HTTP_CLIENT
-        .get(url)
-        .with_oauth(Some(oauth_token))
-        .send()
-        .await?;
+async fn fetch_stream_page(oauth_token: &str, url: &str) -> Result<StreamResponse, NewTracksError> {
+    let response = HTTP_CLIENT.get(url).with_oauth(Some(oauth_token)).send().await?;
 
     validate_api_response(response.status())?;
 
-    response
-        .json::<StreamResponse>()
-        .await
-        .map_err(|_| NewTracksError::InvalidResponse)
+    response.json::<StreamResponse>().await.map_err(|_| NewTracksError::InvalidResponse)
 }
 
 fn sort_by_created_at_desc<T>(items: &mut [T], get_created_at: impl Fn(&T) -> &str) {
@@ -392,11 +358,9 @@ fn sort_by_created_at_desc<T>(items: &mut [T], get_created_at: impl Fn(&T) -> &s
 }
 
 pub fn has_items_after<T>(items: &[T], threshold: i64, get_created_at: impl Fn(&T) -> &str) -> bool {
-    items.iter().any(|item| {
-        parse_iso_timestamp(get_created_at(item))
-            .map(|ts| ts > threshold)
-            .unwrap_or(false)
-    })
+    items
+        .iter()
+        .any(|item| parse_iso_timestamp(get_created_at(item)).map(|ts| ts > threshold).unwrap_or(false))
 }
 
 fn resolve_release_type(is_album: bool, set_type: &Option<String>) -> ReleaseType {
@@ -421,9 +385,7 @@ pub struct StreamData {
     pub releases: HashMap<u64, Vec<ReleaseActivityItem>>,
 }
 
-pub async fn fetch_stream(
-    oauth_token: &str,
-) -> Result<StreamData, NewTracksError> {
+pub async fn fetch_stream(oauth_token: &str) -> Result<StreamData, NewTracksError> {
     let mut all_tracks: HashMap<u64, Vec<ActivityItem>> = HashMap::new();
     let mut all_releases: HashMap<u64, Vec<ReleaseActivityItem>> = HashMap::new();
     let mut url = format!("{}/stream?limit=200", API_V2_BASE);
@@ -443,11 +405,7 @@ pub async fn fetch_stream(
                     _ => continue,
                 };
                 let user_id = item.user.id;
-                let activity = ActivityItem {
-                    created_at: item.created_at,
-                    track: TrackInfo::from(raw_track),
-                    activity_type,
-                };
+                let activity = ActivityItem { created_at: item.created_at, track: TrackInfo::from(raw_track), activity_type };
                 all_tracks.entry(user_id).or_default().push(activity);
                 continue;
             }
@@ -470,11 +428,7 @@ pub async fn fetch_stream(
                     permalink_url: raw_playlist.permalink_url,
                     release_type,
                 };
-                let activity = ReleaseActivityItem {
-                    release,
-                    activity_type,
-                    created_at: item.created_at,
-                };
+                let activity = ReleaseActivityItem { release, activity_type, created_at: item.created_at };
                 all_releases.entry(user_id).or_default().push(activity);
             }
         }
@@ -495,10 +449,7 @@ pub async fn fetch_stream(
         dedup_by_id(items, |i| i.release.id);
     }
 
-    Ok(StreamData {
-        tracks: all_tracks,
-        releases: all_releases,
-    })
+    Ok(StreamData { tracks: all_tracks, releases: all_releases })
 }
 
 #[cfg(test)]
@@ -523,11 +474,7 @@ mod tests {
             track: TrackInfo {
                 id: 1,
                 title: title.to_string(),
-                user: UserInfo {
-                    id: 1,
-                    username: "artist".to_string(),
-                    avatar_url: None,
-                },
+                user: UserInfo { id: 1, username: "artist".to_string(), avatar_url: None },
                 artwork_url: None,
                 duration: 180000,
                 permalink_url: "https://soundcloud.com/test/track".to_string(),
@@ -778,10 +725,7 @@ mod tests {
         };
         assert_eq!(playlist.resolved_artwork_url(), Some("https://track2.jpg".into()));
 
-        let with_own_art = RawStreamPlaylist {
-            artwork_url: Some("https://playlist.jpg".into()),
-            ..playlist
-        };
+        let with_own_art = RawStreamPlaylist { artwork_url: Some("https://playlist.jpg".into()), ..playlist };
         assert_eq!(with_own_art.resolved_artwork_url(), Some("https://playlist.jpg".into()));
     }
 

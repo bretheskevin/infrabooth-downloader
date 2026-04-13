@@ -1,14 +1,11 @@
-use crate::services::rekordbox::models::{
-    INFRABOOTH_FOLDER_NAME, PLAYLIST_TYPE_FOLDER, PLAYLIST_TYPE_PLAYLIST,
-};
+use crate::services::rekordbox::models::{INFRABOOTH_FOLDER_NAME, PLAYLIST_TYPE_FOLDER, PLAYLIST_TYPE_PLAYLIST};
 use crate::services::rekordbox::playlist;
 use crate::services::rekordbox::tests::helpers::setup_test_db;
 
 #[test]
 fn test_find_or_create_infrabooth_folder() {
     let (_tmp, mut db) = setup_test_db();
-    let folder =
-        playlist::find_or_create_infrabooth_folder(&mut db).expect("Failed to create folder");
+    let folder = playlist::find_or_create_infrabooth_folder(&mut db).expect("Failed to create folder");
     assert_eq!(folder.name, INFRABOOTH_FOLDER_NAME);
     assert_eq!(folder.attribute, PLAYLIST_TYPE_FOLDER);
     assert_eq!(folder.parent_id, "root");
@@ -20,8 +17,7 @@ fn test_find_or_create_infrabooth_folder() {
 fn test_create_playlist() {
     let (_tmp, mut db) = setup_test_db();
     let folder = playlist::find_or_create_infrabooth_folder(&mut db).unwrap();
-    let pl = playlist::create_playlist(&mut db, "My Playlist", &folder.id)
-        .expect("Failed to create playlist");
+    let pl = playlist::create_playlist(&mut db, "My Playlist", &folder.id).expect("Failed to create playlist");
     assert_eq!(pl.name, "My Playlist");
     assert_eq!(pl.attribute, PLAYLIST_TYPE_PLAYLIST);
     assert_eq!(pl.parent_id, folder.id);

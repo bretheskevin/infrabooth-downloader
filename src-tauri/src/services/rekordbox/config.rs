@@ -22,9 +22,7 @@ pub fn is_rekordbox_running() -> bool {
     })
 }
 
-pub fn detect_rekordbox(
-    manual_db_path: Option<PathBuf>,
-) -> Result<RekordboxConfig, RekordboxError> {
+pub fn detect_rekordbox(manual_db_path: Option<PathBuf>) -> Result<RekordboxConfig, RekordboxError> {
     if let Some(path) = manual_db_path {
         return validate_db_path(path);
     }
@@ -47,8 +45,7 @@ pub fn detect_rekordbox(
 fn get_pioneer_app_dir() -> Result<PathBuf, String> {
     #[cfg(target_os = "macos")]
     {
-        let home =
-            std::env::var("HOME").map_err(|_| "Cannot determine home directory".to_string())?;
+        let home = std::env::var("HOME").map_err(|_| "Cannot determine home directory".to_string())?;
         let path = PathBuf::from(home).join("Library/Application Support/Pioneer");
         if path.exists() {
             Ok(path)
@@ -58,8 +55,7 @@ fn get_pioneer_app_dir() -> Result<PathBuf, String> {
     }
     #[cfg(target_os = "windows")]
     {
-        let app_data = std::env::var("APPDATA")
-            .map_err(|_| "APPDATA environment variable not set".to_string())?;
+        let app_data = std::env::var("APPDATA").map_err(|_| "APPDATA environment variable not set".to_string())?;
         let path = PathBuf::from(app_data).join("Pioneer");
         if path.exists() {
             Ok(path)
@@ -74,20 +70,17 @@ fn get_pioneer_app_dir() -> Result<PathBuf, String> {
 }
 
 fn detect_from_options_json(pioneer_app_dir: &Path) -> Result<RekordboxConfig, RekordboxError> {
-    let options_path = pioneer_app_dir
-        .join("rekordboxAgent")
-        .join("storage")
-        .join("options.json");
+    let options_path = pioneer_app_dir.join("rekordboxAgent").join("storage").join("options.json");
 
     if !options_path.exists() {
         return Err(RekordboxError::NotFound("options.json not found".into()));
     }
 
-    let content = std::fs::read_to_string(&options_path)
-        .map_err(|e| RekordboxError::NotFound(format!("Cannot read options.json: {}", e)))?;
+    let content =
+        std::fs::read_to_string(&options_path).map_err(|e| RekordboxError::NotFound(format!("Cannot read options.json: {}", e)))?;
 
-    let data: serde_json::Value = serde_json::from_str(&content)
-        .map_err(|e| RekordboxError::NotFound(format!("Invalid options.json: {}", e)))?;
+    let data: serde_json::Value =
+        serde_json::from_str(&content).map_err(|e| RekordboxError::NotFound(format!("Invalid options.json: {}", e)))?;
 
     let options = data["options"]
         .as_array()
@@ -103,26 +96,19 @@ fn detect_from_options_json(pioneer_app_dir: &Path) -> Result<RekordboxConfig, R
                 None
             }
         })
-        .ok_or_else(|| {
-            RekordboxError::NotFound("db-path not found in options.json".into())
-        })?;
+        .ok_or_else(|| RekordboxError::NotFound("db-path not found in options.json".into()))?;
 
     validate_db_path(PathBuf::from(&db_path_str))
 }
 
 fn detect_from_settings_file(pioneer_app_dir: &Path) -> Result<RekordboxConfig, RekordboxError> {
-    let settings_path = pioneer_app_dir
-        .join("rekordbox6")
-        .join("rekordbox3.settings");
+    let settings_path = pioneer_app_dir.join("rekordbox6").join("rekordbox3.settings");
 
     if !settings_path.exists() {
-        return Err(RekordboxError::NotFound(
-            "rekordbox3.settings not found".into(),
-        ));
+        return Err(RekordboxError::NotFound("rekordbox3.settings not found".into()));
     }
 
-    let content = std::fs::read_to_string(&settings_path)
-        .map_err(|e| RekordboxError::NotFound(format!("Cannot read settings: {}", e)))?;
+    let content = std::fs::read_to_string(&settings_path).map_err(|e| RekordboxError::NotFound(format!("Cannot read settings: {}", e)))?;
 
     let db_dir_str = content
         .lines()
@@ -135,19 +121,14 @@ fn detect_from_settings_file(pioneer_app_dir: &Path) -> Result<RekordboxConfig, 
                 None
             }
         })
-        .ok_or_else(|| {
-            RekordboxError::NotFound("masterDbDirectory not found in settings".into())
-        })?;
+        .ok_or_else(|| RekordboxError::NotFound("masterDbDirectory not found in settings".into()))?;
 
     validate_db_path(PathBuf::from(&db_dir_str).join("master.db"))
 }
 
 fn validate_db_path(db_path: PathBuf) -> Result<RekordboxConfig, RekordboxError> {
     if !db_path.exists() {
-        return Err(RekordboxError::NotFound(format!(
-            "Database file not found: {}",
-            db_path.display()
-        )));
+        return Err(RekordboxError::NotFound(format!("Database file not found: {}", db_path.display())));
     }
 
     let db_dir = db_path
@@ -159,4 +140,3 @@ fn validate_db_path(db_path: PathBuf) -> Result<RekordboxConfig, RekordboxError>
 
     Ok(RekordboxConfig { db_path, db_dir, version })
 }
-

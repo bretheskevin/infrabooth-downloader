@@ -22,9 +22,7 @@ pub struct AuthChoiceState {
 
 impl AuthChoiceState {
     pub fn new() -> Self {
-        Self {
-            skip_auth: AtomicBool::new(false),
-        }
+        Self { skip_auth: AtomicBool::new(false) }
     }
 
     pub fn should_skip_auth(&self) -> bool {
@@ -74,10 +72,7 @@ mod tests {
 
     #[test]
     fn test_download_auth_needed_event_serialize() {
-        let event = DownloadAuthNeededEvent {
-            track_id: "123".to_string(),
-            track_title: "Test Track".to_string(),
-        };
+        let event = DownloadAuthNeededEvent { track_id: "123".to_string(), track_title: "Test Track".to_string() };
         let json = serde_json::to_string(&event).unwrap();
         assert!(json.contains("\"trackId\":\"123\""));
         assert!(json.contains("\"trackTitle\":\"Test Track\""));

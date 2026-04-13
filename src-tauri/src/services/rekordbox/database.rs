@@ -10,22 +10,14 @@ const MIN_GENERATED_ID: i64 = 100;
 const MAX_ID_GENERATION_ATTEMPTS: u32 = 1_000_000;
 const ID_BIT_SHIFT: u32 = 4;
 
-const ALLOWED_TABLES: &[&str] = &[
-    "djmdContent",
-    "djmdPlaylist",
-    "djmdSongPlaylist",
-    "djmdArtist",
-    "djmdAlbum",
-];
+const ALLOWED_TABLES: &[&str] = &["djmdContent", "djmdPlaylist", "djmdSongPlaylist", "djmdArtist", "djmdAlbum"];
 
 pub(crate) fn validate_table_name(table_name: &str) -> Result<&str, RekordboxError> {
     ALLOWED_TABLES
         .iter()
         .find(|&&t| t == table_name)
         .copied()
-        .ok_or_else(|| {
-            RekordboxError::DatabaseError(format!("Invalid table name: {}", table_name))
-        })
+        .ok_or_else(|| RekordboxError::DatabaseError(format!("Invalid table name: {}", table_name)))
 }
 
 pub struct RekordboxDatabase {
@@ -36,8 +28,7 @@ pub struct RekordboxDatabase {
 impl RekordboxDatabase {
     pub fn open(config: &RekordboxConfig) -> Result<Self, RekordboxError> {
         let key = config::db_key();
-        let conn = Connection::open(&config.db_path)
-            .map_err(|e| RekordboxError::DatabaseError(format!("Cannot open DB: {}", e)))?;
+        let conn = Connection::open(&config.db_path).map_err(|e| RekordboxError::DatabaseError(format!("Cannot open DB: {}", e)))?;
 
         conn.execute_batch(&format!("PRAGMA key = '{}';", key))
             .map_err(|e| RekordboxError::DatabaseError(format!("Cannot set key: {}", e)))?;
@@ -48,27 +39,17 @@ impl RekordboxDatabase {
         conn.execute_batch("BEGIN")
             .map_err(|e| RekordboxError::DatabaseError(format!("BEGIN failed: {}", e)))?;
 
-        Ok(Self {
-            conn,
-            pending_usn_updates: Vec::new(),
-        })
+        Ok(Self { conn, pending_usn_updates: Vec::new() })
     }
 
     #[cfg(test)]
-    pub fn open_unencrypted(
-        db_path: &std::path::Path,
-        _db_dir: std::path::PathBuf,
-    ) -> Result<Self, RekordboxError> {
-        let conn = Connection::open(db_path)
-            .map_err(|e| RekordboxError::DatabaseError(format!("Cannot open DB: {}", e)))?;
+    pub fn open_unencrypted(db_path: &std::path::Path, _db_dir: std::path::PathBuf) -> Result<Self, RekordboxError> {
+        let conn = Connection::open(db_path).map_err(|e| RekordboxError::DatabaseError(format!("Cannot open DB: {}", e)))?;
 
         conn.execute_batch("BEGIN")
             .map_err(|e| RekordboxError::DatabaseError(format!("BEGIN failed: {}", e)))?;
 
-        Ok(Self {
-            conn,
-            pending_usn_updates: Vec::new(),
-        })
+        Ok(Self { conn, pending_usn_updates: Vec::new() })
     }
 
     pub fn conn(&self) -> &Connection {
@@ -88,10 +69,8 @@ impl RekordboxDatabase {
     }
 
     pub fn track_usn_update(&mut self, table_name: &str, row_id: &str) {
-        self.pending_usn_updates.push(UsnUpdate {
-            table_name: table_name.to_string(),
-            row_id: row_id.to_string(),
-        });
+        self.pending_usn_updates
+            .push(UsnUpdate { table_name: table_name.to_string(), row_id: row_id.to_string() });
     }
 
     pub fn flush_usn_and_commit(&mut self) -> Result<(), RekordboxError> {
@@ -106,9 +85,7 @@ impl RekordboxDatabase {
                     rusqlite::params![usn, now_timestamp(), update.row_id],
                 )
                 .map_err(|e| {
-                    RekordboxError::DatabaseError(format!(
-                        "USN update failed for {}.{}: {}", update.table_name, update.row_id, e
-                    ))
+                    RekordboxError::DatabaseError(format!("USN update failed for {}.{}: {}", update.table_name, update.row_id, e))
                 })?;
         }
 
@@ -118,9 +95,7 @@ impl RekordboxDatabase {
                  WHERE registry_id = 'localUpdateCount'",
                 rusqlite::params![usn, now_timestamp()],
             )
-            .map_err(|e| {
-                RekordboxError::DatabaseError(format!("Global USN update failed: {}", e))
-            })?;
+            .map_err(|e| RekordboxError::DatabaseError(format!("Global USN update failed: {}", e)))?;
 
         self.conn
             .execute_batch("COMMIT")
@@ -167,9 +142,7 @@ impl RekordboxDatabase {
                     rusqlite::params![id.to_string()],
                     |row| row.get(0),
                 )
-                .map_err(|e| {
-                    RekordboxError::DatabaseError(format!("ID check failed: {}", e))
-                })?;
+                .map_err(|e| RekordboxError::DatabaseError(format!("ID check failed: {}", e)))?;
 
             if !exists {
                 return Ok(id);
@@ -193,7 +166,12 @@ pub fn now_timestamp() -> String {
     let now = time::OffsetDateTime::now_utc();
     format!(
         "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.000 +00:00",
-        now.year(), now.month() as u8, now.day(), now.hour(), now.minute(), now.second()
+        now.year(),
+        now.month() as u8,
+        now.day(),
+        now.hour(),
+        now.minute(),
+        now.second()
     )
 }
 

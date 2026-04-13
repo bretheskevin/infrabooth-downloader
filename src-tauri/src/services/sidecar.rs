@@ -5,10 +5,7 @@ pub fn bytes_to_string(bytes: &[u8]) -> String {
 }
 
 pub async fn get_sidecar_version<R: tauri::Runtime, E>(
-    app: &tauri::AppHandle<R>,
-    sidecar_name: &str,
-    version_arg: &str,
-    not_found_err: impl Fn() -> E,
+    app: &tauri::AppHandle<R>, sidecar_name: &str, version_arg: &str, not_found_err: impl Fn() -> E,
 ) -> Result<String, E> {
     let shell = app.shell();
     let (mut rx, _child) = shell

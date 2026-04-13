@@ -14,8 +14,7 @@ fn setup_fake_db_dir() -> TempDir {
 fn test_create_backup() {
     let db_dir = setup_fake_db_dir();
     let backup_root = TempDir::new().unwrap();
-    let path =
-        backup::create_backup(db_dir.path(), backup_root.path()).expect("Backup creation failed");
+    let path = backup::create_backup(db_dir.path(), backup_root.path()).expect("Backup creation failed");
     assert!(path.join("master.db").exists());
     assert!(path.join("masterPlaylists6.xml").exists());
     let content = fs::read(path.join("master.db")).unwrap();
@@ -35,10 +34,7 @@ fn test_rotate_backups_keeps_max() {
         fs::write(dir.join("masterPlaylists6.xml"), b"xml").unwrap();
     }
     backup::rotate_backups(backup_root.path(), 5).expect("Rotation failed");
-    let remaining: Vec<_> = fs::read_dir(&backups_dir)
-        .unwrap()
-        .filter_map(|e| e.ok())
-        .collect();
+    let remaining: Vec<_> = fs::read_dir(&backups_dir).unwrap().filter_map(|e| e.ok()).collect();
     assert_eq!(remaining.len(), 5, "Should keep exactly 5 backups");
 }
 
@@ -50,10 +46,7 @@ fn test_restore_backup() {
     fs::write(db_dir.path().join("master.db"), b"modified-content").unwrap();
     backup::restore_backup(&backup_path, db_dir.path()).expect("Restore failed");
     let content = fs::read(db_dir.path().join("master.db")).unwrap();
-    assert_eq!(
-        content, b"fake-db-content",
-        "Should restore original content"
-    );
+    assert_eq!(content, b"fake-db-content", "Should restore original content");
 }
 
 #[test]

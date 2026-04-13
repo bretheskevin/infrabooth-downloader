@@ -52,9 +52,7 @@ fn test_track_and_apply_usn_updates() {
 #[test]
 fn test_generate_unused_id() {
     let (_tmp, db) = setup_test_db();
-    let id = db
-        .generate_unused_id("djmdContent")
-        .expect("ID generation failed");
+    let id = db.generate_unused_id("djmdContent").expect("ID generation failed");
     assert!(id >= 100, "ID should be >= 100, got: {}", id);
     assert!(id < (1 << 28), "ID should be 28-bit, got: {}", id);
 }

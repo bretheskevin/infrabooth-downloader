@@ -19,28 +19,16 @@ fn test_full_export_flow_with_test_db() {
     fs::write(&track1_path, vec![0u8; 2048]).unwrap();
     fs::write(&track2_path, vec![0u8; 4096]).unwrap();
 
-    let folder = playlist::find_or_create_infrabooth_folder(&mut db)
-        .expect("Failed to create InfraBooth folder");
+    let folder = playlist::find_or_create_infrabooth_folder(&mut db).expect("Failed to create InfraBooth folder");
     assert_eq!(folder.name, "InfraBooth Downloader");
 
-    let pl = playlist::create_playlist(&mut db, "Test Export", &folder.id)
-        .expect("Failed to create playlist");
+    let pl = playlist::create_playlist(&mut db, "Test Export", &folder.id).expect("Failed to create playlist");
 
-    let dest1 = file_manager::copy_track_to_rekordbox(
-        &track1_path,
-        "Artist A",
-        "Song One",
-        &rekordbox_tracks_dir,
-    )
-    .expect("Copy track 1 failed");
+    let dest1 =
+        file_manager::copy_track_to_rekordbox(&track1_path, "Artist A", "Song One", &rekordbox_tracks_dir).expect("Copy track 1 failed");
 
-    let dest2 = file_manager::copy_track_to_rekordbox(
-        &track2_path,
-        "Artist B",
-        "Song Two",
-        &rekordbox_tracks_dir,
-    )
-    .expect("Copy track 2 failed");
+    let dest2 =
+        file_manager::copy_track_to_rekordbox(&track2_path, "Artist B", "Song Two", &rekordbox_tracks_dir).expect("Copy track 2 failed");
 
     let metadata1 = TrackMetadata {
         title: "Song One".to_string(),
@@ -63,10 +51,8 @@ fn test_full_export_flow_with_test_db() {
     let content_id1 = content::add_content(&mut db, &dest1, &metadata1).expect("Add content 1 failed");
     let content_id2 = content::add_content(&mut db, &dest2, &metadata2).expect("Add content 2 failed");
 
-    let song1 = playlist::add_to_playlist(&mut db, &pl.id, &content_id1, None)
-        .expect("Add to playlist 1 failed");
-    let song2 = playlist::add_to_playlist(&mut db, &pl.id, &content_id2, None)
-        .expect("Add to playlist 2 failed");
+    let song1 = playlist::add_to_playlist(&mut db, &pl.id, &content_id1, None).expect("Add to playlist 1 failed");
+    let song2 = playlist::add_to_playlist(&mut db, &pl.id, &content_id2, None).expect("Add to playlist 2 failed");
 
     assert_eq!(song1.track_no, 1);
     assert_eq!(song2.track_no, 2);

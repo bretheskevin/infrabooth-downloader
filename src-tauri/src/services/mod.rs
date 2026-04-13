@@ -1,33 +1,32 @@
 #[cfg(test)]
 pub mod auth_choice;
-pub mod events;
-pub mod rate_limit_choice;
 pub mod cancellation;
-pub mod cookie;
 pub mod client_id;
+pub mod cookie;
 pub mod downloader;
+pub mod events;
 pub mod ffmpeg;
 pub mod http;
 pub mod metadata;
 pub mod oauth;
 pub mod paths;
 pub mod pipeline;
+pub mod rate_limit_choice;
 
+pub mod artist;
+pub mod artist_playlists;
+pub mod filename;
+pub mod follow;
+pub mod library;
+pub mod new_tracks;
 pub mod playlist;
 pub mod queue;
+pub mod rekordbox;
+pub mod related;
+pub mod search;
+pub mod selections;
 pub mod sidecar;
 pub mod storage;
 pub mod stream;
-pub mod url_validator;
 pub mod updater;
-pub mod library;
-pub mod search;
-pub mod selections;
-pub mod new_tracks;
-pub mod related;
-pub mod artist;
-pub mod artist_playlists;
-pub mod follow;
-pub mod filename;
-pub mod rekordbox;
-
+pub mod url_validator;

@@ -8,15 +8,15 @@ use tauri::{Emitter, State};
 use tauri::Manager;
 
 use crate::models::{ErrorResponse, HasErrorCode, TrackCore};
-use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
 use crate::services::cancellation::CancellationState;
+use crate::services::downloader::DownloadProgressEvent;
 use crate::services::events;
 use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
 use crate::services::paths::get_downloads_dir;
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem, QueueProcessContext};
+use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
 use crate::services::storage::AuthState;
-use crate::services::downloader::DownloadProgressEvent;
 
 #[derive(Debug, Deserialize, Type)]
 #[serde(rename_all = "camelCase")]
@@ -38,10 +38,7 @@ pub struct DownloadRequest {
 /// 4. Emits progress events throughout the process
 #[tauri::command]
 #[specta::specta]
-pub async fn download_track_full(
-    request: DownloadRequest,
-    app: tauri::AppHandle,
-) -> Result<String, ErrorResponse> {
+pub async fn download_track_full(request: DownloadRequest, app: tauri::AppHandle) -> Result<String, ErrorResponse> {
     let output_path = match request.output_dir {
         Some(dir) => PathBuf::from(dir),
         None => get_download_path(&app)?,
@@ -70,24 +67,22 @@ pub async fn download_track_full(
         download_url: request.core.download_url,
     };
 
-    let result_path = download_and_convert(&app, config, None)
-        .await
-        .map_err(|e| {
-            let _ = app.emit(
-                events::DOWNLOAD_PROGRESS,
-                DownloadProgressEvent::failed(
-                    track_id.clone(),
-                    ErrorResponse {
-                        code: e.code().to_string(),
-                        message: e.to_string(),
-                    },
-                ),
-            );
-            ErrorResponse::from(e)
-        })?;
+    let result_path = download_and_convert(&app, config, None).await.map_err(|e| {
+        let _ = app.emit(
+            events::DOWNLOAD_PROGRESS,
+            DownloadProgressEvent::failed(
+                track_id.clone(),
+                ErrorResponse { code: e.code().to_string(), message: e.to_string() },
+            ),
+        );
+        ErrorResponse::from(e)
+    })?;
 
     let result_str = result_path.to_string_lossy().to_string();
-    let _ = app.emit(events::DOWNLOAD_PROGRESS, DownloadProgressEvent::complete(track_id, result_str.clone()));
+    let _ = app.emit(
+        events::DOWNLOAD_PROGRESS,
+        DownloadProgressEvent::complete(track_id, result_str.clone()),
+    );
 
     Ok(result_str)
 }
@@ -115,9 +110,7 @@ pub type QueueItemRequest = TrackCore;
 #[tauri::command]
 #[specta::specta]
 pub async fn start_download_queue(
-    request: StartQueueRequest,
-    app: tauri::AppHandle,
-    cancel_state: State<'_, CancellationState>,
+    request: StartQueueRequest, app: tauri::AppHandle, cancel_state: State<'_, CancellationState>,
     rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
 ) -> Result<(), ErrorResponse> {
     cancel_state.reset();
@@ -134,14 +127,7 @@ pub async fn start_download_queue(
         .tracks
         .into_iter()
         .enumerate()
-        .map(|(i, core)| QueueItem {
-            core,
-            track_number: if preserve_order {
-                Some((i + 1) as u32)
-            } else {
-                None
-            },
-        })
+        .map(|(i, core)| QueueItem { core, track_number: if preserve_order { Some((i + 1) as u32) } else { None } })
         .collect();
 
     let mut queue = DownloadQueue::new(items, request.album_name);
@@ -169,9 +155,7 @@ pub async fn start_download_queue(
 /// Cancel the current download queue.
 #[tauri::command]
 #[specta::specta]
-pub async fn cancel_download_queue(
-    cancel_state: State<'_, CancellationState>,
-) -> Result<(), ErrorResponse> {
+pub async fn cancel_download_queue(cancel_state: State<'_, CancellationState>) -> Result<(), ErrorResponse> {
     log::info!("[download] Cancelling download queue");
     cancel_state.cancel();
     cancel_state.kill_active_processes().await;
@@ -182,8 +166,7 @@ pub async fn cancel_download_queue(
 #[tauri::command]
 #[specta::specta]
 pub async fn respond_to_rate_limit_choice(
-    choice: RateLimitChoice,
-    rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
+    choice: RateLimitChoice, rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
 ) -> Result<(), ErrorResponse> {
     log::info!("[download] Rate limit choice received: {:?}", choice);
     rate_limit_choice_state.send_choice(choice);
@@ -191,10 +174,7 @@ pub async fn respond_to_rate_limit_choice(
 }
 
 fn get_download_path(app: &tauri::AppHandle) -> Result<PathBuf, ErrorResponse> {
-    get_downloads_dir(app).map_err(|message| ErrorResponse {
-        code: "DOWNLOAD_FAILED".to_string(),
-        message,
-    })
+    get_downloads_dir(app).map_err(|message| ErrorResponse { code: "DOWNLOAD_FAILED".to_string(), message })
 }
 
 #[tauri::command]
@@ -236,10 +216,7 @@ mod tests {
         assert_eq!(request.album, Some("Test Album".to_string()));
         assert_eq!(request.track_number, Some(5));
         assert_eq!(request.total_tracks, Some(10));
-        assert_eq!(
-            request.core.artwork_url,
-            Some("https://example.com/art.jpg".to_string())
-        );
+        assert_eq!(request.core.artwork_url, Some("https://example.com/art.jpg".to_string()));
         assert_eq!(request.core.duration_ms, 180000);
     }
 
@@ -278,10 +255,7 @@ mod tests {
         assert_eq!(item.track_id, "123456");
         assert_eq!(item.title, "Test Track");
         assert_eq!(item.artist, "Test Artist");
-        assert_eq!(
-            item.artwork_url,
-            Some("https://example.com/art.jpg".to_string())
-        );
+        assert_eq!(item.artwork_url, Some("https://example.com/art.jpg".to_string()));
         assert_eq!(item.duration_ms, 180000);
     }
 

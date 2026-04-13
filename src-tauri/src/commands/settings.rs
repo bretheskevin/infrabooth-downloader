@@ -44,8 +44,7 @@ pub fn get_app_data_path(app: tauri::AppHandle) -> Result<String, String> {
 #[tauri::command]
 #[specta::specta]
 pub fn get_log_path(app: tauri::AppHandle) -> Result<String, String> {
-    get_app_data_dir(&app)
-        .map(|p| p.join("logs").to_string_lossy().to_string())
+    get_app_data_dir(&app).map(|p| p.join("logs").to_string_lossy().to_string())
 }
 
 #[tauri::command]

@@ -10,7 +10,8 @@ pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 /// Extracted from the SoundCloud web app bundle (look for `app_version` in network requests).
 /// May need periodic updating if SoundCloud rejects older versions.
 pub const SC_APP_VERSION: &str = "1775080930";
-pub const CHROME_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
+pub const CHROME_USER_AGENT: &str =
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
 pub const DEFAULT_PAGE_SIZE: usize = 20;
 pub const DEFAULT_PAGE_SIZE_STR: &str = "20";
@@ -121,16 +122,9 @@ pub fn validate_api_response(status: rquest::StatusCode) -> Result<(), ApiRespon
 }
 
 pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(
-    url: &str,
-    client_id: &str,
-    oauth_token: Option<&str>,
+    url: &str, client_id: &str, oauth_token: Option<&str>,
 ) -> Result<T, ApiResponseError> {
-    let resolve_url = format!(
-        "{}/resolve?url={}&client_id={}",
-        API_V2_BASE,
-        urlencoding::encode(url),
-        client_id,
-    );
+    let resolve_url = format!("{}/resolve?url={}&client_id={}", API_V2_BASE, urlencoding::encode(url), client_id,);
 
     let response = HTTP_CLIENT
         .get(&resolve_url)
@@ -144,10 +138,7 @@ pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(
         validate_api_response(status)?;
     }
 
-    let body = response
-        .text()
-        .await
-        .map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
+    let body = response.text().await.map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
 
     #[derive(serde::Deserialize)]
     struct ResolveRedirect {
@@ -157,9 +148,7 @@ pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(
     if let Ok(redirect) = serde_json::from_str::<ResolveRedirect>(&body) {
         if let Some(location) = redirect.location {
             if !location.starts_with(API_V2_BASE) {
-                return Err(ApiResponseError::InvalidResponse(
-                    "Unexpected redirect domain".to_string(),
-                ));
+                return Err(ApiResponseError::InvalidResponse("Unexpected redirect domain".to_string()));
             }
 
             log::info!("[http] Following resolve redirect to: {}", location);
@@ -220,13 +209,7 @@ pub struct PaginatedResponse<T> {
 }
 
 pub async fn fetch_all_pages<Raw, T, F, M>(
-    initial_url: String,
-    token: Option<&str>,
-    datadome: Option<&str>,
-    label: &str,
-    page_size: usize,
-    map_item: M,
-    on_batch: F,
+    initial_url: String, token: Option<&str>, datadome: Option<&str>, label: &str, page_size: usize, map_item: M, on_batch: F,
 ) -> Result<Vec<T>, String>
 where
     Raw: serde::de::DeserializeOwned,
@@ -253,7 +236,11 @@ where
 
         match validate_api_response(response.status()) {
             Err(ApiResponseError::AuthRequired) if !all_items.is_empty() => {
-                log::info!("[{}] Auth required for next page, returning {} items collected so far", label, all_items.len());
+                log::info!(
+                    "[{}] Auth required for next page, returning {} items collected so far",
+                    label,
+                    all_items.len()
+                );
                 break;
             }
             Err(e) => return Err(e.to_string()),
@@ -268,7 +255,12 @@ where
             format!("Failed to parse {}: {}", label, e)
         })?;
 
-        log::info!("[{}] Fetched {} items, has_more={}", label, api_response.collection.len(), api_response.next_href.is_some());
+        log::info!(
+            "[{}] Fetched {} items, has_more={}",
+            label,
+            api_response.collection.len(),
+            api_response.next_href.is_some()
+        );
 
         if !api_response.collection.is_empty() {
             let items: Vec<T> = api_response.collection.into_iter().map(&map_item).collect();
@@ -278,8 +270,7 @@ where
 
         next_url = api_response.next_href.map(|href| {
             let mut parsed = rquest::Url::parse(&href).expect("SoundCloud returned invalid next_href URL");
-            let existing_keys: std::collections::HashSet<String> =
-                parsed.query_pairs().map(|(k, _)| k.into_owned()).collect();
+            let existing_keys: std::collections::HashSet<String> = parsed.query_pairs().map(|(k, _)| k.into_owned()).collect();
             {
                 let mut pairs = parsed.query_pairs_mut();
                 for (k, v) in &initial_params {
@@ -298,10 +289,7 @@ where
 }
 
 pub async fn parse_rate_limit_response(response: rquest::Response) -> crate::models::error::DownloadError {
-    let info = response
-        .json::<crate::models::error::RateLimitInfo>()
-        .await
-        .ok();
+    let info = response.json::<crate::models::error::RateLimitInfo>().await.ok();
     crate::models::error::DownloadError::RateLimited(info)
 }
 
@@ -314,8 +302,7 @@ pub async fn parse_rate_limit_response(response: rquest::Response) -> crate::mod
 /// - `None`: treated as StreamResolutionFailed (default for track data fetches)
 /// - `Some(f)`: custom mapping (e.g. GeoBlocked for transcoding URL resolution)
 pub async fn validate_sc_response(
-    response: rquest::Response,
-    map_403: Option<fn() -> crate::models::error::DownloadError>,
+    response: rquest::Response, map_403: Option<fn() -> crate::models::error::DownloadError>,
 ) -> Result<rquest::Response, crate::models::error::DownloadError> {
     use crate::models::error::DownloadError;
 
@@ -338,10 +325,7 @@ pub async fn validate_sc_response(
     }
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
-        return Err(DownloadError::StreamResolutionFailed(format!(
-            "HTTP {}: {}",
-            status, body
-        )));
+        return Err(DownloadError::StreamResolutionFailed(format!("HTTP {}: {}", status, body)));
     }
 
     Ok(response)
