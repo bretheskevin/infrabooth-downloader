@@ -705,8 +705,9 @@ mod tests {
     // UserInfo tests
     #[test]
     fn test_user_info_deserializes_correctly() {
-        let json = r#"{"username": "test_artist"}"#;
+        let json = r#"{"id": 1, "username": "test_artist"}"#;
         let user: UserInfo = serde_json::from_str(json).unwrap();
+        assert_eq!(user.id, 1);
         assert_eq!(user.username, "test_artist");
     }
 
@@ -723,7 +724,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "test_artist"},
+            "user": {"id": 1, "username": "test_artist"},
             "artwork_url": "https://i1.sndcdn.com/artworks-xxx-large.jpg",
             "duration": 180000
         }"#;
@@ -742,7 +743,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "test_artist"},
+            "user": {"id": 1, "username": "test_artist"},
             "artwork_url": null,
             "duration": 180000
         }"#;
@@ -756,7 +757,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "test_artist", "avatar_url": "https://i1.sndcdn.com/avatars-xxx.jpg"},
+            "user": {"id": 1, "username": "test_artist", "avatar_url": "https://i1.sndcdn.com/avatars-xxx.jpg"},
             "artwork_url": null,
             "duration": 180000
         }"#;
@@ -770,7 +771,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "test_artist", "avatar_url": "https://i1.sndcdn.com/avatars-xxx.jpg"},
+            "user": {"id": 1, "username": "test_artist", "avatar_url": "https://i1.sndcdn.com/avatars-xxx.jpg"},
             "artwork_url": "https://i1.sndcdn.com/artworks-yyy.jpg",
             "duration": 180000
         }"#;
@@ -786,7 +787,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "FreakFreak",
-            "user": {"username": "NA"},
+            "user": {"id": 1, "username": "NA"},
             "artwork_url": null,
             "duration": 180000,
             "publisher_metadata": {"artist": "PioUPioU"}
@@ -802,7 +803,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "regular_artist"},
+            "user": {"id": 1, "username": "regular_artist"},
             "artwork_url": null,
             "duration": 180000
         }"#;
@@ -816,7 +817,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "uploader"},
+            "user": {"id": 1, "username": "uploader"},
             "artwork_url": null,
             "duration": 180000,
             "publisher_metadata": {"artist": null}
@@ -831,7 +832,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "uploader"},
+            "user": {"id": 1, "username": "uploader"},
             "artwork_url": null,
             "duration": 180000,
             "publisher_metadata": {"artist": ""}
@@ -866,21 +867,21 @@ mod tests {
         let json = r#"{
             "id": 999,
             "title": "My Playlist",
-            "user": {"username": "playlist_owner"},
+            "user": {"id": 10, "username": "playlist_owner"},
             "artwork_url": "https://i1.sndcdn.com/artworks-playlist-large.jpg",
             "track_count": 2,
             "tracks": [
                 {
                     "id": 1,
                     "title": "Track 1",
-                    "user": {"username": "artist1"},
+                    "user": {"id": 11, "username": "artist1"},
                     "artwork_url": null,
                     "duration": 120000
                 },
                 {
                     "id": 2,
                     "title": "Track 2",
-                    "user": {"username": "artist2"},
+                    "user": {"id": 12, "username": "artist2"},
                     "artwork_url": "https://example.com/art2.jpg",
                     "duration": 240000
                 }
@@ -902,7 +903,7 @@ mod tests {
         let json = r#"{
             "id": 999,
             "title": "Empty Playlist",
-            "user": {"username": "owner"},
+            "user": {"id": 10, "username": "owner"},
             "artwork_url": null,
             "track_count": 0,
             "tracks": []
@@ -919,14 +920,14 @@ mod tests {
         let json = r#"{
             "id": 999,
             "title": "Label Compilation",
-            "user": {"username": "record_label"},
+            "user": {"id": 10, "username": "record_label"},
             "artwork_url": null,
             "track_count": 2,
             "tracks": [
                 {
                     "id": 1,
                     "title": "Track A",
-                    "user": {"username": "NA"},
+                    "user": {"id": 11, "username": "NA"},
                     "artwork_url": null,
                     "duration": 120000,
                     "publisher_metadata": {"artist": "Artist One"}
@@ -934,7 +935,7 @@ mod tests {
                 {
                     "id": 2,
                     "title": "Track B",
-                    "user": {"username": "regular_uploader"},
+                    "user": {"id": 12, "username": "regular_uploader"},
                     "artwork_url": null,
                     "duration": 180000
                 }
@@ -1085,7 +1086,7 @@ mod tests {
         let tracks: Vec<Value> = vec![serde_json::json!({
             "id": 123,
             "title": "Track 1",
-            "user": {"username": "artist1"},
+            "user": {"id": 1, "username": "artist1"},
             "artwork_url": null,
             "duration": 180000
         })];
@@ -1103,7 +1104,7 @@ mod tests {
             serde_json::json!({
                 "id": 789,
                 "title": "Track 3",
-                "user": {"username": "artist3"},
+                "user": {"id": 3, "username": "artist3"},
                 "artwork_url": null,
                 "duration": 180000
             }),
@@ -1122,7 +1123,7 @@ mod tests {
                 data: serde_json::json!({
                     "id": 999,
                     "title": "Test Playlist",
-                    "user": {"username": "owner"},
+                    "user": {"id": 10, "username": "owner"},
                     "artwork_url": null,
                     "track_count": 2,
                     "tracks": [123, 456]
@@ -1146,9 +1147,9 @@ mod tests {
     fn test_fetch_playlist_by_id_extract_track_ids_from_api_response() {
         // Test that extract_track_ids handles mixed full objects and ID stubs
         let tracks = vec![
-            serde_json::json!({"id": 100, "title": "Track 1", "user": {"username": "artist"}}),
+            serde_json::json!({"id": 100, "title": "Track 1", "user": {"id": 1, "username": "artist"}}),
             serde_json::json!(200),
-            serde_json::json!({"id": 300, "title": "Track 3", "user": {"username": "artist"}}),
+            serde_json::json!({"id": 300, "title": "Track 3", "user": {"id": 3, "username": "artist"}}),
         ];
         let ids = extract_track_ids(&tracks);
         assert_eq!(ids, vec![100, 200, 300]);
@@ -1159,7 +1160,7 @@ mod tests {
         let tracks = vec![
             serde_json::json!({
                 "id": 100, "title": "Track 1",
-                "user": {"username": "artist", "avatar_url": null},
+                "user": {"id": 1, "username": "artist", "avatar_url": null},
                 "artwork_url": null, "duration": 180000,
                 "publisher_metadata": null
             }),
@@ -1176,7 +1177,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "test_artist"},
+            "user": {"id": 1, "username": "test_artist"},
             "artwork_url": null,
             "duration": 180000,
             "downloadable": true,
@@ -1196,7 +1197,7 @@ mod tests {
         let json = r#"{
             "id": 123456,
             "title": "Test Track",
-            "user": {"username": "test_artist"},
+            "user": {"id": 1, "username": "test_artist"},
             "artwork_url": null,
             "duration": 180000
         }"#;
