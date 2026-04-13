@@ -1,5 +1,3 @@
-use std::path::{Path, PathBuf};
-
 use rand::RngExt;
 use rusqlite::Connection;
 
@@ -32,7 +30,6 @@ pub(crate) fn validate_table_name(table_name: &str) -> Result<&str, RekordboxErr
 
 pub struct RekordboxDatabase {
     conn: Connection,
-    db_dir: PathBuf,
     pending_usn_updates: Vec<UsnUpdate>,
 }
 
@@ -53,12 +50,15 @@ impl RekordboxDatabase {
 
         Ok(Self {
             conn,
-            db_dir: config.db_dir.clone(),
             pending_usn_updates: Vec::new(),
         })
     }
 
-    pub fn open_unencrypted(db_path: &Path, db_dir: PathBuf) -> Result<Self, RekordboxError> {
+    #[cfg(test)]
+    pub fn open_unencrypted(
+        db_path: &std::path::Path,
+        _db_dir: std::path::PathBuf,
+    ) -> Result<Self, RekordboxError> {
         let conn = Connection::open(db_path)
             .map_err(|e| RekordboxError::DatabaseError(format!("Cannot open DB: {}", e)))?;
 
@@ -67,17 +67,12 @@ impl RekordboxDatabase {
 
         Ok(Self {
             conn,
-            db_dir,
             pending_usn_updates: Vec::new(),
         })
     }
 
     pub fn conn(&self) -> &Connection {
         &self.conn
-    }
-
-    pub fn db_dir(&self) -> &Path {
-        &self.db_dir
     }
 
     pub fn get_local_usn(&self) -> Result<i64, RekordboxError> {
@@ -139,6 +134,7 @@ impl RekordboxDatabase {
         Ok(())
     }
 
+    #[cfg(test)]
     pub fn rollback(&mut self) -> Result<(), RekordboxError> {
         self.pending_usn_updates.clear();
         self.conn
@@ -147,6 +143,7 @@ impl RekordboxDatabase {
         Ok(())
     }
 
+    #[cfg(test)]
     pub fn close(self) -> Result<(), RekordboxError> {
         self.conn
             .close()

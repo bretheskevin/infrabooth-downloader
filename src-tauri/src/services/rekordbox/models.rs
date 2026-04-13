@@ -12,39 +12,19 @@ pub const MAX_NAME_CONFLICTS: i32 = 999;
 
 // -- Database row structs (internal, not specta-exported) ---------------------
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub struct DjmdPlaylist {
     pub id: String,
-    pub uuid: String,
     pub seq: i32,
     pub name: String,
     pub attribute: i32,
     pub parent_id: String,
-    pub image_path: Option<String>,
-    pub smart_list: Option<String>,
-    pub rb_data_status: i32,
-    pub rb_local_data_status: i32,
-    pub rb_local_deleted: i32,
-    pub rb_local_synced: i32,
-    pub usn: Option<i64>,
-    pub rb_local_usn: Option<i64>,
-    pub created_at: String,
-    pub updated_at: String,
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub struct DjmdSongPlaylist {
-    pub id: String,
-    pub playlist_id: String,
     pub content_id: String,
     pub track_no: i32,
-    pub uuid: String,
-    pub rb_data_status: i32,
-    pub rb_local_data_status: i32,
-    pub rb_local_deleted: i32,
-    pub rb_local_synced: i32,
-    pub usn: Option<i64>,
-    pub rb_local_usn: Option<i64>,
-    pub created_at: String,
-    pub updated_at: String,
 }
 
 pub struct TrackMetadata {

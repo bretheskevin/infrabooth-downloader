@@ -9,47 +9,23 @@ use super::models::{
 use crate::models::error::RekordboxError;
 
 const PLAYLIST_SELECT: &str = "\
-    SELECT ID, UUID, Seq, Name, ImagePath, Attribute, ParentID, SmartList, \
-    rb_data_status, rb_local_data_status, rb_local_deleted, rb_local_synced, \
-    usn, rb_local_usn, created_at, updated_at \
+    SELECT ID, Seq, Name, Attribute, ParentID \
     FROM djmdPlaylist";
 
 fn row_to_playlist(row: &rusqlite::Row) -> rusqlite::Result<DjmdPlaylist> {
     Ok(DjmdPlaylist {
         id: row.get(0)?,
-        uuid: row.get(1)?,
-        seq: row.get(2)?,
-        name: row.get(3)?,
-        image_path: row.get(4)?,
-        attribute: row.get(5)?,
-        parent_id: row.get(6)?,
-        smart_list: row.get(7)?,
-        rb_data_status: row.get(8)?,
-        rb_local_data_status: row.get(9)?,
-        rb_local_deleted: row.get(10)?,
-        rb_local_synced: row.get(11)?,
-        usn: row.get(12)?,
-        rb_local_usn: row.get(13)?,
-        created_at: row.get(14)?,
-        updated_at: row.get(15)?,
+        seq: row.get(1)?,
+        name: row.get(2)?,
+        attribute: row.get(3)?,
+        parent_id: row.get(4)?,
     })
 }
 
 fn row_to_song(row: &rusqlite::Row) -> rusqlite::Result<DjmdSongPlaylist> {
     Ok(DjmdSongPlaylist {
-        id: row.get(0)?,
-        playlist_id: row.get(1)?,
-        content_id: row.get(2)?,
-        track_no: row.get(3)?,
-        uuid: row.get(4)?,
-        rb_data_status: row.get(5)?,
-        rb_local_data_status: row.get(6)?,
-        rb_local_deleted: row.get(7)?,
-        rb_local_synced: row.get(8)?,
-        usn: row.get(9)?,
-        rb_local_usn: row.get(10)?,
-        created_at: row.get(11)?,
-        updated_at: row.get(12)?,
+        content_id: row.get(0)?,
+        track_no: row.get(1)?,
     })
 }
 
@@ -78,19 +54,22 @@ fn count_siblings(db: &RekordboxDatabase, parent_id: &str) -> Result<i32, Rekord
         .map_err(|e| RekordboxError::DatabaseError(format!("Count siblings failed: {}", e)))
 }
 
-fn reorder_siblings(db: &RekordboxDatabase, parent_id: &str) -> Result<(), RekordboxError> {
-    let mut stmt = db
-        .conn()
-        .prepare(
-            "SELECT ID FROM djmdPlaylist WHERE ParentID = ?1 ORDER BY Seq ASC",
-        )
-        .map_err(|e| RekordboxError::DatabaseError(format!("Reorder query failed: {}", e)))?;
+fn reorder_siblings(db: &mut RekordboxDatabase, parent_id: &str) -> Result<(), RekordboxError> {
+    let ids: Vec<String> = {
+        let mut stmt = db
+            .conn()
+            .prepare(
+                "SELECT ID FROM djmdPlaylist WHERE ParentID = ?1 ORDER BY Seq ASC",
+            )
+            .map_err(|e| RekordboxError::DatabaseError(format!("Reorder query failed: {}", e)))?;
 
-    let ids: Vec<String> = stmt
-        .query_map(params![parent_id], |row| row.get(0))
-        .map_err(|e| RekordboxError::DatabaseError(format!("Reorder fetch failed: {}", e)))?
-        .collect::<Result<Vec<String>, _>>()
-        .map_err(|e| RekordboxError::DatabaseError(format!("Reorder collect failed: {}", e)))?;
+        let ids = stmt
+            .query_map(params![parent_id], |row| row.get(0))
+            .map_err(|e| RekordboxError::DatabaseError(format!("Reorder fetch failed: {}", e)))?
+            .collect::<Result<Vec<String>, _>>()
+            .map_err(|e| RekordboxError::DatabaseError(format!("Reorder collect failed: {}", e)))?;
+        ids
+    };
 
     for (i, id) in ids.iter().enumerate() {
         db.conn()
@@ -99,6 +78,7 @@ fn reorder_siblings(db: &RekordboxDatabase, parent_id: &str) -> Result<(), Rekor
                 params![(i + 1) as i32, id],
             )
             .map_err(|e| RekordboxError::DatabaseError(format!("Reorder update failed: {}", e)))?;
+        db.track_usn_update("djmdPlaylist", id);
     }
 
     Ok(())
@@ -122,6 +102,30 @@ fn deduplicate_name(db: &RekordboxDatabase, name: &str, parent_id: &str) -> Stri
 
 pub fn find_infrabooth_folder(db: &RekordboxDatabase) -> Option<DjmdPlaylist> {
     find_playlist_by_name_and_type(db, INFRABOOTH_FOLDER_NAME, "root", PLAYLIST_TYPE_FOLDER)
+}
+
+pub fn find_playlist_by_id(db: &RekordboxDatabase, playlist_id: &str) -> Option<DjmdPlaylist> {
+    db.conn()
+        .query_row(
+            &format!("{} WHERE ID = ?1", PLAYLIST_SELECT),
+            params![playlist_id],
+            row_to_playlist,
+        )
+        .ok()
+}
+
+pub fn find_playlist_in_folder(
+    db: &RekordboxDatabase,
+    playlist_id: &str,
+    parent_id: &str,
+) -> Option<DjmdPlaylist> {
+    db.conn()
+        .query_row(
+            &format!("{} WHERE ID = ?1 AND ParentID = ?2 AND Attribute = ?3", PLAYLIST_SELECT),
+            params![playlist_id, parent_id, PLAYLIST_TYPE_PLAYLIST],
+            row_to_playlist,
+        )
+        .ok()
 }
 
 pub fn find_or_create_infrabooth_folder(
@@ -237,6 +241,21 @@ pub fn add_to_playlist(
     let target_pos = track_no.unwrap_or(current_count + 1);
 
     if target_pos <= current_count {
+        let shifted_ids: Vec<String> = {
+            let mut stmt = db
+                .conn()
+                .prepare(
+                    "SELECT ID FROM djmdSongPlaylist WHERE PlaylistID = ?1 AND TrackNo >= ?2",
+                )
+                .map_err(|e| RekordboxError::DatabaseError(format!("Shift lookup failed: {}", e)))?;
+            let shifted_ids = stmt
+                .query_map(params![playlist_id, target_pos], |row| row.get(0))
+                .map_err(|e| RekordboxError::DatabaseError(format!("Shift fetch failed: {}", e)))?
+                .collect::<Result<Vec<String>, _>>()
+                .map_err(|e| RekordboxError::DatabaseError(format!("Shift collect failed: {}", e)))?;
+            shifted_ids
+        };
+
         db.conn()
             .execute(
                 "UPDATE djmdSongPlaylist SET TrackNo = TrackNo + 1 \
@@ -246,6 +265,10 @@ pub fn add_to_playlist(
             .map_err(|e| {
                 RekordboxError::DatabaseError(format!("Shift tracks failed: {}", e))
             })?;
+
+        for shifted_id in shifted_ids {
+            db.track_usn_update("djmdSongPlaylist", &shifted_id);
+        }
     }
 
     let id = db.generate_unused_id("djmdSongPlaylist")?.to_string();
@@ -269,9 +292,7 @@ pub fn add_to_playlist(
 
     db.conn()
         .query_row(
-            "SELECT ID, PlaylistID, ContentID, TrackNo, UUID, \
-             rb_data_status, rb_local_data_status, rb_local_deleted, rb_local_synced, \
-             usn, rb_local_usn, created_at, updated_at \
+            "SELECT ContentID, TrackNo \
              FROM djmdSongPlaylist WHERE ID = ?1",
             params![id],
             row_to_song,
