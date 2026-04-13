@@ -72,3 +72,9 @@ pub use artist::{get_artist_profile, get_all_artist_tracks, resolve_user, resolv
 
 pub mod follow;
 pub use follow::{follow_user, unfollow_user, check_follow_status};
+
+pub mod rekordbox;
+pub use rekordbox::{
+    detect_rekordbox, export_to_rekordbox, list_rekordbox_playlists,
+    delete_rekordbox_playlist, list_rekordbox_backups, restore_rekordbox_backup,
+};

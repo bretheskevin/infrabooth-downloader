@@ -130,25 +130,13 @@ fn detect_format_from_content_type(content_type: &str) -> OriginalFormat {
     }
 }
 
-fn sanitize_filename(s: &str) -> String {
-    s.chars()
-        .map(|c| match c {
-            '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
-            c if c.is_control() => '_',
-            _ => c,
-        })
-        .collect()
-}
-
-/// Builds the base filename (without extension) for a track.
-/// Returns (base_name, display_title) where display_title is used for UI.
 pub fn build_base_filename(
     playlist_context: &Option<PlaylistContext>,
     artist: &str,
     title: &str,
 ) -> (String, String) {
-    let safe_artist = sanitize_filename(artist);
-    let safe_title = sanitize_filename(title);
+    let safe_artist = super::filename::sanitize_path_component(artist);
+    let safe_title = super::filename::sanitize_path_component(title);
 
     match playlist_context {
         Some(ctx) => {
@@ -1043,30 +1031,6 @@ mod tests {
     fn test_classify_ffmpeg_exit_error_unknown() {
         let err = classify_ffmpeg_exit_error("some unknown error");
         assert!(matches!(err, DownloadError::DownloadFailed(_)));
-    }
-
-    // sanitize_filename tests
-
-    #[test]
-    fn test_sanitize_filename_special_chars() {
-        assert_eq!(sanitize_filename("Artist/Name"), "Artist_Name");
-        assert_eq!(sanitize_filename("Title:Test?"), "Title_Test_");
-        assert_eq!(sanitize_filename("a<b>c|d"), "a_b_c_d");
-    }
-
-    #[test]
-    fn test_sanitize_filename_control_chars() {
-        assert_eq!(sanitize_filename("Artist\x00Name"), "Artist_Name");
-        assert_eq!(sanitize_filename("Title\nTest"), "Title_Test");
-    }
-
-    #[test]
-    fn test_sanitize_filename_normal_text() {
-        assert_eq!(sanitize_filename("Normal Title"), "Normal Title");
-        assert_eq!(
-            sanitize_filename("Bartholomé - Track"),
-            "Bartholomé - Track"
-        );
     }
 
     // build_base_filename tests

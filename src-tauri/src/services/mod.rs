@@ -28,4 +28,6 @@ pub mod related;
 pub mod artist;
 pub mod artist_playlists;
 pub mod follow;
+pub mod filename;
+pub mod rekordbox;
 
