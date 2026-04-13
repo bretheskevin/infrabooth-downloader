@@ -32,39 +32,29 @@ fn build_backup_path(backups_dir: &Path) -> Result<PathBuf, RekordboxError> {
         }
     }
 
-    Err(RekordboxError::BackupFailed(
-        "Could not allocate a unique backup directory".into(),
-    ))
+    Err(RekordboxError::BackupFailed("Could not allocate a unique backup directory".into()))
 }
 
 pub fn create_backup(db_dir: &Path, app_data_dir: &Path) -> Result<PathBuf, RekordboxError> {
     let backups_dir = app_data_dir.join(BACKUPS_DIR_NAME);
-    fs::create_dir_all(&backups_dir).map_err(|e| {
-        RekordboxError::BackupFailed(format!("Cannot create backups dir: {}", e))
-    })?;
+    fs::create_dir_all(&backups_dir).map_err(|e| RekordboxError::BackupFailed(format!("Cannot create backups dir: {}", e)))?;
 
     let backup_path = build_backup_path(&backups_dir)?;
-    fs::create_dir_all(&backup_path).map_err(|e| {
-        RekordboxError::BackupFailed(format!("Cannot create backup dir: {}", e))
-    })?;
+    fs::create_dir_all(&backup_path).map_err(|e| RekordboxError::BackupFailed(format!("Cannot create backup dir: {}", e)))?;
 
     let db_file = db_dir.join("master.db");
     let xml_file = db_dir.join("masterPlaylists6.xml");
 
     if db_file.exists() {
-        fs::copy(&db_file, backup_path.join("master.db")).map_err(|e| {
-            RekordboxError::BackupFailed(format!("Cannot copy master.db: {}", e))
-        })?;
+        fs::copy(&db_file, backup_path.join("master.db"))
+            .map_err(|e| RekordboxError::BackupFailed(format!("Cannot copy master.db: {}", e)))?;
     } else {
-        return Err(RekordboxError::BackupFailed(
-            "master.db not found in database directory".into(),
-        ));
+        return Err(RekordboxError::BackupFailed("master.db not found in database directory".into()));
     }
 
     if xml_file.exists() {
-        fs::copy(&xml_file, backup_path.join("masterPlaylists6.xml")).map_err(|e| {
-            RekordboxError::BackupFailed(format!("Cannot copy XML: {}", e))
-        })?;
+        fs::copy(&xml_file, backup_path.join("masterPlaylists6.xml"))
+            .map_err(|e| RekordboxError::BackupFailed(format!("Cannot copy XML: {}", e)))?;
     }
 
     log::info!("Backup created: {}", backup_path.display());
@@ -78,9 +68,7 @@ pub fn rotate_backups(app_data_dir: &Path, max_backups: usize) -> Result<(), Rek
     }
 
     let mut entries: Vec<PathBuf> = fs::read_dir(&backups_dir)
-        .map_err(|e| {
-            RekordboxError::BackupFailed(format!("Cannot read backups dir: {}", e))
-        })?
+        .map_err(|e| RekordboxError::BackupFailed(format!("Cannot read backups dir: {}", e)))?
         .filter_map(|e| e.ok())
         .filter(|e| e.path().is_dir())
         .map(|e| e.path())
@@ -90,13 +78,8 @@ pub fn rotate_backups(app_data_dir: &Path, max_backups: usize) -> Result<(), Rek
 
     while entries.len() > max_backups {
         let oldest = entries.remove(0);
-        fs::remove_dir_all(&oldest).map_err(|e| {
-            RekordboxError::BackupFailed(format!(
-                "Cannot remove old backup {}: {}",
-                oldest.display(),
-                e
-            ))
-        })?;
+        fs::remove_dir_all(&oldest)
+            .map_err(|e| RekordboxError::BackupFailed(format!("Cannot remove old backup {}: {}", oldest.display(), e)))?;
         log::info!("Removed old backup: {}", oldest.display());
     }
 
@@ -108,25 +91,19 @@ pub fn restore_backup(backup_path: &Path, db_dir: &Path) -> Result<(), Rekordbox
     let xml_backup = backup_path.join("masterPlaylists6.xml");
 
     if !db_backup.exists() {
-        return Err(RekordboxError::RestoreFailed(
-            "Backup does not contain master.db".into(),
-        ));
+        return Err(RekordboxError::RestoreFailed("Backup does not contain master.db".into()));
     }
 
-    fs::copy(&db_backup, db_dir.join("master.db")).map_err(|e| {
-        RekordboxError::RestoreFailed(format!("Cannot restore master.db: {}", e))
-    })?;
+    fs::copy(&db_backup, db_dir.join("master.db"))
+        .map_err(|e| RekordboxError::RestoreFailed(format!("Cannot restore master.db: {}", e)))?;
 
     if xml_backup.exists() {
-        fs::copy(&xml_backup, db_dir.join("masterPlaylists6.xml")).map_err(|e| {
-            RekordboxError::RestoreFailed(format!("Cannot restore XML: {}", e))
-        })?;
+        fs::copy(&xml_backup, db_dir.join("masterPlaylists6.xml"))
+            .map_err(|e| RekordboxError::RestoreFailed(format!("Cannot restore XML: {}", e)))?;
     } else {
         let xml_target = db_dir.join("masterPlaylists6.xml");
         if xml_target.exists() {
-            fs::remove_file(&xml_target).map_err(|e| {
-                RekordboxError::RestoreFailed(format!("Cannot remove XML during restore: {}", e))
-            })?;
+            fs::remove_file(&xml_target).map_err(|e| RekordboxError::RestoreFailed(format!("Cannot remove XML during restore: {}", e)))?;
         }
     }
 
@@ -141,9 +118,7 @@ pub fn list_backups(app_data_dir: &Path) -> Result<Vec<BackupInfo>, RekordboxErr
     }
 
     let mut backups: Vec<BackupInfo> = fs::read_dir(&backups_dir)
-        .map_err(|e| {
-            RekordboxError::BackupFailed(format!("Cannot read backups dir: {}", e))
-        })?
+        .map_err(|e| RekordboxError::BackupFailed(format!("Cannot read backups dir: {}", e)))?
         .filter_map(|e| e.ok())
         .filter(|e| e.path().is_dir())
         .filter_map(|e| {
@@ -154,11 +129,7 @@ pub fn list_backups(app_data_dir: &Path) -> Result<Vec<BackupInfo>, RekordboxErr
             let xml_file = path.join("masterPlaylists6.xml");
             let xml_size = xml_file.metadata().map(|m| m.len()).unwrap_or(0);
             let total_mb = (size_bytes + xml_size) as f64 / (1024.0 * 1024.0);
-            Some(BackupInfo {
-                path: path.to_string_lossy().to_string(),
-                timestamp,
-                size_mb: (total_mb * 100.0).round() / 100.0,
-            })
+            Some(BackupInfo { path: path.to_string_lossy().to_string(), timestamp, size_mb: (total_mb * 100.0).round() / 100.0 })
         })
         .collect();
 

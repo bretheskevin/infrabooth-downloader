@@ -7,10 +7,7 @@ use super::{require_auth_and_cid, require_user_id};
 
 #[tauri::command]
 #[specta::specta]
-pub async fn follow_user(
-    app: tauri::AppHandle,
-    user_id: u64,
-) -> Result<(), String> {
+pub async fn follow_user(app: tauri::AppHandle, user_id: u64) -> Result<(), String> {
     let current_user_id = require_user_id(&app)?;
     let datadome = app.state::<AuthState>().get_datadome();
     let (token, client_id) = require_auth_and_cid(&app).await?;
@@ -22,10 +19,7 @@ pub async fn follow_user(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn unfollow_user(
-    app: tauri::AppHandle,
-    user_id: u64,
-) -> Result<(), String> {
+pub async fn unfollow_user(app: tauri::AppHandle, user_id: u64) -> Result<(), String> {
     let current_user_id = require_user_id(&app)?;
     let datadome = app.state::<AuthState>().get_datadome();
     let (token, client_id) = require_auth_and_cid(&app).await?;
@@ -37,10 +31,7 @@ pub async fn unfollow_user(
 
 #[tauri::command]
 #[specta::specta]
-pub async fn check_follow_status(
-    app: tauri::AppHandle,
-    user_id: u64,
-) -> Result<bool, String> {
+pub async fn check_follow_status(app: tauri::AppHandle, user_id: u64) -> Result<bool, String> {
     let current_user_id = require_user_id(&app)?;
     let datadome = app.state::<AuthState>().get_datadome();
     let (token, client_id) = require_auth_and_cid(&app).await?;

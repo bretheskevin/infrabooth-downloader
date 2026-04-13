@@ -1,19 +1,15 @@
 use rquest::Url;
 
 use crate::models::artist::{ArtistProfile, ResolvedLink, SortOption};
-use crate::services::http::{build_sc_paginated_url, expand_short_link, fetch_all_pages, resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE, DEFAULT_PAGE_SIZE, HTTP_CLIENT};
+use crate::services::http::{
+    build_sc_paginated_url, expand_short_link, fetch_all_pages, resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE,
+    DEFAULT_PAGE_SIZE, HTTP_CLIENT,
+};
 use crate::services::playlist::TrackInfo;
 
-pub async fn fetch_artist_profile(
-    client_id: &str,
-    token: Option<&str>,
-    artist_id: u64,
-) -> Result<ArtistProfile, String> {
-    let url = Url::parse_with_params(
-        &format!("{}/users/{}", API_V2_BASE, artist_id),
-        &[("client_id", client_id)],
-    )
-    .map_err(|e| format!("Failed to build URL: {}", e))?;
+pub async fn fetch_artist_profile(client_id: &str, token: Option<&str>, artist_id: u64) -> Result<ArtistProfile, String> {
+    let url = Url::parse_with_params(&format!("{}/users/{}", API_V2_BASE, artist_id), &[("client_id", client_id)])
+        .map_err(|e| format!("Failed to build URL: {}", e))?;
 
     log::info!("[artist] Fetching profile for user {}", artist_id);
 
@@ -33,18 +29,18 @@ pub async fn fetch_artist_profile(
         .await
         .map_err(|e| format!("Failed to parse artist profile: {}", e))?;
 
-    log::info!("[artist] Profile loaded: id={}, username={}, track_count={}", profile.id, profile.username, profile.track_count);
+    log::info!(
+        "[artist] Profile loaded: id={}, username={}, track_count={}",
+        profile.id,
+        profile.username,
+        profile.track_count
+    );
 
     Ok(profile)
 }
 
 pub async fn fetch_all_artist_tracks<F>(
-    client_id: &str,
-    token: Option<&str>,
-    datadome: Option<&str>,
-    artist_id: u64,
-    sort: &SortOption,
-    on_batch: F,
+    client_id: &str, token: Option<&str>, datadome: Option<&str>, artist_id: u64, sort: &SortOption, on_batch: F,
 ) -> Result<Vec<TrackInfo>, String>
 where
     F: Fn(&[TrackInfo]),
@@ -68,16 +64,8 @@ where
     .await
 }
 
-pub async fn resolve_user(
-    client_id: &str,
-    token: Option<&str>,
-    permalink: &str,
-) -> Result<ArtistProfile, String> {
-    if permalink.is_empty()
-        || permalink.contains('/')
-        || permalink.contains('?')
-        || permalink.contains('#')
-    {
+pub async fn resolve_user(client_id: &str, token: Option<&str>, permalink: &str) -> Result<ArtistProfile, String> {
+    if permalink.is_empty() || permalink.contains('/') || permalink.contains('?') || permalink.contains('#') {
         return Err("Invalid permalink".to_string());
     }
 
@@ -90,11 +78,7 @@ pub async fn resolve_user(
         .map_err(|e| e.to_string())
 }
 
-pub async fn resolve_soundcloud_link(
-    client_id: &str,
-    token: Option<&str>,
-    url: &str,
-) -> Result<ResolvedLink, String> {
+pub async fn resolve_soundcloud_link(client_id: &str, token: Option<&str>, url: &str) -> Result<ResolvedLink, String> {
     let canonical_url = expand_short_link(url).await?;
 
     log::debug!("[artist] Resolving canonical URL: {}", canonical_url);

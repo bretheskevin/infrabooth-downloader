@@ -12,23 +12,12 @@ fn test_detect_rekordbox_on_this_machine() {
     let result = config::detect_rekordbox(None);
     match result {
         Ok(cfg) => {
-            assert!(
-                cfg.db_path.exists(),
-                "DB path should exist: {:?}",
-                cfg.db_path
-            );
-            assert!(
-                cfg.db_dir.exists(),
-                "DB dir should exist: {:?}",
-                cfg.db_dir
-            );
+            assert!(cfg.db_path.exists(), "DB path should exist: {:?}", cfg.db_path);
+            assert!(cfg.db_dir.exists(), "DB dir should exist: {:?}", cfg.db_dir);
             log::info!("Detected Rekordbox {}: {:?}", cfg.version, cfg.db_path);
         }
         Err(e) => {
-            log::warn!(
-                "Rekordbox not detected (expected if not installed): {}",
-                e
-            );
+            log::warn!("Rekordbox not detected (expected if not installed): {}", e);
         }
     }
 }

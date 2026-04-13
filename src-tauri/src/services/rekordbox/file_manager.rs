@@ -6,35 +6,24 @@ use crate::models::error::RekordboxError;
 const REKORDBOX_DIR_NAME: &str = "rekordbox";
 
 pub fn sanitize_name(name: &str) -> String {
-    crate::services::filename::sanitize_path_component(name)
-        .trim()
-        .to_string()
+    crate::services::filename::sanitize_path_component(name).trim().to_string()
 }
 
 fn files_match(source_path: &Path, target_path: &Path) -> Result<bool, RekordboxError> {
-    let source_meta = fs::metadata(source_path)
-        .map_err(|e| RekordboxError::FileError(format!("Cannot stat source: {}", e)))?;
-    let target_meta = fs::metadata(target_path)
-        .map_err(|e| RekordboxError::FileError(format!("Cannot stat target: {}", e)))?;
+    let source_meta = fs::metadata(source_path).map_err(|e| RekordboxError::FileError(format!("Cannot stat source: {}", e)))?;
+    let target_meta = fs::metadata(target_path).map_err(|e| RekordboxError::FileError(format!("Cannot stat target: {}", e)))?;
 
     if source_meta.len() != target_meta.len() {
         return Ok(false);
     }
 
-    let source_bytes = fs::read(source_path)
-        .map_err(|e| RekordboxError::FileError(format!("Cannot read source: {}", e)))?;
-    let target_bytes = fs::read(target_path)
-        .map_err(|e| RekordboxError::FileError(format!("Cannot read target: {}", e)))?;
+    let source_bytes = fs::read(source_path).map_err(|e| RekordboxError::FileError(format!("Cannot read source: {}", e)))?;
+    let target_bytes = fs::read(target_path).map_err(|e| RekordboxError::FileError(format!("Cannot read target: {}", e)))?;
 
     Ok(source_bytes == target_bytes)
 }
 
-pub fn copy_track_to_rekordbox(
-    source_path: &Path,
-    artist: &str,
-    title: &str,
-    rekordbox_root: &Path,
-) -> Result<PathBuf, RekordboxError> {
+pub fn copy_track_to_rekordbox(source_path: &Path, artist: &str, title: &str, rekordbox_root: &Path) -> Result<PathBuf, RekordboxError> {
     let artist_dir_name = if artist.trim().is_empty() {
         "Unknown Artist".to_string()
     } else {
@@ -56,8 +45,7 @@ pub fn copy_track_to_rekordbox(
         .unwrap_or_else(|| "mp3".to_string());
 
     let artist_dir = rekordbox_root.join(&artist_dir_name);
-    fs::create_dir_all(&artist_dir)
-        .map_err(|e| RekordboxError::FileError(format!("Cannot create artist dir: {}", e)))?;
+    fs::create_dir_all(&artist_dir).map_err(|e| RekordboxError::FileError(format!("Cannot create artist dir: {}", e)))?;
 
     let target_filename = format!("{}.{}", file_stem, extension);
     let target_path = artist_dir.join(&target_filename);
@@ -77,17 +65,13 @@ pub fn copy_track_to_rekordbox(
                 continue;
             }
 
-            fs::copy(source_path, &alt_path)
-                .map_err(|e| RekordboxError::FileError(format!("Copy failed: {}", e)))?;
+            fs::copy(source_path, &alt_path).map_err(|e| RekordboxError::FileError(format!("Copy failed: {}", e)))?;
             return Ok(alt_path);
         }
-        return Err(RekordboxError::FileError(
-            "Too many filename conflicts".into(),
-        ));
+        return Err(RekordboxError::FileError("Too many filename conflicts".into()));
     }
 
-    fs::copy(source_path, &target_path)
-        .map_err(|e| RekordboxError::FileError(format!("Copy failed: {}", e)))?;
+    fs::copy(source_path, &target_path).map_err(|e| RekordboxError::FileError(format!("Copy failed: {}", e)))?;
     Ok(target_path)
 }
 

@@ -32,18 +32,12 @@ pub struct CookieScanResult {
 }
 
 pub fn scan_browser_cookies() -> CookieScanResult {
-    let domains = Some(vec![
-        "soundcloud.com".to_string(),
-        ".soundcloud.com".to_string(),
-    ]);
+    let domains = Some(vec!["soundcloud.com".to_string(), ".soundcloud.com".to_string()]);
 
     // Each entry: (display name, extraction function)
     // rookie browser functions all share the signature:
     //   fn(Option<Vec<String>>) -> eyre::Result<Vec<rookie::enums::Cookie>>
-    let mut browsers: Vec<(
-        &str,
-        fn(Option<Vec<String>>) -> rookie::Result<Vec<rookie::enums::Cookie>>,
-    )> = vec![
+    let mut browsers: Vec<(&str, fn(Option<Vec<String>>) -> rookie::Result<Vec<rookie::enums::Cookie>>)> = vec![
         ("Firefox", rookie::firefox),
         ("Chrome", rookie::chrome),
         ("Brave", rookie::brave),
@@ -77,7 +71,11 @@ pub fn scan_browser_cookies() -> CookieScanResult {
                         // Exact "soundcloud.com" or ".soundcloud.com" gets priority 0,
                         // subdomains get priority 1
                         let domain = c.domain.trim_start_matches('.');
-                        if domain == "soundcloud.com" { 0 } else { 1 }
+                        if domain == "soundcloud.com" {
+                            0
+                        } else {
+                            1
+                        }
                     });
 
                 if let Some(token_cookie) = token_cookie {
@@ -94,10 +92,7 @@ pub fn scan_browser_cookies() -> CookieScanResult {
                 }
 
                 // Detect cookies with names but empty values (Chrome App-Bound Encryption on Windows)
-                let empty_token_count = cookies
-                    .iter()
-                    .filter(|c| c.name == "oauth_token" && c.value.is_empty())
-                    .count();
+                let empty_token_count = cookies.iter().filter(|c| c.name == "oauth_token" && c.value.is_empty()).count();
                 if empty_token_count > 0 {
                     warn!(
                         "Found {} oauth_token cookie(s) in {} but value is empty — \
@@ -137,11 +132,8 @@ mod tests {
 
     #[test]
     fn test_browser_cookie_clone() {
-        let cookie = BrowserCookie {
-            value: "test_token".to_string(),
-            browser: "Firefox".to_string(),
-            datadome: Some("datadome_value".to_string()),
-        };
+        let cookie =
+            BrowserCookie { value: "test_token".to_string(), browser: "Firefox".to_string(), datadome: Some("datadome_value".to_string()) };
         let cloned = cookie.clone();
         assert_eq!(cloned.value, "test_token");
         assert_eq!(cloned.browser, "Firefox");
@@ -149,11 +141,7 @@ mod tests {
 
     #[test]
     fn test_browser_cookie_debug_redacts_value() {
-        let cookie = BrowserCookie {
-            value: "secret_oauth_token".to_string(),
-            browser: "Chrome".to_string(),
-            datadome: None,
-        };
+        let cookie = BrowserCookie { value: "secret_oauth_token".to_string(), browser: "Chrome".to_string(), datadome: None };
         let debug_str = format!("{:?}", cookie);
         assert!(debug_str.contains("Chrome"));
         assert!(debug_str.contains("[redacted]"));

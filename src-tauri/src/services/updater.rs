@@ -51,11 +51,7 @@ mod tests {
 
     #[test]
     fn test_update_info_serializes_with_none_fields() {
-        let info = UpdateInfo {
-            version: "1.0.0".to_string(),
-            body: None,
-            date: None,
-        };
+        let info = UpdateInfo { version: "1.0.0".to_string(), body: None, date: None };
         let json = serde_json::to_string(&info).unwrap();
         assert!(json.contains("\"version\":\"1.0.0\""));
         assert!(json.contains("\"body\":null"));

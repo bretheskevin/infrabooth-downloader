@@ -14,10 +14,7 @@ pub struct ErrorResponse {
 
 impl<T: HasErrorCode + std::fmt::Display> From<T> for ErrorResponse {
     fn from(err: T) -> Self {
-        ErrorResponse {
-            code: err.code().to_string(),
-            message: err.to_string(),
-        }
+        ErrorResponse { code: err.code().to_string(), message: err.to_string() }
     }
 }
 
@@ -228,10 +225,7 @@ mod tests {
     #[test]
     fn test_verification_failed_error_message() {
         let err = AuthError::VerificationFailed("API returned 401".to_string());
-        assert_eq!(
-            err.to_string(),
-            "Cookie verification failed: API returned 401"
-        );
+        assert_eq!(err.to_string(), "Cookie verification failed: API returned 401");
     }
 
     #[test]
@@ -329,32 +323,14 @@ mod tests {
 
     #[test]
     fn test_download_error_code_method() {
-        assert_eq!(
-            DownloadError::DownloadFailed("test".to_string()).code(),
-            "DOWNLOAD_FAILED"
-        );
+        assert_eq!(DownloadError::DownloadFailed("test".to_string()).code(), "DOWNLOAD_FAILED");
         assert_eq!(DownloadError::BinaryNotFound.code(), "DOWNLOAD_FAILED");
         assert_eq!(DownloadError::RateLimited(None).code(), "RATE_LIMITED");
-        assert_eq!(
-            DownloadError::GeoBlocked("test".to_string()).code(),
-            "GEO_BLOCKED"
-        );
-        assert_eq!(
-            DownloadError::TrackUnavailable("test".to_string()).code(),
-            "DOWNLOAD_FAILED"
-        );
-        assert_eq!(
-            DownloadError::NetworkError("test".to_string()).code(),
-            "NETWORK_ERROR"
-        );
-        assert_eq!(
-            DownloadError::ConversionFailed("test".to_string()).code(),
-            "CONVERSION_FAILED"
-        );
-        assert_eq!(
-            DownloadError::AuthRequired("test".to_string()).code(),
-            "AUTH_REQUIRED"
-        );
+        assert_eq!(DownloadError::GeoBlocked("test".to_string()).code(), "GEO_BLOCKED");
+        assert_eq!(DownloadError::TrackUnavailable("test".to_string()).code(), "DOWNLOAD_FAILED");
+        assert_eq!(DownloadError::NetworkError("test".to_string()).code(), "NETWORK_ERROR");
+        assert_eq!(DownloadError::ConversionFailed("test".to_string()).code(), "CONVERSION_FAILED");
+        assert_eq!(DownloadError::AuthRequired("test".to_string()).code(), "AUTH_REQUIRED");
     }
 
     #[test]
@@ -370,15 +346,10 @@ mod tests {
         assert_eq!(response.code, "BINARY_NOT_FOUND");
     }
 
-
-
     #[test]
     fn test_metadata_write_failed_error_message() {
         let err = MetadataError::WriteFailed("Permission denied".to_string());
-        assert_eq!(
-            err.to_string(),
-            "Failed to write metadata: Permission denied"
-        );
+        assert_eq!(err.to_string(), "Failed to write metadata: Permission denied");
     }
 
     #[test]
@@ -389,14 +360,8 @@ mod tests {
 
     #[test]
     fn test_metadata_error_code_method() {
-        assert_eq!(
-            MetadataError::WriteFailed("test".to_string()).code(),
-            "METADATA_WRITE_FAILED"
-        );
-        assert_eq!(
-            MetadataError::ArtworkFailed("test".to_string()).code(),
-            "ARTWORK_DOWNLOAD_FAILED"
-        );
+        assert_eq!(MetadataError::WriteFailed("test".to_string()).code(), "METADATA_WRITE_FAILED");
+        assert_eq!(MetadataError::ArtworkFailed("test".to_string()).code(), "ARTWORK_DOWNLOAD_FAILED");
     }
 
     #[test]

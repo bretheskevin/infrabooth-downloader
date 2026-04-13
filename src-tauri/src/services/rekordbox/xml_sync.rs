@@ -43,14 +43,10 @@ impl PlaylistXml {
 
     pub fn read(db_dir: &Path) -> Result<Self, RekordboxError> {
         let xml_path = db_dir.join("masterPlaylists6.xml");
-        let content = fs::read_to_string(&xml_path)
-            .map_err(|e| RekordboxError::XmlError(format!("Cannot read XML: {}", e)))?;
+        let content = fs::read_to_string(&xml_path).map_err(|e| RekordboxError::XmlError(format!("Cannot read XML: {}", e)))?;
         let document = XmlDocument::parse(&content)?;
 
-        Ok(Self {
-            document,
-            modified: false,
-        })
+        Ok(Self { document, modified: false })
     }
 
     #[cfg(test)]
@@ -59,24 +55,13 @@ impl PlaylistXml {
             .segments
             .iter()
             .filter_map(|segment| match segment {
-                InnerSegment::Node(n) => Some((
-                    n.id.clone(),
-                    n.parent_id.clone(),
-                    n.attribute.clone(),
-                    n.timestamp.clone(),
-                )),
+                InnerSegment::Node(n) => Some((n.id.clone(), n.parent_id.clone(), n.attribute.clone(), n.timestamp.clone())),
                 InnerSegment::Raw(_) => None,
             })
             .collect()
     }
 
-    pub fn add_playlist(
-        &mut self,
-        playlist_id: &str,
-        parent_id: &str,
-        attribute: i32,
-        timestamp_ms: i64,
-    ) -> bool {
+    pub fn add_playlist(&mut self, playlist_id: &str, parent_id: &str, attribute: i32, timestamp_ms: i64) -> bool {
         let hex_id = decimal_to_hex(playlist_id);
         if self
             .document
@@ -127,8 +112,7 @@ impl PlaylistXml {
         let xml_path = db_dir.join("masterPlaylists6.xml");
         let output = self.document.render();
 
-        fs::write(&xml_path, &output)
-            .map_err(|e| RekordboxError::XmlError(format!("Cannot write XML: {}", e)))?;
+        fs::write(&xml_path, &output).map_err(|e| RekordboxError::XmlError(format!("Cannot write XML: {}", e)))?;
         log::info!("Saved masterPlaylists6.xml");
         Ok(())
     }
@@ -138,11 +122,7 @@ impl XmlDocument {
     fn parse(content: &str) -> Result<Self, RekordboxError> {
         let (before_inner, inner_content, after_inner) = split_inner_playlists(content)?;
         let segments = parse_inner_segments(inner_content)?;
-        Ok(Self {
-            before_inner: before_inner.to_string(),
-            segments,
-            after_inner: after_inner.to_string(),
-        })
+        Ok(Self { before_inner: before_inner.to_string(), segments, after_inner: after_inner.to_string() })
     }
 
     fn push_node(&mut self, node: XmlNode) {
@@ -168,9 +148,7 @@ impl XmlDocument {
     }
 
     fn render(&self) -> String {
-        let mut output = String::with_capacity(
-            self.before_inner.len() + self.after_inner.len() + (self.segments.len() * 80),
-        );
+        let mut output = String::with_capacity(self.before_inner.len() + self.after_inner.len() + (self.segments.len() * 80));
         output.push_str(&self.before_inner);
         for segment in &self.segments {
             match segment {
@@ -205,20 +183,13 @@ fn parse_node_attributes(e: &BytesStart) -> Result<XmlNode, RekordboxError> {
         }
     }
 
-    Ok(XmlNode {
-        id,
-        parent_id,
-        attribute,
-        timestamp,
-        lib_type,
-        check_type,
-    })
+    Ok(XmlNode { id, parent_id, attribute, timestamp, lib_type, check_type })
 }
 
 fn split_inner_playlists(content: &str) -> Result<(&str, &str, &str), RekordboxError> {
-    let outer_start = content.find("<PLAYLISTS").ok_or_else(|| {
-        RekordboxError::XmlError("Missing outer PLAYLISTS tag".into())
-    })?;
+    let outer_start = content
+        .find("<PLAYLISTS")
+        .ok_or_else(|| RekordboxError::XmlError("Missing outer PLAYLISTS tag".into()))?;
     let outer_open_end = content[outer_start..]
         .find('>')
         .map(|idx| outer_start + idx + 1)
@@ -298,5 +269,8 @@ fn decimal_to_hex(decimal_str: &str) -> String {
 }
 
 fn escape_xml_attr(s: &str) -> String {
-    s.replace('&', "&amp;").replace('"', "&quot;").replace('<', "&lt;").replace('>', "&gt;")
+    s.replace('&', "&amp;")
+        .replace('"', "&quot;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }

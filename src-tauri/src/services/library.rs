@@ -8,7 +8,7 @@ use specta::Type;
 use thiserror::Error;
 
 use crate::models::PlaylistTracksResponse;
-use crate::services::http::{validate_api_response, API_V2_BASE, HTTP_CLIENT, RequestBuilderExt};
+use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::build_playlist_url;
 
 // === Error Type ===
@@ -80,7 +80,6 @@ struct LibraryUserRaw {
     username: String,
 }
 
-
 // === Public types (exposed to frontend via specta) ===
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -125,13 +124,7 @@ pub struct LibraryCache {
 
 impl Default for LibraryCache {
     fn default() -> Self {
-        Self {
-            inner: Mutex::new(LibraryCacheInner {
-                playlists: Vec::new(),
-                complete: false,
-                artwork: HashMap::new(),
-            }),
-        }
+        Self { inner: Mutex::new(LibraryCacheInner { playlists: Vec::new(), complete: false, artwork: HashMap::new() }) }
     }
 }
 
@@ -200,11 +193,7 @@ fn map_library_item(item: &LibraryItem) -> Option<LibraryPlaylist> {
 
 // === Service function ===
 
-async fn fetch_library_page(
-    oauth_token: &str,
-    client_id: &str,
-    cursor: Option<String>,
-) -> Result<LibraryPageResponse, LibraryError> {
+async fn fetch_library_page(oauth_token: &str, client_id: &str, cursor: Option<String>) -> Result<LibraryPageResponse, LibraryError> {
     let url = match cursor {
         Some(ref next_href) => next_href.clone(),
         None => format!(
@@ -213,18 +202,11 @@ async fn fetch_library_page(
         ),
     };
 
-    let response = HTTP_CLIENT
-        .get(&url)
-        .with_oauth(Some(oauth_token))
-        .send()
-        .await?;
+    let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
 
     validate_api_response(response.status())?;
 
-    let library_response: LibraryResponse = response
-        .json()
-        .await
-        .map_err(|_| LibraryError::InvalidResponse)?;
+    let library_response: LibraryResponse = response.json().await.map_err(|_| LibraryError::InvalidResponse)?;
 
     let playlists: Vec<LibraryPlaylist> = library_response
         .collection
@@ -233,16 +215,10 @@ async fn fetch_library_page(
         .filter_map(map_library_item)
         .collect();
 
-    Ok(LibraryPageResponse {
-        playlists,
-        next_cursor: library_response.next_href,
-    })
+    Ok(LibraryPageResponse { playlists, next_cursor: library_response.next_href })
 }
 
-pub async fn fetch_all_library_pages(
-    oauth_token: &str,
-    client_id: &str,
-) -> Result<Vec<LibraryPlaylist>, LibraryError> {
+pub async fn fetch_all_library_pages(oauth_token: &str, client_id: &str) -> Result<Vec<LibraryPlaylist>, LibraryError> {
     let mut all_playlists = Vec::new();
     let mut cursor = None;
 
@@ -260,11 +236,7 @@ pub async fn fetch_all_library_pages(
 }
 
 pub async fn fetch_owned_playlists_for_track(
-    oauth_token: &str,
-    client_id: &str,
-    track_id: u64,
-    playlists: &[LibraryPlaylist],
-    cache: &LibraryCache,
+    oauth_token: &str, client_id: &str, track_id: u64, playlists: &[LibraryPlaylist], cache: &LibraryCache,
 ) -> Result<Vec<PlaylistForTrackPicker>, LibraryError> {
     use futures::future::join_all;
 
@@ -281,11 +253,7 @@ pub async fn fetch_owned_playlists_for_track(
         async move {
             let url = build_playlist_url(pid, &cid, secret.as_deref());
 
-            let response = HTTP_CLIENT
-                .get(&url)
-                .with_oauth(Some(&oauth))
-                .send()
-                .await;
+            let response = HTTP_CLIENT.get(&url).with_oauth(Some(&oauth)).send().await;
 
             match response {
                 Ok(resp) if resp.status().is_success() => {
@@ -336,25 +304,15 @@ pub async fn fetch_owned_playlists_for_track(
 }
 
 pub async fn resolve_playlist_artwork(
-    oauth_token: &str,
-    client_id: &str,
-    playlist_id: u64,
-    secret_token: Option<String>,
+    oauth_token: &str, client_id: &str, playlist_id: u64, secret_token: Option<String>,
 ) -> Result<Option<String>, LibraryError> {
     let url = build_playlist_url(playlist_id, client_id, secret_token.as_deref());
 
-    let response = HTTP_CLIENT
-        .get(&url)
-        .with_oauth(Some(oauth_token))
-        .send()
-        .await?;
+    let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
 
     validate_api_response(response.status())?;
 
-    let playlist_data: PlaylistTracksResponse = response
-        .json()
-        .await
-        .map_err(|_| LibraryError::InvalidResponse)?;
+    let playlist_data: PlaylistTracksResponse = response.json().await.map_err(|_| LibraryError::InvalidResponse)?;
 
     Ok(playlist_data.first_track_artwork())
 }
@@ -429,10 +387,7 @@ mod tests {
             playlist: Some(LibraryPlaylistRaw {
                 id: 100,
                 title: "My Playlist".to_string(),
-                user: LibraryUserRaw {
-                    id: 1,
-                    username: "me".to_string(),
-                },
+                user: LibraryUserRaw { id: 1, username: "me".to_string() },
                 artwork_url: Some("https://artwork.jpg".to_string()),
                 track_count: 10,
                 duration: 600000,
@@ -454,10 +409,7 @@ mod tests {
             playlist: Some(LibraryPlaylistRaw {
                 id: 200,
                 title: "Liked One".to_string(),
-                user: LibraryUserRaw {
-                    id: 2,
-                    username: "someone".to_string(),
-                },
+                user: LibraryUserRaw { id: 2, username: "someone".to_string() },
                 artwork_url: None,
                 track_count: 5,
                 duration: 300000,
@@ -479,10 +431,7 @@ mod tests {
             playlist: Some(LibraryPlaylistRaw {
                 id: 300,
                 title: "No Art".to_string(),
-                user: LibraryUserRaw {
-                    id: 3,
-                    username: "user3".to_string(),
-                },
+                user: LibraryUserRaw { id: 3, username: "user3".to_string() },
                 artwork_url: None,
                 track_count: 1,
                 duration: 60000,
@@ -497,10 +446,7 @@ mod tests {
 
     #[test]
     fn test_map_item_without_playlist_returns_none() {
-        let item = LibraryItem {
-            item_type: "track".to_string(),
-            playlist: None,
-        };
+        let item = LibraryItem { item_type: "track".to_string(), playlist: None };
         assert!(map_library_item(&item).is_none());
     }
 
@@ -581,10 +527,7 @@ mod tests {
         assert!(cache.get_artwork(1).is_none());
 
         cache.set_artwork(1, Some("https://example.com/art.jpg".to_string()));
-        assert_eq!(
-            cache.get_artwork(1),
-            Some(Some("https://example.com/art.jpg".to_string()))
-        );
+        assert_eq!(cache.get_artwork(1), Some(Some("https://example.com/art.jpg".to_string())));
 
         cache.set_artwork(2, None);
         assert_eq!(cache.get_artwork(2), Some(None));

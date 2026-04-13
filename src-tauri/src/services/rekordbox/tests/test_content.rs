@@ -26,8 +26,7 @@ fn test_add_content() {
         bit_rate: Some(320),
         sample_rate: Some(44100),
     };
-    let content_id = content::add_content(&mut db, &mp3_path, &metadata)
-        .expect("add_content failed");
+    let content_id = content::add_content(&mut db, &mp3_path, &metadata).expect("add_content failed");
     let (title, file_type, analysed): (Option<String>, i32, i32) = db
         .conn()
         .query_row(

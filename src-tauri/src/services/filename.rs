@@ -2,13 +2,7 @@ const UNSAFE_CHARS: &[char] = &['/', '\\', ':', '*', '?', '"', '<', '>', '|'];
 
 pub fn sanitize_path_component(s: &str) -> String {
     s.chars()
-        .map(|c| {
-            if UNSAFE_CHARS.contains(&c) || c.is_control() {
-                '_'
-            } else {
-                c
-            }
-        })
+        .map(|c| if UNSAFE_CHARS.contains(&c) || c.is_control() { '_' } else { c })
         .collect()
 }
 
