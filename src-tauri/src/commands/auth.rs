@@ -21,13 +21,7 @@ pub struct AuthStatePayload {
 use crate::services::events;
 
 fn signed_out_payload(cookie_warning: Option<String>) -> AuthStatePayload {
-    AuthStatePayload {
-        is_signed_in: false,
-        username: None,
-        plan: None,
-        avatar_url: None,
-        cookie_warning,
-    }
+    AuthStatePayload { is_signed_in: false, username: None, plan: None, avatar_url: None, cookie_warning }
 }
 
 #[tauri::command]
@@ -54,11 +48,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
 
     match verify_token(&cookie.value).await {
         Ok(profile) => {
-            state.set(CachedAuth {
-                oauth_token: cookie.value,
-                datadome: cookie.datadome,
-                user_id: profile.id,
-            });
+            state.set(CachedAuth { oauth_token: cookie.value, datadome: cookie.datadome, user_id: profile.id });
             let _ = app.emit(
                 events::AUTH_STATE_CHANGED,
                 AuthStatePayload {
@@ -121,7 +111,6 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     Ok(())
 }
 
-
 #[cfg(target_os = "windows")]
 const WINDOWS_FIREFOX_FALLBACK_PATHS: &[&str] = &[
     r"C:\Program Files\Mozilla Firefox\firefox.exe",
@@ -134,9 +123,12 @@ fn firefox_exe_from_registry() -> Option<String> {
         .args(["query", r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\firefox.exe", "/ve"])
         .output()
         .ok()?;
-    if !output.status.success() { return None; }
+    if !output.status.success() {
+        return None;
+    }
     let stdout = String::from_utf8_lossy(&output.stdout);
-    stdout.lines()
+    stdout
+        .lines()
         .find_map(|line| line.split("REG_SZ").nth(1))
         .map(|s| s.trim().to_string())
         .filter(|path| std::path::Path::new(path).exists())
@@ -145,7 +137,8 @@ fn firefox_exe_from_registry() -> Option<String> {
 #[cfg(target_os = "windows")]
 fn find_firefox_exe() -> Option<String> {
     firefox_exe_from_registry().or_else(|| {
-        WINDOWS_FIREFOX_FALLBACK_PATHS.iter()
+        WINDOWS_FIREFOX_FALLBACK_PATHS
+            .iter()
             .find(|p| std::path::Path::new(p).exists())
             .map(|p| p.to_string())
     })
@@ -154,21 +147,26 @@ fn find_firefox_exe() -> Option<String> {
 #[cfg(target_os = "macos")]
 fn is_firefox_installed_macos() -> bool {
     let home = std::env::var("HOME").unwrap_or_default();
-    std::path::Path::new("/Applications/Firefox.app").exists()
-        || std::path::Path::new(&format!("{home}/Applications/Firefox.app")).exists()
+    std::path::Path::new("/Applications/Firefox.app").exists() || std::path::Path::new(&format!("{home}/Applications/Firefox.app")).exists()
 }
 
 #[tauri::command]
 #[specta::specta]
 pub fn check_firefox_installed() -> bool {
     #[cfg(target_os = "windows")]
-    { return find_firefox_exe().is_some(); }
+    {
+        return find_firefox_exe().is_some();
+    }
 
     #[cfg(target_os = "macos")]
-    { return is_firefox_installed_macos(); }
+    {
+        return is_firefox_installed_macos();
+    }
 
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    { false }
+    {
+        false
+    }
 }
 
 #[tauri::command]
@@ -194,7 +192,9 @@ pub fn open_in_firefox() -> Result<(), String> {
     }
 
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
-    { Err("Unsupported platform".to_string()) }
+    {
+        Err("Unsupported platform".to_string())
+    }
 }
 
 #[cfg(test)]

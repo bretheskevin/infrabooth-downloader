@@ -1,9 +1,7 @@
 use tauri::Manager;
 
 use crate::commands::{require_auth_and_cid, require_user_id};
-use crate::services::new_tracks::{
-    self, ActivityItem, FollowedArtist, NewTracksCache, ReleaseActivityItem, SeenArtistsState,
-};
+use crate::services::new_tracks::{self, ActivityItem, FollowedArtist, NewTracksCache, ReleaseActivityItem, SeenArtistsState};
 use crate::services::paths::get_app_data_dir;
 
 pub fn seen_state_path(app: &tauri::AppHandle) -> std::path::PathBuf {
@@ -45,7 +43,11 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
         log::error!("[new-tracks] Failed to fetch stream: {}", e);
         e.to_string()
     })?;
-    log::info!("[new-tracks] Fetched stream: {} artists with tracks, {} with releases", stream_data.tracks.len(), stream_data.releases.len());
+    log::info!(
+        "[new-tracks] Fetched stream: {} artists with tracks, {} with releases",
+        stream_data.tracks.len(),
+        stream_data.releases.len()
+    );
 
     let mut seen_times = std::collections::HashMap::<u64, i64>::new();
     let mut artists: Vec<FollowedArtist> = raw_artists
@@ -54,8 +56,7 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
             let track_items = stream_data.tracks.get(&raw.id);
             let release_items = stream_data.releases.get(&raw.id);
 
-            let has_any = track_items.is_some_and(|i| !i.is_empty())
-                || release_items.is_some_and(|i| !i.is_empty());
+            let has_any = track_items.is_some_and(|i| !i.is_empty()) || release_items.is_some_and(|i| !i.is_empty());
             if !has_any {
                 return None;
             }
@@ -93,7 +94,6 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
         })
         .collect();
 
-
     artists.sort_by(|a, b| {
         let a_has_new = a.has_new_content || a.has_new_releases;
         let b_has_new = b.has_new_content || b.has_new_releases;
@@ -129,8 +129,7 @@ fn cache_all_stream_data(data: &new_tracks::StreamData, cache: &NewTracksCache) 
 }
 
 async fn get_cached_or_fetch_stream<T: Clone>(
-    app: &tauri::AppHandle,
-    get_cached: impl FnOnce(&NewTracksCache) -> Option<Vec<T>>,
+    app: &tauri::AppHandle, get_cached: impl FnOnce(&NewTracksCache) -> Option<Vec<T>>,
     extract: impl FnOnce(&new_tracks::StreamData) -> Vec<T>,
 ) -> Result<Vec<T>, String> {
     let cache = app.state::<NewTracksCache>();
@@ -146,27 +145,28 @@ async fn get_cached_or_fetch_stream<T: Clone>(
 #[tauri::command]
 #[specta::specta]
 pub async fn get_artist_activity(app: tauri::AppHandle, artist_id: u64) -> Result<Vec<ActivityItem>, String> {
-    get_cached_or_fetch_stream(&app,
+    get_cached_or_fetch_stream(
+        &app,
         |cache| cache.get_activity(artist_id),
         |data| data.tracks.get(&artist_id).cloned().unwrap_or_default(),
-    ).await
+    )
+    .await
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn get_artist_releases(app: tauri::AppHandle, artist_id: u64) -> Result<Vec<ReleaseActivityItem>, String> {
-    get_cached_or_fetch_stream(&app,
+    get_cached_or_fetch_stream(
+        &app,
         |cache| cache.get_releases(artist_id),
         |data| data.releases.get(&artist_id).cloned().unwrap_or_default(),
-    ).await
+    )
+    .await
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_release_tracks(
-    app: tauri::AppHandle,
-    release_id: u64,
-) -> Result<Vec<crate::services::playlist::TrackInfo>, String> {
+pub async fn get_release_tracks(app: tauri::AppHandle, release_id: u64) -> Result<Vec<crate::services::playlist::TrackInfo>, String> {
     let (token, _client_id) = require_auth_and_cid(&app).await?;
     crate::services::playlist::fetch_playlist_by_id(release_id, None, Some(&token), |_| {})
         .await
@@ -174,9 +174,7 @@ pub async fn get_release_tracks(
 }
 
 async fn persist_seen_state(
-    app: &tauri::AppHandle,
-    artist_id: u64,
-    update: impl FnOnce(&SeenArtistsState, &NewTracksCache, u64, i64),
+    app: &tauri::AppHandle, artist_id: u64, update: impl FnOnce(&SeenArtistsState, &NewTracksCache, u64, i64),
 ) -> Result<(), String> {
     let now = new_tracks::now_unix();
     let path = seen_state_path(app);
@@ -187,9 +185,13 @@ async fn persist_seen_state(
         seen.to_json()?
     };
     if let Some(parent) = path.parent() {
-        tokio::fs::create_dir_all(parent).await.map_err(|e| format!("Failed to create directory: {}", e))?;
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|e| format!("Failed to create directory: {}", e))?;
     }
-    tokio::fs::write(&path, json).await.map_err(|e| format!("Failed to write seen state: {}", e))?;
+    tokio::fs::write(&path, json)
+        .await
+        .map_err(|e| format!("Failed to write seen state: {}", e))?;
     Ok(())
 }
 
@@ -199,7 +201,8 @@ pub async fn mark_artist_seen(app: tauri::AppHandle, artist_id: u64) -> Result<(
     persist_seen_state(&app, artist_id, |seen, cache, id, now| {
         seen.mark_track_seen(id, now);
         cache.update_artist_seen(id);
-    }).await
+    })
+    .await
 }
 
 #[tauri::command]
@@ -208,5 +211,6 @@ pub async fn mark_artist_releases_seen(app: tauri::AppHandle, artist_id: u64) ->
     persist_seen_state(&app, artist_id, |seen, cache, id, now| {
         seen.mark_release_seen(id, now);
         cache.update_artist_releases_seen(id);
-    }).await
+    })
+    .await
 }

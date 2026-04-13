@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
 use std::sync::atomic::{AtomicBool, Ordering};
-use tokio::sync::{watch, Mutex};
-
-use crate::services::rate_limit_choice::ChoiceState;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Type)]
 #[serde(rename_all = "snake_case")]
@@ -20,22 +17,12 @@ pub struct DownloadAuthNeededEvent {
 }
 
 pub struct AuthChoiceState {
-    inner: ChoiceState<AuthChoice>,
     skip_auth: AtomicBool,
-    pending: Mutex<bool>,
 }
 
 impl AuthChoiceState {
     pub fn new() -> Self {
-        Self {
-            inner: ChoiceState::new(),
-            skip_auth: AtomicBool::new(false),
-            pending: Mutex::new(false),
-        }
-    }
-
-    pub fn subscribe(&self) -> watch::Receiver<Option<AuthChoice>> {
-        self.inner.subscribe()
+        Self { skip_auth: AtomicBool::new(false) }
     }
 
     pub fn should_skip_auth(&self) -> bool {
@@ -44,11 +31,6 @@ impl AuthChoiceState {
 
     pub fn set_skip_auth(&self, skip: bool) {
         self.skip_auth.store(skip, Ordering::SeqCst);
-    }
-
-    pub async fn set_pending(&self, pending: bool) {
-        let mut guard = self.pending.lock().await;
-        *guard = pending;
     }
 }
 
@@ -90,10 +72,7 @@ mod tests {
 
     #[test]
     fn test_download_auth_needed_event_serialize() {
-        let event = DownloadAuthNeededEvent {
-            track_id: "123".to_string(),
-            track_title: "Test Track".to_string(),
-        };
+        let event = DownloadAuthNeededEvent { track_id: "123".to_string(), track_title: "Test Track".to_string() };
         let json = serde_json::to_string(&event).unwrap();
         assert!(json.contains("\"trackId\":\"123\""));
         assert!(json.contains("\"trackTitle\":\"Test Track\""));

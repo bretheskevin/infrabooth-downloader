@@ -1,0 +1,10 @@
+mod helpers;
+mod test_backup;
+mod test_config;
+mod test_content;
+mod test_database;
+mod test_e2e;
+mod test_export_flow;
+mod test_file_manager;
+mod test_playlist;
+mod test_xml_sync;

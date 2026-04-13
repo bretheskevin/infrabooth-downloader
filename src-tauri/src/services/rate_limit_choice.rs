@@ -53,9 +53,7 @@ pub struct RateLimitChoiceState {
 
 impl RateLimitChoiceState {
     pub fn new() -> Self {
-        Self {
-            inner: ChoiceState::new(),
-        }
+        Self { inner: ChoiceState::new() }
     }
 
     pub fn subscribe(&self) -> watch::Receiver<Option<RateLimitChoice>> {
