@@ -4,7 +4,7 @@ import { PlaylistPreview } from '../PlaylistPreview';
 import type { PlaylistInfo } from '@/features/url-input/types/playlist';
 
 // Mock bindings
-const mockScanExistingTracks = vi.fn().mockResolvedValue([]);
+const mockScanExistingTracks = vi.fn().mockResolvedValue({});
 vi.mock('@/bindings', () => ({
   commands: {
     scanExistingTracks: (...args: unknown[]) => mockScanExistingTracks(...args),
@@ -311,7 +311,7 @@ describe('PlaylistPreview', () => {
 
   describe('already downloaded badge', () => {
     it('should show already downloaded badge when tracks exist', async () => {
-      mockScanExistingTracks.mockResolvedValue(['1', '2']);
+      mockScanExistingTracks.mockResolvedValue({ 1: '/tmp/1.mp3', 2: '/tmp/2.mp3' });
 
       render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
@@ -323,7 +323,7 @@ describe('PlaylistPreview', () => {
     });
 
     it('should not show badge when no tracks exist', async () => {
-      mockScanExistingTracks.mockResolvedValue([]);
+      mockScanExistingTracks.mockResolvedValue({});
 
       render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 

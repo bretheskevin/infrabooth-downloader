@@ -1,0 +1,34 @@
+#!/bin/sh
+set -eu
+
+staged_files="$(git diff --cached --name-only --diff-filter=ACMR)"
+
+if [ -z "$staged_files" ]; then
+  exit 0
+fi
+
+frontend_changed=0
+backend_changed=0
+frontend_ts_files="$(printf '%s\n' "$staged_files" | grep -E '^src/.*\.(ts|tsx)$' || true)"
+
+if [ -n "$frontend_ts_files" ] || printf '%s\n' "$staged_files" | grep -Eq '^(vite\.config\.ts|vitest\.config\.ts|tsconfig(\.node)?\.json|package(-lock)?\.json)$'; then
+  frontend_changed=1
+fi
+
+if printf '%s\n' "$staged_files" | grep -Eq '^(src-tauri/.*\.(rs|toml)|src-tauri/Cargo\.lock|src-tauri/build\.rs)$'; then
+  backend_changed=1
+fi
+
+if [ "$frontend_changed" -eq 1 ]; then
+  echo "pre-commit: running frontend checks"
+  if [ -n "$frontend_ts_files" ]; then
+    printf '%s\n' "$frontend_ts_files" | xargs npx eslint --max-warnings=0 --
+  fi
+  npm run typecheck
+fi
+
+if [ "$backend_changed" -eq 1 ]; then
+  echo "pre-commit: running backend checks"
+  cargo fmt --all --check --manifest-path src-tauri/Cargo.toml
+  cargo check --manifest-path src-tauri/Cargo.toml
+fi
