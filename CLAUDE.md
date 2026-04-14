@@ -106,6 +106,16 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 - **Never use `console.log/warn/error` in frontend code.** Use `logger` from `@/lib/logger` (backed by `@tauri-apps/plugin-log`) which routes logs to the Tauri logging system. Logger methods are async — use `void logger.info(...)` for fire-and-forget calls.
 - **Never write comments unless necessary.** Code should be self-documenting. Only add comments when the logic is genuinely non-obvious and cannot be clarified through better naming or structure.
 
+## React Hooks Rules
+
+- **No `useEffect` for derived state.** Compute during render or use `useMemo` for expensive derivations. Never `setState` inside `useEffect` watching another state.
+- **No `useState` + `useEffect` for fetched data.** Use TanStack Query — it handles caching, loading, errors, and race conditions.
+- **No reflexive `useCallback`/`useMemo`.** Only memoize when: (1) prop goes to a `React.memo`-wrapped child, (2) value is a dependency of another hook, or (3) computation is genuinely expensive (profile first).
+- **No `useCallback` on DOM element handlers.** `<button onClick={useCallback(fn)}>` achieves nothing — DOM elements always re-render with parent.
+- **No `useEffect` for event-specific logic.** If code runs because the user *did something*, it belongs in the event handler, not an Effect.
+- **No `useEffect` to notify parent of state changes.** Call parent callback in the same event handler that updates state — both batch in one render.
+- **Prefer `key` prop over `useEffect` state reset.** Instead of `useEffect(() => setState(''), [id])`, put `key={id}` on the component to remount with fresh state.
+
 ## Code Complexity
 
 - **Function length**: Keep functions under ~50 lines. Extract helpers for longer functions.
