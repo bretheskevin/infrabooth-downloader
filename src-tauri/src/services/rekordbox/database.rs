@@ -30,6 +30,7 @@ impl RekordboxDatabase {
         let key = config::db_key();
         let conn = Connection::open(&config.db_path).map_err(|e| RekordboxError::DatabaseError(format!("Cannot open DB: {}", e)))?;
 
+        // SAFETY: `key` is a compile-time constant hex string, not user input — no injection risk
         conn.execute_batch(&format!("PRAGMA key = '{}';", key))
             .map_err(|e| RekordboxError::DatabaseError(format!("Cannot set key: {}", e)))?;
 

@@ -176,9 +176,8 @@ fn get_content_link(db: &RekordboxDatabase) -> Result<i64, RekordboxError> {
 }
 
 fn build_search_str(title: &str, artist: &str, album: Option<&str>) -> String {
-    let mut parts = vec![title.to_string(), artist.to_string()];
-    if let Some(a) = album {
-        parts.push(a.to_string());
+    match album {
+        Some(a) => format!("{} {} {}", title, artist, a),
+        None => format!("{} {}", title, artist),
     }
-    parts.join(" ")
 }

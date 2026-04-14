@@ -123,7 +123,7 @@ fn detect_from_settings_file(pioneer_app_dir: &Path) -> Result<RekordboxConfig, 
         })
         .ok_or_else(|| RekordboxError::NotFound("masterDbDirectory not found in settings".into()))?;
 
-    validate_db_path(PathBuf::from(&db_dir_str).join("master.db"))
+    validate_db_path(PathBuf::from(&db_dir_str).join(super::models::MASTER_DB_FILENAME))
 }
 
 fn validate_db_path(db_path: PathBuf) -> Result<RekordboxConfig, RekordboxError> {
@@ -136,6 +136,7 @@ fn validate_db_path(db_path: PathBuf) -> Result<RekordboxConfig, RekordboxError>
         .ok_or_else(|| RekordboxError::NotFound("Cannot determine database directory".into()))?
         .to_path_buf();
 
+    // Only Rekordbox 6 is supported; update if adding v7+ support
     let version = "6".to_string();
 
     Ok(RekordboxConfig { db_path, db_dir, version })

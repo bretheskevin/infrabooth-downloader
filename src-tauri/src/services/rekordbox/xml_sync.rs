@@ -4,6 +4,7 @@ use std::path::Path;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::Reader;
 
+use super::models::MASTER_PLAYLISTS_XML;
 use crate::models::error::RekordboxError;
 
 pub struct PlaylistXml {
@@ -33,7 +34,7 @@ struct XmlNode {
 
 impl PlaylistXml {
     pub fn read_if_exists(db_dir: &Path) -> Result<Option<Self>, RekordboxError> {
-        let xml_path = db_dir.join("masterPlaylists6.xml");
+        let xml_path = db_dir.join(MASTER_PLAYLISTS_XML);
         if !xml_path.exists() {
             return Ok(None);
         }
@@ -42,7 +43,7 @@ impl PlaylistXml {
     }
 
     pub fn read(db_dir: &Path) -> Result<Self, RekordboxError> {
-        let xml_path = db_dir.join("masterPlaylists6.xml");
+        let xml_path = db_dir.join(MASTER_PLAYLISTS_XML);
         let content = fs::read_to_string(&xml_path).map_err(|e| RekordboxError::XmlError(format!("Cannot read XML: {}", e)))?;
         let document = XmlDocument::parse(&content)?;
 
@@ -109,11 +110,11 @@ impl PlaylistXml {
             return Ok(());
         }
 
-        let xml_path = db_dir.join("masterPlaylists6.xml");
+        let xml_path = db_dir.join(MASTER_PLAYLISTS_XML);
         let output = self.document.render();
 
         fs::write(&xml_path, &output).map_err(|e| RekordboxError::XmlError(format!("Cannot write XML: {}", e)))?;
-        log::info!("Saved masterPlaylists6.xml");
+        log::info!("Saved {}", MASTER_PLAYLISTS_XML);
         Ok(())
     }
 }
@@ -126,6 +127,7 @@ impl XmlDocument {
     }
 
     fn push_node(&mut self, node: XmlNode) {
+        // Insert before the last non-empty raw segment (trailing whitespace) to preserve XML formatting
         let insert_at = self
             .segments
             .iter()
@@ -181,6 +183,10 @@ fn parse_node_attributes(e: &BytesStart) -> Result<XmlNode, RekordboxError> {
             "CheckType" => check_type = val,
             _ => {}
         }
+    }
+
+    if id.is_empty() {
+        return Err(RekordboxError::XmlError("NODE element missing required Id attribute".into()));
     }
 
     Ok(XmlNode { id, parent_id, attribute, timestamp, lib_type, check_type })

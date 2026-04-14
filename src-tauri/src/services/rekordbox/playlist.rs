@@ -50,28 +50,61 @@ fn reorder_siblings(db: &mut RekordboxDatabase, parent_id: &str) -> Result<(), R
         ids
     };
 
-    for (i, id) in ids.iter().enumerate() {
-        db.conn()
-            .execute("UPDATE djmdPlaylist SET Seq = ?1 WHERE ID = ?2", params![(i + 1) as i32, id])
-            .map_err(|e| RekordboxError::DatabaseError(format!("Reorder update failed: {}", e)))?;
+    {
+        let mut stmt = db
+            .conn()
+            .prepare("UPDATE djmdPlaylist SET Seq = ?1 WHERE ID = ?2")
+            .map_err(|e| RekordboxError::DatabaseError(format!("Reorder prepare failed: {}", e)))?;
+        for (i, id) in ids.iter().enumerate() {
+            stmt.execute(params![(i + 1) as i32, id])
+                .map_err(|e| RekordboxError::DatabaseError(format!("Reorder update failed: {}", e)))?;
+        }
+    }
+
+    for id in &ids {
         db.track_usn_update("djmdPlaylist", id);
     }
 
     Ok(())
 }
 
-fn deduplicate_name(db: &RekordboxDatabase, name: &str, parent_id: &str) -> String {
+fn deduplicate_name(db: &RekordboxDatabase, name: &str, parent_id: &str) -> Result<String, RekordboxError> {
     if find_playlist_by_name_and_type(db, name, parent_id, PLAYLIST_TYPE_PLAYLIST).is_none() {
-        return name.to_string();
+        return Ok(name.to_string());
     }
 
     for counter in 2..=super::models::MAX_NAME_CONFLICTS {
         let candidate = format!("{} ({})", name, counter);
         if find_playlist_by_name_and_type(db, &candidate, parent_id, PLAYLIST_TYPE_PLAYLIST).is_none() {
-            return candidate;
+            return Ok(candidate);
         }
     }
-    format!("{} ({})", name, super::models::MAX_NAME_CONFLICTS)
+    Err(RekordboxError::DatabaseError(format!(
+        "Too many playlists named '{}' (limit: {})",
+        name,
+        super::models::MAX_NAME_CONFLICTS
+    )))
+}
+
+fn insert_playlist_row(
+    db: &mut RekordboxDatabase, id: &str, name: &str, attribute: i32, parent_id: &str, seq: i32,
+) -> Result<(), RekordboxError> {
+    let uuid = Uuid::new_v4().to_string();
+    let now = database::now_timestamp();
+
+    db.conn()
+        .execute(
+            "INSERT INTO djmdPlaylist \
+             (ID, UUID, Seq, Name, ImagePath, Attribute, ParentID, SmartList, \
+              rb_data_status, rb_local_data_status, rb_local_deleted, rb_local_synced, \
+              usn, rb_local_usn, created_at, updated_at) \
+             VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6, NULL, 0, 0, 0, 0, NULL, NULL, ?7, ?8)",
+            params![id, uuid, seq, name, attribute, parent_id, now, now],
+        )
+        .map_err(|e| RekordboxError::DatabaseError(format!("Insert playlist failed: {}", e)))?;
+
+    db.track_usn_update("djmdPlaylist", id);
+    Ok(())
 }
 
 pub fn find_infrabooth_folder(db: &RekordboxDatabase) -> Option<DjmdPlaylist> {
@@ -100,46 +133,18 @@ pub fn find_or_create_infrabooth_folder(db: &mut RekordboxDatabase) -> Result<Dj
     }
 
     let id = db.generate_unused_id("djmdPlaylist")?.to_string();
-    let uuid = Uuid::new_v4().to_string();
-    let now = database::now_timestamp();
     let seq = count_siblings(db, "root")? + 1;
-
-    db.conn()
-        .execute(
-            "INSERT INTO djmdPlaylist \
-             (ID, UUID, Seq, Name, ImagePath, Attribute, ParentID, SmartList, \
-              rb_data_status, rb_local_data_status, rb_local_deleted, rb_local_synced, \
-              usn, rb_local_usn, created_at, updated_at) \
-             VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6, NULL, 0, 0, 0, 0, NULL, NULL, ?7, ?8)",
-            params![id, uuid, seq, INFRABOOTH_FOLDER_NAME, PLAYLIST_TYPE_FOLDER, "root", now, now],
-        )
-        .map_err(|e| RekordboxError::DatabaseError(format!("Insert InfraBooth folder failed: {}", e)))?;
-
-    db.track_usn_update("djmdPlaylist", &id);
+    insert_playlist_row(db, &id, INFRABOOTH_FOLDER_NAME, PLAYLIST_TYPE_FOLDER, "root", seq)?;
 
     find_playlist_by_name_and_type(db, INFRABOOTH_FOLDER_NAME, "root", PLAYLIST_TYPE_FOLDER)
         .ok_or_else(|| RekordboxError::DatabaseError("InfraBooth folder not found after insert".into()))
 }
 
 pub fn create_playlist(db: &mut RekordboxDatabase, name: &str, parent_id: &str) -> Result<DjmdPlaylist, RekordboxError> {
-    let final_name = deduplicate_name(db, name, parent_id);
+    let final_name = deduplicate_name(db, name, parent_id)?;
     let id = db.generate_unused_id("djmdPlaylist")?.to_string();
-    let uuid = Uuid::new_v4().to_string();
-    let now = database::now_timestamp();
     let seq = count_siblings(db, parent_id)? + 1;
-
-    db.conn()
-        .execute(
-            "INSERT INTO djmdPlaylist \
-             (ID, UUID, Seq, Name, ImagePath, Attribute, ParentID, SmartList, \
-              rb_data_status, rb_local_data_status, rb_local_deleted, rb_local_synced, \
-              usn, rb_local_usn, created_at, updated_at) \
-             VALUES (?1, ?2, ?3, ?4, NULL, ?5, ?6, NULL, 0, 0, 0, 0, NULL, NULL, ?7, ?8)",
-            params![id, uuid, seq, final_name, PLAYLIST_TYPE_PLAYLIST, parent_id, now, now],
-        )
-        .map_err(|e| RekordboxError::DatabaseError(format!("Insert playlist failed: {}", e)))?;
-
-    db.track_usn_update("djmdPlaylist", &id);
+    insert_playlist_row(db, &id, &final_name, PLAYLIST_TYPE_PLAYLIST, parent_id, seq)?;
 
     db.conn()
         .query_row(&format!("{} WHERE ID = ?1", PLAYLIST_SELECT), params![id], row_to_playlist)
