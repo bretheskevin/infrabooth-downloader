@@ -45,10 +45,17 @@ Create a new release version for InfraBooth Downloader.
    - `src-tauri/Cargo.toml`
 10. Update `CHANGELOG.md` (English) with the new entry under `## [Unreleased]`
 11. Update `CHANGELOG.fr.md` (French) with the translated entry under `## [Unreleased]` — translate all changelog items to French, keeping the same structure (### Added, ### Changed, ### Fixed, ### Removed headings stay in English as they are parsed by the app). The French translation must sound natural and idiomatic — write it as a native French speaker would phrase a changelog, not as a literal translation from English. Prefer nominal forms (e.g. "Amélioration des performances" not "Meilleures performances"). For **Fixed** items, describe the bug from the user's perspective using "On ne pouvait pas..." / "Il était impossible de..." / "L'application ne..." phrasing (e.g. "On ne pouvait pas consulter la page d'un artiste sans être connecté" not "La consultation des profils d'artistes nécessitait une connexion").
-12. Run `cargo check` in src-tauri to update Cargo.lock
-13. Create a commit with message `chore: release vX.Y.Z`
-14. Create the git tag `vX.Y.Z`
-15. Push the commit and the new tag only: `git push origin main v<VERSION>`
+12. **Update Serena memories**: Analyze what changed since last tag (`git diff --name-status <tag>..HEAD`) and update relevant Serena MCP memories to reflect the current codebase state. Focus on:
+    - New/removed features, commands, services, or components → update `architecture/*` memories
+    - New conventions or patterns introduced → update `conventions/*` memories
+    - Significant structural changes → update `project/overview`
+    - Only update memories that are actually affected by the changes. Skip if changes are minor (patch-level bug fixes, config tweaks).
+    - Use `list_memories` to see existing memories, `read_memory` to check current content, then `write_memory` or `edit_memory` to update.
+13. Run `npm install` to update `package-lock.json` with the new version
+14. Run `cargo check` in src-tauri to update `Cargo.lock`
+15. Create a commit with message `chore: release vX.Y.Z`
+16. Create the git tag `vX.Y.Z`
+17. Push the commit and the new tag only: `git push origin main v<VERSION>`
 
 ## Arguments (Optional)
 
