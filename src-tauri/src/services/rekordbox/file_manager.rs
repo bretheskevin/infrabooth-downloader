@@ -10,6 +10,8 @@ pub fn sanitize_name(name: &str) -> String {
 }
 
 fn files_match(source_path: &Path, target_path: &Path) -> Result<bool, RekordboxError> {
+    use std::io::{BufReader, Read};
+
     let source_meta = fs::metadata(source_path).map_err(|e| RekordboxError::FileError(format!("Cannot stat source: {}", e)))?;
     let target_meta = fs::metadata(target_path).map_err(|e| RekordboxError::FileError(format!("Cannot stat target: {}", e)))?;
 
@@ -17,10 +19,25 @@ fn files_match(source_path: &Path, target_path: &Path) -> Result<bool, Rekordbox
         return Ok(false);
     }
 
-    let source_bytes = fs::read(source_path).map_err(|e| RekordboxError::FileError(format!("Cannot read source: {}", e)))?;
-    let target_bytes = fs::read(target_path).map_err(|e| RekordboxError::FileError(format!("Cannot read target: {}", e)))?;
+    let mut src = BufReader::new(fs::File::open(source_path).map_err(|e| RekordboxError::FileError(format!("Cannot open source: {}", e)))?);
+    let mut tgt = BufReader::new(fs::File::open(target_path).map_err(|e| RekordboxError::FileError(format!("Cannot open target: {}", e)))?);
 
-    Ok(source_bytes == target_bytes)
+    let mut src_buf = [0u8; 8192];
+    let mut tgt_buf = [0u8; 8192];
+    loop {
+        let n1 = src
+            .read(&mut src_buf)
+            .map_err(|e| RekordboxError::FileError(format!("Cannot read source: {}", e)))?;
+        let n2 = tgt
+            .read(&mut tgt_buf)
+            .map_err(|e| RekordboxError::FileError(format!("Cannot read target: {}", e)))?;
+        if n1 != n2 || src_buf[..n1] != tgt_buf[..n2] {
+            return Ok(false);
+        }
+        if n1 == 0 {
+            return Ok(true);
+        }
+    }
 }
 
 pub fn copy_track_to_rekordbox(source_path: &Path, artist: &str, title: &str, rekordbox_root: &Path) -> Result<PathBuf, RekordboxError> {

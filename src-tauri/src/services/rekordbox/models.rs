@@ -9,6 +9,8 @@ pub const FILE_TYPE_MP3: i32 = 1;
 pub const INFRABOOTH_FOLDER_NAME: &str = "InfraBooth Downloader";
 pub const ALL_TRACKS_PLAYLIST_NAME: &str = "All Tracks";
 pub const MAX_NAME_CONFLICTS: i32 = 999;
+pub const MASTER_DB_FILENAME: &str = "master.db";
+pub const MASTER_PLAYLISTS_XML: &str = "masterPlaylists6.xml";
 
 // -- Database row structs (internal, not specta-exported) ---------------------
 

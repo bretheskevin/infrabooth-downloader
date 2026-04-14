@@ -229,7 +229,7 @@ pub fn restore_rekordbox_backup(backup_path: String, app: tauri::AppHandle) -> R
         .map_err(|e| ErrorResponse::from(RekordboxError::RestoreFailed(format!("Invalid backup path: {}", e))))?;
 
     let app_data_dir = get_app_data_dir(&app).map_err(app_data_dir_error)?;
-    let backups_dir = std::fs::canonicalize(app_data_dir.join("rekordbox-backups"))
+    let backups_dir = std::fs::canonicalize(app_data_dir.join(backup::BACKUPS_DIR_NAME))
         .map_err(|e| ErrorResponse::from(RekordboxError::RestoreFailed(format!("Backups dir error: {}", e))))?;
 
     if !path.starts_with(&backups_dir) {
