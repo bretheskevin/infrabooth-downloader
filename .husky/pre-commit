@@ -9,7 +9,7 @@ fi
 
 frontend_changed=0
 backend_changed=0
-frontend_ts_files="$(printf '%s\n' "$staged_files" | grep -E '^src/.*\.(ts|tsx)$' || true)"
+frontend_ts_files="$(printf '%s\n' "$staged_files" | grep -E '^src/.*\.(ts|tsx)$' | grep -v '^src/bindings\.ts$' || true)"
 
 if [ -n "$frontend_ts_files" ] || printf '%s\n' "$staged_files" | grep -Eq '^(vite\.config\.ts|vitest\.config\.ts|tsconfig(\.node)?\.json|package(-lock)?\.json)$'; then
   frontend_changed=1
