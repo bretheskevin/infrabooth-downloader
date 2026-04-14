@@ -24,7 +24,7 @@ pub fn is_rekordbox_running() -> bool {
 
 pub fn detect_rekordbox(manual_db_path: Option<PathBuf>) -> Result<RekordboxConfig, RekordboxError> {
     if let Some(path) = manual_db_path {
-        return validate_db_path(path);
+        return validate_db_path(normalize_manual_override_path(path));
     }
 
     let pioneer_app_dir = get_pioneer_app_dir().map_err(RekordboxError::NotFound)?;
@@ -40,6 +40,23 @@ pub fn detect_rekordbox(manual_db_path: Option<PathBuf>) -> Result<RekordboxConf
     Err(RekordboxError::NotFound(
         "Could not find Rekordbox installation. Set the database path manually in Settings.".into(),
     ))
+}
+
+pub fn default_rekordbox_data_directory_parent() -> Result<PathBuf, String> {
+    #[cfg(target_os = "macos")]
+    {
+        let home = std::env::var("HOME").map_err(|_| "Cannot determine home directory".to_string())?;
+        Ok(PathBuf::from(home).join("Library/Pioneer"))
+    }
+    #[cfg(target_os = "windows")]
+    {
+        let app_data = std::env::var("APPDATA").map_err(|_| "APPDATA environment variable not set".to_string())?;
+        Ok(PathBuf::from(app_data).join("Pioneer"))
+    }
+    #[cfg(not(any(target_os = "macos", target_os = "windows")))]
+    {
+        Err("Rekordbox is only supported on macOS and Windows".into())
+    }
 }
 
 fn get_pioneer_app_dir() -> Result<PathBuf, String> {
@@ -140,4 +157,12 @@ fn validate_db_path(db_path: PathBuf) -> Result<RekordboxConfig, RekordboxError>
     let version = "6".to_string();
 
     Ok(RekordboxConfig { db_path, db_dir, version })
+}
+
+fn normalize_manual_override_path(path: PathBuf) -> PathBuf {
+    if path.is_dir() {
+        path.join(super::models::MASTER_DB_FILENAME)
+    } else {
+        path
+    }
 }

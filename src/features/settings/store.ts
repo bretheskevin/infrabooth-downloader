@@ -7,6 +7,7 @@ export type Theme = 'system' | 'light' | 'dark';
 
 interface SettingsState {
   downloadPath: string;
+  rekordboxPathOverride: string;
   language: 'en' | 'fr';
   theme: Theme;
   maxConcurrentDownloads: number;
@@ -19,6 +20,7 @@ interface SettingsState {
   hideReleasesReposts: boolean;
   _hasHydrated: boolean;
   setDownloadPath: (path: string) => void;
+  setRekordboxPathOverride: (path: string) => void;
   setLanguage: (lang: 'en' | 'fr') => void;
   setTheme: (theme: Theme) => void;
   setMaxConcurrentDownloads: (n: number) => void;
@@ -36,6 +38,7 @@ export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
       downloadPath: '',
+      rekordboxPathOverride: '',
       language: 'en',
       theme: 'system',
       maxConcurrentDownloads: 3,
@@ -48,6 +51,7 @@ export const useSettingsStore = create<SettingsState>()(
       hideReleasesReposts: false,
       _hasHydrated: false,
       setDownloadPath: (path) => set({ downloadPath: path }),
+      setRekordboxPathOverride: (path) => set({ rekordboxPathOverride: path }),
       setLanguage: (lang) => set({ language: lang }),
       setTheme: (theme) => set({ theme }),
       setMaxConcurrentDownloads: (n) => set({ maxConcurrentDownloads: clamp(n, 1, 10) }),
@@ -65,6 +69,7 @@ export const useSettingsStore = create<SettingsState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         downloadPath: state.downloadPath,
+        rekordboxPathOverride: state.rekordboxPathOverride,
         language: state.language,
         theme: state.theme,
         maxConcurrentDownloads: state.maxConcurrentDownloads,

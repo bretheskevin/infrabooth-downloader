@@ -10,6 +10,7 @@ vi.mock('react-i18next', () => ({
         'settings.description': 'Customize your app preferences',
         'settings.categoryGeneral': 'General',
         'settings.categoryPlaylists': 'Playlists',
+        'settings.categoryRekordbox': 'Rekordbox',
         'settings.categoryAbout': 'About',
       };
       return translations[key] || key;
@@ -40,6 +41,10 @@ vi.mock('../DownloadLocationSection', () => ({
 
 vi.mock('../ConcurrentDownloadsSection', () => ({
   ConcurrentDownloadsSection: () => <div data-testid="concurrent-downloads-section">Concurrent Downloads</div>,
+}));
+
+vi.mock('../RekordboxSettings', () => ({
+  RekordboxSettings: () => <div data-testid="rekordbox-settings">Rekordbox Settings</div>,
 }));
 
 vi.mock('../PlaylistOrderSection', () => ({
@@ -73,10 +78,11 @@ describe('SettingsDialog', () => {
     expect(tablist).toHaveAttribute('aria-orientation', 'vertical');
 
     const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(3);
+    expect(tabs).toHaveLength(4);
     expect(tabs[0]).toHaveTextContent('General');
     expect(tabs[1]).toHaveTextContent('Playlists');
-    expect(tabs[2]).toHaveTextContent('About');
+    expect(tabs[2]).toHaveTextContent('Rekordbox');
+    expect(tabs[3]).toHaveTextContent('About');
   });
 
   it('shows General settings by default with correct aria-selected', () => {
@@ -97,6 +103,12 @@ describe('SettingsDialog', () => {
     expect(screen.getByRole('tab', { name: /General/ })).toHaveAttribute('aria-selected', 'false');
     expect(screen.getByTestId('concurrent-downloads-section')).toBeInTheDocument();
     expect(screen.getByTestId('playlist-order-section')).toBeInTheDocument();
+  });
+
+  it('switches to Rekordbox settings when clicked', () => {
+    render(<SettingsDialog {...defaultProps} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Rekordbox/ }));
+    expect(screen.getByTestId('rekordbox-settings')).toBeInTheDocument();
   });
 
   it('switches to About settings when clicked', async () => {
@@ -132,6 +144,10 @@ describe('SettingsDialog', () => {
     // ArrowDown moves to next tab
     fireEvent.keyDown(tablist, { key: 'ArrowDown' });
     expect(screen.getByRole('tab', { name: /Playlists/ })).toHaveAttribute('aria-selected', 'true');
+
+    // ArrowDown again moves to Rekordbox
+    fireEvent.keyDown(tablist, { key: 'ArrowDown' });
+    expect(screen.getByRole('tab', { name: /Rekordbox/ })).toHaveAttribute('aria-selected', 'true');
 
     // ArrowDown again moves to About
     fireEvent.keyDown(tablist, { key: 'ArrowDown' });

@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use crate::models::error::{ErrorResponse, HasErrorCode, RekordboxError};
 use crate::services::paths::get_app_data_dir;
 use crate::services::rekordbox::models::{
-    BackupInfo, ExportResult, ExportTrackRequest, RekordboxPlaylistInfo, RekordboxStatus, ALL_TRACKS_PLAYLIST_NAME,
+    BackupInfo, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus, ALL_TRACKS_PLAYLIST_NAME,
 };
 use crate::services::rekordbox::{
     backup, config, content,
@@ -11,10 +11,18 @@ use crate::services::rekordbox::{
     file_manager, playlist, xml_sync,
 };
 
+#[cfg(test)]
+#[path = "rekordbox_tests.rs"]
+mod rekordbox_tests;
+
 const MAX_REKORDBOX_BACKUPS: usize = 5;
 
 fn app_data_dir_error(e: String) -> ErrorResponse {
     ErrorResponse { code: "APP_DATA_DIR_ERROR".to_string(), message: e }
+}
+
+fn resolve_rekordbox_config(manual_db_path: Option<String>) -> Result<RekordboxConfig, ErrorResponse> {
+    config::detect_rekordbox(manual_db_path.map(PathBuf::from)).map_err(ErrorResponse::from)
 }
 
 fn is_content_in_playlist(db: &database::RekordboxDatabase, playlist_id: &str, content_id: &str) -> Result<bool, RekordboxError> {
@@ -67,9 +75,11 @@ fn export_single_track(
 
 #[tauri::command]
 #[specta::specta]
-pub fn detect_rekordbox(_app: tauri::AppHandle) -> Result<RekordboxStatus, ErrorResponse> {
+pub fn detect_rekordbox(manual_db_path: Option<String>, _app: tauri::AppHandle) -> Result<RekordboxStatus, ErrorResponse> {
     let is_running = config::is_rekordbox_running();
-    match config::detect_rekordbox(None) {
+    let manual_db_path = manual_db_path.map(PathBuf::from);
+
+    match config::detect_rekordbox(manual_db_path) {
         Ok(cfg) => Ok(RekordboxStatus {
             found: true,
             version: Some(cfg.version),
@@ -83,10 +93,16 @@ pub fn detect_rekordbox(_app: tauri::AppHandle) -> Result<RekordboxStatus, Error
 
 #[tauri::command]
 #[specta::specta]
+pub fn get_default_rekordbox_data_directory_parent(_app: tauri::AppHandle) -> Result<String, String> {
+    config::default_rekordbox_data_directory_parent().map(|p| p.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn export_to_rekordbox(
-    tracks: Vec<ExportTrackRequest>, playlist_name: Option<String>, app: tauri::AppHandle,
+    tracks: Vec<ExportTrackRequest>, playlist_name: Option<String>, manual_db_path: Option<String>, app: tauri::AppHandle,
 ) -> Result<ExportResult, ErrorResponse> {
-    let rb_config = config::detect_rekordbox(None).map_err(ErrorResponse::from)?;
+    let rb_config = resolve_rekordbox_config(manual_db_path)?;
 
     if config::is_rekordbox_running() {
         return Err(ErrorResponse::from(RekordboxError::RekordboxRunning));
@@ -141,8 +157,10 @@ pub fn export_to_rekordbox(
 
 #[tauri::command]
 #[specta::specta]
-pub fn list_rekordbox_playlists(_app: tauri::AppHandle) -> Result<Vec<RekordboxPlaylistInfo>, ErrorResponse> {
-    let rb_config = config::detect_rekordbox(None).map_err(ErrorResponse::from)?;
+pub fn list_rekordbox_playlists(
+    manual_db_path: Option<String>, _app: tauri::AppHandle,
+) -> Result<Vec<RekordboxPlaylistInfo>, ErrorResponse> {
+    let rb_config = resolve_rekordbox_config(manual_db_path)?;
     let db = database::RekordboxDatabase::open(&rb_config).map_err(ErrorResponse::from)?;
 
     let folder = match playlist::find_infrabooth_folder(&db) {
@@ -166,12 +184,12 @@ pub fn list_rekordbox_playlists(_app: tauri::AppHandle) -> Result<Vec<RekordboxP
 
 #[tauri::command]
 #[specta::specta]
-pub fn delete_rekordbox_playlist(playlist_id: String, app: tauri::AppHandle) -> Result<(), ErrorResponse> {
+pub fn delete_rekordbox_playlist(playlist_id: String, manual_db_path: Option<String>, app: tauri::AppHandle) -> Result<(), ErrorResponse> {
     if config::is_rekordbox_running() {
         return Err(ErrorResponse::from(RekordboxError::RekordboxRunning));
     }
 
-    let rb_config = config::detect_rekordbox(None).map_err(ErrorResponse::from)?;
+    let rb_config = resolve_rekordbox_config(manual_db_path)?;
     let app_data_dir = get_app_data_dir(&app).map_err(app_data_dir_error)?;
 
     let backup_path = backup::create_backup(&rb_config.db_dir, &app_data_dir).map_err(ErrorResponse::from)?;
@@ -218,12 +236,12 @@ pub fn list_rekordbox_backups(app: tauri::AppHandle) -> Result<Vec<BackupInfo>, 
 
 #[tauri::command]
 #[specta::specta]
-pub fn restore_rekordbox_backup(backup_path: String, app: tauri::AppHandle) -> Result<(), ErrorResponse> {
+pub fn restore_rekordbox_backup(backup_path: String, manual_db_path: Option<String>, app: tauri::AppHandle) -> Result<(), ErrorResponse> {
     if config::is_rekordbox_running() {
         return Err(ErrorResponse::from(RekordboxError::RekordboxRunning));
     }
 
-    let rb_config = config::detect_rekordbox(None).map_err(ErrorResponse::from)?;
+    let rb_config = resolve_rekordbox_config(manual_db_path)?;
 
     let path = std::fs::canonicalize(&backup_path)
         .map_err(|e| ErrorResponse::from(RekordboxError::RestoreFailed(format!("Invalid backup path: {}", e))))?;

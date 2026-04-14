@@ -10,6 +10,7 @@ import {
 import { SettingsSidebar } from './SettingsSidebar';
 import { GeneralSettings } from './GeneralSettings';
 import { PlaylistsSettings } from './PlaylistsSettings';
+import { RekordboxSettings } from './RekordboxSettings';
 import { AboutSettings } from './AboutSettings';
 import type { SettingsCategory, SettingsDialogProps } from './types';
 import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
@@ -17,6 +18,7 @@ import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
 const CONTENT_COMPONENTS: Record<SettingsCategory, React.ComponentType> = {
   general: GeneralSettings,
   playlists: PlaylistsSettings,
+  rekordbox: RekordboxSettings,
   about: AboutSettings,
 };
 
