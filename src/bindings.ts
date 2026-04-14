@@ -444,33 +444,41 @@ async openInFirefox() : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async detectRekordbox() : Promise<Result<RekordboxStatus, ErrorResponse>> {
+async detectRekordbox(manualDbPath: string | null) : Promise<Result<RekordboxStatus, ErrorResponse>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("detect_rekordbox") };
+    return { status: "ok", data: await TAURI_INVOKE("detect_rekordbox", { manualDbPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async exportToRekordbox(tracks: ExportTrackRequest[], playlistName: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
+async getDefaultRekordboxDataDirectoryParent() : Promise<Result<string, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("export_to_rekordbox", { tracks, playlistName }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_default_rekordbox_data_directory_parent") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async listRekordboxPlaylists() : Promise<Result<RekordboxPlaylistInfo[], ErrorResponse>> {
+async exportToRekordbox(tracks: ExportTrackRequest[], playlistName: string | null, manualDbPath: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("list_rekordbox_playlists") };
+    return { status: "ok", data: await TAURI_INVOKE("export_to_rekordbox", { tracks, playlistName, manualDbPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
 },
-async deleteRekordboxPlaylist(playlistId: string) : Promise<Result<null, ErrorResponse>> {
+async listRekordboxPlaylists(manualDbPath: string | null) : Promise<Result<RekordboxPlaylistInfo[], ErrorResponse>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("delete_rekordbox_playlist", { playlistId }) };
+    return { status: "ok", data: await TAURI_INVOKE("list_rekordbox_playlists", { manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteRekordboxPlaylist(playlistId: string, manualDbPath: string | null) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_rekordbox_playlist", { playlistId, manualDbPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -484,9 +492,9 @@ async listRekordboxBackups() : Promise<Result<BackupInfo[], ErrorResponse>> {
     else return { status: "error", error: e  as any };
 }
 },
-async restoreRekordboxBackup(backupPath: string) : Promise<Result<null, ErrorResponse>> {
+async restoreRekordboxBackup(backupPath: string, manualDbPath: string | null) : Promise<Result<null, ErrorResponse>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("restore_rekordbox_backup", { backupPath }) };
+    return { status: "ok", data: await TAURI_INVOKE("restore_rekordbox_backup", { backupPath, manualDbPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
