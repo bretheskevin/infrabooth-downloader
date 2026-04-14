@@ -8,12 +8,13 @@ use commands::{
     add_track_to_playlist, cancel_download_queue, check_auth, check_firefox_installed, check_follow_status, check_for_updates,
     check_write_permission, clear_library_cache, delete_rekordbox_playlist, detect_rekordbox, download_track_full, export_to_rekordbox,
     fetch_related_tracks, follow_user, get_all_artist_tracks, get_app_data_path, get_artist_activity, get_artist_playlist_tracks,
-    get_artist_playlists, get_artist_profile, get_artist_releases, get_default_download_path, get_followed_artists,
-    get_library_playlist_tracks, get_library_playlists, get_log_path, get_owned_playlists_for_track, get_playlist_info, get_release_tracks,
-    get_selections, get_track_info, install_update, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen,
-    mark_artist_seen, open_in_firefox, refresh_auth, remove_track_from_playlist, resolve_library_artwork, resolve_playback_url,
-    resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_tracks,
-    search_users, sign_out, start_download_queue, test_ffmpeg, unfollow_user, validate_download_path, validate_soundcloud_url,
+    get_artist_playlists, get_artist_profile, get_artist_releases, get_default_download_path, get_default_rekordbox_data_directory_parent,
+    get_followed_artists, get_library_playlist_tracks, get_library_playlists, get_log_path, get_owned_playlists_for_track,
+    get_playlist_info, get_release_tracks, get_selections, get_track_info, install_update, list_rekordbox_backups,
+    list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, open_in_firefox, refresh_auth, remove_track_from_playlist,
+    resolve_library_artwork, resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice,
+    restore_rekordbox_backup, scan_existing_tracks, search_tracks, search_users, sign_out, start_download_queue, test_ffmpeg,
+    unfollow_user, validate_download_path, validate_soundcloud_url,
 };
 use services::cancellation::CancellationState;
 use services::events;
@@ -96,6 +97,7 @@ pub fn run() {
             check_firefox_installed,
             open_in_firefox,
             detect_rekordbox,
+            get_default_rekordbox_data_directory_parent,
             export_to_rekordbox,
             list_rekordbox_playlists,
             delete_rekordbox_playlist,

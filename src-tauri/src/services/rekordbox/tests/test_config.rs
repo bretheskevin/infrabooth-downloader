@@ -35,3 +35,35 @@ fn test_manual_override_path() {
     let result = config::detect_rekordbox(Some(fake_path));
     assert!(result.is_err(), "Should fail for nonexistent path");
 }
+
+#[test]
+fn test_manual_override_valid_db_path() {
+    use std::fs;
+    use tempfile::tempdir;
+
+    let temp_dir = tempdir().unwrap();
+    let db_path = temp_dir.path().join("master.db");
+    fs::write(&db_path, b"sqlite").unwrap();
+
+    let result = config::detect_rekordbox(Some(db_path.clone())).unwrap();
+
+    assert_eq!(result.db_path, db_path);
+    assert_eq!(result.db_dir, temp_dir.path().to_path_buf());
+    assert_eq!(result.version, "6");
+}
+
+#[test]
+fn test_manual_override_valid_db_dir() {
+    use std::fs;
+    use tempfile::tempdir;
+
+    let temp_dir = tempdir().unwrap();
+    let db_path = temp_dir.path().join("master.db");
+    fs::write(&db_path, b"sqlite").unwrap();
+
+    let result = config::detect_rekordbox(Some(temp_dir.path().to_path_buf())).unwrap();
+
+    assert_eq!(result.db_path, db_path);
+    assert_eq!(result.db_dir, temp_dir.path().to_path_buf());
+    assert_eq!(result.version, "6");
+}

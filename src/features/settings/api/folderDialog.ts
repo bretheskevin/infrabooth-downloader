@@ -20,3 +20,4 @@ export async function selectFolder(options: FolderDialogOptions = {}): Promise<s
   // Returns string (path) or null (cancelled)
   return selected as string | null;
 }
+

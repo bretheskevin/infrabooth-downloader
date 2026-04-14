@@ -8,6 +8,7 @@ describe('settingsStore', () => {
     // Reset only data properties (not actions)
     useSettingsStore.setState({
       downloadPath: '',
+      rekordboxPathOverride: '',
       language: 'en',
       theme: 'system',
       preservePlaylistOrder: true,
@@ -21,6 +22,11 @@ describe('settingsStore', () => {
     it('should have empty downloadPath as default', () => {
       const { downloadPath } = useSettingsStore.getState();
       expect(downloadPath).toBe('');
+    });
+
+    it('should have empty rekordboxPathOverride as default', () => {
+      const { rekordboxPathOverride } = useSettingsStore.getState();
+      expect(rekordboxPathOverride).toBe('');
     });
 
     it('should have language as en by default', () => {
@@ -55,6 +61,16 @@ describe('settingsStore', () => {
 
       const { downloadPath } = useSettingsStore.getState();
       expect(downloadPath).toBe('/path/two');
+    });
+  });
+
+  describe('setRekordboxPathOverride', () => {
+    it('should set rekordboxPathOverride', () => {
+      const { setRekordboxPathOverride } = useSettingsStore.getState();
+      setRekordboxPathOverride('/Users/test/rekordbox/master.db');
+
+      const { rekordboxPathOverride } = useSettingsStore.getState();
+      expect(rekordboxPathOverride).toBe('/Users/test/rekordbox/master.db');
     });
   });
 
@@ -125,8 +141,9 @@ describe('settingsStore', () => {
 
   describe('persistence', () => {
     it('should persist settings to localStorage', () => {
-      const { setDownloadPath, setLanguage, setTheme, setPreservePlaylistOrder } = useSettingsStore.getState();
+      const { setDownloadPath, setRekordboxPathOverride, setLanguage, setTheme, setPreservePlaylistOrder } = useSettingsStore.getState();
       setDownloadPath('/test/path');
+      setRekordboxPathOverride('/Users/test/rekordbox/master.db');
       setLanguage('fr');
       setTheme('dark');
       setPreservePlaylistOrder(false);
@@ -136,6 +153,7 @@ describe('settingsStore', () => {
 
       const parsed = JSON.parse(stored!);
       expect(parsed.state.downloadPath).toBe('/test/path');
+      expect(parsed.state.rekordboxPathOverride).toBe('/Users/test/rekordbox/master.db');
       expect(parsed.state.language).toBe('fr');
       expect(parsed.state.theme).toBe('dark');
       expect(parsed.state.preservePlaylistOrder).toBe(false);

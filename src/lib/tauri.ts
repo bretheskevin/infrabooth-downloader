@@ -17,8 +17,13 @@ import {
   type ReleaseActivityItem,
   type SortOption,
   type ArtistPlaylist,
+  type ExportResult,
+  type ExportTrackRequest,
+  type RekordboxPlaylistInfo,
+  type RekordboxStatus,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
+import { useSettingsStore } from '@/features/settings/store';
 
 type StringError = string;
 type AnyError = ErrorResponse | StringError;
@@ -42,6 +47,10 @@ function unwrap<T>(result: Result<T, AnyError>): T {
     throw new ApiError(err.code, err.message);
   }
   return result.data;
+}
+
+function getStoredRekordboxPathOverride(): string | null {
+  return useSettingsStore.getState().rekordboxPathOverride || null;
 }
 
 export const api = {
@@ -97,6 +106,24 @@ export const api = {
 
   validateDownloadPath: (path: string): Promise<boolean> =>
     commands.validateDownloadPath(path).then(unwrap),
+
+  detectRekordbox: (manualDbPath?: string): Promise<RekordboxStatus> =>
+    commands.detectRekordbox(manualDbPath ?? null).then(unwrap),
+
+  getDefaultRekordboxDataDirectoryParent: (): Promise<string> =>
+    commands.getDefaultRekordboxDataDirectoryParent().then(unwrap),
+
+  exportToRekordbox: (tracks: ExportTrackRequest[], playlistName: string | null): Promise<ExportResult> =>
+    commands.exportToRekordbox(tracks, playlistName, getStoredRekordboxPathOverride()).then(unwrap),
+
+  listRekordboxPlaylists: (): Promise<RekordboxPlaylistInfo[]> =>
+    commands.listRekordboxPlaylists(getStoredRekordboxPathOverride()).then(unwrap),
+
+  deleteRekordboxPlaylist: (playlistId: string): Promise<void> =>
+    commands.deleteRekordboxPlaylist(playlistId, getStoredRekordboxPathOverride()).then(unwrap).then(() => undefined),
+
+  restoreRekordboxBackup: (backupPath: string): Promise<void> =>
+    commands.restoreRekordboxBackup(backupPath, getStoredRekordboxPathOverride()).then(unwrap).then(() => undefined),
 
   // Testing/Debug
   testFfmpeg: (): Promise<string> =>
