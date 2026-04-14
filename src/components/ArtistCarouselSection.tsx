@@ -34,10 +34,11 @@ export function ArtistCarouselSection({
   hideReposts, onHideRepostsChange, hideRepostsId,
   filterFn, getHasNew,
 }: ArtistCarouselSectionProps) {
-  const displayedArtists = useMemo(
-    () => (hideReposts ? artists.filter(filterFn) : artists),
-    [artists, hideReposts, filterFn],
-  );
+  const displayedArtists = useMemo(() => {
+    const filtered = hideReposts ? artists.filter(filterFn) : artists;
+    if (!getHasNew) return filtered;
+    return [...filtered].sort((a, b) => Number(getHasNew(b)) - Number(getHasNew(a)));
+  }, [artists, hideReposts, filterFn, getHasNew]);
 
   if (isLoading) return null;
 
