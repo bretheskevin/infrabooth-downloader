@@ -1,10 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { getArtworkUrl } from '@/lib/soundcloud';
 import { formatRelativeTime } from '@/lib/date';
 import type { ReleaseActivityItem } from '@/bindings';
-import { RELEASE_TYPE_KEYS } from '../constants';
+import { getReleaseMeta } from '../utils/release-meta';
+import { ReleaseArtwork } from './ReleaseArtwork';
 
 interface ReleaseCardProps {
   item: ReleaseActivityItem;
@@ -13,29 +12,16 @@ interface ReleaseCardProps {
 
 export function ReleaseCard({ item, onClick }: ReleaseCardProps) {
   const { t } = useTranslation();
-  const artworkUrl = getArtworkUrl(item.release.artwork_url, 300);
-  const typeLabel = t(RELEASE_TYPE_KEYS[item.release.release_type]);
-  const isRepost = item.activity_type === 'Repost';
+  const { artworkUrl, typeLabel, isRepost, activityLabel } = getReleaseMeta(item, t, 300);
 
   return (
-    <Button
-      variant="ghost"
+    <button
+      type="button"
       onClick={onClick}
-      className="rounded-lg overflow-hidden bg-muted/50 border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors text-left h-auto p-0 w-full flex-col items-stretch"
+      className="flex w-full flex-col items-stretch overflow-hidden rounded-lg border border-border bg-muted/50 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <div className="relative aspect-square bg-muted">
-        {artworkUrl ? (
-          <img
-            src={artworkUrl}
-            alt={item.release.title}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground text-2xl font-bold">
-            {item.release.title.charAt(0).toUpperCase()}
-          </div>
-        )}
+        <ReleaseArtwork artworkUrl={artworkUrl} title={item.release.title} fallbackClassName="text-2xl" />
         <span className="absolute top-1.5 left-1.5 bg-black/60 backdrop-blur-sm text-white text-[10px] px-1.5 py-0.5 rounded">
           {typeLabel}
         </span>
@@ -49,11 +35,11 @@ export function ReleaseCard({ item, onClick }: ReleaseCardProps) {
       <div className="px-2 py-1.5">
         <p className={cn('text-[10px]', isRepost ? 'text-orange-500' : 'text-muted-foreground')}>
           {isRepost ? '↻ ' : ''}
-          {t(isRepost ? 'newReleases.reposted' : 'newReleases.new')}
+          {activityLabel}
           {' · '}
           {formatRelativeTime(item.created_at, t)}
         </p>
       </div>
-    </Button>
+    </button>
   );
 }
