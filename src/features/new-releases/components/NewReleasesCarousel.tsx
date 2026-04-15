@@ -7,7 +7,8 @@ import { useSettingsStore } from '@/features/settings/store';
 import type { FollowedArtist } from '@/bindings';
 
 const filterOriginalReleases = (a: FollowedArtist) => a.has_original_releases;
-const getHasNewReleases = (a: FollowedArtist) => a.has_new_releases;
+const getHasNewAnyReleases = (a: FollowedArtist) => a.has_new_releases;
+const getHasNewOriginalReleases = (a: FollowedArtist) => a.has_new_original_releases;
 
 export function NewReleasesCarousel() {
   const { t } = useTranslation();
@@ -43,7 +44,8 @@ export function NewReleasesCarousel() {
       onHideRepostsChange={handleHideRepostsChange}
       hideRepostsId="hide-releases-reposts"
       filterFn={filterOriginalReleases}
-      getHasNew={getHasNewReleases}
+      getHasNewAny={getHasNewAnyReleases}
+      getHasNewOriginal={getHasNewOriginalReleases}
     />
   );
 }

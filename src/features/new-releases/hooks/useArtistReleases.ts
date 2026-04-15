@@ -4,7 +4,7 @@ import { useMarkSeenQuery } from '@/hooks/useMarkSeenQuery';
 
 export function useArtistReleases(artistId: number | undefined) {
   const updateArtist = useCallback(
-    (a: import('@/bindings').FollowedArtist) => ({ ...a, has_new_releases: false }),
+    (a: import('@/bindings').FollowedArtist) => ({ ...a, has_new_releases: false, has_new_original_releases: false }),
     [],
   );
 
