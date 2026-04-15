@@ -51,8 +51,10 @@ pub struct FollowedArtist {
     pub username: String,
     pub avatar_url: Option<String>,
     pub has_new_content: bool,
+    pub has_new_original_tracks: bool,
     pub has_original_tracks: bool,
     pub has_new_releases: bool,
+    pub has_new_original_releases: bool,
     pub has_original_releases: bool,
 }
 
@@ -206,11 +208,17 @@ impl NewTracksCache {
     }
 
     pub fn update_artist_seen(&self, artist_id: u64) {
-        self.update_artist_field(artist_id, |a| a.has_new_content = false);
+        self.update_artist_field(artist_id, |a| {
+            a.has_new_content = false;
+            a.has_new_original_tracks = false;
+        });
     }
 
     pub fn update_artist_releases_seen(&self, artist_id: u64) {
-        self.update_artist_field(artist_id, |a| a.has_new_releases = false);
+        self.update_artist_field(artist_id, |a| {
+            a.has_new_releases = false;
+            a.has_new_original_releases = false;
+        });
     }
 
     pub fn clear(&self) {
@@ -357,10 +365,25 @@ fn sort_by_created_at_desc<T>(items: &mut [T], get_created_at: impl Fn(&T) -> &s
     });
 }
 
-pub fn has_items_after<T>(items: &[T], threshold: i64, get_created_at: impl Fn(&T) -> &str) -> bool {
-    items
-        .iter()
-        .any(|item| parse_iso_timestamp(get_created_at(item)).map(|ts| ts > threshold).unwrap_or(false))
+pub fn compute_has_new<T>(
+    items: &[T], threshold: i64, get_created_at: impl Fn(&T) -> &str, is_original: impl Fn(&T) -> bool,
+) -> (bool, bool, bool) {
+    let mut any_new = false;
+    let mut any_original = false;
+    for item in items {
+        let is_orig = is_original(item);
+        if is_orig {
+            any_original = true;
+        }
+        let is_new = parse_iso_timestamp(get_created_at(item)).map(|ts| ts > threshold).unwrap_or(false);
+        if is_new {
+            any_new = true;
+            if is_orig {
+                return (true, true, true);
+            }
+        }
+    }
+    (any_new, false, any_original)
 }
 
 fn resolve_release_type(is_album: bool, set_type: &Option<String>) -> ReleaseType {
@@ -463,8 +486,10 @@ mod tests {
             username: name.to_string(),
             avatar_url: None,
             has_new_content: true,
+            has_new_original_tracks: true,
             has_original_tracks: true,
             has_new_releases: false,
+            has_new_original_releases: false,
             has_original_releases: false,
         }
     }

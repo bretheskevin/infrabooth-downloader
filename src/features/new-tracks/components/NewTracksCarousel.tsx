@@ -11,6 +11,8 @@ interface NewTracksCarouselProps {
 }
 
 const filterOriginalTracks = (a: FollowedArtist) => a.has_original_tracks;
+const getHasNewAnyTracks = (a: FollowedArtist) => a.has_new_content;
+const getHasNewOriginalTracks = (a: FollowedArtist) => a.has_new_original_tracks;
 
 export function NewTracksCarousel({ onSelectArtist }: NewTracksCarouselProps) {
   const { t } = useTranslation();
@@ -41,6 +43,8 @@ export function NewTracksCarousel({ onSelectArtist }: NewTracksCarouselProps) {
       onHideRepostsChange={handleHideRepostsChange}
       hideRepostsId="hide-reposts"
       filterFn={filterOriginalTracks}
+      getHasNewAny={getHasNewAnyTracks}
+      getHasNewOriginal={getHasNewOriginalTracks}
     />
   );
 }

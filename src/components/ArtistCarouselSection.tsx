@@ -25,15 +25,17 @@ interface ArtistCarouselSectionProps {
   onHideRepostsChange: (checked: boolean) => void;
   hideRepostsId: string;
   filterFn: (artist: FollowedArtist) => boolean;
-  getHasNew?: (artist: FollowedArtist) => boolean;
+  getHasNewAny?: (artist: FollowedArtist) => boolean;
+  getHasNewOriginal?: (artist: FollowedArtist) => boolean;
 }
 
 export function ArtistCarouselSection({
   labels, artists, isLoading, error, onRefresh,
   selectedArtistId, onSelectArtist,
   hideReposts, onHideRepostsChange, hideRepostsId,
-  filterFn, getHasNew,
+  filterFn, getHasNewAny, getHasNewOriginal,
 }: ArtistCarouselSectionProps) {
+  const getHasNew = hideReposts ? getHasNewOriginal : getHasNewAny;
   const displayedArtists = useMemo(() => {
     const filtered = hideReposts ? artists.filter(filterFn) : artists;
     if (!getHasNew) return filtered;

@@ -53,43 +53,10 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
     let mut artists: Vec<FollowedArtist> = raw_artists
         .into_iter()
         .filter_map(|raw| {
-            let track_items = stream_data.tracks.get(&raw.id);
-            let release_items = stream_data.releases.get(&raw.id);
-
-            let has_any = track_items.is_some_and(|i| !i.is_empty()) || release_items.is_some_and(|i| !i.is_empty());
-            if !has_any {
-                return None;
-            }
-
-            let track_last_seen = seen.get_track_seen(raw.id).unwrap_or(0);
-            let release_last_seen = seen.get_release_seen(raw.id).unwrap_or(0);
-
-            let has_new_content = track_items.map_or(false, |items| {
-                new_tracks::has_items_after(items, track_last_seen, |i| &i.created_at)
-            });
-
-            let has_original_tracks = track_items.map_or(false, |items| {
-                items.iter().any(|item| item.activity_type == new_tracks::ActivityType::Track)
-            });
-
-            let has_new_releases = release_items.map_or(false, |items| {
-                new_tracks::has_items_after(items, release_last_seen, |i| &i.created_at)
-            });
-
-            let has_original_releases = release_items.map_or(false, |items| {
-                items.iter().any(|item| item.activity_type == new_tracks::ReleaseActivityType::New)
-            });
-
-            seen_times.insert(raw.id, track_last_seen.max(release_last_seen));
-
-            Some(FollowedArtist {
-                id: raw.id,
-                username: raw.username,
-                avatar_url: raw.avatar_url,
-                has_new_content,
-                has_original_tracks,
-                has_new_releases,
-                has_original_releases,
+            let id = raw.id;
+            build_followed_artist(raw, &stream_data, &seen).map(|(artist, seen_time)| {
+                seen_times.insert(id, seen_time);
+                artist
             })
         })
         .collect();
@@ -117,6 +84,54 @@ pub async fn get_followed_artists(app: tauri::AppHandle, force_refresh: bool) ->
     cache_all_stream_data(&stream_data, &cache);
 
     Ok(artists)
+}
+
+fn build_followed_artist(
+    raw: new_tracks::RawFollowedArtist, stream_data: &new_tracks::StreamData, seen: &SeenArtistsState,
+) -> Option<(FollowedArtist, i64)> {
+    let track_items = stream_data.tracks.get(&raw.id);
+    let release_items = stream_data.releases.get(&raw.id);
+
+    let has_any = track_items.is_some_and(|i| !i.is_empty()) || release_items.is_some_and(|i| !i.is_empty());
+    if !has_any {
+        return None;
+    }
+
+    let track_last_seen = seen.get_track_seen(raw.id).unwrap_or(0);
+    let release_last_seen = seen.get_release_seen(raw.id).unwrap_or(0);
+
+    let (has_new_content, has_new_original_tracks, has_original_tracks) = track_items.map_or((false, false, false), |items| {
+        new_tracks::compute_has_new(
+            items,
+            track_last_seen,
+            |i| &i.created_at,
+            |i| i.activity_type == new_tracks::ActivityType::Track,
+        )
+    });
+
+    let (has_new_releases, has_new_original_releases, has_original_releases) = release_items.map_or((false, false, false), |items| {
+        new_tracks::compute_has_new(
+            items,
+            release_last_seen,
+            |i| &i.created_at,
+            |i| i.activity_type == new_tracks::ReleaseActivityType::New,
+        )
+    });
+
+    Some((
+        FollowedArtist {
+            id: raw.id,
+            username: raw.username,
+            avatar_url: raw.avatar_url,
+            has_new_content,
+            has_new_original_tracks,
+            has_original_tracks,
+            has_new_releases,
+            has_new_original_releases,
+            has_original_releases,
+        },
+        track_last_seen.max(release_last_seen),
+    ))
 }
 
 fn cache_all_stream_data(data: &new_tracks::StreamData, cache: &NewTracksCache) {
