@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { Button } from '@/components/ui/button';
 import { formatRelativeTime } from '@/lib/date';
 import { PlaylistArtwork } from './PlaylistArtwork';
 import type { ArtistPlaylist } from '@/bindings';
@@ -13,10 +12,10 @@ export function PlaylistCard({ playlist, onClick }: PlaylistCardProps) {
   const { t } = useTranslation();
 
   return (
-    <Button
-      variant="ghost"
+    <button
+      type="button"
       onClick={onClick}
-      className="rounded-lg overflow-hidden bg-muted/50 border border-border hover:border-primary/30 hover:bg-muted/50 transition-colors text-left h-auto p-0 w-full flex-col items-stretch"
+      className="flex w-full flex-col items-stretch overflow-hidden rounded-lg border border-border bg-muted/50 text-left transition-colors hover:border-primary/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
     >
       <div className="relative aspect-square bg-muted">
         <PlaylistArtwork artworkUrl={playlist.artwork_url} title={playlist.title} size="lg" />
@@ -32,6 +31,6 @@ export function PlaylistCard({ playlist, onClick }: PlaylistCardProps) {
           {formatRelativeTime(playlist.created_at, t)}
         </p>
       </div>
-    </Button>
+    </button>
   );
 }

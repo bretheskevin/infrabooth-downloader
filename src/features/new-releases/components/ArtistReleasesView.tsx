@@ -7,9 +7,12 @@ import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import { TrackRowSkeletonList } from '@/components/TrackRowSkeleton';
 import { RefreshButton } from '@/components/ui/refresh-button';
+import { ViewModeToggle } from '@/components/ViewModeToggle';
+import { CardListView } from '@/components/CardListView';
 import { useArtistReleases } from '../hooks/useArtistReleases';
 import { useNewReleasesStore } from '../store';
 import { ReleaseCard } from './ReleaseCard';
+import { ReleaseListRow } from './ReleaseListRow';
 import { useArtistProfileStore } from '@/features/artist-profile';
 import type { FollowedArtist, ReleaseType } from '@/bindings';
 import type { ReleaseFilter } from '../constants';
@@ -65,11 +68,14 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
       />
 
       {items.length > 0 && (
-        <FilterChips
-          options={RELEASE_FILTERS}
-          active={filter}
-          onChange={setReleaseFilter}
-        />
+        <div className="flex items-center justify-between gap-3">
+          <FilterChips
+            options={RELEASE_FILTERS}
+            active={filter}
+            onChange={setReleaseFilter}
+          />
+          <ViewModeToggle />
+        </div>
       )}
 
       {isLoading && <TrackRowSkeletonList />}
@@ -88,15 +94,13 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
       )}
 
       {!isLoading && filteredItems.length > 0 && (
-        <div className="grid grid-cols-3 gap-3 overflow-y-auto">
-          {filteredItems.map((item) => (
-            <ReleaseCard
-              key={`${item.release.id}-${item.activity_type}`}
-              item={item}
-              onClick={() => selectRelease(item)}
-            />
-          ))}
-        </div>
+        <CardListView
+          items={filteredItems}
+          getKey={(i) => `${i.release.id}-${i.activity_type}`}
+          renderCard={(i) => <ReleaseCard item={i} onClick={() => selectRelease(i)} />}
+          renderRow={(i) => <ReleaseListRow item={i} onClick={() => selectRelease(i)} />}
+          className="overflow-y-auto"
+        />
       )}
     </div>
   );

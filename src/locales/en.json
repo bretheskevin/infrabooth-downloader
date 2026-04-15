@@ -30,7 +30,10 @@
     "sortTitle": "Title",
     "sortArtist": "Artist",
     "sortAsc": "Asc",
-    "sortDesc": "Desc"
+    "sortDesc": "Desc",
+    "viewModeGroup": "View mode",
+    "viewModeCard": "Card view",
+    "viewModeList": "List view"
   },
   "auth": {
     "signIn": "Sign In",

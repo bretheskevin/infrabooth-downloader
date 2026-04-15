@@ -2,7 +2,10 @@ import { useTranslation } from 'react-i18next';
 import { TrackRowSkeletonList } from '@/components/TrackRowSkeleton';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { useArtistPlaylists } from '../hooks/useArtistPlaylists';
+import { ViewModeToggle } from '@/components/ViewModeToggle';
+import { CardListView } from '@/components/CardListView';
 import { PlaylistCard } from './PlaylistCard';
+import { PlaylistListRow } from './PlaylistListRow';
 import type { ArtistPlaylist } from '@/bindings';
 
 interface PlaylistGridProps {
@@ -34,14 +37,16 @@ export function PlaylistGrid({ artistId, onSelectPlaylist }: PlaylistGridProps) 
   }
 
   return (
-    <div className="grid grid-cols-3 gap-3">
-      {playlists.map((playlist) => (
-        <PlaylistCard
-          key={playlist.id}
-          playlist={playlist}
-          onClick={() => onSelectPlaylist(playlist)}
-        />
-      ))}
+    <div className="flex flex-col gap-3">
+      <div className="flex justify-end">
+        <ViewModeToggle />
+      </div>
+      <CardListView
+        items={playlists}
+        getKey={(p) => p.id}
+        renderCard={(p) => <PlaylistCard playlist={p} onClick={() => onSelectPlaylist(p)} />}
+        renderRow={(p) => <PlaylistListRow playlist={p} onClick={() => onSelectPlaylist(p)} />}
+      />
     </div>
   );
 }
