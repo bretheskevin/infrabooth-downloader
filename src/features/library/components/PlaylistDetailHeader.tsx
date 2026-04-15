@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Music } from 'lucide-react';
 import { DetailHeader } from '@/components/DetailHeader';
+import { ArtistLink } from '@/features/artist-profile/components/ArtistLink';
 import type { LibraryPlaylist } from '@/bindings';
 import { formatTotalDuration } from '@/lib/format';
 
@@ -43,16 +44,13 @@ export function PlaylistDetailHeader({
         </div>
       }
       subtitle={
-        <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
-          <span className="truncate">
-            {playlist.username}
-            {' · '}
-            {t('library.detail.tracks', { count: trackCount })}
-            {' · '}
-            {formatTotalDuration(playlist.duration)}
+        <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
+          <span className="truncate min-w-0">
+            <ArtistLink userId={playlist.user_id} username={playlist.username} />
+            {` · ${t('library.detail.tracks', { count: trackCount })} · ${formatTotalDuration(playlist.duration)}`}
           </span>
           {folderMetadata}
-        </p>
+        </div>
       }
       actions={actions}
     />

@@ -16,6 +16,7 @@ export function toLibraryPlaylist(selection: Selection): LibraryPlaylist {
     id: stableNumericId(selection.id),
     title: selection.title,
     username: 'SoundCloud',
+    user_id: null,
     artwork_url: selection.artworkUrl,
     track_count: selection.trackCount,
     duration: totalDuration,

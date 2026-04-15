@@ -564,7 +564,7 @@ export type ErrorResponse = { code: string; message: string }
 export type ExportResult = { exportedCount: number; skippedCount: number; playlistName: string; errors: string[] }
 export type ExportTrackRequest = { sourcePath: string }
 export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean; has_original_tracks: boolean; has_new_releases: boolean; has_original_releases: boolean }
-export type LibraryPlaylist = { id: number; title: string; username: string; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
+export type LibraryPlaylist = { id: number; title: string; username: string; user_id: number | null; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
 export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }
 /**
  * Playlist information from SoundCloud API.
