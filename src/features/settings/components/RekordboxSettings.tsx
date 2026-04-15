@@ -1,13 +1,15 @@
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle2, RefreshCw } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Folder, RefreshCw, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/tauri';
 import { useSettingsStore } from '@/features/settings/store';
-import { RekordboxPathPicker } from './RekordboxPathPicker';
+import { useFolderSelection } from '@/hooks';
 
 type DetectionResult = { found: true; isRunning: boolean } | { found: false };
 
@@ -49,7 +51,17 @@ export function RekordboxSettings() {
     retry: false,
   });
 
+  const { selectFolder } = useFolderSelection({
+    defaultPath: rekordboxPathOverride || undefined,
+    dialogTitle: t('settings.rekordboxSelectDirectory'),
+    onSelected: (path) => {
+      useSettingsStore.getState().setRekordboxPathOverride(path);
+      void refetch();
+    },
+  });
+
   const statusVariant = getStatusVariant(data);
+  const showPathSection = (data && !data.found) || (data?.found && rekordboxPathOverride);
 
   function handleClearOverride() {
     useSettingsStore.getState().setRekordboxPathOverride('');
@@ -58,16 +70,17 @@ export function RekordboxSettings() {
 
   return (
     <div className="space-y-6" data-testid="rekordbox-settings">
-      <div className="space-y-1">
-        <div className="flex items-center gap-2" data-testid="rekordbox-header">
+      <div className="space-y-1" data-testid="rekordbox-header">
+        <div className="flex items-center gap-2">
           <h2 className="text-lg font-semibold">{t('settings.categoryRekordbox')}</h2>
           {statusVariant && <StatusBadge variant={statusVariant} />}
         </div>
         <p className="text-sm text-muted-foreground">{t('settings.rekordboxDescription')}</p>
-        {statusVariant === 'running' && (
-          <p className="text-sm text-amber-600 dark:text-amber-400">{t('settings.rekordboxRunning')}</p>
-        )}
       </div>
+
+      {statusVariant === 'running' && (
+        <p className="text-sm text-amber-600 dark:text-amber-400">{t('settings.rekordboxRunning')}</p>
+      )}
 
       {isLoading && (
         <p className="text-sm text-muted-foreground">{t('settings.rekordboxLoading')}</p>
@@ -83,29 +96,55 @@ export function RekordboxSettings() {
         </div>
       )}
 
-      {data && !data.found && (
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-base font-medium">{t('settings.rekordboxManualLabel')}</Label>
-            <p className="text-sm text-muted-foreground">{t('settings.rekordboxNotFound')}</p>
+      {showPathSection && (
+        <>
+          <Separator />
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label className="text-base font-medium">{t('settings.rekordboxManualLabel')}</Label>
+              {data && !data.found && (
+                <p className="text-sm text-muted-foreground">{t('settings.rekordboxNotFound')}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex min-w-0 flex-1 items-center gap-2 rounded-md border border-input bg-muted/40 px-3 py-2">
+                    <Folder className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                    <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
+                      {rekordboxPathOverride || t('settings.notSet')}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-sm break-all">
+                  {rekordboxPathOverride || t('settings.notSet')}
+                </TooltipContent>
+              </Tooltip>
+              <Button
+                variant="outline"
+                onClick={() => void selectFolder()}
+                aria-label={t('settings.rekordboxSelectDirectory')}
+              >
+                {t('settings.browse')}
+              </Button>
+              {rekordboxPathOverride && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleClearOverride}
+                      aria-label={t('settings.rekordboxClearOverride')}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>{t('settings.rekordboxClearOverride')}</TooltipContent>
+                </Tooltip>
+              )}
+            </div>
           </div>
-          <RekordboxPathPicker onPicked={() => void refetch()} />
-        </div>
-      )}
-
-      {data?.found && rekordboxPathOverride && (
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-base font-medium">{t('settings.rekordboxCustomPathLabel')}</Label>
-            <p className="truncate text-sm text-muted-foreground">{rekordboxPathOverride}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <RekordboxPathPicker onPicked={() => void refetch()} />
-            <Button variant="ghost" size="sm" onClick={handleClearOverride}>
-              {t('settings.rekordboxClearOverride')}
-            </Button>
-          </div>
-        </div>
+        </>
       )}
     </div>
   );
