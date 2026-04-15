@@ -16,10 +16,16 @@ vi.mock('../../hooks/usePlaylistArtwork', () => ({
   usePlaylistArtwork: () => ({ data: undefined }),
 }));
 
+const mockOpenProfile = vi.fn();
+vi.mock('@/features/artist-profile/store', () => ({
+  useArtistProfileStore: { getState: () => ({ openProfile: mockOpenProfile }) },
+}));
+
 const mockPlaylist: LibraryPlaylist = {
   id: 1,
   title: 'Test Playlist',
   username: 'TestUser',
+  user_id: 99,
   artwork_url: 'https://example.com/art.jpg',
   track_count: 10,
   duration: 3600000,
@@ -68,6 +74,22 @@ describe('LibraryPlaylistItem', () => {
 
   it('shows username', () => {
     render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+    expect(screen.getByText('TestUser')).toBeInTheDocument();
+  });
+
+  it('opens artist profile when username clicked, without opening detail', () => {
+    mockOpenProfile.mockClear();
+    const onOpenDetail = vi.fn();
+    render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={onOpenDetail} onDownload={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'TestUser' }));
+    expect(mockOpenProfile).toHaveBeenCalledWith(99, 'TestUser');
+    expect(onOpenDetail).not.toHaveBeenCalled();
+  });
+
+  it('renders username as plain text when user_id is null', () => {
+    const noUser = { ...mockPlaylist, user_id: null };
+    render(<LibraryPlaylistItem playlist={noUser} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: 'TestUser' })).not.toBeInTheDocument();
     expect(screen.getByText('TestUser')).toBeInTheDocument();
   });
 });

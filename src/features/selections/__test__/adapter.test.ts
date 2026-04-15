@@ -44,6 +44,7 @@ describe('toLibraryPlaylist', () => {
 
     expect(result.title).toBe('Daily Mix 1');
     expect(result.username).toBe('SoundCloud');
+    expect(result.user_id).toBeNull();
     expect(result.artwork_url).toBe('https://example.com/art.jpg');
     expect(result.track_count).toBe(2);
     expect(result.is_owned).toBe(false);

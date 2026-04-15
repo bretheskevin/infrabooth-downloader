@@ -75,7 +75,6 @@ struct LibraryPlaylistRaw {
 
 #[derive(Debug, Deserialize)]
 struct LibraryUserRaw {
-    #[allow(dead_code)]
     id: u64,
     username: String,
 }
@@ -87,6 +86,7 @@ pub struct LibraryPlaylist {
     pub id: u64,
     pub title: String,
     pub username: String,
+    pub user_id: Option<u64>,
     pub artwork_url: Option<String>,
     pub track_count: u32,
     pub duration: u64,
@@ -181,6 +181,7 @@ fn map_library_item(item: &LibraryItem) -> Option<LibraryPlaylist> {
         id: playlist.id,
         title: playlist.title.clone(),
         username: playlist.user.username.clone(),
+        user_id: Some(playlist.user.id),
         artwork_url: playlist.artwork_url.clone(),
         track_count: playlist.track_count,
         duration: playlist.duration,
@@ -480,6 +481,7 @@ mod tests {
             id: 100,
             title: "Test".to_string(),
             username: "user".to_string(),
+            user_id: Some(42),
             artwork_url: None,
             track_count: 5,
             duration: 300000,
@@ -503,6 +505,7 @@ mod tests {
             id: 1,
             title: "Test".to_string(),
             username: "user".to_string(),
+            user_id: Some(42),
             artwork_url: None,
             track_count: 5,
             duration: 300000,
@@ -545,6 +548,7 @@ mod tests {
                 id: 1,
                 title: "Public".into(),
                 username: "user".into(),
+                user_id: Some(42),
                 artwork_url: None,
                 track_count: 5,
                 duration: 300000,
@@ -557,6 +561,7 @@ mod tests {
                 id: 2,
                 title: "Private".into(),
                 username: "user".into(),
+                user_id: Some(42),
                 artwork_url: None,
                 track_count: 3,
                 duration: 180000,

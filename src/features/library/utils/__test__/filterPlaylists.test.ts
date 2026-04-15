@@ -4,19 +4,19 @@ import type { LibraryPlaylist } from '@/bindings';
 
 const makePlaylists = (): LibraryPlaylist[] => [
   {
-    id: 1, title: 'Acidcore Mix', username: 'DJ Acid', artwork_url: null,
+    id: 1, title: 'Acidcore Mix', username: 'DJ Acid', user_id: 11, artwork_url: null,
     track_count: 20, duration: 7200000,
     permalink_url: 'https://soundcloud.com/dj-acid/sets/acidcore',
     is_owned: true, is_public: true, secret_token: null,
   },
   {
-    id: 2, title: 'Chill Vibes', username: 'ChillGuy', artwork_url: null,
+    id: 2, title: 'Chill Vibes', username: 'ChillGuy', user_id: 22, artwork_url: null,
     track_count: 15, duration: 3600000,
     permalink_url: 'https://soundcloud.com/chillguy/sets/vibes',
     is_owned: false, is_public: true, secret_token: null,
   },
   {
-    id: 3, title: 'Techno Bangers', username: 'TechnoKing', artwork_url: null,
+    id: 3, title: 'Techno Bangers', username: 'TechnoKing', user_id: 33, artwork_url: null,
     track_count: 30, duration: 5400000,
     permalink_url: 'https://soundcloud.com/technoking/sets/bangers',
     is_owned: true, is_public: false, secret_token: null,

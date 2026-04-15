@@ -20,3 +20,4 @@ Cargo.lock
 test_api_v2_auth.sh
 .superpowers/
 .worktrees/
+.claude/scheduled_tasks.lock

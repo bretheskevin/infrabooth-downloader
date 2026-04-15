@@ -2,6 +2,7 @@ import { Download, Loader2, Music } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useIsDownloadEnabled } from '@/features/settings';
+import { ArtistLink } from '@/features/artist-profile/components/ArtistLink';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -49,7 +50,11 @@ export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDown
       </div>
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium truncate">{playlist.title}</p>
-        <p className="text-xs text-muted-foreground truncate">{playlist.username}</p>
+        <ArtistLink
+          userId={playlist.user_id}
+          username={playlist.username}
+          className="relative z-10 block text-xs text-muted-foreground truncate max-w-full"
+        />
       </div>
       <span className="text-xs text-muted-foreground flex-shrink-0">
         {t('download.trackCount', { count: playlist.track_count })}
