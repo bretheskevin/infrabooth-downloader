@@ -91,7 +91,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             selectedCategory={selectedCategory}
             onSelectCategory={setSelectedCategory}
           />
-          <div className="flex-1 relative">
+          <div className="min-w-0 flex-1 relative">
             <ScrollShadow position="top" visible={showTopShadow} />
             <div
               ref={scrollRef}
@@ -102,7 +102,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               tabIndex={0}
               className="h-full p-6 overflow-y-auto focus-visible:outline-none"
             >
-              <ContentComponent />
+              <div className="space-y-6">
+                <ContentComponent />
+              </div>
             </div>
             <ScrollShadow position="bottom" visible={showBottomShadow} />
           </div>

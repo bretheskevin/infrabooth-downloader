@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 export function createTestQueryClient() {
   return new QueryClient({
@@ -18,7 +19,7 @@ export function createQueryWrapper() {
   return function QueryWrapper({ children }: { children: ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
       </QueryClientProvider>
     );
   };

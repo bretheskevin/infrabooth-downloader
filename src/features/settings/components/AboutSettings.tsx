@@ -40,7 +40,7 @@ export function AboutSettings() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
       <h2 className="text-lg font-semibold">{t('settings.categoryAbout')}</h2>
       <div className="flex items-center justify-between">
         <span className="text-sm">{t('app.version', { version: appVersion || '...' })}</span>
@@ -86,6 +86,6 @@ export function AboutSettings() {
         </div>
       )}
       <ChangelogDialog open={changelogOpen} onOpenChange={setChangelogOpen} />
-    </div>
+    </>
   );
 }

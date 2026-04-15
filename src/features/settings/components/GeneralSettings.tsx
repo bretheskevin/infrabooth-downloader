@@ -12,7 +12,7 @@ export function GeneralSettings() {
   const isDownloadEnabled = useIsDownloadEnabled();
 
   return (
-    <div className="space-y-6">
+    <>
       <h2 className="text-lg font-semibold">{t('settings.categoryGeneral')}</h2>
       <LanguageSection />
       <Separator />
@@ -27,6 +27,6 @@ export function GeneralSettings() {
           <DownloadLocationSection />
         </>
       )}
-    </div>
+    </>
   );
 }

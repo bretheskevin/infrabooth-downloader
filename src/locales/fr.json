@@ -182,7 +182,6 @@
     "rekordboxSelectDirectory": "Choisir le dossier de données Rekordbox",
     "rekordboxUnexpectedError": "Impossible de vérifier Rekordbox pour le moment.",
     "rekordboxLoading": "Vérification de Rekordbox...",
-    "rekordboxCustomPathLabel": "Dossier de données personnalisé",
     "rekordboxClearOverride": "Revenir à la détection automatique"
   },
   "completion": {

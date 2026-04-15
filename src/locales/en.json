@@ -182,7 +182,6 @@
     "rekordboxSelectDirectory": "Select Rekordbox data directory",
     "rekordboxUnexpectedError": "Unable to check Rekordbox right now.",
     "rekordboxLoading": "Checking Rekordbox...",
-    "rekordboxCustomPathLabel": "Custom data directory",
     "rekordboxClearOverride": "Reset to auto-detection"
   },
   "completion": {

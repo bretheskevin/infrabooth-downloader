@@ -7,11 +7,11 @@ export function PlaylistsSettings() {
   const { t } = useTranslation();
 
   return (
-    <div className="space-y-6">
+    <>
       <h2 className="text-lg font-semibold">{t('settings.categoryPlaylists')}</h2>
       <ConcurrentDownloadsSection />
       <Separator />
       <PlaylistOrderSection />
-    </div>
+    </>
   );
 }

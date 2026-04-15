@@ -6,6 +6,7 @@ import { RekordboxSettings } from '../RekordboxSettings';
 
 const mockDetectRekordbox = vi.fn();
 const mockSetRekordboxPathOverride = vi.fn();
+const mockSelectFolder = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -21,8 +22,10 @@ vi.mock('react-i18next', () => ({
       'settings.rekordboxUnexpectedError': 'Unable to check Rekordbox right now.',
       'settings.rekordboxLoading': 'Checking Rekordbox...',
       'settings.rekordboxRetry': 'Retry detection',
-      'settings.rekordboxCustomPathLabel': 'Custom data directory',
       'settings.rekordboxClearOverride': 'Reset to auto-detection',
+      'settings.rekordboxSelectDirectory': 'Select Rekordbox directory',
+      'settings.browse': 'Browse',
+      'settings.notSet': 'Not set',
     }[key] || key),
   }),
 }));
@@ -33,10 +36,8 @@ vi.mock('@/lib/tauri', () => ({
   },
 }));
 
-vi.mock('../RekordboxPathPicker', () => ({
-  RekordboxPathPicker: ({ onPicked }: { onPicked: (path: string) => void }) => (
-    <button onClick={() => onPicked('/Users/test/custom/master.db')}>Mock picker</button>
-  ),
+vi.mock('@/hooks', () => ({
+  useFolderSelection: () => ({ selectFolder: mockSelectFolder, error: null }),
 }));
 
 const mockStoreState: Record<string, unknown> = {
@@ -65,16 +66,11 @@ describe('RekordboxSettings', () => {
 
     render(<RekordboxSettings />, { wrapper });
 
-    const header = screen.getByTestId('rekordbox-header');
-    expect(header).toContainElement(screen.getByRole('heading', { name: 'Rekordbox' }));
-
     const successBadge = await screen.findByText('Detected');
     expect(successBadge).toBeInTheDocument();
-    expect(header).toContainElement(successBadge);
     expect(successBadge).toHaveClass('bg-green-500/10');
     expect(successBadge).toHaveClass('text-green-600');
     expect(screen.queryByText('Rekordbox data directory')).not.toBeInTheDocument();
-    expect(screen.queryByText('Mock picker')).not.toBeInTheDocument();
   });
 
   it('detects using override path when one is saved', async () => {
@@ -89,28 +85,27 @@ describe('RekordboxSettings', () => {
     expect(successBadge).toHaveClass('bg-green-500/10');
     expect(mockDetectRekordbox).toHaveBeenCalledTimes(1);
     expect(mockDetectRekordbox).toHaveBeenCalledWith('/Users/test/saved/master.db');
-    expect(screen.queryByText('Rekordbox data directory')).not.toBeInTheDocument();
   });
 
-  it('shows override section with clear button when found via override', async () => {
+  it('shows path section with browse and clear when found via override', async () => {
     mockStoreState.rekordboxPathOverride = '/Users/test/saved/master.db';
     mockDetectRekordbox.mockResolvedValue({ found: true, version: '6', dbPath: '/Users/test/saved/master.db', isRunning: false });
 
     render(<RekordboxSettings />, { wrapper });
 
-    expect(await screen.findByText('Custom data directory')).toBeInTheDocument();
+    expect(await screen.findByText('Rekordbox data directory')).toBeInTheDocument();
     expect(screen.getByText('/Users/test/saved/master.db')).toBeInTheDocument();
-    expect(screen.getByText('Reset to auto-detection')).toBeInTheDocument();
-    expect(screen.getByText('Mock picker')).toBeInTheDocument();
+    expect(screen.getByText('Browse')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Reset to auto-detection' })).toBeInTheDocument();
   });
 
-  it('clears override when reset button is clicked', async () => {
+  it('clears override when clear button is clicked', async () => {
     mockStoreState.rekordboxPathOverride = '/Users/test/saved/master.db';
     mockDetectRekordbox.mockResolvedValue({ found: true, version: '6', dbPath: '/Users/test/saved/master.db', isRunning: false });
 
     render(<RekordboxSettings />, { wrapper });
 
-    const clearButton = await screen.findByText('Reset to auto-detection');
+    const clearButton = await screen.findByRole('button', { name: 'Reset to auto-detection' });
     await user.click(clearButton);
 
     expect(mockSetRekordboxPathOverride).toHaveBeenCalledWith('');
@@ -129,7 +124,7 @@ describe('RekordboxSettings', () => {
     expect(screen.getByText('Close Rekordbox before exporting or managing playlists.')).toBeInTheDocument();
   });
 
-  it('shows manual picker when override detection fails', async () => {
+  it('shows browse with explanation when not found', async () => {
     mockStoreState.rekordboxPathOverride = '/Users/test/saved/master.db';
     mockDetectRekordbox.mockResolvedValue({ found: false, version: null, dbPath: null, isRunning: false });
 
@@ -142,7 +137,7 @@ describe('RekordboxSettings', () => {
     expect(notFoundBadge).toHaveClass('text-destructive');
     expect(await screen.findByText('Rekordbox not found automatically. Choose your Rekordbox data directory if you use a custom location.')).toBeInTheDocument();
     expect(screen.getByText('Rekordbox data directory')).toBeInTheDocument();
-    expect(screen.getByText('Mock picker')).toBeInTheDocument();
+    expect(screen.getByText('Browse')).toBeInTheDocument();
   });
 
   it('shows a generic error with retry button when detection throws', async () => {
