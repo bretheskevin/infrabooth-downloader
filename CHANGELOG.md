@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-04-15
+
+### Added
+
+- Switch between card and list view for playlists and releases
+- Clickable artist links on playlists
+
+### Changed
+
+- New releases now appear before reposts in the carousel
+
+### Fixed
+
+- Tracks did not appear until the whole playlist loaded
+
 ## [1.19.0] - 2026-04-10
 
 ### Added

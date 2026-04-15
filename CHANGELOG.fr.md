@@ -7,6 +7,21 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.20.0] - 2026-04-15
+
+### Added
+
+- Basculement entre l'affichage en grille et en liste pour les playlists et les sorties
+- Liens cliquables vers les artistes sur les playlists
+
+### Changed
+
+- Les nouvelles sorties apparaissent désormais avant les reposts dans le carrousel
+
+### Fixed
+
+- On ne voyait pas les morceaux tant que la playlist entière n'était pas chargée
+
 ## [1.19.0] - 2026-04-10
 
 ### Added

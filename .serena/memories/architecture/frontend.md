@@ -7,11 +7,12 @@ main.tsx               — React root
 providers/AppProviders  — QueryClientProvider + I18nextProvider + AppInitializer
 components/            — shared components
   layout/              — AppLayout (tab nav), Header
-  detail-view/         — reusable detail view (toolbar, track list, layout)
+  track-list/          — reusable track list view (TrackListView, TrackListItems, TrackListToolbar, useTrackListState)
   ui/                  — shadcn/ui primitives (40+ components)
+config/                — feature-flags.toml (WIP UI gating)
 features/              — feature modules (self-contained)
 hooks/                 — shared hooks
-lib/                   — utilities (logger, i18n, tauri, utils, date, format, sort, etc.)
+lib/                   — utilities (logger, i18n, tauri, utils, date, format, sort, featureFlags, etc.)
 locales/               — en.json, fr.json
 test/                  — test setup (tauri mocks, localStorage, query wrapper, factories)
 bindings.ts            — auto-generated Tauri IPC types
@@ -31,18 +32,19 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 ### Library & Social
 - **library** — playlist list/detail, downloaded tracks, remove from playlist
 - **search** — track + artist search with infinite scroll
-- **artist-profile** — artist page (banner, tabs, playlists, follow button)
+- **artist-profile** — artist page (banner, tabs, playlists, follow button), ArtistLink (clickable artist navigation, exported for reuse)
 - **selections** — SoundCloud curated selections display
 
 ### Activity Feed
 - **new-tracks** — followed artists new tracks carousel, activity badges
-- **new-releases** — new releases carousel, release tracklist, artist releases view
+- **new-releases** — new releases carousel (card + list layouts via ReleaseCard/ReleaseListRow), release tracklist, artist releases view, ReleaseArtwork + getReleaseMeta() shared helpers
 - **new-albums** — new albums feature
 
 ### Settings & System
-- **settings** — settings dialog with sidebar nav (General, Playlists, Rekordbox, About)
-  - Sections: DownloadLocation, Language, Theme, ConcurrentDownloads, StreamMode, Crossfade, PlaylistOrder, RekordboxPathPicker
-  - Store: persisted Zustand with download path, language, theme, max concurrent, crossfade, stream mode, playlist order, rekordbox path override
+- **settings** — settings dialog with sidebar nav (General, Playlists, Rekordbox [flag-gated], About)
+  - Sections: DownloadLocation, Language, Theme, ConcurrentDownloads, StreamMode, Crossfade, PlaylistOrder, RekordboxSettings (status + manual path)
+  - Store: persisted Zustand with download path, language, theme, max concurrent, crossfade, stream mode, playlist order, view mode (card/list), rekordbox path override
+  - `helpers.ts` — makeSetter, makeClampedSetter, pickKeys helpers to reduce store boilerplate
 - **auth** — sign in/out, cookie-based auth, user menu, startup auth check
 - **update** — update banner, version check
 - **changelog** — what's new dialog, changelog parsing, version tracking
@@ -58,7 +60,9 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - InteractiveTrackRow — selectable track with actions
 - SelectAllCheckbox, SelectionActionBar — batch operations
 - TrackActionsDropdown, TrackDownloadAction — context menus
-- DetailHeader, ArtistAvatar, ArtistAvatarImage, ArtistCarouselSection
+- DetailHeader, ArtistAvatar, ArtistAvatarImage, ArtistCarouselSection (sorts artists with new content first, reposts before originals by default)
+- CardListView — generic primitive rendering card or list mode based on settings
+- ViewModeToggle — UI control for toggling between card/list layouts
 - FilterChips, SortDirectionSelect, PreserveOrderToggle
 - FolderMetadata, OpenFolderButton, PlaylistPickerSubmenu, AppDialogs
 
@@ -67,9 +71,14 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - useTrackActions, usePlayPauseToggle, useFollowedArtists, useAddToPlaylist
 - useSearchFilter, useDebounce, useInfiniteScroll, useVirtualizedList
 - useFolderPath, useFolderSelection, useOpenDownloadFolder
-- useStreamedQuery, useMarkSeenQuery, useAppVersion, useDownloadState
+- useStreamedQuery (progressive batch loading — overrides isLoading once first batch arrives), useMarkSeenQuery, useAppVersion, useDownloadState
 - useMergedTrackState, useTrackDownloadState, useHoverPreload
 - useMenuExclusivity, useTauriEventDialog, useSticky
+
+## Feature Flags (`src/lib/featureFlags.ts`, `src/config/feature-flags.toml`)
+- Boolean flags for gating WIP UI areas
+- Parsed at startup; unknown keys or non-boolean values throw
+- Current flags: `rekordbox` (false) — gates Rekordbox settings section
 
 ## IPC Layer (`src/lib/tauri.ts`)
 - `api` object wraps all Tauri commands (40+ methods)

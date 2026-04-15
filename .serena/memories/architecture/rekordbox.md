@@ -1,5 +1,7 @@
 # Rekordbox Integration Architecture
 
+**Feature flag**: `rekordbox = false` in `src/config/feature-flags.toml` — gated from user UI until ready.
+
 ## Purpose
 Export downloaded tracks into Rekordbox 6/7 database. Creates "InfraBooth" folder in Rekordbox with per-download playlists.
 
@@ -36,9 +38,13 @@ Export downloaded tracks into Rekordbox 6/7 database. Creates "InfraBooth" folde
   - INFRABOOTH_FOLDER_NAME, MASTER_DB_FILENAME, MASTER_PLAYLISTS_XML
   - ExportTrackRequest, ExportResult, RekordboxConfig, RekordboxStatus, etc.
 
+## Tests
+- Unit tests colocated as `services/rekordbox/tests/` (backup, config, content, database, file_manager, playlist, xml_sync, e2e, export_flow)
+- Fixtures and runner script in `src-tauri/tests/fixtures/rekordbox/`
+- Command-level tests in `commands/rekordbox_tests.rs`
+
 ## Frontend Settings
-- RekordboxSettings component — detect status, configure path
-- RekordboxPathPicker — folder dialog for manual override
+- `RekordboxSettings` component (sidebar entry hidden by feature flag) — detects status, configures manual path override via embedded folder picker
 - Settings store: `rekordboxPathOverride` field
 
 ## Safety
