@@ -9,13 +9,11 @@ export interface SortConfig<T extends string = string> {
   onChange: (key: T) => void;
   direction: 'asc' | 'desc';
   onDirectionChange: (dir: 'asc' | 'desc') => void;
-  variant?: 'chips' | 'select' | 'tabs';
 }
 
 export interface TrackListConfig {
   virtualized?: boolean;
   itemHeight?: number;
-  searchThreshold?: number;
   searchPlaceholder?: string;
   subtitleSlot?: (track: TrackInfo, index: number) => React.ReactNode;
   onRemoveFromPlaylist?: (track: TrackInfo) => void;
@@ -28,30 +26,18 @@ export interface DownloadConfig {
   onDownloadTracks: (tracks: TrackInfo[], title: string, outputDir?: string) => void | Promise<void>;
 }
 
-export interface FolderState {
-  effectivePath: string | undefined;
-  folderName: string | undefined;
-  isCustomFolder: boolean;
-  handleChangeFolder: () => Promise<string | null>;
-  handleOpenFolder: () => Promise<void>;
-}
-
-export interface DetailViewRenderContext {
-  trackCount: number;
-  downloadedCount: number;
+export interface TrackListRenderContext {
   downloadAllAction: React.ReactNode;
-  isDownloadEnabled: boolean;
-  folder: FolderState;
+  folderMetadata: React.ReactNode;
 }
 
-export interface DetailViewMessages {
+export interface TrackListMessages {
   empty: string;
   noResults?: string;
   error?: string;
 }
 
-export interface DetailViewLayoutProps<
-  S extends string = string,
+export interface TrackListViewProps<
   F extends string = string,
 > {
   tracks: TrackInfo[] | undefined;
@@ -60,12 +46,11 @@ export interface DetailViewLayoutProps<
   error?: Error | null;
   onRetry?: () => void;
   title: string;
-  header: React.ReactNode | ((ctx: DetailViewRenderContext) => React.ReactNode);
+  header: React.ReactNode | ((ctx: TrackListRenderContext) => React.ReactNode);
   download: DownloadConfig;
   folder?: boolean;
   trackList?: TrackListConfig;
   filters?: FilterConfig<F>;
-  sort?: SortConfig<S>;
-  messages: DetailViewMessages;
+  messages: TrackListMessages;
   resetKey?: string | number;
 }

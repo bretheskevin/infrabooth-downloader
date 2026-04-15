@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { DetailViewLayout } from '../DetailViewLayout';
+import { render, screen, act } from '@testing-library/react';
+import { TrackListView } from '../TrackListView';
 import type { TrackInfo } from '@/bindings';
 
 const mockPlayTrack = vi.fn();
@@ -85,6 +85,26 @@ vi.mock('@/hooks/useOpenDownloadFolder', () => ({
   useOpenDownloadFolder: () => vi.fn(),
 }));
 
+vi.mock('@/components/PreserveOrderToggle', () => ({
+  PreserveOrderToggle: () => <div data-testid="preserve-order-toggle" />,
+}));
+
+const toolbarSortRef: { current: import('@/components/track-list/types').SortConfig<import('@/lib/sort').SortField> | null } = { current: null };
+vi.mock('../TrackListToolbar', () => ({
+  TrackListToolbar: (props: { sort: import('@/components/track-list/types').SortConfig<import('@/lib/sort').SortField> }) => {
+    toolbarSortRef.current = props.sort;
+    return <div data-testid="toolbar" />;
+  },
+}));
+
+const itemsTracksRef: { current: TrackInfo[] | null } = { current: null };
+vi.mock('../TrackListItems', () => ({
+  TrackListItems: ({ tracks }: { tracks: TrackInfo[] }) => {
+    itemsTracksRef.current = tracks;
+    return <div data-testid="items" />;
+  },
+}));
+
 const createTrack = (id: number) =>
   ({
     id,
@@ -95,7 +115,7 @@ const createTrack = (id: number) =>
     permalink_url: `https://soundcloud.com/artist/track-${id}`,
   }) as TrackInfo;
 
-describe('DetailViewLayout', () => {
+describe('TrackListView', () => {
   const defaultProps = {
     tracks: undefined as TrackInfo[] | undefined,
     isLoading: false,
@@ -108,20 +128,20 @@ describe('DetailViewLayout', () => {
 
   it('renders loading state when isLoading', () => {
     const { container } = render(
-      <DetailViewLayout {...defaultProps} isLoading />,
+      <TrackListView {...defaultProps} isLoading />,
     );
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('renders empty state when tracks is empty array', () => {
-    render(<DetailViewLayout {...defaultProps} tracks={[]} />);
+    render(<TrackListView {...defaultProps} tracks={[]} />);
     expect(screen.getByText('No tracks')).toBeInTheDocument();
   });
 
   it('renders error state when error present and onRetry provided', () => {
     const onRetry = vi.fn();
     render(
-      <DetailViewLayout
+      <TrackListView
         {...defaultProps}
         error={new Error('fail')}
         onRetry={onRetry}
@@ -133,14 +153,14 @@ describe('DetailViewLayout', () => {
   });
 
   it('renders header always', () => {
-    render(<DetailViewLayout {...defaultProps} />);
+    render(<TrackListView {...defaultProps} />);
     expect(screen.getByTestId('header')).toBeInTheDocument();
   });
 
   it('calls header render function with context', () => {
     const headerFn = vi.fn(() => <div data-testid="fn-header">FN</div>);
     render(
-      <DetailViewLayout
+      <TrackListView
         {...defaultProps}
         tracks={[createTrack(1)]}
         header={headerFn}
@@ -148,24 +168,46 @@ describe('DetailViewLayout', () => {
     );
     expect(headerFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        downloadedCount: expect.any(Number),
         downloadAllAction: expect.anything(),
-        isDownloadEnabled: true,
-        folder: expect.objectContaining({
-          folderName: expect.any(String),
-          isCustomFolder: expect.any(Boolean),
-          handleChangeFolder: expect.any(Function),
-          handleOpenFolder: expect.any(Function),
-        }),
+        folderMetadata: expect.anything(),
       }),
     );
     expect(screen.getByTestId('fn-header')).toBeInTheDocument();
   });
 
+  it('passes tracks in original order with default sort', () => {
+    const t1 = { ...createTrack(1), title: 'Zebra' };
+    const t2 = { ...createTrack(2), title: 'Alpha' };
+    render(<TrackListView {...defaultProps} tracks={[t1, t2]} />);
+    expect(itemsTracksRef.current?.map((t) => t.title)).toEqual(['Zebra', 'Alpha']);
+  });
+
+  it('sorts tracks by title when sort field changes', () => {
+    const t1 = { ...createTrack(1), title: 'Zebra' };
+    const t2 = { ...createTrack(2), title: 'Alpha' };
+    render(<TrackListView {...defaultProps} tracks={[t1, t2]} />);
+    act(() => toolbarSortRef.current?.onChange('title'));
+    expect(itemsTracksRef.current?.map((t) => t.title)).toEqual(['Alpha', 'Zebra']);
+  });
+
+  it('resets sort state when resetKey changes', () => {
+    const t1 = { ...createTrack(1), title: 'Zebra' };
+    const t2 = { ...createTrack(2), title: 'Alpha' };
+    const { rerender } = render(
+      <TrackListView {...defaultProps} tracks={[t1, t2]} resetKey="a" />,
+    );
+    act(() => toolbarSortRef.current?.onChange('title'));
+    expect(toolbarSortRef.current?.active).toBe('title');
+
+    rerender(<TrackListView {...defaultProps} tracks={[t1, t2]} resetKey="b" />);
+    expect(toolbarSortRef.current?.active).toBe('default');
+    expect(itemsTracksRef.current?.map((t) => t.title)).toEqual(['Zebra', 'Alpha']);
+  });
+
   it('renders filter chips when filters config is provided and not loading', () => {
     const onChange = vi.fn();
     render(
-      <DetailViewLayout
+      <TrackListView
         {...defaultProps}
         tracks={[createTrack(1)]}
         filters={{
@@ -184,7 +226,7 @@ describe('DetailViewLayout', () => {
 
   it('does not render filters when loading', () => {
     render(
-      <DetailViewLayout
+      <TrackListView
         {...defaultProps}
         isLoading
         filters={{
@@ -199,7 +241,7 @@ describe('DetailViewLayout', () => {
 
   it('renders streaming indicator when streaming and has tracks', () => {
     render(
-      <DetailViewLayout
+      <TrackListView
         {...defaultProps}
         tracks={[createTrack(1)]}
         isStreaming
@@ -210,7 +252,7 @@ describe('DetailViewLayout', () => {
 
   it('does not render streaming indicator when not streaming', () => {
     render(
-      <DetailViewLayout
+      <TrackListView
         {...defaultProps}
         tracks={[createTrack(1)]}
         isStreaming={false}

@@ -1,22 +1,12 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
-import { DetailViewLayout } from '@/components/detail-view/DetailViewLayout';
+import { TrackListView } from '@/components/track-list/TrackListView';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import { useRemoveFromPlaylist } from '../hooks/useRemoveFromPlaylist';
 import { useLibraryStore } from '../store';
-import { sortTracks } from '../utils/sortTracks';
-import { getErrorMessageKey } from '@/lib/getErrorMessageKey';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
 import { RemoveFromPlaylistDialog } from './RemoveFromPlaylistDialog';
-import type { SortField } from '../types';
-import type { SortDirection } from '@/lib/sort';
-
-const PLAYLIST_SORT_OPTIONS = [
-  { key: 'default', label: 'library.detail.sortDefault' },
-  { key: 'title', label: 'library.detail.sortTitle' },
-  { key: 'artist', label: 'library.detail.sortArtist' },
-] as const satisfies readonly { key: SortField; label: string }[];
 
 interface PlaylistDetailViewProps {
   playlist: LibraryPlaylist;
@@ -28,19 +18,6 @@ interface PlaylistDetailViewProps {
 export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownloadTracks }: PlaylistDetailViewProps) {
   const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id, initialTracks);
 
-  const [sortField, setSortField] = useState<SortField>('default');
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
-
-  useEffect(() => {
-    setSortField('default');
-    setSortDirection('asc');
-  }, [playlist.id]);
-
-  const sortedTracks = useMemo(
-    () => (tracks ? sortTracks(tracks, sortField, sortDirection) : []),
-    [tracks, sortField, sortDirection],
-  );
-
   const needsArtwork = !playlist.artwork_url && !initialTracks;
   const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secret_token, needsArtwork);
   const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
@@ -50,11 +27,6 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
     setTrackToRemove(null);
   });
 
-  const errorMessageKey = useMemo(
-    () => (error ? getErrorMessageKey(error, 'library.detail.errorLoading') : undefined),
-    [error],
-  );
-
   const initialScrollOffset = useLibraryStore.getState().detailScrollTop;
   const saveScrollOffset = useCallback((offset: number) => {
     useLibraryStore.getState().setDetailScrollTop(offset);
@@ -62,49 +34,35 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
 
   return (
     <>
-      <DetailViewLayout
-        tracks={sortedTracks}
+      <TrackListView
+        tracks={tracks}
         isLoading={isLoading}
         isStreaming={isStreaming}
         error={error}
         onRetry={refetch}
         title={playlist.title}
         resetKey={playlist.id}
-        header={({ downloadedCount, downloadAllAction, folder }) => (
+        header={({ downloadAllAction, folderMetadata }) => (
           <PlaylistDetailHeader
             playlist={playlist}
             artworkUrl={artworkUrl}
             trackCount={tracks?.length ?? playlist.track_count}
             onBack={onBack}
-            downloadedCount={downloadedCount}
-            folderName={folder.folderName}
-            isCustomFolder={folder.isCustomFolder}
-            onChangeFolder={folder.handleChangeFolder}
-            onOpenFolder={folder.handleOpenFolder}
-            showOrderToggle={(tracks?.length ?? 0) > 1}
+            folderMetadata={folderMetadata}
             actions={downloadAllAction}
           />
         )}
         folder
         download={{ onDownloadTracks }}
-        sort={{
-          options: PLAYLIST_SORT_OPTIONS,
-          active: sortField,
-          onChange: setSortField,
-          direction: sortDirection,
-          onDirectionChange: setSortDirection,
-          variant: 'select',
-        }}
         trackList={{
           virtualized: true,
-          searchThreshold: 5,
           onRemoveFromPlaylist: playlist.is_owned ? setTrackToRemove : undefined,
           initialScrollOffset,
           onScrollOffsetChange: saveScrollOffset,
         }}
         messages={{
           empty: 'library.detail.emptyPlaylist',
-          error: errorMessageKey,
+          error: 'library.detail.errorLoading',
         }}
       />
 

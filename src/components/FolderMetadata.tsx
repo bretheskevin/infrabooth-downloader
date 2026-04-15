@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { CheckCircle2, ChevronRight, Folder } from 'lucide-react';
 import { OpenFolderButton } from '@/components/OpenFolderButton';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FolderMetadataProps {
   folderName: string | undefined;
@@ -26,21 +27,25 @@ export function FolderMetadata({
       {isDownloadEnabled && folderName && (
         <>
           <span className="text-border">&middot;</span>
-          <button
-            type="button"
-            onClick={onChangeFolder}
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border border-border/50 bg-muted/30 hover:bg-muted transition-colors shrink-0 max-w-[200px]"
-            aria-label={t('common.changeFolder')}
-          >
-            <Folder className="h-3 w-3 shrink-0" />
-            <span className="truncate">{folderName}</span>
-            {isCustomFolder && (
-              <span className="text-[10px] text-muted-foreground/70 shrink-0">
-                ({t('library.detail.customFolder')})
-              </span>
-            )}
-            <ChevronRight className="h-3 w-3 shrink-0" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onChangeFolder}
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs border border-border/50 bg-muted/30 hover:bg-muted transition-colors shrink-0 max-w-[200px]"
+              >
+                <Folder className="h-3 w-3 shrink-0" />
+                <span className="truncate">{folderName}</span>
+                {isCustomFolder && (
+                  <span className="text-[10px] text-muted-foreground/70 shrink-0">
+                    ({t('library.detail.customFolder')})
+                  </span>
+                )}
+                <ChevronRight className="h-3 w-3 shrink-0" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">{t('common.changeFolder')}</TooltipContent>
+          </Tooltip>
           <OpenFolderButton onClick={onOpenFolder} size="sm" />
         </>
       )}

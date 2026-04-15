@@ -3,8 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/tauri';
 import { DetailHeader } from '@/components/DetailHeader';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
-import { FolderMetadata } from '@/components/FolderMetadata';
-import { DetailViewLayout } from '@/components/detail-view/DetailViewLayout';
+import { TrackListView } from '@/components/track-list/TrackListView';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import type { FollowedArtist, ReleaseActivityItem, TrackInfo } from '@/bindings';
 import { DEFAULT_STALE_TIME } from '@/lib/query';
@@ -45,14 +44,14 @@ export function ReleaseTracklistView({
   );
 
   return (
-    <DetailViewLayout
+    <TrackListView
       tracks={tracks}
       isLoading={isLoading}
       error={error}
       onRetry={refetch}
       title={info.title}
       resetKey={info.id}
-      header={({ downloadedCount, downloadAllAction, isDownloadEnabled, folder }) => (
+      header={({ downloadAllAction, folderMetadata }) => (
         <DetailHeader
           navigation={<Breadcrumb items={[
             { label: t('newReleases.title'), onClick: onBackToCarousel },
@@ -66,14 +65,7 @@ export function ReleaseTracklistView({
               <span className="truncate">
                 {artist.username} · {typeLabel} · {t('newReleases.trackCount', { count: info.track_count })}
               </span>
-              <FolderMetadata
-                folderName={folder.folderName}
-                isCustomFolder={folder.isCustomFolder}
-                downloadedCount={downloadedCount}
-                isDownloadEnabled={isDownloadEnabled}
-                onChangeFolder={folder.handleChangeFolder}
-                onOpenFolder={folder.handleOpenFolder}
-              />
+              {folderMetadata}
             </p>
           }
           actions={downloadAllAction}

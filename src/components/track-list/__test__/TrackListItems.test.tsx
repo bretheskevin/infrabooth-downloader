@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { DetailViewTrackList } from '../DetailViewTrackList';
+import { TrackListItems } from '../TrackListItems';
 import type { TrackInfo } from '@/bindings';
 
 vi.mock('@/hooks/useVirtualizedList', () => ({
@@ -39,10 +39,10 @@ const createTrack = (id: number) =>
 
 const tracks = [createTrack(1), createTrack(2), createTrack(3)];
 
-describe('DetailViewTrackList', () => {
+describe('TrackListItems', () => {
   it('renders virtualized list when virtualized is true', () => {
     render(
-      <DetailViewTrackList tracks={tracks} virtualized itemHeight={56} />,
+      <TrackListItems tracks={tracks} virtualized itemHeight={56} />,
     );
     expect(screen.getByTestId('virtual-list')).toBeInTheDocument();
     expect(screen.getAllByTestId('virtual-row')).toHaveLength(3);
@@ -50,7 +50,7 @@ describe('DetailViewTrackList', () => {
 
   it('renders flat list when virtualized is false', () => {
     render(
-      <DetailViewTrackList tracks={tracks} virtualized={false} itemHeight={56} />,
+      <TrackListItems tracks={tracks} virtualized={false} itemHeight={56} />,
     );
     expect(screen.queryByTestId('virtual-list')).not.toBeInTheDocument();
     expect(screen.getByText('Track 1')).toBeInTheDocument();
@@ -59,7 +59,7 @@ describe('DetailViewTrackList', () => {
 
   it('passes subtitleSlot to each track row', () => {
     render(
-      <DetailViewTrackList
+      <TrackListItems
         tracks={tracks}
         virtualized={false}
         itemHeight={56}
@@ -72,7 +72,7 @@ describe('DetailViewTrackList', () => {
   it('calls onScrollOffsetChange cleanup on unmount for virtualized list', () => {
     const onScrollOffsetChange = vi.fn();
     const { unmount } = render(
-      <DetailViewTrackList
+      <TrackListItems
         tracks={tracks}
         virtualized
         itemHeight={56}

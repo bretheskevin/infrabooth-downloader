@@ -1,9 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FolderMetadata } from '@/components/FolderMetadata';
 import { DetailHeader } from '@/components/DetailHeader';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
-import { DetailViewLayout } from '@/components/detail-view/DetailViewLayout';
+import { TrackListView } from '@/components/track-list/TrackListView';
 import { useArtistActivity } from '../hooks/useArtistActivity';
 import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { ActivityBadge } from './ActivityBadge';
@@ -47,14 +46,14 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
   const avatarUrl = getArtworkUrl(artist.avatar_url, 200);
 
   return (
-    <DetailViewLayout
+    <TrackListView
       tracks={tracks}
       isLoading={isLoading}
       error={error}
       onRetry={refetch}
       title={artist.username}
       resetKey={artist.id}
-      header={({ downloadedCount, downloadAllAction, isDownloadEnabled, folder }) => (
+      header={({ downloadAllAction, folderMetadata }) => (
         <DetailHeader
           navigation={<Breadcrumb items={[
             { label: t('newTracks.title'), onClick: onBack },
@@ -74,14 +73,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
               <span className="truncate">
                 {t('newTracks.trackCount', { count: filteredItems.length })}
               </span>
-              <FolderMetadata
-                folderName={folder.folderName}
-                isCustomFolder={folder.isCustomFolder}
-                downloadedCount={downloadedCount}
-                isDownloadEnabled={isDownloadEnabled}
-                onChangeFolder={folder.handleChangeFolder}
-                onOpenFolder={folder.handleOpenFolder}
-              />
+              {folderMetadata}
             </p>
           }
           actions={downloadAllAction}

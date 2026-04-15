@@ -25,7 +25,12 @@
     "daysAgo_other": "il y a {{count}} jours",
     "weeksAgo_one": "il y a {{count}} semaine",
     "weeksAgo_other": "il y a {{count}} semaines",
-    "monthAgo": "il y a plus d'un mois"
+    "monthAgo": "il y a plus d'un mois",
+    "sortDefault": "Ordre de la playlist",
+    "sortTitle": "Titre",
+    "sortArtist": "Artiste",
+    "sortAsc": "Asc",
+    "sortDesc": "Desc"
   },
   "auth": {
     "signIn": "Se connecter",
@@ -279,11 +284,6 @@
       "conflictConfirm": "Annuler et démarrer",
       "conflictCancel": "Garder l'actuel",
       "conflictError": "Échec de l'annulation du téléchargement en cours",
-      "sortDefault": "Ordre de la playlist",
-      "sortTitle": "Titre",
-      "sortArtist": "Artiste",
-      "sortAsc": "Asc",
-      "sortDesc": "Desc",
       "downloadedCount_one": "{{count}} téléchargé",
       "downloadedCount_other": "{{count}} téléchargés",
       "customFolder": "personnalisé",

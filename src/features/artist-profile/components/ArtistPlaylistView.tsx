@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { DetailViewLayout } from '@/components/detail-view/DetailViewLayout';
+import { TrackListView } from '@/components/track-list/TrackListView';
 import { DetailHeader } from '@/components/DetailHeader';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { useArtistPlaylistTracks } from '../hooks/useArtistPlaylistTracks';
@@ -31,7 +31,7 @@ export function ArtistPlaylistView({
   const artwork = <PlaylistArtwork artworkUrl={playlist.artwork_url} title={playlist.title} />;
 
   return (
-    <DetailViewLayout
+    <TrackListView
       tracks={tracks}
       isLoading={isLoading}
       isStreaming={isStreaming}
@@ -39,7 +39,7 @@ export function ArtistPlaylistView({
       onRetry={refetch}
       title={playlist.title}
       resetKey={playlist.id}
-      header={({ downloadAllAction }) => (
+      header={({ downloadAllAction, folderMetadata }) => (
         <DetailHeader
           navigation={
             <Breadcrumb
@@ -52,8 +52,11 @@ export function ArtistPlaylistView({
           artwork={artwork}
           title={playlist.title}
           subtitle={
-            <p className="text-xs text-muted-foreground">
-              {t('artistProfile.playlistTrackCount', { count: playlist.track_count })}
+            <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
+              <span className="truncate">
+                {t('artistProfile.playlistTrackCount', { count: playlist.track_count })}
+              </span>
+              {folderMetadata}
             </p>
           }
           actions={downloadAllAction}
@@ -61,10 +64,6 @@ export function ArtistPlaylistView({
       )}
       folder
       download={{ onDownloadTracks }}
-      trackList={{
-        virtualized: true,
-        searchThreshold: 5,
-      }}
       messages={{ empty: 'artistProfile.noPlaylistTracks' }}
     />
   );

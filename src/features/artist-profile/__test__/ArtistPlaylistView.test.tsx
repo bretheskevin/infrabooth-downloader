@@ -22,9 +22,9 @@ vi.mock('../hooks/useArtistPlaylistTracks', () => ({
   useArtistPlaylistTracks: (...args: unknown[]) => mockUseArtistPlaylistTracks(...args),
 }));
 
-vi.mock('@/components/detail-view/DetailViewLayout', () => ({
-  DetailViewLayout: ({ title, messages }: { title: string; messages: { empty: string } }) => (
-    <div data-testid="detail-view-layout">
+vi.mock('@/components/track-list/TrackListView', () => ({
+  TrackListView: ({ title, messages }: { title: string; messages: { empty: string } }) => (
+    <div data-testid="track-list-view">
       <span>{title}</span>
       <span>{messages.empty}</span>
     </div>

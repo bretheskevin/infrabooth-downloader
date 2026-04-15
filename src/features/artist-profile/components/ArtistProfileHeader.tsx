@@ -1,16 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCount } from '@/lib/format';
-import { cn } from '@/lib/utils';
-import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import { ExpandableDescription } from './ExpandableDescription';
 import type { ArtistProfile } from '@/bindings';
 
 interface ArtistProfileHeaderProps {
   profile: ArtistProfile | undefined;
   isLoading: boolean;
-  isDownloadEnabled?: boolean;
-  showOrderToggle?: boolean;
   actions?: React.ReactNode;
   followButton?: React.ReactNode;
 }
@@ -18,8 +14,6 @@ interface ArtistProfileHeaderProps {
 export function ArtistProfileHeader({
   profile,
   isLoading,
-  isDownloadEnabled = false,
-  showOrderToggle = false,
   actions,
   followButton,
 }: ArtistProfileHeaderProps) {
@@ -58,11 +52,6 @@ export function ArtistProfileHeader({
         </div>
         {actions}
       </div>
-      {isDownloadEnabled && showOrderToggle && (
-        <div className={cn("flex justify-end", {"mt-3": (profile.description?.length ?? 0) <= 1})}>
-          <PreserveOrderToggle compact />
-        </div>
-      )}
     </div>
   );
 }
