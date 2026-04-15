@@ -72,6 +72,7 @@ export function useStreamedQuery({
   return {
     ...query,
     data: tracks,
+    isLoading: query.isLoading && !tracks,
     isStreaming,
   };
 }
