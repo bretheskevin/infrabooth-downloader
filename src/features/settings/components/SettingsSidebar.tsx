@@ -2,6 +2,7 @@ import { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Settings2, Download, Disc3, Info, Heart } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { featureFlags } from '@/lib/featureFlags';
 import type { SettingsCategory, SettingsSidebarProps } from './types';
 import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
 
@@ -17,7 +18,10 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
   const isDownloadEnabled = useIsDownloadEnabled();
 
   const visibleCategories = useMemo(
-    () => isDownloadEnabled ? CATEGORIES : CATEGORIES.filter((c) => c.id !== 'playlists'),
+    () =>
+      CATEGORIES
+        .filter((c) => c.id !== 'playlists' || isDownloadEnabled)
+        .filter((c) => c.id !== 'rekordbox' || featureFlags.rekordbox),
     [isDownloadEnabled]
   );
 
