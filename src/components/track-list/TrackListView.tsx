@@ -1,3 +1,4 @@
+import { useState, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -6,12 +7,18 @@ import { SelectionActionBar } from '@/components/SelectionActionBar';
 import { SearchBar } from '@/components/ui/search-bar';
 import { FilterChips } from '@/components/FilterChips';
 import { TrackRowSkeletonList } from '@/components/TrackRowSkeleton';
-import { useDetailViewState } from './hooks/useDetailViewState';
-import { DetailViewToolbar } from './DetailViewToolbar';
-import { DetailViewTrackList } from './DetailViewTrackList';
-import type { DetailViewLayoutProps, DetailViewRenderContext } from './types';
+import { sortTracks, TRACK_SORT_OPTIONS, type SortField, type SortDirection } from '@/lib/sort';
+import { getErrorMessageKey } from '@/lib/getErrorMessageKey';
+import { FolderMetadata } from '@/components/FolderMetadata';
+import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
+import { useTrackListState } from './hooks/useTrackListState';
+import { TrackListToolbar } from './TrackListToolbar';
+import { TrackListItems } from './TrackListItems';
+import type { TrackListViewProps, TrackListRenderContext } from './types';
 
-export function DetailViewLayout<S extends string = string, F extends string = string>({
+const DEFAULT_SEARCH_THRESHOLD = 5;
+
+export function TrackListView<F extends string = string>({
   tracks,
   isLoading,
   isStreaming,
@@ -23,45 +30,95 @@ export function DetailViewLayout<S extends string = string, F extends string = s
   folder,
   trackList,
   filters,
-  sort,
   messages,
   resetKey,
-}: DetailViewLayoutProps<S, F>) {
+}: TrackListViewProps<F>) {
   const { t } = useTranslation();
 
-  const state = useDetailViewState({
-    tracks,
+  const [sortState, setSortState] = useState<{ field: SortField; direction: SortDirection }>({
+    field: 'default',
+    direction: 'asc',
+  });
+  const [prevResetKey, setPrevResetKey] = useState(resetKey);
+  if (prevResetKey !== resetKey) {
+    setPrevResetKey(resetKey);
+    setSortState({ field: 'default', direction: 'asc' });
+  }
+
+  const sortedTracks = useMemo(
+    () => (tracks ? sortTracks(tracks, sortState.field, sortState.direction) : undefined),
+    [tracks, sortState.field, sortState.direction],
+  );
+
+  const state = useTrackListState({
+    tracks: sortedTracks,
     isLoading,
     isStreaming,
     title,
     download,
     folder,
-    searchThreshold: trackList?.searchThreshold,
+    searchThreshold: DEFAULT_SEARCH_THRESHOLD,
     resetKey,
   });
 
+  const fallbackErrorKey = messages.error ?? 'common.error';
+  const resolvedErrorKey = useMemo(
+    () => (error ? getErrorMessageKey(error, fallbackErrorKey) : fallbackErrorKey),
+    [error, fallbackErrorKey],
+  );
+
   const hasData = tracks && tracks.length > 0;
+  const hasMultipleTracks = (tracks?.length ?? 0) > 1;
   const showFilters = !!filters && !isLoading;
   const showContent = !isLoading && state.displayTracks.length > 0;
   const showEmptyNoData = !isLoading && !error && tracks && tracks.length === 0;
   const showEmptyFiltered = !isLoading && !error && hasData && state.displayTracks.length === 0;
 
   const canDownload = state.isDownloadEnabled && !!(hasData && !isLoading);
+  const showOrderToggle = canDownload && hasMultipleTracks;
   const downloadAllAction = canDownload ? (
-    <Button size="sm" onClick={state.handleDownloadAll} className="gap-1.5 shrink-0">
-      <Download className="h-3.5 w-3.5" />
-      {t('common.downloadAll')}
-    </Button>
+    <div className="flex items-center gap-2 shrink-0">
+      {showOrderToggle && <PreserveOrderToggle variant="icon" />}
+      <Button size="sm" onClick={state.handleDownloadAll} className="gap-1.5">
+        <Download className="h-3.5 w-3.5" />
+        {t('common.downloadAll')}
+      </Button>
+    </div>
   ) : null;
 
-  const renderCtx: DetailViewRenderContext = {
-    trackCount: tracks?.length ?? 0,
-    downloadedCount: state.downloadedCount,
+  const renderCtx: TrackListRenderContext = {
     downloadAllAction,
-    isDownloadEnabled: state.isDownloadEnabled,
-    folder: state.folder,
+    folderMetadata: (
+      <FolderMetadata
+        folderName={state.folder.folderName}
+        isCustomFolder={state.folder.isCustomFolder}
+        downloadedCount={state.downloadedCount}
+        isDownloadEnabled={state.isDownloadEnabled}
+        onChangeFolder={state.folder.handleChangeFolder}
+        onOpenFolder={state.folder.handleOpenFolder}
+      />
+    ),
   };
   const headerNode = typeof header === 'function' ? header(renderCtx) : header;
+
+  const onSortFieldChange = useCallback(
+    (field: SortField) => setSortState((s) => ({ ...s, field })),
+    [],
+  );
+  const onSortDirectionChange = useCallback(
+    (direction: SortDirection) => setSortState((s) => ({ ...s, direction })),
+    [],
+  );
+  const sortConfig = useMemo(
+    () => ({
+      options: TRACK_SORT_OPTIONS,
+      active: sortState.field,
+      onChange: onSortFieldChange,
+      direction: sortState.direction,
+      onDirectionChange: onSortDirectionChange,
+    }),
+    [sortState.field, sortState.direction, onSortFieldChange, onSortDirectionChange],
+  );
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
@@ -89,7 +146,7 @@ export function DetailViewLayout<S extends string = string, F extends string = s
 
       {error && !isLoading && onRetry && !hasData && (
         <div className="flex flex-col items-center justify-center py-12 gap-2">
-          <p className="text-sm text-muted-foreground">{t(messages.error ?? 'common.error')}</p>
+          <p className="text-sm text-muted-foreground">{t(resolvedErrorKey)}</p>
           <Button variant="ghost" size="sm" onClick={onRetry}>
             {t('common.retry')}
           </Button>
@@ -98,7 +155,7 @@ export function DetailViewLayout<S extends string = string, F extends string = s
 
       {error && !isLoading && onRetry && hasData && (
         <div className="flex items-center justify-between px-3 py-1.5 text-xs text-destructive/80 bg-destructive/10 rounded mx-3">
-          <span>{t(messages.error ?? 'common.error')}</span>
+          <span>{t(resolvedErrorKey)}</span>
           <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={onRetry}>
             {t('common.retry')}
           </Button>
@@ -117,12 +174,12 @@ export function DetailViewLayout<S extends string = string, F extends string = s
 
       {showContent && (
         <>
-          <DetailViewToolbar
+          <TrackListToolbar
             isDownloadEnabled={state.isDownloadEnabled}
             hasSelectableTracks={state.selectableCount > 0}
             isAllSelected={state.isAllSelected}
             onToggleAll={state.toggleAll}
-            sort={sort}
+            sort={hasMultipleTracks ? sortConfig : undefined}
             isStreaming={isStreaming}
           />
 
@@ -134,7 +191,7 @@ export function DetailViewLayout<S extends string = string, F extends string = s
             selection={{ selectedIds: state.selectedIds, toggleTrack: state.toggleTrack }}
             animate={state.shouldAnimate}
           >
-            <DetailViewTrackList
+            <TrackListItems
               tracks={state.displayTracks}
               virtualized={trackList?.virtualized ?? true}
               itemHeight={trackList?.itemHeight ?? 56}

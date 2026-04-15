@@ -25,7 +25,12 @@
     "daysAgo_other": "{{count}} days ago",
     "weeksAgo_one": "{{count}} week ago",
     "weeksAgo_other": "{{count}} weeks ago",
-    "monthAgo": "over a month ago"
+    "monthAgo": "over a month ago",
+    "sortDefault": "Playlist order",
+    "sortTitle": "Title",
+    "sortArtist": "Artist",
+    "sortAsc": "Asc",
+    "sortDesc": "Desc"
   },
   "auth": {
     "signIn": "Sign In",
@@ -279,11 +284,6 @@
       "conflictConfirm": "Cancel & Start New",
       "conflictCancel": "Keep Current",
       "conflictError": "Failed to cancel the current download",
-      "sortDefault": "Playlist order",
-      "sortTitle": "Title",
-      "sortArtist": "Artist",
-      "sortAsc": "Asc",
-      "sortDesc": "Desc",
       "downloadedCount_one": "{{count}} downloaded",
       "downloadedCount_other": "{{count}} downloaded",
       "customFolder": "custom",

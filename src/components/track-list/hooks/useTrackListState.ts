@@ -13,7 +13,7 @@ import type { DownloadConfig } from '../types';
 
 const EMPTY_ARRAY: TrackInfo[] = [];
 
-interface UseDetailViewStateConfig {
+interface UseTrackListStateConfig {
   tracks: TrackInfo[] | undefined;
   isLoading: boolean;
   isStreaming?: boolean;
@@ -24,7 +24,7 @@ interface UseDetailViewStateConfig {
   resetKey?: string | number;
 }
 
-export function useDetailViewState(config: UseDetailViewStateConfig) {
+export function useTrackListState(config: UseTrackListStateConfig) {
   const isDownloadEnabled = useIsDownloadEnabled();
   const stableTracks = config.tracks ?? EMPTY_ARRAY;
   const { onDownloadTracks } = config.download;

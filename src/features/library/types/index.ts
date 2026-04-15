@@ -6,4 +6,3 @@ export type LibraryView =
   | { view: 'list' }
   | { view: 'detail'; playlist: LibraryPlaylist };
 
-export type SortField = 'default' | 'title' | 'artist';

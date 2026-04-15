@@ -1,8 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { SortDirectionSelect } from '@/components/SortDirectionSelect';
-import type { SortDirection } from '@/lib/sort';
 
 const TAB_OPTIONS = [
   { key: 'recent' as const, label: 'artistProfile.sortRecent' },
@@ -15,18 +13,12 @@ export type ProfileTab = (typeof TAB_OPTIONS)[number]['key'];
 interface ProfileTabsProps {
   activeTab: ProfileTab;
   onTabChange: (tab: ProfileTab) => void;
-  sortDirection: SortDirection;
-  onSortDirectionChange: (dir: SortDirection) => void;
-  showSortDirection?: boolean;
   isStreaming?: boolean;
 }
 
 export function ProfileTabs({
   activeTab,
   onTabChange,
-  sortDirection,
-  onSortDirectionChange,
-  showSortDirection,
   isStreaming,
 }: ProfileTabsProps) {
   const { t } = useTranslation();
@@ -42,10 +34,7 @@ export function ProfileTabs({
           ))}
         </TabsList>
       </Tabs>
-      <div className={showSortDirection ? 'flex items-center gap-2' : 'flex items-center gap-2 opacity-0'} inert={!showSortDirection || undefined}>
-        {isStreaming && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
-        <SortDirectionSelect value={sortDirection} onChange={onSortDirectionChange} />
-      </div>
+      {isStreaming && <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />}
     </div>
   );
 }

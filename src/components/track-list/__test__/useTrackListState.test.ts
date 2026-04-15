@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useDetailViewState } from '../hooks/useDetailViewState';
+import { useTrackListState } from '../hooks/useTrackListState';
 import type { TrackInfo } from '@/bindings';
 
 const mockPlayTrack = vi.fn();
@@ -48,7 +48,7 @@ vi.mock('@/features/player/hooks/usePlayContext', () => ({
 }));
 
 vi.mock('@/features/player/store', () => ({
-  usePlayerStore: (selector: any) =>
+  usePlayerStore: (selector: (state: { currentTrack: { trackId: number } | null }) => unknown) =>
     selector
       ? selector({ currentTrack: mockCurrentTrackId != null ? { trackId: mockCurrentTrackId } : null })
       : undefined,
@@ -81,7 +81,7 @@ const createTrack = (id: number) => ({
   permalink_url: `https://soundcloud.com/artist/track-${id}`,
 }) as TrackInfo;
 
-describe('useDetailViewState', () => {
+describe('useTrackListState', () => {
   const baseConfig = {
     tracks: [createTrack(1), createTrack(2), createTrack(3)] as TrackInfo[],
     isLoading: false,
@@ -91,19 +91,19 @@ describe('useDetailViewState', () => {
   };
 
   it('returns displayTracks from search filter', () => {
-    const { result } = renderHook(() => useDetailViewState(baseConfig));
+    const { result } = renderHook(() => useTrackListState(baseConfig));
     expect(result.current.displayTracks).toHaveLength(3);
   });
 
   it('hides search when tracks below threshold', () => {
-    const { result } = renderHook(() => useDetailViewState(baseConfig));
+    const { result } = renderHook(() => useTrackListState(baseConfig));
     expect(result.current.showSearch).toBe(false);
   });
 
   it('shows search when tracks at or above threshold', () => {
     const tracks = Array.from({ length: 5 }, (_, i) => createTrack(i));
     const { result } = renderHook(() =>
-      useDetailViewState({ ...baseConfig, tracks }),
+      useTrackListState({ ...baseConfig, tracks }),
     );
     expect(result.current.showSearch).toBe(true);
   });
@@ -111,7 +111,7 @@ describe('useDetailViewState', () => {
   it('hides search when searchThreshold is omitted', () => {
     const tracks = Array.from({ length: 10 }, (_, i) => createTrack(i));
     const { result } = renderHook(() =>
-      useDetailViewState({ ...baseConfig, tracks, searchThreshold: undefined }),
+      useTrackListState({ ...baseConfig, tracks, searchThreshold: undefined }),
     );
     expect(result.current.showSearch).toBe(false);
   });
@@ -119,7 +119,7 @@ describe('useDetailViewState', () => {
   it('handleDownloadAll downloads all tracks when none selected', () => {
     const onDownloadTracks = vi.fn();
     const config = { ...baseConfig, download: { path: '/dl', onDownloadTracks } };
-    const { result } = renderHook(() => useDetailViewState(config));
+    const { result } = renderHook(() => useTrackListState(config));
 
     act(() => result.current.handleDownloadAll());
 
@@ -128,14 +128,14 @@ describe('useDetailViewState', () => {
 
   it('returns empty displayTracks when tracks is undefined', () => {
     const { result } = renderHook(() =>
-      useDetailViewState({ ...baseConfig, tracks: undefined }),
+      useTrackListState({ ...baseConfig, tracks: undefined }),
     );
     expect(result.current.displayTracks).toHaveLength(0);
     expect(result.current.showSearch).toBe(false);
   });
 
   it('exposes isDownloadEnabled from settings', () => {
-    const { result } = renderHook(() => useDetailViewState(baseConfig));
+    const { result } = renderHook(() => useTrackListState(baseConfig));
     expect(result.current.isDownloadEnabled).toBe(true);
   });
 
@@ -149,7 +149,7 @@ describe('useDetailViewState', () => {
     it('does not call syncQueue when streaming ends without playTrack called', () => {
       mockCurrentTrackId = 1;
       const { rerender } = renderHook(
-        ({ isStreaming }) => useDetailViewState({ ...baseConfig, isStreaming }),
+        ({ isStreaming }) => useTrackListState({ ...baseConfig, isStreaming }),
         { initialProps: { isStreaming: true } },
       );
 
@@ -161,7 +161,7 @@ describe('useDetailViewState', () => {
     it('calls syncQueue when streaming ends after playTrack was called', () => {
       mockCurrentTrackId = 1;
       const { result, rerender } = renderHook(
-        ({ isStreaming }) => useDetailViewState({ ...baseConfig, isStreaming }),
+        ({ isStreaming }) => useTrackListState({ ...baseConfig, isStreaming }),
         { initialProps: { isStreaming: false } },
       );
 
@@ -176,7 +176,7 @@ describe('useDetailViewState', () => {
       mockCurrentTrackId = 1;
       const { result, rerender } = renderHook(
         ({ isStreaming, resetKey }: { isStreaming: boolean; resetKey?: string }) =>
-          useDetailViewState({ ...baseConfig, isStreaming, resetKey }),
+          useTrackListState({ ...baseConfig, isStreaming, resetKey }),
         { initialProps: { isStreaming: false, resetKey: 'a' } },
       );
 
@@ -189,7 +189,7 @@ describe('useDetailViewState', () => {
     });
 
     it('playTrack delegates to underlying rawPlayTrack', () => {
-      const { result } = renderHook(() => useDetailViewState(baseConfig));
+      const { result } = renderHook(() => useTrackListState(baseConfig));
 
       act(() => result.current.playTrack(0));
 

@@ -21,8 +21,8 @@ export function SortDirectionSelect({ value, onChange, showIcon = true }: SortDi
         <SelectValue />
       </SelectTrigger>
       <SelectContent>
-        <SelectItem value="asc">{t('library.detail.sortAsc')}</SelectItem>
-        <SelectItem value="desc">{t('library.detail.sortDesc')}</SelectItem>
+        <SelectItem value="asc">{t('common.sortAsc')}</SelectItem>
+        <SelectItem value="desc">{t('common.sortDesc')}</SelectItem>
       </SelectContent>
     </Select>
   );

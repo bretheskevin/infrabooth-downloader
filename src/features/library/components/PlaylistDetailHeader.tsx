@@ -1,23 +1,15 @@
 import { useTranslation } from 'react-i18next';
 import { Music } from 'lucide-react';
-import { FolderMetadata } from '@/components/FolderMetadata';
 import { DetailHeader } from '@/components/DetailHeader';
-import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import type { LibraryPlaylist } from '@/bindings';
 import { formatTotalDuration } from '@/lib/format';
-import { useIsDownloadEnabled } from '@/features/settings';
 
 interface PlaylistDetailHeaderProps {
   playlist: LibraryPlaylist;
   artworkUrl: string | null;
   trackCount: number;
   onBack: () => void;
-  downloadedCount: number;
-  folderName: string | undefined;
-  isCustomFolder: boolean;
-  onChangeFolder: () => void;
-  onOpenFolder: () => void;
-  showOrderToggle?: boolean;
+  folderMetadata: React.ReactNode;
   actions?: React.ReactNode;
 }
 
@@ -26,16 +18,10 @@ export function PlaylistDetailHeader({
   artworkUrl,
   trackCount,
   onBack,
-  downloadedCount,
-  folderName,
-  isCustomFolder,
-  onChangeFolder,
-  onOpenFolder,
-  showOrderToggle,
+  folderMetadata,
   actions,
 }: PlaylistDetailHeaderProps) {
   const { t } = useTranslation();
-  const isDownloadEnabled = useIsDownloadEnabled();
 
   return (
     <DetailHeader
@@ -65,23 +51,10 @@ export function PlaylistDetailHeader({
             {' · '}
             {formatTotalDuration(playlist.duration)}
           </span>
-          <FolderMetadata
-            folderName={folderName}
-            isCustomFolder={isCustomFolder}
-            downloadedCount={downloadedCount}
-            isDownloadEnabled={isDownloadEnabled}
-            onChangeFolder={onChangeFolder}
-            onOpenFolder={onOpenFolder}
-          />
+          {folderMetadata}
         </p>
       }
       actions={actions}
-    >
-      {isDownloadEnabled && showOrderToggle && (
-        <div className="flex justify-end">
-          <PreserveOrderToggle compact />
-        </div>
-      )}
-    </DetailHeader>
+    />
   );
 }

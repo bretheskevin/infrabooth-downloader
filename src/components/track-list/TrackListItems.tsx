@@ -8,7 +8,7 @@ import { useIsMiniPillVisible } from '@/features/player/hooks/useIsMiniPillVisib
 
 const MINI_PILL_BOTTOM_PADDING = 'pb-10';
 
-interface DetailViewTrackListProps {
+interface TrackListItemsProps {
   tracks: TrackInfo[];
   virtualized: boolean;
   itemHeight: number;
@@ -18,7 +18,7 @@ interface DetailViewTrackListProps {
   onScrollOffsetChange?: (offset: number) => void;
 }
 
-export function DetailViewTrackList({
+export function TrackListItems({
   tracks,
   virtualized,
   itemHeight,
@@ -26,7 +26,7 @@ export function DetailViewTrackList({
   onRemoveFromPlaylist,
   initialScrollOffset,
   onScrollOffsetChange,
-}: DetailViewTrackListProps) {
+}: TrackListItemsProps) {
   const miniPillVisible = useIsMiniPillVisible();
 
   if (virtualized) {
@@ -66,7 +66,7 @@ function VirtualizedTrackList({
   onRemoveFromPlaylist,
   initialScrollOffset,
   onScrollOffsetChange,
-}: Omit<DetailViewTrackListProps, 'virtualized'>) {
+}: Omit<TrackListItemsProps, 'virtualized'>) {
   const miniPillVisible = useIsMiniPillVisible();
   const { parentRef, virtualItems, totalSize, getScrollOffset } = useVirtualizedList({
     count: tracks.length,

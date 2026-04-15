@@ -13,8 +13,6 @@ describe('ProfileTabs', () => {
   const defaults = {
     activeTab: 'recent' as const,
     onTabChange: vi.fn(),
-    sortDirection: 'desc' as const,
-    onSortDirectionChange: vi.fn(),
   };
 
   it('renders all tab options', () => {
@@ -31,17 +29,13 @@ describe('ProfileTabs', () => {
     expect(onTabChange).toHaveBeenCalledWith('popular');
   });
 
-  it('shows sort direction when showSortDirection is true', () => {
-    const { container } = render(<ProfileTabs {...defaults} showSortDirection />);
-    const sortDiv = container.querySelector('[class*="flex items-center gap-2"]');
-    expect(sortDiv).not.toHaveClass('opacity-0');
-    expect(sortDiv).not.toHaveAttribute('inert');
+  it('shows streaming spinner when isStreaming', () => {
+    const { container } = render(<ProfileTabs {...defaults} isStreaming />);
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
-  it('hides sort direction with inert when showSortDirection is false', () => {
-    const { container } = render(<ProfileTabs {...defaults} showSortDirection={false} />);
-    const sortDiv = container.querySelector('.opacity-0');
-    expect(sortDiv).toBeInTheDocument();
-    expect(sortDiv).toHaveAttribute('inert');
+  it('does not show spinner when not streaming', () => {
+    const { container } = render(<ProfileTabs {...defaults} />);
+    expect(container.querySelector('.animate-spin')).not.toBeInTheDocument();
   });
 });

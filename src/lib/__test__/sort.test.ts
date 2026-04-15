@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sortTracks } from '../sortTracks';
+import { sortTracks } from '@/lib/sort';
 import type { TrackInfo } from '@/bindings';
 
 const makeTracks = (): TrackInfo[] => [
