@@ -29,6 +29,10 @@ Create a new release version for InfraBooth Downloader.
    - **Fixed**: Bug fixes (look for changes that fix issues)
    - **Removed**: Deleted features or files (user-facing only)
    - Skip internal changes: CI, tests, configs, refactoring
+   - **Feature flag handling** (inspect `src/config/feature-flags.toml` at both the previous tag and HEAD, plus `src/lib/featureFlags.ts` defaults):
+     - If a feature is still gated behind a flag set to `false` at HEAD, the user cannot see it — **exclude it from the changelog entirely** (neither Added nor Changed). The rekordbox flag is the canonical example: while `rekordbox = false`, no rekordbox-related item belongs in the release notes, even if the code landed this cycle.
+     - If a flag flipped from `false` → `true` this cycle, OR the flag entry was removed from `feature-flags.toml` and `featureFlags.ts` (meaning the feature now runs unconditionally), the feature just became user-visible — **add it to `### Added`** in this release, regardless of when the underlying code originally landed.
+     - Detection: run `git show <tag>:src/config/feature-flags.toml` and compare to the current file. Any key that went from `false` to `true`, or disappeared entirely, is an unflag. Any key still at `false` is a gate — filter its related commits out.
 6. Read the actual code changes (`git diff <tag>..HEAD`) to understand what was done
 7. Generate a user-friendly changelog entry following these writing rules:
    - **Ultra-concise**: each item must be a short fragment (5-12 words max). No full sentences, no explanations, no dashes or parenthetical details. Think app store release notes, not documentation. Bad: "The app now silently checks for updates when launched — if a new version is available, a non-intrusive banner appears at the top of the window". Good: "Automatic update checks at startup".
@@ -38,7 +42,19 @@ Create a new release version for InfraBooth Downloader.
    - **Hide implementation details**: Never expose technical internals (protocols, caching strategies, preloading mechanisms, rendering techniques, etc.) in changelog entries. Describe what the user *experiences*, not how it works under the hood. Bad: "HLS preloading for smoother playback". Good: "Smoother audio playback". For new features, these details are just expected quality — only mention performance/UX improvements as "Changed" items when they improve an *existing* feature.
    - **Fixed items are bug-oriented**: Describe the bug the user experienced, not the fix. Use past tense. Bad: "Search cleared when switching tabs". Good: "Search was cleared when switching tabs".
    - **Collapse fixes into their parent feature**: If a feature was added since the last release and subsequent commits fix bugs in that feature, do NOT list those fixes separately — the user never saw the broken version. Only mention the feature as "Added". Similarly, if a "Changed" item was later fixed, just describe the final working behavior. Only list a "Fixed" item if it fixes something that existed in the *previous release*.
-8. Show the detected version bump, the English changelog, AND the French translation side by side for user review. Ask user to confirm before proceeding. If the user requests changes, apply them and show the updated versions for confirmation again. Do NOT proceed until the user explicitly confirms both English and French entries.
+8. Show the detected version bump and the changelog for user review. **ALWAYS present the English and French entries in a 3-column Markdown table** with columns `Section` | `English` | `French`, and **one table row per bullet item** (not one row per section). Repeat the section label in the `Section` column for every bullet belonging to it. Do NOT use `<br>` tags, bullet lists inside cells, side-by-side code blocks, or separate sections — the terminal renderer collapses multi-line cells into a single line, so each bullet MUST be its own row. Example:
+
+   ```markdown
+   ## Version 1.20.0 (minor)
+
+   | Section | English | French |
+   |---------|---------|--------|
+   | **Added** | Export playlists to Rekordbox | Export des playlists vers Rekordbox |
+   | **Added** | Switch between card and list view | Basculement entre l'affichage en grille et en liste |
+   | **Fixed** | Tracks did not appear until fully loaded | Les morceaux ne s'affichaient qu'une fois toutes chargées |
+   ```
+
+   Ask the user to confirm before proceeding. If the user requests changes, apply them and show the updated table for confirmation again. Do NOT proceed until the user explicitly confirms both English and French entries.
 9. Update version in:
    - `package.json`
    - `src-tauri/tauri.conf.json`
