@@ -29,10 +29,6 @@ Create a new release version for InfraBooth Downloader.
    - **Fixed**: Bug fixes (look for changes that fix issues)
    - **Removed**: Deleted features or files (user-facing only)
    - Skip internal changes: CI, tests, configs, refactoring
-   - **Feature flag handling** (inspect `src/config/feature-flags.toml` at both the previous tag and HEAD, plus `src/lib/featureFlags.ts` defaults):
-     - If a feature is still gated behind a flag set to `false` at HEAD, the user cannot see it — **exclude it from the changelog entirely** (neither Added nor Changed). The rekordbox flag is the canonical example: while `rekordbox = false`, no rekordbox-related item belongs in the release notes, even if the code landed this cycle.
-     - If a flag flipped from `false` → `true` this cycle, OR the flag entry was removed from `feature-flags.toml` and `featureFlags.ts` (meaning the feature now runs unconditionally), the feature just became user-visible — **add it to `### Added`** in this release, regardless of when the underlying code originally landed.
-     - Detection: run `git show <tag>:src/config/feature-flags.toml` and compare to the current file. Any key that went from `false` to `true`, or disappeared entirely, is an unflag. Any key still at `false` is a gate — filter its related commits out.
 6. Read the actual code changes (`git diff <tag>..HEAD`) to understand what was done
 7. Generate a user-friendly changelog entry following these writing rules:
    - **Ultra-concise**: each item must be a short fragment (5-12 words max). No full sentences, no explanations, no dashes or parenthetical details. Think app store release notes, not documentation. Bad: "The app now silently checks for updates when launched — if a new version is available, a non-intrusive banner appears at the top of the window". Good: "Automatic update checks at startup".
