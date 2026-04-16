@@ -19,10 +19,6 @@ export function TransportControls({ className }: TransportControlsProps) {
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Button variant="ghost" size="icon" onClick={() => actions().toggleShuffle()}
-        className={cn(isShuffled && 'text-primary')}>
-        <Shuffle className="h-4 w-4" />
-      </Button>
       <Button variant="ghost" size="icon" onClick={() => actions().previous()}>
         <SkipBack className="h-5 w-5" />
       </Button>
@@ -32,6 +28,10 @@ export function TransportControls({ className }: TransportControlsProps) {
       </Button>
       <Button variant="ghost" size="icon" onClick={() => actions().next()}>
         <SkipForward className="h-5 w-5" />
+      </Button>
+      <Button variant="ghost" size="icon" onClick={() => actions().toggleShuffle()}
+        className={cn(isShuffled && 'text-primary')}>
+        <Shuffle className="h-4 w-4" />
       </Button>
     </div>
   );
