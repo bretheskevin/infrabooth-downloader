@@ -434,7 +434,9 @@
     "empty": "Aucune conversation",
     "error": "Impossible de charger les messages",
     "retry": "Réessayer",
-    "you": "Vous"
+    "you": "Vous",
+    "trackCount_one": "{{count}} piste",
+    "trackCount_other": "{{count}} pistes"
   },
   "newReleases": {
     "title": "Playlists / Albums récents",

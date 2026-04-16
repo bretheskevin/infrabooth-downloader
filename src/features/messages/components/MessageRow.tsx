@@ -3,10 +3,12 @@ import { open } from '@tauri-apps/plugin-shell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePlayerStore } from '@/features/player';
 import type { PlaybackItem } from '@/features/player';
+import { useMessagesStore } from '../store';
 import { MessageTrackCard } from './MessageTrackCard';
+import { MessagePlaylistCard } from './MessagePlaylistCard';
 import type { ConversationMessage, MessageTrackEmbed, MessageUser } from '@/bindings';
 import { formatChatTimestamp } from '@/lib/date';
-import { useResolveTrackEmbed } from '../hooks/useResolveTrackEmbed';
+import { useResolveEmbed } from '../hooks/useResolveEmbed';
 import { linkifyText } from '@/lib/linkify';
 import { useAuthStore } from '@/features/auth/store';
 
@@ -50,9 +52,15 @@ export function MessageRow({ message, currentUserId, otherUser, showHeader }: Me
   const senderName = isOwnMessage ? t('directMessages.you') : (otherUser?.username ?? '');
   const senderAvatar = isOwnMessage ? myAvatarUrl : otherUser?.avatar_url;
 
-  const { embed: trackEmbed, scUrl } = useResolveTrackEmbed(message.content);
+  const { trackEmbed, playlistEmbed, scUrl } = useResolveEmbed(message.content);
   const displayContent = scUrl ? message.content.replace(scUrl, '').trim() : message.content;
   const timestamp = formatChatTimestamp(message.sent_at, i18n.language);
+
+  const embedElement = trackEmbed
+    ? <TrackEmbed embed={trackEmbed} />
+    : playlistEmbed
+      ? <MessagePlaylistCard embed={playlistEmbed} onOpen={() => useMessagesStore.getState().openPlaylist(playlistEmbed)} />
+      : null;
 
   if (isOwnMessage) {
     return (
@@ -72,7 +80,7 @@ export function MessageRow({ message, currentUserId, otherUser, showHeader }: Me
               <p className="text-sm">{linkifyText(displayContent)}</p>
             </div>
           )}
-          {trackEmbed && <TrackEmbed embed={trackEmbed} />}
+          {embedElement}
         </div>
       </div>
     );
@@ -100,7 +108,7 @@ export function MessageRow({ message, currentUserId, otherUser, showHeader }: Me
             <p className="text-sm">{linkifyText(displayContent)}</p>
           </div>
         )}
-        {trackEmbed && <TrackEmbed embed={trackEmbed} />}
+        {embedElement}
       </div>
     </div>
   );

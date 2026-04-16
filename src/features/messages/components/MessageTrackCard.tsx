@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { TrackMenuItems } from '@/components/TrackRowActions';
 import type { MessageTrackEmbed } from '@/bindings';
-import { ArtistLink } from '@/features/artist-profile/components/ArtistLink';
+import { ArtistLink } from '@/components/ArtistLink';
 
 interface MessageTrackCardProps {
   embed: MessageTrackEmbed;

@@ -434,7 +434,9 @@
     "empty": "No conversations",
     "error": "Couldn't load messages",
     "retry": "Retry",
-    "you": "You"
+    "you": "You",
+    "trackCount_one": "{{count}} track",
+    "trackCount_other": "{{count}} tracks"
   },
   "newReleases": {
     "title": "New Playlists / Albums",

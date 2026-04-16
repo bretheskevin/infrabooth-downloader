@@ -1,7 +1,7 @@
 use tauri::Manager;
 
 use crate::commands::{require_auth_and_cid, require_user_id};
-use crate::services::messages::{self, ConversationsPage, MessageTrackEmbed, MessagesCache, MessagesPage, CONVERSATIONS_TTL};
+use crate::services::messages::{self, ConversationsPage, MessageEmbed, MessagesCache, MessagesPage, CONVERSATIONS_TTL};
 
 #[tauri::command]
 #[specta::specta]
@@ -63,7 +63,7 @@ pub async fn get_unread_conversations_flag(app: tauri::AppHandle) -> Result<bool
 
 #[tauri::command]
 #[specta::specta]
-pub async fn resolve_message_track_embed(app: tauri::AppHandle, url: String) -> Result<Option<MessageTrackEmbed>, String> {
+pub async fn resolve_message_embed(app: tauri::AppHandle, url: String) -> Result<Option<MessageEmbed>, String> {
     let (token, client_id) = require_auth_and_cid(&app).await?;
     let cache = app.state::<MessagesCache>();
     Ok(messages::resolve_embed_cached(&cache, &url, &client_id, &token).await)

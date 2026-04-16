@@ -60,6 +60,25 @@ pub struct MessageTrackEmbed {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct MessagePlaylistEmbed {
+    pub id: u64,
+    pub title: String,
+    pub artist: String,
+    pub artist_id: u64,
+    pub artwork_url: Option<String>,
+    pub track_count: u32,
+    pub permalink_url: String,
+    pub secret_token: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+#[serde(tag = "kind")]
+pub enum MessageEmbed {
+    Track(MessageTrackEmbed),
+    Playlist(MessagePlaylistEmbed),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct ConversationSummary {
     pub id: String,
     pub other_user: MessageUser,
@@ -175,9 +194,9 @@ fn convert_conversations(raw: RawPaginatedResponse<RawConversation>, current_use
 // URL resolution
 // ---------------------------------------------------------------------------
 
-async fn resolve_track_embed(url: &str, client_id: &str, oauth_token: &str) -> Option<MessageTrackEmbed> {
+async fn resolve_embed(url: &str, client_id: &str, oauth_token: &str) -> Option<MessageEmbed> {
     use crate::services::http::{expand_short_link, resolve_sc_url};
-    use crate::services::playlist::RawTrackInfo;
+    use crate::services::playlist::{RawTrackInfo, RawUserInfo};
 
     let expanded = if url.contains("on.soundcloud.com") {
         expand_short_link(url).await.ok()?
@@ -185,18 +204,59 @@ async fn resolve_track_embed(url: &str, client_id: &str, oauth_token: &str) -> O
         url.to_string()
     };
 
-    let track: RawTrackInfo = resolve_sc_url(&expanded, client_id, Some(oauth_token)).await.ok()?;
+    let value: serde_json::Value = resolve_sc_url(&expanded, client_id, Some(oauth_token)).await.ok()?;
+    let kind = value.get("kind")?.as_str()?;
 
-    Some(MessageTrackEmbed {
-        id: track.id,
-        title: track.title,
-        artist: track.user.username,
-        artist_id: track.user.id,
-        artwork_url: track.artwork_url,
-        waveform_url: track.waveform_url,
-        duration_ms: track.duration,
-        permalink_url: track.permalink_url,
-    })
+    match kind {
+        "track" => {
+            let track: RawTrackInfo = serde_json::from_value(value).ok()?;
+            Some(MessageEmbed::Track(MessageTrackEmbed {
+                id: track.id,
+                title: track.title,
+                artist: track.user.username,
+                artist_id: track.user.id,
+                artwork_url: track.artwork_url,
+                waveform_url: track.waveform_url,
+                duration_ms: track.duration,
+                permalink_url: track.permalink_url,
+            }))
+        }
+        "playlist" => {
+            #[derive(serde::Deserialize)]
+            struct RawPlaylistTrack {
+                artwork_url: Option<String>,
+            }
+            #[derive(serde::Deserialize)]
+            struct RawPlaylist {
+                id: u64,
+                title: String,
+                user: RawUserInfo,
+                artwork_url: Option<String>,
+                #[serde(default)]
+                track_count: u32,
+                #[serde(default)]
+                permalink_url: String,
+                secret_token: Option<String>,
+                #[serde(default)]
+                tracks: Vec<RawPlaylistTrack>,
+            }
+            let playlist: RawPlaylist = serde_json::from_value(value).ok()?;
+            let artwork = playlist
+                .artwork_url
+                .or_else(|| playlist.tracks.iter().find_map(|t| t.artwork_url.clone()));
+            Some(MessageEmbed::Playlist(MessagePlaylistEmbed {
+                id: playlist.id,
+                title: playlist.title,
+                artist: playlist.user.username,
+                artist_id: playlist.user.id,
+                artwork_url: artwork,
+                track_count: playlist.track_count,
+                permalink_url: playlist.permalink_url,
+                secret_token: playlist.secret_token,
+            }))
+        }
+        _ => None,
+    }
 }
 
 fn convert_messages(raw: RawPaginatedResponse<RawMessage>, other_user_id: u64, current_user_id: u64) -> MessagesPage {
@@ -218,11 +278,11 @@ fn convert_messages(raw: RawPaginatedResponse<RawMessage>, other_user_id: u64, c
     MessagesPage { items, other_user, current_user_id, next_offset }
 }
 
-pub async fn resolve_embed_cached(cache: &MessagesCache, url: &str, client_id: &str, oauth_token: &str) -> Option<MessageTrackEmbed> {
+pub async fn resolve_embed_cached(cache: &MessagesCache, url: &str, client_id: &str, oauth_token: &str) -> Option<MessageEmbed> {
     if let Some(cached) = cache.get_embed(url) {
         return Some(cached);
     }
-    let embed = resolve_track_embed(url, client_id, oauth_token).await?;
+    let embed = resolve_embed(url, client_id, oauth_token).await?;
     cache.set_embed(url.to_string(), embed.clone());
     Some(embed)
 }
@@ -249,7 +309,7 @@ struct CachedUnread {
 struct MessagesCacheInner {
     first_conversations_page: Option<CachedConversations>,
     unread: Option<CachedUnread>,
-    embed_cache: HashMap<String, MessageTrackEmbed>,
+    embed_cache: HashMap<String, MessageEmbed>,
 }
 
 #[derive(Default)]
@@ -292,12 +352,12 @@ impl MessagesCache {
         inner.unread = Some(CachedUnread { has_unread, fetched_at: Instant::now() });
     }
 
-    pub fn get_embed(&self, url: &str) -> Option<MessageTrackEmbed> {
+    pub fn get_embed(&self, url: &str) -> Option<MessageEmbed> {
         let guard = self.lock();
         guard.as_ref()?.embed_cache.get(url).cloned()
     }
 
-    pub fn set_embed(&self, url: String, embed: MessageTrackEmbed) {
+    pub fn set_embed(&self, url: String, embed: MessageEmbed) {
         let mut guard = self.lock();
         let inner = guard.get_or_insert_with(Default::default);
         if inner.embed_cache.len() >= MAX_EMBED_CACHE_SIZE {
