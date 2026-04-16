@@ -7,6 +7,12 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.21.1] - 2026-04-16
+
+### Fixed
+
+- Sous Windows, on ne pouvait pas installer les mises à jour depuis l'application
+
 ## [1.21.0] - 2026-04-16
 
 ### Added

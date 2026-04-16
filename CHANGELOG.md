@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.1] - 2026-04-16
+
+### Fixed
+
+- Windows app updates could not install from the app
+
 ## [1.21.0] - 2026-04-16
 
 ### Added
