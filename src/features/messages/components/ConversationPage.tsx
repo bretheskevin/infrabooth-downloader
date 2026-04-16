@@ -2,10 +2,12 @@ import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { MessageRow } from './MessageRow';
 import { useConversationMessages } from '../hooks/useConversationMessages';
 import { useMessagesStore } from '../store';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useIsMiniPillVisible } from '@/features/player/hooks/useIsMiniPillVisible';
 
 export function ConversationPage() {
   const { t } = useTranslation();
@@ -14,6 +16,7 @@ export function ConversationPage() {
   const { items, currentUserId, otherUser, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
     useConversationMessages(conversation?.otherUserId ?? 0);
   const { sentinelRef } = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
+  const miniPillVisible = useIsMiniPillVisible();
 
   const displayUser = otherUser?.username ? otherUser : conversation
     ? { id: conversation.otherUserId, username: conversation.username, avatar_url: conversation.avatarUrl, permalink_url: '' }
@@ -54,7 +57,7 @@ export function ConversationPage() {
       )}
 
       {!isLoading && !error && (
-        <div className="flex-1 min-h-0 overflow-y-auto flex flex-col-reverse gap-5 pb-4 px-4">
+        <div className={cn('flex-1 min-h-0 overflow-y-auto flex flex-col-reverse gap-5 pb-4 px-4', miniPillVisible && 'pb-14')}>
           {items.map((msg, idx) => (
             <MessageRow
               key={`${msg.sent_at}-${idx}`}
