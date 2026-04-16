@@ -1,4 +1,5 @@
 use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
@@ -280,14 +281,23 @@ pub fn has_unread(latest_created_at: Option<i64>, last_seen: Option<i64>) -> boo
 // Cache
 // ---------------------------------------------------------------------------
 
+pub const UNREAD_PROBE_TTL: Duration = Duration::from_secs(90);
+pub const FIRST_PAGE_TTL: Duration = Duration::from_secs(120);
+
+struct CachedPage {
+    page: NotificationsPage,
+    fetched_at: Instant,
+}
+
 #[derive(Default)]
 struct NotificationsCacheInner {
-    first_page: Option<NotificationsPage>,
+    first_page: Option<CachedPage>,
     unread_probe: Option<UnreadProbe>,
 }
 
 struct UnreadProbe {
     latest_created_at: Option<i64>,
+    fetched_at: Instant,
 }
 
 #[derive(Default)]
@@ -300,24 +310,41 @@ impl NotificationsCache {
         self.inner.lock().unwrap_or_else(|e| e.into_inner())
     }
 
-    pub fn get_first_page(&self) -> Option<NotificationsPage> {
-        self.lock().as_ref()?.first_page.clone()
+    pub fn get_first_page(&self, ttl: Duration) -> Option<NotificationsPage> {
+        let guard = self.lock();
+        let cached = guard.as_ref()?.first_page.as_ref()?;
+        if cached.fetched_at.elapsed() > ttl {
+            return None;
+        }
+        Some(cached.page.clone())
     }
 
     pub fn set_first_page(&self, page: NotificationsPage) {
         let mut guard = self.lock();
         let inner = guard.get_or_insert_with(Default::default);
-        inner.first_page = Some(page);
+        inner.first_page = Some(CachedPage { page, fetched_at: Instant::now() });
     }
 
-    pub fn get_unread_probe(&self) -> Option<Option<i64>> {
-        Some(self.lock().as_ref()?.unread_probe.as_ref()?.latest_created_at)
+    pub fn clear_first_page(&self) {
+        let mut guard = self.lock();
+        if let Some(inner) = guard.as_mut() {
+            inner.first_page = None;
+        }
+    }
+
+    pub fn get_unread_probe(&self, ttl: Duration) -> Option<Option<i64>> {
+        let guard = self.lock();
+        let probe = guard.as_ref()?.unread_probe.as_ref()?;
+        if probe.fetched_at.elapsed() > ttl {
+            return None;
+        }
+        Some(probe.latest_created_at)
     }
 
     pub fn set_unread_probe(&self, latest_created_at: Option<i64>) {
         let mut guard = self.lock();
         let inner = guard.get_or_insert_with(Default::default);
-        inner.unread_probe = Some(UnreadProbe { latest_created_at });
+        inner.unread_probe = Some(UnreadProbe { latest_created_at, fetched_at: Instant::now() });
     }
 
     pub fn clear(&self) {
@@ -662,11 +689,13 @@ mod tests {
         assert_eq!(page.next_cursor.as_deref(), Some("cursor123"));
     }
 
+    const TEST_TTL: Duration = Duration::from_secs(60);
+
     #[test]
     fn test_cache_default_is_empty() {
         let cache = NotificationsCache::default();
-        assert!(cache.get_first_page().is_none());
-        assert!(cache.get_unread_probe().is_none());
+        assert!(cache.get_first_page(TEST_TTL).is_none());
+        assert!(cache.get_unread_probe(TEST_TTL).is_none());
     }
 
     #[test]
@@ -674,15 +703,39 @@ mod tests {
         let cache = NotificationsCache::default();
         let page = NotificationsPage { items: vec![], next_cursor: Some("c1".into()) };
         cache.set_first_page(page);
-        let got = cache.get_first_page().unwrap();
+        let got = cache.get_first_page(TEST_TTL).unwrap();
         assert_eq!(got.next_cursor.as_deref(), Some("c1"));
+    }
+
+    #[test]
+    fn test_cache_first_page_expires() {
+        let cache = NotificationsCache::default();
+        let page = NotificationsPage { items: vec![], next_cursor: None };
+        cache.set_first_page(page);
+        assert!(cache.get_first_page(Duration::ZERO).is_none());
     }
 
     #[test]
     fn test_cache_set_and_get_unread_probe() {
         let cache = NotificationsCache::default();
         cache.set_unread_probe(Some(12345));
-        assert_eq!(cache.get_unread_probe(), Some(Some(12345)));
+        assert_eq!(cache.get_unread_probe(TEST_TTL), Some(Some(12345)));
+    }
+
+    #[test]
+    fn test_cache_unread_probe_expires() {
+        let cache = NotificationsCache::default();
+        cache.set_unread_probe(Some(12345));
+        assert!(cache.get_unread_probe(Duration::ZERO).is_none());
+    }
+
+    #[test]
+    fn test_cache_clear_first_page() {
+        let cache = NotificationsCache::default();
+        let page = NotificationsPage { items: vec![], next_cursor: None };
+        cache.set_first_page(page);
+        cache.clear_first_page();
+        assert!(cache.get_first_page(TEST_TTL).is_none());
     }
 
     #[test]
@@ -690,7 +743,7 @@ mod tests {
         let cache = NotificationsCache::default();
         cache.set_unread_probe(Some(100));
         cache.clear();
-        assert!(cache.get_unread_probe().is_none());
+        assert!(cache.get_unread_probe(TEST_TTL).is_none());
     }
 
     #[test]
