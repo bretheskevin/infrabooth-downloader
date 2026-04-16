@@ -13,6 +13,7 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 - Basculement entre l'affichage en grille et en liste pour les playlists et les sorties
 - Liens cliquables vers les artistes sur les playlists
+- Notifications d'activité SoundCloud (abonnements, likes, reposts, commentaires)
 
 ### Changed
 
