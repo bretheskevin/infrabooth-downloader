@@ -179,6 +179,14 @@ async getLogPath() : Promise<Result<string, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async getFeatureFlags() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_feature_flags") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async validateDownloadPath(path: string) : Promise<Result<boolean, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("validate_download_path", { path }) };

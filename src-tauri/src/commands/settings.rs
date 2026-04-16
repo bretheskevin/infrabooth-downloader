@@ -47,6 +47,115 @@ pub fn get_log_path(app: tauri::AppHandle) -> Result<String, String> {
     get_app_data_dir(&app).map(|p| p.join("logs").to_string_lossy().to_string())
 }
 
+const DEFAULT_FEATURE_FLAGS: &str = include_str!("../../feature-flags.toml");
+
+fn line_key(line: &str) -> Option<&str> {
+    let before_comment = line.split('#').next().unwrap_or("").trim();
+    let (key, _) = before_comment.split_once('=')?;
+    let key = key.trim();
+    if key.is_empty() {
+        None
+    } else {
+        Some(key)
+    }
+}
+
+fn parse_flag_keys(source: &str) -> Vec<String> {
+    source.lines().filter_map(|line| line_key(line).map(str::to_string)).collect()
+}
+
+fn extract_flag_block(source: &str, key: &str) -> Option<String> {
+    let lines: Vec<&str> = source.lines().collect();
+    for (i, line) in lines.iter().enumerate() {
+        if line_key(line) == Some(key) {
+            let mut start = i;
+            while start > 0 && lines[start - 1].trim_start().starts_with('#') {
+                start -= 1;
+            }
+            return Some(lines[start..=i].join("\n") + "\n");
+        }
+    }
+    None
+}
+
+fn remove_flag_block(source: &str, key: &str) -> String {
+    let lines: Vec<&str> = source.lines().collect();
+    let mut to_remove = std::collections::HashSet::new();
+
+    for (i, line) in lines.iter().enumerate() {
+        if line_key(line) == Some(key) {
+            let mut start = i;
+            while start > 0 && lines[start - 1].trim_start().starts_with('#') {
+                start -= 1;
+            }
+            for j in start..=i {
+                to_remove.insert(j);
+            }
+            if i + 1 < lines.len() && lines[i + 1].trim().is_empty() {
+                to_remove.insert(i + 1);
+            }
+            break;
+        }
+    }
+
+    lines
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| !to_remove.contains(i))
+        .map(|(_, line)| *line)
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n"
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_feature_flags(app: tauri::AppHandle) -> Result<String, String> {
+    let app_data = get_app_data_dir(&app)?;
+    let flags_path = app_data.join("feature-flags.toml");
+
+    if !flags_path.exists() {
+        fs::create_dir_all(&app_data).map_err(|e| format!("Failed to create app data dir: {}", e))?;
+        fs::write(&flags_path, DEFAULT_FEATURE_FLAGS).map_err(|e| format!("Failed to write default feature flags: {}", e))?;
+        return Ok(DEFAULT_FEATURE_FLAGS.to_string());
+    }
+
+    let mut content = fs::read_to_string(&flags_path).map_err(|e| format!("Failed to read feature flags: {}", e))?;
+
+    let existing_keys = parse_flag_keys(&content);
+    let default_keys = parse_flag_keys(DEFAULT_FEATURE_FLAGS);
+
+    let mut dirty = false;
+
+    // Remove stale keys (present in user file but not in defaults)
+    for key in &existing_keys {
+        if !default_keys.iter().any(|k| k == key) {
+            content = remove_flag_block(&content, key);
+            dirty = true;
+        }
+    }
+
+    // Append missing keys (present in defaults but not in user file)
+    for key in &default_keys {
+        if !existing_keys.iter().any(|k| k == key) {
+            if let Some(block) = extract_flag_block(DEFAULT_FEATURE_FLAGS, key) {
+                if !content.ends_with('\n') {
+                    content.push('\n');
+                }
+                content.push('\n');
+                content.push_str(&block);
+                dirty = true;
+            }
+        }
+    }
+
+    if dirty {
+        fs::write(&flags_path, &content).map_err(|e| format!("Failed to update feature flags: {}", e))?;
+    }
+
+    Ok(content)
+}
+
 #[tauri::command]
 #[specta::specta]
 pub fn validate_download_path(path: String) -> Result<bool, String> {

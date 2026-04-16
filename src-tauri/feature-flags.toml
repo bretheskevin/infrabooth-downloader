@@ -2,8 +2,10 @@
 #
 # Toggle in-progress features without removing their code. Only booleans are
 # supported. Lines starting with '#' are comments; blank lines are ignored.
-# Unknown keys and non-boolean values cause a startup error (see
-# src/lib/featureFlags.ts).
+# Unknown keys and non-boolean values are rejected by the app.
+#
+# This file lives in the app data directory so power users can enable
+# work-in-progress features. It is created automatically on first launch.
 
 # Rekordbox export (settings sidebar entry + section). Work-in-progress.
 rekordbox = false
