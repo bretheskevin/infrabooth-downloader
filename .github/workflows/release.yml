@@ -206,42 +206,12 @@ jobs:
 
       - name: Generate latest.json
         run: |
-          VERSION=${{ steps.version.outputs.version }}
-          cd release
-
-          # Find files
-          ARM_TAR=$(ls *Apple_Silicon*.app.tar.gz 2>/dev/null | head -1 || echo "")
-          INTEL_TAR=$(ls *Intel*.app.tar.gz 2>/dev/null | head -1 || echo "")
-          WINDOWS_EXE=$(ls *setup*.exe 2>/dev/null | head -1 || ls *.exe 2>/dev/null | head -1 || echo "")
-
-          # Get signatures
-          ARM_SIG=$(cat "${ARM_TAR}.sig" 2>/dev/null || echo "")
-          INTEL_SIG=$(cat "${INTEL_TAR}.sig" 2>/dev/null || echo "")
-          WINDOWS_SIG=$(cat "${WINDOWS_EXE}.sig" 2>/dev/null || echo "")
-
-          cat > latest.json << EOF
-          {
-            "version": "${VERSION}",
-            "notes": "See release notes for details.",
-            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
-            "platforms": {
-              "darwin-aarch64": {
-                "signature": "${ARM_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${ARM_TAR}"
-              },
-              "darwin-x86_64": {
-                "signature": "${INTEL_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${INTEL_TAR}"
-              },
-              "windows-x86_64": {
-                "signature": "${WINDOWS_SIG}",
-                "url": "https://github.com/${{ github.repository }}/releases/download/v${VERSION}/${WINDOWS_EXE}"
-              }
-            }
-          }
-          EOF
-
-          cat latest.json
+          node scripts/generate-latest-json.mjs \
+            --version "${{ steps.version.outputs.version }}" \
+            --repo "${{ github.repository }}" \
+            --release-dir release \
+            > release/latest.json
+          cat release/latest.json
 
       - name: Generate checksums
         run: |
