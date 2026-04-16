@@ -416,6 +416,30 @@ pub async fn fetch_conversation_messages(
     Ok(convert_messages(raw, other_user_id, user_id))
 }
 
+pub async fn send_message(
+    oauth_token: &str, client_id: &str, datadome: Option<&str>, user_id: u64, other_user_id: u64, content: &str,
+) -> Result<(), MessagesError> {
+    let url = format!(
+        "{}/users/{}/conversations/{}?client_id={}",
+        API_V2_BASE, user_id, other_user_id, client_id,
+    );
+
+    let body = serde_json::json!({ "contents": content });
+
+    let response = HTTP_CLIENT
+        .post(&url)
+        .with_oauth(Some(oauth_token))
+        .with_datadome(datadome)
+        .header("Content-Type", "application/json")
+        .body(body.to_string())
+        .send()
+        .await?;
+
+    validate_api_response(response.status())?;
+
+    Ok(())
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------

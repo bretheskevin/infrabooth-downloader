@@ -1,10 +1,13 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, SendHorizonal } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { MessageRow } from './MessageRow';
 import { useConversationMessages } from '../hooks/useConversationMessages';
+import { useSendMessage } from '../hooks/useSendMessage';
 import { useMessagesStore } from '../store';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useIsMiniPillVisible } from '@/features/player/hooks/useIsMiniPillVisible';
@@ -17,6 +20,16 @@ export function ConversationPage() {
     useConversationMessages(conversation?.otherUserId ?? 0);
   const { sentinelRef } = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
   const miniPillVisible = useIsMiniPillVisible();
+  const { sendMessage, isPending } = useSendMessage(conversation?.otherUserId ?? 0);
+  const [inputValue, setInputValue] = useState('');
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = inputValue.trim();
+    if (!trimmed) return;
+    sendMessage(trimmed);
+    setInputValue('');
+  };
 
   const displayUser = otherUser?.username ? otherUser : conversation
     ? { id: conversation.otherUserId, username: conversation.username, avatar_url: conversation.avatarUrl, permalink_url: '' }
@@ -79,6 +92,26 @@ export function ConversationPage() {
             </div>
           )}
         </div>
+      )}
+
+      {!isLoading && !error && conversation && (
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t pt-3 px-4">
+          <Input
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            placeholder={t('directMessages.placeholder')}
+            className="flex-1"
+            autoComplete="off"
+          />
+          <Button
+            type="submit"
+            size="icon"
+            disabled={!inputValue.trim() || isPending}
+            aria-label={t('directMessages.send')}
+          >
+            <SendHorizonal className="h-4 w-4" />
+          </Button>
+        </form>
       )}
     </div>
   );

@@ -237,4 +237,7 @@ export const api = {
 
   resolveMessageEmbed: (url: string): Promise<MessageEmbed | null> =>
     commands.resolveMessageEmbed(url).then(unwrap),
+
+  sendMessage: (otherUserId: number, content: string): Promise<void> =>
+    commands.sendMessage(otherUserId, content).then(unwrap).then(() => undefined),
 };

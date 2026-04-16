@@ -436,7 +436,10 @@
     "retry": "Retry",
     "you": "You",
     "trackCount_one": "{{count}} track",
-    "trackCount_other": "{{count}} tracks"
+    "trackCount_other": "{{count}} tracks",
+    "placeholder": "Write a message...",
+    "send": "Send",
+    "sendError": "Failed to send message"
   },
   "newReleases": {
     "title": "New Playlists / Albums",
