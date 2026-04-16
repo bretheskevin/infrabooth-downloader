@@ -1,4 +1,4 @@
-import rawFeatureFlags from '@/config/feature-flags.toml?raw';
+import { commands } from '@/bindings';
 
 export type FeatureFlags = {
   rekordbox: boolean;
@@ -25,7 +25,7 @@ export function parseFeatureFlags(source: string, defaults: FeatureFlags = DEFAU
     const value = line.slice(separator + 1).trim();
 
     if (!knownKeys.has(key)) {
-      throw new Error(`feature-flags.toml: unknown flag "${key}" on line ${index + 1}`);
+      return;
     }
 
     if (value !== 'true' && value !== 'false') {
@@ -40,4 +40,11 @@ export function parseFeatureFlags(source: string, defaults: FeatureFlags = DEFAU
   return flags;
 }
 
-export const featureFlags: FeatureFlags = parseFeatureFlags(rawFeatureFlags);
+export const featureFlags: FeatureFlags = { ...DEFAULTS };
+
+export async function loadFeatureFlags(): Promise<void> {
+  const result = await commands.getFeatureFlags();
+  if (result.status === 'ok') {
+    Object.assign(featureFlags, parseFeatureFlags(result.data));
+  }
+}

@@ -7,11 +7,13 @@ description: Use when adding or toggling a boolean feature flag in sc-downloader
 
 ## Overview
 
-Feature flags in this project are **boolean, build-time, frontend-only**. They exist to hide in-progress UI from users without deleting the code. The flag system lives at:
+Feature flags in this project are **boolean, runtime, loaded from app data**. They exist to hide in-progress UI from users without deleting the code. The flag system lives at:
 
-- Config: `src/config/feature-flags.toml`
-- Loader + types: `src/lib/featureFlags.ts`
-- TOML `?raw` typing: `src/vite-env.d.ts`
+- Default template: `src-tauri/feature-flags.toml` (embedded via `include_str!` at compile time)
+- Rust reader: `src-tauri/src/commands/settings.rs` (`get_feature_flags` command)
+- Frontend types + parser + loader: `src/lib/featureFlags.ts`
+
+On first launch, the Rust backend seeds `<app_data_dir>/feature-flags.toml` from the default template. On subsequent launches, any new flags added to the template are automatically appended to the user's file. Power users can edit this file and restart the app to enable WIP features.
 
 **Core principle: flag the entry point, not the destination.** If the user can't click to reach a piece of UI, you don't need to guard anything behind it.
 
@@ -42,13 +44,14 @@ That is the only acceptable interaction between tests and flags.
 
 ## How to Add a New Flag
 
-1. **Add to the config** — `src/config/feature-flags.toml`
+1. **Add to the default template** — `src-tauri/feature-flags.toml`:
    ```toml
    # <one-line comment: what this gates and why it's off>
    myFeature = false
    ```
+   This file is embedded in the binary at compile time. On first launch it's copied to `<app_data_dir>/feature-flags.toml`. For existing users, new keys are automatically appended to their file on next launch.
 
-2. **Add to the typed defaults** — `src/lib/featureFlags.ts`
+2. **Add to the frontend typed defaults** — `src/lib/featureFlags.ts`
    ```ts
    export type FeatureFlags = {
      rekordbox: boolean;
@@ -157,11 +160,12 @@ There should be exactly one place where the answer is the second one.
 | Adding a `*.test.ts` file for the flag | Don't — see "Do Not Write Tests" |
 | Gating Rust/Tauri commands the frontend won't call | Leave them registered |
 | Adding a flag without updating `FeatureFlags` type + `DEFAULTS` | Parser throws "unknown flag" at startup |
+| Adding a flag to frontend `DEFAULTS` but not to `src-tauri/feature-flags.toml` | New installs won't have the key in their file (harmless but inconsistent) |
 
 ## Checklist
 
 1. Add the flag + default to `FeatureFlags` type and `DEFAULTS` in `src/lib/featureFlags.ts`.
-2. Add the line in `src/config/feature-flags.toml` with a one-line comment on what it gates.
+2. Add the flag + default to `src-tauri/feature-flags.toml` with a one-line comment on what it gates.
 3. Identify the single UI entry point on the user's path.
 4. Add the flag check there — and only there.
 5. Do **not** write a test.

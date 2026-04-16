@@ -121,6 +121,8 @@ jobs:
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # Windows: allow duplicate OpenSSL/BoringSSL symbols (rquest uses BoringSSL, SQLCipher uses OpenSSL)
+          RUSTFLAGS: ${{ matrix.platform == 'windows-latest' && '-Clink-args=/FORCE:MULTIPLE' || '' }}
         run: npm run tauri build -- --target ${{ matrix.target }}
 
       - name: Rename macOS artifacts
