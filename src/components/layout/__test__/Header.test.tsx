@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Header } from '../Header';
 import i18n from '@/lib/i18n';
 import { useAuthStore } from '@/features/auth/store';
+import { createQueryWrapper } from '@/test/queryWrapper';
 
 // Mock auth module
 vi.mock('@/features/auth/api', () => ({
@@ -71,8 +72,9 @@ describe('Header', () => {
 
   it('should render AuthContainer with UserMenu when authenticated', () => {
     useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
+    const Wrapper = createQueryWrapper();
 
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(<Wrapper><TooltipProvider><Header /></TooltipProvider></Wrapper>);
 
     // UserMenu displays username and quality badge in a dropdown trigger
     expect(screen.getByText('testuser')).toBeInTheDocument();

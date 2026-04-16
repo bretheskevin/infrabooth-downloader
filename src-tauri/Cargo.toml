@@ -46,7 +46,7 @@ tauri-plugin-clipboard-manager = "2"
 once_cell = "1"
 time = { version = "0.3.41", features = ["formatting", "local-offset", "parsing"] }
 tauri-plugin-process = "2.3.1"
-rusqlite = { version = "0.31", features = ["bundled-sqlcipher"] }
+rusqlite = { version = "0.31", features = ["bundled-sqlcipher-vendored-openssl"] }
 sysinfo = "0.38"
 quick-xml = { version = "0.39", features = ["serialize"] }
 rand = "0.10"

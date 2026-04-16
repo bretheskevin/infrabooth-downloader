@@ -16,3 +16,15 @@ pub fn get_app_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
         .app_data_dir()
         .map_err(|e| format!("Failed to get app data directory: {}", e))
 }
+
+pub async fn persist_json(path: &std::path::Path, json: String) -> Result<(), String> {
+    if let Some(parent) = path.parent() {
+        tokio::fs::create_dir_all(parent)
+            .await
+            .map_err(|e| format!("Failed to create directory: {}", e))?;
+    }
+    tokio::fs::write(path, json)
+        .await
+        .map_err(|e| format!("Failed to persist state: {}", e))?;
+    Ok(())
+}

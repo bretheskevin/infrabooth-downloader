@@ -106,6 +106,11 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     app.state::<LibraryCache>().clear();
     app.state::<crate::services::selections::SelectionCache>().clear();
     app.state::<crate::services::new_tracks::NewTracksCache>().clear();
+    app.state::<crate::services::notifications::NotificationsCache>().clear();
+    let activities_path = crate::commands::notifications::last_seen_activities_path(&app);
+    let _ = app
+        .state::<crate::services::notifications::LastSeenActivityState>()
+        .clear_and_persist(&activities_path);
     let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(None));
     info!("User signed out");
     Ok(())

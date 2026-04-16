@@ -13,6 +13,7 @@ import { ArtistProfileView, useArtistProfileStore } from '@/features/artist-prof
 import { ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { ArtistReleasesView, ReleaseTracklistView, useNewReleasesStore } from '@/features/new-releases';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
+import { NotificationsPage, useNotificationsStore, playlistSummaryToLibraryPlaylist } from '@/features/notifications';
 import { useSelectionsStore } from '@/features/selections';
 import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
 import { cn } from '@/lib/utils';
@@ -22,6 +23,7 @@ function clearDetailOverlays() {
   useNewTracksStore.getState().clearSelectedArtist();
   useSelectionsStore.getState().clearSelectedMix();
   useNewReleasesStore.getState().goBackToCarousel();
+  useNotificationsStore.getState().clear();
 }
 
 function PageContent({
@@ -38,10 +40,13 @@ function PageContent({
   const selectedArtist = useNewTracksStore((s) => s.selectedArtist);
   const selectedMix = useSelectionsStore((s) => s.selectedMix);
   const newReleasesView = useNewReleasesStore((s) => s.viewState);
+  const isNotificationsPageOpen = useNotificationsStore((s) => s.isPageOpen);
+  const notificationPlaylist = useNotificationsStore((s) => s.selectedPlaylist);
 
   const [slideClass, setSlideClass] = useState('');
   const prevHasOverlayRef = useRef(false);
-  const hasOverlay = !!(selectedArtist || selectedMix || profileArtistId || newReleasesView.view !== 'carousel');
+  const hasNotificationOverlay = isNotificationsPageOpen || notificationPlaylist;
+  const hasOverlay = !!(selectedArtist || selectedMix || profileArtistId || newReleasesView.view !== 'carousel' || hasNotificationOverlay);
 
   useLayoutEffect(() => {
     if (hasOverlay && !prevHasOverlayRef.current) {
@@ -75,6 +80,27 @@ function PageContent({
   const handleBackToReleases = useCallback(() => {
     useNewReleasesStore.getState().goBackToReleases();
   }, []);
+
+  if (notificationPlaylist) {
+    const libraryPlaylist = playlistSummaryToLibraryPlaylist(notificationPlaylist);
+    return (
+      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <PlaylistDetailView
+          playlist={libraryPlaylist}
+          onBack={() => useNotificationsStore.getState().closePlaylist()}
+          onDownloadTracks={handleDownloadTracks}
+        />
+      </section>
+    );
+  }
+
+  if (isNotificationsPageOpen) {
+    return (
+      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <NotificationsPage />
+      </section>
+    );
+  }
 
   if (profileArtistId && profileArtistName) {
     return (

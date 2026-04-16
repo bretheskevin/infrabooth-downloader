@@ -9,17 +9,18 @@ use commands::{
     check_write_permission, clear_library_cache, delete_rekordbox_playlist, detect_rekordbox, download_track_full, export_to_rekordbox,
     fetch_related_tracks, follow_user, get_all_artist_tracks, get_app_data_path, get_artist_activity, get_artist_playlist_tracks,
     get_artist_playlists, get_artist_profile, get_artist_releases, get_default_download_path, get_default_rekordbox_data_directory_parent,
-    get_followed_artists, get_library_playlist_tracks, get_library_playlists, get_log_path, get_owned_playlists_for_track,
-    get_playlist_info, get_release_tracks, get_selections, get_track_info, install_update, list_rekordbox_backups,
-    list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, open_in_firefox, refresh_auth, remove_track_from_playlist,
-    resolve_library_artwork, resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice,
-    restore_rekordbox_backup, scan_existing_tracks, search_tracks, search_users, sign_out, start_download_queue, test_ffmpeg,
-    unfollow_user, validate_download_path, validate_soundcloud_url,
+    get_followed_artists, get_library_playlist_tracks, get_library_playlists, get_log_path, get_notifications_page,
+    get_owned_playlists_for_track, get_playlist_info, get_release_tracks, get_selections, get_track_info, get_unread_count, install_update,
+    list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, mark_notifications_seen,
+    open_in_firefox, refresh_auth, remove_track_from_playlist, resolve_library_artwork, resolve_playback_url, resolve_soundcloud_link,
+    resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_tracks, search_users, sign_out,
+    start_download_queue, test_ffmpeg, unfollow_user, validate_download_path, validate_soundcloud_url,
 };
 use services::cancellation::CancellationState;
 use services::events;
 use services::library::LibraryCache;
 use services::new_tracks::{NewTracksCache, SeenArtistsState};
+use services::notifications::{LastSeenActivityState, NotificationsCache};
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::selections::SelectionCache;
 use services::storage::AuthState;
@@ -103,6 +104,9 @@ pub fn run() {
             delete_rekordbox_playlist,
             list_rekordbox_backups,
             restore_rekordbox_backup,
+            get_unread_count,
+            get_notifications_page,
+            mark_notifications_seen,
         ]);
 
     // Export TypeScript bindings in debug mode
@@ -125,6 +129,7 @@ pub fn run() {
         .manage(LibraryCache::default())
         .manage(SelectionCache::default())
         .manage(NewTracksCache::default())
+        .manage(NotificationsCache::default())
         .manage(CancellationState::default())
         .manage(Arc::new(RateLimitChoiceState::default()))
         .invoke_handler(builder.invoke_handler())
@@ -133,6 +138,9 @@ pub fn run() {
 
             let seen_path = commands::new_tracks::seen_state_path(app.handle());
             app.manage(SeenArtistsState::load(&seen_path));
+
+            let activities_path = commands::notifications::last_seen_activities_path(app.handle());
+            app.manage(LastSeenActivityState::load(&activities_path));
 
             #[cfg(target_os = "macos")]
             {
@@ -201,7 +209,7 @@ pub fn run() {
                         // Filter out noisy rookie debug logs
                         !(metadata.target().starts_with("rookie") && metadata.level() > log::LevelFilter::Info)
                     })
-                    .max_file_size(50_000_000) // 50 MB per file
+                    .max_file_size(10_000_000) // 10 MB per file
                     .rotation_strategy(tauri_plugin_log::RotationStrategy::KeepOne)
                     .format(|out, message, record| {
                         let now = time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc());

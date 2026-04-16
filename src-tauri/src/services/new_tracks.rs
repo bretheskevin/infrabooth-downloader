@@ -304,11 +304,7 @@ pub fn now_unix() -> i64 {
         .as_secs() as i64
 }
 
-pub fn parse_iso_timestamp(s: &str) -> Option<i64> {
-    time::OffsetDateTime::parse(s, &time::format_description::well_known::Rfc3339)
-        .ok()
-        .map(|dt| dt.unix_timestamp())
-}
+pub use crate::services::timestamp::parse_iso_timestamp;
 
 fn is_within_30_days(created_at: &str) -> bool {
     parse_iso_timestamp(created_at)

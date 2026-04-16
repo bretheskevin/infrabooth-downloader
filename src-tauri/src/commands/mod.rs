@@ -57,6 +57,9 @@ pub use new_tracks::{
     get_artist_activity, get_artist_releases, get_followed_artists, get_release_tracks, mark_artist_releases_seen, mark_artist_seen,
 };
 
+pub mod notifications;
+pub use notifications::{get_notifications_page, get_unread_count, mark_notifications_seen};
+
 pub mod related;
 pub use related::fetch_related_tracks;
 
@@ -73,3 +76,5 @@ pub use rekordbox::{
     delete_rekordbox_playlist, detect_rekordbox, export_to_rekordbox, get_default_rekordbox_data_directory_parent, list_rekordbox_backups,
     list_rekordbox_playlists, restore_rekordbox_backup,
 };
+
+pub use crate::services::paths::persist_json;
