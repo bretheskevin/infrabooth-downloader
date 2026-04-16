@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Switch between card and list view for playlists and releases
 - Clickable artist links on playlists
+- SoundCloud activity notifications (follows, likes, reposts, comments)
 
 ### Changed
 
