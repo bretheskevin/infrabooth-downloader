@@ -23,6 +23,9 @@ import {
   type RekordboxStatus,
   type UnreadCountResult,
   type NotificationsPage,
+  type ConversationsPage,
+  type MessageTrackEmbed,
+  type MessagesPage,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
@@ -221,4 +224,17 @@ export const api = {
 
   markNotificationsSeen: (latestCreatedAt: string): Promise<void> =>
     commands.markNotificationsSeen(latestCreatedAt).then(unwrap).then(() => undefined),
+
+  // Direct Messages
+  getConversationsPage: (offset: number | null): Promise<ConversationsPage> =>
+    commands.getConversationsPage(offset).then(unwrap),
+
+  getConversationMessages: (otherUserId: number, offset: number | null): Promise<MessagesPage> =>
+    commands.getConversationMessages(otherUserId, offset).then(unwrap),
+
+  getUnreadConversationsFlag: (): Promise<boolean> =>
+    commands.getUnreadConversationsFlag().then(unwrap),
+
+  resolveMessageTrackEmbed: (url: string): Promise<MessageTrackEmbed | null> =>
+    commands.resolveMessageTrackEmbed(url).then(unwrap),
 };

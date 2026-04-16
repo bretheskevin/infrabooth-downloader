@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { linkifyDescription } from './LinkifiedDescription';
+import { linkifyText } from '@/lib/linkify';
 
 interface ExpandableDescriptionProps {
   description: string;
@@ -52,7 +52,7 @@ export function ExpandableDescription({ description }: ExpandableDescriptionProp
           isExpanded ? 'max-h-32 overflow-y-auto' : 'line-clamp-3',
         )}
       >
-        {linkifyDescription(description)}
+        {linkifyText(description)}
       </p>
       {isExpanded && canScrollDown && (
         <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />

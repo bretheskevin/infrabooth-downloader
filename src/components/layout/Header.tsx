@@ -4,6 +4,7 @@ import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuthContainer } from '@/features/auth/components/AuthContainer';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { MessageBell } from '@/features/messages';
 import { useIsSignedIn } from '@/features/auth/store';
 import { SettingsDialog } from '@/features/settings/components/SettingsDialog';
 import { useMenuSettingsListener } from '@/features/settings/hooks/useMenuSettingsListener';
@@ -33,6 +34,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-1">
+          {isSignedIn && <MessageBell />}
           {isSignedIn && <NotificationBell />}
           <AuthContainer />
 

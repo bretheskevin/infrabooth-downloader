@@ -373,6 +373,7 @@
     "signInDescription": "Connectez votre compte SoundCloud pour explorer des mixes personnalisés"
   },
   "trackMenu": {
+    "moreActions": "Plus d'actions",
     "copyLink": "Copier le lien",
     "linkCopied": "Lien copié",
     "openInBrowser": "Ouvrir dans le navigateur",
@@ -426,6 +427,14 @@
       "playlist_like": "{{actor}} a aimé {{playlist}}",
       "playlist_repost": "{{actor}} a reposté {{playlist}}"
     }
+  },
+  "directMessages": {
+    "ariaLabel": "Messages",
+    "title": "Messages",
+    "empty": "Aucune conversation",
+    "error": "Impossible de charger les messages",
+    "retry": "Réessayer",
+    "you": "Vous"
   },
   "newReleases": {
     "title": "Playlists / Albums récents",
