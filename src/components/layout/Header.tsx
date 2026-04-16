@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AuthContainer } from '@/features/auth/components/AuthContainer';
+import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { useIsSignedIn } from '@/features/auth/store';
 import { SettingsDialog } from '@/features/settings/components/SettingsDialog';
 import { useMenuSettingsListener } from '@/features/settings/hooks/useMenuSettingsListener';
 import { useAppVersion } from '@/hooks';
@@ -12,6 +14,7 @@ export function Header() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const appVersion = useAppVersion();
 
+  const isSignedIn = useIsSignedIn();
   const openSettings = useCallback(() => setSettingsOpen(true), []);
   useMenuSettingsListener(openSettings);
 
@@ -30,6 +33,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-1">
+          {isSignedIn && <NotificationBell />}
           <AuthContainer />
 
           <Button

@@ -199,15 +199,7 @@ async fn persist_seen_state(
         update(&seen, &cache, artist_id, now);
         seen.to_json()?
     };
-    if let Some(parent) = path.parent() {
-        tokio::fs::create_dir_all(parent)
-            .await
-            .map_err(|e| format!("Failed to create directory: {}", e))?;
-    }
-    tokio::fs::write(&path, json)
-        .await
-        .map_err(|e| format!("Failed to write seen state: {}", e))?;
-    Ok(())
+    super::persist_json(&path, json).await
 }
 
 #[tauri::command]

@@ -411,6 +411,22 @@
     "error": "Impossible de charger les nouveautés",
     "retry": "Réessayer"
   },
+  "notifications": {
+    "ariaLabel": "Notifications",
+    "title": "Notifications",
+    "empty": "Aucune notification",
+    "error": "Impossible de charger les notifications",
+    "retry": "Réessayer",
+    "label": {
+      "affiliation": "{{actor}} vous suit",
+      "track_like": "{{actor}} a aimé {{track}}",
+      "track_repost": "{{actor}} a reposté {{track}}",
+      "comment": "{{actor}} a commenté {{track}}",
+      "mention": "{{actor}} vous a mentionné sur {{track}}",
+      "playlist_like": "{{actor}} a aimé {{playlist}}",
+      "playlist_repost": "{{actor}} a reposté {{playlist}}"
+    }
+  },
   "newReleases": {
     "title": "Playlists / Albums récents",
     "releasesCount_one": "{{count}} sortie",

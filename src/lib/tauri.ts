@@ -21,6 +21,8 @@ import {
   type ExportTrackRequest,
   type RekordboxPlaylistInfo,
   type RekordboxStatus,
+  type UnreadCountResult,
+  type NotificationsPage,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
@@ -209,4 +211,14 @@ export const api = {
 
   checkFollowStatus: (userId: number): Promise<boolean> =>
     commands.checkFollowStatus(userId).then(unwrap),
+
+  // Notifications
+  getUnreadCount: (): Promise<UnreadCountResult> =>
+    commands.getUnreadCount().then(unwrap),
+
+  getNotificationsPage: (cursor: string | null): Promise<NotificationsPage> =>
+    commands.getNotificationsPage(cursor).then(unwrap),
+
+  markNotificationsSeen: (latestCreatedAt: string): Promise<void> =>
+    commands.markNotificationsSeen(latestCreatedAt).then(unwrap).then(() => undefined),
 };

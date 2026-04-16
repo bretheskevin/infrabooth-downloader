@@ -411,6 +411,22 @@
     "error": "Failed to load new tracks",
     "retry": "Retry"
   },
+  "notifications": {
+    "ariaLabel": "Notifications",
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "error": "Couldn't load notifications",
+    "retry": "Retry",
+    "label": {
+      "affiliation": "{{actor}} followed you",
+      "track_like": "{{actor}} liked {{track}}",
+      "track_repost": "{{actor}} reposted {{track}}",
+      "comment": "{{actor}} commented on {{track}}",
+      "mention": "{{actor}} mentioned you on {{track}}",
+      "playlist_like": "{{actor}} liked {{playlist}}",
+      "playlist_repost": "{{actor}} reposted {{playlist}}"
+    }
+  },
   "newReleases": {
     "title": "New Playlists / Albums",
     "releasesCount_one": "{{count}} release",
