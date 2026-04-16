@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Music } from 'lucide-react';
 import { DetailHeader } from '@/components/DetailHeader';
-import { ArtistLink } from '@/features/artist-profile/components/ArtistLink';
+import { ArtistLink } from '@/components/ArtistLink';
 import type { LibraryPlaylist } from '@/bindings';
 import { formatTotalDuration } from '@/lib/format';
 

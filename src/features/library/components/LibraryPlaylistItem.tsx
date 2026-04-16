@@ -2,7 +2,7 @@ import { Download, Loader2, Music } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useIsDownloadEnabled } from '@/features/settings';
-import { ArtistLink } from '@/features/artist-profile/components/ArtistLink';
+import { ArtistLink } from '@/components/ArtistLink';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import type { LibraryPlaylist } from '@/bindings';
 

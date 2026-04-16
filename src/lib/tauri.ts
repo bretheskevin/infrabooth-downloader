@@ -24,7 +24,7 @@ import {
   type UnreadCountResult,
   type NotificationsPage,
   type ConversationsPage,
-  type MessageTrackEmbed,
+  type MessageEmbed,
   type MessagesPage,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
@@ -193,8 +193,8 @@ export const api = {
   getArtistPlaylists: (artistId: number): Promise<ArtistPlaylist[]> =>
     commands.getArtistPlaylists(artistId).then(unwrap),
 
-  getArtistPlaylistTracks: (playlistId: number): Promise<TrackInfo[]> =>
-    commands.getArtistPlaylistTracks(playlistId).then(unwrap),
+  getArtistPlaylistTracks: (playlistId: number, secretToken: string | null = null): Promise<TrackInfo[]> =>
+    commands.getArtistPlaylistTracks(playlistId, secretToken).then(unwrap),
 
   getArtistReleases: (artistId: number): Promise<ReleaseActivityItem[]> =>
     commands.getArtistReleases(artistId).then(unwrap),
@@ -235,6 +235,6 @@ export const api = {
   getUnreadConversationsFlag: (): Promise<boolean> =>
     commands.getUnreadConversationsFlag().then(unwrap),
 
-  resolveMessageTrackEmbed: (url: string): Promise<MessageTrackEmbed | null> =>
-    commands.resolveMessageTrackEmbed(url).then(unwrap),
+  resolveMessageEmbed: (url: string): Promise<MessageEmbed | null> =>
+    commands.resolveMessageEmbed(url).then(unwrap),
 };

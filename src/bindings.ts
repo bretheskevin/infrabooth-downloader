@@ -409,9 +409,9 @@ async getArtistPlaylists(artistId: number) : Promise<Result<ArtistPlaylist[], st
     else return { status: "error", error: e  as any };
 }
 },
-async getArtistPlaylistTracks(playlistId: number) : Promise<Result<TrackInfo[], string>> {
+async getArtistPlaylistTracks(playlistId: number, secretToken: string | null) : Promise<Result<TrackInfo[], string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("get_artist_playlist_tracks", { playlistId }) };
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_playlist_tracks", { playlistId, secretToken }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -556,9 +556,9 @@ async getUnreadConversationsFlag() : Promise<Result<boolean, string>> {
     else return { status: "error", error: e  as any };
 }
 },
-async resolveMessageTrackEmbed(url: string) : Promise<Result<MessageTrackEmbed | null, string>> {
+async resolveMessageEmbed(url: string) : Promise<Result<MessageEmbed | null, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("resolve_message_track_embed", { url }) };
+    return { status: "ok", data: await TAURI_INVOKE("resolve_message_embed", { url }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -592,7 +592,7 @@ tracksBatchEvent: "tracks-batch-event"
 export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
 export type ActivityType = "Track" | "Repost"
 export type ActorInfo = { id: number; username: string; avatar_url: string | null; permalink_url: string }
-export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string }
+export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string; secret_token: string | null }
 export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
 export type BackupInfo = { path: string; timestamp: string; sizeMb: number }
 export type ConversationMessage = { content: string; sender_id: number; sent_at: string; track_embed: MessageTrackEmbed | null }
@@ -633,6 +633,8 @@ export type ExportResult = { exportedCount: number; skippedCount: number; playli
 export type ExportTrackRequest = { sourcePath: string }
 export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean; has_new_original_tracks: boolean; has_original_tracks: boolean; has_new_releases: boolean; has_new_original_releases: boolean; has_original_releases: boolean }
 export type LibraryPlaylist = { id: number; title: string; username: string; user_id: number | null; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
+export type MessageEmbed = ({ kind: "Track" } & MessageTrackEmbed) | ({ kind: "Playlist" } & MessagePlaylistEmbed)
+export type MessagePlaylistEmbed = { id: number; title: string; artist: string; artist_id: number; artwork_url: string | null; track_count: number; permalink_url: string; secret_token: string | null }
 export type MessageTrackEmbed = { id: number; title: string; artist: string; artist_id: number; artwork_url: string | null; waveform_url: string | null; duration_ms: number; permalink_url: string }
 export type MessageUser = { id: number; username: string; avatar_url: string | null; permalink_url: string }
 export type MessagesPage = { items: ConversationMessage[]; other_user: MessageUser; current_user_id: number; next_offset: number | null }

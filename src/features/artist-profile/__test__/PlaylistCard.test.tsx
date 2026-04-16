@@ -28,6 +28,7 @@ const mockPlaylist: ArtistPlaylist = {
   track_count: 12,
   created_at: '2026-01-15T10:00:00Z',
   permalink_url: 'https://soundcloud.com/user/sets/my-cool-playlist',
+  secret_token: null,
 };
 
 describe('PlaylistCard', () => {

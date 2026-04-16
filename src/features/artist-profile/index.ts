@@ -1,3 +1,3 @@
 export { ArtistProfileView } from './components/ArtistProfileView';
-export { ArtistLink } from './components/ArtistLink';
+export { ArtistPlaylistView } from './components/ArtistPlaylistView';
 export { useArtistProfileStore } from './store';

@@ -9,7 +9,7 @@ import { AppDialogs } from '@/components/AppDialogs';
 import { AppProviders } from '@/providers/AppProviders';
 import { useLibraryDownload } from '@/features/queue';
 import { useIsSignedIn } from '@/features/auth/store';
-import { ArtistProfileView, useArtistProfileStore } from '@/features/artist-profile';
+import { ArtistProfileView, ArtistPlaylistView, useArtistProfileStore } from '@/features/artist-profile';
 import { ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { ArtistReleasesView, ReleaseTracklistView, useNewReleasesStore } from '@/features/new-releases';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
@@ -46,6 +46,7 @@ function PageContent({
   const isNotificationsPageOpen = useNotificationsStore((s) => s.isPageOpen);
   const isConversationPageOpen = useMessagesStore((s) => s.isPageOpen);
   const notificationPlaylist = useNotificationsStore((s) => s.selectedPlaylist);
+  const messagePlaylist = useMessagesStore((s) => s.selectedPlaylist);
 
   const [slideClass, setSlideClass] = useState('');
   const prevHasOverlayRef = useRef(false);
@@ -84,6 +85,19 @@ function PageContent({
   const handleBackToReleases = useCallback(() => {
     useNewReleasesStore.getState().goBackToReleases();
   }, []);
+
+  if (messagePlaylist) {
+    return (
+      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <ArtistPlaylistView
+          playlist={messagePlaylist}
+          artistName={messagePlaylist.artist}
+          onBack={() => useMessagesStore.getState().closePlaylist()}
+          onDownloadTracks={handleDownloadTracks}
+        />
+      </section>
+    );
+  }
 
   if (notificationPlaylist) {
     const libraryPlaylist = playlistSummaryToLibraryPlaylist(notificationPlaylist);

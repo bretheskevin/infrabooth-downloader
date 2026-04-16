@@ -40,6 +40,7 @@ pub struct ArtistPlaylist {
     pub track_count: u32,
     pub created_at: String,
     pub permalink_url: String,
+    pub secret_token: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]
