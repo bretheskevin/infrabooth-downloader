@@ -6,8 +6,10 @@ import { useArtistPlaylistTracks } from '../hooks/useArtistPlaylistTracks';
 import { PlaylistArtwork } from './PlaylistArtwork';
 import type { ArtistPlaylist, TrackInfo } from '@/bindings';
 
+type PlaylistViewData = Omit<ArtistPlaylist, 'created_at'>;
+
 interface ArtistPlaylistViewProps {
-  playlist: ArtistPlaylist;
+  playlist: PlaylistViewData;
   artistName: string;
   onBack: () => void;
   onDownloadTracks: (tracks: TrackInfo[], title: string, outputDir?: string) => void | Promise<void>;
@@ -26,7 +28,7 @@ export function ArtistPlaylistView({
     isStreaming,
     error,
     refetch,
-  } = useArtistPlaylistTracks(playlist.id);
+  } = useArtistPlaylistTracks(playlist.id, playlist.secret_token);
 
   const artwork = <PlaylistArtwork artworkUrl={playlist.artwork_url} title={playlist.title} />;
 

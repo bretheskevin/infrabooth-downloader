@@ -26,7 +26,7 @@ const mockPlaylists: ArtistPlaylist[] = [
     track_count: 5,
     created_at: '2026-01-01T00:00:00Z',
     permalink_url: 'https://soundcloud.com/user/sets/one',
-
+    secret_token: null,
   },
   {
     id: 2,
@@ -35,7 +35,7 @@ const mockPlaylists: ArtistPlaylist[] = [
     track_count: 10,
     created_at: '2026-02-01T00:00:00Z',
     permalink_url: 'https://soundcloud.com/user/sets/two',
-
+    secret_token: null,
   },
 ];
 

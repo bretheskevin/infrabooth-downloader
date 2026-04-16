@@ -48,6 +48,7 @@ const mockPlaylist: ArtistPlaylist = {
   track_count: 8,
   created_at: '2026-01-01T00:00:00Z',
   permalink_url: 'https://soundcloud.com/user/sets/cool',
+  secret_token: null,
 };
 
 describe('ArtistPlaylistView', () => {
@@ -79,6 +80,6 @@ describe('ArtistPlaylistView', () => {
       refetch: vi.fn(),
     });
     render(<ArtistPlaylistView {...defaults} />);
-    expect(mockUseArtistPlaylistTracks).toHaveBeenCalledWith(42);
+    expect(mockUseArtistPlaylistTracks).toHaveBeenCalledWith(42, null);
   });
 });

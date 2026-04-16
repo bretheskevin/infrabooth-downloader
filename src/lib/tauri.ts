@@ -23,6 +23,9 @@ import {
   type RekordboxStatus,
   type UnreadCountResult,
   type NotificationsPage,
+  type ConversationsPage,
+  type MessageEmbed,
+  type MessagesPage,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
@@ -190,8 +193,8 @@ export const api = {
   getArtistPlaylists: (artistId: number): Promise<ArtistPlaylist[]> =>
     commands.getArtistPlaylists(artistId).then(unwrap),
 
-  getArtistPlaylistTracks: (playlistId: number): Promise<TrackInfo[]> =>
-    commands.getArtistPlaylistTracks(playlistId).then(unwrap),
+  getArtistPlaylistTracks: (playlistId: number, secretToken: string | null = null): Promise<TrackInfo[]> =>
+    commands.getArtistPlaylistTracks(playlistId, secretToken).then(unwrap),
 
   getArtistReleases: (artistId: number): Promise<ReleaseActivityItem[]> =>
     commands.getArtistReleases(artistId).then(unwrap),
@@ -221,4 +224,20 @@ export const api = {
 
   markNotificationsSeen: (latestCreatedAt: string): Promise<void> =>
     commands.markNotificationsSeen(latestCreatedAt).then(unwrap).then(() => undefined),
+
+  // Direct Messages
+  getConversationsPage: (offset: number | null): Promise<ConversationsPage> =>
+    commands.getConversationsPage(offset).then(unwrap),
+
+  getConversationMessages: (otherUserId: number, offset: number | null): Promise<MessagesPage> =>
+    commands.getConversationMessages(otherUserId, offset).then(unwrap),
+
+  getUnreadConversationsFlag: (): Promise<boolean> =>
+    commands.getUnreadConversationsFlag().then(unwrap),
+
+  resolveMessageEmbed: (url: string): Promise<MessageEmbed | null> =>
+    commands.resolveMessageEmbed(url).then(unwrap),
+
+  sendMessage: (otherUserId: number, content: string): Promise<void> =>
+    commands.sendMessage(otherUserId, content).then(unwrap).then(() => undefined),
 };

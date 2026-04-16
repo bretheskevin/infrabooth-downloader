@@ -9,21 +9,24 @@ import { AppDialogs } from '@/components/AppDialogs';
 import { AppProviders } from '@/providers/AppProviders';
 import { useLibraryDownload } from '@/features/queue';
 import { useIsSignedIn } from '@/features/auth/store';
-import { ArtistProfileView, useArtistProfileStore } from '@/features/artist-profile';
+import { ArtistProfileView, ArtistPlaylistView, useArtistProfileStore } from '@/features/artist-profile';
 import { ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { ArtistReleasesView, ReleaseTracklistView, useNewReleasesStore } from '@/features/new-releases';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
 import { NotificationsPage, useNotificationsStore, playlistSummaryToLibraryPlaylist } from '@/features/notifications';
+import { ConversationPage, useMessagesStore } from '@/features/messages';
 import { useSelectionsStore } from '@/features/selections';
 import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
 import { cn } from '@/lib/utils';
 import type { TrackInfo } from '@/bindings';
 
 function clearDetailOverlays() {
+  useArtistProfileStore.getState().closeProfile();
   useNewTracksStore.getState().clearSelectedArtist();
   useSelectionsStore.getState().clearSelectedMix();
   useNewReleasesStore.getState().goBackToCarousel();
   useNotificationsStore.getState().clear();
+  useMessagesStore.getState().clear();
 }
 
 function PageContent({
@@ -41,12 +44,14 @@ function PageContent({
   const selectedMix = useSelectionsStore((s) => s.selectedMix);
   const newReleasesView = useNewReleasesStore((s) => s.viewState);
   const isNotificationsPageOpen = useNotificationsStore((s) => s.isPageOpen);
+  const isConversationPageOpen = useMessagesStore((s) => s.isPageOpen);
   const notificationPlaylist = useNotificationsStore((s) => s.selectedPlaylist);
+  const messagePlaylist = useMessagesStore((s) => s.selectedPlaylist);
 
   const [slideClass, setSlideClass] = useState('');
   const prevHasOverlayRef = useRef(false);
   const hasNotificationOverlay = isNotificationsPageOpen || notificationPlaylist;
-  const hasOverlay = !!(selectedArtist || selectedMix || profileArtistId || newReleasesView.view !== 'carousel' || hasNotificationOverlay);
+  const hasOverlay = !!(selectedArtist || selectedMix || profileArtistId || newReleasesView.view !== 'carousel' || hasNotificationOverlay || isConversationPageOpen);
 
   useLayoutEffect(() => {
     if (hasOverlay && !prevHasOverlayRef.current) {
@@ -81,6 +86,19 @@ function PageContent({
     useNewReleasesStore.getState().goBackToReleases();
   }, []);
 
+  if (messagePlaylist) {
+    return (
+      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <ArtistPlaylistView
+          playlist={messagePlaylist}
+          artistName={messagePlaylist.artist}
+          onBack={() => useMessagesStore.getState().closePlaylist()}
+          onDownloadTracks={handleDownloadTracks}
+        />
+      </section>
+    );
+  }
+
   if (notificationPlaylist) {
     const libraryPlaylist = playlistSummaryToLibraryPlaylist(notificationPlaylist);
     return (
@@ -94,14 +112,6 @@ function PageContent({
     );
   }
 
-  if (isNotificationsPageOpen) {
-    return (
-      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
-        <NotificationsPage />
-      </section>
-    );
-  }
-
   if (profileArtistId && profileArtistName) {
     return (
       <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
@@ -111,6 +121,22 @@ function PageContent({
           onBack={handleCloseProfile}
           onDownloadTracks={handleDownloadTracks}
         />
+      </section>
+    );
+  }
+
+  if (isConversationPageOpen) {
+    return (
+      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <ConversationPage />
+      </section>
+    );
+  }
+
+  if (isNotificationsPageOpen) {
+    return (
+      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <NotificationsPage />
       </section>
     );
   }
@@ -194,7 +220,6 @@ function AppContent() {
   const isSignedIn = useIsSignedIn();
 
   const handlePageChange = useCallback((page: AppPage) => {
-    useArtistProfileStore.getState().closeProfile();
     clearDetailOverlays();
     setActivePage(page);
   }, []);
@@ -209,13 +234,14 @@ function AppContent() {
   });
 
   const profileArtistId = useArtistProfileStore((s) => s.profileArtistId);
+  const isConversationPageOpen = useMessagesStore((s) => s.isPageOpen);
 
   return (
     <AppLayout
       activePage={activePage}
       onPageChange={handlePageChange}
       isSignedIn={isSignedIn}
-      hideTabs={!!profileArtistId}
+      hideTabs={!!profileArtistId || isConversationPageOpen}
     >
       <PageContent
         activePage={activePage}

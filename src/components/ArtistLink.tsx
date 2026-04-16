@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils';
-import { useArtistProfileStore } from '../store';
+import { useArtistProfileStore } from '@/features/artist-profile/store';
 
 interface ArtistLinkProps {
   userId: number | null;

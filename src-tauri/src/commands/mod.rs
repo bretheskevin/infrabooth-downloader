@@ -79,4 +79,7 @@ pub use rekordbox::{
     list_rekordbox_playlists, restore_rekordbox_backup,
 };
 
+pub mod messages;
+pub use messages::{get_conversation_messages, get_conversations_page, get_unread_conversations_flag, resolve_message_embed, send_message};
+
 pub use crate::services::paths::persist_json;
