@@ -14,6 +14,7 @@ interface MessageRowProps {
   message: ConversationMessage;
   currentUserId: number;
   otherUser: MessageUser | null;
+  showHeader: boolean;
 }
 
 function toPlaybackItem(embed: MessageTrackEmbed): PlaybackItem {
@@ -29,7 +30,19 @@ function toPlaybackItem(embed: MessageTrackEmbed): PlaybackItem {
   };
 }
 
-export function MessageRow({ message, currentUserId, otherUser }: MessageRowProps) {
+function TrackEmbed({ embed }: { embed: MessageTrackEmbed }) {
+  return (
+    <MessageTrackCard
+      embed={embed}
+      onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(embed)], 0)}
+      onCopyLink={() => void navigator.clipboard.writeText(embed.permalink_url)}
+      onOpenInBrowser={() => void open(embed.permalink_url)}
+      onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(embed))}
+    />
+  );
+}
+
+export function MessageRow({ message, currentUserId, otherUser, showHeader }: MessageRowProps) {
   const { t, i18n } = useTranslation();
   const isOwnMessage = message.sender_id === currentUserId;
 
@@ -39,30 +52,27 @@ export function MessageRow({ message, currentUserId, otherUser }: MessageRowProp
 
   const { embed: trackEmbed, scUrl } = useResolveTrackEmbed(message.content);
   const displayContent = scUrl ? message.content.replace(scUrl, '').trim() : message.content;
-
   const timestamp = formatChatTimestamp(message.sent_at, i18n.language);
 
   if (isOwnMessage) {
     return (
       <div className="flex gap-2.5 items-start justify-end">
         <div className="min-w-0 max-w-[75%]">
-          <div className="flex items-center gap-2 justify-end">
-            <span className="text-xs text-muted-foreground">{timestamp}</span>
-            <Avatar className="h-7 w-7 flex-shrink-0">
-              <AvatarImage src={senderAvatar ?? undefined} alt={senderName} />
-              <AvatarFallback className="text-[10px]">{senderName.charAt(0).toUpperCase()}</AvatarFallback>
-            </Avatar>
-          </div>
-          {displayContent && <p className="text-sm text-foreground/80 mt-0.5 text-right">{linkifyText(displayContent)}</p>}
-          {trackEmbed && (
-            <MessageTrackCard
-              embed={trackEmbed}
-              onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(trackEmbed)], 0)}
-              onCopyLink={() => void navigator.clipboard.writeText(trackEmbed.permalink_url)}
-              onOpenInBrowser={() => void open(trackEmbed.permalink_url)}
-              onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(trackEmbed))}
-            />
+          {showHeader && (
+            <div className="flex items-center gap-2 justify-end mb-1">
+              <span className="text-[10px] text-muted-foreground">{timestamp}</span>
+              <Avatar className="h-7 w-7 flex-shrink-0">
+                <AvatarImage src={senderAvatar ?? undefined} alt={senderName} />
+                <AvatarFallback className="text-[10px]">{senderName.charAt(0).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            </div>
           )}
+          {displayContent && (
+            <div className="bg-primary/10 rounded-2xl px-3 py-1.5 ml-auto w-fit">
+              <p className="text-sm">{linkifyText(displayContent)}</p>
+            </div>
+          )}
+          {trackEmbed && <TrackEmbed embed={trackEmbed} />}
         </div>
       </div>
     );
@@ -70,25 +80,27 @@ export function MessageRow({ message, currentUserId, otherUser }: MessageRowProp
 
   return (
     <div className="flex gap-2.5 items-start">
-      <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
-        <AvatarImage src={senderAvatar ?? undefined} alt={senderName} />
-        <AvatarFallback className="text-[10px]">{senderName.charAt(0).toUpperCase()}</AvatarFallback>
-      </Avatar>
+      {showHeader ? (
+        <Avatar className="h-7 w-7 flex-shrink-0 mt-0.5">
+          <AvatarImage src={senderAvatar ?? undefined} alt={senderName} />
+          <AvatarFallback className="text-[10px]">{senderName.charAt(0).toUpperCase()}</AvatarFallback>
+        </Avatar>
+      ) : (
+        <div className="w-7 flex-shrink-0" />
+      )}
       <div className="min-w-0 max-w-[75%]">
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm font-semibold">{senderName}</span>
-          <span className="text-xs text-muted-foreground">{timestamp}</span>
-        </div>
-        {displayContent && <p className="text-sm text-foreground/80 mt-0.5">{linkifyText(displayContent)}</p>}
-        {trackEmbed && (
-          <MessageTrackCard
-            embed={trackEmbed}
-            onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(trackEmbed)], 0)}
-            onCopyLink={() => void navigator.clipboard.writeText(trackEmbed.permalink_url)}
-            onOpenInBrowser={() => void open(trackEmbed.permalink_url)}
-            onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(trackEmbed))}
-          />
+        {showHeader && (
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-sm font-semibold">{senderName}</span>
+            <span className="text-[10px] text-muted-foreground">{timestamp}</span>
+          </div>
         )}
+        {displayContent && (
+          <div className="bg-muted/40 rounded-2xl px-3 py-1.5 w-fit">
+            <p className="text-sm">{linkifyText(displayContent)}</p>
+          </div>
+        )}
+        {trackEmbed && <TrackEmbed embed={trackEmbed} />}
       </div>
     </div>
   );

@@ -26,7 +26,7 @@ export function ConversationPage() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex items-center gap-3 mb-4">
+      <div className="flex items-center gap-3 pb-3 border-b">
         <Button variant="ghost" size="icon" onClick={handleClose} aria-label={t('common.back')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -57,15 +57,21 @@ export function ConversationPage() {
       )}
 
       {!isLoading && !error && (
-        <div className={cn('flex-1 min-h-0 overflow-y-auto flex flex-col-reverse gap-5 pb-4 px-4', miniPillVisible && 'pb-14')}>
-          {items.map((msg, idx) => (
-            <MessageRow
-              key={`${msg.sent_at}-${idx}`}
-              message={msg}
-              currentUserId={currentUserId}
-              otherUser={displayUser}
-            />
-          ))}
+        <div className={cn('flex-1 min-h-0 overflow-y-auto flex flex-col-reverse pb-4 px-4 pt-2', miniPillVisible && 'pb-14')}>
+          {items.map((msg, idx) => {
+            const prevMsg = items[idx + 1];
+            const showHeader = !prevMsg || prevMsg.sender_id !== msg.sender_id;
+            return (
+              <div key={`${msg.sent_at}-${idx}`} className={showHeader ? 'mt-5' : 'mt-1'}>
+                <MessageRow
+                  message={msg}
+                  currentUserId={currentUserId}
+                  otherUser={displayUser}
+                  showHeader={showHeader}
+                />
+              </div>
+            );
+          })}
           <div ref={sentinelRef} className="h-1" />
           {isFetchingNextPage && (
             <div className="flex justify-center py-3">
