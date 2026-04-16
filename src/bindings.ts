@@ -563,6 +563,14 @@ async resolveMessageEmbed(url: string) : Promise<Result<MessageEmbed | null, str
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async sendMessage(otherUserId: number, content: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("send_message", { otherUserId, content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 

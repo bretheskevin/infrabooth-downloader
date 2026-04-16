@@ -436,7 +436,10 @@
     "retry": "Réessayer",
     "you": "Vous",
     "trackCount_one": "{{count}} piste",
-    "trackCount_other": "{{count}} pistes"
+    "trackCount_other": "{{count}} pistes",
+    "placeholder": "Écrire un message...",
+    "send": "Envoyer",
+    "sendError": "Échec de l'envoi du message"
   },
   "newReleases": {
     "title": "Playlists / Albums récents",
