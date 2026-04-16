@@ -95,6 +95,13 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Install OpenSSL (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: powershell
+        run: |
+          choco install openssl --yes --no-progress
+          echo "OPENSSL_DIR=C:\Program Files\OpenSSL-Win64" >> $env:GITHUB_ENV
+
       - name: Install npm dependencies
         run: npm ci
 
