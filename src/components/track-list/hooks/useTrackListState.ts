@@ -63,7 +63,7 @@ export function useTrackListState(config: UseTrackListStateConfig) {
     selectableCount,
   } = useTrackSelection(filteredTracks, downloadedIds);
 
-  const { playTrack: rawPlayTrack, syncQueue } = usePlayContext(filteredTracks);
+  const { playTrack: rawPlayTrack, syncQueue, playShuffled: rawPlayShuffled } = usePlayContext(filteredTracks);
 
   const playedFromHereRef = useRef(false);
   useEffect(() => {
@@ -77,6 +77,11 @@ export function useTrackListState(config: UseTrackListStateConfig) {
     },
     [rawPlayTrack],
   );
+
+  const playShuffled = useCallback(() => {
+    playedFromHereRef.current = true;
+    rawPlayShuffled();
+  }, [rawPlayShuffled]);
 
   const wasStreamingRef = useRef(false);
   const currentTrackId = usePlayerStore((s) => s.currentTrack?.trackId);
@@ -127,6 +132,7 @@ export function useTrackListState(config: UseTrackListStateConfig) {
     handleDownloadAll,
     handleDownloadSelected,
     playTrack,
+    playShuffled,
     shouldAnimate,
     folder: {
       effectivePath: downloadPath,

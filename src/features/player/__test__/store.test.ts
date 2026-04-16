@@ -304,6 +304,31 @@ describe('playerStore', () => {
     expect(state.queue[0]!.trackId).toBe(queue2[2]!.trackId);
   });
 
+  it('playShuffled() should be no-op for empty queue', async () => {
+    await usePlayerStore.getState().playShuffled([]);
+
+    const state = usePlayerStore.getState();
+    expect(state.queue).toEqual([]);
+    expect(state.currentTrack).toBeNull();
+    expect(state.isShuffled).toBe(false);
+    expect(audioEngine.load).not.toHaveBeenCalled();
+  });
+
+  it('playShuffled() should enable shuffle and play from a random index', async () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.75);
+    const queue = makeQueue(4);
+
+    await usePlayerStore.getState().playShuffled(queue);
+
+    const state = usePlayerStore.getState();
+    expect(state.isShuffled).toBe(true);
+    expect(state.originalQueue).toEqual(queue);
+    expect(state.queue[0]!.trackId).toBe(queue[3]!.trackId);
+    expect(state.cursor).toBe(0);
+
+    randomSpy.mockRestore();
+  });
+
   it('stop() should reset shuffle state', async () => {
     const queue = makeQueue(5);
     await usePlayerStore.getState().play(queue, 2);

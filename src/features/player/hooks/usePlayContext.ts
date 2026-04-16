@@ -13,9 +13,9 @@ export function usePlayContext(tracks: TrackInfo[]) {
       const queueIndex = queue.findIndex((q) => q.trackId === track.id);
 
       if (queueIndex !== -1) {
-        skipTo(queueIndex);
+        void skipTo(queueIndex);
       } else {
-        play(buildPlaybackQueue(tracks), index);
+        void play(buildPlaybackQueue(tracks), index);
       }
     },
     [tracks],
@@ -26,5 +26,9 @@ export function usePlayContext(tracks: TrackInfo[]) {
     usePlayerStore.getState().syncQueue(queue);
   }, [tracks]);
 
-  return { playTrack, syncQueue };
+  const playShuffled = useCallback(() => {
+    void usePlayerStore.getState().playShuffled(buildPlaybackQueue(tracks));
+  }, [tracks]);
+
+  return { playTrack, syncQueue, playShuffled };
 }

@@ -75,6 +75,7 @@ export function TrackListView<F extends string = string>({
   const showEmptyFiltered = !isLoading && !error && hasData && state.displayTracks.length === 0;
 
   const canDownload = state.isDownloadEnabled && !!(hasData && !isLoading);
+  const canShuffle = !!(hasData && !isLoading && hasMultipleTracks);
   const showOrderToggle = canDownload && hasMultipleTracks;
   const downloadAllAction = canDownload ? (
     <div className="flex items-center gap-2 shrink-0">
@@ -181,6 +182,7 @@ export function TrackListView<F extends string = string>({
             onToggleAll={state.toggleAll}
             sort={hasMultipleTracks ? sortConfig : undefined}
             isStreaming={isStreaming}
+            onPlayShuffled={canShuffle ? state.playShuffled : undefined}
           />
 
           <TrackListProvider

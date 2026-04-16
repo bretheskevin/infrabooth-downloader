@@ -9,6 +9,7 @@
     "selected": "{{count}} selected",
     "download": "Download",
     "downloadAll": "Download all",
+    "shuffle": "Shuffle",
     "error": "Something went wrong",
     "retry": "Retry",
     "noResults": "No results found",

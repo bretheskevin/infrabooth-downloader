@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
-import { ArrowUpDown, Loader2 } from 'lucide-react';
+import { ArrowUpDown, Loader2, Shuffle } from 'lucide-react';
 import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
 import { SortDirectionSelect } from '@/components/SortDirectionSelect';
+import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { SortField } from '@/lib/sort';
 import type { SortConfig } from './types';
@@ -13,6 +14,7 @@ interface TrackListToolbarProps {
   onToggleAll: () => void;
   sort?: SortConfig<SortField>;
   isStreaming?: boolean;
+  onPlayShuffled?: () => void;
 }
 
 export function TrackListToolbar({
@@ -22,16 +24,29 @@ export function TrackListToolbar({
   onToggleAll,
   sort,
   isStreaming,
+  onPlayShuffled,
 }: TrackListToolbarProps) {
+  const { t } = useTranslation();
   const showSelectAll = isDownloadEnabled && hasSelectableTracks;
 
   return (
     <div className="flex items-center justify-between px-3">
-      {showSelectAll ? (
-        <SelectAllCheckbox isAllSelected={isAllSelected} onToggleAll={onToggleAll} />
-      ) : (
-        <div />
-      )}
+      <div className="flex items-center gap-3">
+        {showSelectAll && (
+          <SelectAllCheckbox isAllSelected={isAllSelected} onToggleAll={onToggleAll} />
+        )}
+        {onPlayShuffled && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onPlayShuffled}
+            className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <Shuffle className="h-3 w-3" />
+            <span>{t('common.shuffle')}</span>
+          </Button>
+        )}
+      </div>
       <div className="flex items-center gap-2">
         {sort && (
           <>

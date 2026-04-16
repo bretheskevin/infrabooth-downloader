@@ -1,15 +1,18 @@
 import type { StateCreator } from 'zustand';
+import type { PlaybackItem } from '../types';
 import type { PlayerState } from './types';
+import type { PlaybackSliceActions } from './playbackSlice';
 import { shuffleQueueWithCurrent, splitStationTracks } from './playbackSlice';
 
 export interface ShuffleSliceActions {
   toggleShuffle: () => void;
+  playShuffled: (queue: PlaybackItem[]) => Promise<void>;
 }
 
 export type ShuffleSlice = ShuffleSliceActions;
 
 export const createShuffleSlice: StateCreator<
-  PlayerState & ShuffleSliceActions,
+  PlayerState & ShuffleSliceActions & PlaybackSliceActions,
   [],
   [],
   ShuffleSlice
@@ -42,5 +45,12 @@ export const createShuffleSlice: StateCreator<
         isShuffled: false,
       });
     }
+  },
+
+  playShuffled: async (queue) => {
+    if (queue.length === 0) return;
+    const randomIndex = Math.floor(Math.random() * queue.length);
+    set({ isShuffled: true });
+    await get().play(queue, randomIndex);
   },
 });
