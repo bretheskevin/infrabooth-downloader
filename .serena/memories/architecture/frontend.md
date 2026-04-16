@@ -18,7 +18,7 @@ test/                  — test setup (tauri mocks, localStorage, query wrapper,
 bindings.ts            — auto-generated Tauri IPC types
 ```
 
-## Features (16 modules)
+## Features (17 modules)
 Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index.ts
 
 ### Core
@@ -34,6 +34,12 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - **search** — track + artist search with infinite scroll
 - **artist-profile** — artist page (banner, tabs, playlists, follow button), ArtistLink (clickable artist navigation, exported for reuse)
 - **selections** — SoundCloud curated selections display
+
+### Messaging
+- **messages** — direct messaging with other SoundCloud users
+  - Components: ConversationsList, ConversationRow, ConversationPage, MessageRow, MessageBell, MessageTrackCard, MessagePlaylistCard
+  - Hooks: useConversationsPage, useConversationMessages, useSendMessage (optimistic updates), useUnreadConversations, useResolveEmbed
+  - Supports track and playlist embeds in messages
 
 ### Activity Feed
 - **new-tracks** — followed artists new tracks carousel, activity badges

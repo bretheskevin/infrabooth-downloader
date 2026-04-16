@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.21.0] - 2026-04-16
+
+### Added
+
+- Direct messaging with other SoundCloud users
+- Shuffle playback button in track lists
+
+### Changed
+
+- Notifications refresh automatically on new activity
+
 ## [1.20.0] - 2026-04-15
 
 ### Added

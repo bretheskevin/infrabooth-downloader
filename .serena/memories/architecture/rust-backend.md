@@ -9,8 +9,8 @@ services/       — Business logic layer
 models/         — Shared types (error.rs, track.rs, playlist.rs, url.rs, artist.rs)
 ```
 
-## Commands (15 modules)
-auth, download, ffmpeg, playlist, settings, updater, library, search, player, selections, new_tracks, related, artist, follow, rekordbox
+## Commands (16 modules)
+auth, download, ffmpeg, playlist, settings, updater, library, search, player, selections, new_tracks, related, artist, follow, rekordbox, messages
 
 ## Services (30 modules)
 ### Core Download Pipeline
@@ -28,6 +28,9 @@ auth, download, ffmpeg, playlist, settings, updater, library, search, player, se
 
 ### HTTP Layer
 - `http.rs` — shared HTTP client (rquest), API_V2_BASE, pagination (fetch_all_pages), rate limit parsing, RequestBuilderExt trait (with_oauth, with_datadome)
+
+### Messaging
+- `messages.rs` — direct messages (conversations list, message fetching, send with DataDome, unread probe), track/playlist embed resolution
 
 ### SoundCloud Features
 - `artist.rs` — profile fetch, all tracks, URL resolution

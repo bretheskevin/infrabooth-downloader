@@ -7,6 +7,17 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.21.0] - 2026-04-16
+
+### Added
+
+- Messagerie privée avec les autres utilisateurs SoundCloud
+- Bouton de lecture aléatoire dans les listes de morceaux
+
+### Changed
+
+- Actualisation automatique des notifications lors d'une nouvelle activité
+
 ## [1.20.0] - 2026-04-15
 
 ### Added
