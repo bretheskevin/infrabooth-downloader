@@ -3,7 +3,14 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
+import { normalizeShortUrl } from '@/lib/soundcloud';
 import type { ConversationMessage, MessagesPage } from '@/bindings';
+
+const SC_SHORT_URL_PATTERN = /(?<!\/\/)on\.soundcloud\.com\/\S+/g;
+
+function normalizeContent(content: string): string {
+  return content.replace(SC_SHORT_URL_PATTERN, (match) => normalizeShortUrl(match));
+}
 
 export function useSendMessage(otherUserId: number) {
   const queryClient = useQueryClient();
@@ -57,7 +64,7 @@ export function useSendMessage(otherUserId: number) {
   });
 
   return {
-    sendMessage: mutation.mutate,
+    sendMessage: (content: string) => mutation.mutate(normalizeContent(content)),
     isPending: mutation.isPending,
   };
 }

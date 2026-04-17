@@ -8,3 +8,7 @@ export function getArtworkUrl(url: string | null, size: ArtworkSize = 67): strin
 export function buildTrackApiUrl(id: number | string): string {
   return `https://api.soundcloud.com/tracks/${id}`;
 }
+
+export function normalizeShortUrl(url: string): string {
+  return url.startsWith('http') ? url : `https://${url}`;
+}

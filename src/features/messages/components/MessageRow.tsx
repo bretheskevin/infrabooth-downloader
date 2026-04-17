@@ -52,8 +52,8 @@ export function MessageRow({ message, currentUserId, otherUser, showHeader }: Me
   const senderName = isOwnMessage ? t('directMessages.you') : (otherUser?.username ?? '');
   const senderAvatar = isOwnMessage ? myAvatarUrl : otherUser?.avatar_url;
 
-  const { trackEmbed, playlistEmbed, scUrl } = useResolveEmbed(message.content);
-  const displayContent = scUrl ? message.content.replace(scUrl, '').trim() : message.content;
+  const { trackEmbed, playlistEmbed, rawScUrl } = useResolveEmbed(message.content);
+  const displayContent = rawScUrl ? message.content.replace(rawScUrl, '').trim() : message.content;
   const timestamp = formatChatTimestamp(message.sent_at, i18n.language);
 
   const embedElement = trackEmbed

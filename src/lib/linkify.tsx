@@ -2,8 +2,9 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { open } from '@tauri-apps/plugin-shell';
 import { commands } from '@/bindings';
 import { useArtistProfileStore } from '@/features/artist-profile/store';
+import { normalizeShortUrl } from '@/lib/soundcloud';
 
-const LINKIFY_REGEX = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(https?:\/\/soundcloud\.com\/([\w][\w-]*[\w]|[\w])(?=[^\w/-]|$))|(https?:\/\/on\.soundcloud\.com\/[a-zA-Z0-9]+)|(https?:\/\/[^\s<>"{}|\\^`[\]]+[^\s<>"{}|\\^`[\].,;:!?)'\]])|(@[\w][\w-]*[\w]|@[\w])/g;
+const LINKIFY_REGEX = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(https?:\/\/soundcloud\.com\/([\w][\w-]*[\w]|[\w])(?=[^\w/-]|$))|((?:https?:\/\/)?on\.soundcloud\.com\/[a-zA-Z0-9]+)|(https?:\/\/[^\s<>"{}|\\^`[\]]+[^\s<>"{}|\\^`[\].,;:!?)'\]])|(@[\w][\w-]*[\w]|@[\w])/g;
 
 function isHttpUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
@@ -189,7 +190,7 @@ export function linkifyText(text: string): ReactNode[] {
         </a>,
       );
     } else if (scShortUrl) {
-      parts.push(<ShortLink key={index} url={scShortUrl} />);
+      parts.push(<ShortLink key={index} url={normalizeShortUrl(scShortUrl)} />);
     } else if (genericUrl) {
       parts.push(<ExternalLink key={index} href={genericUrl}>{genericUrl}</ExternalLink>);
     } else if (scUrlUsername && scUrlUsername.length >= 3) {
