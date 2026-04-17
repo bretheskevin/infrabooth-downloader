@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { formatRelativeTime } from '@/lib/date';
+
 import { PlaylistArtwork } from './PlaylistArtwork';
 import type { ArtistPlaylist } from '@/bindings';
 
@@ -24,8 +24,6 @@ export function PlaylistListRow({ playlist, onClick }: PlaylistListRowProps) {
         <p className="truncate text-sm font-medium">{playlist.title}</p>
         <p className="truncate text-xs text-muted-foreground">
           {t('artistProfile.playlistTrackCount', { count: playlist.track_count })}
-          {' · '}
-          {formatRelativeTime(playlist.created_at, t)}
         </p>
       </div>
     </button>

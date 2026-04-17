@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { formatRelativeTime } from '@/lib/date';
+
 import { PlaylistArtwork } from './PlaylistArtwork';
 import type { ArtistPlaylist } from '@/bindings';
 
@@ -25,11 +25,6 @@ export function PlaylistCard({ playlist, onClick }: PlaylistCardProps) {
             {t('artistProfile.playlistTrackCount', { count: playlist.track_count })}
           </p>
         </div>
-      </div>
-      <div className="px-2 py-1.5">
-        <p className="text-[10px] text-muted-foreground">
-          {formatRelativeTime(playlist.created_at, t)}
-        </p>
       </div>
     </button>
   );
