@@ -29,13 +29,4 @@ describe('ProfileTabs', () => {
     expect(onTabChange).toHaveBeenCalledWith('popular');
   });
 
-  it('shows streaming spinner when isStreaming', () => {
-    const { container } = render(<ProfileTabs {...defaults} isStreaming />);
-    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
-  });
-
-  it('does not show spinner when not streaming', () => {
-    const { container } = render(<ProfileTabs {...defaults} />);
-    expect(container.querySelector('.animate-spin')).not.toBeInTheDocument();
-  });
 });

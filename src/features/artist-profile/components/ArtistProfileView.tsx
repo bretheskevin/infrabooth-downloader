@@ -106,11 +106,7 @@ export function ArtistProfileView({
           }
           followButton={<FollowButton artistId={artistId} artistUsername={profile?.username} />}
         />
-        <ProfileTabs
-          activeTab={activeTab}
-          onTabChange={setActiveTab}
-          isStreaming={isStreaming}
-        />
+        <ProfileTabs activeTab={activeTab} onTabChange={setActiveTab} />
       </div>
 
       {isPlaylistsTab ? (

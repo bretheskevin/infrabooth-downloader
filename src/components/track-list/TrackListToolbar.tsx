@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ArrowUpDown, Loader2, Shuffle } from 'lucide-react';
+import { ArrowUpDown, Shuffle } from 'lucide-react';
 import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
 import { SortDirectionSelect } from '@/components/SortDirectionSelect';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,6 @@ interface TrackListToolbarProps {
   isAllSelected: boolean;
   onToggleAll: () => void;
   sort?: SortConfig<SortField>;
-  isStreaming?: boolean;
   onPlayShuffled?: () => void;
 }
 
@@ -23,7 +22,6 @@ export function TrackListToolbar({
   isAllSelected,
   onToggleAll,
   sort,
-  isStreaming,
   onPlayShuffled,
 }: TrackListToolbarProps) {
   const { t } = useTranslation();
@@ -57,9 +55,6 @@ export function TrackListToolbar({
               showIcon={false}
             />
           </>
-        )}
-        {isStreaming && (
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
         )}
       </div>
     </div>

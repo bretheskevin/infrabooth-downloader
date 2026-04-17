@@ -181,7 +181,6 @@ export function TrackListView<F extends string = string>({
             isAllSelected={state.isAllSelected}
             onToggleAll={state.toggleAll}
             sort={hasMultipleTracks ? sortConfig : undefined}
-            isStreaming={isStreaming}
             onPlayShuffled={canShuffle ? state.playShuffled : undefined}
           />
 

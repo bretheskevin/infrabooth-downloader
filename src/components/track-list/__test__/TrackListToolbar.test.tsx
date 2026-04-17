@@ -43,11 +43,6 @@ describe('TrackListToolbar', () => {
     expect(screen.getByRole('checkbox')).toBeInTheDocument();
   });
 
-  it('shows streaming spinner when isStreaming', () => {
-    const { container } = render(<TrackListToolbar {...baseProps} isStreaming />);
-    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
-  });
-
   it('does not render sort controls when sort is undefined', () => {
     render(<TrackListToolbar {...baseProps} sort={undefined} />);
     expect(screen.queryByText('Playlist order')).not.toBeInTheDocument();
