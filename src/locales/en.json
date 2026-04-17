@@ -483,6 +483,8 @@
     "noPlaylists": "This artist has no public playlists",
     "playlistTrackCount": "{{count}} track",
     "playlistTrackCount_other": "{{count}} tracks",
-    "noPlaylistTracks": "This playlist has no tracks"
+    "noPlaylistTracks": "This playlist has no tracks",
+    "searchPlaylists": "Search playlists...",
+    "noPlaylistResults": "No playlists match your search"
   }
 }
