@@ -67,6 +67,7 @@ export function TrackListView<F extends string = string>({
     [error, fallbackErrorKey],
   );
 
+  const itemHeight = trackList?.itemHeight ?? 56;
   const hasData = tracks && tracks.length > 0;
   const hasMultipleTracks = (tracks?.length ?? 0) > 1;
   const showFilters = !!filters && !isLoading;
@@ -203,7 +204,7 @@ export function TrackListView<F extends string = string>({
             />
           </TrackListProvider>
 
-          {isStreaming && (
+          {isStreaming && state.displayTracks.length * itemHeight < 600 && (
             <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
               <span>{t('common.loadingTracks')}</span>

@@ -108,7 +108,7 @@ export function useTrackListState(config: UseTrackListStateConfig) {
   );
 
   const prevCountRef = useRef(0);
-  const shouldAnimate = stableTracks.length > prevCountRef.current;
+  const shouldAnimate = prevCountRef.current === 0 && stableTracks.length > 0;
   useEffect(() => {
     prevCountRef.current = stableTracks.length;
   }, [stableTracks.length]);
