@@ -1,0 +1,27 @@
+name: "Demande de fonctionnalité (Français)"
+description: "Suggérer une nouvelle fonctionnalité"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "Décrivez la fonctionnalité souhaitée"
+      placeholder: "Une description claire de la fonctionnalité..."
+    validations:
+      required: true
+  - type: textarea
+    id: usecase
+    attributes:
+      label: "Cas d'utilisation"
+      description: "En quoi serait-ce utile ?"
+      placeholder: "Expliquez le problème que cela résoudrait..."
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: "Contexte supplémentaire"
+      description: "Maquettes, exemples ou toute autre information"
+    validations:
+      required: false

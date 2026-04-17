@@ -1,0 +1,27 @@
+name: "Feature Request (English)"
+description: "Suggest a new feature"
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: "Description"
+      description: "Describe the feature you'd like"
+      placeholder: "A clear description of the feature..."
+    validations:
+      required: true
+  - type: textarea
+    id: usecase
+    attributes:
+      label: "Use Case"
+      description: "Why would this be useful?"
+      placeholder: "Explain the problem this would solve..."
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: "Additional Context"
+      description: "Mockups, examples, or anything else"
+    validations:
+      required: false

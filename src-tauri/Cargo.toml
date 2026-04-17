@@ -29,6 +29,7 @@ tauri-specta = { version = "=2.0.0-rc.21", features = ["derive", "typescript"] }
 tauri-plugin-log = "2"
 rookie = "0.5"
 tauri-plugin-shell = "2"
+tauri-plugin-os = "2"
 url = "2"
 rquest = { version = "5", features = ["json"] }
 rquest-util = "2"

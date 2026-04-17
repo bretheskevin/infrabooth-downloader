@@ -105,3 +105,10 @@ vi.mock('@tauri-apps/plugin-opener', () => ({
   openPath: vi.fn().mockResolvedValue(undefined),
   openUrl: vi.fn().mockResolvedValue(undefined),
 }));
+
+// Mock @tauri-apps/plugin-os
+vi.mock('@tauri-apps/plugin-os', () => ({
+  platform: vi.fn().mockReturnValue('macos'),
+  version: vi.fn().mockReturnValue('15.4'),
+  arch: vi.fn().mockReturnValue('aarch64'),
+}));
