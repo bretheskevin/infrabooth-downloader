@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Search, Check, ListMusic } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
+import { logger } from '@/lib/logger';
 import {
   ContextMenuSub,
   ContextMenuSubTrigger,
@@ -31,28 +32,18 @@ interface PlaylistPickerSubmenuProps {
 
 interface PlaylistRowProps {
   playlist: PlaylistForTrackPicker;
-  isLoading: boolean;
   onSelect: (playlist: PlaylistForTrackPicker) => void;
   isAddingThis: boolean;
 }
 
-function PlaylistRow({ playlist, isLoading, onSelect, isAddingThis }: PlaylistRowProps) {
+function PlaylistRow({ playlist, onSelect, isAddingThis }: PlaylistRowProps) {
   const { t } = useTranslation();
 
   const handleClick = useCallback(() => {
-    if (!playlist.contains_track && !isLoading && !isAddingThis) {
+    if (!playlist.contains_track && !isAddingThis) {
       onSelect(playlist);
     }
-  }, [playlist, isLoading, isAddingThis, onSelect]);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center gap-3 px-2 py-1.5">
-        <Skeleton className="w-8 h-8 rounded" />
-        <Skeleton className="h-4 flex-1" />
-      </div>
-    );
-  }
+  }, [playlist, isAddingThis, onSelect]);
 
   const alreadyAdded = playlist.contains_track;
 
@@ -111,11 +102,17 @@ function PlaylistPickerContent({ trackId, onSuccess, onOpenChange }: PlaylistCon
 
   const { playlists: libraryPlaylists, isLoading: isLoadingLibrary } = useLibraryPlaylists(true);
 
-  const { data: membershipData, isLoading: isCheckingMembership } = useQuery({
+  const { data: membershipData, error: membershipError } = useQuery({
     queryKey: ['owned-playlists-for-track', trackId],
     queryFn: () => api.getOwnedPlaylistsForTrack(trackId),
     staleTime: 30 * 1000,
   });
+
+  useEffect(() => {
+    if (membershipError) {
+      void logger.error(`[PlaylistPickerSubmenu] Failed to fetch membership for track ${trackId}: ${membershipError}`);
+    }
+  }, [membershipError, trackId]);
 
   const membershipMap = useMemo(() => {
     if (!membershipData) return new Map<number, PlaylistForTrackPicker>();
@@ -147,10 +144,7 @@ function PlaylistPickerContent({ trackId, onSuccess, onOpenChange }: PlaylistCon
       const query = search.toLowerCase();
       filtered = ownedPlaylists.filter((p) => p.title.toLowerCase().includes(query));
     }
-    return [...filtered].sort((a, b) => {
-      if (a.contains_track === b.contains_track) return 0;
-      return a.contains_track ? 1 : -1;
-    });
+    return filtered;
   }, [ownedPlaylists, search]);
 
   const handleSelect = useCallback(
@@ -194,23 +188,14 @@ function PlaylistPickerContent({ trackId, onSuccess, onOpenChange }: PlaylistCon
             {search.trim() ? t('trackMenu.noResults', { query: search }) : t('trackMenu.noPlaylists')}
           </p>
         ) : (
-          <>
-            {isCheckingMembership && (
-              <div className="px-2 py-1 text-xs text-muted-foreground flex items-center gap-1 min-h-[24px]">
-                <div className="w-3 h-3 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin" />
-                {t('trackMenu.checkingMembership')}
-              </div>
-            )}
-            {filteredPlaylists.map((playlist) => (
-              <PlaylistRow
-                key={playlist.id}
-                playlist={playlist}
-                isLoading={false}
-                onSelect={handleSelect}
-                isAddingThis={addingToPlaylistId === playlist.id}
-              />
-            ))}
-          </>
+          filteredPlaylists.map((playlist) => (
+            <PlaylistRow
+              key={playlist.id}
+              playlist={playlist}
+              onSelect={handleSelect}
+              isAddingThis={addingToPlaylistId === playlist.id}
+            />
+          ))
         )}
       </div>
     </>

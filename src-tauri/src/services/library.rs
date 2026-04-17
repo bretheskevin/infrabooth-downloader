@@ -138,10 +138,26 @@ impl LibraryCache {
         }
     }
 
+    pub fn get_if_complete_enriched(&self) -> Option<Vec<LibraryPlaylist>> {
+        let inner = self.inner.lock().expect("LibraryCache lock poisoned");
+        if inner.complete {
+            Some(enrich_playlists(inner.playlists.clone(), &inner.artwork))
+        } else {
+            None
+        }
+    }
+
     pub fn set(&self, playlists: Vec<LibraryPlaylist>) {
         let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
         inner.playlists = playlists;
         inner.complete = true;
+    }
+
+    pub fn set_and_enrich(&self, playlists: Vec<LibraryPlaylist>) -> Vec<LibraryPlaylist> {
+        let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
+        inner.playlists = playlists.clone();
+        inner.complete = true;
+        enrich_playlists(playlists, &inner.artwork)
     }
 
     pub fn clear(&self) {
@@ -169,6 +185,18 @@ impl LibraryCache {
             .find(|p| p.id == playlist_id)
             .and_then(|p| p.secret_token.clone())
     }
+}
+
+fn enrich_playlists(playlists: Vec<LibraryPlaylist>, artwork: &HashMap<u64, Option<String>>) -> Vec<LibraryPlaylist> {
+    playlists
+        .into_iter()
+        .map(|mut p| {
+            if p.artwork_url.is_none() {
+                p.artwork_url = artwork.get(&p.id).cloned().flatten();
+            }
+            p
+        })
+        .collect()
 }
 
 // === Mapping ===
@@ -574,5 +602,71 @@ mod tests {
         assert_eq!(cache.get_secret_token(1), None);
         assert_eq!(cache.get_secret_token(2), Some("s-abc123".into()));
         assert_eq!(cache.get_secret_token(999), None);
+    }
+
+    fn make_playlist(id: u64, artwork_url: Option<&str>) -> LibraryPlaylist {
+        LibraryPlaylist {
+            id,
+            title: format!("Playlist {}", id),
+            username: "user".into(),
+            user_id: Some(42),
+            artwork_url: artwork_url.map(String::from),
+            track_count: 1,
+            duration: 1000,
+            permalink_url: format!("https://soundcloud.com/user/sets/p{}", id),
+            is_owned: true,
+            is_public: true,
+            secret_token: None,
+        }
+    }
+
+    #[test]
+    fn test_enrich_uses_cached_artwork_when_missing() {
+        let cache = LibraryCache::default();
+        cache.set_artwork(1, Some("https://example.com/a.jpg".into()));
+
+        let enriched = cache.set_and_enrich(vec![make_playlist(1, None)]);
+        assert_eq!(enriched[0].artwork_url.as_deref(), Some("https://example.com/a.jpg"));
+    }
+
+    #[test]
+    fn test_enrich_keeps_existing_artwork() {
+        let cache = LibraryCache::default();
+        cache.set_artwork(1, Some("https://example.com/cached.jpg".into()));
+
+        let enriched = cache.set_and_enrich(vec![make_playlist(1, Some("https://example.com/original.jpg"))]);
+        assert_eq!(enriched[0].artwork_url.as_deref(), Some("https://example.com/original.jpg"));
+    }
+
+    #[test]
+    fn test_enrich_with_no_cache_entry_stays_none() {
+        let cache = LibraryCache::default();
+        let enriched = cache.set_and_enrich(vec![make_playlist(1, None)]);
+        assert!(enriched[0].artwork_url.is_none());
+    }
+
+    #[test]
+    fn test_enrich_with_cached_none_stays_none() {
+        let cache = LibraryCache::default();
+        cache.set_artwork(1, None);
+
+        let enriched = cache.set_and_enrich(vec![make_playlist(1, None)]);
+        assert!(enriched[0].artwork_url.is_none());
+    }
+
+    #[test]
+    fn test_get_if_complete_enriched_returns_enriched_on_hit() {
+        let cache = LibraryCache::default();
+        cache.set(vec![make_playlist(1, None)]);
+        cache.set_artwork(1, Some("https://example.com/a.jpg".into()));
+
+        let enriched = cache.get_if_complete_enriched().unwrap();
+        assert_eq!(enriched[0].artwork_url.as_deref(), Some("https://example.com/a.jpg"));
+    }
+
+    #[test]
+    fn test_get_if_complete_enriched_returns_none_when_incomplete() {
+        let cache = LibraryCache::default();
+        assert!(cache.get_if_complete_enriched().is_none());
     }
 }

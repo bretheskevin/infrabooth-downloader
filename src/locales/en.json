@@ -388,7 +388,6 @@
     "noResults": "No playlists match '{{query}}'",
     "alreadyAdded": "Already added",
     "added": "Added",
-    "checkingMembership": "Checking...",
     "addedToPlaylist": "Added to {{playlist}}",
     "addFailed": "Failed to add track",
     "addToQueue": "Add to queue",
