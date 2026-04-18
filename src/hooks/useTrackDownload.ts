@@ -5,19 +5,7 @@ import { useDownloadState, useDownloadStateStore, addManagedTrack, clearManagedT
 import { useTrackDownloader } from './useTrackDownloader';
 import type { TrackInfo } from '@/bindings';
 import type { DownloadState } from '@/types/download';
-import { buildTrackApiUrl } from '@/lib/soundcloud';
-
-function toTrackCore(track: TrackInfo) {
-  return {
-    trackUrl: buildTrackApiUrl(track.id),
-    trackId: String(track.id),
-    title: track.title,
-    artist: track.user.username,
-    artworkUrl: track.artwork_url ?? null,
-    durationMs: track.duration,
-    downloadUrl: track.download_url ?? null,
-  };
-}
+import { toTrackCore } from '@/lib/trackMapping';
 
 export function toDownloadState(state: { status: string; percent?: number; error?: { message: string } | null } | undefined): DownloadState {
   if (!state) return { status: 'idle' };
@@ -62,7 +50,7 @@ export function useTrackDownload(downloadPath: string) {
         } else if (trackState.status === 'failed' && prevStatus !== 'failed'
             && !toastedRef.current.has(`err:${trackId}`)) {
           toastedRef.current.add(`err:${trackId}`);
-          toast.error(t('search.toastError', { error: trackState.error?.message ?? 'Unknown error' }));
+          toast.error(t('search.toastError', { error: trackState.error?.message ?? t('errors.unknownError') }));
         }
       }
     });

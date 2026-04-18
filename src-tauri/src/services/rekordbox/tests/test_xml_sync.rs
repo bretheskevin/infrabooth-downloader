@@ -3,13 +3,14 @@ use tempfile::TempDir;
 
 use crate::services::rekordbox::xml_sync::PlaylistXml;
 
-const SAMPLE_XML: &str = r#"<?xml version="1.0" encoding="utf-8"?>
-<PLAYLISTS Version="1.0" AutomaticSync="1">
-<PRODUCT Version="7.0.9"/>
-<PLAYLISTS>
+const SAMPLE_XML: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+
+<MASTER_PLAYLIST Version="3.0.0" AutomaticSync="0">
+  <PRODUCT Name="" Version="" Company="Pioneer DJ"/>
+  <PLAYLISTS>
 <NODE Id="A1B2C" ParentId="0" Attribute="1" Timestamp="1712847022000" Lib_Type="0" CheckType="0"/>
-</PLAYLISTS>
-</PLAYLISTS>"#;
+  </PLAYLISTS>
+</MASTER_PLAYLIST>"#;
 
 fn setup_xml_dir() -> TempDir {
     let tmp = TempDir::new().unwrap();

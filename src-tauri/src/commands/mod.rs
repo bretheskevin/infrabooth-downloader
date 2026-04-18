@@ -79,6 +79,9 @@ pub use rekordbox::{
     list_rekordbox_playlists, quit_rekordbox, restore_rekordbox_backup,
 };
 
+pub mod rekordbox_export;
+pub use rekordbox_export::export_playlist_to_rekordbox;
+
 pub mod messages;
 pub use messages::{get_conversation_messages, get_conversations_page, get_unread_conversations_flag, resolve_message_embed, send_message};
 

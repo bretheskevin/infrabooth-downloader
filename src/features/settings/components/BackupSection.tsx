@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/tauri';
+import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
 import { formatBackupRelativeTime, formatBackupAbsoluteDate } from '@/features/settings/helpers';
 import type { BackupInfo } from '@/bindings';
 
@@ -99,9 +100,10 @@ export function BackupSection() {
       if (isRunning) {
         void queryClient.invalidateQueries({ queryKey: ['rekordbox-status'] });
       }
+      const code = err instanceof ApiError ? err.code : null;
       const description = isRunning
         ? t('settings.rekordboxRunning')
-        : err instanceof Error ? err.message : String(err);
+        : t(REKORDBOX_ERROR_KEYS[code ?? ''] ?? 'common.error');
       toast.error(t('settings.backupRestoreError'), { description });
     },
     onSettled: () => setConfirmBackup(null),

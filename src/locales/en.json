@@ -131,7 +131,16 @@
     "groupUnavailable": "Track removed or private",
     "groupNetwork": "Network errors",
     "groupOther": "Other errors",
-    "retryTrack": "Retry this track"
+    "retryTrack": "Retry this track",
+    "unknownError": "Unknown error",
+    "rekordboxDb": "Rekordbox database error. The database may be corrupted or encrypted.",
+    "rekordboxBackupFailed": "Failed to create a backup of your Rekordbox library.",
+    "rekordboxRestoreFailed": "Failed to restore from backup. Check available disk space.",
+    "rekordboxFileError": "A file operation failed. Check available disk space.",
+    "rekordboxXmlError": "Failed to synchronize Rekordbox XML.",
+    "rekordboxInvalidPlaylist": "Invalid playlist operation.",
+    "rekordboxDownloadPath": "Could not prepare the download directory.",
+    "rekordboxAppData": "Could not access the application data directory."
   },
   "settings": {
     "title": "Settings",
@@ -503,5 +512,21 @@
     "noPlaylistTracks": "This playlist has no tracks",
     "searchPlaylists": "Search playlists...",
     "noPlaylistResults": "No playlists match your search"
+  },
+  "rekordboxExport": {
+    "button": "Export to Rekordbox",
+    "confirmTitle": "Export to Rekordbox",
+    "confirmMessage": "Export {{count}} tracks as \"{{playlist}}\" to Rekordbox?",
+    "confirmNote": "Tracks will be downloaded to the app data directory and registered in Rekordbox.",
+    "progress": "Exporting track {{current}} of {{total}}...",
+    "downloading": "Downloading...",
+    "exporting": "Registering in Rekordbox...",
+    "complete": "Export complete",
+    "summary": "{{exported}} exported, {{skipped}} skipped, {{errors}} errors",
+    "close": "Close",
+    "cancel": "Cancel",
+    "start": "Export",
+    "rekordboxRunning": "Please close Rekordbox before exporting.",
+    "rekordboxNotConfigured": "Rekordbox not configured"
   }
 }

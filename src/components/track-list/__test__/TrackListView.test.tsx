@@ -168,7 +168,7 @@ describe('TrackListView', () => {
     );
     expect(headerFn).toHaveBeenCalledWith(
       expect.objectContaining({
-        downloadAllAction: expect.anything(),
+        actions: expect.anything(),
         folderMetadata: expect.anything(),
       }),
     );

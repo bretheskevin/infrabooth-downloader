@@ -108,3 +108,22 @@ pub struct RekordboxConfig {
     pub db_dir: std::path::PathBuf,
     pub version: String,
 }
+
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "lowercase")]
+pub enum RekordboxExportStatus {
+    Downloading,
+    Exporting,
+    Error,
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct RekordboxExportProgressEvent {
+    pub track_id: String,
+    pub track_title: String,
+    pub status: RekordboxExportStatus,
+    pub current_track: u32,
+    pub total_tracks: u32,
+    pub error: Option<String>,
+}

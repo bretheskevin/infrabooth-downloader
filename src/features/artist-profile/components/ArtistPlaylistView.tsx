@@ -41,7 +41,7 @@ export function ArtistPlaylistView({
       onRetry={refetch}
       title={playlist.title}
       resetKey={playlist.id}
-      header={({ downloadAllAction, folderMetadata }) => (
+      header={({ actions, folderMetadata }) => (
         <DetailHeader
           navigation={
             <Breadcrumb
@@ -61,7 +61,7 @@ export function ArtistPlaylistView({
               {folderMetadata}
             </p>
           }
-          actions={downloadAllAction}
+          actions={actions}
         />
       )}
       folder

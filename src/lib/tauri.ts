@@ -19,6 +19,7 @@ import {
   type ArtistPlaylist,
   type ExportResult,
   type ExportTrackRequest,
+  type TrackCore,
   type RekordboxPlaylistInfo,
   type RekordboxStatus,
   type UnreadCountResult,
@@ -121,6 +122,9 @@ export const api = {
 
   exportToRekordbox: (tracks: ExportTrackRequest[], playlistName: string | null): Promise<ExportResult> =>
     commands.exportToRekordbox(tracks, playlistName, getStoredRekordboxPathOverride()).then(unwrap),
+
+  exportPlaylistToRekordbox: (tracks: TrackCore[], playlistName: string): Promise<ExportResult> =>
+    commands.exportPlaylistToRekordbox(tracks, playlistName, getStoredRekordboxPathOverride()).then(unwrap),
 
   listRekordboxPlaylists: (): Promise<RekordboxPlaylistInfo[]> =>
     commands.listRekordboxPlaylists(getStoredRekordboxPathOverride()).then(unwrap),

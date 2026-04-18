@@ -21,6 +21,7 @@ pub const AUTH_STATE_CHANGED: &str = "auth-state-changed";
 pub const AUTH_REAUTH_NEEDED: &str = "auth-reauth-needed";
 pub const OPEN_SETTINGS: &str = "open-settings";
 pub const UPDATE_DOWNLOAD_PROGRESS: &str = "update-download-progress";
+pub const REKORDBOX_EXPORT_PROGRESS: &str = "rekordbox-export-progress";
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]

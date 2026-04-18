@@ -51,7 +51,7 @@ export function ReleaseTracklistView({
       onRetry={refetch}
       title={info.title}
       resetKey={info.id}
-      header={({ downloadAllAction, folderMetadata }) => (
+      header={({ actions, folderMetadata }) => (
         <DetailHeader
           navigation={<Breadcrumb items={[
             { label: t('newReleases.title'), onClick: onBackToCarousel },
@@ -68,7 +68,7 @@ export function ReleaseTracklistView({
               {folderMetadata}
             </p>
           }
-          actions={downloadAllAction}
+          actions={actions}
         />
       )}
       folder

@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use crate::models::error::{ErrorResponse, HasErrorCode, RekordboxError};
 use crate::services::paths::get_app_data_dir;
 use crate::services::rekordbox::models::{
-    BackupInfo, BackupKind, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus,
+    BackupInfo, BackupKind, DjmdPlaylist, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus,
     ALL_TRACKS_PLAYLIST_NAME,
 };
 use crate::services::rekordbox::{
@@ -18,21 +18,23 @@ mod rekordbox_tests;
 
 const MAX_REKORDBOX_BACKUPS: usize = 10;
 
-fn app_data_dir_error(e: String) -> ErrorResponse {
+pub(super) fn app_data_dir_error(e: String) -> ErrorResponse {
     ErrorResponse { code: "APP_DATA_DIR_ERROR".to_string(), message: e }
 }
 
-fn create_backup_and_rotate(db_dir: &Path, app_data_dir: &Path, kind: BackupKind) -> Result<PathBuf, ErrorResponse> {
+pub(super) fn create_backup_and_rotate(db_dir: &Path, app_data_dir: &Path, kind: BackupKind) -> Result<PathBuf, ErrorResponse> {
     let backup_path = backup::create_backup(db_dir, app_data_dir, kind).map_err(ErrorResponse::from)?;
     backup::rotate_backups(app_data_dir, MAX_REKORDBOX_BACKUPS).map_err(ErrorResponse::from)?;
     Ok(backup_path)
 }
 
-fn resolve_rekordbox_config(manual_db_path: Option<String>) -> Result<RekordboxConfig, ErrorResponse> {
+pub(super) fn resolve_rekordbox_config(manual_db_path: Option<String>) -> Result<RekordboxConfig, ErrorResponse> {
     config::detect_rekordbox(manual_db_path.map(PathBuf::from)).map_err(ErrorResponse::from)
 }
 
-fn is_content_in_playlist(db: &database::RekordboxDatabase, playlist_id: &str, content_id: &str) -> Result<bool, RekordboxError> {
+pub(super) fn is_content_in_playlist(
+    db: &database::RekordboxDatabase, playlist_id: &str, content_id: &str,
+) -> Result<bool, RekordboxError> {
     db.conn()
         .query_row(
             "SELECT COUNT(*) FROM djmdSongPlaylist WHERE PlaylistID = ?1 AND ContentID = ?2",
@@ -57,9 +59,71 @@ fn restore_state_after_failure(err: RekordboxError, backup_path: &Path, db_dir: 
     }
 }
 
-fn export_single_track(
+pub(super) struct RekordboxWriteContext {
+    pub rb_config: RekordboxConfig,
+    pub app_data_dir: PathBuf,
+    backup_path: PathBuf,
+}
+
+impl RekordboxWriteContext {
+    pub fn prepare(manual_db_path: Option<String>, app: &tauri::AppHandle) -> Result<Self, ErrorResponse> {
+        let rb_config = resolve_rekordbox_config(manual_db_path)?;
+        if config::is_rekordbox_running() {
+            return Err(ErrorResponse::from(RekordboxError::RekordboxRunning));
+        }
+        let app_data_dir = get_app_data_dir(app).map_err(app_data_dir_error)?;
+        let backup_path = create_backup_and_rotate(&rb_config.db_dir, &app_data_dir, BackupKind::Export)?;
+        Ok(Self { rb_config, app_data_dir, backup_path })
+    }
+
+    pub fn open_session(&self) -> Result<RekordboxSession, RekordboxError> {
+        let db = database::RekordboxDatabase::open(&self.rb_config)?;
+        let xml = xml_sync::PlaylistXml::read_if_exists(&self.rb_config.db_dir)?;
+        Ok(RekordboxSession { db, xml, db_dir: self.rb_config.db_dir.clone() })
+    }
+
+    pub fn handle_result<T>(&self, result: Result<T, RekordboxError>) -> Result<T, ErrorResponse> {
+        result.map_err(|err| restore_state_after_failure(err, &self.backup_path, &self.rb_config.db_dir))
+    }
+}
+
+pub(super) struct RekordboxSession {
+    pub db: database::RekordboxDatabase,
+    pub xml: Option<xml_sync::PlaylistXml>,
+    db_dir: PathBuf,
+}
+
+impl RekordboxSession {
+    pub fn init_infrabooth_folder(&mut self) -> Result<DjmdPlaylist, RekordboxError> {
+        let folder = playlist::find_or_create_infrabooth_folder(&mut self.db)?;
+        if let Some(ref mut x) = self.xml {
+            x.add_playlist(&folder.id, "root", 1, timestamp_ms());
+        }
+        Ok(folder)
+    }
+
+    pub fn find_or_create_playlist(&mut self, name: &str, folder_id: &str) -> Result<DjmdPlaylist, RekordboxError> {
+        let pl = match playlist::find_playlist_by_name(&self.db, name, folder_id) {
+            Some(existing) => existing,
+            None => playlist::create_playlist(&mut self.db, name, folder_id)?,
+        };
+        if let Some(ref mut x) = self.xml {
+            x.add_playlist(&pl.id, folder_id, 0, timestamp_ms());
+        }
+        Ok(pl)
+    }
+
+    pub fn commit(mut self) -> Result<(), RekordboxError> {
+        if let Some(ref x) = self.xml {
+            x.save(&self.db_dir)?;
+        }
+        self.db.flush_usn_and_commit()
+    }
+}
+
+pub(super) fn export_single_track(
     db: &mut database::RekordboxDatabase, track: &ExportTrackRequest, playlist_id: &str, rekordbox_tracks_dir: &Path,
-) -> Result<bool, String> {
+) -> Result<(bool, String), String> {
     let source = PathBuf::from(&track.source_path);
 
     let metadata = content::read_track_metadata(&source).map_err(|e| format!("{}: metadata error — {}", track.source_path, e))?;
@@ -71,13 +135,13 @@ fn export_single_track(
 
     if is_content_in_playlist(db, playlist_id, &content_id).map_err(|e| format!("{}: playlist lookup failed — {}", track.source_path, e))?
     {
-        return Ok(false);
+        return Ok((false, content_id));
     }
 
     playlist::add_to_playlist(db, playlist_id, &content_id, None)
         .map_err(|e| format!("{}: add to playlist failed — {}", track.source_path, e))?;
 
-    Ok(true)
+    Ok((true, content_id))
 }
 
 #[tauri::command]
@@ -109,56 +173,31 @@ pub fn get_default_rekordbox_data_directory_parent(_app: tauri::AppHandle) -> Re
 pub fn export_to_rekordbox(
     tracks: Vec<ExportTrackRequest>, playlist_name: Option<String>, manual_db_path: Option<String>, app: tauri::AppHandle,
 ) -> Result<ExportResult, ErrorResponse> {
-    let rb_config = resolve_rekordbox_config(manual_db_path)?;
+    let ctx = RekordboxWriteContext::prepare(manual_db_path, &app)?;
 
-    if config::is_rekordbox_running() {
-        return Err(ErrorResponse::from(RekordboxError::RekordboxRunning));
-    }
-
-    let app_data_dir = get_app_data_dir(&app).map_err(app_data_dir_error)?;
-
-    let backup_path = create_backup_and_rotate(&rb_config.db_dir, &app_data_dir, BackupKind::Export)?;
-
-    let result = (|| -> Result<ExportResult, RekordboxError> {
-        let mut db = database::RekordboxDatabase::open(&rb_config)?;
-        let mut xml = xml_sync::PlaylistXml::read_if_exists(&rb_config.db_dir)?;
-
-        let folder = playlist::find_or_create_infrabooth_folder(&mut db)?;
-        if let Some(ref mut x) = xml {
-            x.add_playlist(&folder.id, "root", 1, timestamp_ms());
-        }
+    ctx.handle_result((|| -> Result<ExportResult, RekordboxError> {
+        let mut session = ctx.open_session()?;
+        let folder = session.init_infrabooth_folder()?;
 
         let target_playlist_name = playlist_name.as_deref().unwrap_or(ALL_TRACKS_PLAYLIST_NAME);
-        let pl = match playlist::find_playlist_by_name(&db, target_playlist_name, &folder.id) {
-            Some(existing) => existing,
-            None => playlist::create_playlist(&mut db, target_playlist_name, &folder.id)?,
-        };
-        if let Some(ref mut x) = xml {
-            x.add_playlist(&pl.id, &folder.id, 0, timestamp_ms());
-        }
+        let pl = session.find_or_create_playlist(target_playlist_name, &folder.id)?;
 
-        let rekordbox_tracks_dir = file_manager::get_rekordbox_tracks_dir(&app_data_dir);
+        let rekordbox_tracks_dir = file_manager::get_rekordbox_tracks_dir(&ctx.app_data_dir);
         let mut exported_count = 0i32;
         let mut skipped_count = 0i32;
         let mut errors: Vec<String> = Vec::new();
 
         for track in &tracks {
-            match export_single_track(&mut db, track, &pl.id, &rekordbox_tracks_dir) {
-                Ok(true) => exported_count += 1,
-                Ok(false) => skipped_count += 1,
+            match export_single_track(&mut session.db, track, &pl.id, &rekordbox_tracks_dir) {
+                Ok((true, _)) => exported_count += 1,
+                Ok((false, _)) => skipped_count += 1,
                 Err(e) => errors.push(e),
             }
         }
 
-        if let Some(ref x) = xml {
-            x.save(&rb_config.db_dir)?;
-        }
-        db.flush_usn_and_commit()?;
-
+        session.commit()?;
         Ok(ExportResult { exported_count, skipped_count, playlist_name: pl.name, errors })
-    })();
-
-    result.map_err(|err| restore_state_after_failure(err, &backup_path, &rb_config.db_dir))
+    })())
 }
 
 #[tauri::command]
@@ -191,22 +230,15 @@ pub fn list_rekordbox_playlists(
 #[tauri::command]
 #[specta::specta]
 pub fn delete_rekordbox_playlist(playlist_id: String, manual_db_path: Option<String>, app: tauri::AppHandle) -> Result<(), ErrorResponse> {
-    if config::is_rekordbox_running() {
-        return Err(ErrorResponse::from(RekordboxError::RekordboxRunning));
-    }
+    let ctx = RekordboxWriteContext::prepare(manual_db_path, &app)?;
 
-    let rb_config = resolve_rekordbox_config(manual_db_path)?;
-    let app_data_dir = get_app_data_dir(&app).map_err(app_data_dir_error)?;
+    ctx.handle_result((|| -> Result<(), RekordboxError> {
+        let mut session = ctx.open_session()?;
 
-    let backup_path = create_backup_and_rotate(&rb_config.db_dir, &app_data_dir, BackupKind::Export)?;
-
-    let result = (|| -> Result<(), RekordboxError> {
-        let mut db = database::RekordboxDatabase::open(&rb_config)?;
-        let mut xml = xml_sync::PlaylistXml::read_if_exists(&rb_config.db_dir)?;
-
-        let folder = playlist::find_infrabooth_folder(&db).ok_or_else(|| RekordboxError::NotFound("InfraBooth folder not found".into()))?;
-        let target = playlist::find_playlist_in_folder(&db, &playlist_id, &folder.id).ok_or_else(|| {
-            let target_type = playlist::find_playlist_by_id(&db, &playlist_id)
+        let folder =
+            playlist::find_infrabooth_folder(&session.db).ok_or_else(|| RekordboxError::NotFound("InfraBooth folder not found".into()))?;
+        let target = playlist::find_playlist_in_folder(&session.db, &playlist_id, &folder.id).ok_or_else(|| {
+            let target_type = playlist::find_playlist_by_id(&session.db, &playlist_id)
                 .map(|pl| {
                     if pl.attribute == 1 {
                         "folder"
@@ -218,18 +250,14 @@ pub fn delete_rekordbox_playlist(playlist_id: String, manual_db_path: Option<Str
             RekordboxError::InvalidPlaylist(format!("Refusing to delete {} with ID {}", target_type, playlist_id))
         })?;
 
-        playlist::delete_playlist(&mut db, &target.id)?;
-
-        if let Some(ref mut playlist_xml) = xml {
-            playlist_xml.remove_playlist(&target.id)?;
-            playlist_xml.save(&rb_config.db_dir)?;
+        playlist::delete_playlist(&mut session.db, &target.id)?;
+        if let Some(ref mut xml) = session.xml {
+            xml.remove_playlist(&target.id)?;
         }
 
-        db.flush_usn_and_commit()?;
+        session.commit()?;
         Ok(())
-    })();
-
-    result.map_err(|err| restore_state_after_failure(err, &backup_path, &rb_config.db_dir))
+    })())
 }
 
 #[tauri::command]

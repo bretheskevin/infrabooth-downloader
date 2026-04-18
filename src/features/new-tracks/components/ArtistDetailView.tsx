@@ -53,7 +53,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
       onRetry={refetch}
       title={artist.username}
       resetKey={artist.id}
-      header={({ downloadAllAction, folderMetadata }) => (
+      header={({ actions, folderMetadata }) => (
         <DetailHeader
           navigation={<Breadcrumb items={[
             { label: t('newTracks.title'), onClick: onBack },
@@ -76,7 +76,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
               {folderMetadata}
             </p>
           }
-          actions={downloadAllAction}
+          actions={actions}
         />
       )}
       folder

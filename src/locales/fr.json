@@ -131,7 +131,16 @@
     "groupUnavailable": "Supprimées ou privées",
     "groupNetwork": "Problème de connexion",
     "groupOther": "Autres problèmes",
-    "retryTrack": "Réessayer cette piste"
+    "retryTrack": "Réessayer cette piste",
+    "unknownError": "Erreur inconnue",
+    "rekordboxDb": "Erreur de base de données Rekordbox. La base de données est peut-être corrompue ou chiffrée.",
+    "rekordboxBackupFailed": "Impossible de créer une sauvegarde de votre bibliothèque Rekordbox.",
+    "rekordboxRestoreFailed": "Impossible de restaurer depuis la sauvegarde. Vérifiez l'espace disque disponible.",
+    "rekordboxFileError": "Opération sur fichier échouée. Vérifiez l'espace disque disponible.",
+    "rekordboxXmlError": "Impossible de synchroniser le XML Rekordbox.",
+    "rekordboxInvalidPlaylist": "Opération de playlist invalide.",
+    "rekordboxDownloadPath": "Impossible de préparer le dossier de téléchargement.",
+    "rekordboxAppData": "Impossible d'accéder au dossier de données de l'application."
   },
   "settings": {
     "title": "Paramètres",
@@ -503,5 +512,21 @@
     "noPlaylistTracks": "Cette playlist ne contient aucun titre",
     "searchPlaylists": "Rechercher des playlists...",
     "noPlaylistResults": "Aucune playlist ne correspond à votre recherche"
+  },
+  "rekordboxExport": {
+    "button": "Exporter vers Rekordbox",
+    "confirmTitle": "Exporter vers Rekordbox",
+    "confirmMessage": "Exporter {{count}} pistes sous \"{{playlist}}\" vers Rekordbox ?",
+    "confirmNote": "Les pistes seront téléchargées dans le dossier de l'application et enregistrées dans Rekordbox.",
+    "progress": "Export de la piste {{current}} sur {{total}}...",
+    "downloading": "Téléchargement...",
+    "exporting": "Enregistrement dans Rekordbox...",
+    "complete": "Export terminé",
+    "summary": "{{exported}} exportés, {{skipped}} ignorés, {{errors}} erreurs",
+    "close": "Fermer",
+    "cancel": "Annuler",
+    "start": "Exporter",
+    "rekordboxRunning": "Veuillez fermer Rekordbox avant d'exporter.",
+    "rekordboxNotConfigured": "Rekordbox non configuré"
   }
 }

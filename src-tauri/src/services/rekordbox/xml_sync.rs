@@ -121,7 +121,7 @@ impl PlaylistXml {
 
 impl XmlDocument {
     fn parse(content: &str) -> Result<Self, RekordboxError> {
-        let (before_inner, inner_content, after_inner) = split_inner_playlists(content)?;
+        let (before_inner, inner_content, after_inner) = split_playlists_section(content)?;
         let segments = parse_inner_segments(inner_content)?;
         Ok(Self { before_inner: before_inner.to_string(), segments, after_inner: after_inner.to_string() })
     }
@@ -192,29 +192,21 @@ fn parse_node_attributes(e: &BytesStart) -> Result<XmlNode, RekordboxError> {
     Ok(XmlNode { id, parent_id, attribute, timestamp, lib_type, check_type })
 }
 
-fn split_inner_playlists(content: &str) -> Result<(&str, &str, &str), RekordboxError> {
-    let outer_start = content
-        .find("<PLAYLISTS")
-        .ok_or_else(|| RekordboxError::XmlError("Missing outer PLAYLISTS tag".into()))?;
-    let outer_open_end = content[outer_start..]
-        .find('>')
-        .map(|idx| outer_start + idx + 1)
-        .ok_or_else(|| RekordboxError::XmlError("Malformed outer PLAYLISTS tag".into()))?;
-    let inner_rel = content[outer_open_end..]
+fn split_playlists_section(content: &str) -> Result<(&str, &str, &str), RekordboxError> {
+    let open_start = content
         .find("<PLAYLISTS>")
-        .ok_or_else(|| RekordboxError::XmlError("Missing inner PLAYLISTS section".into()))?;
-    let inner_open_start = outer_open_end + inner_rel;
-    let inner_open_end = inner_open_start + "<PLAYLISTS>".len();
-    let inner_close_start = content[inner_open_end..]
+        .or_else(|| content.find("<PLAYLISTS "))
+        .ok_or_else(|| RekordboxError::XmlError("Missing PLAYLISTS tag".into()))?;
+    let open_end = content[open_start..]
+        .find('>')
+        .map(|idx| open_start + idx + 1)
+        .ok_or_else(|| RekordboxError::XmlError("Malformed PLAYLISTS tag".into()))?;
+    let close_start = content[open_end..]
         .find("</PLAYLISTS>")
-        .map(|idx| inner_open_end + idx)
-        .ok_or_else(|| RekordboxError::XmlError("Missing inner PLAYLISTS closing tag".into()))?;
+        .map(|idx| open_end + idx)
+        .ok_or_else(|| RekordboxError::XmlError("Missing PLAYLISTS closing tag".into()))?;
 
-    Ok((
-        &content[..inner_open_end],
-        &content[inner_open_end..inner_close_start],
-        &content[inner_close_start..],
-    ))
+    Ok((&content[..open_end], &content[open_end..close_start], &content[close_start..]))
 }
 
 fn parse_inner_segments(inner_content: &str) -> Result<Vec<InnerSegment>, RekordboxError> {

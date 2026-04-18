@@ -42,14 +42,14 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
         onRetry={refetch}
         title={playlist.title}
         resetKey={playlist.id}
-        header={({ downloadAllAction, folderMetadata }) => (
+        header={({ actions, folderMetadata }) => (
           <PlaylistDetailHeader
             playlist={playlist}
             artworkUrl={artworkUrl}
             trackCount={tracks?.length ?? playlist.track_count}
             onBack={onBack}
             folderMetadata={folderMetadata}
-            actions={downloadAllAction}
+            actions={actions}
           />
         )}
         folder

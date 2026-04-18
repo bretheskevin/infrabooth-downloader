@@ -511,6 +511,14 @@ async restoreRekordboxBackup(backupPath: string, manualDbPath: string | null) : 
 async quitRekordbox() : Promise<boolean> {
     return await TAURI_INVOKE("quit_rekordbox");
 },
+async exportPlaylistToRekordbox(tracks: TrackCore[], playlistName: string, manualDbPath: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_playlist_to_rekordbox", { tracks, playlistName, manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getUnreadCount() : Promise<Result<UnreadCountResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_unread_count") };
@@ -585,12 +593,14 @@ downloadProgressEvent: DownloadProgressEvent,
 queueCancelledEvent: QueueCancelledEvent,
 queueCompleteEvent: QueueCompleteEvent,
 queueProgressEvent: QueueProgressEvent,
+rekordboxExportProgressEvent: RekordboxExportProgressEvent,
 tracksBatchEvent: TracksBatchEvent
 }>({
 downloadProgressEvent: "download-progress-event",
 queueCancelledEvent: "queue-cancelled-event",
 queueCompleteEvent: "queue-complete-event",
 queueProgressEvent: "queue-progress-event",
+rekordboxExportProgressEvent: "rekordbox-export-progress-event",
 tracksBatchEvent: "tracks-batch-event"
 })
 
@@ -671,6 +681,8 @@ export type QueueCompleteEvent = { completed: number; failed: number; total: num
  */
 export type QueueProgressEvent = { current: number; total: number; trackId: string }
 export type RateLimitChoice = "retry" | "stop"
+export type RekordboxExportProgressEvent = { trackId: string; trackTitle: string; status: RekordboxExportStatus; currentTrack: number; totalTracks: number; error: string | null }
+export type RekordboxExportStatus = "downloading" | "exporting" | "error"
 export type RekordboxPlaylistInfo = { id: string; name: string; trackCount: number }
 export type RekordboxStatus = { found: boolean; version: string | null; dbPath: string | null; isRunning: boolean }
 export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: ReleaseActivityType; created_at: string }

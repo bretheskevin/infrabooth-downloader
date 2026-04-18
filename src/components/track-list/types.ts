@@ -27,7 +27,7 @@ export interface DownloadConfig {
 }
 
 export interface TrackListRenderContext {
-  downloadAllAction: React.ReactNode;
+  actions: React.ReactNode;
   folderMetadata: React.ReactNode;
 }
 
