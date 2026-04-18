@@ -508,6 +508,9 @@ async restoreRekordboxBackup(backupPath: string, manualDbPath: string | null) : 
     else return { status: "error", error: e  as any };
 }
 },
+async quitRekordbox() : Promise<boolean> {
+    return await TAURI_INVOKE("quit_rekordbox");
+},
 async getUnreadCount() : Promise<Result<UnreadCountResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_unread_count") };
@@ -602,7 +605,8 @@ export type ActivityType = "Track" | "Repost"
 export type ActorInfo = { id: number; username: string; avatar_url: string | null; permalink_url: string }
 export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string; secret_token: string | null }
 export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
-export type BackupInfo = { path: string; timestamp: string; sizeMb: number }
+export type BackupInfo = { path: string; timestamp: string; sizeMb: number; kind: BackupKind }
+export type BackupKind = "export" | "preRestore"
 export type ConversationMessage = { content: string; sender_id: number; sent_at: string; track_embed: MessageTrackEmbed | null }
 export type ConversationSummary = { id: string; other_user: MessageUser; last_message_content: string; last_message_sender_id: number; last_message_at: string; read: boolean }
 export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null }

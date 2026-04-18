@@ -76,7 +76,7 @@ pub use follow::{check_follow_status, follow_user, unfollow_user};
 pub mod rekordbox;
 pub use rekordbox::{
     delete_rekordbox_playlist, detect_rekordbox, export_to_rekordbox, get_default_rekordbox_data_directory_parent, list_rekordbox_backups,
-    list_rekordbox_playlists, restore_rekordbox_backup,
+    list_rekordbox_playlists, quit_rekordbox, restore_rekordbox_backup,
 };
 
 pub mod messages;

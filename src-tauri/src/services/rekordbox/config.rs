@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use sysinfo::{ProcessesToUpdate, System};
+use sysinfo::{ProcessesToUpdate, Signal, System};
 
 use super::models::RekordboxConfig;
 use crate::models::error::RekordboxError;
@@ -20,6 +20,23 @@ pub fn is_rekordbox_running() -> bool {
         let name = p.name().to_string_lossy().to_lowercase();
         name.contains("rekordbox") && !name.contains("rekordboxagent")
     })
+}
+
+pub fn quit_rekordbox() -> bool {
+    let mut s = System::new();
+    s.refresh_processes(ProcessesToUpdate::All, true);
+    let mut killed = false;
+    for p in s.processes().values() {
+        let name = p.name().to_string_lossy().to_lowercase();
+        if name.contains("rekordbox") && !name.contains("rekordboxagent") {
+            match p.kill_with(Signal::Term) {
+                Some(true) => killed = true,
+                Some(false) => log::warn!("Failed to send SIGTERM to {}", name),
+                None => log::warn!("Signal::Term not supported for {}", name),
+            }
+        }
+    }
+    killed
 }
 
 pub fn detect_rekordbox(manual_db_path: Option<PathBuf>) -> Result<RekordboxConfig, RekordboxError> {

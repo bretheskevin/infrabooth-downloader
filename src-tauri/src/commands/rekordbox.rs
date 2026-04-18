@@ -3,7 +3,8 @@ use std::path::{Path, PathBuf};
 use crate::models::error::{ErrorResponse, HasErrorCode, RekordboxError};
 use crate::services::paths::get_app_data_dir;
 use crate::services::rekordbox::models::{
-    BackupInfo, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus, ALL_TRACKS_PLAYLIST_NAME,
+    BackupInfo, BackupKind, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus,
+    ALL_TRACKS_PLAYLIST_NAME,
 };
 use crate::services::rekordbox::{
     backup, config, content,
@@ -15,10 +16,16 @@ use crate::services::rekordbox::{
 #[path = "rekordbox_tests.rs"]
 mod rekordbox_tests;
 
-const MAX_REKORDBOX_BACKUPS: usize = 5;
+const MAX_REKORDBOX_BACKUPS: usize = 10;
 
 fn app_data_dir_error(e: String) -> ErrorResponse {
     ErrorResponse { code: "APP_DATA_DIR_ERROR".to_string(), message: e }
+}
+
+fn create_backup_and_rotate(db_dir: &Path, app_data_dir: &Path, kind: BackupKind) -> Result<PathBuf, ErrorResponse> {
+    let backup_path = backup::create_backup(db_dir, app_data_dir, kind).map_err(ErrorResponse::from)?;
+    backup::rotate_backups(app_data_dir, MAX_REKORDBOX_BACKUPS).map_err(ErrorResponse::from)?;
+    Ok(backup_path)
 }
 
 fn resolve_rekordbox_config(manual_db_path: Option<String>) -> Result<RekordboxConfig, ErrorResponse> {
@@ -110,8 +117,7 @@ pub fn export_to_rekordbox(
 
     let app_data_dir = get_app_data_dir(&app).map_err(app_data_dir_error)?;
 
-    let backup_path = backup::create_backup(&rb_config.db_dir, &app_data_dir).map_err(ErrorResponse::from)?;
-    backup::rotate_backups(&app_data_dir, MAX_REKORDBOX_BACKUPS).map_err(ErrorResponse::from)?;
+    let backup_path = create_backup_and_rotate(&rb_config.db_dir, &app_data_dir, BackupKind::Export)?;
 
     let result = (|| -> Result<ExportResult, RekordboxError> {
         let mut db = database::RekordboxDatabase::open(&rb_config)?;
@@ -192,8 +198,7 @@ pub fn delete_rekordbox_playlist(playlist_id: String, manual_db_path: Option<Str
     let rb_config = resolve_rekordbox_config(manual_db_path)?;
     let app_data_dir = get_app_data_dir(&app).map_err(app_data_dir_error)?;
 
-    let backup_path = backup::create_backup(&rb_config.db_dir, &app_data_dir).map_err(ErrorResponse::from)?;
-    backup::rotate_backups(&app_data_dir, MAX_REKORDBOX_BACKUPS).map_err(ErrorResponse::from)?;
+    let backup_path = create_backup_and_rotate(&rb_config.db_dir, &app_data_dir, BackupKind::Export)?;
 
     let result = (|| -> Result<(), RekordboxError> {
         let mut db = database::RekordboxDatabase::open(&rb_config)?;
@@ -229,6 +234,12 @@ pub fn delete_rekordbox_playlist(playlist_id: String, manual_db_path: Option<Str
 
 #[tauri::command]
 #[specta::specta]
+pub fn quit_rekordbox() -> bool {
+    config::quit_rekordbox()
+}
+
+#[tauri::command]
+#[specta::specta]
 pub fn list_rekordbox_backups(app: tauri::AppHandle) -> Result<Vec<BackupInfo>, ErrorResponse> {
     let app_data_dir = get_app_data_dir(&app).map_err(app_data_dir_error)?;
     backup::list_backups(&app_data_dir).map_err(ErrorResponse::from)
@@ -255,6 +266,8 @@ pub fn restore_rekordbox_backup(backup_path: String, manual_db_path: Option<Stri
             "Backup path is outside the backups directory".into(),
         )));
     }
+
+    backup::create_backup(&rb_config.db_dir, &app_data_dir, BackupKind::PreRestore).map_err(ErrorResponse::from)?;
 
     backup::restore_backup(&path, &rb_config.db_dir).map_err(ErrorResponse::from)
 }

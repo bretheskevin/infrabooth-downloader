@@ -4,7 +4,9 @@ use std::path::PathBuf;
 use crate::services::rekordbox::{
     backup, config, content,
     database::{self, timestamp_ms},
-    file_manager, playlist, xml_sync,
+    file_manager,
+    models::BackupKind,
+    playlist, xml_sync,
 };
 
 fn app_data_dir() -> PathBuf {
@@ -48,7 +50,7 @@ fn test_e2e_export_fixtures_to_rekordbox() {
     let app_dir = app_data_dir();
     fs::create_dir_all(&app_dir).expect("Cannot create app data dir");
 
-    backup::create_backup(&rb_config.db_dir, &app_dir).expect("Backup failed");
+    backup::create_backup(&rb_config.db_dir, &app_dir, BackupKind::Export).expect("Backup failed");
     backup::rotate_backups(&app_dir, 5).expect("Rotation failed");
 
     let mut db = database::RekordboxDatabase::open(&rb_config).expect("Cannot open Rekordbox DB");

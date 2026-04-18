@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 
 use crate::models::error::RekordboxError;
 
-use super::models::{BackupInfo, MASTER_DB_FILENAME, MASTER_PLAYLISTS_XML};
+use super::models::{BackupInfo, BackupKind, MASTER_DB_FILENAME, MASTER_PLAYLISTS_XML};
+
+const KIND_FILENAME: &str = ".kind";
 
 pub(crate) const BACKUPS_DIR_NAME: &str = "rekordbox-backups";
 
@@ -35,7 +37,7 @@ fn build_backup_path(backups_dir: &Path) -> Result<PathBuf, RekordboxError> {
     Err(RekordboxError::BackupFailed("Could not allocate a unique backup directory".into()))
 }
 
-pub fn create_backup(db_dir: &Path, app_data_dir: &Path) -> Result<PathBuf, RekordboxError> {
+pub fn create_backup(db_dir: &Path, app_data_dir: &Path, kind: BackupKind) -> Result<PathBuf, RekordboxError> {
     let backups_dir = app_data_dir.join(BACKUPS_DIR_NAME);
     fs::create_dir_all(&backups_dir).map_err(|e| RekordboxError::BackupFailed(format!("Cannot create backups dir: {}", e)))?;
 
@@ -57,7 +59,10 @@ pub fn create_backup(db_dir: &Path, app_data_dir: &Path) -> Result<PathBuf, Reko
             .map_err(|e| RekordboxError::BackupFailed(format!("Cannot copy XML: {}", e)))?;
     }
 
-    log::info!("Backup created: {}", backup_path.display());
+    fs::write(backup_path.join(KIND_FILENAME), kind.to_string())
+        .map_err(|e| RekordboxError::BackupFailed(format!("Cannot write kind marker: {}", e)))?;
+
+    log::info!("Backup created ({}): {}", kind, backup_path.display());
     Ok(backup_path)
 }
 
@@ -129,7 +134,11 @@ pub fn list_backups(app_data_dir: &Path) -> Result<Vec<BackupInfo>, RekordboxErr
             let xml_file = path.join(MASTER_PLAYLISTS_XML);
             let xml_size = xml_file.metadata().map(|m| m.len()).unwrap_or(0);
             let total_mb = (size_bytes + xml_size) as f64 / (1024.0 * 1024.0);
-            Some(BackupInfo { path: path.to_string_lossy().to_string(), timestamp, size_mb: (total_mb * 100.0).round() / 100.0 })
+            let kind = match fs::read_to_string(path.join(KIND_FILENAME)).ok().as_deref() {
+                Some("pre-restore") => BackupKind::PreRestore,
+                _ => BackupKind::Export,
+            };
+            Some(BackupInfo { path: path.to_string_lossy().to_string(), timestamp, size_mb: (total_mb * 100.0).round() / 100.0, kind })
         })
         .collect();
 

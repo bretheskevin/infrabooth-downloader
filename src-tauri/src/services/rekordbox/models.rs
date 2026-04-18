@@ -70,10 +70,27 @@ pub struct RekordboxPlaylistInfo {
 
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
+pub enum BackupKind {
+    Export,
+    PreRestore,
+}
+
+impl std::fmt::Display for BackupKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            BackupKind::Export => f.write_str("export"),
+            BackupKind::PreRestore => f.write_str("pre-restore"),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub struct BackupInfo {
     pub path: String,
     pub timestamp: String,
     pub size_mb: f64,
+    pub kind: BackupKind,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]

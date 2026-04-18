@@ -1,7 +1,7 @@
 use std::fs;
 use tempfile::TempDir;
 
-use crate::services::rekordbox::backup;
+use crate::services::rekordbox::{backup, models::BackupKind};
 
 fn setup_fake_db_dir() -> TempDir {
     let tmp = TempDir::new().unwrap();
@@ -14,7 +14,7 @@ fn setup_fake_db_dir() -> TempDir {
 fn test_create_backup() {
     let db_dir = setup_fake_db_dir();
     let backup_root = TempDir::new().unwrap();
-    let path = backup::create_backup(db_dir.path(), backup_root.path()).expect("Backup creation failed");
+    let path = backup::create_backup(db_dir.path(), backup_root.path(), BackupKind::Export).expect("Backup creation failed");
     assert!(path.join("master.db").exists());
     assert!(path.join("masterPlaylists6.xml").exists());
     let content = fs::read(path.join("master.db")).unwrap();
@@ -42,7 +42,7 @@ fn test_rotate_backups_keeps_max() {
 fn test_restore_backup() {
     let db_dir = setup_fake_db_dir();
     let backup_root = TempDir::new().unwrap();
-    let backup_path = backup::create_backup(db_dir.path(), backup_root.path()).unwrap();
+    let backup_path = backup::create_backup(db_dir.path(), backup_root.path(), BackupKind::Export).unwrap();
     fs::write(db_dir.path().join("master.db"), b"modified-content").unwrap();
     backup::restore_backup(&backup_path, db_dir.path()).expect("Restore failed");
     let content = fs::read(db_dir.path().join("master.db")).unwrap();

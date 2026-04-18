@@ -26,6 +26,7 @@ import {
   type ConversationsPage,
   type MessageEmbed,
   type MessagesPage,
+  type BackupInfo,
 } from '@/bindings';
 import type { LibraryPlaylist } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
@@ -129,6 +130,12 @@ export const api = {
 
   restoreRekordboxBackup: (backupPath: string): Promise<void> =>
     commands.restoreRekordboxBackup(backupPath, getStoredRekordboxPathOverride()).then(unwrap).then(() => undefined),
+
+  listRekordboxBackups: (): Promise<BackupInfo[]> =>
+    commands.listRekordboxBackups().then(unwrap),
+
+  quitRekordbox: (): Promise<boolean> =>
+    commands.quitRekordbox(),
 
   // Testing/Debug
   testFfmpeg: (): Promise<string> =>

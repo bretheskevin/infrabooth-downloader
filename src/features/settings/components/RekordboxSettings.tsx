@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, CheckCircle2, Folder, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Folder, Loader2, RefreshCw, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { BackupSection } from './BackupSection';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/tauri';
 import { useSettingsStore } from '@/features/settings/store';
@@ -60,8 +62,16 @@ export function RekordboxSettings() {
     },
   });
 
+  const [isQuitting, setIsQuitting] = useState(false);
   const statusVariant = getStatusVariant(data);
   const showPathSection = (data && !data.found) || (data?.found && rekordboxPathOverride);
+
+  function handleQuitRekordbox() {
+    setIsQuitting(true);
+    void api.quitRekordbox().then(() => setTimeout(() => {
+      void refetch().finally(() => setIsQuitting(false));
+    }, 1500));
+  }
 
   function handleClearOverride() {
     useSettingsStore.getState().setRekordboxPathOverride('');
@@ -79,7 +89,13 @@ export function RekordboxSettings() {
       </div>
 
       {statusVariant === 'running' && (
-        <p className="text-sm text-amber-600 dark:text-amber-400">{t('settings.rekordboxRunning')}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-amber-600 dark:text-amber-400">{t('settings.rekordboxRunning')}</p>
+          <Button variant="outline" size="sm" disabled={isQuitting} onClick={handleQuitRekordbox}>
+            {isQuitting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+            {t('settings.backupCloseRekordbox')}
+          </Button>
+        </div>
       )}
 
       {isLoading && (
@@ -144,6 +160,12 @@ export function RekordboxSettings() {
               )}
             </div>
           </div>
+        </>
+      )}
+      {data?.found && (
+        <>
+          <Separator />
+          <BackupSection />
         </>
       )}
     </div>
