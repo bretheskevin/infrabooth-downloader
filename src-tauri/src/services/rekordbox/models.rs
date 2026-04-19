@@ -112,8 +112,11 @@ pub struct RekordboxConfig {
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "lowercase")]
 pub enum RekordboxExportStatus {
+    Pending,
     Downloading,
+    Downloaded,
     Exporting,
+    Completed,
     Error,
 }
 
@@ -123,7 +126,6 @@ pub struct RekordboxExportProgressEvent {
     pub track_id: String,
     pub track_title: String,
     pub status: RekordboxExportStatus,
-    pub current_track: u32,
     pub total_tracks: u32,
     pub error: Option<String>,
 }

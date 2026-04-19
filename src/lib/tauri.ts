@@ -123,8 +123,8 @@ export const api = {
   exportToRekordbox: (tracks: ExportTrackRequest[], playlistName: string | null): Promise<ExportResult> =>
     commands.exportToRekordbox(tracks, playlistName, getStoredRekordboxPathOverride()).then(unwrap),
 
-  exportPlaylistToRekordbox: (tracks: TrackCore[], playlistName: string): Promise<ExportResult> =>
-    commands.exportPlaylistToRekordbox(tracks, playlistName, getStoredRekordboxPathOverride()).then(unwrap),
+  exportPlaylistToRekordbox: (tracks: TrackCore[], playlistName: string, maxConcurrent: number): Promise<ExportResult> =>
+    commands.exportPlaylistToRekordbox(tracks, playlistName, maxConcurrent, getStoredRekordboxPathOverride()).then(unwrap),
 
   listRekordboxPlaylists: (): Promise<RekordboxPlaylistInfo[]> =>
     commands.listRekordboxPlaylists(getStoredRekordboxPathOverride()).then(unwrap),

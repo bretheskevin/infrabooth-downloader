@@ -25,7 +25,7 @@ export function FolderMetadata({
   return (
     <>
       {isDownloadEnabled && folderName && (
-        <>
+        <span className="inline-flex items-center gap-1 shrink-0">
           <span className="text-border">&middot;</span>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -47,7 +47,7 @@ export function FolderMetadata({
             <TooltipContent side="bottom">{t('common.changeFolder')}</TooltipContent>
           </Tooltip>
           <OpenFolderButton onClick={onOpenFolder} size="sm" />
-        </>
+        </span>
       )}
       {isDownloadEnabled && downloadedCount > 0 && (
         <span

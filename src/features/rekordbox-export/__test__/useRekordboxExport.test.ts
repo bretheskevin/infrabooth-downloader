@@ -29,6 +29,12 @@ vi.mock('@/lib/logger', () => ({
   logger: { error: vi.fn().mockResolvedValue(undefined) },
 }));
 
+vi.mock('@/features/settings/store', () => ({
+  useSettingsStore: {
+    getState: () => ({ maxConcurrentDownloads: 3 }),
+  },
+}));
+
 const mockTrack: TrackInfo = {
   id: 1,
   title: 'Test Track',
@@ -61,7 +67,8 @@ describe('useRekordboxExport', () => {
     const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
 
     expect(result.current.phase).toBe('idle');
-    expect(result.current.progress).toBeNull();
+    expect(result.current.trackStatuses.size).toBe(0);
+    expect(result.current.totalTracks).toBe(0);
     expect(result.current.result).toBeNull();
     expect(result.current.errorCode).toBeNull();
     expect(result.current.error).toBeNull();
@@ -103,6 +110,22 @@ describe('useRekordboxExport', () => {
     expect(result.current.phase).toBe('complete');
     expect(result.current.result).toEqual(mockResult);
     expect(result.current.error).toBeNull();
+  });
+
+  it('passes maxConcurrent from settings store', async () => {
+    mockExportPlaylistToRekordbox.mockResolvedValue(mockResult);
+
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+
+    await act(async () => {
+      await result.current.startExport();
+    });
+
+    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(
+      expect.any(Array),
+      'Test Playlist',
+      3,
+    );
   });
 
   it('transitions to error on failed export', async () => {

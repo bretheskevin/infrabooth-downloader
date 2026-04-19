@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Disc3 } from 'lucide-react';
-import type { TrackInfo } from '@/bindings';
+import type { TrackInfo, RekordboxExportStatus } from '@/bindings';
 import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +13,8 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { useRekordboxExport } from '../hooks/useRekordboxExport';
+import { useRekordboxExport, type TrackStatus } from '../hooks/useRekordboxExport';
+import { ExportPhaseSection } from './ExportPhaseSection';
 
 interface ExportToRekordboxButtonProps {
   tracks: TrackInfo[] | undefined;
@@ -20,13 +22,128 @@ interface ExportToRekordboxButtonProps {
   disabled?: boolean;
 }
 
+const MAX_VISIBLE_TRACKS = 3;
+
+function groupByStatus(trackStatuses: Map<string, TrackStatus>) {
+  const groups: Record<RekordboxExportStatus, TrackStatus[]> = {
+    pending: [],
+    downloading: [],
+    downloaded: [],
+    exporting: [],
+    completed: [],
+    error: [],
+  };
+  for (const status of trackStatuses.values()) {
+    groups[status.status].push(status);
+  }
+  return groups;
+}
+
+interface ExportingContentProps {
+  groups: Record<RekordboxExportStatus, TrackStatus[]>;
+  totalTracks: number;
+  completedCount: number;
+  percent: number;
+  isRegistering: boolean;
+  onCancel: () => void;
+}
+
+function ExportingContent({ groups, totalTracks, completedCount, percent, isRegistering, onCancel }: ExportingContentProps) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t('rekordboxExport.confirmTitle')}</DialogTitle>
+        <DialogDescription>
+          {isRegistering ? t('rekordboxExport.registeringTracks') : t('rekordboxExport.downloadingTracks')}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="space-y-3 overflow-hidden">
+        <div className="space-y-1">
+          <div className="flex justify-between text-[11px] text-muted-foreground">
+            <span>{completedCount} / {totalTracks}</span>
+            <span>{Math.round(percent)}%</span>
+          </div>
+          <Progress
+            value={percent}
+            className={!isRegistering ? '[&>div]:bg-[hsl(var(--info))] [&>div]:shadow-[0_0_8px_hsl(var(--info)/0.5)]' : ''}
+          />
+        </div>
+        <div className="max-h-48 overflow-y-auto overflow-x-hidden">
+          {!isRegistering ? (
+            <>
+              <ExportPhaseSection
+                label={t('rekordboxExport.sectionDownloading')}
+                icon="↓"
+                colorClass="text-[hsl(var(--info))]"
+                tracks={groups.downloading}
+                showSpinner
+              />
+              <ExportPhaseSection
+                label={t('rekordboxExport.sectionDownloaded')}
+                icon="✓"
+                colorClass="text-[hsl(var(--success))]"
+                tracks={groups.downloaded}
+                maxVisible={MAX_VISIBLE_TRACKS}
+              />
+            </>
+          ) : (
+            <>
+              <ExportPhaseSection
+                label={t('rekordboxExport.sectionRegistering')}
+                icon="⚡"
+                colorClass="text-primary"
+                tracks={groups.exporting}
+                showSpinner
+              />
+              <ExportPhaseSection
+                label={t('rekordboxExport.sectionCompleted')}
+                icon="✓"
+                colorClass="text-[hsl(var(--success))]"
+                tracks={groups.completed}
+                maxVisible={MAX_VISIBLE_TRACKS}
+              />
+            </>
+          )}
+          {groups.error.length > 0 && (
+            <ExportPhaseSection
+              label={t('rekordboxExport.sectionErrors')}
+              icon="✗"
+              colorClass="text-destructive"
+              tracks={groups.error}
+              showError
+            />
+          )}
+          {groups.pending.length > 0 && (
+            <div className="text-[10px] uppercase tracking-wider font-semibold mb-1 text-muted-foreground mt-2">
+              ○ {t('rekordboxExport.sectionPending')} ({groups.pending.length})
+              <p className="normal-case tracking-normal font-normal text-[11px] mt-1">
+                {t('rekordboxExport.pendingCount', { count: groups.pending.length })}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel}>{t('rekordboxExport.cancel')}</Button>
+      </DialogFooter>
+    </>
+  );
+}
+
 export function ExportToRekordboxButton({ tracks, playlistName, disabled }: ExportToRekordboxButtonProps) {
   const { t } = useTranslation();
-  const { phase, progress, result, errorCode, openConfirm, startExport, close } = useRekordboxExport(tracks, playlistName);
+  const { phase, trackStatuses, totalTracks, result, errorCode, openConfirm, startExport, close } =
+    useRekordboxExport(tracks, playlistName);
 
   const trackCount = tracks?.length ?? 0;
   const isOpen = phase !== 'idle';
-  const percent = progress ? (progress.currentTrack / progress.totalTracks) * 100 : 0;
+
+  const groups = useMemo(() => groupByStatus(trackStatuses), [trackStatuses]);
+
+  const isRegistering = groups.exporting.length > 0 || groups.completed.length > 0;
+  const completedCount = groups.downloaded.length + groups.exporting.length + groups.completed.length + groups.error.length;
+  const percent = totalTracks > 0 ? (completedCount / totalTracks) * 100 : 0;
 
   return (
     <>
@@ -60,29 +177,14 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
           )}
 
           {phase === 'exporting' && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{t('rekordboxExport.confirmTitle')}</DialogTitle>
-                <DialogDescription>
-                  {progress
-                    ? t('rekordboxExport.progress', { current: progress.currentTrack, total: progress.totalTracks })
-                    : t('rekordboxExport.exporting')}
-                </DialogDescription>
-              </DialogHeader>
-              {progress && (
-                <div className="space-y-2">
-                  <Progress value={percent} />
-                  <p className="text-xs text-muted-foreground truncate">
-                    {progress.trackTitle} — {progress.status === 'downloading'
-                      ? t('rekordboxExport.downloading')
-                      : t('rekordboxExport.exporting')}
-                  </p>
-                </div>
-              )}
-              <DialogFooter>
-                <Button variant="outline" onClick={close}>{t('rekordboxExport.cancel')}</Button>
-              </DialogFooter>
-            </>
+            <ExportingContent
+              groups={groups}
+              totalTracks={totalTracks}
+              completedCount={completedCount}
+              percent={percent}
+              isRegistering={isRegistering}
+              onCancel={close}
+            />
           )}
 
           {phase === 'complete' && result && (
@@ -90,20 +192,31 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
               <DialogHeader>
                 <DialogTitle>{t('rekordboxExport.complete')}</DialogTitle>
                 <DialogDescription>
-                  {t('rekordboxExport.summary', {
+                  {t('rekordboxExport.summaryLine', {
                     exported: result.exportedCount,
                     skipped: result.skippedCount,
                     errors: result.errors.length,
                   })}
                 </DialogDescription>
               </DialogHeader>
-              {result.errors.length > 0 && (
-                <div className="max-h-32 overflow-y-auto text-xs text-destructive space-y-1">
-                  {result.errors.map((err, i) => (
-                    <p key={i}>{err}</p>
-                  ))}
-                </div>
-              )}
+              <div className="max-h-48 overflow-y-auto overflow-x-hidden">
+                {groups.error.length > 0 && (
+                  <ExportPhaseSection
+                    label={t('rekordboxExport.sectionErrors')}
+                    icon="✗"
+                    colorClass="text-destructive"
+                    tracks={groups.error}
+                    showError
+                  />
+                )}
+                <ExportPhaseSection
+                  label={t('rekordboxExport.sectionCompleted')}
+                  icon="✓"
+                  colorClass="text-[hsl(var(--success))]"
+                  tracks={groups.completed}
+                  maxVisible={MAX_VISIBLE_TRACKS}
+                />
+              </div>
               <DialogFooter>
                 <Button onClick={close}>{t('rekordboxExport.close')}</Button>
               </DialogFooter>
