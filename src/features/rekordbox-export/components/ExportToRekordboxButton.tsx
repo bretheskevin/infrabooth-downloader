@@ -13,6 +13,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
+import { useRekordboxDetection } from '../hooks/useRekordboxDetection';
 import { useRekordboxExport, type TrackStatus } from '../hooks/useRekordboxExport';
 import { ExportPhaseSection } from './ExportPhaseSection';
 
@@ -133,6 +134,8 @@ function ExportingContent({ groups, totalTracks, completedCount, percent, isRegi
 
 export function ExportToRekordboxButton({ tracks, playlistName, disabled }: ExportToRekordboxButtonProps) {
   const { t } = useTranslation();
+  const { data: rekordboxStatus } = useRekordboxDetection();
+
   const { phase, trackStatuses, totalTracks, result, errorCode, openConfirm, startExport, close } =
     useRekordboxExport(tracks, playlistName);
 
@@ -140,6 +143,8 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
   const isOpen = phase !== 'idle';
 
   const groups = useMemo(() => groupByStatus(trackStatuses), [trackStatuses]);
+
+  if (rekordboxStatus && !rekordboxStatus.found) return null;
 
   const isRegistering = groups.exporting.length > 0 || groups.completed.length > 0;
   const completedCount = groups.downloaded.length + groups.exporting.length + groups.completed.length + groups.error.length;

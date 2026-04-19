@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
 import { AlertCircle, CheckCircle2, Folder, Loader2, RefreshCw, X } from 'lucide-react';
+import type { RekordboxStatus } from '@/bindings';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -12,8 +12,7 @@ import { cn } from '@/lib/utils';
 import { api } from '@/lib/tauri';
 import { useSettingsStore } from '@/features/settings/store';
 import { useFolderSelection } from '@/hooks';
-
-type DetectionResult = { found: true; isRunning: boolean } | { found: false };
+import { useRekordboxDetection } from '@/features/rekordbox-export/hooks/useRekordboxDetection';
 
 const STATUS_BADGE_CONFIG = {
   running: { icon: AlertCircle, labelKey: 'settings.rekordboxRunningBadge', className: 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400' },
@@ -32,7 +31,7 @@ function StatusBadge({ variant }: { variant: keyof typeof STATUS_BADGE_CONFIG })
   );
 }
 
-function getStatusVariant(result: DetectionResult | undefined): keyof typeof STATUS_BADGE_CONFIG | null {
+function getStatusVariant(result: RekordboxStatus | undefined): keyof typeof STATUS_BADGE_CONFIG | null {
   if (!result) return null;
   if (result.found && result.isRunning) return 'running';
   if (result.found) return 'found';
@@ -42,16 +41,7 @@ function getStatusVariant(result: DetectionResult | undefined): keyof typeof STA
 export function RekordboxSettings() {
   const { t } = useTranslation();
   const rekordboxPathOverride = useSettingsStore((s) => s.rekordboxPathOverride);
-
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ['rekordbox-status', rekordboxPathOverride],
-    queryFn: async (): Promise<DetectionResult> => {
-      const result = await api.detectRekordbox(rekordboxPathOverride || undefined);
-      if (result.found) return { found: true, isRunning: result.isRunning };
-      return { found: false };
-    },
-    retry: false,
-  });
+  const { data, isLoading, isError, refetch } = useRekordboxDetection();
 
   const { selectFolder } = useFolderSelection({
     defaultPath: rekordboxPathOverride || undefined,

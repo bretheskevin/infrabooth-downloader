@@ -7,5 +7,3 @@
 # This file lives in the app data directory so power users can enable
 # work-in-progress features. It is created automatically on first launch.
 
-# Rekordbox export (settings sidebar entry + section). Work-in-progress.
-rekordbox = false

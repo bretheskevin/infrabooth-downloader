@@ -1,12 +1,8 @@
 import { commands } from '@/bindings';
 
-export type FeatureFlags = {
-  rekordbox: boolean;
-};
+export type FeatureFlags = Record<string, boolean>;
 
-const DEFAULTS: FeatureFlags = {
-  rekordbox: false,
-};
+const DEFAULTS: FeatureFlags = {};
 
 export function parseFeatureFlags(source: string, defaults: FeatureFlags = DEFAULTS): FeatureFlags {
   const flags: FeatureFlags = { ...defaults };

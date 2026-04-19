@@ -22,10 +22,6 @@ vi.mock('@tauri-apps/api/app', () => ({
   getVersion: vi.fn().mockResolvedValue('1.6.0'),
 }));
 
-vi.mock('@/lib/featureFlags', () => ({
-  featureFlags: { rekordbox: true },
-}));
-
 vi.mock('@/features/changelog', () => ({
   ChangelogDialog: ({ open }: { open: boolean }) =>
     open ? <div data-testid="changelog-dialog">Changelog Dialog</div> : null,

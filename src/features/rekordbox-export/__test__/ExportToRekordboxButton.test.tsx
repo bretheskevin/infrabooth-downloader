@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { TrackInfo, ExportResult } from '@/bindings';
+import type { TrackInfo, ExportResult, RekordboxStatus } from '@/bindings';
 import type { TrackStatus } from '../hooks/useRekordboxExport';
 import { ExportToRekordboxButton } from '../components/ExportToRekordboxButton';
 
@@ -22,6 +22,12 @@ let hookReturn = {
   startExport: mockStartExport,
   close: mockClose,
 };
+
+let mockDetectionData: RekordboxStatus | undefined = { found: true, version: '6', dbPath: '/fake', isRunning: false };
+
+vi.mock('../hooks/useRekordboxDetection', () => ({
+  useRekordboxDetection: () => ({ data: mockDetectionData }),
+}));
 
 vi.mock('../hooks/useRekordboxExport', () => ({
   useRekordboxExport: () => hookReturn,
@@ -59,6 +65,7 @@ function makeTrackStatus(id: string, title: string, status: TrackStatus['status'
 describe('ExportToRekordboxButton', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockDetectionData = { found: true, version: '6', dbPath: '/fake', isRunning: false };
     hookReturn = {
       phase: 'idle', trackStatuses: new Map(), totalTracks: 0,
       result: null, errorCode: null, error: null,
@@ -68,7 +75,7 @@ describe('ExportToRekordboxButton', () => {
 
   it('renders the button', () => {
     render(<ExportToRekordboxButton tracks={[mockTrack]} playlistName="My Playlist" />);
-    expect(screen.getByText('button')).toBeInTheDocument();
+    expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('disables button when no tracks', () => {
@@ -79,6 +86,18 @@ describe('ExportToRekordboxButton', () => {
   it('disables button when disabled prop is true', () => {
     render(<ExportToRekordboxButton tracks={[mockTrack]} playlistName="My Playlist" disabled />);
     expect(screen.getByRole('button')).toBeDisabled();
+  });
+
+  it('renders nothing when rekordbox is not found', () => {
+    mockDetectionData = { found: false, version: null, dbPath: null, isRunning: false };
+    const { container } = render(<ExportToRekordboxButton tracks={[mockTrack]} playlistName="My Playlist" />);
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('renders button while detection is pending', () => {
+    mockDetectionData = undefined;
+    render(<ExportToRekordboxButton tracks={[mockTrack]} playlistName="My Playlist" />);
+    expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
   it('calls openConfirm on click', async () => {

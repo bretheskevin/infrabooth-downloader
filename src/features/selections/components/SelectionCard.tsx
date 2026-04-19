@@ -40,10 +40,13 @@ export function SelectionCard({ mix, index, label, onClick, onDownload }: Select
   }, [mix.tracks]);
 
   return (
-    <button
-      type="button"
+    // div instead of button: a nested <Button> for download makes <button> invalid HTML
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onClick}
-      className="group rounded-xl border border-border bg-card overflow-hidden text-left transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
+      className="group rounded-xl border border-border bg-card overflow-hidden text-left transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
     >
       <div className="relative h-24 bg-secondary">
         {artworkUrl ? (
@@ -95,6 +98,6 @@ export function SelectionCard({ mix, index, label, onClick, onDownload }: Select
           </TooltipContent>
         </Tooltip>
       </div>
-    </button>
+    </div>
   );
 }
