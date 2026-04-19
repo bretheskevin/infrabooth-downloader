@@ -158,12 +158,15 @@ jobs:
           VERSION=${{ steps.version.outputs.version }}
           BUNDLE_DIR="src-tauri/target/${{ matrix.target }}/release/bundle"
 
-          # Create output directory
           mkdir -p output
 
-          # Copy NSIS installer
-          find "$BUNDLE_DIR/nsis" -name "*.exe" -exec cp {} output/ \;
-          find "$BUNDLE_DIR/nsis" -name "*.exe.sig" -exec cp {} output/ \; 2>/dev/null || true
+          EXE_FILE=$(find "$BUNDLE_DIR/nsis" -name "*-setup.exe" | head -1)
+          if [ -n "$EXE_FILE" ]; then
+            cp "$EXE_FILE" "output/InfraBooth.Downloader_${VERSION}_x64-setup.exe"
+            if [ -f "${EXE_FILE}.sig" ]; then
+              cp "${EXE_FILE}.sig" "output/InfraBooth.Downloader_${VERSION}_x64-setup.exe.sig"
+            fi
+          fi
 
           ls -la output/
 
