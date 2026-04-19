@@ -23,34 +23,67 @@ pub fn read_track_metadata(path: &Path) -> Result<TrackMetadata, RekordboxError>
 }
 
 pub fn add_content(db: &mut RekordboxDatabase, file_path: &Path, metadata: &TrackMetadata) -> Result<String, RekordboxError> {
+    log::info!("[rekordbox-content] add_content: file_path={:?}", file_path);
+
     let folder_path = file_path
         .to_str()
-        .ok_or_else(|| RekordboxError::FileError("Invalid file path encoding".into()))?
+        .ok_or_else(|| {
+            log::error!("[rekordbox-content] Invalid file path encoding: {:?}", file_path);
+            RekordboxError::FileError("Invalid file path encoding".into())
+        })?
         .to_string();
+    log::debug!("[rekordbox-content] folder_path string: {}", folder_path);
 
+    log::debug!("[rekordbox-content] Checking for existing content...");
     if let Some(existing_id) = find_content_id_by_path(db, &folder_path)? {
+        log::debug!("[rekordbox-content] Content already exists with id: {}", existing_id);
         return Ok(existing_id);
     }
 
     let file_name = file_path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+    log::debug!("[rekordbox-content] file_name: {}", file_name);
 
     let file_size = std::fs::metadata(file_path).map(|m| m.len() as i64).unwrap_or(0);
+    log::debug!("[rekordbox-content] file_size: {}", file_size);
 
+    log::debug!("[rekordbox-content] Resolving artist: {}", metadata.artist);
     let artist_id = resolve_or_create_artist(db, &metadata.artist)?;
-    let album_id = metadata.album.as_ref().map(|name| resolve_or_create_album(db, name)).transpose()?;
+    log::debug!("[rekordbox-content] artist_id: {}", artist_id);
 
+    let album_id = metadata
+        .album
+        .as_ref()
+        .map(|name| {
+            log::debug!("[rekordbox-content] Resolving album: {}", name);
+            resolve_or_create_album(db, name)
+        })
+        .transpose()?;
+    log::debug!("[rekordbox-content] album_id: {:?}", album_id);
+
+    log::debug!("[rekordbox-content] Getting device info...");
     let (device_id, master_db_id) = get_device_info(db)?;
-    let content_link = get_content_link(db)?;
+    log::debug!("[rekordbox-content] device_id: {}, master_db_id: {}", device_id, master_db_id);
 
+    log::debug!("[rekordbox-content] Getting content link...");
+    let content_link = get_content_link(db)?;
+    log::debug!("[rekordbox-content] content_link: {}", content_link);
+
+    log::debug!("[rekordbox-content] Generating new content ID...");
     let id = db.generate_unused_id("djmdContent")?.to_string();
     let uuid = Uuid::new_v4().to_string();
     let now = database::now_timestamp();
     let today = database::today_date();
+    log::debug!("[rekordbox-content] Generated id: {}, uuid: {}", id, uuid);
 
     let search_str = build_search_str(&metadata.title, &metadata.artist, metadata.album.as_deref());
 
     let length_sec = metadata.duration_ms.map(|ms| (ms / 1000) as i32);
 
+    log::info!(
+        "[rekordbox-content] Inserting content into database: id={}, title={}",
+        id,
+        metadata.title
+    );
     db.conn()
         .execute(
             "INSERT INTO djmdContent (
@@ -105,7 +138,11 @@ pub fn add_content(db: &mut RekordboxDatabase, file_path: &Path, metadata: &Trac
                 now,
             ],
         )
-        .map_err(|e| RekordboxError::DatabaseError(format!("Insert content failed: {}", e)))?;
+        .map_err(|e| {
+            log::error!("[rekordbox-content] Insert content failed: {}", e);
+            RekordboxError::DatabaseError(format!("Insert content failed: {}", e))
+        })?;
+    log::info!("[rekordbox-content] Content inserted successfully: id={}", id);
 
     db.track_usn_update("djmdContent", &id);
 

@@ -75,38 +75,63 @@ impl RekordboxDatabase {
     }
 
     pub fn flush_usn_and_commit(&mut self) -> Result<(), RekordboxError> {
-        let mut usn = self.get_local_usn()?;
+        log::info!(
+            "[rekordbox-db] flush_usn_and_commit: {} pending updates",
+            self.pending_usn_updates.len()
+        );
 
-        for update in &self.pending_usn_updates {
+        let mut usn = self.get_local_usn()?;
+        log::debug!("[rekordbox-db] Current USN: {}", usn);
+
+        for (idx, update) in self.pending_usn_updates.iter().enumerate() {
             let table = validate_table_name(&update.table_name)?;
             usn += 1;
+            log::debug!(
+                "[rekordbox-db] USN update {}/{}: {}.{} -> usn={}",
+                idx + 1,
+                self.pending_usn_updates.len(),
+                table,
+                update.row_id,
+                usn
+            );
             self.conn
                 .execute(
                     &format!("UPDATE {} SET rb_local_usn = ?1, updated_at = ?2 WHERE ID = ?3", table),
                     rusqlite::params![usn, now_timestamp(), update.row_id],
                 )
                 .map_err(|e| {
+                    log::error!("[rekordbox-db] USN update failed: {}", e);
                     RekordboxError::DatabaseError(format!("USN update failed for {}.{}: {}", update.table_name, update.row_id, e))
                 })?;
         }
 
+        log::debug!("[rekordbox-db] Updating global USN to {}", usn);
         self.conn
             .execute(
                 "UPDATE agentRegistry SET int_1 = ?1, updated_at = ?2 \
                  WHERE registry_id = 'localUpdateCount'",
                 rusqlite::params![usn, now_timestamp()],
             )
-            .map_err(|e| RekordboxError::DatabaseError(format!("Global USN update failed: {}", e)))?;
+            .map_err(|e| {
+                log::error!("[rekordbox-db] Global USN update failed: {}", e);
+                RekordboxError::DatabaseError(format!("Global USN update failed: {}", e))
+            })?;
 
-        self.conn
-            .execute_batch("COMMIT")
-            .map_err(|e| RekordboxError::DatabaseError(format!("COMMIT failed: {}", e)))?;
+        log::info!("[rekordbox-db] Executing COMMIT...");
+        self.conn.execute_batch("COMMIT").map_err(|e| {
+            log::error!("[rekordbox-db] COMMIT failed: {}", e);
+            RekordboxError::DatabaseError(format!("COMMIT failed: {}", e))
+        })?;
+        log::info!("[rekordbox-db] COMMIT successful");
 
-        self.conn
-            .execute_batch("BEGIN")
-            .map_err(|e| RekordboxError::DatabaseError(format!("BEGIN after COMMIT failed: {}", e)))?;
+        log::debug!("[rekordbox-db] Starting new transaction...");
+        self.conn.execute_batch("BEGIN").map_err(|e| {
+            log::error!("[rekordbox-db] BEGIN after COMMIT failed: {}", e);
+            RekordboxError::DatabaseError(format!("BEGIN after COMMIT failed: {}", e))
+        })?;
 
         self.pending_usn_updates.clear();
+        log::info!("[rekordbox-db] flush_usn_and_commit completed successfully");
         Ok(())
     }
 

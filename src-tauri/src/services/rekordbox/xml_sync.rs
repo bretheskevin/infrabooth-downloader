@@ -107,14 +107,25 @@ impl PlaylistXml {
 
     pub fn save(&self, db_dir: &Path) -> Result<(), RekordboxError> {
         if !self.modified {
+            log::info!("[rekordbox-xml] No modifications, skipping save");
             return Ok(());
         }
 
         let xml_path = db_dir.join(MASTER_PLAYLISTS_XML);
-        let output = self.document.render();
+        log::info!("[rekordbox-xml] Saving XML to: {:?}", xml_path);
 
-        fs::write(&xml_path, &output).map_err(|e| RekordboxError::XmlError(format!("Cannot write XML: {}", e)))?;
-        log::info!("Saved {}", MASTER_PLAYLISTS_XML);
+        let output = self.document.render();
+        log::info!(
+            "[rekordbox-xml] Rendered XML: {} bytes, {} segments",
+            output.len(),
+            self.document.segments.len()
+        );
+
+        fs::write(&xml_path, &output).map_err(|e| {
+            log::error!("[rekordbox-xml] Failed to write XML: {}", e);
+            RekordboxError::XmlError(format!("Cannot write XML: {}", e))
+        })?;
+        log::info!("[rekordbox-xml] Saved {} successfully", MASTER_PLAYLISTS_XML);
         Ok(())
     }
 }

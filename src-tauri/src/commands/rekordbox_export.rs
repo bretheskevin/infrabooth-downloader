@@ -136,31 +136,70 @@ async fn resolve_track_sources(
 pub async fn export_playlist_to_rekordbox(
     tracks: Vec<TrackCore>, playlist_name: String, max_concurrent: u32, manual_db_path: Option<String>, app: tauri::AppHandle,
 ) -> Result<ExportResult, ErrorResponse> {
+    log::info!(
+        "[rekordbox-export] Starting export of {} tracks to playlist '{}'",
+        tracks.len(),
+        playlist_name
+    );
+
     let prepare_app = app.clone();
+    log::info!("[rekordbox-export] Preparing write context...");
     let ctx = tokio::task::spawn_blocking(move || RekordboxWriteContext::prepare(manual_db_path, &prepare_app))
         .await
-        .map_err(|e| ErrorResponse { code: "TASK_JOIN_ERROR".to_string(), message: e.to_string() })??;
+        .map_err(|e| {
+            log::error!("[rekordbox-export] spawn_blocking join error during prepare: {}", e);
+            ErrorResponse { code: "TASK_JOIN_ERROR".to_string(), message: e.to_string() }
+        })??;
+
+    log::info!("[rekordbox-export] Write context prepared. App data dir: {:?}", ctx.app_data_dir);
 
     let total = tracks.len() as u32;
     let export_dl_dir = ctx.app_data_dir.join(EXPORT_DOWNLOADS_DIR);
     let max_concurrent = max_concurrent.clamp(1, 10) as usize;
 
+    log::info!("[rekordbox-export] Resolving track sources (download dir: {:?})...", export_dl_dir);
     let (resolved, download_errors) = resolve_track_sources(&app, tracks, &export_dl_dir, total, max_concurrent).await?;
+    log::info!(
+        "[rekordbox-export] Track sources resolved: {} successful, {} errors",
+        resolved.len(),
+        download_errors.len()
+    );
 
+    log::info!("[rekordbox-export] Starting database export phase...");
     tokio::task::spawn_blocking(move || {
         ctx.handle_result((|| -> Result<ExportResult, RekordboxError> {
+            log::info!("[rekordbox-export] Opening database session...");
             let mut session = ctx.open_session()?;
-            let folder = session.init_infrabooth_folder()?;
+            log::info!("[rekordbox-export] Database session opened successfully");
 
+            log::info!("[rekordbox-export] Initializing InfraBooth folder...");
+            let folder = session.init_infrabooth_folder()?;
+            log::info!("[rekordbox-export] InfraBooth folder initialized: id={}", folder.id);
+
+            log::info!("[rekordbox-export] Finding/creating playlist '{}'...", playlist_name);
             let named_pl = session.find_or_create_playlist(&playlist_name, &folder.id)?;
+            log::info!("[rekordbox-export] Playlist ready: id={}, name={}", named_pl.id, named_pl.name);
+
+            log::info!("[rekordbox-export] Finding/creating all-tracks playlist...");
             let all_tracks_pl = session.find_or_create_playlist(ALL_TRACKS_PLAYLIST_NAME, &folder.id)?;
+            log::info!("[rekordbox-export] All-tracks playlist ready: id={}", all_tracks_pl.id);
 
             let rekordbox_tracks_dir = file_manager::get_rekordbox_tracks_dir(&ctx.app_data_dir);
+            log::info!("[rekordbox-export] Rekordbox tracks dir: {:?}", rekordbox_tracks_dir);
+
             let mut exported_count = 0i32;
             let mut skipped_count = 0i32;
             let mut errors: Vec<String> = download_errors;
 
-            for (track, source_path) in resolved.iter() {
+            log::info!("[rekordbox-export] Starting to export {} tracks...", resolved.len());
+            for (idx, (track, source_path)) in resolved.iter().enumerate() {
+                log::info!(
+                    "[rekordbox-export] Exporting track {}/{}: {} (source: {:?})",
+                    idx + 1,
+                    resolved.len(),
+                    track.title,
+                    source_path
+                );
                 emit_progress(&app, progress_event(track, total, RekordboxExportStatus::Exporting, None));
 
                 let export_req = ExportTrackRequest { source_path: source_path.to_string_lossy().to_string() };
@@ -169,27 +208,47 @@ pub async fn export_playlist_to_rekordbox(
                     Ok((exported, content_id)) => {
                         if exported {
                             exported_count += 1;
+                            log::info!("[rekordbox-export] Track exported: content_id={}", content_id);
                         } else {
                             skipped_count += 1;
+                            log::info!("[rekordbox-export] Track skipped (already exists): content_id={}", content_id);
                         }
 
+                        log::debug!("[rekordbox-export] Checking if track is in all-tracks playlist...");
                         if !is_content_in_playlist(&session.db, &all_tracks_pl.id, &content_id)
                             .map_err(|e| RekordboxError::DatabaseError(format!("all_tracks check failed: {}", e)))?
                         {
+                            log::debug!("[rekordbox-export] Adding track to all-tracks playlist...");
                             playlist::add_to_playlist(&mut session.db, &all_tracks_pl.id, &content_id, None)
                                 .map_err(|e| RekordboxError::DatabaseError(format!("add to all_tracks failed: {}", e)))?;
                         }
 
                         emit_progress(&app, progress_event(track, total, RekordboxExportStatus::Completed, None));
                     }
-                    Err(e) => errors.push(e),
+                    Err(e) => {
+                        log::error!("[rekordbox-export] Track export failed: {}", e);
+                        errors.push(e);
+                    }
                 }
             }
 
+            log::info!(
+                "[rekordbox-export] Export loop complete. Exported: {}, Skipped: {}, Errors: {}",
+                exported_count,
+                skipped_count,
+                errors.len()
+            );
+
+            log::info!("[rekordbox-export] Committing database session...");
             session.commit()?;
+            log::info!("[rekordbox-export] Database session committed successfully");
+
             Ok(ExportResult { exported_count, skipped_count, playlist_name: named_pl.name, errors })
         })())
     })
     .await
-    .map_err(|e| ErrorResponse { code: "TASK_JOIN_ERROR".to_string(), message: e.to_string() })?
+    .map_err(|e| {
+        log::error!("[rekordbox-export] spawn_blocking join error during export: {}", e);
+        ErrorResponse { code: "TASK_JOIN_ERROR".to_string(), message: e.to_string() }
+    })?
 }

@@ -67,23 +67,46 @@ pub(super) struct RekordboxWriteContext {
 
 impl RekordboxWriteContext {
     pub fn prepare(manual_db_path: Option<String>, app: &tauri::AppHandle) -> Result<Self, ErrorResponse> {
+        log::info!("[rekordbox] RekordboxWriteContext::prepare starting...");
         let rb_config = resolve_rekordbox_config(manual_db_path)?;
+        log::info!("[rekordbox] Rekordbox config resolved: db_path={:?}", rb_config.db_path);
+
         if config::is_rekordbox_running() {
+            log::warn!("[rekordbox] Rekordbox is running, aborting");
             return Err(ErrorResponse::from(RekordboxError::RekordboxRunning));
         }
+        log::info!("[rekordbox] Rekordbox is not running, proceeding");
+
         let app_data_dir = get_app_data_dir(app).map_err(app_data_dir_error)?;
+        log::info!("[rekordbox] App data dir: {:?}", app_data_dir);
+
+        log::info!("[rekordbox] Creating backup...");
         let backup_path = create_backup_and_rotate(&rb_config.db_dir, &app_data_dir, BackupKind::Export)?;
+        log::info!("[rekordbox] Backup created: {:?}", backup_path);
+
         Ok(Self { rb_config, app_data_dir, backup_path })
     }
 
     pub fn open_session(&self) -> Result<RekordboxSession, RekordboxError> {
+        log::info!("[rekordbox] Opening database: {:?}", self.rb_config.db_path);
         let db = database::RekordboxDatabase::open(&self.rb_config)?;
+        log::info!("[rekordbox] Database opened successfully");
+
+        log::info!("[rekordbox] Reading XML playlist file...");
         let xml = xml_sync::PlaylistXml::read_if_exists(&self.rb_config.db_dir)?;
+        log::info!(
+            "[rekordbox] XML playlist file: {}",
+            if xml.is_some() { "found" } else { "not found" }
+        );
+
         Ok(RekordboxSession { db, xml, db_dir: self.rb_config.db_dir.clone() })
     }
 
     pub fn handle_result<T>(&self, result: Result<T, RekordboxError>) -> Result<T, ErrorResponse> {
-        result.map_err(|err| restore_state_after_failure(err, &self.backup_path, &self.rb_config.db_dir))
+        result.map_err(|err| {
+            log::error!("[rekordbox] Operation failed: {}, attempting restore from backup", err);
+            restore_state_after_failure(err, &self.backup_path, &self.rb_config.db_dir)
+        })
     }
 }
 
@@ -95,7 +118,9 @@ pub(super) struct RekordboxSession {
 
 impl RekordboxSession {
     pub fn init_infrabooth_folder(&mut self) -> Result<DjmdPlaylist, RekordboxError> {
+        log::debug!("[rekordbox] Finding or creating InfraBooth folder...");
         let folder = playlist::find_or_create_infrabooth_folder(&mut self.db)?;
+        log::debug!("[rekordbox] InfraBooth folder: id={}", folder.id);
         if let Some(ref mut x) = self.xml {
             x.add_playlist(&folder.id, "root", 1, timestamp_ms());
         }
@@ -103,9 +128,16 @@ impl RekordboxSession {
     }
 
     pub fn find_or_create_playlist(&mut self, name: &str, folder_id: &str) -> Result<DjmdPlaylist, RekordboxError> {
+        log::debug!("[rekordbox] Finding or creating playlist '{}' in folder {}...", name, folder_id);
         let pl = match playlist::find_playlist_by_name(&self.db, name, folder_id) {
-            Some(existing) => existing,
-            None => playlist::create_playlist(&mut self.db, name, folder_id)?,
+            Some(existing) => {
+                log::debug!("[rekordbox] Found existing playlist: id={}", existing.id);
+                existing
+            }
+            None => {
+                log::debug!("[rekordbox] Creating new playlist...");
+                playlist::create_playlist(&mut self.db, name, folder_id)?
+            }
         };
         if let Some(ref mut x) = self.xml {
             x.add_playlist(&pl.id, folder_id, 0, timestamp_ms());
@@ -114,10 +146,16 @@ impl RekordboxSession {
     }
 
     pub fn commit(mut self) -> Result<(), RekordboxError> {
+        log::info!("[rekordbox] Session commit starting...");
         if let Some(ref x) = self.xml {
+            log::info!("[rekordbox] Saving XML playlist file to {:?}...", self.db_dir);
             x.save(&self.db_dir)?;
+            log::info!("[rekordbox] XML playlist file saved");
         }
-        self.db.flush_usn_and_commit()
+        log::info!("[rekordbox] Flushing USN and committing database transaction...");
+        self.db.flush_usn_and_commit()?;
+        log::info!("[rekordbox] Database transaction committed");
+        Ok(())
     }
 }
 
@@ -125,21 +163,44 @@ pub(super) fn export_single_track(
     db: &mut database::RekordboxDatabase, track: &ExportTrackRequest, playlist_id: &str, rekordbox_tracks_dir: &Path,
 ) -> Result<(bool, String), String> {
     let source = PathBuf::from(&track.source_path);
+    log::debug!("[rekordbox] export_single_track: source={:?}", source);
 
-    let metadata = content::read_track_metadata(&source).map_err(|e| format!("{}: metadata error — {}", track.source_path, e))?;
+    log::debug!("[rekordbox] Reading track metadata...");
+    let metadata = content::read_track_metadata(&source).map_err(|e| {
+        log::error!("[rekordbox] Metadata read failed: {}", e);
+        format!("{}: metadata error — {}", track.source_path, e)
+    })?;
+    log::debug!("[rekordbox] Metadata: title='{}', artist='{}'", metadata.title, metadata.artist);
 
-    let dest = file_manager::copy_track_to_rekordbox(&source, &metadata.artist, &metadata.title, rekordbox_tracks_dir)
-        .map_err(|e| format!("{}: copy failed — {}", track.source_path, e))?;
+    log::debug!("[rekordbox] Copying track to rekordbox dir: {:?}", rekordbox_tracks_dir);
+    let dest = file_manager::copy_track_to_rekordbox(&source, &metadata.artist, &metadata.title, rekordbox_tracks_dir).map_err(|e| {
+        log::error!("[rekordbox] Copy failed: {}", e);
+        format!("{}: copy failed — {}", track.source_path, e)
+    })?;
+    log::debug!("[rekordbox] Track copied to: {:?}", dest);
 
-    let content_id = content::add_content(db, &dest, &metadata).map_err(|e| format!("{}: db insert failed — {}", track.source_path, e))?;
+    log::debug!("[rekordbox] Adding content to database...");
+    let content_id = content::add_content(db, &dest, &metadata).map_err(|e| {
+        log::error!("[rekordbox] Database insert failed: {}", e);
+        format!("{}: db insert failed — {}", track.source_path, e)
+    })?;
+    log::debug!("[rekordbox] Content added with id: {}", content_id);
 
-    if is_content_in_playlist(db, playlist_id, &content_id).map_err(|e| format!("{}: playlist lookup failed — {}", track.source_path, e))?
-    {
+    log::debug!("[rekordbox] Checking if content is already in playlist...");
+    if is_content_in_playlist(db, playlist_id, &content_id).map_err(|e| {
+        log::error!("[rekordbox] Playlist lookup failed: {}", e);
+        format!("{}: playlist lookup failed — {}", track.source_path, e)
+    })? {
+        log::debug!("[rekordbox] Content already in playlist, skipping");
         return Ok((false, content_id));
     }
 
-    playlist::add_to_playlist(db, playlist_id, &content_id, None)
-        .map_err(|e| format!("{}: add to playlist failed — {}", track.source_path, e))?;
+    log::debug!("[rekordbox] Adding content to playlist...");
+    playlist::add_to_playlist(db, playlist_id, &content_id, None).map_err(|e| {
+        log::error!("[rekordbox] Add to playlist failed: {}", e);
+        format!("{}: add to playlist failed — {}", track.source_path, e)
+    })?;
+    log::debug!("[rekordbox] Content added to playlist successfully");
 
     Ok((true, content_id))
 }
