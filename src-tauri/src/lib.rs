@@ -3,6 +3,7 @@ mod models;
 mod services;
 
 use std::sync::Arc;
+use std::sync::Once;
 
 use commands::{
     add_track_to_playlist, cancel_download_queue, check_auth, check_firefox_installed, check_follow_status, check_for_updates,
@@ -42,8 +43,89 @@ use services::rekordbox::models::RekordboxExportProgressEvent;
 use specta_typescript::{BigIntExportBehavior, Typescript};
 use tauri_specta::{collect_commands, collect_events, Builder};
 
+static PANIC_HOOK_INIT: Once = Once::new();
+
+fn install_panic_hook() {
+    PANIC_HOOK_INIT.call_once(|| {
+        let default_hook = std::panic::take_hook();
+        std::panic::set_hook(Box::new(move |panic_info| {
+            let payload = if let Some(s) = panic_info.payload().downcast_ref::<&str>() {
+                s.to_string()
+            } else if let Some(s) = panic_info.payload().downcast_ref::<String>() {
+                s.clone()
+            } else {
+                "Unknown panic payload".to_string()
+            };
+
+            let location = panic_info
+                .location()
+                .map(|loc| format!("{}:{}:{}", loc.file(), loc.line(), loc.column()))
+                .unwrap_or_else(|| "unknown location".to_string());
+
+            let backtrace = std::backtrace::Backtrace::force_capture();
+
+            let crash_msg = format!(
+                "=== PANIC DETECTED ===\n\
+                 Payload: {}\n\
+                 Location: {}\n\
+                 Backtrace:\n{}\n\
+                 ======================",
+                payload, location, backtrace
+            );
+
+            // Log to the Tauri logger (if initialized)
+            log::error!("[PANIC] {}", crash_msg);
+
+            // Also write to a crash log file as backup
+            if let Ok(crash_log_path) = get_crash_log_path() {
+                let timestamp = time::OffsetDateTime::now_utc();
+                let timestamped_msg = format!(
+                    "[{:04}-{:02}-{:02} {:02}:{:02}:{:02}]\n{}",
+                    timestamp.year(),
+                    timestamp.month() as u8,
+                    timestamp.day(),
+                    timestamp.hour(),
+                    timestamp.minute(),
+                    timestamp.second(),
+                    crash_msg
+                );
+                if let Some(parent) = crash_log_path.parent() {
+                    let _ = std::fs::create_dir_all(parent);
+                }
+                let _ = std::fs::write(&crash_log_path, &timestamped_msg);
+                eprintln!("Crash log written to: {}", crash_log_path.display());
+            }
+
+            // Call the default hook (prints to stderr)
+            default_hook(panic_info);
+        }));
+    });
+}
+
+fn get_crash_log_path() -> Result<std::path::PathBuf, String> {
+    #[cfg(target_os = "windows")]
+    {
+        let app_data = std::env::var("APPDATA").map_err(|_| "APPDATA not set")?;
+        Ok(std::path::PathBuf::from(app_data)
+            .join("com.infrabooth.downloader")
+            .join("crash.log"))
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let home = std::env::var("HOME").map_err(|_| "HOME not set")?;
+        Ok(std::path::PathBuf::from(home)
+            .join("Library/Application Support/com.infrabooth.downloader")
+            .join("crash.log"))
+    }
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        Err("Unsupported platform".to_string())
+    }
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    install_panic_hook();
     let builder = Builder::<tauri::Wry>::new()
         .events(collect_events![
             DownloadProgressEvent,
