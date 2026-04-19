@@ -7,6 +7,15 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-04-19
+
+### Added
+
+- Export de playlists vers Rekordbox
+- Recherche de playlists sur les profils d'artistes
+- Menu d'actions sur la bannière de profil d'artiste
+- Signaler un bug et Suggérer une fonctionnalité depuis les paramètres
+
 ## [1.21.1] - 2026-04-16
 
 ### Fixed

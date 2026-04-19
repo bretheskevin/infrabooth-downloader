@@ -47,8 +47,9 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - **new-albums** — new albums feature
 
 ### Settings & System
-- **settings** — settings dialog with sidebar nav (General, Playlists, Rekordbox [flag-gated], About)
-  - Sections: DownloadLocation, Language, Theme, ConcurrentDownloads, StreamMode, Crossfade, PlaylistOrder, RekordboxSettings (status + manual path)
+- **rekordbox-export** — export playlists to Rekordbox (ExportToRekordboxButton, ExportPhaseSection, useRekordboxExport, useRekordboxDetection)
+- **settings** — settings dialog with sidebar nav (General, Playlists, Rekordbox, About)
+  - Sections: DownloadLocation, Language, Theme, ConcurrentDownloads, StreamMode, Crossfade, PlaylistOrder, RekordboxSettings (status + manual path), BackupSection (restore with confirmation)
   - Store: persisted Zustand with download path, language, theme, max concurrent, crossfade, stream mode, playlist order, view mode (card/list), rekordbox path override
   - `helpers.ts` — makeSetter, makeClampedSetter, pickKeys helpers to reduce store boilerplate
 - **auth** — sign in/out, cookie-based auth, user menu, startup auth check
@@ -84,7 +85,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 ## Feature Flags (`src/lib/featureFlags.ts`, `src/config/feature-flags.toml`)
 - Boolean flags for gating WIP UI areas
 - Parsed at startup; unknown keys or non-boolean values throw
-- Current flags: `rekordbox` (false) — gates Rekordbox settings section
+- Current flags: none active (rekordbox flag shipped and removed)
 
 ## IPC Layer (`src/lib/tauri.ts`)
 - `api` object wraps all Tauri commands (40+ methods)

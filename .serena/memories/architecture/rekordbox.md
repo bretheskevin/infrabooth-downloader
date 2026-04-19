@@ -1,9 +1,20 @@
 # Rekordbox Integration Architecture
 
-**Feature flag**: `rekordbox = false` in `src/config/feature-flags.toml` — gated from user UI until ready.
-
 ## Purpose
-Export downloaded tracks into Rekordbox 6/7 database. Creates "InfraBooth" folder in Rekordbox with per-download playlists.
+Export downloaded tracks and playlists into Rekordbox 6/7 database. Creates "InfraBooth" folder in Rekordbox with per-download playlists.
+
+## Playlist Export (`commands/rekordbox_export.rs`)
+- `export_playlist_to_rekordbox` command — exports a playlist's tracks to Rekordbox
+- Concurrent track downloads with semaphore-based throttling
+- Progress events streamed to frontend via `REKORDBOX_EXPORT_PROGRESS`
+- Downloads tracks to `rekordbox_downloads/` in app data dir, reuses existing files
+- Registers tracks in named playlist + "All Tracks" playlist under InfraBooth folder
+
+## Frontend Export (`features/rekordbox-export/`)
+- `ExportToRekordboxButton` — trigger button with confirmation dialog
+- `ExportPhaseSection` — phase-based progress UI (pending → downloading → registering → completed)
+- `useRekordboxExport` hook — manages export lifecycle and track status tracking
+- `useRekordboxDetection` hook — checks Rekordbox availability
 
 ## Module Layout (`services/rekordbox/`)
 - `config.rs` — detect Rekordbox install path, version, DB location
@@ -44,7 +55,8 @@ Export downloaded tracks into Rekordbox 6/7 database. Creates "InfraBooth" folde
 - Command-level tests in `commands/rekordbox_tests.rs`
 
 ## Frontend Settings
-- `RekordboxSettings` component (sidebar entry hidden by feature flag) — detects status, configures manual path override via embedded folder picker
+- `RekordboxSettings` component — detects status, configures manual path override via embedded folder picker
+- `BackupSection` component — lists backups, restore with confirmation dialog, pre-restore snapshots
 - Settings store: `rekordboxPathOverride` field
 
 ## Safety
