@@ -7,6 +7,18 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.23.0] - 2026-04-20
+
+### Added
+
+- Onglet des titres likés dans la bibliothèque
+- Ajout et retrait de likes sur les titres
+- Titres likés par l'artiste sur sa page de profil
+
+### Changed
+
+- Affichage de la progression lors de l'export Rekordbox
+
 ## [1.22.1] - 2026-04-19
 
 ### Fixed

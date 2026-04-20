@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.0] - 2026-04-20
+
+### Added
+
+- Liked tracks tab in library
+- Like and unlike tracks
+- Artist's liked tracks on profile page
+
+### Changed
+
+- Download progress during Rekordbox export
+
 ## [1.22.1] - 2026-04-19
 
 ### Fixed
