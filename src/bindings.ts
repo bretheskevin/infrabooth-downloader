@@ -637,6 +637,7 @@ async clearLikedTracksCache() : Promise<Result<null, string>> {
 
 
 export const events = __makeEvents__<{
+artistPlaylistsBatchEvent: ArtistPlaylistsBatchEvent,
 downloadProgressEvent: DownloadProgressEvent,
 libraryPlaylistsBatchEvent: LibraryPlaylistsBatchEvent,
 queueCancelledEvent: QueueCancelledEvent,
@@ -645,6 +646,7 @@ queueProgressEvent: QueueProgressEvent,
 rekordboxExportProgressEvent: RekordboxExportProgressEvent,
 tracksBatchEvent: TracksBatchEvent
 }>({
+artistPlaylistsBatchEvent: "artist-playlists-batch-event",
 downloadProgressEvent: "download-progress-event",
 libraryPlaylistsBatchEvent: "library-playlists-batch-event",
 queueCancelledEvent: "queue-cancelled-event",
@@ -664,6 +666,7 @@ export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; crea
 export type ActivityType = "Track" | "Repost"
 export type ActorInfo = { id: number; username: string; avatar_url: string | null; permalink_url: string }
 export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string; secret_token: string | null }
+export type ArtistPlaylistsBatchEvent = { entityId: number; playlists: ArtistPlaylist[] }
 export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
 export type BackupInfo = { path: string; timestamp: string; sizeMb: number; kind: BackupKind }
 export type BackupKind = "export" | "preRestore"

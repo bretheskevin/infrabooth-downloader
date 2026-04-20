@@ -15,6 +15,7 @@
     "noResults": "No results found",
     "filterPlaceholder": "Filter tracks...",
     "loadingTracks": "Loading tracks...",
+    "loadingPlaylists": "Loading playlists...",
     "changeFolder": "Change download folder",
     "folderPermissionDenied": "Cannot write to this folder. Please choose another location.",
     "scrollLeft": "Scroll left",

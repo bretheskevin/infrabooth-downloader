@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Loader2 } from 'lucide-react';
 import { TrackRowSkeletonList } from '@/components/TrackRowSkeleton';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { SearchBar } from '@/components/ui/search-bar';
@@ -17,7 +18,7 @@ interface PlaylistGridProps {
 
 export function PlaylistGrid({ artistId, onSelectPlaylist }: PlaylistGridProps) {
   const { t } = useTranslation();
-  const { data: playlists, isLoading, error, refetch } = useArtistPlaylists(artistId);
+  const { data: playlists, isLoading, isStreaming, error, refetch } = useArtistPlaylists(artistId);
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
@@ -63,10 +64,16 @@ export function PlaylistGrid({ artistId, onSelectPlaylist }: PlaylistGridProps) 
           renderCard={(p) => <PlaylistCard playlist={p} onClick={() => onSelectPlaylist(p)} />}
           renderRow={(p) => <PlaylistListRow playlist={p} onClick={() => onSelectPlaylist(p)} />}
         />
-      ) : (
+      ) : !isStreaming ? (
         <p className="text-sm text-muted-foreground text-center py-12">
           {t('artistProfile.noPlaylistResults')}
         </p>
+      ) : null}
+      {isStreaming && (
+        <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3 w-3 animate-spin" />
+          <span>{t('common.loadingPlaylists')}</span>
+        </div>
       )}
     </div>
   );

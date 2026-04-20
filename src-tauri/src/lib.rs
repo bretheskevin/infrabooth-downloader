@@ -38,7 +38,7 @@ use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
 
 use services::downloader::DownloadProgressEvent;
-use services::events::{LibraryPlaylistsBatchEvent, TracksBatchEvent};
+use services::events::{ArtistPlaylistsBatchEvent, LibraryPlaylistsBatchEvent, TracksBatchEvent};
 use services::queue::{QueueCancelledEvent, QueueCompleteEvent, QueueProgressEvent};
 use services::rekordbox::models::RekordboxExportProgressEvent;
 #[cfg(debug_assertions)]
@@ -136,6 +136,7 @@ pub fn run() {
             QueueCancelledEvent,
             TracksBatchEvent,
             LibraryPlaylistsBatchEvent,
+            ArtistPlaylistsBatchEvent,
             RekordboxExportProgressEvent
         ])
         .commands(collect_commands![

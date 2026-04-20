@@ -7,6 +7,7 @@ use serde::Serialize;
 use specta::Type;
 use tauri::Emitter;
 
+use crate::models::artist::ArtistPlaylist;
 use crate::services::library::LibraryPlaylist;
 use crate::services::playlist::TrackInfo;
 
@@ -25,6 +26,7 @@ pub const UPDATE_DOWNLOAD_PROGRESS: &str = "update-download-progress";
 pub const REKORDBOX_EXPORT_PROGRESS: &str = "rekordbox-export-progress";
 pub const LIKED_TRACKS_BATCH: &str = "liked-tracks-batch";
 pub const ARTIST_LIKED_TRACKS_BATCH: &str = "artist-liked-tracks-batch";
+pub const ARTIST_PLAYLISTS_BATCH: &str = "artist-playlists-batch";
 pub const LIBRARY_PLAYLISTS_BATCH: &str = "library-playlists-batch";
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
@@ -52,4 +54,21 @@ pub fn emit_library_playlists_batch(app: &tauri::AppHandle, playlists: &[Library
         LIBRARY_PLAYLISTS_BATCH,
         LibraryPlaylistsBatchEvent { playlists: playlists.to_vec() },
     );
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct ArtistPlaylistsBatchEvent {
+    pub entity_id: u64,
+    pub playlists: Vec<ArtistPlaylist>,
+}
+
+pub fn make_playlist_batch_emitter(app: &tauri::AppHandle, entity_id: u64) -> impl Fn(&[ArtistPlaylist]) {
+    let app = app.clone();
+    move |batch: &[ArtistPlaylist]| {
+        let _ = app.emit(
+            ARTIST_PLAYLISTS_BATCH,
+            ArtistPlaylistsBatchEvent { entity_id, playlists: batch.to_vec() },
+        );
+    }
 }
