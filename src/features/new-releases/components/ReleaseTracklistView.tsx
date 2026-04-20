@@ -72,6 +72,7 @@ export function ReleaseTracklistView({
         />
       )}
       folder
+      permalinkUrl={info.permalink_url}
       download={{ onDownloadTracks }}
       messages={{
         empty: 'newReleases.empty',

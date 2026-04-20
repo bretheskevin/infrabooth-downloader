@@ -51,6 +51,7 @@ export interface TrackListViewProps<
   folder?: boolean;
   trackList?: TrackListConfig;
   filters?: FilterConfig<F>;
+  permalinkUrl?: string;
   messages: TrackListMessages;
   resetKey?: string | number;
 }

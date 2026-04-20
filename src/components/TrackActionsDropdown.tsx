@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrackMenuItems } from '@/components/TrackRowActions';
-import { useTrackActions } from '@/hooks/useTrackActions';
+import { useLinkActions } from '@/hooks/useLinkActions';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 import { useIsSignedIn } from '@/features/auth';
 
@@ -35,7 +35,7 @@ export function TrackActionsDropdown({
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const isSignedIn = useIsSignedIn();
-  const { handleCopyLink, handleOpenInBrowser } = useTrackActions(permalinkUrl);
+  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl);
 
   const closeMenu = useCallback(() => setOpen(false), []);
   const claimMenu = useMenuExclusivity(closeMenu);

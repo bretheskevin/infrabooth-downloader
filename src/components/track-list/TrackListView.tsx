@@ -11,7 +11,7 @@ import { sortTracks, TRACK_SORT_OPTIONS, type SortField, type SortDirection } fr
 import { getErrorMessageKey } from '@/lib/getErrorMessageKey';
 import { FolderMetadata } from '@/components/FolderMetadata';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
-import { ExportToRekordboxButton } from '@/features/rekordbox-export/components/ExportToRekordboxButton';
+import { TrackListActionsDropdown } from '@/features/rekordbox-export/components/TrackListActionsDropdown';
 import { useTrackListState } from './hooks/useTrackListState';
 import { TrackListToolbar } from './TrackListToolbar';
 import { TrackListItems } from './TrackListItems';
@@ -31,6 +31,7 @@ export function TrackListView<F extends string = string>({
   folder,
   trackList,
   filters,
+  permalinkUrl,
   messages,
   resetKey,
 }: TrackListViewProps<F>) {
@@ -90,7 +91,7 @@ export function TrackListView<F extends string = string>({
   ) : null;
 
   const rekordboxExportAction = hasData && !isLoading ? (
-    <ExportToRekordboxButton tracks={tracks} playlistName={title} />
+    <TrackListActionsDropdown tracks={tracks} playlistName={title} permalinkUrl={permalinkUrl} />
   ) : null;
 
   const renderCtx: TrackListRenderContext = {

@@ -3,7 +3,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-export function useTrackActions(permalinkUrl: string) {
+export function useLinkActions(permalinkUrl: string) {
   const { t } = useTranslation();
 
   const handleCopyLink = useCallback(async () => {

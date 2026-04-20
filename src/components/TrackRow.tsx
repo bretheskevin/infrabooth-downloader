@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
-import { useTrackActions } from '@/hooks/useTrackActions';
+import { useLinkActions } from '@/hooks/useLinkActions';
 import { useLikeTrack } from '@/hooks/useLikeTrack';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 import { useIsSignedIn } from '@/features/auth/store';
@@ -74,7 +74,7 @@ export function TrackRow({
     },
     [claimMenu],
   );
-  const { handleCopyLink, handleOpenInBrowser } = useTrackActions(track.permalink_url);
+  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(track.permalink_url);
   const likeState = useLikeTrack(track);
   const isSignedIn = useIsSignedIn();
   const handleAddToQueue = useCallback(() => {

@@ -1,13 +1,15 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Disc3, EllipsisVertical } from 'lucide-react';
+import { Disc3, EllipsisVertical, ExternalLink, Link } from 'lucide-react';
 import type { TrackInfo, RekordboxExportStatus } from '@/bindings';
+import { useLinkActions } from '@/hooks/useLinkActions';
 import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
@@ -23,9 +25,10 @@ import { useRekordboxDetection } from '../hooks/useRekordboxDetection';
 import { useRekordboxExport, type TrackStatus } from '../hooks/useRekordboxExport';
 import { ExportPhaseSection } from './ExportPhaseSection';
 
-interface ExportToRekordboxButtonProps {
+interface TrackListActionsDropdownProps {
   tracks: TrackInfo[] | undefined;
   playlistName: string;
+  permalinkUrl?: string;
   disabled?: boolean;
 }
 
@@ -138,9 +141,10 @@ function ExportingContent({ groups, totalTracks, completedCount, percent, isRegi
   );
 }
 
-export function ExportToRekordboxButton({ tracks, playlistName, disabled }: ExportToRekordboxButtonProps) {
+export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, disabled }: TrackListActionsDropdownProps) {
   const { t } = useTranslation();
   const { data: rekordboxStatus } = useRekordboxDetection();
+  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
 
   const { phase, trackStatuses, totalTracks, result, errorCode, openConfirm, startExport, cancel, close } =
     useRekordboxExport(tracks, playlistName);
@@ -150,7 +154,10 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
 
   const groups = useMemo(() => groupByStatus(trackStatuses), [trackStatuses]);
 
-  if (rekordboxStatus && !rekordboxStatus.found) return null;
+  const showRekordbox = !rekordboxStatus || rekordboxStatus.found;
+  const showLinks = !!permalinkUrl;
+
+  if (!showRekordbox && !showLinks) return null;
 
   const isRegistering = groups.exporting.length > 0 || groups.completed.length > 0;
   const completedCount = groups.downloaded.length + groups.exporting.length + groups.completed.length + groups.error.length;
@@ -163,7 +170,7 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
           <Button
             variant="ghost"
             size="icon"
-            aria-label={t('rekordboxExport.moreActions')}
+            aria-label={t('trackMenu.moreActions')}
             disabled={disabled || trackCount === 0}
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
           >
@@ -171,10 +178,25 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={openConfirm}>
-            <Disc3 className="h-3.5 w-3.5" />
-            {t('rekordboxExport.button')}
-          </DropdownMenuItem>
+          {showLinks && (
+            <>
+              <DropdownMenuItem onClick={handleCopyLink}>
+                <Link className="h-3.5 w-3.5" />
+                {t('trackMenu.copyLink')}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={handleOpenInBrowser}>
+                <ExternalLink className="h-3.5 w-3.5" />
+                {t('trackMenu.openInBrowser')}
+              </DropdownMenuItem>
+            </>
+          )}
+          {showLinks && showRekordbox && <DropdownMenuSeparator />}
+          {showRekordbox && (
+            <DropdownMenuItem onClick={openConfirm}>
+              <Disc3 className="h-3.5 w-3.5" />
+              {t('rekordboxExport.button')}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -65,6 +65,7 @@ export function ArtistPlaylistView({
         />
       )}
       folder
+      permalinkUrl={playlist.permalink_url}
       download={{ onDownloadTracks }}
       messages={{ empty: 'artistProfile.noPlaylistTracks' }}
     />

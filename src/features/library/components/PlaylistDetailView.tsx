@@ -53,6 +53,7 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
           />
         )}
         folder
+        permalinkUrl={playlist.permalink_url}
         download={{ onDownloadTracks }}
         trackList={{
           virtualized: true,

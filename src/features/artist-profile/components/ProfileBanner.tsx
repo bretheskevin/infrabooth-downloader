@@ -6,7 +6,7 @@ import { ContextMenu, ContextMenuContent, ContextMenuTrigger } from '@/component
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { LinkContextMenuItems } from '@/components/TrackRowActions';
-import { useTrackActions } from '@/hooks/useTrackActions';
+import { useLinkActions } from '@/hooks/useLinkActions';
 
 interface ProfileBannerProps {
   onBack: () => void;
@@ -19,7 +19,7 @@ interface ProfileBannerProps {
 
 export function ProfileBanner({ onBack, isLoading, bannerUrl, avatarUrl, username, permalinkUrl }: ProfileBannerProps) {
   const { t } = useTranslation();
-  const { handleCopyLink, handleOpenInBrowser } = useTrackActions(permalinkUrl ?? '');
+  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
 
   const badge = (
     <div className="flex items-center gap-2.5 backdrop-blur-sm bg-black/50 rounded-lg px-4 py-1.5 ml-3 cursor-default">
