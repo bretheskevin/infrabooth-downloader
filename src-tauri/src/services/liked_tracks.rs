@@ -1,42 +1,10 @@
 use std::sync::Mutex;
 
 use serde::Deserialize;
-use thiserror::Error;
 
+use crate::models::error::ScApiError;
 use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
 use crate::services::playlist::TrackInfo;
-
-#[derive(Debug, Error)]
-pub enum LikedTracksError {
-    #[error("Authentication required")]
-    AuthRequired,
-
-    #[error("Rate limited by SoundCloud")]
-    RateLimited,
-
-    #[error("Failed to fetch liked tracks: {0}")]
-    FetchFailed(String),
-
-    #[error("Network error: {0}")]
-    NetworkError(#[from] rquest::Error),
-
-    #[error("Invalid response format")]
-    InvalidResponse,
-}
-
-impl From<crate::services::http::ApiResponseError> for LikedTracksError {
-    fn from(e: crate::services::http::ApiResponseError) -> Self {
-        use crate::services::http::ApiResponseError;
-        match e {
-            ApiResponseError::AuthRequired => Self::AuthRequired,
-            ApiResponseError::RateLimited => Self::RateLimited,
-            ApiResponseError::NotFound => Self::FetchFailed("Not found".to_string()),
-            ApiResponseError::GeoBlocked => Self::FetchFailed("Access forbidden".to_string()),
-            ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
-            ApiResponseError::InvalidResponse(_) => Self::InvalidResponse,
-        }
-    }
-}
 
 #[derive(Debug, Deserialize)]
 struct LikedTracksResponse {
@@ -133,7 +101,7 @@ fn map_track(item: LikedTrackItem) -> TrackInfo {
 
 async fn fetch_liked_tracks_page(
     oauth_token: &str, client_id: &str, user_id: u64, cursor: Option<String>,
-) -> Result<LikedTracksPageResponse, LikedTracksError> {
+) -> Result<LikedTracksPageResponse, ScApiError> {
     let url = match cursor {
         Some(ref next_href) => next_href.clone(),
         None => format!(
@@ -146,16 +114,14 @@ async fn fetch_liked_tracks_page(
 
     validate_api_response(response.status())?;
 
-    let data: LikedTracksResponse = response.json().await.map_err(|_| LikedTracksError::InvalidResponse)?;
+    let data: LikedTracksResponse = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
 
     let tracks: Vec<TrackInfo> = data.collection.into_iter().map(map_track).collect();
 
     Ok(LikedTracksPageResponse { tracks, next_cursor: data.next_href })
 }
 
-pub async fn fetch_all_liked_tracks<F>(
-    oauth_token: &str, client_id: &str, user_id: u64, on_batch: F,
-) -> Result<Vec<TrackInfo>, LikedTracksError>
+pub async fn fetch_all_liked_tracks<F>(oauth_token: &str, client_id: &str, user_id: u64, on_batch: F) -> Result<Vec<TrackInfo>, ScApiError>
 where
     F: Fn(&[TrackInfo]),
 {

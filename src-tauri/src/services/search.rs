@@ -1,62 +1,11 @@
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use thiserror::Error;
 
 use url::Url;
 
-use crate::models::error::HasErrorCode;
+use crate::models::error::ScApiError;
 use crate::services::http::{validate_api_response, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::{RawTrackInfo, TrackInfo};
-
-// === Error Type ===
-
-#[derive(Debug, Error)]
-pub enum SearchError {
-    #[error("Search failed: {0}")]
-    FetchFailed(String),
-
-    #[error("Rate limited by SoundCloud")]
-    RateLimited,
-
-    #[error("Authentication required")]
-    AuthRequired,
-
-    #[error("Access forbidden")]
-    GeoBlocked,
-
-    #[error("Network error: {0}")]
-    NetworkError(#[from] rquest::Error),
-
-    #[error("Invalid response format")]
-    InvalidResponse,
-}
-
-impl From<crate::services::http::ApiResponseError> for SearchError {
-    fn from(e: crate::services::http::ApiResponseError) -> Self {
-        use crate::services::http::ApiResponseError;
-        match e {
-            ApiResponseError::RateLimited => Self::RateLimited,
-            ApiResponseError::AuthRequired => Self::AuthRequired,
-            ApiResponseError::GeoBlocked => Self::GeoBlocked,
-            ApiResponseError::NotFound => Self::FetchFailed("Not found".to_string()),
-            ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
-            ApiResponseError::InvalidResponse(_) => Self::InvalidResponse,
-        }
-    }
-}
-
-impl HasErrorCode for SearchError {
-    fn code(&self) -> &'static str {
-        match self {
-            SearchError::FetchFailed(_) => "SEARCH_FAILED",
-            SearchError::RateLimited => "RATE_LIMITED",
-            SearchError::AuthRequired => "AUTH_REQUIRED",
-            SearchError::GeoBlocked => "GEO_BLOCKED",
-            SearchError::NetworkError(_) => "NETWORK_ERROR",
-            SearchError::InvalidResponse => "SEARCH_FAILED",
-        }
-    }
-}
 
 // === Internal deserialization types ===
 
@@ -121,7 +70,7 @@ pub struct UserSearchResponse {
 
 async fn search_api<Raw, Out>(
     client_id: &str, query: &str, limit: u32, offset: u32, endpoint: &str,
-) -> Result<(Vec<Out>, Option<i64>), SearchError>
+) -> Result<(Vec<Out>, Option<i64>), ScApiError>
 where
     Raw: serde::de::DeserializeOwned,
     Out: From<Raw>,
@@ -135,24 +84,24 @@ where
             ("offset", &offset.to_string()),
         ],
     )
-    .map_err(|e| SearchError::FetchFailed(e.to_string()))?;
+    .map_err(|e| ScApiError::FetchFailed(e.to_string()))?;
 
     let response = HTTP_CLIENT.get(url).send().await?;
     validate_api_response(response.status())?;
 
-    let api_response: ApiSearchResponse<Raw> = response.json().await.map_err(|_| SearchError::InvalidResponse)?;
+    let api_response: ApiSearchResponse<Raw> = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
 
     let collection = api_response.collection.into_iter().map(Out::from).collect();
 
     Ok((collection, api_response.total_results))
 }
 
-pub async fn search_tracks(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<SearchResponse, SearchError> {
+pub async fn search_tracks(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<SearchResponse, ScApiError> {
     let (collection, total_results) = search_api::<RawTrackInfo, TrackInfo>(client_id, query, limit, offset, "tracks").await?;
     Ok(SearchResponse { collection, total_results })
 }
 
-pub async fn search_users(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<UserSearchResponse, SearchError> {
+pub async fn search_users(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<UserSearchResponse, ScApiError> {
     let (collection, total_results) = search_api::<RawUserInfo, UserSearchResult>(client_id, query, limit, offset, "users").await?;
     Ok(UserSearchResponse { collection, total_results })
 }
@@ -236,12 +185,9 @@ mod tests {
 
     #[test]
     fn test_search_error_messages() {
-        assert_eq!(SearchError::RateLimited.to_string(), "Rate limited by SoundCloud");
-        assert_eq!(
-            SearchError::FetchFailed("HTTP 500".to_string()).to_string(),
-            "Search failed: HTTP 500"
-        );
-        assert_eq!(SearchError::InvalidResponse.to_string(), "Invalid response format");
+        assert_eq!(ScApiError::RateLimited.to_string(), "Rate limited by SoundCloud");
+        assert_eq!(ScApiError::FetchFailed("HTTP 500".to_string()).to_string(), "HTTP 500");
+        assert_eq!(ScApiError::InvalidResponse.to_string(), "Invalid response");
     }
 
     #[test]

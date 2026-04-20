@@ -5,35 +5,8 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::services::http::{validate_api_response, ApiResponseError, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
-
-// ---------------------------------------------------------------------------
-// Error
-// ---------------------------------------------------------------------------
-
-#[derive(Debug, thiserror::Error)]
-pub enum MessagesError {
-    #[error("Authentication required")]
-    AuthRequired,
-    #[error("Rate limited by SoundCloud")]
-    RateLimited,
-    #[error("Failed to fetch: {0}")]
-    FetchFailed(String),
-    #[error("Network error: {0}")]
-    NetworkError(#[from] rquest::Error),
-    #[error("Invalid response")]
-    InvalidResponse,
-}
-
-impl From<ApiResponseError> for MessagesError {
-    fn from(e: ApiResponseError) -> Self {
-        match e {
-            ApiResponseError::AuthRequired => MessagesError::AuthRequired,
-            ApiResponseError::RateLimited => MessagesError::RateLimited,
-            _ => MessagesError::FetchFailed(e.to_string()),
-        }
-    }
-}
+use crate::models::error::ScApiError;
+use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 
 // ---------------------------------------------------------------------------
 // Frontend-facing types
@@ -377,7 +350,7 @@ impl MessagesCache {
 
 pub async fn fetch_conversations_page(
     oauth_token: &str, client_id: &str, user_id: u64, offset: Option<u32>, limit: u32,
-) -> Result<ConversationsPage, MessagesError> {
+) -> Result<ConversationsPage, ScApiError> {
     let url = format!(
         "{}/users/{}/conversations?limit={}&offset={}&linked_partitioning=1&client_id={}",
         API_V2_BASE,
@@ -390,14 +363,14 @@ pub async fn fetch_conversations_page(
     let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
     validate_api_response(response.status())?;
 
-    let raw: RawPaginatedResponse<RawConversation> = response.json().await.map_err(|_| MessagesError::InvalidResponse)?;
+    let raw: RawPaginatedResponse<RawConversation> = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
 
     Ok(convert_conversations(raw, user_id))
 }
 
 pub async fn fetch_conversation_messages(
     oauth_token: &str, client_id: &str, user_id: u64, other_user_id: u64, offset: Option<u32>, limit: u32,
-) -> Result<MessagesPage, MessagesError> {
+) -> Result<MessagesPage, ScApiError> {
     let url = format!(
         "{}/users/{}/conversations/{}/messages?limit={}&offset={}&linked_partitioning=1&client_id={}",
         API_V2_BASE,
@@ -411,14 +384,14 @@ pub async fn fetch_conversation_messages(
     let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
     validate_api_response(response.status())?;
 
-    let raw: RawPaginatedResponse<RawMessage> = response.json().await.map_err(|_| MessagesError::InvalidResponse)?;
+    let raw: RawPaginatedResponse<RawMessage> = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
 
     Ok(convert_messages(raw, other_user_id, user_id))
 }
 
 pub async fn send_message(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, user_id: u64, other_user_id: u64, content: &str,
-) -> Result<(), MessagesError> {
+) -> Result<(), ScApiError> {
     let url = format!(
         "{}/users/{}/conversations/{}?client_id={}",
         API_V2_BASE, user_id, other_user_id, client_id,

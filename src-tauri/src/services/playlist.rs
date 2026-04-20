@@ -15,51 +15,12 @@ use futures::future::join_all;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use specta::Type;
-use thiserror::Error;
 use tokio::time::sleep;
 
+use crate::models::error::ScApiError;
 use crate::services::client_id;
 use crate::services::http::{expand_short_link, resolve_sc_url, validate_api_response, RequestBuilderExt, API_V2_BASE};
 use crate::services::stream;
-
-/// Errors that can occur during playlist operations.
-#[derive(Debug, Error)]
-pub enum PlaylistError {
-    #[error("Failed to fetch playlist: {0}")]
-    FetchFailed(String),
-
-    #[error("Network error: {0}")]
-    NetworkError(#[from] rquest::Error),
-
-    #[error("Invalid response format")]
-    InvalidResponse,
-
-    #[error("Track not found")]
-    TrackNotFound,
-
-    #[error("Track unavailable in your region")]
-    GeoBlocked,
-
-    #[error("Private content requires sign-in")]
-    AuthRequired,
-
-    #[error("Rate limited by SoundCloud")]
-    RateLimited,
-}
-
-impl From<crate::services::http::ApiResponseError> for PlaylistError {
-    fn from(e: crate::services::http::ApiResponseError) -> Self {
-        use crate::services::http::ApiResponseError;
-        match e {
-            ApiResponseError::AuthRequired => Self::AuthRequired,
-            ApiResponseError::RateLimited => Self::RateLimited,
-            ApiResponseError::NotFound => Self::TrackNotFound,
-            ApiResponseError::GeoBlocked => Self::GeoBlocked,
-            ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
-            ApiResponseError::InvalidResponse(_) => Self::InvalidResponse,
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct UserInfo {
@@ -234,7 +195,7 @@ pub fn build_playlist_url(id: u64, client_id: &str, secret_token: Option<&str>) 
     url
 }
 
-async fn resolve_url<T: serde::de::DeserializeOwned>(url: &str, cid: &str, oauth_token: Option<&str>) -> Result<T, PlaylistError> {
+async fn resolve_url<T: serde::de::DeserializeOwned>(url: &str, cid: &str, oauth_token: Option<&str>) -> Result<T, ScApiError> {
     Ok(resolve_sc_url(url, cid, oauth_token).await?)
 }
 
@@ -285,7 +246,7 @@ fn extract_json_array_from_html(html: &str, marker: &str) -> Option<String> {
 /// This approach is inherently fragile and may break if SoundCloud changes their
 /// page structure. If hydration extraction fails, callers should fall back to the
 /// OAuth API via `fetch_playlist_info_via_api`.
-async fn fetch_hydration_data(url: &str) -> Result<Vec<HydrationItem>, PlaylistError> {
+async fn fetch_hydration_data(url: &str) -> Result<Vec<HydrationItem>, ScApiError> {
     let client = &*crate::services::http::HTTP_CLIENT;
     let response = client
         .get(url)
@@ -294,12 +255,12 @@ async fn fetch_hydration_data(url: &str) -> Result<Vec<HydrationItem>, PlaylistE
         .await?;
 
     if !response.status().is_success() {
-        return Err(PlaylistError::FetchFailed(format!("HTTP {}", response.status())));
+        return Err(ScApiError::FetchFailed(format!("HTTP {}", response.status())));
     }
 
     let html = response.text().await?;
 
-    let json_str = extract_json_array_from_html(&html, "__sc_hydration = ").ok_or(PlaylistError::InvalidResponse)?;
+    let json_str = extract_json_array_from_html(&html, "__sc_hydration = ").ok_or(ScApiError::InvalidResponse)?;
 
     // Clean control characters that might break JSON parsing
     let original_len = json_str.len();
@@ -317,21 +278,21 @@ async fn fetch_hydration_data(url: &str) -> Result<Vec<HydrationItem>, PlaylistE
 
     serde_json::from_str(&cleaned).map_err(|e| {
         log::error!("[soundcloud] Failed to parse hydration JSON: {}", e);
-        PlaylistError::InvalidResponse
+        ScApiError::InvalidResponse
     })
 }
 
 /// Extracts playlist data from hydration items.
-fn extract_playlist_from_hydration(items: &[HydrationItem]) -> Result<HydrationPlaylist, PlaylistError> {
+fn extract_playlist_from_hydration(items: &[HydrationItem]) -> Result<HydrationPlaylist, ScApiError> {
     for item in items {
         if item.hydratable == "playlist" {
             return serde_json::from_value(item.data.clone()).map_err(|e| {
                 log::error!("[soundcloud] Failed to parse playlist from hydration: {}", e);
-                PlaylistError::InvalidResponse
+                ScApiError::InvalidResponse
             });
         }
     }
-    Err(PlaylistError::InvalidResponse)
+    Err(ScApiError::InvalidResponse)
 }
 
 /// Extracts track IDs from hydration playlist data.
@@ -390,7 +351,7 @@ where
 /// Returns all successfully fetched tracks.
 async fn fetch_missing_tracks_batched<F>(
     missing_ids: Vec<u64>, cid: &str, oauth_token: Option<&str>, on_batch: &F,
-) -> Result<Vec<TrackInfo>, PlaylistError>
+) -> Result<Vec<TrackInfo>, ScApiError>
 where
     F: Fn(&[TrackInfo]),
 {
@@ -434,7 +395,7 @@ where
 /// Calls `on_batch` with each batch of resolved tracks for progressive loading.
 pub(crate) async fn resolve_tracks_from_mixed<F>(
     tracks: &[Value], cid: &str, oauth_token: Option<&str>, on_batch: F,
-) -> Result<Vec<TrackInfo>, PlaylistError>
+) -> Result<Vec<TrackInfo>, ScApiError>
 where
     F: Fn(&[TrackInfo]),
 {
@@ -465,7 +426,7 @@ where
 /// Fetches track details by IDs using the API v2 batch endpoint.
 /// SoundCloud allows fetching up to 50 tracks per request.
 /// Includes rate limiting (100ms delay between batches) to avoid hitting API limits.
-async fn fetch_tracks_by_ids<F>(ids: &[u64], cid: &str, oauth_token: Option<&str>, on_batch: &F) -> Result<Vec<TrackInfo>, PlaylistError>
+async fn fetch_tracks_by_ids<F>(ids: &[u64], cid: &str, oauth_token: Option<&str>, on_batch: &F) -> Result<Vec<TrackInfo>, ScApiError>
 where
     F: Fn(&[TrackInfo]),
 {
@@ -487,7 +448,7 @@ where
         let response = client.get(&url).with_oauth(oauth_token).send().await?;
 
         if response.status() == rquest::StatusCode::TOO_MANY_REQUESTS {
-            return Err(PlaylistError::RateLimited);
+            return Err(ScApiError::RateLimited);
         }
 
         if response.status().is_success() {
@@ -536,11 +497,9 @@ async fn fetch_tracks_by_ids_parallel(ids: &[u64], cid: &str, oauth_token: Optio
     join_all(futures).await.into_iter().flatten().collect()
 }
 
-/// Get a SoundCloud client_id, mapping errors to `PlaylistError`.
-pub(crate) async fn get_cid() -> Result<String, PlaylistError> {
-    client_id::get_client_id()
-        .await
-        .map_err(|e| PlaylistError::FetchFailed(e.to_string()))
+/// Get a SoundCloud client_id, mapping errors to `ScApiError`.
+pub(crate) async fn get_cid() -> Result<String, ScApiError> {
+    client_id::get_client_id().await.map_err(|e| ScApiError::FetchFailed(e.to_string()))
 }
 
 /// Validates that a URL is a SoundCloud URL.
@@ -557,7 +516,7 @@ fn extract_system_playlist_slug(url: &str) -> Option<&str> {
     path.strip_prefix("discover/sets/").filter(|s| !s.is_empty())
 }
 
-async fn fetch_system_playlist(slug: &str, oauth_token: Option<&str>) -> Result<PlaylistInfo, PlaylistError> {
+async fn fetch_system_playlist(slug: &str, oauth_token: Option<&str>) -> Result<PlaylistInfo, ScApiError> {
     let cid = get_cid().await?;
     let url = format!("https://soundcloud.com/discover/sets/{}", slug);
 
@@ -592,18 +551,18 @@ async fn fetch_system_playlist(slug: &str, oauth_token: Option<&str>) -> Result<
 
 /// Fetches playlist info using the API v2 (fallback for private playlists).
 /// This is used when web hydration fails (e.g., for private content).
-async fn fetch_playlist_info_via_api(url: &str, oauth_token: Option<&str>) -> Result<PlaylistInfo, PlaylistError> {
+async fn fetch_playlist_info_via_api(url: &str, oauth_token: Option<&str>) -> Result<PlaylistInfo, ScApiError> {
     let cid = get_cid().await?;
     log::info!("[soundcloud] Fetching playlist via API v2 for URL: {}", url);
     let raw: RawPlaylistInfo = resolve_url(url, &cid, oauth_token).await?;
     Ok(PlaylistInfo::from(raw))
 }
 
-pub async fn fetch_playlist_info(url: &str, oauth_token: Option<&str>) -> Result<PlaylistInfo, PlaylistError> {
-    let url = expand_short_link(url).await.map_err(PlaylistError::FetchFailed)?;
+pub async fn fetch_playlist_info(url: &str, oauth_token: Option<&str>) -> Result<PlaylistInfo, ScApiError> {
+    let url = expand_short_link(url).await.map_err(ScApiError::FetchFailed)?;
 
     if !is_valid_soundcloud_url(&url) {
-        return Err(PlaylistError::FetchFailed("Invalid SoundCloud URL".to_string()));
+        return Err(ScApiError::FetchFailed("Invalid SoundCloud URL".to_string()));
     }
 
     if let Some(slug) = extract_system_playlist_slug(&url) {
@@ -656,8 +615,8 @@ pub async fn fetch_playlist_info(url: &str, oauth_token: Option<&str>) -> Result
     })
 }
 
-pub async fn fetch_track_info(url: &str, oauth_token: Option<&str>) -> Result<TrackInfo, PlaylistError> {
-    let url = expand_short_link(url).await.map_err(PlaylistError::FetchFailed)?;
+pub async fn fetch_track_info(url: &str, oauth_token: Option<&str>) -> Result<TrackInfo, ScApiError> {
+    let url = expand_short_link(url).await.map_err(ScApiError::FetchFailed)?;
     let cid = get_cid().await?;
     log::info!("[soundcloud] Fetching track info for URL: {}", url);
     let raw: RawTrackInfo = resolve_url(&url, &cid, oauth_token).await?;
@@ -670,7 +629,7 @@ pub async fn fetch_track_info(url: &str, oauth_token: Option<&str>) -> Result<Tr
 /// Calls `on_batch` with each batch of resolved tracks for progressive loading.
 pub async fn fetch_playlist_by_id<F>(
     id: u64, secret_token: Option<&str>, oauth_token: Option<&str>, on_batch: F,
-) -> Result<Vec<TrackInfo>, PlaylistError>
+) -> Result<Vec<TrackInfo>, ScApiError>
 where
     F: Fn(&[TrackInfo]),
 {
@@ -686,7 +645,7 @@ where
 
     let playlist: HydrationPlaylist = response.json().await.map_err(|e| {
         log::error!("[soundcloud] Failed to parse playlist response: {}", e);
-        PlaylistError::InvalidResponse
+        ScApiError::InvalidResponse
     })?;
 
     log::info!("[soundcloud] Playlist '{}' has {} tracks", playlist.title, playlist.track_count);
@@ -975,35 +934,35 @@ mod tests {
         assert!(json.contains("\"track_count\":1"));
     }
 
-    // PlaylistError tests
+    // ScApiError tests
     #[test]
-    fn test_playlist_error_auth_required_message() {
-        let err = PlaylistError::AuthRequired;
-        assert_eq!(err.to_string(), "Private content requires sign-in");
+    fn test_sc_api_error_auth_required_message() {
+        let err = ScApiError::AuthRequired;
+        assert_eq!(err.to_string(), "Authentication required");
     }
 
     #[test]
-    fn test_playlist_error_fetch_failed_message() {
-        let err = PlaylistError::FetchFailed("HTTP 404: Not found".to_string());
-        assert_eq!(err.to_string(), "Failed to fetch playlist: HTTP 404: Not found");
+    fn test_sc_api_error_fetch_failed_message() {
+        let err = ScApiError::FetchFailed("HTTP 404: Not found".to_string());
+        assert_eq!(err.to_string(), "HTTP 404: Not found");
     }
 
     #[test]
-    fn test_playlist_error_invalid_response_message() {
-        let err = PlaylistError::InvalidResponse;
-        assert_eq!(err.to_string(), "Invalid response format");
+    fn test_sc_api_error_invalid_response_message() {
+        let err = ScApiError::InvalidResponse;
+        assert_eq!(err.to_string(), "Invalid response");
     }
 
     #[test]
-    fn test_playlist_error_track_not_found_message() {
-        let err = PlaylistError::TrackNotFound;
-        assert_eq!(err.to_string(), "Track not found");
+    fn test_sc_api_error_not_found_message() {
+        let err = ScApiError::NotFound;
+        assert_eq!(err.to_string(), "Not found");
     }
 
     #[test]
-    fn test_playlist_error_geo_blocked_message() {
-        let err = PlaylistError::GeoBlocked;
-        assert_eq!(err.to_string(), "Track unavailable in your region");
+    fn test_sc_api_error_geo_blocked_message() {
+        let err = ScApiError::GeoBlocked;
+        assert_eq!(err.to_string(), "Access forbidden");
     }
 
     // URL validation tests

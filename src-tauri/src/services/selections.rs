@@ -4,38 +4,10 @@ use futures::stream::{self, StreamExt};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use specta::Type;
-use thiserror::Error;
 
+use crate::models::error::ScApiError;
 use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::{self, TrackInfo};
-
-#[derive(Debug, Error)]
-pub enum SelectionError {
-    #[error("Authentication required")]
-    AuthRequired,
-    #[error("Rate limited by SoundCloud")]
-    RateLimited,
-    #[error("Failed to fetch selections: {0}")]
-    FetchFailed(String),
-    #[error("Network error: {0}")]
-    NetworkError(#[from] rquest::Error),
-}
-
-impl From<crate::services::http::ApiResponseError> for SelectionError {
-    fn from(e: crate::services::http::ApiResponseError) -> Self {
-        match e {
-            crate::services::http::ApiResponseError::AuthRequired => Self::AuthRequired,
-            crate::services::http::ApiResponseError::RateLimited => Self::RateLimited,
-            other => Self::FetchFailed(other.to_string()),
-        }
-    }
-}
-
-impl From<playlist::PlaylistError> for SelectionError {
-    fn from(e: playlist::PlaylistError) -> Self {
-        Self::FetchFailed(e.to_string())
-    }
-}
 
 #[derive(Debug, Deserialize)]
 struct MixedSelectionsResponse {
@@ -97,7 +69,7 @@ impl SelectionCache {
     }
 }
 
-pub async fn fetch_selections(oauth_token: &str, client_id: &str) -> Result<Vec<Selection>, SelectionError> {
+pub async fn fetch_selections(oauth_token: &str, client_id: &str) -> Result<Vec<Selection>, ScApiError> {
     let url = format!(
         "{}/mixed-selections?client_id={}&limit=50&linked_partitioning=1",
         API_V2_BASE, client_id

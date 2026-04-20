@@ -3,34 +3,10 @@ use std::sync::Mutex;
 
 use serde::{Deserialize, Serialize};
 use specta::Type;
-use thiserror::Error;
 
-use crate::services::http::{validate_api_response, ApiResponseError, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
+use crate::models::error::ScApiError;
+use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::TrackInfo;
-
-#[derive(Debug, Error)]
-pub enum NewTracksError {
-    #[error("Authentication required")]
-    AuthRequired,
-    #[error("Rate limited by SoundCloud")]
-    RateLimited,
-    #[error("Failed to fetch: {0}")]
-    FetchFailed(String),
-    #[error("Network error: {0}")]
-    NetworkError(#[from] rquest::Error),
-    #[error("Invalid response")]
-    InvalidResponse,
-}
-
-impl From<ApiResponseError> for NewTracksError {
-    fn from(e: ApiResponseError) -> Self {
-        match e {
-            ApiResponseError::AuthRequired => NewTracksError::AuthRequired,
-            ApiResponseError::RateLimited => NewTracksError::RateLimited,
-            _ => NewTracksError::FetchFailed(e.to_string()),
-        }
-    }
-}
 
 #[derive(Debug, Deserialize)]
 pub struct FollowingsResponse {
@@ -312,20 +288,15 @@ fn is_within_30_days(created_at: &str) -> bool {
         .unwrap_or(false)
 }
 
-pub async fn fetch_followed_artists_page(oauth_token: &str, url: &str) -> Result<FollowingsResponse, NewTracksError> {
+pub async fn fetch_followed_artists_page(oauth_token: &str, url: &str) -> Result<FollowingsResponse, ScApiError> {
     let response = HTTP_CLIENT.get(url).with_oauth(Some(oauth_token)).send().await?;
 
     validate_api_response(response.status())?;
 
-    response
-        .json::<FollowingsResponse>()
-        .await
-        .map_err(|_| NewTracksError::InvalidResponse)
+    response.json::<FollowingsResponse>().await.map_err(|_| ScApiError::InvalidResponse)
 }
 
-pub async fn fetch_all_followed_artists(
-    oauth_token: &str, client_id: &str, user_id: u64,
-) -> Result<Vec<RawFollowedArtist>, NewTracksError> {
+pub async fn fetch_all_followed_artists(oauth_token: &str, client_id: &str, user_id: u64) -> Result<Vec<RawFollowedArtist>, ScApiError> {
     let mut all_artists = Vec::new();
     let mut url = format!(
         "{}/users/{}/followings?client_id={}&limit=200&linked_partitioning=1",
@@ -345,12 +316,12 @@ pub async fn fetch_all_followed_artists(
     Ok(all_artists)
 }
 
-async fn fetch_stream_page(oauth_token: &str, url: &str) -> Result<StreamResponse, NewTracksError> {
+async fn fetch_stream_page(oauth_token: &str, url: &str) -> Result<StreamResponse, ScApiError> {
     let response = HTTP_CLIENT.get(url).with_oauth(Some(oauth_token)).send().await?;
 
     validate_api_response(response.status())?;
 
-    response.json::<StreamResponse>().await.map_err(|_| NewTracksError::InvalidResponse)
+    response.json::<StreamResponse>().await.map_err(|_| ScApiError::InvalidResponse)
 }
 
 fn sort_by_created_at_desc<T>(items: &mut [T], get_created_at: impl Fn(&T) -> &str) {
@@ -404,7 +375,7 @@ pub struct StreamData {
     pub releases: HashMap<u64, Vec<ReleaseActivityItem>>,
 }
 
-pub async fn fetch_stream(oauth_token: &str) -> Result<StreamData, NewTracksError> {
+pub async fn fetch_stream(oauth_token: &str) -> Result<StreamData, ScApiError> {
     let mut all_tracks: HashMap<u64, Vec<ActivityItem>> = HashMap::new();
     let mut all_releases: HashMap<u64, Vec<ReleaseActivityItem>> = HashMap::new();
     let mut url = format!("{}/stream?limit=200", API_V2_BASE);

@@ -58,6 +58,64 @@ pub struct RateLimitInfo {
     pub time_window: Option<String>,
 }
 
+#[derive(Debug, Error)]
+pub enum ScApiError {
+    #[error("Authentication required")]
+    AuthRequired,
+
+    #[error("Rate limited by SoundCloud")]
+    RateLimited,
+
+    #[error("Not found")]
+    NotFound,
+
+    #[error("Access forbidden")]
+    GeoBlocked,
+
+    #[error("{0}")]
+    FetchFailed(String),
+
+    #[error("Network error: {0}")]
+    NetworkError(#[from] rquest::Error),
+
+    #[error("Invalid response")]
+    InvalidResponse,
+}
+
+impl HasErrorCode for ScApiError {
+    fn code(&self) -> &'static str {
+        match self {
+            ScApiError::AuthRequired => "AUTH_REQUIRED",
+            ScApiError::RateLimited => "RATE_LIMITED",
+            ScApiError::NotFound => "NOT_FOUND",
+            ScApiError::GeoBlocked => "GEO_BLOCKED",
+            ScApiError::FetchFailed(_) => "FETCH_FAILED",
+            ScApiError::NetworkError(_) => "NETWORK_ERROR",
+            ScApiError::InvalidResponse => "INVALID_RESPONSE",
+        }
+    }
+}
+
+impl From<crate::services::http::ApiResponseError> for ScApiError {
+    fn from(e: crate::services::http::ApiResponseError) -> Self {
+        use crate::services::http::ApiResponseError;
+        match e {
+            ApiResponseError::AuthRequired => Self::AuthRequired,
+            ApiResponseError::RateLimited => Self::RateLimited,
+            ApiResponseError::NotFound => Self::NotFound,
+            ApiResponseError::GeoBlocked => Self::GeoBlocked,
+            ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
+            ApiResponseError::InvalidResponse(_) => Self::InvalidResponse,
+        }
+    }
+}
+
+impl From<ScApiError> for String {
+    fn from(err: ScApiError) -> Self {
+        err.to_string()
+    }
+}
+
 #[derive(Debug, Error, Serialize)]
 pub enum DownloadError {
     #[error("{0}")]

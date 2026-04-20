@@ -4,36 +4,9 @@ use std::time::{Duration, Instant};
 use serde::{Deserialize, Serialize};
 use specta::Type;
 
-use crate::services::http::{validate_api_response, ApiResponseError, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
+use crate::models::error::ScApiError;
+use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::{RawTrackInfo, RawUserInfo, TrackInfo, UserInfo};
-
-// ---------------------------------------------------------------------------
-// Error
-// ---------------------------------------------------------------------------
-
-#[derive(Debug, thiserror::Error)]
-pub enum NotificationsError {
-    #[error("Authentication required")]
-    AuthRequired,
-    #[error("Rate limited by SoundCloud")]
-    RateLimited,
-    #[error("Failed to fetch: {0}")]
-    FetchFailed(String),
-    #[error("Network error: {0}")]
-    NetworkError(#[from] rquest::Error),
-    #[error("Invalid response")]
-    InvalidResponse,
-}
-
-impl From<ApiResponseError> for NotificationsError {
-    fn from(e: ApiResponseError) -> Self {
-        match e {
-            ApiResponseError::AuthRequired => NotificationsError::AuthRequired,
-            ApiResponseError::RateLimited => NotificationsError::RateLimited,
-            _ => NotificationsError::FetchFailed(e.to_string()),
-        }
-    }
-}
 
 // ---------------------------------------------------------------------------
 // Frontend-facing types
@@ -408,7 +381,7 @@ impl LastSeenActivityState {
 
 pub async fn fetch_activities_page(
     oauth_token: &str, client_id: &str, cursor: Option<&str>, limit: u32,
-) -> Result<NotificationsPage, NotificationsError> {
+) -> Result<NotificationsPage, ScApiError> {
     let url = match cursor {
         Some(c) => format!(
             "{}/activities?offset={}&limit={}&client_id={}&linked_partitioning=1",
@@ -426,7 +399,7 @@ pub async fn fetch_activities_page(
     let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
     validate_api_response(response.status())?;
 
-    let raw: RawActivitiesPage = response.json().await.map_err(|_| NotificationsError::InvalidResponse)?;
+    let raw: RawActivitiesPage = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
 
     Ok(convert_page(raw))
 }

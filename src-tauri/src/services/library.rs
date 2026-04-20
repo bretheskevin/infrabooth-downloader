@@ -3,47 +3,12 @@
 use std::collections::HashMap;
 use std::sync::Mutex;
 
-use serde::{Deserialize, Serialize};
-use specta::Type;
-use thiserror::Error;
-
+use crate::models::error::ScApiError;
 use crate::models::PlaylistTracksResponse;
 use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::build_playlist_url;
-
-// === Error Type ===
-
-#[derive(Debug, Error)]
-pub enum LibraryError {
-    #[error("Authentication required")]
-    AuthRequired,
-
-    #[error("Rate limited by SoundCloud")]
-    RateLimited,
-
-    #[error("Failed to fetch library: {0}")]
-    FetchFailed(String),
-
-    #[error("Network error: {0}")]
-    NetworkError(#[from] rquest::Error),
-
-    #[error("Invalid response format")]
-    InvalidResponse,
-}
-
-impl From<crate::services::http::ApiResponseError> for LibraryError {
-    fn from(e: crate::services::http::ApiResponseError) -> Self {
-        use crate::services::http::ApiResponseError;
-        match e {
-            ApiResponseError::AuthRequired => Self::AuthRequired,
-            ApiResponseError::RateLimited => Self::RateLimited,
-            ApiResponseError::NotFound => Self::FetchFailed("Not found".to_string()),
-            ApiResponseError::GeoBlocked => Self::FetchFailed("Access forbidden".to_string()),
-            ApiResponseError::FetchFailed(msg) => Self::FetchFailed(msg),
-            ApiResponseError::InvalidResponse(_) => Self::InvalidResponse,
-        }
-    }
-}
+use serde::{Deserialize, Serialize};
+use specta::Type;
 
 // === Internal deserialization types (not exposed to frontend) ===
 
@@ -222,7 +187,7 @@ fn map_library_item(item: &LibraryItem) -> Option<LibraryPlaylist> {
 
 // === Service function ===
 
-async fn fetch_library_page(oauth_token: &str, client_id: &str, cursor: Option<String>) -> Result<LibraryPageResponse, LibraryError> {
+async fn fetch_library_page(oauth_token: &str, client_id: &str, cursor: Option<String>) -> Result<LibraryPageResponse, ScApiError> {
     let url = match cursor {
         Some(ref next_href) => next_href.clone(),
         None => format!(
@@ -235,7 +200,7 @@ async fn fetch_library_page(oauth_token: &str, client_id: &str, cursor: Option<S
 
     validate_api_response(response.status())?;
 
-    let library_response: LibraryResponse = response.json().await.map_err(|_| LibraryError::InvalidResponse)?;
+    let library_response: LibraryResponse = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
 
     let playlists: Vec<LibraryPlaylist> = library_response
         .collection
@@ -247,7 +212,7 @@ async fn fetch_library_page(oauth_token: &str, client_id: &str, cursor: Option<S
     Ok(LibraryPageResponse { playlists, next_cursor: library_response.next_href })
 }
 
-pub async fn fetch_all_library_pages<F>(oauth_token: &str, client_id: &str, on_batch: F) -> Result<Vec<LibraryPlaylist>, LibraryError>
+pub async fn fetch_all_library_pages<F>(oauth_token: &str, client_id: &str, on_batch: F) -> Result<Vec<LibraryPlaylist>, ScApiError>
 where
     F: Fn(&[LibraryPlaylist]),
 {
@@ -270,7 +235,7 @@ where
 
 pub async fn fetch_owned_playlists_for_track(
     oauth_token: &str, client_id: &str, track_id: u64, playlists: &[LibraryPlaylist], cache: &LibraryCache,
-) -> Result<Vec<PlaylistForTrackPicker>, LibraryError> {
+) -> Result<Vec<PlaylistForTrackPicker>, ScApiError> {
     use futures::future::join_all;
 
     let owned: Vec<_> = playlists.iter().filter(|p| p.is_owned).collect();
@@ -338,14 +303,14 @@ pub async fn fetch_owned_playlists_for_track(
 
 pub async fn resolve_playlist_artwork(
     oauth_token: &str, client_id: &str, playlist_id: u64, secret_token: Option<String>,
-) -> Result<Option<String>, LibraryError> {
+) -> Result<Option<String>, ScApiError> {
     let url = build_playlist_url(playlist_id, client_id, secret_token.as_deref());
 
     let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
 
     validate_api_response(response.status())?;
 
-    let playlist_data: PlaylistTracksResponse = response.json().await.map_err(|_| LibraryError::InvalidResponse)?;
+    let playlist_data: PlaylistTracksResponse = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
 
     Ok(playlist_data.first_track_artwork())
 }
@@ -481,30 +446,6 @@ mod tests {
     fn test_map_item_without_playlist_returns_none() {
         let item = LibraryItem { item_type: "track".to_string(), playlist: None };
         assert!(map_library_item(&item).is_none());
-    }
-
-    #[test]
-    fn test_library_error_auth_required_message() {
-        let err = LibraryError::AuthRequired;
-        assert_eq!(err.to_string(), "Authentication required");
-    }
-
-    #[test]
-    fn test_library_error_rate_limited_message() {
-        let err = LibraryError::RateLimited;
-        assert_eq!(err.to_string(), "Rate limited by SoundCloud");
-    }
-
-    #[test]
-    fn test_library_error_fetch_failed_message() {
-        let err = LibraryError::FetchFailed("HTTP 500".to_string());
-        assert_eq!(err.to_string(), "Failed to fetch library: HTTP 500");
-    }
-
-    #[test]
-    fn test_library_error_invalid_response_message() {
-        let err = LibraryError::InvalidResponse;
-        assert_eq!(err.to_string(), "Invalid response format");
     }
 
     #[test]
