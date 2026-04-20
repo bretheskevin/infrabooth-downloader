@@ -13,8 +13,8 @@ vi.mock('@/features/player/url-cache', () => ({
   preloadImmediate: vi.fn(),
 }));
 
-vi.mock('@/features/player/store', () => {
-  const { create } = require('zustand');
+vi.mock('@/features/player/store', async () => {
+  const { create } = await import('zustand');
   const store = create(() => ({
     currentTrack: null,
     state: 'idle',
@@ -24,8 +24,8 @@ vi.mock('@/features/player/store', () => {
   return { usePlayerStore: store };
 });
 
-vi.mock('@/hooks/useDownloadState', () => {
-  const { create } = require('zustand');
+vi.mock('@/hooks/useDownloadState', async () => {
+  const { create } = await import('zustand');
   const store = create(() => ({
     states: new Map(),
     completedCount: 0,
@@ -56,6 +56,14 @@ vi.mock('../hooks/useArtistProfile', () => ({
 
 vi.mock('../hooks/useArtistTracks', () => ({
   useArtistTracks: () => ({
+    data: undefined,
+    isLoading: false,
+    isStreaming: false,
+  }),
+}));
+
+vi.mock('../hooks/useArtistLikedTracks', () => ({
+  useArtistLikedTracks: () => ({
     data: undefined,
     isLoading: false,
     isStreaming: false,
