@@ -543,6 +543,14 @@ async exportPlaylistToRekordbox(tracks: TrackCore[], playlistName: string, maxCo
     else return { status: "error", error: e  as any };
 }
 },
+async cancelRekordboxExport() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cancel_rekordbox_export") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getUnreadCount() : Promise<Result<UnreadCountResult, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_unread_count") };

@@ -532,6 +532,7 @@
   },
   "rekordboxExport": {
     "button": "Exporter vers Rekordbox",
+    "moreActions": "Plus d'actions",
     "confirmTitle": "Exporter vers Rekordbox",
     "confirmMessage": "Exporter {{count}} pistes sous \"{{playlist}}\" vers Rekordbox ?",
     "confirmNote": "Les pistes seront téléchargées dans le dossier de l'application et enregistrées dans Rekordbox.",

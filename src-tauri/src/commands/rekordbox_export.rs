@@ -1,15 +1,17 @@
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use tauri::{Emitter, Manager};
-use tokio::sync::Semaphore;
+use tauri::{Emitter, Manager, State};
+use tokio::sync::{Mutex, Semaphore};
 use tokio::task::JoinSet;
 
-use crate::models::error::{ErrorResponse, RekordboxError};
+use crate::models::error::{DownloadError, ErrorResponse, RekordboxError};
 use crate::models::track::TrackCore;
+use crate::services::cancellation::{ActiveProcess, CancellationState};
 use crate::services::events::REKORDBOX_EXPORT_PROGRESS;
 use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
-use crate::services::pipeline::{download_and_convert, PipelineConfig};
+use crate::services::pipeline::{download_and_convert, CancellationHandles, PipelineConfig};
 use crate::services::rekordbox::models::{
     ExportResult, ExportTrackRequest, RekordboxExportProgressEvent, RekordboxExportStatus, ALL_TRACKS_PLAYLIST_NAME,
 };
@@ -20,6 +22,16 @@ use super::rekordbox::{export_single_track, is_content_in_playlist, RekordboxWri
 
 const EXPORT_DOWNLOADS_DIR: &str = "rekordbox-downloads";
 
+#[derive(Default)]
+pub struct RekordboxExportCancellation(CancellationState);
+
+impl Deref for RekordboxExportCancellation {
+    type Target = CancellationState;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 fn emit_progress(app: &tauri::AppHandle, event: RekordboxExportProgressEvent) {
     let _ = app.emit(REKORDBOX_EXPORT_PROGRESS, event);
 }
@@ -28,14 +40,21 @@ fn progress_event(track: &TrackCore, total: u32, status: RekordboxExportStatus, 
     RekordboxExportProgressEvent { track_id: track.track_id.clone(), track_title: track.title.clone(), status, total_tracks: total, error }
 }
 
+enum DownloadOutcome {
+    Ok(PathBuf),
+    Failed(String),
+    Cancelled,
+}
+
 async fn download_track(
-    app: &tauri::AppHandle, track: &TrackCore, output_dir: PathBuf, oauth_token: Option<String>, existing_path: Option<PathBuf>, total: u32,
-) -> Result<PathBuf, String> {
+    app: &tauri::AppHandle, track: &TrackCore, output_dir: PathBuf, oauth_token: Option<String>, existing_path: Option<PathBuf>,
+    total: u32, cancellation: Option<CancellationHandles>,
+) -> DownloadOutcome {
     emit_progress(app, progress_event(track, total, RekordboxExportStatus::Downloading, None));
 
     if let Some(path) = existing_path {
         emit_progress(app, progress_event(track, total, RekordboxExportStatus::Downloaded, None));
-        return Ok(path);
+        return DownloadOutcome::Ok(path);
     }
 
     let metadata = TrackMetadata {
@@ -59,25 +78,27 @@ async fn download_track(
         download_url: track.download_url.clone(),
     };
 
-    match download_and_convert(app, config, None).await {
+    match download_and_convert(app, config, cancellation).await {
         Ok(path) => {
             emit_progress(app, progress_event(track, total, RekordboxExportStatus::Downloaded, None));
-            Ok(path)
+            DownloadOutcome::Ok(path)
         }
+        Err(DownloadError::Cancelled) => DownloadOutcome::Cancelled,
         Err(e) => {
             let err_msg = e.to_string();
             emit_progress(
                 app,
                 progress_event(track, total, RekordboxExportStatus::Error, Some(err_msg.clone())),
             );
-            Err(format!("{}: download failed — {}", track.title, err_msg))
+            DownloadOutcome::Failed(format!("{}: download failed — {}", track.title, err_msg))
         }
     }
 }
 
 async fn resolve_track_sources(
     app: &tauri::AppHandle, tracks: Vec<TrackCore>, output_dir: &Path, total: u32, max_concurrent: usize,
-) -> Result<(Vec<(TrackCore, PathBuf)>, Vec<String>), ErrorResponse> {
+    cancel_state: &RekordboxExportCancellation,
+) -> Result<(Vec<(TrackCore, PathBuf)>, Vec<String>, bool), ErrorResponse> {
     tokio::fs::create_dir_all(output_dir).await.map_err(|e| ErrorResponse {
         code: "DOWNLOAD_PATH_ERROR".to_string(),
         message: format!("Failed to create export downloads directory: {}", e),
@@ -95,47 +116,75 @@ async fn resolve_track_sources(
     }
 
     let semaphore = Arc::new(Semaphore::new(max_concurrent));
-    let mut join_set: JoinSet<(usize, TrackCore, Result<PathBuf, String>)> = JoinSet::new();
+    let active_processes = cancel_state.active_processes();
+    let mut join_set: JoinSet<(usize, TrackCore, DownloadOutcome)> = JoinSet::new();
 
     for (idx, track) in tracks.into_iter().enumerate() {
+        if cancel_state.is_cancelled() {
+            break;
+        }
+
         let sem = semaphore.clone();
         let app_clone = app.clone();
         let output = output_dir.to_path_buf();
         let token = oauth_token.clone();
         let existing_path = existing.get(&track.track_id).cloned();
+        let worker_cancel_rx = cancel_state.subscribe();
+        let procs = active_processes.clone();
+        let track_id = track.track_id.clone();
 
         join_set.spawn(async move {
-            // SAFETY: semaphore is owned via Arc and never closed
             let _permit = sem.acquire().await.expect("semaphore closed");
-            let result = download_track(&app_clone, &track, output, token, existing_path, total).await;
+
+            let child_handle = Arc::new(Mutex::new(None));
+            let pid_handle = Arc::new(Mutex::new(None));
+            procs.lock().await.insert(
+                track_id.clone(),
+                ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() },
+            );
+
+            let cancellation = CancellationHandles { cancel_rx: worker_cancel_rx, active_child: child_handle, active_pid: pid_handle };
+
+            let result = download_track(&app_clone, &track, output, token, existing_path, total, Some(cancellation)).await;
+            procs.lock().await.remove(&track_id);
             (idx, track, result)
         });
     }
 
     let mut results: Vec<Option<(TrackCore, PathBuf)>> = (0..total as usize).map(|_| None).collect();
     let mut errors: Vec<String> = Vec::new();
+    let mut was_cancelled = false;
 
     while let Some(outcome) = join_set.join_next().await {
+        if cancel_state.is_cancelled() && !was_cancelled {
+            was_cancelled = true;
+            cancel_state.kill_active_processes().await;
+        }
+
         let (idx, track, result) = outcome.map_err(|e| ErrorResponse { code: "TASK_JOIN_ERROR".to_string(), message: e.to_string() })?;
         match result {
-            Ok(path) => {
+            DownloadOutcome::Ok(path) => {
                 results[idx] = Some((track, path));
             }
-            Err(msg) => {
+            DownloadOutcome::Failed(msg) => {
                 errors.push(msg);
             }
+            DownloadOutcome::Cancelled => {}
         }
     }
 
     let pairs: Vec<(TrackCore, PathBuf)> = results.into_iter().flatten().collect();
-    Ok((pairs, errors))
+    Ok((pairs, errors, was_cancelled))
 }
 
 #[tauri::command]
 #[specta::specta]
 pub async fn export_playlist_to_rekordbox(
     tracks: Vec<TrackCore>, playlist_name: String, max_concurrent: u32, manual_db_path: Option<String>, app: tauri::AppHandle,
+    cancel_state: State<'_, RekordboxExportCancellation>,
 ) -> Result<ExportResult, ErrorResponse> {
+    cancel_state.reset();
+
     log::info!(
         "[rekordbox-export] Starting export of {} tracks to playlist '{}'",
         tracks.len(),
@@ -158,12 +207,26 @@ pub async fn export_playlist_to_rekordbox(
     let max_concurrent = max_concurrent.clamp(1, 10) as usize;
 
     log::info!("[rekordbox-export] Resolving track sources (download dir: {:?})...", export_dl_dir);
-    let (resolved, download_errors) = resolve_track_sources(&app, tracks, &export_dl_dir, total, max_concurrent).await?;
+    let cancelled_err = || ErrorResponse { code: "CANCELLED".to_string(), message: "Export cancelled".to_string() };
+
+    let (resolved, download_errors, was_cancelled) =
+        resolve_track_sources(&app, tracks, &export_dl_dir, total, max_concurrent, &cancel_state).await?;
+
+    if was_cancelled {
+        log::info!("[rekordbox-export] Export cancelled during download phase");
+        return Err(cancelled_err());
+    }
+
     log::info!(
         "[rekordbox-export] Track sources resolved: {} successful, {} errors",
         resolved.len(),
         download_errors.len()
     );
+
+    if cancel_state.is_cancelled() {
+        log::info!("[rekordbox-export] Export cancelled before database phase");
+        return Err(cancelled_err());
+    }
 
     log::info!("[rekordbox-export] Starting database export phase...");
     tokio::task::spawn_blocking(move || {
@@ -251,4 +314,13 @@ pub async fn export_playlist_to_rekordbox(
         log::error!("[rekordbox-export] spawn_blocking join error during export: {}", e);
         ErrorResponse { code: "TASK_JOIN_ERROR".to_string(), message: e.to_string() }
     })?
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn cancel_rekordbox_export(cancel_state: State<'_, RekordboxExportCancellation>) -> Result<(), ErrorResponse> {
+    log::info!("[rekordbox-export] Cancelling export");
+    cancel_state.cancel();
+    cancel_state.kill_active_processes().await;
+    Ok(())
 }

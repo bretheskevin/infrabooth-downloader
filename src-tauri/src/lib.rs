@@ -6,8 +6,8 @@ use std::sync::Arc;
 use std::sync::Once;
 
 use commands::{
-    add_track_to_playlist, cancel_download_queue, check_auth, check_firefox_installed, check_follow_status, check_for_updates,
-    check_write_permission, clear_library_cache, clear_liked_tracks_cache, delete_rekordbox_playlist, detect_rekordbox,
+    add_track_to_playlist, cancel_download_queue, cancel_rekordbox_export, check_auth, check_firefox_installed, check_follow_status,
+    check_for_updates, check_write_permission, clear_library_cache, clear_liked_tracks_cache, delete_rekordbox_playlist, detect_rekordbox,
     download_track_full, export_playlist_to_rekordbox, export_to_rekordbox, fetch_related_tracks, follow_user, get_all_artist_tracks,
     get_app_data_path, get_artist_activity, get_artist_liked_tracks, get_artist_playlist_tracks, get_artist_playlists, get_artist_profile,
     get_artist_releases, get_conversation_messages, get_conversations_page, get_default_download_path,
@@ -18,7 +18,7 @@ use commands::{
     open_in_firefox, quit_rekordbox, refresh_auth, remove_track_from_playlist, resolve_library_artwork, resolve_message_embed,
     resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup,
     scan_existing_tracks, search_tracks, search_users, send_message, sign_out, start_download_queue, test_ffmpeg, unfollow_user,
-    unlike_track, validate_download_path, validate_soundcloud_url,
+    unlike_track, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
 };
 use services::cancellation::CancellationState;
 use services::events;
@@ -200,6 +200,7 @@ pub fn run() {
             restore_rekordbox_backup,
             quit_rekordbox,
             export_playlist_to_rekordbox,
+            cancel_rekordbox_export,
             get_unread_count,
             get_notifications_page,
             mark_notifications_seen,
@@ -237,6 +238,7 @@ pub fn run() {
         .manage(NotificationsCache::default())
         .manage(MessagesCache::default())
         .manage(CancellationState::default())
+        .manage(RekordboxExportCancellation::default())
         .manage(Arc::new(RateLimitChoiceState::default()))
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {

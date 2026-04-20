@@ -37,6 +37,7 @@ const INITIAL_STATE: ExportState = {
 export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName: string) {
   const [state, setState] = useState<ExportState>(INITIAL_STATE);
   const unlistenRef = useRef<UnlistenFn[]>([]);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -45,14 +46,23 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
   }, []);
 
   const openConfirm = useCallback(() => {
+    cancelledRef.current = false;
     setState({ ...INITIAL_STATE, phase: 'confirm' });
   }, []);
 
-  const close = useCallback(() => {
+  const cleanup = useCallback(() => {
     for (const fn of unlistenRef.current) fn();
     unlistenRef.current = [];
     setState(INITIAL_STATE);
   }, []);
+
+  const cancel = useCallback(() => {
+    cancelledRef.current = true;
+    cleanup();
+    void api.cancelRekordboxExport();
+  }, [cleanup]);
+
+  const close = cleanup;
 
   const startExport = useCallback(async () => {
     if (!tracks || tracks.length === 0) return;
@@ -94,7 +104,9 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
       const result = await api.exportPlaylistToRekordbox(trackCores, playlistName, maxConcurrent);
       setState((s) => ({ ...s, phase: 'complete', result }));
     } catch (err: unknown) {
+      if (cancelledRef.current) return;
       const code = err instanceof ApiError ? err.code : null;
+      if (code === 'CANCELLED') return;
       const message = err instanceof Error ? err.message : String(err);
       void logger.error(`[rekordbox-export] Export failed: ${message}`);
       setState((s) => ({ ...s, phase: 'error', errorCode: code, error: message }));
@@ -109,6 +121,7 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
     ...state,
     openConfirm,
     startExport,
+    cancel,
     close,
   };
 }

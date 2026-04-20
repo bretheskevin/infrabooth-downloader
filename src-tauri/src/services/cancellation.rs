@@ -33,6 +33,10 @@ impl CancellationState {
         let _ = self.sender.send(false);
     }
 
+    pub fn is_cancelled(&self) -> bool {
+        *self.receiver.borrow()
+    }
+
     pub fn active_processes(&self) -> Arc<Mutex<HashMap<String, ActiveProcess>>> {
         self.active_processes.clone()
     }

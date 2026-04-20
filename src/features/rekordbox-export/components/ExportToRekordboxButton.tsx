@@ -1,9 +1,15 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Disc3 } from 'lucide-react';
+import { Disc3, EllipsisVertical } from 'lucide-react';
 import type { TrackInfo, RekordboxExportStatus } from '@/bindings';
 import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
 import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
@@ -136,7 +142,7 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
   const { t } = useTranslation();
   const { data: rekordboxStatus } = useRekordboxDetection();
 
-  const { phase, trackStatuses, totalTracks, result, errorCode, openConfirm, startExport, close } =
+  const { phase, trackStatuses, totalTracks, result, errorCode, openConfirm, startExport, cancel, close } =
     useRekordboxExport(tracks, playlistName);
 
   const trackCount = tracks?.length ?? 0;
@@ -152,18 +158,27 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
 
   return (
     <>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={openConfirm}
-        disabled={disabled || trackCount === 0}
-        className="h-7 gap-1.5 px-2 text-xs text-muted-foreground hover:text-foreground"
-      >
-        <Disc3 className="h-3 w-3" />
-        <span>{t('rekordboxExport.button')}</span>
-      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('rekordboxExport.moreActions')}
+            disabled={disabled || trackCount === 0}
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          >
+            <EllipsisVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={openConfirm}>
+            <Disc3 className="h-3.5 w-3.5" />
+            {t('rekordboxExport.button')}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) close(); }}>
+      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { if (phase === 'exporting') cancel(); else close(); } }}>
         <DialogContent className="sm:max-w-md">
           {phase === 'confirm' && (
             <>
@@ -188,7 +203,7 @@ export function ExportToRekordboxButton({ tracks, playlistName, disabled }: Expo
               completedCount={completedCount}
               percent={percent}
               isRegistering={isRegistering}
-              onCancel={close}
+              onCancel={cancel}
             />
           )}
 

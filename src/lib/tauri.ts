@@ -126,6 +126,9 @@ export const api = {
   exportPlaylistToRekordbox: (tracks: TrackCore[], playlistName: string, maxConcurrent: number): Promise<ExportResult> =>
     commands.exportPlaylistToRekordbox(tracks, playlistName, maxConcurrent, getStoredRekordboxPathOverride()).then(unwrap),
 
+  cancelRekordboxExport: (): Promise<void> =>
+    commands.cancelRekordboxExport().then(unwrap).then(() => undefined),
+
   listRekordboxPlaylists: (): Promise<RekordboxPlaylistInfo[]> =>
     commands.listRekordboxPlaylists(getStoredRekordboxPathOverride()).then(unwrap),
 

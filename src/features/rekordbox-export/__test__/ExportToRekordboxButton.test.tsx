@@ -7,6 +7,7 @@ import { ExportToRekordboxButton } from '../components/ExportToRekordboxButton';
 
 const mockOpenConfirm = vi.fn();
 const mockStartExport = vi.fn();
+const mockCancel = vi.fn();
 const mockClose = vi.fn();
 
 type ExportPhase = 'idle' | 'confirm' | 'exporting' | 'complete' | 'error';
@@ -20,6 +21,7 @@ let hookReturn = {
   error: null as string | null,
   openConfirm: mockOpenConfirm,
   startExport: mockStartExport,
+  cancel: mockCancel,
   close: mockClose,
 };
 
@@ -69,7 +71,7 @@ describe('ExportToRekordboxButton', () => {
     hookReturn = {
       phase: 'idle', trackStatuses: new Map(), totalTracks: 0,
       result: null, errorCode: null, error: null,
-      openConfirm: mockOpenConfirm, startExport: mockStartExport, close: mockClose,
+      openConfirm: mockOpenConfirm, startExport: mockStartExport, cancel: mockCancel, close: mockClose,
     };
   });
 
@@ -100,10 +102,11 @@ describe('ExportToRekordboxButton', () => {
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
-  it('calls openConfirm on click', async () => {
+  it('calls openConfirm when menu item clicked', async () => {
     const user = userEvent.setup();
     render(<ExportToRekordboxButton tracks={[mockTrack]} playlistName="My Playlist" />);
     await user.click(screen.getByRole('button'));
+    await user.click(screen.getByRole('menuitem'));
     expect(mockOpenConfirm).toHaveBeenCalledOnce();
   });
 
