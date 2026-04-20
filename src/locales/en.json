@@ -512,6 +512,7 @@
   "artistProfile": {
     "back": "Back",
     "followers": "followers",
+    "followings": "following",
     "tracks": "tracks",
     "sortRecent": "Recent",
     "sortPopular": "Popular",

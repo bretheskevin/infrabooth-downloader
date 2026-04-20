@@ -39,6 +39,7 @@ const mockProfile: ArtistProfile = {
   avatar_url: 'https://i1.sndcdn.com/avatars-test.jpg',
   description: 'An electronic music producer',
   followers_count: 12500,
+  followings_count: 320,
   track_count: 45,
   permalink_url: 'https://soundcloud.com/dj-test',
   visuals: null,

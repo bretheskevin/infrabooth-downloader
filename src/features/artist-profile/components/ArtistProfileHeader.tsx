@@ -44,6 +44,10 @@ export function ArtistProfileHeader({
               {t('artistProfile.followers')}
             </span>
             <span>
+              <strong className="text-foreground">{formatCount(profile.followings_count)}</strong>{' '}
+              {t('artistProfile.followings')}
+            </span>
+            <span>
               <strong className="text-foreground">{formatCount(profile.track_count)}</strong>{' '}
               {t('artistProfile.tracks')}
             </span>

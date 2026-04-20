@@ -8,6 +8,7 @@ pub struct ArtistProfile {
     pub avatar_url: Option<String>,
     pub description: Option<String>,
     pub followers_count: u64,
+    pub followings_count: u64,
     pub track_count: u64,
     pub permalink_url: String,
     #[serde(default)]

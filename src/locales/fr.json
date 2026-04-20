@@ -512,6 +512,7 @@
   "artistProfile": {
     "back": "Retour",
     "followers": "abonnés",
+    "followings": "abonnements",
     "tracks": "titres",
     "sortRecent": "Récents",
     "sortPopular": "Populaires",
