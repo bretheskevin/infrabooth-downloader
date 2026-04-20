@@ -9,6 +9,7 @@ import { useIsDownloadEnabled } from '@/features/settings';
 
 import { useArtistProfile } from '../hooks/useArtistProfile';
 import { useArtistTracks } from '../hooks/useArtistTracks';
+import { useArtistLikedTracks } from '../hooks/useArtistLikedTracks';
 import { ArtistProfileHeader } from './ArtistProfileHeader';
 import { FollowButton } from './FollowButton';
 import { ProfileBanner } from './ProfileBanner';
@@ -45,15 +46,14 @@ export function ArtistProfileView({
   const isDownloadEnabled = useIsDownloadEnabled();
 
   const isPlaylistsTab = activeTab === 'playlists';
-  const sortOption: SortOption = isPlaylistsTab ? 'recent' : activeTab;
+  const isLikesTab = activeTab === 'likes';
+  const sortOption: SortOption = (isPlaylistsTab || isLikesTab) ? 'recent' : activeTab;
 
-  const {
-    data: tracksData,
-    isLoading: isTracksLoading,
-    isStreaming,
-    error: tracksError,
-    refetch: refetchTracks,
-  } = useArtistTracks(artistId, sortOption);
+  const artistTracks = useArtistTracks(isLikesTab ? null : artistId, sortOption);
+  const likedTracks = useArtistLikedTracks(isLikesTab ? artistId : null);
+
+  const { data: tracksData, isLoading: isTracksLoading, isStreaming, error: tracksError, refetch: refetchTracks } =
+    isLikesTab ? likedTracks : artistTracks;
 
   const tracks = useMemo(() => tracksData ?? [], [tracksData]);
 
@@ -125,7 +125,7 @@ export function ArtistProfileView({
           header={null}
           folder
           download={{ onDownloadTracks }}
-          messages={{ empty: 'artistProfile.noTracks' }}
+          messages={{ empty: isLikesTab ? 'artistProfile.noLikes' : 'artistProfile.noTracks' }}
         />
       )}
     </div>

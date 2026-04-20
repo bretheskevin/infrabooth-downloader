@@ -385,6 +385,14 @@ async getAllArtistTracks(artistId: number, sort: SortOption) : Promise<Result<Tr
     else return { status: "error", error: e  as any };
 }
 },
+async getArtistLikedTracks(artistId: number) : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_liked_tracks", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async resolveUser(permalink: string) : Promise<Result<ArtistProfile, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("resolve_user", { permalink }) };

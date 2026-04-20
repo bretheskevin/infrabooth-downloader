@@ -207,6 +207,9 @@ export const api = {
   getAllArtistTracks: (artistId: number, sort: SortOption): Promise<TrackInfo[]> =>
     commands.getAllArtistTracks(artistId, sort).then(unwrap),
 
+  getArtistLikedTracks: (artistId: number): Promise<TrackInfo[]> =>
+    commands.getArtistLikedTracks(artistId).then(unwrap),
+
   getArtistPlaylists: (artistId: number): Promise<ArtistPlaylist[]> =>
     commands.getArtistPlaylists(artistId).then(unwrap),
 

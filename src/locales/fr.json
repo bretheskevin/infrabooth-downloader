@@ -520,6 +520,8 @@
     "followError": "Impossible de suivre cet artiste",
     "unfollowError": "Impossible de se désabonner de cet artiste",
     "playlists": "Playlists",
+    "likes": "Likes",
+    "noLikes": "Cet artiste n'a aimé aucun titre",
     "playlistsError": "Impossible de charger les playlists",
     "noPlaylists": "Cet artiste n'a aucune playlist publique",
     "playlistTrackCount": "{{count}} titre",

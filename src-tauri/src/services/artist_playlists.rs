@@ -15,7 +15,7 @@ where
         datadome,
         &format!("artist_playlists:user_{}", artist_id),
         DEFAULT_PAGE_SIZE,
-        |raw: RawPlaylistItem| raw.into_artist_playlist(),
+        |raw: RawPlaylistItem| Some(raw.into_artist_playlist()),
         on_batch,
     )
     .await

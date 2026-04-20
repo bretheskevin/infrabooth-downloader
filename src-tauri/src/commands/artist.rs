@@ -47,6 +47,17 @@ pub async fn get_all_artist_tracks(app: tauri::AppHandle, artist_id: u64, sort: 
 
 #[tauri::command]
 #[specta::specta]
+pub async fn get_artist_liked_tracks(app: tauri::AppHandle, artist_id: u64) -> Result<Vec<TrackInfo>, String> {
+    let datadome = app.state::<AuthState>().get_datadome();
+    let (token, client_id) = get_optional_auth_and_cid(&app).await?;
+
+    let on_batch = events::make_batch_emitter(&app, events::ARTIST_LIKED_TRACKS_BATCH, artist_id);
+
+    artist::fetch_all_artist_likes(&client_id, token.as_deref(), datadome.as_deref(), artist_id, on_batch).await
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn get_artist_playlists(app: tauri::AppHandle, artist_id: u64) -> Result<Vec<ArtistPlaylist>, String> {
     let datadome = app.state::<AuthState>().get_datadome();
     let (token, client_id) = get_optional_auth_and_cid(&app).await?;

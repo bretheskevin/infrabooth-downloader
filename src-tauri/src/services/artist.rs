@@ -58,7 +58,32 @@ where
         datadome,
         &format!("artist_tracks:user_{}:{:?}", artist_id, sort),
         DEFAULT_PAGE_SIZE,
-        |raw: crate::services::playlist::RawTrackInfo| TrackInfo::from(raw),
+        |raw: crate::services::playlist::RawTrackInfo| Some(TrackInfo::from(raw)),
+        on_batch,
+    )
+    .await
+}
+
+#[derive(serde::Deserialize)]
+struct UserLikeItem {
+    track: Option<crate::services::playlist::RawTrackInfo>,
+}
+
+pub async fn fetch_all_artist_likes<F>(
+    client_id: &str, token: Option<&str>, datadome: Option<&str>, artist_id: u64, on_batch: F,
+) -> Result<Vec<TrackInfo>, String>
+where
+    F: Fn(&[TrackInfo]),
+{
+    let initial_url = build_sc_paginated_url(&format!("{}/users/{}/likes", API_V2_BASE, artist_id), client_id)?;
+
+    fetch_all_pages(
+        initial_url.to_string(),
+        token,
+        datadome,
+        &format!("artist_likes:user_{}", artist_id),
+        DEFAULT_PAGE_SIZE,
+        |raw: UserLikeItem| raw.track.map(TrackInfo::from),
         on_batch,
     )
     .await

@@ -5,6 +5,7 @@ const TAB_OPTIONS = [
   { key: 'recent' as const, label: 'artistProfile.sortRecent' },
   { key: 'popular' as const, label: 'artistProfile.sortPopular' },
   { key: 'playlists' as const, label: 'artistProfile.playlists' },
+  { key: 'likes' as const, label: 'artistProfile.likes' },
 ] satisfies readonly { key: string; label: string }[];
 
 export type ProfileTab = (typeof TAB_OPTIONS)[number]['key'];

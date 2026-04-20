@@ -24,6 +24,7 @@ pub const OPEN_SETTINGS: &str = "open-settings";
 pub const UPDATE_DOWNLOAD_PROGRESS: &str = "update-download-progress";
 pub const REKORDBOX_EXPORT_PROGRESS: &str = "rekordbox-export-progress";
 pub const LIKED_TRACKS_BATCH: &str = "liked-tracks-batch";
+pub const ARTIST_LIKED_TRACKS_BATCH: &str = "artist-liked-tracks-batch";
 pub const LIBRARY_PLAYLISTS_BATCH: &str = "library-playlists-batch";
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]

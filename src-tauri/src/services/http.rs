@@ -211,7 +211,7 @@ pub async fn fetch_all_pages<Raw, T, F, M>(
 ) -> Result<Vec<T>, String>
 where
     Raw: serde::de::DeserializeOwned,
-    M: Fn(Raw) -> T,
+    M: Fn(Raw) -> Option<T>,
     F: Fn(&[T]),
 {
     let mut all_items = Vec::new();
@@ -261,7 +261,7 @@ where
         );
 
         if !api_response.collection.is_empty() {
-            let items: Vec<T> = api_response.collection.into_iter().map(&map_item).collect();
+            let items: Vec<T> = api_response.collection.into_iter().filter_map(&map_item).collect();
             on_batch(&items);
             all_items.extend(items);
         }

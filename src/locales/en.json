@@ -520,6 +520,8 @@
     "followError": "Failed to follow this artist",
     "unfollowError": "Failed to unfollow this artist",
     "playlists": "Playlists",
+    "likes": "Likes",
+    "noLikes": "This artist hasn't liked any tracks",
     "playlistsError": "Failed to load playlists",
     "noPlaylists": "This artist has no public playlists",
     "playlistTrackCount": "{{count}} track",
