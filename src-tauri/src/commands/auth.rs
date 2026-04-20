@@ -12,6 +12,7 @@ use tauri::{AppHandle, Emitter, Manager};
 #[serde(rename_all = "camelCase")]
 pub struct AuthStatePayload {
     pub is_signed_in: bool,
+    pub user_id: Option<u64>,
     pub username: Option<String>,
     pub plan: Option<String>,
     pub avatar_url: Option<String>,
@@ -21,7 +22,7 @@ pub struct AuthStatePayload {
 use crate::services::events;
 
 fn signed_out_payload(cookie_warning: Option<String>) -> AuthStatePayload {
-    AuthStatePayload { is_signed_in: false, username: None, plan: None, avatar_url: None, cookie_warning }
+    AuthStatePayload { is_signed_in: false, user_id: None, username: None, plan: None, avatar_url: None, cookie_warning }
 }
 
 #[tauri::command]
@@ -53,6 +54,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
                 events::AUTH_STATE_CHANGED,
                 AuthStatePayload {
                     is_signed_in: true,
+                    user_id: Some(profile.id),
                     username: Some(profile.username),
                     plan: profile.plan,
                     avatar_url: profile.avatar_url,
@@ -211,6 +213,7 @@ mod tests {
     fn test_auth_state_payload_serializes() {
         let payload = AuthStatePayload {
             is_signed_in: true,
+            user_id: Some(12345),
             username: Some("testuser".to_string()),
             plan: Some("Pro Unlimited".to_string()),
             avatar_url: Some("https://i1.sndcdn.com/avatars-xxx.jpg".to_string()),
@@ -227,6 +230,7 @@ mod tests {
     fn test_auth_state_payload_serializes_without_optional_fields() {
         let payload = AuthStatePayload {
             is_signed_in: true,
+            user_id: Some(12345),
             username: Some("testuser".to_string()),
             plan: None,
             avatar_url: None,

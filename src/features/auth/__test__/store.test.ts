@@ -3,6 +3,7 @@ import { useAuthStore } from '../store';
 
 const signedInData = {
   isSignedIn: true,
+  userId: 12345,
   username: 'testuser',
   plan: 'Pro Unlimited',
   avatarUrl: 'https://example.com/avatar.jpg',
@@ -12,6 +13,7 @@ describe('authStore', () => {
   beforeEach(() => {
     useAuthStore.setState({
       isSignedIn: false,
+      userId: null,
       username: null,
       plan: null,
       avatarUrl: null,
@@ -64,7 +66,7 @@ describe('authStore', () => {
     it('should set isSignedIn to false with null username when signed out', () => {
       const { setAuth } = useAuthStore.getState();
       setAuth(signedInData);
-      setAuth({ isSignedIn: false, username: null, plan: null, avatarUrl: null });
+      setAuth({ isSignedIn: false, userId: null, username: null, plan: null, avatarUrl: null });
 
       const { isSignedIn, username, avatarUrl } = useAuthStore.getState();
       expect(isSignedIn).toBe(false);

@@ -38,6 +38,7 @@
   },
   "auth": {
     "signIn": "Se connecter",
+    "myProfile": "Mon profil",
     "signOut": "Se déconnecter",
     "signInHint": "Connectez-vous à SoundCloud dans votre navigateur pour des téléchargements en meilleure qualité",
     "checkBrowser": "Vérifier la connexion",

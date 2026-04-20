@@ -6,23 +6,32 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { User, LogOut, ChevronDown } from 'lucide-react';
+import { useArtistProfileStore } from '@/features/artist-profile';
 
 export function UserMenu() {
   const { t } = useTranslation();
-  const { username, plan, avatarUrl } = useAuthStore(
+  const { username, userId, plan, avatarUrl } = useAuthStore(
     useShallow((state) => ({
       username: state.username,
+      userId: state.userId,
       plan: state.plan,
       avatarUrl: state.avatarUrl,
     }))
   );
   const isGoPlus = plan != null && plan !== '' && plan !== 'Free';
+
+  const handleOpenProfile = () => {
+    if (userId && username) {
+      useArtistProfileStore.getState().openProfile(userId, username);
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -51,6 +60,11 @@ export function UserMenu() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-[160px]">
+        <DropdownMenuItem onClick={handleOpenProfile}>
+          <User className="mr-2 h-4 w-4" aria-hidden="true" />
+          {t('auth.myProfile')}
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
           <LogOut className="mr-2 h-4 w-4" aria-hidden="true" />
           {t('auth.signOut')}

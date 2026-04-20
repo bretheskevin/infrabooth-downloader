@@ -4,6 +4,7 @@ export const WARNING_APPBOUND_ENCRYPTION = 'appbound_encryption';
 
 export interface AuthData {
   isSignedIn: boolean;
+  userId: number | null;
   username: string | null;
   plan: string | null;
   avatarUrl: string | null;
@@ -18,13 +19,14 @@ interface AuthState extends Omit<AuthData, 'cookieWarning'> {
 
 export const useAuthStore = create<AuthState>((set) => ({
   isSignedIn: false,
+  userId: null,
   username: null,
   plan: null,
   avatarUrl: null,
   cookieWarning: null,
-  setAuth: ({ isSignedIn, username, plan, avatarUrl, cookieWarning = null }) =>
-    set({ isSignedIn, username, plan, avatarUrl, cookieWarning }),
-  clearAuth: () => set({ isSignedIn: false, username: null, plan: null, avatarUrl: null, cookieWarning: null }),
+  setAuth: ({ isSignedIn, userId, username, plan, avatarUrl, cookieWarning = null }) =>
+    set({ isSignedIn, userId, username, plan, avatarUrl, cookieWarning }),
+  clearAuth: () => set({ isSignedIn: false, userId: null, username: null, plan: null, avatarUrl: null, cookieWarning: null }),
 }));
 
 export const useIsSignedIn = () => useAuthStore((s) => s.isSignedIn);

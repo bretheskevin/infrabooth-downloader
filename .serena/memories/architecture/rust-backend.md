@@ -9,10 +9,10 @@ services/       — Business logic layer
 models/         — Shared types (error.rs, track.rs, playlist.rs, url.rs, artist.rs)
 ```
 
-## Commands (16 modules)
-auth, download, ffmpeg, playlist, settings, updater, library, search, player, selections, new_tracks, related, artist, follow, rekordbox, messages
+## Commands (17 modules)
+auth, download, ffmpeg, playlist, settings, updater, library, search, player, selections, new_tracks, related, artist, follow, rekordbox, messages, like
 
-## Services (30 modules)
+## Services (33 modules)
 ### Core Download Pipeline
 - `pipeline.rs` — orchestrates download: PipelineConfig + CancellationHandles → download_and_convert
 - `downloader.rs` — FFmpeg sidecar execution, progress parsing, format detection (WAV/FLAC/MP3/AAC), original download support
@@ -41,6 +41,9 @@ auth, download, ffmpeg, playlist, settings, updater, library, search, player, se
 - `new_tracks.rs` — followed artists activity feed, stream parsing, seen state persistence, release detection (30-day window)
 - `related.rs` — related tracks
 - `playlist.rs` — playlist track fetching
+- `like.rs` — like/unlike tracks via SoundCloud API
+- `liked_tracks.rs` — liked tracks fetching with LikedTracksCache
+- `config.rs` — power-user config file (skip_tls_verify), loaded once at startup
 
 ### Rekordbox Integration (`services/rekordbox/`)
 - `config.rs` — auto-detect Rekordbox install (options.json / settings file), DB path validation
@@ -61,7 +64,7 @@ auth, download, ffmpeg, playlist, settings, updater, library, search, player, se
 - `ffmpeg.rs`, `updater.rs` — FFmpeg check, app update
 
 ## Error System
-All error types in `models/error.rs`: FfmpegError, MetadataError, DownloadError, AuthError, FollowError, RekordboxError, SearchError
+All error types in `models/error.rs`: FfmpegError, MetadataError, DownloadError, AuthError, FollowError, RekordboxError, SearchError, ScApiError (shared error for API services)
 Each implements HasErrorCode trait → ErrorResponse with code + message for frontend.
 
 ## Key Patterns

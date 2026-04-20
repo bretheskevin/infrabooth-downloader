@@ -38,6 +38,7 @@
   },
   "auth": {
     "signIn": "Sign In",
+    "myProfile": "My Profile",
     "signOut": "Sign Out",
     "signInHint": "Sign in to SoundCloud in your browser for better quality downloads",
     "checkBrowser": "Check browser login",

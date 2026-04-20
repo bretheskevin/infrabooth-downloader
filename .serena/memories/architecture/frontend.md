@@ -30,9 +30,9 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - **completion** — success/error panels, failure grouping
 
 ### Library & Social
-- **library** — playlist list/detail, downloaded tracks, remove from playlist
+- **library** — playlist list/detail, liked tracks tab, downloaded tracks, remove from playlist
 - **search** — track + artist search with infinite scroll
-- **artist-profile** — artist page (banner, tabs, playlists, follow button), ArtistLink (clickable artist navigation, exported for reuse)
+- **artist-profile** — artist page (banner, tabs: tracks/playlists/likes, follow button), ArtistLink (clickable artist navigation, exported for reuse)
 - **selections** — SoundCloud curated selections display
 
 ### Messaging
@@ -47,7 +47,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - **new-albums** — new albums feature
 
 ### Settings & System
-- **rekordbox-export** — export playlists to Rekordbox (ExportToRekordboxButton, ExportPhaseSection, useRekordboxExport, useRekordboxDetection)
+- **rekordbox-export** — export playlists to Rekordbox (TrackListActionsDropdown, ExportPhaseSection, useRekordboxExport with cancellation + download progress, useRekordboxDetection)
 - **settings** — settings dialog with sidebar nav (General, Playlists, Rekordbox, About)
   - Sections: DownloadLocation, Language, Theme, ConcurrentDownloads, StreamMode, Crossfade, PlaylistOrder, RekordboxSettings (status + manual path), BackupSection (restore with confirmation)
   - Store: persisted Zustand with download path, language, theme, max concurrent, crossfade, stream mode, playlist order, view mode (card/list), rekordbox path override
@@ -75,10 +75,10 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 
 ## Shared Hooks (`src/hooks/`)
 - useTrackSelection, useTrackDownloader, useTrackDownload, useDownloadSelected
-- useTrackActions, usePlayPauseToggle, useFollowedArtists, useAddToPlaylist
+- useLinkActions, useLikeTrack, usePlayPauseToggle, useFollowedArtists, useAddToPlaylist
 - useSearchFilter, useDebounce, useInfiniteScroll, useVirtualizedList
 - useFolderPath, useFolderSelection, useOpenDownloadFolder
-- useStreamedQuery (progressive batch loading — overrides isLoading once first batch arrives), useMarkSeenQuery, useAppVersion, useDownloadState
+- useStreamedQuery (progressive batch loading — overrides isLoading once first batch arrives), useStreamedUserQuery, useMarkSeenQuery, useAppVersion, useDownloadState
 - useMergedTrackState, useTrackDownloadState, useHoverPreload
 - useMenuExclusivity, useTauriEventDialog, useSticky
 
