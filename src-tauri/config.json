@@ -1,0 +1,9 @@
+{
+  "_comment": "Power User Configuration - Edit with caution. Restart app after changes.",
+  "_location": {
+    "macOS": "~/Library/Application Support/com.infrabooth.downloader/config.json",
+    "Windows": "%APPDATA%/com.infrabooth.downloader/config.json",
+    "Linux": "~/.local/share/com.infrabooth.downloader/config.json"
+  },
+  "skip_tls_verify": false
+}

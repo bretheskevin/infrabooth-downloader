@@ -17,9 +17,7 @@ pub const DEFAULT_PAGE_SIZE: usize = 20;
 pub const DEFAULT_PAGE_SIZE_STR: &str = "20";
 
 fn skip_tls_verify() -> bool {
-    std::env::var("DANGER_SKIP_TLS_VERIFY")
-        .map(|v| v == "1" || v.eq_ignore_ascii_case("true"))
-        .unwrap_or(false)
+    super::config::skip_tls_verify()
 }
 
 static NO_REDIRECT_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
