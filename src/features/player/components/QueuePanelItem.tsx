@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -20,9 +20,24 @@ interface QueuePanelItemProps {
   onResume: () => void;
   onRemove: (index: number) => void;
   isPlayerPlaying: boolean;
+  sectionHeader?: string;
+  isDragOverlay?: boolean;
 }
 
-export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResume, onRemove, isPlayerPlaying }: QueuePanelItemProps) {
+const sectionHeaderClass = 'px-3 pt-3 pb-1 text-[10px] font-medium text-muted-foreground uppercase tracking-wider';
+
+export const QueuePanelItem = memo(function QueuePanelItem({
+  item,
+  index,
+  isCurrent,
+  onPlay,
+  onPause,
+  onResume,
+  onRemove,
+  isPlayerPlaying,
+  sectionHeader,
+  isDragOverlay,
+}: QueuePanelItemProps) {
   const { t } = useTranslation();
   const {
     attributes,
@@ -31,7 +46,7 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResu
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: item.trackId });
+  } = useSortable({ id: item.trackId, disabled: isDragOverlay });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -53,21 +68,24 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResu
   }, [isCurrent, isPlayerPlaying, onPause, onResume, onPlay, index]);
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      data-current={isCurrent || undefined}
-      className={cn(
-        'flex items-center gap-2 px-3 py-1.5 rounded-md cursor-grab',
-        isCurrent && 'bg-primary/5',
-        isDragging && 'opacity-50 cursor-grabbing',
-      )}
-      onClick={handlePlayPause}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
+    <div>
+      {sectionHeader && <div className={sectionHeaderClass}>{sectionHeader}</div>}
+      <div
+        ref={setNodeRef}
+        style={style}
+        {...attributes}
+        {...listeners}
+        data-current={isCurrent || undefined}
+        className={cn(
+          'flex items-center gap-2 px-3 py-1.5 rounded-md cursor-grab',
+          isCurrent && 'bg-primary/5',
+          isDragging && 'opacity-50 cursor-grabbing',
+          isDragOverlay && 'shadow-lg bg-card',
+        )}
+        onClick={handlePlayPause}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      >
       <div
         className="h-6 w-6 flex items-center justify-center text-muted-foreground"
         aria-hidden="true"
@@ -76,9 +94,9 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResu
       </div>
 
       {isCurrent ? (
-        <Music className="h-3 w-3 text-primary flex-shrink-0" aria-hidden="true" />
+        <Music className="h-3 w-5 text-primary flex-shrink-0" aria-hidden="true" />
       ) : (
-        <span className="text-[10px] text-muted-foreground w-3 text-center flex-shrink-0">
+        <span className="text-[10px] text-muted-foreground w-5 text-center flex-shrink-0 tabular-nums">
           {index + 1}
         </span>
       )}
@@ -124,6 +142,7 @@ export function QueuePanelItem({ item, index, isCurrent, onPlay, onPause, onResu
           <X className="h-3 w-3" />
         </Button>
       )}
+      </div>
     </div>
   );
-}
+});
