@@ -18,7 +18,7 @@ use crate::services::storage::AuthState;
 
 use super::rekordbox::{export_single_track, is_content_in_playlist, RekordboxWriteContext};
 
-const EXPORT_DOWNLOADS_DIR: &str = "rekordbox_downloads";
+const EXPORT_DOWNLOADS_DIR: &str = "rekordbox-downloads";
 
 fn emit_progress(app: &tauri::AppHandle, event: RekordboxExportProgressEvent) {
     let _ = app.emit(REKORDBOX_EXPORT_PROGRESS, event);
