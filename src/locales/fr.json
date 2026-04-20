@@ -438,7 +438,11 @@
     "removedFromPlaylist": "Retiré de {{playlist}}",
     "notInPlaylist": "Piste absente de la playlist",
     "removeFailed": "Échec de la suppression",
-    "openFileLocation": "Afficher dans le dossier"
+    "openFileLocation": "Afficher dans le dossier",
+    "like": "Ajouter aux titres likés",
+    "unlike": "Retirer des titres likés",
+    "likeError": "Échec de l'ajout aux titres likés",
+    "unlikeError": "Échec du retrait des titres likés"
   },
   "newTracks": {
     "title": "Nouveautés",

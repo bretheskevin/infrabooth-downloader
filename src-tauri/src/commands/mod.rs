@@ -74,6 +74,9 @@ pub use artist::{
 pub mod follow;
 pub use follow::{check_follow_status, follow_user, unfollow_user};
 
+pub mod like;
+pub use like::{like_track, unlike_track};
+
 pub mod rekordbox;
 pub use rekordbox::{
     delete_rekordbox_playlist, detect_rekordbox, export_to_rekordbox, get_default_rekordbox_data_directory_parent, list_rekordbox_backups,

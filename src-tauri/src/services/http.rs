@@ -328,3 +328,17 @@ pub async fn validate_sc_response(
 
     Ok(response)
 }
+
+pub async fn check_api_success<E>(
+    response: rquest::Response, entity_id: u64, action: &str, tag: &str, make_error: impl FnOnce(u16, String) -> E,
+) -> Result<(), E> {
+    if response.status().is_success() {
+        log::info!("[{}] Successfully {} {}", tag, action, entity_id);
+        Ok(())
+    } else {
+        let status = response.status().as_u16();
+        let body = response.text().await.unwrap_or_default();
+        log::error!("[{}] Failed to {} {}: HTTP {} - {}", tag, action, entity_id, status, body);
+        Err(make_error(status, body))
+    }
+}

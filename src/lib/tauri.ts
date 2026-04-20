@@ -232,6 +232,13 @@ export const api = {
   checkFollowStatus: (userId: number): Promise<boolean> =>
     commands.checkFollowStatus(userId).then(unwrap),
 
+  // Likes
+  likeTrack: (trackId: number): Promise<void> =>
+    commands.likeTrack(trackId).then(unwrap).then(() => undefined),
+
+  unlikeTrack: (trackId: number): Promise<void> =>
+    commands.unlikeTrack(trackId).then(unwrap).then(() => undefined),
+
   // Notifications
   getUnreadCount: (): Promise<UnreadCountResult> =>
     commands.getUnreadCount().then(unwrap),

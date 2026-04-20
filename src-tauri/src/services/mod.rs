@@ -19,6 +19,7 @@ pub mod artist_playlists;
 pub mod filename;
 pub mod follow;
 pub mod library;
+pub mod like;
 pub mod liked_tracks;
 pub mod messages;
 pub mod new_tracks;

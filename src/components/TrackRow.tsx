@@ -2,6 +2,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { useTrackActions } from '@/hooks/useTrackActions';
+import { useLikeTrack } from '@/hooks/useLikeTrack';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 import { useIsSignedIn } from '@/features/auth/store';
 import { usePlayerStore, buildPlaybackQueue } from '@/features/player';
@@ -74,6 +75,7 @@ export function TrackRow({
     [claimMenu],
   );
   const { handleCopyLink, handleOpenInBrowser } = useTrackActions(track.permalink_url);
+  const likeState = useLikeTrack(track);
   const isSignedIn = useIsSignedIn();
   const handleAddToQueue = useCallback(() => {
     const [item] = buildPlaybackQueue([track]);
@@ -136,6 +138,7 @@ export function TrackRow({
             onArtistClick={track.user.id > 0 ? handleArtistClick : undefined}
             downloadProgress={downloadProgress}
             subtitleSlot={subtitleSlot}
+            isLiked={likeState?.isLiked}
           />
           <TrackRowActionsDropdown
             onCopyLink={handleCopyLink}
@@ -148,6 +151,7 @@ export function TrackRow({
             actionSlot={actionSlot}
             onRemoveFromPlaylist={onRemoveFromPlaylist}
             onAddToQueue={handleAddToQueue}
+            likeState={likeState}
           />
         </div>
       </ContextMenuTrigger>
@@ -160,6 +164,7 @@ export function TrackRow({
         onCloseMenu={() => setContextMenuKey((k) => k + 1)}
         onRemoveFromPlaylist={onRemoveFromPlaylist}
         onAddToQueue={handleAddToQueue}
+        likeState={likeState}
       />
     </ContextMenu>
   );

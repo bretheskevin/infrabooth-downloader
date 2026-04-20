@@ -441,6 +441,22 @@ async checkFollowStatus(userId: number) : Promise<Result<boolean, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async likeTrack(trackId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("like_track", { trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async unlikeTrack(trackId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unlike_track", { trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async checkFirefoxInstalled() : Promise<boolean> {
     return await TAURI_INVOKE("check_firefox_installed");
 },

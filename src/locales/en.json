@@ -438,7 +438,11 @@
     "removedFromPlaylist": "Removed from {{playlist}}",
     "notInPlaylist": "Track not in playlist",
     "removeFailed": "Failed to remove track",
-    "openFileLocation": "Show in folder"
+    "openFileLocation": "Show in folder",
+    "like": "Like",
+    "unlike": "Unlike",
+    "likeError": "Failed to like track",
+    "unlikeError": "Failed to unlike track"
   },
   "newTracks": {
     "title": "New releases",

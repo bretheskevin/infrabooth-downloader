@@ -1,4 +1,4 @@
-import { Music } from 'lucide-react';
+import { Heart, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlayOverlay } from '@/features/player';
 import { cn } from '@/lib/utils';
@@ -22,6 +22,7 @@ interface TrackRowContentProps {
   onArtistClick?: () => void;
   downloadProgress: DownloadProgress | null;
   subtitleSlot?: React.ReactNode;
+  isLiked?: boolean;
 }
 
 export function TrackRowContent({
@@ -35,6 +36,7 @@ export function TrackRowContent({
   onArtistClick,
   downloadProgress,
   subtitleSlot,
+  isLiked,
 }: TrackRowContentProps) {
   const showProgress = downloadProgress && downloadProgress.progress > 0;
 
@@ -71,18 +73,23 @@ export function TrackRowContent({
         <p className={cn('text-sm font-medium truncate', isCurrentlyPlaying && 'text-primary')}>
           {track.title}
         </p>
-        {onArtistClick ? (
-          <Button
-            variant="ghost"
-            className="text-xs text-muted-foreground truncate hover:text-foreground hover:bg-transparent h-auto p-0 block max-w-full text-left"
-            onClick={(e) => { e.stopPropagation(); onArtistClick(); }}
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            {track.user.username}
-          </Button>
-        ) : (
-          <p className="text-xs text-muted-foreground truncate">{track.user.username}</p>
-        )}
+        <div className="flex items-center gap-1 min-w-0">
+          {isLiked && (
+            <Heart className="h-3 w-3 shrink-0 fill-primary text-primary" aria-hidden="true" />
+          )}
+          {onArtistClick ? (
+            <Button
+              variant="ghost"
+              className="text-xs text-muted-foreground truncate hover:text-foreground hover:bg-transparent h-auto p-0 block max-w-full text-left"
+              onClick={(e) => { e.stopPropagation(); onArtistClick(); }}
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              {track.user.username}
+            </Button>
+          ) : (
+            <p className="text-xs text-muted-foreground truncate">{track.user.username}</p>
+          )}
+        </div>
         {subtitleSlot}
         {showProgress && (
           <div className="mt-1 flex items-center gap-2">

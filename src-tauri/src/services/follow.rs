@@ -1,7 +1,7 @@
 use rquest::Url;
 
 use crate::models::error::FollowError;
-use crate::services::http::{RequestBuilderExt, API_V2_BASE, CHROME_USER_AGENT, HTTP_CLIENT, SC_APP_VERSION};
+use crate::services::http::{check_api_success, RequestBuilderExt, API_V2_BASE, CHROME_USER_AGENT, HTTP_CLIENT, SC_APP_VERSION};
 
 /// Extracted from SoundCloud's JS bundle — may need periodic updating (like SC_APP_VERSION).
 const FOLLOWS_SIGNATURE_SECRET: &str = "5Dpr3ubBw8LFtbvQcd4Hx6hU";
@@ -44,18 +44,6 @@ fn signed_follow_url(current_user_id: u64, target_user_id: u64, client_id: &str)
     Ok(url)
 }
 
-async fn check_api_success(response: rquest::Response, user_id: u64, action: &str) -> Result<(), FollowError> {
-    if response.status().is_success() {
-        log::info!("[follow] Successfully {} user {}", action, user_id);
-        Ok(())
-    } else {
-        let status = response.status().as_u16();
-        let body = response.text().await.unwrap_or_default();
-        log::error!("[follow] Failed to {} user {}: HTTP {} - {}", action, user_id, status, body);
-        Err(FollowError::ApiError(status, body))
-    }
-}
-
 pub async fn follow_user(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, current_user_id: u64, target_user_id: u64,
 ) -> Result<(), FollowError> {
@@ -69,7 +57,7 @@ pub async fn follow_user(
         .send()
         .await?;
 
-    check_api_success(response, target_user_id, "followed").await
+    check_api_success(response, target_user_id, "followed", "follow", FollowError::ApiError).await
 }
 
 pub async fn unfollow_user(
@@ -84,7 +72,7 @@ pub async fn unfollow_user(
         .send()
         .await?;
 
-    check_api_success(response, target_user_id, "unfollowed").await
+    check_api_success(response, target_user_id, "unfollowed", "follow", FollowError::ApiError).await
 }
 
 pub async fn check_follow_status(

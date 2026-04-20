@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useAuthStore } from '@/features/auth/store';
 import { useStreamedUserQuery } from '@/hooks/useStreamedUserQuery';
 import { api } from '@/lib/tauri';
+import { LIKED_TRACKS_KEY } from '@/lib/query';
 import type { TracksBatchEvent } from '@/bindings';
 
 export function useLikedTracks(enabled: boolean) {
@@ -14,7 +15,7 @@ export function useLikedTracks(enabled: boolean) {
 
   const query = useStreamedUserQuery({
     eventName: 'liked-tracks-batch',
-    queryKey: ['liked-tracks', username],
+    queryKey: [LIKED_TRACKS_KEY, username],
     queryFn: api.getLikedTracks,
     getItemsFromEvent: getTracksFromEvent,
     enabled,

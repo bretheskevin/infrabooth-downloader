@@ -140,35 +140,42 @@ impl From<AuthError> for String {
     }
 }
 
-#[derive(Debug, Error, Serialize)]
-pub enum FollowError {
-    #[error("Follow API error ({0}): {1}")]
-    ApiError(u16, String),
+macro_rules! define_api_error {
+    ($name:ident, $api_code:expr) => {
+        #[derive(Debug, Error, Serialize)]
+        pub enum $name {
+            #[error("API error ({0}): {1}")]
+            ApiError(u16, String),
 
-    #[error("Network error: {0}")]
-    NetworkError(String),
-}
-
-impl HasErrorCode for FollowError {
-    fn code(&self) -> &'static str {
-        match self {
-            FollowError::ApiError(_, _) => "FOLLOW_API_ERROR",
-            FollowError::NetworkError(_) => "NETWORK_ERROR",
+            #[error("Network error: {0}")]
+            NetworkError(String),
         }
-    }
+
+        impl HasErrorCode for $name {
+            fn code(&self) -> &'static str {
+                match self {
+                    $name::ApiError(_, _) => $api_code,
+                    $name::NetworkError(_) => "NETWORK_ERROR",
+                }
+            }
+        }
+
+        impl From<rquest::Error> for $name {
+            fn from(e: rquest::Error) -> Self {
+                $name::NetworkError(e.to_string())
+            }
+        }
+
+        impl From<$name> for String {
+            fn from(err: $name) -> Self {
+                err.to_string()
+            }
+        }
+    };
 }
 
-impl From<rquest::Error> for FollowError {
-    fn from(e: rquest::Error) -> Self {
-        FollowError::NetworkError(e.to_string())
-    }
-}
-
-impl From<FollowError> for String {
-    fn from(err: FollowError) -> Self {
-        err.to_string()
-    }
-}
+define_api_error!(FollowError, "FOLLOW_API_ERROR");
+define_api_error!(LikeTrackError, "LIKE_TRACK_API_ERROR");
 
 #[derive(Debug, Error, Serialize)]
 pub enum RekordboxError {
@@ -383,7 +390,7 @@ mod tests {
     #[test]
     fn test_follow_api_error_message() {
         let err = FollowError::ApiError(403, "Forbidden".to_string());
-        assert_eq!(err.to_string(), "Follow API error (403): Forbidden");
+        assert_eq!(err.to_string(), "API error (403): Forbidden");
     }
 
     #[test]

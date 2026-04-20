@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Trash2 } from 'lucide-react';
+import { Heart, Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +14,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
+import type { LikeState } from '@/hooks/useLikeTrack';
 
 export interface TrackMenuItemsProps {
   onCopyLink: () => void;
@@ -26,6 +28,7 @@ export interface TrackMenuItemsProps {
   onCloseMenu?: () => void;
   onRemoveFromPlaylist?: () => void;
   onAddToQueue?: () => void;
+  likeState?: LikeState;
 }
 
 export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLink: () => void; onOpenInBrowser: () => void }) {
@@ -44,7 +47,7 @@ export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLi
   );
 }
 
-export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue }: TrackMenuItemsProps) {
+export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue, likeState }: TrackMenuItemsProps) {
   const { t } = useTranslation();
 
   if (variant === 'context') {
@@ -60,6 +63,12 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation
         {isSignedIn && (
           <>
             <ContextMenuSeparator />
+            {likeState && (
+              <ContextMenuItem onClick={likeState.onToggle} disabled={likeState.isLoading}>
+                <Heart className={cn('mr-2 h-4 w-4', likeState.isLiked && 'fill-primary text-primary')} />
+                {t(likeState.isLiked ? 'trackMenu.unlike' : 'trackMenu.like')}
+              </ContextMenuItem>
+            )}
             {onAddToQueue && (
               <ContextMenuItem onClick={onAddToQueue}>
                 <ListPlus className="mr-2 h-4 w-4" />
@@ -98,6 +107,12 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation
       {isSignedIn && (
         <>
           <DropdownMenuSeparator />
+          {likeState && (
+            <DropdownMenuItem onClick={likeState.onToggle} disabled={likeState.isLoading}>
+              <Heart className={cn('h-4 w-4', likeState.isLiked && 'fill-primary text-primary')} />
+              {t(likeState.isLiked ? 'trackMenu.unlike' : 'trackMenu.like')}
+            </DropdownMenuItem>
+          )}
           {onAddToQueue && (
             <DropdownMenuItem onClick={onAddToQueue}>
               <ListPlus className="h-4 w-4" />
@@ -126,6 +141,7 @@ interface TrackRowActionsContextContentProps {
   onCloseMenu: () => void;
   onRemoveFromPlaylist?: () => void;
   onAddToQueue?: () => void;
+  likeState?: LikeState;
 }
 
 export function TrackRowActionsContextContent({
@@ -137,6 +153,7 @@ export function TrackRowActionsContextContent({
   onCloseMenu,
   onRemoveFromPlaylist,
   onAddToQueue,
+  likeState,
 }: TrackRowActionsContextContentProps) {
   return (
     <ContextMenuContent>
@@ -150,6 +167,7 @@ export function TrackRowActionsContextContent({
         onCloseMenu={onCloseMenu}
         onRemoveFromPlaylist={onRemoveFromPlaylist}
         onAddToQueue={onAddToQueue}
+        likeState={likeState}
       />
     </ContextMenuContent>
   );
@@ -166,6 +184,7 @@ interface TrackRowActionsDropdownProps {
   actionSlot?: React.ReactNode;
   onRemoveFromPlaylist?: () => void;
   onAddToQueue?: () => void;
+  likeState?: LikeState;
 }
 
 export function TrackRowActionsDropdown({
@@ -179,6 +198,7 @@ export function TrackRowActionsDropdown({
   actionSlot,
   onRemoveFromPlaylist,
   onAddToQueue,
+  likeState,
 }: TrackRowActionsDropdownProps) {
   const closeMenu = useCallback(() => onDropdownMenuOpenChange(false), [onDropdownMenuOpenChange]);
 
@@ -206,6 +226,7 @@ export function TrackRowActionsDropdown({
             onCloseMenu={closeMenu}
             onRemoveFromPlaylist={onRemoveFromPlaylist}
             onAddToQueue={onAddToQueue}
+            likeState={likeState}
           />
         </DropdownMenuContent>
       </DropdownMenu>
