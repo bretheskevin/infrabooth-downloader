@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import type { TrackInfo, ExportResult, RekordboxExportProgressEvent, RekordboxExportStatus } from '@/bindings';
+import type { TrackInfo, ExportResult, RekordboxExportProgressEvent, RekordboxExportStatus, DownloadProgressEvent } from '@/bindings';
 import { api, ApiError } from '@/lib/tauri';
 import { toTrackCore } from '@/lib/trackMapping';
 import { logger } from '@/lib/logger';
@@ -13,6 +13,7 @@ export interface TrackStatus {
   trackTitle: string;
   status: RekordboxExportStatus;
   error?: string;
+  percent?: number;
 }
 
 interface ExportState {
@@ -35,11 +36,11 @@ const INITIAL_STATE: ExportState = {
 
 export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName: string) {
   const [state, setState] = useState<ExportState>(INITIAL_STATE);
-  const unlistenRef = useRef<UnlistenFn | null>(null);
+  const unlistenRef = useRef<UnlistenFn[]>([]);
 
   useEffect(() => {
     return () => {
-      unlistenRef.current?.();
+      for (const fn of unlistenRef.current) fn();
     };
   }, []);
 
@@ -48,8 +49,8 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
   }, []);
 
   const close = useCallback(() => {
-    unlistenRef.current?.();
-    unlistenRef.current = null;
+    for (const fn of unlistenRef.current) fn();
+    unlistenRef.current = [];
     setState(INITIAL_STATE);
   }, []);
 
@@ -58,7 +59,7 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
 
     setState((s) => ({ ...s, phase: 'exporting', trackStatuses: new Map(), totalTracks: tracks.length }));
 
-    const unlisten = await listen<RekordboxExportProgressEvent>('rekordbox-export-progress', (event) => {
+    const unlistenExport = await listen<RekordboxExportProgressEvent>('rekordbox-export-progress', (event) => {
       const p = event.payload;
       setState((s) => {
         const updated = new Map(s.trackStatuses);
@@ -71,7 +72,20 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
         return { ...s, trackStatuses: updated };
       });
     });
-    unlistenRef.current = unlisten;
+
+    const unlistenDownload = await listen<DownloadProgressEvent>('download-progress', (event) => {
+      const { trackId, percent } = event.payload;
+      if (percent == null) return;
+      setState((s) => {
+        const existing = s.trackStatuses.get(trackId);
+        if (!existing || existing.status !== 'downloading') return s;
+        const updated = new Map(s.trackStatuses);
+        updated.set(trackId, { ...existing, percent });
+        return { ...s, trackStatuses: updated };
+      });
+    });
+
+    unlistenRef.current = [unlistenExport, unlistenDownload];
 
     const trackCores = tracks.map(toTrackCore);
     const maxConcurrent = useSettingsStore.getState().maxConcurrentDownloads;
@@ -85,8 +99,9 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
       void logger.error(`[rekordbox-export] Export failed: ${message}`);
       setState((s) => ({ ...s, phase: 'error', errorCode: code, error: message }));
     } finally {
-      unlisten();
-      unlistenRef.current = null;
+      unlistenExport();
+      unlistenDownload();
+      unlistenRef.current = [];
     }
   }, [tracks, playlistName]);
 
