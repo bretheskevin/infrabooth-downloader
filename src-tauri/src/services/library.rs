@@ -247,12 +247,16 @@ async fn fetch_library_page(oauth_token: &str, client_id: &str, cursor: Option<S
     Ok(LibraryPageResponse { playlists, next_cursor: library_response.next_href })
 }
 
-pub async fn fetch_all_library_pages(oauth_token: &str, client_id: &str) -> Result<Vec<LibraryPlaylist>, LibraryError> {
+pub async fn fetch_all_library_pages<F>(oauth_token: &str, client_id: &str, on_batch: F) -> Result<Vec<LibraryPlaylist>, LibraryError>
+where
+    F: Fn(&[LibraryPlaylist]),
+{
     let mut all_playlists = Vec::new();
     let mut cursor = None;
 
     loop {
         let page = fetch_library_page(oauth_token, client_id, cursor).await?;
+        on_batch(&page.playlists);
         all_playlists.extend(page.playlists);
 
         match page.next_cursor {

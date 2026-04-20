@@ -303,6 +303,17 @@
     "rateLimited": "Rate limit reached. Click to retry.",
     "errorRetry": "Failed to load library. Click to retry.",
     "refresh": "Refresh library",
+    "tabs": {
+      "playlists": "Playlists",
+      "tracks": "Tracks"
+    },
+    "tracks": {
+      "title": "Liked Tracks",
+      "searchPlaceholder": "Search liked tracks...",
+      "empty": "No liked tracks yet",
+      "emptyFiltered": "No tracks match your search",
+      "errorLoading": "Failed to load liked tracks"
+    },
     "noResults": "No playlists match your search",
     "emptyState": "No playlists found",
     "detail": {

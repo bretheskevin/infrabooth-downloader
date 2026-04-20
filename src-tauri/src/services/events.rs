@@ -7,6 +7,7 @@ use serde::Serialize;
 use specta::Type;
 use tauri::Emitter;
 
+use crate::services::library::LibraryPlaylist;
 use crate::services::playlist::TrackInfo;
 
 pub const DOWNLOAD_PROGRESS: &str = "download-progress";
@@ -22,6 +23,8 @@ pub const AUTH_REAUTH_NEEDED: &str = "auth-reauth-needed";
 pub const OPEN_SETTINGS: &str = "open-settings";
 pub const UPDATE_DOWNLOAD_PROGRESS: &str = "update-download-progress";
 pub const REKORDBOX_EXPORT_PROGRESS: &str = "rekordbox-export-progress";
+pub const LIKED_TRACKS_BATCH: &str = "liked-tracks-batch";
+pub const LIBRARY_PLAYLISTS_BATCH: &str = "library-playlists-batch";
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
@@ -35,4 +38,17 @@ pub fn make_batch_emitter(app: &tauri::AppHandle, event_name: &'static str, enti
     move |batch: &[TrackInfo]| {
         let _ = app.emit(event_name, TracksBatchEvent { entity_id, tracks: batch.to_vec() });
     }
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct LibraryPlaylistsBatchEvent {
+    pub playlists: Vec<LibraryPlaylist>,
+}
+
+pub fn emit_library_playlists_batch(app: &tauri::AppHandle, playlists: &[LibraryPlaylist]) {
+    let _ = app.emit(
+        LIBRARY_PLAYLISTS_BATCH,
+        LibraryPlaylistsBatchEvent { playlists: playlists.to_vec() },
+    );
 }

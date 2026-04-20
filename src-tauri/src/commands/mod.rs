@@ -42,7 +42,8 @@ pub use updater::{check_for_updates, install_update};
 
 pub mod library;
 pub use library::{
-    clear_library_cache, get_library_playlist_tracks, get_library_playlists, get_owned_playlists_for_track, resolve_library_artwork,
+    clear_library_cache, clear_liked_tracks_cache, get_library_playlist_tracks, get_library_playlists, get_liked_tracks,
+    get_owned_playlists_for_track, resolve_library_artwork,
 };
 
 pub mod search;

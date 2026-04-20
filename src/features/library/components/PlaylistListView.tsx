@@ -10,9 +10,7 @@ import { FilterChips } from '@/components/FilterChips';
 import { LibraryPlaylistList } from './LibraryPlaylistList';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
 import type { LibraryFilter } from '../types';
-import { useLibraryStore } from '../store';
-
-const libraryActions = () => useLibraryStore.getState();
+import { libraryActions } from '../store';
 
 interface PlaylistListViewProps {
   searchQuery: string;

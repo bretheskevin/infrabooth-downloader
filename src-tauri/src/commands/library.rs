@@ -3,6 +3,7 @@
 use tauri::Manager;
 
 use crate::services::events;
+use crate::services::liked_tracks::{fetch_all_liked_tracks, LikedTracksCache};
 
 use crate::services::library::{
     fetch_all_library_pages, fetch_owned_playlists_for_track, resolve_playlist_artwork as resolve_artwork, LibraryCache, LibraryPlaylist,
@@ -25,7 +26,11 @@ pub async fn get_library_playlists(app: tauri::AppHandle) -> Result<Vec<LibraryP
 
     let (token, cid) = super::require_auth_and_cid(&app).await?;
 
-    match fetch_all_library_pages(&token, &cid).await {
+    let emitter = |batch: &[LibraryPlaylist]| {
+        events::emit_library_playlists_batch(&app, batch);
+    };
+
+    match fetch_all_library_pages(&token, &cid, emitter).await {
         Ok(playlists) => {
             log::info!("[get_library_playlists] Fetched {} playlists from API", playlists.len());
             Ok(cache.set_and_enrich(playlists))
@@ -73,7 +78,7 @@ pub async fn get_owned_playlists_for_track(track_id: u64, app: tauri::AppHandle)
     let playlists = if let Some(cached) = cache.get_if_complete() {
         cached
     } else {
-        let fetched = fetch_all_library_pages(&token, &cid).await.map_err(|e| e.to_string())?;
+        let fetched = fetch_all_library_pages(&token, &cid, |_| {}).await.map_err(|e| e.to_string())?;
         cache.set(fetched.clone());
         fetched
     };
@@ -106,4 +111,42 @@ pub async fn get_library_playlist_tracks(playlist_id: u64, app: tauri::AppHandle
             Err(e.to_string())
         }
     }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn get_liked_tracks(app: tauri::AppHandle) -> Result<Vec<TrackInfo>, String> {
+    let cache = app.state::<LikedTracksCache>();
+
+    if let Some(cached) = cache.get_if_complete() {
+        log::info!("[get_liked_tracks] Returning {} cached tracks", cached.len());
+        return Ok(cached);
+    }
+
+    log::info!("[get_liked_tracks] Cache miss, fetching from API");
+
+    let (token, cid) = super::require_auth_and_cid(&app).await?;
+    let user_id = super::require_user_id(&app)?;
+
+    let emitter = events::make_batch_emitter(&app, events::LIKED_TRACKS_BATCH, user_id);
+
+    match fetch_all_liked_tracks(&token, &cid, user_id, emitter).await {
+        Ok(tracks) => {
+            log::info!("[get_liked_tracks] Fetched {} tracks from API", tracks.len());
+            cache.set(tracks.clone());
+            Ok(tracks)
+        }
+        Err(e) => {
+            log::error!("[get_liked_tracks] Error: {}", e);
+            Err(e.to_string())
+        }
+    }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn clear_liked_tracks_cache(app: tauri::AppHandle) -> Result<(), String> {
+    log::info!("[clear_liked_tracks_cache] Clearing liked tracks cache");
+    app.state::<LikedTracksCache>().clear();
+    Ok(())
 }

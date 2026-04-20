@@ -303,6 +303,17 @@
     "rateLimited": "Limite atteinte. Cliquez pour réessayer.",
     "errorRetry": "Échec du chargement. Cliquez pour réessayer.",
     "refresh": "Rafraîchir la bibliothèque",
+    "tabs": {
+      "playlists": "Playlists",
+      "tracks": "Titres"
+    },
+    "tracks": {
+      "title": "Titres likés",
+      "searchPlaceholder": "Rechercher dans les titres likés...",
+      "empty": "Aucun titre liké",
+      "emptyFiltered": "Aucun titre ne correspond à votre recherche",
+      "errorLoading": "Impossible de charger les titres likés"
+    },
     "noResults": "Aucune playlist ne correspond à votre recherche",
     "emptyState": "Aucune playlist trouvée",
     "detail": {

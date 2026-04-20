@@ -152,6 +152,12 @@ export const api = {
   clearLibraryCache: (): Promise<void> =>
     commands.clearLibraryCache().then(unwrap).then(() => undefined),
 
+  getLikedTracks: (): Promise<TrackInfo[]> =>
+    commands.getLikedTracks().then(unwrap),
+
+  clearLikedTracksCache: (): Promise<void> =>
+    commands.clearLikedTracksCache().then(unwrap).then(() => undefined),
+
   resolveLibraryArtwork: (playlistId: number, secretToken: string | null): Promise<string | null> =>
     commands.resolveLibraryArtwork(playlistId, secretToken).then(unwrap),
 
