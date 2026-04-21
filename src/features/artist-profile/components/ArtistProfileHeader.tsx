@@ -44,18 +44,16 @@ export function ArtistProfileHeader({
             <Button
               variant="link"
               onClick={() => useArtistProfileStore.getState().openFollowView('followers')}
-              className="p-0 h-auto text-xs text-muted-foreground gap-1"
+              className="p-0 h-auto text-xs text-muted-foreground"
             >
-              <strong className="text-foreground">{formatCount(profile.followers_count)}</strong>
-              {t('artistProfile.followers')}
+              <span><strong className="text-foreground">{formatCount(profile.followers_count)}</strong> {t('artistProfile.followers')}</span>
             </Button>
             <Button
               variant="link"
               onClick={() => useArtistProfileStore.getState().openFollowView('followings')}
-              className="p-0 h-auto text-xs text-muted-foreground gap-1"
+              className="p-0 h-auto text-xs text-muted-foreground"
             >
-              <strong className="text-foreground">{formatCount(profile.followings_count)}</strong>
-              {t('artistProfile.followings')}
+              <span><strong className="text-foreground">{formatCount(profile.followings_count)}</strong> {t('artistProfile.followings')}</span>
             </Button>
             <span>
               <strong className="text-foreground">{formatCount(profile.track_count)}</strong>{' '}
