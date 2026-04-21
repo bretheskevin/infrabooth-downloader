@@ -1,7 +1,7 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
-import { ListMusic, ChevronDown } from 'lucide-react';
+import { ListMusic, ChevronDown, Heart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,8 @@ import { TransportControls } from './TransportControls';
 import { VolumeControl } from './VolumeControl';
 import { TrackActionsDropdown } from '@/components/TrackActionsDropdown';
 import { useArtistProfileStore } from '@/features/artist-profile';
+import { useLikeTrack } from '@/hooks/useLikeTrack';
+import type { TrackInfo } from '@/bindings';
 
 export const EXPANDED_BAR_HEIGHT = 90;
 
@@ -41,6 +43,23 @@ export function ExpandedBar() {
       isQueueOpen: s.isQueueOpen,
     }))
   );
+
+  const trackInfo = useMemo(() => {
+    if (!currentTrack) return undefined;
+    return {
+      id: currentTrack.trackId,
+      title: currentTrack.title,
+      user: { id: currentTrack.artistId, username: currentTrack.artist, avatar_url: null },
+      artwork_url: currentTrack.artworkUrl,
+      duration: currentTrack.durationMs,
+      permalink_url: currentTrack.trackUrl,
+      waveform_url: currentTrack.waveformUrl,
+      downloadable: false,
+      download_url: null,
+    } satisfies TrackInfo;
+  }, [currentTrack]);
+
+  const likeState = useLikeTrack(trackInfo);
 
   const filePath = useDownloadStateStore((s) => s.states.get(String(currentTrack?.trackId ?? ''))?.filePath);
   const handleOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
@@ -72,17 +91,25 @@ export function ExpandedBar() {
         </div>
         <div className="flex-1 min-w-0">
           <ScrollingText text={currentTrack.title} className="text-xs font-semibold" />
-          {currentTrack.artistId > 0 ? (
-            <Button
-              variant="link"
-              className="text-[10px] text-muted-foreground truncate hover:text-foreground h-auto p-0 block max-w-full text-left"
-              onClick={handleArtistClick}
-            >
-              {currentTrack.artist}
-            </Button>
-          ) : (
-            <div className="text-[10px] text-muted-foreground truncate">{currentTrack.artist}</div>
-          )}
+          {(() => {
+            const artistContent = (
+              <span className="flex items-center gap-1 min-w-0">
+                {likeState?.isLiked && <Heart className="h-2.5 w-2.5 flex-shrink-0 fill-primary text-primary" aria-hidden="true" />}
+                <span className="truncate">{currentTrack.artist}</span>
+              </span>
+            );
+            return currentTrack.artistId > 0 ? (
+              <Button
+                variant="link"
+                className="text-[10px] text-muted-foreground truncate hover:text-foreground h-auto p-0 block max-w-full text-left"
+                onClick={handleArtistClick}
+              >
+                {artistContent}
+              </Button>
+            ) : (
+              <div className="text-[10px] text-muted-foreground truncate">{artistContent}</div>
+            );
+          })()}
         </div>
 
         {/* Transport controls */}
@@ -116,6 +143,7 @@ export function ExpandedBar() {
           contentSide="top"
           contentAlign="end"
           onOpenFileLocation={filePath ? handleOpenFileLocation : undefined}
+          likeState={likeState}
         />
 
         {/* Collapse */}

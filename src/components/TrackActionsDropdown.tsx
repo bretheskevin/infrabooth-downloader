@@ -9,6 +9,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrackMenuItems } from '@/components/TrackRowActions';
+import type { LikeState } from '@/hooks/useLikeTrack';
 import { useLinkActions } from '@/hooks/useLinkActions';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 import { useIsSignedIn } from '@/features/auth';
@@ -21,6 +22,7 @@ interface TrackActionsDropdownProps {
   contentAlign?: 'start' | 'end';
   onAddToQueue?: () => void;
   onOpenFileLocation?: () => void;
+  likeState?: LikeState;
 }
 
 export function TrackActionsDropdown({
@@ -31,6 +33,7 @@ export function TrackActionsDropdown({
   contentAlign = 'end',
   onAddToQueue,
   onOpenFileLocation,
+  likeState,
 }: TrackActionsDropdownProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -77,6 +80,7 @@ export function TrackActionsDropdown({
           variant="dropdown"
           onCloseMenu={closeMenu}
           onAddToQueue={onAddToQueue}
+          likeState={likeState}
         />
       </DropdownMenuContent>
     </DropdownMenu>
