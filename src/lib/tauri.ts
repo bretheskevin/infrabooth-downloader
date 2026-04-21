@@ -222,6 +222,12 @@ export const api = {
   getArtistReleases: (artistId: number): Promise<ReleaseActivityItem[]> =>
     commands.getArtistReleases(artistId).then(unwrap),
 
+  getArtistFollowers: (artistId: number): Promise<ArtistProfile[]> =>
+    commands.getArtistFollowers(artistId).then(unwrap),
+
+  getArtistFollowings: (artistId: number): Promise<ArtistProfile[]> =>
+    commands.getArtistFollowings(artistId).then(unwrap),
+
   getReleaseTracks: (releaseId: number): Promise<TrackInfo[]> =>
     commands.getReleaseTracks(releaseId).then(unwrap),
 

@@ -136,13 +136,17 @@ describe('useArtistProfileStore', () => {
     useArtistProfileStore.setState({
       profileArtistId: null,
       profileArtistName: null,
+      activeFollowView: null,
+      profileStack: [],
     });
   });
 
-  it('starts with null values', () => {
+  it('starts with null values and empty stack', () => {
     const state = useArtistProfileStore.getState();
     expect(state.profileArtistId).toBeNull();
     expect(state.profileArtistName).toBeNull();
+    expect(state.activeFollowView).toBeNull();
+    expect(state.profileStack).toEqual([]);
   });
 
   it('sets artist id and name on openProfile', () => {
@@ -158,14 +162,80 @@ describe('useArtistProfileStore', () => {
     const state = useArtistProfileStore.getState();
     expect(state.profileArtistId).toBeNull();
     expect(state.profileArtistName).toBeNull();
+    expect(state.activeFollowView).toBeNull();
+    expect(state.profileStack).toEqual([]);
   });
 
-  it('replaces previous profile when opening a new one', () => {
+  it('pushes to stack when opening profile from within a profile', () => {
     useArtistProfileStore.getState().openProfile(1, 'First');
     useArtistProfileStore.getState().openProfile(2, 'Second');
     const state = useArtistProfileStore.getState();
     expect(state.profileArtistId).toBe(2);
     expect(state.profileArtistName).toBe('Second');
+    expect(state.profileStack).toHaveLength(1);
+    expect(state.profileStack[0]).toEqual({
+      artistId: 1,
+      artistName: 'First',
+      followView: null,
+    });
+  });
+
+  it('does not push to stack when opening profile from outside', () => {
+    useArtistProfileStore.getState().openProfile(42, 'DJ Test');
+    const state = useArtistProfileStore.getState();
+    expect(state.profileStack).toEqual([]);
+  });
+
+  it('sets activeFollowView and pushes current state to stack', () => {
+    useArtistProfileStore.getState().openProfile(42, 'DJ Test');
+    useArtistProfileStore.getState().openFollowView('followers');
+    const state = useArtistProfileStore.getState();
+    expect(state.activeFollowView).toBe('followers');
+    expect(state.profileStack).toHaveLength(1);
+    expect(state.profileStack[0]).toEqual({
+      artistId: 42,
+      artistName: 'DJ Test',
+      followView: null,
+    });
+  });
+
+  it('goBack pops stack and restores state', () => {
+    useArtistProfileStore.getState().openProfile(1, 'First');
+    useArtistProfileStore.getState().openFollowView('followers');
+    useArtistProfileStore.getState().openProfile(2, 'Second');
+
+    useArtistProfileStore.getState().goBack();
+    let state = useArtistProfileStore.getState();
+    expect(state.profileArtistId).toBe(1);
+    expect(state.activeFollowView).toBe('followers');
+
+    useArtistProfileStore.getState().goBack();
+    state = useArtistProfileStore.getState();
+    expect(state.profileArtistId).toBe(1);
+    expect(state.activeFollowView).toBeNull();
+
+    useArtistProfileStore.getState().goBack();
+    state = useArtistProfileStore.getState();
+    expect(state.profileArtistId).toBeNull();
+  });
+
+  it('full navigation: A > followers > B > back > back > back closes', () => {
+    const { openProfile, openFollowView, goBack } = useArtistProfileStore.getState();
+
+    openProfile(1, 'Artist A');
+    openFollowView('followers');
+    openProfile(2, 'Artist B');
+
+    goBack();
+    expect(useArtistProfileStore.getState().profileArtistId).toBe(1);
+    expect(useArtistProfileStore.getState().activeFollowView).toBe('followers');
+
+    goBack();
+    expect(useArtistProfileStore.getState().profileArtistId).toBe(1);
+    expect(useArtistProfileStore.getState().activeFollowView).toBeNull();
+
+    goBack();
+    expect(useArtistProfileStore.getState().profileArtistId).toBeNull();
   });
 });
 
@@ -182,7 +252,6 @@ describe('ArtistProfileView', () => {
       <ArtistProfileView
         artistId={42}
         artistName="DJ Test"
-        onBack={vi.fn()}
         onDownloadTracks={vi.fn()}
       />,
     );
@@ -198,7 +267,6 @@ describe('ArtistProfileView', () => {
       <ArtistProfileView
         artistId={42}
         artistName="DJ Test"
-        onBack={vi.fn()}
         onDownloadTracks={vi.fn()}
       />,
     );
@@ -213,7 +281,6 @@ describe('ArtistProfileView', () => {
       <ArtistProfileView
         artistId={42}
         artistName="DJ Test"
-        onBack={vi.fn()}
         onDownloadTracks={vi.fn()}
       />,
     );
@@ -231,7 +298,6 @@ describe('ArtistProfileView', () => {
       <ArtistProfileView
         artistId={42}
         artistName="DJ Test"
-        onBack={vi.fn()}
         onDownloadTracks={vi.fn()}
       />,
     );

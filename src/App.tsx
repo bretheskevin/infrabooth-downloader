@@ -66,10 +66,6 @@ function PageContent({
     if (!isSignedIn) clearDetailOverlays();
   }, [isSignedIn]);
 
-  const handleCloseProfile = useCallback(() => {
-    useArtistProfileStore.getState().closeProfile();
-  }, []);
-
   const handleBackFromArtist = useCallback(() => {
     useNewTracksStore.getState().clearSelectedArtist();
   }, []);
@@ -118,7 +114,6 @@ function PageContent({
         <ArtistProfileView
           artistId={profileArtistId}
           artistName={profileArtistName}
-          onBack={handleCloseProfile}
           onDownloadTracks={handleDownloadTracks}
         />
       </section>

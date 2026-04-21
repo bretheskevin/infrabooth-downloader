@@ -7,9 +7,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { LinkContextMenuItems } from '@/components/TrackRowActions';
 import { useLinkActions } from '@/hooks/useLinkActions';
+import { useArtistProfileStore } from '../store';
 
 interface ProfileBannerProps {
-  onBack: () => void;
   isLoading: boolean;
   bannerUrl: string | null;
   avatarUrl: string | null;
@@ -17,7 +17,7 @@ interface ProfileBannerProps {
   permalinkUrl?: string;
 }
 
-export function ProfileBanner({ onBack, isLoading, bannerUrl, avatarUrl, username, permalinkUrl }: ProfileBannerProps) {
+export function ProfileBanner({ isLoading, bannerUrl, avatarUrl, username, permalinkUrl }: ProfileBannerProps) {
   const { t } = useTranslation();
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
 
@@ -56,7 +56,7 @@ export function ProfileBanner({ onBack, isLoading, bannerUrl, avatarUrl, usernam
       <Button
         variant="ghost"
         size="sm"
-        onClick={onBack}
+        onClick={() => useArtistProfileStore.getState().goBack()}
         className="gap-1.5 -ml-2 h-7 text-xs text-muted-foreground hover:text-foreground self-start"
       >
         <ArrowLeft className="h-3.5 w-3.5" />

@@ -531,7 +531,11 @@
     "playlistTrackCount_other": "{{count}} tracks",
     "noPlaylistTracks": "This playlist has no tracks",
     "searchPlaylists": "Search playlists...",
-    "noPlaylistResults": "No playlists match your search"
+    "noPlaylistResults": "No playlists match your search",
+    "searchFollowers": "Search followers...",
+    "searchFollowings": "Search following...",
+    "noFollowersResults": "No followers found",
+    "noFollowingsResults": "No following found"
   },
   "rekordboxExport": {
     "button": "Export to Rekordbox",

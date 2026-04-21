@@ -68,8 +68,8 @@ pub use related::fetch_related_tracks;
 
 pub mod artist;
 pub use artist::{
-    get_all_artist_tracks, get_artist_liked_tracks, get_artist_playlist_tracks, get_artist_playlists, get_artist_profile,
-    resolve_soundcloud_link, resolve_user,
+    get_all_artist_tracks, get_artist_followers, get_artist_followings, get_artist_liked_tracks, get_artist_playlist_tracks,
+    get_artist_playlists, get_artist_profile, resolve_soundcloud_link, resolve_user,
 };
 
 pub mod follow;

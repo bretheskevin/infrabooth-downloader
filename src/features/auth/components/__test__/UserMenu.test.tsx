@@ -10,6 +10,7 @@ vi.mock('@/features/auth/api', () => ({
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
+  initReactI18next: { type: '3rdParty', init: () => {} },
   useTranslation: () => ({
     t: (key: string, fallback?: string) => {
       const translations: Record<string, string> = {

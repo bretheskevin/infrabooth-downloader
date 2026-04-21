@@ -9,16 +9,17 @@ use commands::{
     add_track_to_playlist, cancel_download_queue, cancel_rekordbox_export, check_auth, check_firefox_installed, check_follow_status,
     check_for_updates, check_write_permission, clear_library_cache, clear_liked_tracks_cache, delete_rekordbox_playlist, detect_rekordbox,
     download_track_full, export_playlist_to_rekordbox, export_to_rekordbox, fetch_related_tracks, follow_user, get_all_artist_tracks,
-    get_app_data_path, get_artist_activity, get_artist_liked_tracks, get_artist_playlist_tracks, get_artist_playlists, get_artist_profile,
-    get_artist_releases, get_conversation_messages, get_conversations_page, get_default_download_path,
-    get_default_rekordbox_data_directory_parent, get_feature_flags, get_followed_artists, get_library_playlist_tracks,
-    get_library_playlists, get_liked_tracks, get_log_path, get_notifications_page, get_owned_playlists_for_track, get_playlist_info,
-    get_release_tracks, get_selections, get_track_info, get_unread_conversations_flag, get_unread_count, install_update, like_track,
-    list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, mark_notifications_seen,
-    open_in_firefox, quit_rekordbox, refresh_auth, remove_track_from_playlist, resolve_library_artwork, resolve_message_embed,
-    resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup,
-    scan_existing_tracks, search_tracks, search_users, send_message, sign_out, start_download_queue, test_ffmpeg, unfollow_user,
-    unlike_track, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
+    get_app_data_path, get_artist_activity, get_artist_followers, get_artist_followings, get_artist_liked_tracks,
+    get_artist_playlist_tracks, get_artist_playlists, get_artist_profile, get_artist_releases, get_conversation_messages,
+    get_conversations_page, get_default_download_path, get_default_rekordbox_data_directory_parent, get_feature_flags,
+    get_followed_artists, get_library_playlist_tracks, get_library_playlists, get_liked_tracks, get_log_path, get_notifications_page,
+    get_owned_playlists_for_track, get_playlist_info, get_release_tracks, get_selections, get_track_info, get_unread_conversations_flag,
+    get_unread_count, install_update, like_track, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen,
+    mark_artist_seen, mark_notifications_seen, open_in_firefox, quit_rekordbox, refresh_auth, remove_track_from_playlist,
+    resolve_library_artwork, resolve_message_embed, resolve_playback_url, resolve_soundcloud_link, resolve_user,
+    respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_tracks, search_users, send_message, sign_out,
+    start_download_queue, test_ffmpeg, unfollow_user, unlike_track, validate_download_path, validate_soundcloud_url,
+    RekordboxExportCancellation,
 };
 use services::cancellation::CancellationState;
 use services::events;
@@ -38,7 +39,7 @@ use tauri::Manager;
 use tauri_plugin_log::{Target, TargetKind};
 
 use services::downloader::DownloadProgressEvent;
-use services::events::{ArtistPlaylistsBatchEvent, LibraryPlaylistsBatchEvent, TracksBatchEvent};
+use services::events::{ArtistPlaylistsBatchEvent, ArtistProfilesBatchEvent, LibraryPlaylistsBatchEvent, TracksBatchEvent};
 use services::queue::{QueueCancelledEvent, QueueCompleteEvent, QueueProgressEvent};
 use services::rekordbox::models::RekordboxExportProgressEvent;
 #[cfg(debug_assertions)]
@@ -137,6 +138,7 @@ pub fn run() {
             TracksBatchEvent,
             LibraryPlaylistsBatchEvent,
             ArtistPlaylistsBatchEvent,
+            ArtistProfilesBatchEvent,
             RekordboxExportProgressEvent
         ])
         .commands(collect_commands![
@@ -181,6 +183,8 @@ pub fn run() {
             get_artist_profile,
             get_all_artist_tracks,
             get_artist_liked_tracks,
+            get_artist_followers,
+            get_artist_followings,
             resolve_user,
             resolve_soundcloud_link,
             get_artist_playlists,

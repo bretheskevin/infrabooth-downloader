@@ -1,7 +1,9 @@
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatCount } from '@/lib/format';
 import { ExpandableDescription } from './ExpandableDescription';
+import { useArtistProfileStore } from '../store';
 import type { ArtistProfile } from '@/bindings';
 
 interface ArtistProfileHeaderProps {
@@ -39,14 +41,22 @@ export function ArtistProfileHeader({
             <ExpandableDescription description={profile.description} />
           )}
           <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
-            <span>
-              <strong className="text-foreground">{formatCount(profile.followers_count)}</strong>{' '}
+            <Button
+              variant="link"
+              onClick={() => useArtistProfileStore.getState().openFollowView('followers')}
+              className="p-0 h-auto text-xs text-muted-foreground gap-1"
+            >
+              <strong className="text-foreground">{formatCount(profile.followers_count)}</strong>
               {t('artistProfile.followers')}
-            </span>
-            <span>
-              <strong className="text-foreground">{formatCount(profile.followings_count)}</strong>{' '}
+            </Button>
+            <Button
+              variant="link"
+              onClick={() => useArtistProfileStore.getState().openFollowView('followings')}
+              className="p-0 h-auto text-xs text-muted-foreground gap-1"
+            >
+              <strong className="text-foreground">{formatCount(profile.followings_count)}</strong>
               {t('artistProfile.followings')}
-            </span>
+            </Button>
             <span>
               <strong className="text-foreground">{formatCount(profile.track_count)}</strong>{' '}
               {t('artistProfile.tracks')}

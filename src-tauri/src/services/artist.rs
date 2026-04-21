@@ -89,6 +89,26 @@ where
     .await
 }
 
+pub async fn fetch_all_artist_follow_list<F>(
+    client_id: &str, token: Option<&str>, datadome: Option<&str>, artist_id: u64, kind: &str, on_batch: F,
+) -> Result<Vec<ArtistProfile>, String>
+where
+    F: Fn(&[ArtistProfile]),
+{
+    let initial_url = build_sc_paginated_url(&format!("{}/users/{}/{}", API_V2_BASE, artist_id, kind), client_id)?;
+
+    fetch_all_pages(
+        initial_url.to_string(),
+        token,
+        datadome,
+        &format!("artist_{}:user_{}", kind, artist_id),
+        DEFAULT_PAGE_SIZE,
+        Some,
+        on_batch,
+    )
+    .await
+}
+
 pub async fn resolve_user(client_id: &str, token: Option<&str>, permalink: &str) -> Result<ArtistProfile, String> {
     if permalink.is_empty() || permalink.contains('/') || permalink.contains('?') || permalink.contains('#') {
         return Err("Invalid permalink".to_string());

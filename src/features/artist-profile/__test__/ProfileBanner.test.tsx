@@ -22,6 +22,11 @@ vi.mock('@tauri-apps/plugin-shell', () => ({
   open: (...args: unknown[]) => mockOpen(...args),
 }));
 
+const mockGoBack = vi.fn();
+vi.mock('../store', () => ({
+  useArtistProfileStore: { getState: () => ({ goBack: mockGoBack }) },
+}));
+
 describe('ProfileBanner', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,7 +36,6 @@ describe('ProfileBanner', () => {
   });
 
   const defaults = {
-    onBack: vi.fn(),
     isLoading: false,
     bannerUrl: 'https://example.com/banner.jpg',
     avatarUrl: 'https://example.com/avatar.jpg',
@@ -44,11 +48,10 @@ describe('ProfileBanner', () => {
     expect(screen.getByRole('button', { name: /common\.back/i })).toBeInTheDocument();
   });
 
-  it('calls onBack when back button clicked', async () => {
-    const onBack = vi.fn();
-    render(<ProfileBanner {...defaults} onBack={onBack} />);
+  it('calls goBack from store when back button clicked', async () => {
+    render(<ProfileBanner {...defaults} />);
     await userEvent.click(screen.getByRole('button', { name: /common\.back/i }));
-    expect(onBack).toHaveBeenCalledOnce();
+    expect(mockGoBack).toHaveBeenCalledOnce();
   });
 
   it('renders skeleton when loading', () => {

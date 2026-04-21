@@ -11,27 +11,28 @@ import { useArtistProfile } from '../hooks/useArtistProfile';
 import { useArtistTracks } from '../hooks/useArtistTracks';
 import { useArtistLikedTracks } from '../hooks/useArtistLikedTracks';
 import { ArtistProfileHeader } from './ArtistProfileHeader';
+import { ArtistFollowList } from './ArtistFollowList';
 import { FollowButton } from './FollowButton';
 import { ProfileBanner } from './ProfileBanner';
 import { ProfileTabs, type ProfileTab } from './ProfileTabs';
 import { PlaylistGrid } from './PlaylistGrid';
 import { ArtistPlaylistView } from './ArtistPlaylistView';
+import { useArtistProfileStore } from '../store';
 import type { TrackInfo, ArtistPlaylist, SortOption } from '@/bindings';
 
 interface ArtistProfileViewProps {
   artistId: number;
   artistName: string;
-  onBack: () => void;
   onDownloadTracks: (tracks: TrackInfo[], title: string, outputDir?: string) => void | Promise<void>;
 }
 
 export function ArtistProfileView({
   artistId,
   artistName,
-  onBack,
   onDownloadTracks,
 }: ArtistProfileViewProps) {
   const { t } = useTranslation();
+  const activeFollowView = useArtistProfileStore((s) => s.activeFollowView);
   const [activeTab, setActiveTab] = useState<ProfileTab>('recent');
   const [selectedPlaylist, setSelectedPlaylist] = useState<ArtistPlaylist | null>(null);
   const [prevArtistId, setPrevArtistId] = useState(artistId);
@@ -65,6 +66,16 @@ export function ArtistProfileView({
     if (tracks.length > 0) onDownloadTracks(tracks, username);
   }, [tracks, onDownloadTracks, username]);
 
+  if (activeFollowView) {
+    return (
+      <ArtistFollowList
+        type={activeFollowView}
+        artistId={artistId}
+        artistName={username}
+      />
+    );
+  }
+
   if (selectedPlaylist) {
     return (
       <ArtistPlaylistView
@@ -83,7 +94,6 @@ export function ArtistProfileView({
     <div className="flex flex-col gap-3 flex-1 min-h-0">
       <div className="flex flex-col gap-3 px-3">
         <ProfileBanner
-          onBack={onBack}
           isLoading={isProfileLoading}
           bannerUrl={bannerUrl}
           avatarUrl={avatarUrl}

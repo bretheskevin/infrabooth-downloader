@@ -6,6 +6,7 @@ import { useAuthStore } from '@/features/auth/store';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
+  initReactI18next: { type: '3rdParty', init: () => {} },
   useTranslation: () => ({
     t: (key: string, options?: Record<string, unknown>) => {
       const translations: Record<string, string> = {

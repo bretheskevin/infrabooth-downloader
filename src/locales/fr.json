@@ -531,7 +531,11 @@
     "playlistTrackCount_other": "{{count}} titres",
     "noPlaylistTracks": "Cette playlist ne contient aucun titre",
     "searchPlaylists": "Rechercher des playlists...",
-    "noPlaylistResults": "Aucune playlist ne correspond à votre recherche"
+    "noPlaylistResults": "Aucune playlist ne correspond à votre recherche",
+    "searchFollowers": "Rechercher des abonnés...",
+    "searchFollowings": "Rechercher des abonnements...",
+    "noFollowersResults": "Aucun abonné trouvé",
+    "noFollowingsResults": "Aucun abonnement trouvé"
   },
   "rekordboxExport": {
     "button": "Exporter vers Rekordbox",

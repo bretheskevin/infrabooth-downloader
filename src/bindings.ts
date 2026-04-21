@@ -393,6 +393,22 @@ async getArtistLikedTracks(artistId: number) : Promise<Result<TrackInfo[], strin
     else return { status: "error", error: e  as any };
 }
 },
+async getArtistFollowers(artistId: number) : Promise<Result<ArtistProfile[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_followers", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistFollowings(artistId: number) : Promise<Result<ArtistProfile[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_followings", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async resolveUser(permalink: string) : Promise<Result<ArtistProfile, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("resolve_user", { permalink }) };
@@ -638,6 +654,7 @@ async clearLikedTracksCache() : Promise<Result<null, string>> {
 
 export const events = __makeEvents__<{
 artistPlaylistsBatchEvent: ArtistPlaylistsBatchEvent,
+artistProfilesBatchEvent: ArtistProfilesBatchEvent,
 downloadProgressEvent: DownloadProgressEvent,
 libraryPlaylistsBatchEvent: LibraryPlaylistsBatchEvent,
 queueCancelledEvent: QueueCancelledEvent,
@@ -647,6 +664,7 @@ rekordboxExportProgressEvent: RekordboxExportProgressEvent,
 tracksBatchEvent: TracksBatchEvent
 }>({
 artistPlaylistsBatchEvent: "artist-playlists-batch-event",
+artistProfilesBatchEvent: "artist-profiles-batch-event",
 downloadProgressEvent: "download-progress-event",
 libraryPlaylistsBatchEvent: "library-playlists-batch-event",
 queueCancelledEvent: "queue-cancelled-event",
@@ -668,6 +686,7 @@ export type ActorInfo = { id: number; username: string; avatar_url: string | nul
 export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string; secret_token: string | null }
 export type ArtistPlaylistsBatchEvent = { entityId: number; playlists: ArtistPlaylist[] }
 export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; followings_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
+export type ArtistProfilesBatchEvent = { entityId: number; profiles: ArtistProfile[] }
 export type BackupInfo = { path: string; timestamp: string; sizeMb: number; kind: BackupKind }
 export type BackupKind = "export" | "preRestore"
 export type ConversationMessage = { content: string; sender_id: number; sent_at: string; track_embed: MessageTrackEmbed | null }
