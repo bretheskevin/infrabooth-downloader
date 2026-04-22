@@ -75,12 +75,13 @@ pub async fn resolve_message_embed(app: tauri::AppHandle, url: String) -> Result
 pub async fn send_message(app: tauri::AppHandle, other_user_id: u64, content: String) -> Result<(), String> {
     let (token, client_id) = require_auth_and_cid(&app).await?;
     let user_id = require_user_id(&app)?;
-    let datadome = app.state::<AuthState>().get_datadome();
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
     let cache = app.state::<MessagesCache>();
 
-    messages::send_message(&token, &client_id, datadome.as_deref(), user_id, other_user_id, &content)
-        .await
-        .map_err(|e| e.to_string())?;
+    let (new_datadome, result) = messages::send_message(&token, &client_id, datadome.as_deref(), user_id, other_user_id, &content).await;
+    state.update_datadome(new_datadome);
+    result.map_err(|e| e.to_string())?;
 
     cache.clear();
 

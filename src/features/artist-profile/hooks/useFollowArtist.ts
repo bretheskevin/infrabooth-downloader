@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 import { FOLLOWED_ARTISTS_KEY, FOLLOW_STATUS_KEY } from '@/lib/query';
+import { getApiErrorMessage } from '@/lib/errorMessages';
 import { useIsSignedIn } from '@/features/auth/store';
 
 interface UseFollowArtistResult {
@@ -41,7 +42,7 @@ export function useFollowArtist(artistId: number): UseFollowArtistResult {
     },
     onError: (err) => {
       queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], false);
-      toast.error(t('artistProfile.followError'));
+      toast.error(getApiErrorMessage(err, t, 'artistProfile.followError'));
       void logger.error(`[follow] Failed to follow user ${artistId}: ${err}`);
     },
   });
@@ -59,7 +60,7 @@ export function useFollowArtist(artistId: number): UseFollowArtistResult {
     },
     onError: (err) => {
       queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], true);
-      toast.error(t('artistProfile.unfollowError'));
+      toast.error(getApiErrorMessage(err, t, 'artistProfile.unfollowError'));
       void logger.error(`[follow] Failed to unfollow user ${artistId}: ${err}`);
     },
   });

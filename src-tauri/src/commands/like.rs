@@ -10,12 +10,13 @@ use super::{require_auth_and_cid, require_user_id};
 #[specta::specta]
 pub async fn like_track(app: tauri::AppHandle, track_id: u64) -> Result<(), String> {
     let current_user_id = require_user_id(&app)?;
-    let datadome = app.state::<AuthState>().get_datadome();
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
     let (token, client_id) = require_auth_and_cid(&app).await?;
 
-    like::like_track(&token, &client_id, datadome.as_deref(), current_user_id, track_id)
-        .await
-        .map_err(|e| e.to_string())?;
+    let (new_datadome, result) = like::like_track(&token, &client_id, datadome.as_deref(), current_user_id, track_id).await;
+    state.update_datadome(new_datadome);
+    result.map_err(|e| e.to_string())?;
 
     app.state::<LikedTracksCache>().clear();
     Ok(())
@@ -25,12 +26,13 @@ pub async fn like_track(app: tauri::AppHandle, track_id: u64) -> Result<(), Stri
 #[specta::specta]
 pub async fn unlike_track(app: tauri::AppHandle, track_id: u64) -> Result<(), String> {
     let current_user_id = require_user_id(&app)?;
-    let datadome = app.state::<AuthState>().get_datadome();
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
     let (token, client_id) = require_auth_and_cid(&app).await?;
 
-    like::unlike_track(&token, &client_id, datadome.as_deref(), current_user_id, track_id)
-        .await
-        .map_err(|e| e.to_string())?;
+    let (new_datadome, result) = like::unlike_track(&token, &client_id, datadome.as_deref(), current_user_id, track_id).await;
+    state.update_datadome(new_datadome);
+    result.map_err(|e| e.to_string())?;
 
     app.state::<LikedTracksCache>().clear();
     Ok(())

@@ -3,6 +3,7 @@ import { getErrorString } from '@/lib/utils';
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
+import { isAntibotError } from '@/lib/errorMessages';
 
 interface PlaylistMutationConfig {
   apiCall: (playlistId: number, trackId: number) => Promise<void>;
@@ -41,7 +42,8 @@ export function usePlaylistMutation(config: PlaylistMutationConfig, onSuccess?: 
         rollback?.();
         const message = getErrorString(error);
         const matchedError = config.errorMatchers.find((m) => message.includes(m.pattern));
-        toast.error(t(matchedError?.key ?? config.fallbackErrorKey));
+        const errorKey = matchedError?.key ?? (isAntibotError(error) ? 'errors.antibotBlocked' : config.fallbackErrorKey);
+        toast.error(t(errorKey));
         return false;
       } finally {
         setMutatingPlaylistId(null);

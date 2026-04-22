@@ -1,7 +1,7 @@
 use rquest::Url;
 
 use crate::models::error::FollowError;
-use crate::services::http::{check_api_success, RequestBuilderExt, API_V2_BASE, CHROME_USER_AGENT, HTTP_CLIENT, SC_APP_VERSION};
+use crate::services::http::{check_api_success, try_none, RequestBuilderExt, API_V2_BASE, CHROME_USER_AGENT, HTTP_CLIENT, SC_APP_VERSION};
 
 /// Extracted from SoundCloud's JS bundle — may need periodic updating (like SC_APP_VERSION).
 const FOLLOWS_SIGNATURE_SECRET: &str = "5Dpr3ubBw8LFtbvQcd4Hx6hU";
@@ -46,32 +46,34 @@ fn signed_follow_url(current_user_id: u64, target_user_id: u64, client_id: &str)
 
 pub async fn follow_user(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, current_user_id: u64, target_user_id: u64,
-) -> Result<(), FollowError> {
+) -> (Option<String>, Result<(), FollowError>) {
     log::info!("[follow] Following user {}", target_user_id);
-
-    let response = HTTP_CLIENT
-        .post(signed_follow_url(current_user_id, target_user_id, client_id)?)
-        .with_oauth(Some(oauth_token))
-        .with_datadome(datadome)
-        .header("Content-Length", "0")
-        .send()
-        .await?;
-
+    let url = try_none!(signed_follow_url(current_user_id, target_user_id, client_id));
+    let response = try_none!(
+        HTTP_CLIENT
+            .post(url)
+            .with_oauth(Some(oauth_token))
+            .with_datadome(datadome)
+            .header("Content-Length", "0")
+            .send()
+            .await
+    );
     check_api_success(response, target_user_id, "followed", "follow", FollowError::ApiError).await
 }
 
 pub async fn unfollow_user(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, current_user_id: u64, target_user_id: u64,
-) -> Result<(), FollowError> {
+) -> (Option<String>, Result<(), FollowError>) {
     log::info!("[follow] Unfollowing user {}", target_user_id);
-
-    let response = HTTP_CLIENT
-        .delete(signed_follow_url(current_user_id, target_user_id, client_id)?)
-        .with_oauth(Some(oauth_token))
-        .with_datadome(datadome)
-        .send()
-        .await?;
-
+    let url = try_none!(signed_follow_url(current_user_id, target_user_id, client_id));
+    let response = try_none!(
+        HTTP_CLIENT
+            .delete(url)
+            .with_oauth(Some(oauth_token))
+            .with_datadome(datadome)
+            .send()
+            .await
+    );
     check_api_success(response, target_user_id, "unfollowed", "follow", FollowError::ApiError).await
 }
 

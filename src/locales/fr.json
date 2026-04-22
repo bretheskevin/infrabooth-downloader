@@ -124,6 +124,7 @@
     "authExpired": "Session expirée",
     "authExpiredHint": "Veuillez vous déconnecter puis vous reconnecter",
     "notSignedIn": "Veuillez vous connecter pour continuer",
+    "antibotBlocked": "Bloqué par la protection anti-bot de SoundCloud. Réessayez plus tard.",
     "showDetails": "Afficher les détails",
     "panelTitle": "Pistes en erreur",
     "tracksFailed_one": "{{count}} erreur",

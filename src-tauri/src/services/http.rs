@@ -9,7 +9,7 @@ pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 /// SoundCloud web-app version sent as `app_version` query parameter.
 /// Extracted from the SoundCloud web app bundle (look for `app_version` in network requests).
 /// May need periodic updating if SoundCloud rejects older versions.
-pub const SC_APP_VERSION: &str = "1775080930";
+pub const SC_APP_VERSION: &str = "1776774633";
 pub const CHROME_USER_AGENT: &str =
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
@@ -61,12 +61,17 @@ pub async fn expand_short_link(url: &str) -> Result<String, String> {
 }
 
 pub static HTTP_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
-    use rquest::header::{HeaderMap, HeaderValue, ORIGIN, REFERER, USER_AGENT};
+    use rquest::header::{HeaderMap, HeaderName, HeaderValue, ACCEPT, ACCEPT_LANGUAGE, ORIGIN, REFERER, USER_AGENT};
 
     let mut headers = HeaderMap::new();
     headers.insert(ORIGIN, HeaderValue::from_static("https://soundcloud.com"));
     headers.insert(REFERER, HeaderValue::from_static("https://soundcloud.com/"));
     headers.insert(USER_AGENT, HeaderValue::from_static(CHROME_USER_AGENT));
+    headers.insert(ACCEPT, HeaderValue::from_static("application/json, text/javascript, */*; q=0.1"));
+    headers.insert(ACCEPT_LANGUAGE, HeaderValue::from_static("en-US,en;q=0.9"));
+    headers.insert(HeaderName::from_static("sec-fetch-dest"), HeaderValue::from_static("empty"));
+    headers.insert(HeaderName::from_static("sec-fetch-mode"), HeaderValue::from_static("cors"));
+    headers.insert(HeaderName::from_static("sec-fetch-site"), HeaderValue::from_static("same-site"));
 
     rquest::Client::builder()
         .emulation(Emulation::Chrome136)
@@ -180,7 +185,9 @@ impl RequestBuilderExt for rquest::RequestBuilder {
 
     fn with_datadome(self, datadome: Option<&str>) -> Self {
         match datadome {
-            Some(dd) => self.header("x-datadome-clientid", dd),
+            Some(dd) => self
+                .header("x-datadome-clientid", dd)
+                .header(rquest::header::COOKIE, format!("datadome={}", dd)),
             None => self,
         }
     }
@@ -329,16 +336,57 @@ pub async fn validate_sc_response(
     Ok(response)
 }
 
+pub fn extract_datadome_from_response(response: &rquest::Response) -> Option<String> {
+    let result = response
+        .headers()
+        .get_all("x-set-cookie")
+        .iter()
+        .chain(response.headers().get_all("set-cookie").iter())
+        .filter_map(|v| v.to_str().ok())
+        .find_map(|cookie_str| {
+            cookie_str
+                .strip_prefix("datadome=")
+                .and_then(|rest| rest.split(';').next())
+                .filter(|v| !v.is_empty())
+                .map(|v| v.to_string())
+        });
+    if result.is_some() {
+        log::debug!("[http] Extracted updated datadome cookie from response");
+    }
+    result
+}
+
+macro_rules! try_none {
+    ($expr:expr) => {
+        match $expr {
+            Ok(v) => v,
+            Err(e) => return (None, Err(e.into())),
+        }
+    };
+}
+pub(crate) use try_none;
+
+pub const ANTIBOT_BLOCKED: &str = "ANTIBOT_BLOCKED";
+
+pub fn sanitize_error_body(body: String) -> String {
+    if body.contains("captcha-delivery.com") || body.contains("captcha/?initialCid") {
+        ANTIBOT_BLOCKED.to_string()
+    } else {
+        body
+    }
+}
+
 pub async fn check_api_success<E>(
     response: rquest::Response, entity_id: u64, action: &str, tag: &str, make_error: impl FnOnce(u16, String) -> E,
-) -> Result<(), E> {
+) -> (Option<String>, Result<(), E>) {
+    let new_datadome = extract_datadome_from_response(&response);
     if response.status().is_success() {
         log::info!("[{}] Successfully {} {}", tag, action, entity_id);
-        Ok(())
+        (new_datadome, Ok(()))
     } else {
         let status = response.status().as_u16();
         let body = response.text().await.unwrap_or_default();
         log::error!("[{}] Failed to {} {}: HTTP {} - {}", tag, action, entity_id, status, body);
-        Err(make_error(status, body))
+        (new_datadome, Err(make_error(status, sanitize_error_body(body))))
     }
 }

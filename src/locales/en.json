@@ -124,6 +124,7 @@
     "authExpired": "Session expired",
     "authExpiredHint": "Please sign out and sign in again",
     "notSignedIn": "Please sign in to continue",
+    "antibotBlocked": "Blocked by SoundCloud's anti-bot protection. Please try again later.",
     "showDetails": "Show details",
     "panelTitle": "Failed Downloads",
     "tracksFailed_one": "{{count}} track failed",

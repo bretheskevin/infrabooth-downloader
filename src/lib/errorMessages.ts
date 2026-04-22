@@ -80,6 +80,16 @@ export function getGeoBlockNoRetry(t: TFunction): string {
   return t('errors.geoBlockedNoRetry');
 }
 
+export const ANTIBOT_BLOCKED = 'ANTIBOT_BLOCKED';
+
+export function isAntibotError(error: unknown): boolean {
+  return String(error).includes(ANTIBOT_BLOCKED);
+}
+
+export function getApiErrorMessage(error: unknown, t: TFunction, fallbackKey: string): string {
+  return isAntibotError(error) ? t('errors.antibotBlocked') : t(fallbackKey);
+}
+
 /**
  * Patterns that indicate a track is unavailable (removed/private/deleted).
  */

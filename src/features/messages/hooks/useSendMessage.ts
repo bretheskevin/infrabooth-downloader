@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
+import { getApiErrorMessage } from '@/lib/errorMessages';
 import { normalizeShortUrl } from '@/lib/soundcloud';
 import type { ConversationMessage, MessagesPage } from '@/bindings';
 
@@ -49,12 +50,12 @@ export function useSendMessage(otherUserId: number) {
       return { snapshot };
     },
 
-    onError: (_err, _content, context) => {
+    onError: (err, _content, context) => {
       if (context?.snapshot) {
         queryClient.setQueryData(messagesKey, context.snapshot);
       }
-      toast.error(t('directMessages.sendError'));
-      void logger.error(`Failed to send message: ${_err}`);
+      toast.error(getApiErrorMessage(err, t, 'directMessages.sendError'));
+      void logger.error(`Failed to send message: ${err}`);
     },
 
     onSettled: () => {

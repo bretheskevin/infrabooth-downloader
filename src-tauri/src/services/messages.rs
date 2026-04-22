@@ -6,7 +6,10 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::models::error::ScApiError;
-use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
+use crate::services::http::{
+    extract_datadome_from_response, sanitize_error_body, try_none, validate_api_response, RequestBuilderExt, ANTIBOT_BLOCKED, API_V2_BASE,
+    HTTP_CLIENT,
+};
 
 // ---------------------------------------------------------------------------
 // Frontend-facing types
@@ -391,7 +394,7 @@ pub async fn fetch_conversation_messages(
 
 pub async fn send_message(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, user_id: u64, other_user_id: u64, content: &str,
-) -> Result<(), ScApiError> {
+) -> (Option<String>, Result<(), ScApiError>) {
     let url = format!(
         "{}/users/{}/conversations/{}?client_id={}",
         API_V2_BASE, user_id, other_user_id, client_id,
@@ -399,18 +402,33 @@ pub async fn send_message(
 
     let body = serde_json::json!({ "contents": content });
 
-    let response = HTTP_CLIENT
-        .post(&url)
-        .with_oauth(Some(oauth_token))
-        .with_datadome(datadome)
-        .header("Content-Type", "application/json")
-        .body(body.to_string())
-        .send()
-        .await?;
+    let response = try_none!(
+        HTTP_CLIENT
+            .post(&url)
+            .with_oauth(Some(oauth_token))
+            .with_datadome(datadome)
+            .header("Content-Type", "application/json")
+            .body(body.to_string())
+            .send()
+            .await
+    );
 
-    validate_api_response(response.status())?;
+    let new_datadome = extract_datadome_from_response(&response);
+    let status = response.status();
 
-    Ok(())
+    if !status.is_success() {
+        let body = response.text().await.unwrap_or_default();
+        log::error!("[messages] Failed to send message: HTTP {} - {}", status, body);
+        let sanitized = sanitize_error_body(body);
+        let err = if sanitized == ANTIBOT_BLOCKED {
+            ScApiError::FetchFailed(sanitized)
+        } else {
+            validate_api_response(status).unwrap_err().into()
+        };
+        return (new_datadome, Err(err));
+    }
+
+    (new_datadome, Ok(()))
 }
 
 // ---------------------------------------------------------------------------

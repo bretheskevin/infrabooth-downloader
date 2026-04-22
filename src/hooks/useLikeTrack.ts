@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { skipToken, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 import { LIKED_TRACKS_KEY } from '@/lib/query';
+import { getApiErrorMessage } from '@/lib/errorMessages';
 import { useAuthStore } from '@/features/auth/store';
 import type { TrackInfo } from '@/bindings';
 
@@ -22,7 +23,7 @@ export function useLikeTrack(track?: TrackInfo): LikeState | undefined {
 
   const likedStatus = useQuery({
     queryKey: likedQueryKey,
-    enabled: false,
+    queryFn: skipToken,
     select: (data: TrackInfo[] | undefined) =>
       track ? (data?.some((t) => t.id === track.id) ?? false) : false,
   });
@@ -60,7 +61,7 @@ export function useLikeTrack(track?: TrackInfo): LikeState | undefined {
       if (context?.previous !== undefined) {
         queryClient.setQueryData(likedQueryKey, context.previous);
       }
-      toast.error(t(nextLiked ? 'trackMenu.likeError' : 'trackMenu.unlikeError'));
+      toast.error(getApiErrorMessage(err, t, nextLiked ? 'trackMenu.likeError' : 'trackMenu.unlikeError'));
       void logger.error(`[like] Failed to toggle like for track ${track?.id}: ${String(err)}`);
     },
     onSuccess: (_data, nextLiked) => {

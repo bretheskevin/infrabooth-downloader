@@ -1,6 +1,6 @@
 use crate::models::url::ValidationResult;
 use crate::models::PlaylistTracksResponse;
-use crate::services::http::{RequestBuilderExt, API_V2_BASE};
+use crate::services::http::{extract_datadome_from_response, sanitize_error_body, RequestBuilderExt, API_V2_BASE};
 use crate::services::playlist::build_playlist_url;
 use crate::services::playlist::{fetch_playlist_info, fetch_track_info, PlaylistInfo, TrackInfo};
 use crate::services::storage::AuthState;
@@ -51,7 +51,8 @@ async fn modify_playlist_tracks<F>(playlist_id: u64, app: &tauri::AppHandle, ope
 where
     F: FnOnce(Vec<u64>) -> Result<Vec<u64>, String>,
 {
-    let datadome = app.state::<AuthState>().get_datadome();
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
     let (token, client_id) = super::require_auth_and_cid(app).await?;
 
     let client = &*crate::services::http::HTTP_CLIENT;
@@ -85,11 +86,17 @@ where
 
     let put_response = put_request.send().await.map_err(|e| format!("Failed to update playlist: {}", e))?;
 
+    state.update_datadome(extract_datadome_from_response(&put_response));
+
     if !put_response.status().is_success() {
         let status = put_response.status();
         let body = put_response.text().await.unwrap_or_default();
         log::error!("[{}] PUT failed: {} - {}", operation, status, body);
-        return Err(format!("Failed to update playlist: HTTP {}", status));
+        return Err(format!(
+            "Failed to update playlist: HTTP {} - {}",
+            status,
+            sanitize_error_body(body)
+        ));
     }
 
     Ok(())

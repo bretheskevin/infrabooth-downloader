@@ -49,7 +49,8 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
 
     match verify_token(&cookie.value).await {
         Ok(profile) => {
-            state.set(CachedAuth { oauth_token: cookie.value, datadome: cookie.datadome, user_id: profile.id });
+            state.set_datadome(cookie.datadome);
+            state.set(CachedAuth { oauth_token: cookie.value, user_id: profile.id });
             let _ = app.emit(
                 events::AUTH_STATE_CHANGED,
                 AuthStatePayload {
