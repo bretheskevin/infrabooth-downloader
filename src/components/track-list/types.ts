@@ -1,5 +1,6 @@
 import type { TrackInfo } from '@/bindings';
 import type { FilterChipsProps } from '@/components/FilterChips';
+import type { ShareTrackInfo } from '@/features/messages/store';
 
 export type FilterConfig<T extends string = string> = FilterChipsProps<T>;
 
@@ -52,6 +53,7 @@ export interface TrackListViewProps<
   trackList?: TrackListConfig;
   filters?: FilterConfig<F>;
   permalinkUrl?: string;
+  shareInfo?: ShareTrackInfo;
   messages: TrackListMessages;
   resetKey?: string | number;
 }

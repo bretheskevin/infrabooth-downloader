@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Disc3, EllipsisVertical, ExternalLink, Link } from 'lucide-react';
+import { Disc3, EllipsisVertical, ExternalLink, Link, Send } from 'lucide-react';
 import type { TrackInfo, RekordboxExportStatus } from '@/bindings';
 import { useLinkActions } from '@/hooks/useLinkActions';
 import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
+import { useIsSignedIn } from '@/features/auth/store';
+import { useMessagesStore, type ShareTrackInfo } from '@/features/messages/store';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -30,6 +32,7 @@ interface TrackListActionsDropdownProps {
   playlistName: string;
   permalinkUrl?: string;
   disabled?: boolean;
+  shareInfo?: ShareTrackInfo;
 }
 
 const MAX_VISIBLE_TRACKS = 3;
@@ -141,7 +144,7 @@ function ExportingContent({ groups, totalTracks, completedCount, percent, isRegi
   );
 }
 
-export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, disabled }: TrackListActionsDropdownProps) {
+export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, disabled, shareInfo }: TrackListActionsDropdownProps) {
   const { t } = useTranslation();
   const { data: rekordboxStatus } = useRekordboxDetection();
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
@@ -156,8 +159,10 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
 
   const showRekordbox = !rekordboxStatus || rekordboxStatus.found;
   const showLinks = !!permalinkUrl;
+  const isSignedIn = useIsSignedIn();
+  const canShare = isSignedIn && !!shareInfo;
 
-  if (!showRekordbox && !showLinks) return null;
+  if (!showRekordbox && !showLinks && !canShare) return null;
 
   const isRegistering = groups.exporting.length > 0 || groups.completed.length > 0;
   const completedCount = groups.downloaded.length + groups.exporting.length + groups.completed.length + groups.error.length;
@@ -195,6 +200,13 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
             <DropdownMenuItem onClick={openConfirm}>
               <Disc3 className="h-3.5 w-3.5" />
               {t('rekordboxExport.button')}
+            </DropdownMenuItem>
+          )}
+          {canShare && (showLinks || showRekordbox) && <DropdownMenuSeparator />}
+          {canShare && shareInfo && (
+            <DropdownMenuItem onClick={() => useMessagesStore.getState().openShareDialog(shareInfo)}>
+              <Send className="h-3.5 w-3.5" />
+              {t('trackMenu.shareByDm')}
             </DropdownMenuItem>
           )}
         </DropdownMenuContent>

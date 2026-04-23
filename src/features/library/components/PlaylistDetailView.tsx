@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
+import type { ShareTrackInfo } from '@/features/messages/store';
 import { TrackListView } from '@/components/track-list/TrackListView';
 import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
@@ -32,6 +33,10 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
     useLibraryStore.getState().setDetailScrollTop(offset);
   }, []);
 
+  const shareInfo: ShareTrackInfo | undefined = playlist.permalink_url
+    ? { trackId: playlist.id, title: playlist.title, artist: playlist.username, artworkUrl: playlist.artwork_url, permalinkUrl: playlist.permalink_url }
+    : undefined;
+
   return (
     <>
       <TrackListView
@@ -54,6 +59,7 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
         )}
         folder
         permalinkUrl={playlist.permalink_url}
+        shareInfo={shareInfo}
         download={{ onDownloadTracks }}
         trackList={{
           virtualized: true,

@@ -5,6 +5,7 @@ import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { useArtistPlaylistTracks } from '../hooks/useArtistPlaylistTracks';
 import { PlaylistArtwork } from './PlaylistArtwork';
 import type { ArtistPlaylist, TrackInfo } from '@/bindings';
+import type { ShareTrackInfo } from '@/features/messages/store';
 
 type PlaylistViewData = Omit<ArtistPlaylist, 'created_at'>;
 
@@ -29,6 +30,10 @@ export function ArtistPlaylistView({
     error,
     refetch,
   } = useArtistPlaylistTracks(playlist.id, playlist.secret_token);
+
+  const shareInfo: ShareTrackInfo | undefined = playlist.permalink_url
+    ? { trackId: playlist.id, title: playlist.title, artist: artistName, artworkUrl: playlist.artwork_url, permalinkUrl: playlist.permalink_url }
+    : undefined;
 
   const artwork = <PlaylistArtwork artworkUrl={playlist.artwork_url} title={playlist.title} />;
 
@@ -66,6 +71,7 @@ export function ArtistPlaylistView({
       )}
       folder
       permalinkUrl={playlist.permalink_url}
+      shareInfo={shareInfo}
       download={{ onDownloadTracks }}
       messages={{ empty: 'artistProfile.noPlaylistTracks' }}
     />

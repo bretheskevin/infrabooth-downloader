@@ -6,6 +6,7 @@ import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { TrackListView } from '@/components/track-list/TrackListView';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import type { FollowedArtist, ReleaseActivityItem, TrackInfo } from '@/bindings';
+import type { ShareTrackInfo } from '@/features/messages/store';
 import { DEFAULT_STALE_TIME } from '@/lib/query';
 import { RELEASE_TYPE_KEYS } from '../constants';
 
@@ -26,6 +27,9 @@ export function ReleaseTracklistView({
 }: ReleaseTracklistViewProps) {
   const { t } = useTranslation();
   const info = release.release;
+  const shareInfo: ShareTrackInfo | undefined = info.permalink_url
+    ? { trackId: info.id, title: info.title, artist: info.user.username, artworkUrl: info.artwork_url, permalinkUrl: info.permalink_url }
+    : undefined;
   const artworkUrl = getArtworkUrl(info.artwork_url, 300);
   const typeLabel = t(RELEASE_TYPE_KEYS[info.release_type]);
 
@@ -73,6 +77,7 @@ export function ReleaseTracklistView({
       )}
       folder
       permalinkUrl={info.permalink_url}
+      shareInfo={shareInfo}
       download={{ onDownloadTracks }}
       messages={{
         empty: 'newReleases.empty',
