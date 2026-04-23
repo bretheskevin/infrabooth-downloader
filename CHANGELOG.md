@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.0] - 2026-04-23
+
+### Added
+
+- Share tracks via direct message
+- Followers and following lists on artist profiles
+- My Profile shortcut in user menu
+- Like status indicator in expanded player
+
 ## [1.23.0] - 2026-04-20
 
 ### Added

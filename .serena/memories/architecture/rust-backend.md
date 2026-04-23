@@ -23,18 +23,18 @@ auth, download, ffmpeg, playlist, settings, updater, library, search, player, se
 ### Auth System
 - `cookie.rs` — browser cookie extraction via rookie crate (BrowserCookie, CookieScanResult, datadome support)
 - `oauth.rs` — token verification via SoundCloud /me endpoint (UserProfile)
-- `storage.rs` — in-memory AuthState with refresh guard, token/datadome/user_id caching
+- `storage.rs` — in-memory AuthState with refresh guard, token/datadome/user_id caching, user_id exposed to frontend
 - `client_id.rs` — SoundCloud client_id scraping from JS bundles (cached, regex extraction)
 
 ### HTTP Layer
 - `http.rs` — shared HTTP client (rquest), API_V2_BASE, pagination (fetch_all_pages), rate limit parsing, RequestBuilderExt trait (with_oauth, with_datadome)
 
 ### Messaging
-- `messages.rs` — direct messages (conversations list, message fetching, send with DataDome, unread probe), track/playlist embed resolution
+- `messages.rs` — direct messages (conversations list, message fetching, send with DataDome, unread probe), track/playlist embed resolution, share tracks via DM
 
 ### SoundCloud Features
-- `artist.rs` — profile fetch, all tracks, URL resolution
-- `follow.rs` — follow/unfollow with HMAC signature (matches SC JS implementation)
+- `artist.rs` — profile fetch, all tracks, followings count, URL resolution
+- `follow.rs` — follow/unfollow with HMAC signature (matches SC JS implementation), followers/followings list fetching
 - `search.rs` — track + user search via API v2
 - `library.rs` — user playlists with caching (LibraryCache), owned playlist detection
 - `selections.rs` — SoundCloud curated selections/mixes (cached)

@@ -32,7 +32,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 ### Library & Social
 - **library** — playlist list/detail, liked tracks tab, downloaded tracks, remove from playlist
 - **search** — track + artist search with infinite scroll
-- **artist-profile** — artist page (banner, tabs: tracks/playlists/likes, follow button), ArtistLink (clickable artist navigation, exported for reuse)
+- **artist-profile** — artist page (banner, tabs: tracks/playlists/likes, follow button), ArtistLink (clickable artist navigation, exported for reuse), followers/followings lists with navigation stack (ArtistFollowList, ArtistFollowRow, useArtistFollowList)
 - **selections** — SoundCloud curated selections display
 
 ### Messaging
@@ -40,6 +40,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
   - Components: ConversationsList, ConversationRow, ConversationPage, MessageRow, MessageBell, MessageTrackCard, MessagePlaylistCard
   - Hooks: useConversationsPage, useConversationMessages, useSendMessage (optimistic updates), useUnreadConversations, useResolveEmbed
   - Supports track and playlist embeds in messages
+  - ShareTrackDialog: share tracks to conversations via DM (search, pick conversation, send)
 
 ### Activity Feed
 - **new-tracks** — followed artists new tracks carousel, activity badges
@@ -52,7 +53,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
   - Sections: DownloadLocation, Language, Theme, ConcurrentDownloads, StreamMode, Crossfade, PlaylistOrder, RekordboxSettings (status + manual path), BackupSection (restore with confirmation)
   - Store: persisted Zustand with download path, language, theme, max concurrent, crossfade, stream mode, playlist order, view mode (card/list), rekordbox path override
   - `helpers.ts` — makeSetter, makeClampedSetter, pickKeys helpers to reduce store boilerplate
-- **auth** — sign in/out, cookie-based auth, user menu, startup auth check
+- **auth** — sign in/out, cookie-based auth, user menu (My Profile shortcut, sign out), startup auth check, userId in auth state
 - **update** — update banner, version check
 - **changelog** — what's new dialog, changelog parsing, version tracking
 

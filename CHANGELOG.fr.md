@@ -7,6 +7,15 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.24.0] - 2026-04-23
+
+### Added
+
+- Partage de morceaux par message privé
+- Listes d'abonnés et d'abonnements sur les profils d'artistes
+- Accès rapide à Mon Profil dans le menu utilisateur
+- Indicateur de like dans le lecteur étendu
+
 ## [1.23.0] - 2026-04-20
 
 ### Added
