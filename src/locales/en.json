@@ -445,7 +445,19 @@
     "like": "Like",
     "unlike": "Unlike",
     "likeError": "Failed to like track",
-    "unlikeError": "Failed to unlike track"
+    "unlikeError": "Failed to unlike track",
+    "shareByDm": "Share"
+  },
+  "shareTrack": {
+    "title": "Send track",
+    "description": "Send a track via direct message",
+    "searchPlaceholder": "Search conversations...",
+    "messagePlaceholder": "Add a message...",
+    "send": "Send",
+    "success": "Track sent!",
+    "error": "Failed to send track",
+    "noConversations": "No conversations yet",
+    "noResults": "No conversations found"
   },
   "newTracks": {
     "title": "New releases",

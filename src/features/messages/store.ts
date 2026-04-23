@@ -7,6 +7,14 @@ interface SelectedConversation {
   avatarUrl: string | null;
 }
 
+export interface ShareTrackInfo {
+  trackId: number;
+  title: string;
+  artist: string;
+  artworkUrl: string | null;
+  permalinkUrl: string;
+}
+
 interface MessagesState {
   isPageOpen: boolean;
   selectedConversation: SelectedConversation | null;
@@ -15,6 +23,9 @@ interface MessagesState {
   openPlaylist: (embed: MessagePlaylistEmbed) => void;
   closePlaylist: () => void;
   clear: () => void;
+  shareDialogTrack: ShareTrackInfo | null;
+  openShareDialog: (track: ShareTrackInfo) => void;
+  closeShareDialog: () => void;
 }
 
 export const useMessagesStore = create<MessagesState>((set) => ({
@@ -25,4 +36,7 @@ export const useMessagesStore = create<MessagesState>((set) => ({
   openPlaylist: (embed) => set({ selectedPlaylist: embed }),
   closePlaylist: () => set({ selectedPlaylist: null }),
   clear: () => set({ isPageOpen: false, selectedConversation: null, selectedPlaylist: null }),
+  shareDialogTrack: null,
+  openShareDialog: (track) => set({ shareDialogTrack: track }),
+  closeShareDialog: () => set({ shareDialogTrack: null }),
 }));

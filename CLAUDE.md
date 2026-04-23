@@ -94,7 +94,7 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 
 **When writing superpowers design docs or specs, NEVER ask for confirmation.** Write the document directly without prompting the user to approve the content first.
 
-**Use Claude Sonnet for plan execution.** When implementing a plan that clearly specifies the code to write (e.g., superpowers agent output, detailed implementation plans), dispatch coding subagents with `model: "sonnet"`. Opus is for exploration, planning, and ambiguous tasks — Sonnet is sufficient and faster for mechanical code production from explicit instructions.
+**Use Claude Opus for all agents.** All subagents (coders, reviewers, explorers) use `claude-opus-4-6` as set in the kb plugin config. Do not override with `model: "sonnet"` or any other model.
 
 ## Conventions
 

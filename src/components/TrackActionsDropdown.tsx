@@ -10,6 +10,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrackMenuItems } from '@/components/TrackRowActions';
 import type { LikeState } from '@/hooks/useLikeTrack';
+import type { ShareTrackInfo } from '@/features/messages/store';
 import { useLinkActions } from '@/hooks/useLinkActions';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 import { useIsSignedIn } from '@/features/auth';
@@ -23,6 +24,7 @@ interface TrackActionsDropdownProps {
   onAddToQueue?: () => void;
   onOpenFileLocation?: () => void;
   likeState?: LikeState;
+  shareInfo?: ShareTrackInfo;
 }
 
 export function TrackActionsDropdown({
@@ -34,6 +36,7 @@ export function TrackActionsDropdown({
   onAddToQueue,
   onOpenFileLocation,
   likeState,
+  shareInfo,
 }: TrackActionsDropdownProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -81,6 +84,7 @@ export function TrackActionsDropdown({
           onCloseMenu={closeMenu}
           onAddToQueue={onAddToQueue}
           likeState={likeState}
+          shareInfo={shareInfo}
         />
       </DropdownMenuContent>
     </DropdownMenu>

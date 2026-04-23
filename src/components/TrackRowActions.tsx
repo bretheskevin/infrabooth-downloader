@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Heart, Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Trash2 } from 'lucide-react';
+import { Heart, Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Send, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
 import type { LikeState } from '@/hooks/useLikeTrack';
+import { useMessagesStore, type ShareTrackInfo } from '@/features/messages/store';
 
 export interface TrackMenuItemsProps {
   onCopyLink: () => void;
@@ -29,6 +30,7 @@ export interface TrackMenuItemsProps {
   onRemoveFromPlaylist?: () => void;
   onAddToQueue?: () => void;
   likeState?: LikeState;
+  shareInfo?: ShareTrackInfo;
 }
 
 export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLink: () => void; onOpenInBrowser: () => void }) {
@@ -47,8 +49,16 @@ export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLi
   );
 }
 
-export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue, likeState }: TrackMenuItemsProps) {
+export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue, likeState, shareInfo }: TrackMenuItemsProps) {
   const { t } = useTranslation();
+
+  const handleShareByDm = () => {
+    if (!shareInfo) return;
+    useMessagesStore.getState().openShareDialog(shareInfo);
+    onCloseMenu?.();
+  };
+
+  const canShare = isSignedIn && !!shareInfo;
 
   if (variant === 'context') {
     return (
@@ -76,6 +86,12 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation
               </ContextMenuItem>
             )}
             <PlaylistPickerSubmenu trackId={trackId} variant="context" onSuccess={onCloseMenu} />
+            {canShare && (
+              <ContextMenuItem onClick={handleShareByDm}>
+                <Send className="mr-2 h-4 w-4" />
+                {t('trackMenu.shareByDm')}
+              </ContextMenuItem>
+            )}
             {onRemoveFromPlaylist && (
               <ContextMenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -120,6 +136,12 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation
             </DropdownMenuItem>
           )}
           <PlaylistPickerSubmenu trackId={trackId} variant="dropdown" onSuccess={onCloseMenu} />
+          {canShare && (
+            <DropdownMenuItem onClick={handleShareByDm}>
+              <Send className="h-4 w-4" />
+              {t('trackMenu.shareByDm')}
+            </DropdownMenuItem>
+          )}
           {onRemoveFromPlaylist && (
             <DropdownMenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
               <Trash2 className="h-4 w-4" />
@@ -142,6 +164,7 @@ interface TrackRowActionsContextContentProps {
   onRemoveFromPlaylist?: () => void;
   onAddToQueue?: () => void;
   likeState?: LikeState;
+  shareInfo?: ShareTrackInfo;
 }
 
 export function TrackRowActionsContextContent({
@@ -154,6 +177,7 @@ export function TrackRowActionsContextContent({
   onRemoveFromPlaylist,
   onAddToQueue,
   likeState,
+  shareInfo,
 }: TrackRowActionsContextContentProps) {
   return (
     <ContextMenuContent>
@@ -168,6 +192,7 @@ export function TrackRowActionsContextContent({
         onRemoveFromPlaylist={onRemoveFromPlaylist}
         onAddToQueue={onAddToQueue}
         likeState={likeState}
+        shareInfo={shareInfo}
       />
     </ContextMenuContent>
   );
@@ -185,6 +210,7 @@ interface TrackRowActionsDropdownProps {
   onRemoveFromPlaylist?: () => void;
   onAddToQueue?: () => void;
   likeState?: LikeState;
+  shareInfo?: ShareTrackInfo;
 }
 
 export function TrackRowActionsDropdown({
@@ -199,6 +225,7 @@ export function TrackRowActionsDropdown({
   onRemoveFromPlaylist,
   onAddToQueue,
   likeState,
+  shareInfo,
 }: TrackRowActionsDropdownProps) {
   const closeMenu = useCallback(() => onDropdownMenuOpenChange(false), [onDropdownMenuOpenChange]);
 
@@ -227,6 +254,7 @@ export function TrackRowActionsDropdown({
             onRemoveFromPlaylist={onRemoveFromPlaylist}
             onAddToQueue={onAddToQueue}
             likeState={likeState}
+            shareInfo={shareInfo}
           />
         </DropdownMenuContent>
       </DropdownMenu>

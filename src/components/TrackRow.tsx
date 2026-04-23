@@ -96,6 +96,14 @@ export function TrackRow({
     onHoverEnd?.();
   }, [onHoverEnd]);
 
+  const shareInfo = {
+    trackId: track.id,
+    title: track.title,
+    artist: track.user.username,
+    artworkUrl: track.artwork_url,
+    permalinkUrl: track.permalink_url,
+  };
+
   const handleContentMouseDown = useCallback(
     (e: React.MouseEvent) => {
       if (e.button === 0) onMouseDown?.();
@@ -152,6 +160,7 @@ export function TrackRow({
             onRemoveFromPlaylist={onRemoveFromPlaylist}
             onAddToQueue={handleAddToQueue}
             likeState={likeState}
+            shareInfo={shareInfo}
           />
         </div>
       </ContextMenuTrigger>
@@ -165,6 +174,7 @@ export function TrackRow({
         onRemoveFromPlaylist={onRemoveFromPlaylist}
         onAddToQueue={handleAddToQueue}
         likeState={likeState}
+        shareInfo={shareInfo}
       />
     </ContextMenu>
   );

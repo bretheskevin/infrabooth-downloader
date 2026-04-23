@@ -3,6 +3,7 @@ import { useRateLimitDialog } from '@/features/queue/hooks/useRateLimitDialog';
 import { DownloadConflictDialog } from '@/features/queue/components/DownloadConflictDialog';
 import { WhatsNewDialog } from '@/features/changelog';
 import { useChangelogCheck } from '@/features/changelog';
+import { ShareTrackDialog } from '@/features/messages';
 import { Toaster } from '@/components/ui/sonner';
 
 interface AppDialogsProps {
@@ -48,6 +49,7 @@ export function AppDialogs({
         date={date}
         sections={sections}
       />
+      <ShareTrackDialog />
       <Toaster />
     </>
   );

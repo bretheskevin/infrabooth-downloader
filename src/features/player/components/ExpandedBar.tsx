@@ -144,6 +144,7 @@ export function ExpandedBar() {
           contentAlign="end"
           onOpenFileLocation={filePath ? handleOpenFileLocation : undefined}
           likeState={likeState}
+          shareInfo={{ trackId: currentTrack.trackId, title: currentTrack.title, artist: currentTrack.artist, artworkUrl: currentTrack.artworkUrl, permalinkUrl: currentTrack.trackUrl }}
         />
 
         {/* Collapse */}
