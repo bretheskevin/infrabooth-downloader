@@ -271,6 +271,9 @@ export const api = {
   getUnreadConversationsFlag: (): Promise<boolean> =>
     commands.getUnreadConversationsFlag().then(unwrap),
 
+  markConversationRead: (otherUserId: number): Promise<void> =>
+    commands.markConversationRead(otherUserId).then(unwrap).then(() => undefined),
+
   resolveMessageEmbed: (url: string): Promise<MessageEmbed | null> =>
     commands.resolveMessageEmbed(url).then(unwrap),
 

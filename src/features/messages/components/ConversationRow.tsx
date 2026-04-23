@@ -1,10 +1,13 @@
 import { useTranslation } from 'react-i18next';
+import { useQueryClient, type InfiniteData } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { ConversationSummary } from '@/bindings';
+import type { ConversationsPage, ConversationSummary } from '@/bindings';
 import { useArtistProfileStore } from '@/features/artist-profile/store';
 import { useMessagesStore } from '../store';
 import { formatChatTimestamp } from '@/lib/date';
 import { cn } from '@/lib/utils';
+import { api } from '@/lib/tauri';
+import { logger } from '@/lib/logger';
 
 interface ConversationRowProps {
   conversation: ConversationSummary;
@@ -12,8 +15,41 @@ interface ConversationRowProps {
   onClose: () => void;
 }
 
+function markConversationReadInCache(
+  queryClient: ReturnType<typeof useQueryClient>,
+  conversationId: string,
+) {
+  queryClient.setQueryData<InfiniteData<ConversationsPage>>(
+    ['directMessages', 'conversations'],
+    (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        pages: old.pages.map((page) => ({
+          ...page,
+          items: page.items.map((conv) =>
+            conv.id === conversationId ? { ...conv, read: true } : conv,
+          ),
+        })),
+      };
+    },
+  );
+
+  const data = queryClient.getQueryData<InfiniteData<ConversationsPage>>([
+    'directMessages',
+    'conversations',
+  ]);
+  const hasOtherUnread = data?.pages.some((page) =>
+    page.items.some((conv) => conv.id !== conversationId && !conv.read),
+  );
+  if (!hasOtherUnread) {
+    queryClient.setQueryData(['directMessages', 'unread'], false);
+  }
+}
+
 export function ConversationRow({ conversation, currentUserId, onClose }: ConversationRowProps) {
   const { t, i18n } = useTranslation();
+  const queryClient = useQueryClient();
   const { other_user, last_message_content, last_message_sender_id, last_message_at, read } = conversation;
 
   const isOwnMessage = last_message_sender_id === currentUserId;
@@ -22,6 +58,13 @@ export function ConversationRow({ conversation, currentUserId, onClose }: Conver
     : last_message_content;
 
   const handleClick = () => {
+    if (!read) {
+      markConversationReadInCache(queryClient, conversation.id);
+      void api.markConversationRead(other_user.id).catch((err: unknown) => {
+        void logger.warn(`Failed to mark conversation as read: ${err}`);
+      });
+    }
+
     useArtistProfileStore.getState().closeProfile();
     useMessagesStore.getState().openConversation({
       otherUserId: other_user.id,

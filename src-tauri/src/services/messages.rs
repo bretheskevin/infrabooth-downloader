@@ -392,6 +392,24 @@ pub async fn fetch_conversation_messages(
     Ok(convert_messages(raw, other_user_id, user_id))
 }
 
+pub async fn mark_conversation_read(oauth_token: &str, client_id: &str, user_id: u64, other_user_id: u64) -> Result<(), ScApiError> {
+    let url = format!(
+        "{}/users/{}/conversations/{}/mark_as_read?client_id={}",
+        API_V2_BASE, user_id, other_user_id, client_id,
+    );
+
+    let response = HTTP_CLIENT.put(&url).with_oauth(Some(oauth_token)).send().await?;
+
+    if !response.status().is_success() {
+        return Err(ScApiError::FetchFailed(format!(
+            "mark_conversation_read returned HTTP {}",
+            response.status()
+        )));
+    }
+
+    Ok(())
+}
+
 pub async fn send_message(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, user_id: u64, other_user_id: u64, content: &str,
 ) -> (Option<String>, Result<(), ScApiError>) {

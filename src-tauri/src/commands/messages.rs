@@ -72,6 +72,22 @@ pub async fn resolve_message_embed(app: tauri::AppHandle, url: String) -> Result
 
 #[tauri::command]
 #[specta::specta]
+pub async fn mark_conversation_read(app: tauri::AppHandle, other_user_id: u64) -> Result<(), String> {
+    let (token, client_id) = require_auth_and_cid(&app).await?;
+    let user_id = require_user_id(&app)?;
+    let cache = app.state::<MessagesCache>();
+
+    messages::mark_conversation_read(&token, &client_id, user_id, other_user_id)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    cache.clear();
+
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn send_message(app: tauri::AppHandle, other_user_id: u64, content: String) -> Result<(), String> {
     let (token, client_id) = require_auth_and_cid(&app).await?;
     let user_id = require_user_id(&app)?;

@@ -88,6 +88,9 @@ pub mod rekordbox_export;
 pub use rekordbox_export::{cancel_rekordbox_export, export_playlist_to_rekordbox, RekordboxExportCancellation};
 
 pub mod messages;
-pub use messages::{get_conversation_messages, get_conversations_page, get_unread_conversations_flag, resolve_message_embed, send_message};
+pub use messages::{
+    get_conversation_messages, get_conversations_page, get_unread_conversations_flag, mark_conversation_read, resolve_message_embed,
+    send_message,
+};
 
 pub use crate::services::paths::persist_json;

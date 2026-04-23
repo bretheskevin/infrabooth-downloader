@@ -615,6 +615,14 @@ async getUnreadConversationsFlag() : Promise<Result<boolean, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async markConversationRead(otherUserId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("mark_conversation_read", { otherUserId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async resolveMessageEmbed(url: string) : Promise<Result<MessageEmbed | null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("resolve_message_embed", { url }) };
