@@ -25,7 +25,7 @@ import type { ConversationSummary } from '@/bindings';
 
 function TrackPreview({ track }: { track: ShareTrackInfo }) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-md bg-muted/50">
+    <div className="flex items-center gap-3 p-3 rounded-md bg-muted/50 overflow-hidden">
       <div className="h-10 w-10 rounded bg-secondary flex-shrink-0 overflow-hidden">
         {track.artworkUrl && (
           <img
@@ -35,7 +35,7 @@ function TrackPreview({ track }: { track: ShareTrackInfo }) {
           />
         )}
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium truncate">{track.title}</p>
         <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
       </div>
@@ -148,7 +148,7 @@ export function ShareTrackDialog() {
           <DialogDescription className="sr-only">{t('shareTrack.description')}</DialogDescription>
         </DialogHeader>
 
-        {shareTrack && <div className="px-4 pb-3"><TrackPreview track={shareTrack} /></div>}
+        {shareTrack && <div className="px-4 pb-3 overflow-hidden"><TrackPreview track={shareTrack} /></div>}
 
         <div className="px-4 pb-2">
           <div className="relative">
