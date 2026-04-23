@@ -7,6 +7,16 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.25.0] - 2026-04-23
+
+### Added
+
+- Partage de playlists par message privé
+
+### Fixed
+
+- Le titre du morceau débordait dans la fenêtre de partage
+
 ## [1.24.0] - 2026-04-23
 
 ### Added
