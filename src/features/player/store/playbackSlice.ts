@@ -5,17 +5,31 @@ import { logger } from '@/lib/logger';
 import { useSettingsStore } from '@/features/settings/store';
 import { audioEngine } from '../audio-engine';
 import { fetchStationTracks, fetchStationTracksWithRetry } from '../utils/autoplay';
-import { resolveWithCache, getCachedUrl, preloadQueueSegments, purgeStaleCache } from '../url-cache';
+import {
+  resolveWithCache,
+  getCachedUrl,
+  preloadQueueSegments,
+  purgeStaleCache,
+  invalidateCachedUrl,
+} from '../url-cache';
 import type { PlaybackItem, PlaybackState } from '../types';
 import type { AutoplaySliceState, PlaybackSliceState, PlayerState } from './types';
 import type { AutoplaySliceActions } from './autoplaySlice';
 
 const MAX_CONSECUTIVE_FAILURES = 3;
+const MAX_URL_REFRESH_PER_TRACK = 2;
 
 let loadGeneration = 0;
 let crossfadeGeneration = 0;
 let consecutiveFailures = 0;
 let lastPreloadRefresh = 0;
+let urlRefreshTrackId: number | null = null;
+let urlRefreshCount = 0;
+
+function resetUrlRefreshTracking() {
+  urlRefreshTrackId = null;
+  urlRefreshCount = 0;
+}
 
 const trackIdSet = (queue: PlaybackItem[]) => new Set(queue.map((t) => t.trackId));
 
@@ -120,6 +134,7 @@ async function loadAndPlay(
       return;
     }
     consecutiveFailures = 0;
+    resetUrlRefreshTracking();
     void logger.debug(`[player] Loading track ${track.trackId} into audio engine`);
     audioEngine.setVolume(get().volume);
     audioEngine.load(url);
@@ -138,12 +153,7 @@ async function loadAndPlay(
       return;
     }
 
-    const { cursor, queue } = get();
-    if (cursor + 1 < queue.length) {
-      get().next();
-    } else {
-      get().stop();
-    }
+    skipOrStop(get);
   }
 }
 
@@ -162,6 +172,15 @@ export interface PlaybackSliceActions {
 
 type SetFn = (state: Partial<PlaybackSliceState & AutoplaySliceState>) => void;
 type GetFn = () => PlayerState & PlaybackSliceActions & AutoplaySliceActions;
+
+function skipOrStop(get: () => Pick<PlayerState, 'cursor' | 'queue'> & Pick<PlaybackSliceActions, 'next' | 'stop'>) {
+  const { cursor, queue } = get();
+  if (cursor + 1 < queue.length) {
+    get().next();
+  } else {
+    get().stop();
+  }
+}
 
 const ENGINE_STATE_MAP: Record<string, PlaybackState> = {
   idle: 'stopped',
@@ -462,6 +481,46 @@ export const createPlaybackSlice: StateCreator<
         if (audioEngine.isCrossfading()) return;
         get().next();
       },
+      onUrlExpired: async (positionMs) => {
+        const { currentTrack } = get();
+        if (!currentTrack) return;
+
+        if (urlRefreshTrackId !== currentTrack.trackId) {
+          urlRefreshTrackId = currentTrack.trackId;
+          urlRefreshCount = 0;
+        }
+        urlRefreshCount++;
+
+        if (urlRefreshCount > MAX_URL_REFRESH_PER_TRACK) {
+          void logger.error(
+            `[player] URL refresh limit reached for track ${currentTrack.trackId}, skipping`,
+          );
+          toast.error(i18n.t('player.errorLoadTrack'));
+          resetUrlRefreshTracking();
+          skipOrStop(get);
+          return;
+        }
+
+        void logger.debug(
+          `[player] Refreshing URL for track ${currentTrack.trackId} at ${positionMs}ms (attempt ${urlRefreshCount})`,
+        );
+        invalidateCachedUrl(currentTrack.trackId);
+
+        const generation = ++loadGeneration;
+        try {
+          const url = await resolveWithCache(currentTrack.trackId, currentTrack.trackUrl);
+          if (generation !== loadGeneration) return;
+          audioEngine.load(url, positionMs);
+          audioEngine.play();
+        } catch (e) {
+          if (generation !== loadGeneration) return;
+          const msg = e instanceof Error ? e.message : String(e);
+          void logger.error(`[player] URL refresh failed for track ${currentTrack.trackId}: ${msg}`);
+          toast.error(`${i18n.t('player.errorLoadTrack')}: ${msg}`);
+          resetUrlRefreshTracking();
+          skipOrStop(get);
+        }
+      },
       onError: (message) => {
         void logger.error(`[player] Audio engine error: ${message}`);
         toast.error(`${i18n.t('player.errorLoadTrack')}: ${message}`);
@@ -474,13 +533,8 @@ export const createPlaybackSlice: StateCreator<
           return;
         }
 
-        const { cursor, queue } = get();
-        void logger.debug(`[player] Error recovery: cursor=${cursor}, queueLength=${queue.length}`);
-        if (cursor + 1 < queue.length) {
-          get().next();
-        } else {
-          get().stop();
-        }
+        void logger.debug(`[player] Error recovery: cursor=${get().cursor}, queueLength=${get().queue.length}`);
+        skipOrStop(get);
       },
       onFullyBuffered: () => {
         const { queue, cursor, state } = get();

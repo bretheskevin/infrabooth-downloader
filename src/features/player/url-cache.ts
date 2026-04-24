@@ -50,6 +50,13 @@ export function setCachedUrl(trackId: number, url: string): void {
   cache.set(trackId, { url, expiresAt });
 }
 
+/** Drop all cached data for a track so the next access forces a fresh resolve. */
+export function invalidateCachedUrl(trackId: number): void {
+  cache.delete(trackId);
+  manifestCache.delete(trackId);
+  segmentPreloaded.delete(trackId);
+}
+
 /** Resolve a single track, deduplicating concurrent requests. */
 function resolveOne(trackId: number, trackUrl: string): Promise<string> {
   const existing = inFlight.get(trackId);

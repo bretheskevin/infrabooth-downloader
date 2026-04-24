@@ -25,6 +25,7 @@ vi.mock('../audio-engine', () => ({
 vi.mock('../url-cache', () => ({
   getCachedUrl: vi.fn().mockReturnValue(null),
   setCachedUrl: vi.fn(),
+  invalidateCachedUrl: vi.fn(),
   resolveWithCache: vi.fn().mockResolvedValue('https://example.com/stream.m3u8'),
   preloadQueueSegments: vi.fn(),
   purgeStaleCache: vi.fn(),
@@ -39,7 +40,7 @@ vi.mock('@/lib/tauri', () => ({
 import { usePlayerStore } from '../store';
 import { resetCrossfadeGeneration } from '../store/playbackSlice';
 import { audioEngine } from '../audio-engine';
-import { resolveWithCache, preloadQueueSegments } from '../url-cache';
+import { resolveWithCache, preloadQueueSegments, invalidateCachedUrl } from '../url-cache';
 import { useSettingsStore } from '@/features/settings/store';
 import type { PlaybackItem } from '../types';
 import type { AudioEngineCallbacks } from '../audio-engine';
@@ -1193,6 +1194,96 @@ describe('playerStore', () => {
       expect(state.cursor).toBe(0);
       expect(state.crossfadePending).toBe(false);
       expect(state.crossfadingTrackId).toBeNull();
+    });
+  });
+
+  describe('onUrlExpired', () => {
+    it('should invalidate cache and reload with fresh URL at position', async () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
+
+      vi.mocked(resolveWithCache).mockResolvedValueOnce('https://example.com/refreshed.m3u8');
+
+      const cbs = extractCallbacks();
+      await cbs.onUrlExpired!(45000);
+
+      expect(invalidateCachedUrl).toHaveBeenCalledWith(1);
+      expect(resolveWithCache).toHaveBeenCalledWith(1, queue[0]!.trackUrl);
+      expect(audioEngine.load).toHaveBeenCalledWith('https://example.com/refreshed.m3u8', 45000);
+      expect(audioEngine.play).toHaveBeenCalled();
+    });
+
+    it('should skip to next track when refresh limit is exceeded', async () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
+
+      const cbs = extractCallbacks();
+      // Exhaust the limit (MAX_URL_REFRESH_PER_TRACK = 2)
+      await cbs.onUrlExpired!(1000);
+      await cbs.onUrlExpired!(1000);
+
+      const resolveCallsBefore = vi.mocked(resolveWithCache).mock.calls.length;
+      await cbs.onUrlExpired!(1000);
+
+      const resolveCallsForTrack1 = vi.mocked(resolveWithCache).mock.calls
+        .slice(resolveCallsBefore)
+        .filter(([id]) => id === 1);
+      expect(resolveCallsForTrack1).toHaveLength(0);
+      await vi.waitFor(() => {
+        expect(usePlayerStore.getState().cursor).toBe(1);
+      });
+    });
+
+    it('should stop when refresh limit exceeded on last track', async () => {
+      const queue = makeQueue(1);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
+
+      const cbs = extractCallbacks();
+      await cbs.onUrlExpired!(1000);
+      await cbs.onUrlExpired!(1000);
+      await cbs.onUrlExpired!(1000);
+
+      expect(audioEngine.stop).toHaveBeenCalled();
+    });
+
+    it('should skip to next track when URL resolution fails', async () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
+
+      vi.mocked(resolveWithCache).mockRejectedValueOnce(new Error('Network error'));
+
+      const cbs = extractCallbacks();
+      await cbs.onUrlExpired!(5000);
+
+      expect(usePlayerStore.getState().cursor).toBe(1);
+    });
+
+    it('should be a no-op when no current track', async () => {
+      usePlayerStore.setState({ queue: [], cursor: 0, currentTrack: null, state: 'stopped' });
+
+      const cbs = extractCallbacks();
+      await cbs.onUrlExpired!(0);
+
+      expect(invalidateCachedUrl).not.toHaveBeenCalled();
+      expect(resolveWithCache).not.toHaveBeenCalled();
+    });
+
+    it('should reset refresh count when track changes', async () => {
+      const queue = makeQueue(3);
+      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
+
+      const cbs = extractCallbacks();
+      await cbs.onUrlExpired!(1000);
+      await cbs.onUrlExpired!(1000);
+
+      // Switch to track 2
+      await usePlayerStore.getState().next();
+      vi.mocked(invalidateCachedUrl).mockClear();
+      vi.mocked(resolveWithCache).mockResolvedValueOnce('https://example.com/refreshed2.m3u8');
+
+      await cbs.onUrlExpired!(2000);
+      expect(invalidateCachedUrl).toHaveBeenCalledWith(2);
+      expect(audioEngine.load).toHaveBeenCalledWith('https://example.com/refreshed2.m3u8', 2000);
     });
   });
 });
