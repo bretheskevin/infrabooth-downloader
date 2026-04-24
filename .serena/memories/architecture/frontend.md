@@ -37,9 +37,9 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 
 ### Messaging
 - **messages** — direct messaging with other SoundCloud users
-  - Components: ConversationsList, ConversationRow, ConversationPage, MessageRow, MessageBell, MessageTrackCard, MessagePlaylistCard
+  - Components: ConversationsList, ConversationRow, ConversationPage, MessageRow, MessageBell, MessageTrackCard, MessagePlaylistCard, MessageUserCard
   - Hooks: useConversationsPage, useConversationMessages, useSendMessage (optimistic updates), useUnreadConversations, useResolveEmbed
-  - Supports track and playlist embeds in messages
+  - Supports track, playlist, and user profile embeds in messages
   - ShareTrackDialog: share tracks to conversations via DM (search, pick conversation, send)
 
 ### Activity Feed
