@@ -7,6 +7,12 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.26.0] - 2026-04-24
+
+### Added
+
+- Aperçu des profils utilisateurs dans les messages
+
 ## [1.25.0] - 2026-04-23
 
 ### Added
