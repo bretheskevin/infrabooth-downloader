@@ -32,7 +32,7 @@ export const useMessagesStore = create<MessagesState>((set) => ({
   isPageOpen: false,
   selectedConversation: null,
   selectedPlaylist: null,
-  openConversation: (conv) => set({ isPageOpen: true, selectedConversation: conv }),
+  openConversation: (conv) => set({ isPageOpen: true, selectedConversation: conv, selectedPlaylist: null }),
   openPlaylist: (embed) => set({ selectedPlaylist: embed }),
   closePlaylist: () => set({ selectedPlaylist: null }),
   clear: () => set({ isPageOpen: false, selectedConversation: null, selectedPlaylist: null }),
