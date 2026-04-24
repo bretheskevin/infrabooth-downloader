@@ -5,6 +5,7 @@ interface SelectedConversation {
   otherUserId: number;
   username: string;
   avatarUrl: string | null;
+  permalinkUrl: string;
 }
 
 export interface ShareTrackInfo {

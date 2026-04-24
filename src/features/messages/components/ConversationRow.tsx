@@ -70,6 +70,7 @@ export function ConversationRow({ conversation, currentUserId, onClose }: Conver
       otherUserId: other_user.id,
       username: other_user.username,
       avatarUrl: other_user.avatar_url,
+      permalinkUrl: other_user.permalink_url,
     });
     onClose();
   };

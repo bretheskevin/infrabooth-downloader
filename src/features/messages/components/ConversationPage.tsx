@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Loader2, SendHorizonal } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Link, Loader2, MoreVertical, SendHorizonal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ArtistLink } from '@/components/ArtistLink';
 import { cn } from '@/lib/utils';
+import { useLinkActions } from '@/hooks/useLinkActions';
 import { MessageRow } from './MessageRow';
 import { useConversationMessages } from '../hooks/useConversationMessages';
 import { useSendMessage } from '../hooks/useSendMessage';
@@ -32,8 +35,10 @@ export function ConversationPage() {
   };
 
   const displayUser = otherUser?.username ? otherUser : conversation
-    ? { id: conversation.otherUserId, username: conversation.username, avatar_url: conversation.avatarUrl, permalink_url: '' }
+    ? { id: conversation.otherUserId, username: conversation.username, avatar_url: conversation.avatarUrl, permalink_url: conversation.permalinkUrl }
     : null;
+
+  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(displayUser?.permalink_url ?? '');
 
   const handleClose = () => useMessagesStore.getState().clear();
 
@@ -49,7 +54,26 @@ export function ConversationPage() {
               <AvatarImage src={displayUser.avatar_url ?? undefined} alt={displayUser.username} />
               <AvatarFallback className="text-sm">{displayUser.username.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <h2 className="text-lg font-semibold">{displayUser.username}</h2>
+            <ArtistLink userId={displayUser.id} username={displayUser.username} className="text-lg font-semibold" />
+            {displayUser.permalink_url && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0 ml-auto" aria-label={t('trackMenu.moreActions')}>
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={handleCopyLink}>
+                    <Link className="h-3.5 w-3.5" />
+                    {t('trackMenu.copyLink')}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleOpenInBrowser}>
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    {t('trackMenu.openInBrowser')}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
           </>
         )}
       </div>
