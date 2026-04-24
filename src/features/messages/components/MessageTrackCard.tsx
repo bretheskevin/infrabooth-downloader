@@ -10,6 +10,8 @@ import type { MessageTrackEmbed } from '@/bindings';
 import { ArtistLink } from '@/components/ArtistLink';
 import type { DownloadState } from '@/types/download';
 import { TrackDownloadAction } from '@/components/TrackDownloadAction';
+import { useDownloadStateStore } from '@/hooks/useDownloadState';
+import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 
 interface MessageTrackCardProps {
   embed: MessageTrackEmbed;
@@ -25,6 +27,8 @@ interface MessageTrackCardProps {
 export function MessageTrackCard({ embed, onPlay, onCopyLink, onOpenInBrowser, onAddToQueue, downloadState, onDownload, onRetry }: MessageTrackCardProps) {
   const { t } = useTranslation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const filePath = useDownloadStateStore((s) => s.states.get(String(embed.id))?.filePath);
+  const handleOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
 
   return (
     <div
@@ -55,6 +59,7 @@ export function MessageTrackCard({ embed, onPlay, onCopyLink, onOpenInBrowser, o
             <TrackMenuItems
               onCopyLink={onCopyLink}
               onOpenInBrowser={onOpenInBrowser}
+              onOpenFileLocation={filePath ? handleOpenFileLocation : undefined}
               isSignedIn
               trackId={Number(embed.id)}
               variant="dropdown"
