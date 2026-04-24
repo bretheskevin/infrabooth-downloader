@@ -6,11 +6,13 @@ import type { PlaybackItem } from '@/features/player';
 import { useMessagesStore } from '../store';
 import { MessageTrackCard } from './MessageTrackCard';
 import { MessagePlaylistCard } from './MessagePlaylistCard';
-import type { ConversationMessage, MessageTrackEmbed, MessageUser } from '@/bindings';
+import { MessageUserCard } from './MessageUserCard';
+import type { ConversationMessage, MessageEmbed, MessageTrackEmbed, MessageUser } from '@/bindings';
 import { formatChatTimestamp } from '@/lib/date';
 import { useResolveEmbed } from '../hooks/useResolveEmbed';
 import { linkifyText } from '@/lib/linkify';
 import { useAuthStore } from '@/features/auth/store';
+import { useArtistProfileStore } from '@/features/artist-profile';
 
 interface MessageRowProps {
   message: ConversationMessage;
@@ -32,16 +34,23 @@ function toPlaybackItem(embed: MessageTrackEmbed): PlaybackItem {
   };
 }
 
-function TrackEmbed({ embed }: { embed: MessageTrackEmbed }) {
-  return (
-    <MessageTrackCard
-      embed={embed}
-      onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(embed)], 0)}
-      onCopyLink={() => void navigator.clipboard.writeText(embed.permalink_url)}
-      onOpenInBrowser={() => void open(embed.permalink_url)}
-      onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(embed))}
-    />
-  );
+function renderEmbed(embed: MessageEmbed) {
+  switch (embed.kind) {
+    case 'Track':
+      return (
+        <MessageTrackCard
+          embed={embed}
+          onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(embed)], 0)}
+          onCopyLink={() => void navigator.clipboard.writeText(embed.permalink_url)}
+          onOpenInBrowser={() => void open(embed.permalink_url)}
+          onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(embed))}
+        />
+      );
+    case 'Playlist':
+      return <MessagePlaylistCard embed={embed} onOpen={() => useMessagesStore.getState().openPlaylist(embed)} />;
+    case 'User':
+      return <MessageUserCard embed={embed} onOpen={() => useArtistProfileStore.getState().openProfile(embed.id, embed.username)} />;
+  }
 }
 
 export function MessageRow({ message, currentUserId, otherUser, showHeader }: MessageRowProps) {
@@ -52,15 +61,11 @@ export function MessageRow({ message, currentUserId, otherUser, showHeader }: Me
   const senderName = isOwnMessage ? t('directMessages.you') : (otherUser?.username ?? '');
   const senderAvatar = isOwnMessage ? myAvatarUrl : otherUser?.avatar_url;
 
-  const { trackEmbed, playlistEmbed, rawScUrl } = useResolveEmbed(message.content);
+  const { embed, rawScUrl } = useResolveEmbed(message.content);
   const displayContent = rawScUrl ? message.content.replace(rawScUrl, '').trim() : message.content;
   const timestamp = formatChatTimestamp(message.sent_at, i18n.language);
 
-  const embedElement = trackEmbed
-    ? <TrackEmbed embed={trackEmbed} />
-    : playlistEmbed
-      ? <MessagePlaylistCard embed={playlistEmbed} onOpen={() => useMessagesStore.getState().openPlaylist(playlistEmbed)} />
-      : null;
+  const embedElement = embed ? renderEmbed(embed) : null;
 
   if (isOwnMessage) {
     return (

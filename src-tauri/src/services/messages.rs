@@ -48,10 +48,20 @@ pub struct MessagePlaylistEmbed {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct MessageUserEmbed {
+    pub id: u64,
+    pub username: String,
+    pub avatar_url: Option<String>,
+    pub followers_count: u64,
+    pub permalink_url: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(tag = "kind")]
 pub enum MessageEmbed {
     Track(MessageTrackEmbed),
     Playlist(MessagePlaylistEmbed),
+    User(MessageUserEmbed),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
@@ -229,6 +239,26 @@ async fn resolve_embed(url: &str, client_id: &str, oauth_token: &str) -> Option<
                 track_count: playlist.track_count,
                 permalink_url: playlist.permalink_url,
                 secret_token: playlist.secret_token,
+            }))
+        }
+        "user" => {
+            #[derive(serde::Deserialize)]
+            struct RawUser {
+                id: u64,
+                username: String,
+                avatar_url: Option<String>,
+                #[serde(default)]
+                followers_count: u64,
+                #[serde(default)]
+                permalink_url: String,
+            }
+            let user: RawUser = serde_json::from_value(value).ok()?;
+            Some(MessageEmbed::User(MessageUserEmbed {
+                id: user.id,
+                username: user.username,
+                avatar_url: user.avatar_url,
+                followers_count: user.followers_count,
+                permalink_url: user.permalink_url,
             }))
         }
         _ => None,

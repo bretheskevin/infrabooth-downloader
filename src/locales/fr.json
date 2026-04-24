@@ -500,7 +500,9 @@
     "trackCount_other": "{{count}} pistes",
     "placeholder": "Écrire un message...",
     "send": "Envoyer",
-    "sendError": "Échec de l'envoi du message"
+    "sendError": "Échec de l'envoi du message",
+    "followersCount_one": "{{count}} abonné",
+    "followersCount_other": "{{count}} abonnés"
   },
   "newReleases": {
     "title": "Playlists / Albums récents",

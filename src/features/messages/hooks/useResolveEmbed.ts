@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/tauri';
 import { useIsSignedIn } from '@/features/auth/store';
 import { normalizeShortUrl } from '@/lib/soundcloud';
-import type { MessageTrackEmbed, MessagePlaylistEmbed } from '@/bindings';
+import type { MessageEmbed } from '@/bindings';
 
 const SC_URL_PATTERN = /(?:https?:\/\/(?:on\.)?soundcloud\.com|on\.soundcloud\.com)\/\S+/;
 
@@ -27,11 +27,8 @@ export function useResolveEmbed(content: string) {
     gcTime: 30 * 60 * 1000,
   });
 
-  const embed = query.data ?? null;
-
   return {
-    trackEmbed: (embed?.kind === 'Track' ? embed : null) as MessageTrackEmbed | null,
-    playlistEmbed: (embed?.kind === 'Playlist' ? embed : null) as MessagePlaylistEmbed | null,
+    embed: query.data ?? null as MessageEmbed | null,
     scUrl: url,
     rawScUrl: rawUrl,
     isLoading: query.isLoading && !!url,

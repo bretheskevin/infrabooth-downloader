@@ -500,7 +500,9 @@
     "trackCount_other": "{{count}} tracks",
     "placeholder": "Write a message...",
     "send": "Send",
-    "sendError": "Failed to send message"
+    "sendError": "Failed to send message",
+    "followersCount_one": "{{count}} follower",
+    "followersCount_other": "{{count}} followers"
   },
   "newReleases": {
     "title": "New Playlists / Albums",
