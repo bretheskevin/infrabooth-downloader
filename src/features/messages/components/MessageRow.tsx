@@ -7,18 +7,26 @@ import { useMessagesStore } from '../store';
 import { MessageTrackCard } from './MessageTrackCard';
 import { MessagePlaylistCard } from './MessagePlaylistCard';
 import { MessageUserCard } from './MessageUserCard';
-import type { ConversationMessage, MessageEmbed, MessageTrackEmbed, MessageUser } from '@/bindings';
+import type { ConversationMessage, MessageEmbed, MessageTrackEmbed, MessageUser, TrackCore } from '@/bindings';
 import { formatChatTimestamp } from '@/lib/date';
 import { useResolveEmbed } from '../hooks/useResolveEmbed';
 import { linkifyText } from '@/lib/linkify';
 import { useAuthStore } from '@/features/auth/store';
 import { useArtistProfileStore } from '@/features/artist-profile';
+import { buildTrackApiUrl } from '@/lib/soundcloud';
+import type { DownloadState } from '@/types/download';
+
+interface TrackDownloadControls {
+  downloadTrackCore: (core: TrackCore) => Promise<void>;
+  getTrackState: (trackId: number) => DownloadState;
+}
 
 interface MessageRowProps {
   message: ConversationMessage;
   currentUserId: number;
   otherUser: MessageUser | null;
   showHeader: boolean;
+  trackDownload: TrackDownloadControls;
 }
 
 function toPlaybackItem(embed: MessageTrackEmbed): PlaybackItem {
@@ -34,18 +42,38 @@ function toPlaybackItem(embed: MessageTrackEmbed): PlaybackItem {
   };
 }
 
-function renderEmbed(embed: MessageEmbed) {
+function embedToTrackCore(embed: MessageTrackEmbed): TrackCore {
+  return {
+    trackUrl: buildTrackApiUrl(embed.id),
+    trackId: String(embed.id),
+    title: embed.title,
+    artist: embed.artist,
+    artworkUrl: embed.artwork_url,
+    durationMs: embed.duration_ms,
+    downloadUrl: null,
+  };
+}
+
+function renderTrackEmbed(embed: MessageTrackEmbed, trackDownload: TrackDownloadControls) {
+  const handleDownload = () => void trackDownload.downloadTrackCore(embedToTrackCore(embed));
+  return (
+    <MessageTrackCard
+      embed={embed}
+      onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(embed)], 0)}
+      onCopyLink={() => void navigator.clipboard.writeText(embed.permalink_url)}
+      onOpenInBrowser={() => void open(embed.permalink_url)}
+      onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(embed))}
+      downloadState={trackDownload.getTrackState(embed.id)}
+      onDownload={handleDownload}
+      onRetry={handleDownload}
+    />
+  );
+}
+
+function renderEmbed(embed: MessageEmbed, trackDownload: TrackDownloadControls) {
   switch (embed.kind) {
     case 'Track':
-      return (
-        <MessageTrackCard
-          embed={embed}
-          onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(embed)], 0)}
-          onCopyLink={() => void navigator.clipboard.writeText(embed.permalink_url)}
-          onOpenInBrowser={() => void open(embed.permalink_url)}
-          onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(embed))}
-        />
-      );
+      return renderTrackEmbed(embed, trackDownload);
     case 'Playlist':
       return <MessagePlaylistCard embed={embed} onOpen={() => useMessagesStore.getState().openPlaylist(embed)} />;
     case 'User':
@@ -53,7 +81,7 @@ function renderEmbed(embed: MessageEmbed) {
   }
 }
 
-export function MessageRow({ message, currentUserId, otherUser, showHeader }: MessageRowProps) {
+export function MessageRow({ message, currentUserId, otherUser, showHeader, trackDownload }: MessageRowProps) {
   const { t, i18n } = useTranslation();
   const isOwnMessage = message.sender_id === currentUserId;
 
@@ -65,7 +93,7 @@ export function MessageRow({ message, currentUserId, otherUser, showHeader }: Me
   const displayContent = rawScUrl ? message.content.replace(rawScUrl, '').trim() : message.content;
   const timestamp = formatChatTimestamp(message.sent_at, i18n.language);
 
-  const embedElement = embed ? renderEmbed(embed) : null;
+  const embedElement = embed ? renderEmbed(embed, trackDownload) : null;
 
   if (isOwnMessage) {
     return (

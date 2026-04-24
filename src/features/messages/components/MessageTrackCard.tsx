@@ -8,6 +8,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { TrackMenuItems } from '@/components/TrackRowActions';
 import type { MessageTrackEmbed } from '@/bindings';
 import { ArtistLink } from '@/components/ArtistLink';
+import type { DownloadState } from '@/types/download';
+import { TrackDownloadAction } from '@/components/TrackDownloadAction';
 
 interface MessageTrackCardProps {
   embed: MessageTrackEmbed;
@@ -15,9 +17,12 @@ interface MessageTrackCardProps {
   onCopyLink: () => void;
   onOpenInBrowser: () => void;
   onAddToQueue: () => void;
+  downloadState: DownloadState;
+  onDownload: () => void;
+  onRetry: () => void;
 }
 
-export function MessageTrackCard({ embed, onPlay, onCopyLink, onOpenInBrowser, onAddToQueue }: MessageTrackCardProps) {
+export function MessageTrackCard({ embed, onPlay, onCopyLink, onOpenInBrowser, onAddToQueue, downloadState, onDownload, onRetry }: MessageTrackCardProps) {
   const { t } = useTranslation();
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -39,6 +44,7 @@ export function MessageTrackCard({ embed, onPlay, onCopyLink, onOpenInBrowser, o
       </div>
       <span className="text-xs text-muted-foreground flex-shrink-0">{formatDuration(embed.duration_ms)}</span>
       <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+        <TrackDownloadAction state={downloadState} onDownload={onDownload} onRetry={onRetry} />
         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={t('trackMenu.moreActions')}>

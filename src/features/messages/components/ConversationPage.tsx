@@ -14,6 +14,8 @@ import { useSendMessage } from '../hooks/useSendMessage';
 import { useMessagesStore } from '../store';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useIsMiniPillVisible } from '@/features/player/hooks/useIsMiniPillVisible';
+import { useTrackDownload } from '@/hooks/useTrackDownload';
+import { useSettingsStore } from '@/features/settings/store';
 
 export function ConversationPage() {
   const { t } = useTranslation();
@@ -25,6 +27,10 @@ export function ConversationPage() {
   const miniPillVisible = useIsMiniPillVisible();
   const { sendMessage, isPending } = useSendMessage(conversation?.otherUserId ?? 0);
   const [inputValue, setInputValue] = useState('');
+
+  const downloadPath = useSettingsStore((s) => s.downloadPath);
+  const { downloadTrackCore, getTrackState } = useTrackDownload(downloadPath);
+  const trackDownload = { downloadTrackCore, getTrackState };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,6 +111,7 @@ export function ConversationPage() {
                   currentUserId={currentUserId}
                   otherUser={displayUser}
                   showHeader={showHeader}
+                  trackDownload={trackDownload}
                 />
               </div>
             );

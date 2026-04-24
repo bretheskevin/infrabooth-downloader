@@ -3,7 +3,7 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { useDownloadState, useDownloadStateStore, addManagedTrack, clearManagedTracks } from './useDownloadState';
 import { useTrackDownloader } from './useTrackDownloader';
-import type { TrackInfo } from '@/bindings';
+import type { TrackCore, TrackInfo } from '@/bindings';
 import type { DownloadState } from '@/types/download';
 import { toTrackCore } from '@/lib/trackMapping';
 
@@ -57,8 +57,8 @@ export function useTrackDownload(downloadPath: string) {
     return unsub;
   }, [t, getTrackInfo]);
 
-  const downloadTrack = useCallback(async (track: TrackInfo) => {
-    const trackId = String(track.id);
+  const downloadTrackCore = useCallback(async (core: TrackCore) => {
+    const trackId = core.trackId;
     addManagedTrack(trackId);
     toastedRef.current.delete(trackId);
     toastedRef.current.delete(`err:${trackId}`);
@@ -73,7 +73,7 @@ export function useTrackDownload(downloadPath: string) {
     });
 
     try {
-      await download(toTrackCore(track), downloadPath);
+      await download(core, downloadPath);
     } catch (err) {
       const state = getRawState(trackId);
       if (state?.status === 'downloading') {
@@ -90,6 +90,10 @@ export function useTrackDownload(downloadPath: string) {
     }
   }, [download, downloadPath, updateFromEvent, getRawState]);
 
+  const downloadTrack = useCallback(async (track: TrackInfo) => {
+    await downloadTrackCore(toTrackCore(track));
+  }, [downloadTrackCore]);
+
   const getTrackState = useCallback((trackId: number): DownloadState => {
     return toDownloadState(getRawState(String(trackId)));
   }, [getRawState]);
@@ -98,5 +102,5 @@ export function useTrackDownload(downloadPath: string) {
     rawReconcile(Array.from(diskIds).map(String));
   }, [rawReconcile]);
 
-  return { downloadTrack, getTrackState, completedCount, reconcile };
+  return { downloadTrack, downloadTrackCore, getTrackState, completedCount, reconcile };
 }
