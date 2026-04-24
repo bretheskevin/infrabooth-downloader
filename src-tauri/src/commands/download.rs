@@ -184,7 +184,7 @@ pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>) -> HashM
     if !dir.exists() {
         return HashMap::new();
     }
-    scan_existing_track_ids(&dir, &track_ids)
+    scan_existing_track_ids(&dir, &track_ids, false)
         .into_iter()
         .map(|(id, path)| (id, path.to_string_lossy().to_string()))
         .collect()

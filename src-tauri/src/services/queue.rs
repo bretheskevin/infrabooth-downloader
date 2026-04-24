@@ -276,7 +276,7 @@ impl DownloadQueue {
         // Pre-scan for already-downloaded tracks (blocking I/O on a dedicated thread)
         let track_ids: Vec<String> = self.items.iter().map(|item| item.core.track_id.clone()).collect();
         let scan_dir = ctx.output_dir.clone();
-        let existing_ids: HashSet<String> = tokio::task::spawn_blocking(move || scan_existing_track_ids(&scan_dir, &track_ids))
+        let existing_ids: HashSet<String> = tokio::task::spawn_blocking(move || scan_existing_track_ids(&scan_dir, &track_ids, false))
             .await
             .unwrap_or_default()
             .into_keys()

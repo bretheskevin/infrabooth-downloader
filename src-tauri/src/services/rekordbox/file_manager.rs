@@ -82,14 +82,23 @@ pub fn copy_track_to_rekordbox(source_path: &Path, artist: &str, title: &str, re
                 continue;
             }
 
-            fs::copy(source_path, &alt_path).map_err(|e| RekordboxError::FileError(format!("Copy failed: {}", e)))?;
+            move_file(source_path, &alt_path)?;
             return Ok(alt_path);
         }
         return Err(RekordboxError::FileError("Too many filename conflicts".into()));
     }
 
-    fs::copy(source_path, &target_path).map_err(|e| RekordboxError::FileError(format!("Copy failed: {}", e)))?;
+    move_file(source_path, &target_path)?;
     Ok(target_path)
+}
+
+fn move_file(source: &Path, target: &Path) -> Result<(), RekordboxError> {
+    if fs::rename(source, target).is_ok() {
+        return Ok(());
+    }
+    fs::copy(source, target).map_err(|e| RekordboxError::FileError(format!("Copy failed: {}", e)))?;
+    let _ = fs::remove_file(source);
+    Ok(())
 }
 
 pub fn get_rekordbox_tracks_dir(app_data_dir: &Path) -> PathBuf {

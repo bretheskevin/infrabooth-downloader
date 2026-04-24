@@ -25,14 +25,14 @@ fn test_copy_track_creates_artist_dir() {
 }
 
 #[test]
-fn test_copy_track_idempotent_same_size() {
+fn test_copy_track_idempotent_when_already_in_place() {
     let source_dir = TempDir::new().unwrap();
     let dest_dir = TempDir::new().unwrap();
     let source_file = source_dir.path().join("track.mp3");
     fs::write(&source_file, b"fake mp3 data").unwrap();
     let path1 = file_manager::copy_track_to_rekordbox(&source_file, "Artist", "Track", dest_dir.path()).unwrap();
-    let path2 = file_manager::copy_track_to_rekordbox(&source_file, "Artist", "Track", dest_dir.path()).unwrap();
-    assert_eq!(path1, path2, "Same file should return same path");
+    let path2 = file_manager::copy_track_to_rekordbox(&path1, "Artist", "Track", dest_dir.path()).unwrap();
+    assert_eq!(path1, path2, "Track already in place should return same path");
 }
 
 #[test]

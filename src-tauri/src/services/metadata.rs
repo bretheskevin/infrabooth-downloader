@@ -108,34 +108,43 @@ async fn download_artwork(url: &str) -> Result<Vec<u8>, MetadataError> {
     Ok(bytes.to_vec())
 }
 
-pub fn scan_existing_track_ids(output_dir: &Path, track_ids: &[String]) -> HashMap<String, PathBuf> {
+pub fn scan_existing_track_ids(output_dir: &Path, track_ids: &[String], recursive: bool) -> HashMap<String, PathBuf> {
     let wanted: HashSet<&str> = track_ids.iter().map(|s| s.as_str()).collect();
     let mut found = HashMap::new();
 
-    let entries = match std::fs::read_dir(output_dir) {
-        Ok(e) => e,
-        Err(e) => {
-            log::warn!("[metadata] Failed to read dir for scan: {}", e);
-            return found;
-        }
-    };
+    let mut dirs_to_scan = vec![output_dir.to_path_buf()];
+    while let Some(dir) = dirs_to_scan.pop() {
+        let entries = match std::fs::read_dir(&dir) {
+            Ok(e) => e,
+            Err(e) => {
+                log::warn!("[metadata] Failed to read dir for scan: {}", e);
+                continue;
+            }
+        };
 
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().and_then(|e| e.to_str()) != Some("mp3") {
-            continue;
-        }
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                if recursive {
+                    dirs_to_scan.push(path);
+                }
+                continue;
+            }
+            if path.extension().and_then(|e| e.to_str()) != Some("mp3") {
+                continue;
+            }
 
-        match Tag::read_from_path(&path) {
-            Ok(tag) => {
-                for frame in tag.extended_texts() {
-                    if frame.description == "SOUNDCLOUD_TRACK_ID" && wanted.contains(frame.value.as_str()) {
-                        found.insert(frame.value.clone(), path.clone());
+            match Tag::read_from_path(&path) {
+                Ok(tag) => {
+                    for frame in tag.extended_texts() {
+                        if frame.description == "SOUNDCLOUD_TRACK_ID" && wanted.contains(frame.value.as_str()) {
+                            found.insert(frame.value.clone(), path.clone());
+                        }
                     }
                 }
-            }
-            Err(e) => {
-                log::debug!("[metadata] Could not read tags from {:?}: {}", path, e);
+                Err(e) => {
+                    log::debug!("[metadata] Could not read tags from {:?}: {}", path, e);
+                }
             }
         }
     }
@@ -266,7 +275,7 @@ mod tests {
         tag.add_frame(id3::frame::ExtendedText { description: "SOUNDCLOUD_TRACK_ID".to_string(), value: "12345".to_string() });
         tag.write_to_path(&file_path, Version::Id3v24).unwrap();
 
-        let result = scan_existing_track_ids(dir.path(), &["12345".to_string(), "99999".to_string()]);
+        let result = scan_existing_track_ids(dir.path(), &["12345".to_string(), "99999".to_string()], false);
         assert!(result.contains_key("12345"));
         assert!(!result.contains_key("99999"));
         assert_eq!(result.len(), 1);
@@ -275,7 +284,7 @@ mod tests {
     #[test]
     fn test_scan_existing_track_ids_empty_dir() {
         let dir = tempdir().unwrap();
-        let result = scan_existing_track_ids(dir.path(), &["12345".to_string()]);
+        let result = scan_existing_track_ids(dir.path(), &["12345".to_string()], false);
         assert!(result.is_empty());
     }
 
@@ -285,13 +294,31 @@ mod tests {
         let file_path = dir.path().join("test.mp3");
         fs::write(&file_path, create_minimal_mp3()).unwrap();
 
-        let result = scan_existing_track_ids(dir.path(), &["12345".to_string()]);
+        let result = scan_existing_track_ids(dir.path(), &["12345".to_string()], false);
         assert!(result.is_empty());
     }
 
     #[test]
     fn test_scan_existing_track_ids_nonexistent_dir() {
-        let result = scan_existing_track_ids(Path::new("/nonexistent/dir"), &["12345".to_string()]);
+        let result = scan_existing_track_ids(Path::new("/nonexistent/dir"), &["12345".to_string()], false);
         assert!(result.is_empty());
+    }
+
+    #[test]
+    fn test_scan_existing_track_ids_recursive() {
+        let dir = tempdir().unwrap();
+        let sub_dir = dir.path().join("Artist A");
+        fs::create_dir_all(&sub_dir).unwrap();
+        let file_path = sub_dir.join("Song.mp3");
+        fs::write(&file_path, create_minimal_mp3()).unwrap();
+
+        let mut tag = Tag::new();
+        tag.set_title("Song");
+        tag.add_frame(id3::frame::ExtendedText { description: "SOUNDCLOUD_TRACK_ID".to_string(), value: "67890".to_string() });
+        tag.write_to_path(&file_path, Version::Id3v24).unwrap();
+
+        let result = scan_existing_track_ids(dir.path(), &["67890".to_string()], true);
+        assert!(result.contains_key("67890"));
+        assert_eq!(result["67890"], file_path);
     }
 }

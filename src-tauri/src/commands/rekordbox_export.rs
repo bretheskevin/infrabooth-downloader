@@ -20,7 +20,7 @@ use crate::services::storage::AuthState;
 
 use super::rekordbox::{export_single_track, is_content_in_playlist, RekordboxWriteContext};
 
-const EXPORT_DOWNLOADS_DIR: &str = "rekordbox-downloads";
+const EXPORT_DOWNLOADS_DIR: &str = ".rekordbox-downloads";
 
 #[derive(Default)]
 pub struct RekordboxExportCancellation(CancellationState);
@@ -96,7 +96,7 @@ async fn download_track(
 }
 
 async fn resolve_track_sources(
-    app: &tauri::AppHandle, tracks: Vec<TrackCore>, output_dir: &Path, total: u32, max_concurrent: usize,
+    app: &tauri::AppHandle, tracks: Vec<TrackCore>, output_dir: &Path, scan_dir: &Path, total: u32, max_concurrent: usize,
     cancel_state: &RekordboxExportCancellation,
 ) -> Result<(Vec<(TrackCore, PathBuf)>, Vec<String>, bool), ErrorResponse> {
     tokio::fs::create_dir_all(output_dir).await.map_err(|e| ErrorResponse {
@@ -105,8 +105,8 @@ async fn resolve_track_sources(
     })?;
 
     let track_ids: Vec<String> = tracks.iter().map(|t| t.track_id.clone()).collect();
-    let scan_dir = output_dir.to_path_buf();
-    let existing = tokio::task::spawn_blocking(move || scan_existing_track_ids(&scan_dir, &track_ids))
+    let scan_dir = scan_dir.to_path_buf();
+    let existing = tokio::task::spawn_blocking(move || scan_existing_track_ids(&scan_dir, &track_ids, true))
         .await
         .map_err(|e| ErrorResponse { code: "SCAN_ERROR".to_string(), message: e.to_string() })?;
     let oauth_token = app.state::<AuthState>().get_token();
@@ -204,13 +204,22 @@ pub async fn export_playlist_to_rekordbox(
 
     let total = tracks.len() as u32;
     let export_dl_dir = ctx.app_data_dir.join(EXPORT_DOWNLOADS_DIR);
+    let rekordbox_tracks_dir = file_manager::get_rekordbox_tracks_dir(&ctx.app_data_dir);
     let max_concurrent = max_concurrent.clamp(1, 10) as usize;
 
     log::info!("[rekordbox-export] Resolving track sources (download dir: {:?})...", export_dl_dir);
     let cancelled_err = || ErrorResponse { code: "CANCELLED".to_string(), message: "Export cancelled".to_string() };
 
-    let (resolved, download_errors, was_cancelled) =
-        resolve_track_sources(&app, tracks, &export_dl_dir, total, max_concurrent, &cancel_state).await?;
+    let (resolved, download_errors, was_cancelled) = resolve_track_sources(
+        &app,
+        tracks,
+        &export_dl_dir,
+        &rekordbox_tracks_dir,
+        total,
+        max_concurrent,
+        &cancel_state,
+    )
+    .await?;
 
     if was_cancelled {
         log::info!("[rekordbox-export] Export cancelled during download phase");
