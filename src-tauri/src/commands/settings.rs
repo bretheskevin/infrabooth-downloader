@@ -98,14 +98,7 @@ fn remove_flag_block(source: &str, key: &str) -> String {
         }
     }
 
-    lines
-        .iter()
-        .enumerate()
-        .filter(|(i, _)| !to_remove.contains(i))
-        .map(|(_, line)| *line)
-        .collect::<Vec<_>>()
-        .join("\n")
-        + "\n"
+    lines.iter().enumerate().filter(|(i, _)| !to_remove.contains(i)).map(|(_, line)| *line).collect::<Vec<_>>().join("\n") + "\n"
 }
 
 #[tauri::command]

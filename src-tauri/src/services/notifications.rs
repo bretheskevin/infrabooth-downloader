@@ -225,11 +225,7 @@ fn convert_activity(raw: RawActivity) -> Option<NotificationItem> {
 }
 
 fn extract_cursor_from_next_href(next_href: &str) -> Option<String> {
-    url::Url::parse(next_href)
-        .ok()?
-        .query_pairs()
-        .find(|(key, _)| key == "offset")
-        .map(|(_, value)| value.into_owned())
+    url::Url::parse(next_href).ok()?.query_pairs().find(|(key, _)| key == "offset").map(|(_, value)| value.into_owned())
 }
 
 fn convert_page(raw: RawActivitiesPage) -> NotificationsPage {
@@ -379,21 +375,10 @@ impl LastSeenActivityState {
 // Fetch
 // ---------------------------------------------------------------------------
 
-pub async fn fetch_activities_page(
-    oauth_token: &str, client_id: &str, cursor: Option<&str>, limit: u32,
-) -> Result<NotificationsPage, ScApiError> {
+pub async fn fetch_activities_page(oauth_token: &str, client_id: &str, cursor: Option<&str>, limit: u32) -> Result<NotificationsPage, ScApiError> {
     let url = match cursor {
-        Some(c) => format!(
-            "{}/activities?offset={}&limit={}&client_id={}&linked_partitioning=1",
-            API_V2_BASE,
-            urlencoding::encode(c),
-            limit,
-            client_id,
-        ),
-        None => format!(
-            "{}/activities?limit={}&client_id={}&linked_partitioning=1",
-            API_V2_BASE, limit, client_id,
-        ),
+        Some(c) => format!("{}/activities?offset={}&limit={}&client_id={}&linked_partitioning=1", API_V2_BASE, urlencoding::encode(c), limit, client_id,),
+        None => format!("{}/activities?limit={}&client_id={}&linked_partitioning=1", API_V2_BASE, limit, client_id,),
     };
 
     let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;

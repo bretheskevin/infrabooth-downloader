@@ -69,10 +69,7 @@ pub async fn install_update(app: AppHandle) -> Result<(), String> {
                 .download_and_install(
                     move |chunk_length, total| {
                         let downloaded = cumulative_downloaded.fetch_add(chunk_length, std::sync::atomic::Ordering::Relaxed) + chunk_length;
-                        let _ = app_clone.emit(
-                            events::UPDATE_DOWNLOAD_PROGRESS,
-                            UpdateDownloadProgress { downloaded_bytes: downloaded, total_bytes: total },
-                        );
+                        let _ = app_clone.emit(events::UPDATE_DOWNLOAD_PROGRESS, UpdateDownloadProgress { downloaded_bytes: downloaded, total_bytes: total });
                         if let Some(total) = total {
                             let percent = (downloaded as f64 / total as f64) * 100.0;
                             log::debug!("[updater] Download progress: {:.1}%", percent);

@@ -221,8 +221,16 @@ fn score_transcoding(t: &Transcoding, prefer_hls: bool) -> i32 {
         }
     };
 
-    let quality_bonus = if t.quality == "hq" { 100 } else { 0 };
-    let snipped_penalty = if t.snipped { -1000 } else { 0 };
+    let quality_bonus = if t.quality == "hq" {
+        100
+    } else {
+        0
+    };
+    let snipped_penalty = if t.snipped {
+        -1000
+    } else {
+        0
+    };
 
     codec_score + protocol_score + quality_bonus + snipped_penalty
 }
@@ -238,10 +246,7 @@ fn select_best(transcodings: &[Transcoding], prefer_hls: bool) -> Option<&Transc
         return None;
     }
 
-    transcodings
-        .iter()
-        .filter(|t| score_transcoding(t, prefer_hls) > -10000)
-        .max_by_key(|t| score_transcoding(t, prefer_hls))
+    transcodings.iter().filter(|t| score_transcoding(t, prefer_hls) > -10000).max_by_key(|t| score_transcoding(t, prefer_hls))
 }
 
 // ---------------------------------------------------------------------------
@@ -265,19 +270,11 @@ async fn fetch_track_data_by_id(track_id: u64, client_id: &str, oauth_token: Opt
     let client = &*crate::services::http::HTTP_CLIENT;
     let url = format!("{}/tracks/{}?client_id={}", API_V2_BASE, track_id, client_id);
 
-    let response = client
-        .get(&url)
-        .with_oauth(oauth_token)
-        .send()
-        .await
-        .map_err(|e| DownloadError::StreamResolutionFailed(format!("Network error: {}", e)))?;
+    let response = client.get(&url).with_oauth(oauth_token).send().await.map_err(|e| DownloadError::StreamResolutionFailed(format!("Network error: {}", e)))?;
 
     let response = validate_sc_response(response, None).await?;
 
-    response
-        .json()
-        .await
-        .map_err(|e| DownloadError::StreamResolutionFailed(format!("Invalid API response: {}", e)))
+    response.json().await.map_err(|e| DownloadError::StreamResolutionFailed(format!("Invalid API response: {}", e)))
 }
 
 /// Fetch track data with fallback: try by ID first, then by permalink URL.
@@ -298,15 +295,14 @@ async fn fetch_track_data_with_fallback(
 async fn resolve_transcoding_url(transcoding: &Transcoding, client_id: &str, oauth_token: Option<&str>) -> Result<String, DownloadError> {
     let client = &*crate::services::http::HTTP_CLIENT;
 
-    let separator = if transcoding.url.contains('?') { '&' } else { '?' };
+    let separator = if transcoding.url.contains('?') {
+        '&'
+    } else {
+        '?'
+    };
     let url = format!("{}{}client_id={}", transcoding.url, separator, client_id);
 
-    let response = client
-        .get(&url)
-        .with_oauth(oauth_token)
-        .send()
-        .await
-        .map_err(|e| DownloadError::StreamResolutionFailed(format!("Network error: {}", e)))?;
+    let response = client.get(&url).with_oauth(oauth_token).send().await.map_err(|e| DownloadError::StreamResolutionFailed(format!("Network error: {}", e)))?;
 
     fn geo_blocked_403() -> DownloadError {
         DownloadError::GeoBlocked("Stream access forbidden".to_string())
@@ -314,10 +310,7 @@ async fn resolve_transcoding_url(transcoding: &Transcoding, client_id: &str, oau
 
     let response = validate_sc_response(response, Some(geo_blocked_403)).await?;
 
-    let stream_response: StreamUrlResponse = response
-        .json()
-        .await
-        .map_err(|e| DownloadError::StreamResolutionFailed(format!("Invalid response: {}", e)))?;
+    let stream_response: StreamUrlResponse = response.json().await.map_err(|e| DownloadError::StreamResolutionFailed(format!("Invalid response: {}", e)))?;
 
     Ok(stream_response.url)
 }
@@ -364,7 +357,11 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
         }
 
         let transcodings = if transcodings.is_empty() {
-            let track_id_for_fetch = if is_first_attempt { opts.track_id } else { None };
+            let track_id_for_fetch = if is_first_attempt {
+                opts.track_id
+            } else {
+                None
+            };
             let data = match fetch_track_data_with_fallback(track_id_for_fetch, opts.track_url, &cid, opts.oauth_token).await {
                 Ok(data) => data,
                 Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
@@ -390,8 +387,8 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 
         log::info!("[stream] Found {} transcodings for track", transcodings.len());
 
-        let transcoding = select_best(&transcodings, opts.prefer_hls)
-            .ok_or_else(|| DownloadError::StreamResolutionFailed("No suitable transcoding found".into()))?;
+        let transcoding =
+            select_best(&transcodings, opts.prefer_hls).ok_or_else(|| DownloadError::StreamResolutionFailed("No suitable transcoding found".into()))?;
 
         log::info!(
             "[stream] Selected transcoding: protocol={}, mime={}, quality={}, preset={}",
@@ -433,7 +430,11 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 pub async fn resolve_stream_url(track_url: &str, oauth_token: Option<&str>) -> Result<StreamInfo, DownloadError> {
     log::info!(
         "[stream] resolve_stream_url called, oauth_token={}",
-        if oauth_token.is_some() { "present" } else { "none" }
+        if oauth_token.is_some() {
+            "present"
+        } else {
+            "none"
+        }
     );
 
     let resolved = resolve_inner(ResolveOptions { track_id: None, track_url, oauth_token, prefer_hls: false }).await?;
@@ -449,7 +450,11 @@ pub async fn resolve_playback_url(track_id: u64, track_url: &str, oauth_token: O
     log::info!(
         "[stream] resolve_playback_url called for track_id={}, oauth={}",
         track_id,
-        if oauth_token.is_some() { "present" } else { "none" }
+        if oauth_token.is_some() {
+            "present"
+        } else {
+            "none"
+        }
     );
 
     let resolved = resolve_inner(ResolveOptions { track_id: Some(track_id), track_url, oauth_token, prefer_hls: true }).await?;
@@ -497,10 +502,7 @@ mod tests {
 
     #[test]
     fn test_normalize_protocol_progressive() {
-        assert_eq!(
-            normalize_protocol("progressive", "https://api.soundcloud.com/media/test"),
-            Protocol::Http
-        );
+        assert_eq!(normalize_protocol("progressive", "https://api.soundcloud.com/media/test"), Protocol::Http);
     }
 
     #[test]
@@ -510,34 +512,22 @@ mod tests {
 
     #[test]
     fn test_normalize_protocol_encrypted_hls() {
-        assert_eq!(
-            normalize_protocol("encrypted-hls", "https://api.soundcloud.com/media/test"),
-            Protocol::HlsAes
-        );
+        assert_eq!(normalize_protocol("encrypted-hls", "https://api.soundcloud.com/media/test"), Protocol::HlsAes);
     }
 
     #[test]
     fn test_normalize_protocol_hls_in_url() {
-        assert_eq!(
-            normalize_protocol("unknown", "https://api.soundcloud.com/media/test/hls/stream"),
-            Protocol::Hls
-        );
+        assert_eq!(normalize_protocol("unknown", "https://api.soundcloud.com/media/test/hls/stream"), Protocol::Hls);
     }
 
     #[test]
     fn test_normalize_protocol_drm_ctr() {
-        assert_eq!(
-            normalize_protocol("ctr-aes-128", "https://api.soundcloud.com/media/test"),
-            Protocol::Unknown
-        );
+        assert_eq!(normalize_protocol("ctr-aes-128", "https://api.soundcloud.com/media/test"), Protocol::Unknown);
     }
 
     #[test]
     fn test_normalize_protocol_drm_cbc() {
-        assert_eq!(
-            normalize_protocol("cbc-aes-128", "https://api.soundcloud.com/media/test"),
-            Protocol::Unknown
-        );
+        assert_eq!(normalize_protocol("cbc-aes-128", "https://api.soundcloud.com/media/test"), Protocol::Unknown);
     }
 
     // --- Transcoding selection tests ---
@@ -728,16 +718,12 @@ mod tests {
 
     #[test]
     fn test_is_auth_retry_error_401() {
-        assert!(is_auth_retry_error(&DownloadError::StreamResolutionFailed(
-            "HTTP 401 Unauthorized".into()
-        )));
+        assert!(is_auth_retry_error(&DownloadError::StreamResolutionFailed("HTTP 401 Unauthorized".into())));
     }
 
     #[test]
     fn test_is_auth_retry_error_403() {
-        assert!(is_auth_retry_error(&DownloadError::StreamResolutionFailed(
-            "HTTP 403 Forbidden".into()
-        )));
+        assert!(is_auth_retry_error(&DownloadError::StreamResolutionFailed("HTTP 403 Forbidden".into())));
     }
 
     #[test]

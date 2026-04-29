@@ -85,11 +85,7 @@ fn map_track(item: LikedTrackItem) -> TrackInfo {
     TrackInfo {
         id: item.track.id,
         title: item.track.title,
-        user: crate::services::playlist::UserInfo {
-            id: item.track.user.id,
-            username: item.track.user.username,
-            avatar_url: item.track.user.avatar_url,
-        },
+        user: crate::services::playlist::UserInfo { id: item.track.user.id, username: item.track.user.username, avatar_url: item.track.user.avatar_url },
         artwork_url: item.track.artwork_url,
         duration: item.track.duration,
         permalink_url: item.track.permalink_url,
@@ -99,9 +95,7 @@ fn map_track(item: LikedTrackItem) -> TrackInfo {
     }
 }
 
-async fn fetch_liked_tracks_page(
-    oauth_token: &str, client_id: &str, user_id: u64, cursor: Option<String>,
-) -> Result<LikedTracksPageResponse, ScApiError> {
+async fn fetch_liked_tracks_page(oauth_token: &str, client_id: &str, user_id: u64, cursor: Option<String>) -> Result<LikedTracksPageResponse, ScApiError> {
     let url = match cursor {
         Some(ref next_href) => next_href.clone(),
         None => format!(

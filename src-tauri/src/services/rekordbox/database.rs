@@ -13,11 +13,7 @@ const ID_BIT_SHIFT: u32 = 4;
 const ALLOWED_TABLES: &[&str] = &["djmdContent", "djmdPlaylist", "djmdSongPlaylist", "djmdArtist", "djmdAlbum"];
 
 pub(crate) fn validate_table_name(table_name: &str) -> Result<&str, RekordboxError> {
-    ALLOWED_TABLES
-        .iter()
-        .find(|&&t| t == table_name)
-        .copied()
-        .ok_or_else(|| RekordboxError::DatabaseError(format!("Invalid table name: {}", table_name)))
+    ALLOWED_TABLES.iter().find(|&&t| t == table_name).copied().ok_or_else(|| RekordboxError::DatabaseError(format!("Invalid table name: {}", table_name)))
 }
 
 pub struct RekordboxDatabase {
@@ -31,14 +27,11 @@ impl RekordboxDatabase {
         let conn = Connection::open(&config.db_path).map_err(|e| RekordboxError::DatabaseError(format!("Cannot open DB: {}", e)))?;
 
         // SAFETY: `key` is a compile-time constant hex string, not user input — no injection risk
-        conn.execute_batch(&format!("PRAGMA key = '{}';", key))
-            .map_err(|e| RekordboxError::DatabaseError(format!("Cannot set key: {}", e)))?;
+        conn.execute_batch(&format!("PRAGMA key = '{}';", key)).map_err(|e| RekordboxError::DatabaseError(format!("Cannot set key: {}", e)))?;
 
-        conn.execute_batch("SELECT count(*) FROM agentRegistry;")
-            .map_err(|e| RekordboxError::DatabaseError(format!("Decryption failed: {}", e)))?;
+        conn.execute_batch("SELECT count(*) FROM agentRegistry;").map_err(|e| RekordboxError::DatabaseError(format!("Decryption failed: {}", e)))?;
 
-        conn.execute_batch("BEGIN")
-            .map_err(|e| RekordboxError::DatabaseError(format!("BEGIN failed: {}", e)))?;
+        conn.execute_batch("BEGIN").map_err(|e| RekordboxError::DatabaseError(format!("BEGIN failed: {}", e)))?;
 
         Ok(Self { conn, pending_usn_updates: Vec::new() })
     }
@@ -47,8 +40,7 @@ impl RekordboxDatabase {
     pub fn open_unencrypted(db_path: &std::path::Path, _db_dir: std::path::PathBuf) -> Result<Self, RekordboxError> {
         let conn = Connection::open(db_path).map_err(|e| RekordboxError::DatabaseError(format!("Cannot open DB: {}", e)))?;
 
-        conn.execute_batch("BEGIN")
-            .map_err(|e| RekordboxError::DatabaseError(format!("BEGIN failed: {}", e)))?;
+        conn.execute_batch("BEGIN").map_err(|e| RekordboxError::DatabaseError(format!("BEGIN failed: {}", e)))?;
 
         Ok(Self { conn, pending_usn_updates: Vec::new() })
     }
@@ -60,25 +52,17 @@ impl RekordboxDatabase {
     pub fn get_local_usn(&self) -> Result<i64, RekordboxError> {
         let usn: i64 = self
             .conn
-            .query_row(
-                "SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'",
-                [],
-                |row| row.get(0),
-            )
+            .query_row("SELECT int_1 FROM agentRegistry WHERE registry_id = 'localUpdateCount'", [], |row| row.get(0))
             .map_err(|e| RekordboxError::DatabaseError(format!("Cannot read USN: {}", e)))?;
         Ok(usn)
     }
 
     pub fn track_usn_update(&mut self, table_name: &str, row_id: &str) {
-        self.pending_usn_updates
-            .push(UsnUpdate { table_name: table_name.to_string(), row_id: row_id.to_string() });
+        self.pending_usn_updates.push(UsnUpdate { table_name: table_name.to_string(), row_id: row_id.to_string() });
     }
 
     pub fn flush_usn_and_commit(&mut self) -> Result<(), RekordboxError> {
-        log::info!(
-            "[rekordbox-db] flush_usn_and_commit: {} pending updates",
-            self.pending_usn_updates.len()
-        );
+        log::info!("[rekordbox-db] flush_usn_and_commit: {} pending updates", self.pending_usn_updates.len());
 
         let mut usn = self.get_local_usn()?;
         log::debug!("[rekordbox-db] Current USN: {}", usn);
@@ -86,14 +70,7 @@ impl RekordboxDatabase {
         for (idx, update) in self.pending_usn_updates.iter().enumerate() {
             let table = validate_table_name(&update.table_name)?;
             usn += 1;
-            log::debug!(
-                "[rekordbox-db] USN update {}/{}: {}.{} -> usn={}",
-                idx + 1,
-                self.pending_usn_updates.len(),
-                table,
-                update.row_id,
-                usn
-            );
+            log::debug!("[rekordbox-db] USN update {}/{}: {}.{} -> usn={}", idx + 1, self.pending_usn_updates.len(), table, update.row_id, usn);
             self.conn
                 .execute(
                     &format!("UPDATE {} SET rb_local_usn = ?1, updated_at = ?2 WHERE ID = ?3", table),
@@ -138,17 +115,13 @@ impl RekordboxDatabase {
     #[cfg(test)]
     pub fn rollback(&mut self) -> Result<(), RekordboxError> {
         self.pending_usn_updates.clear();
-        self.conn
-            .execute_batch("ROLLBACK")
-            .map_err(|e| RekordboxError::DatabaseError(format!("ROLLBACK failed: {}", e)))?;
+        self.conn.execute_batch("ROLLBACK").map_err(|e| RekordboxError::DatabaseError(format!("ROLLBACK failed: {}", e)))?;
         Ok(())
     }
 
     #[cfg(test)]
     pub fn close(self) -> Result<(), RekordboxError> {
-        self.conn
-            .close()
-            .map_err(|(_, e)| RekordboxError::DatabaseError(format!("Cannot close DB: {}", e)))
+        self.conn.close().map_err(|(_, e)| RekordboxError::DatabaseError(format!("Cannot close DB: {}", e)))
     }
 
     pub fn generate_unused_id(&self, table_name: &str) -> Result<i64, RekordboxError> {
@@ -163,11 +136,7 @@ impl RekordboxDatabase {
 
             let exists: bool = self
                 .conn
-                .query_row(
-                    &format!("SELECT EXISTS(SELECT 1 FROM {} WHERE ID = ?1)", table),
-                    rusqlite::params![id.to_string()],
-                    |row| row.get(0),
-                )
+                .query_row(&format!("SELECT EXISTS(SELECT 1 FROM {} WHERE ID = ?1)", table), rusqlite::params![id.to_string()], |row| row.get(0))
                 .map_err(|e| RekordboxError::DatabaseError(format!("ID check failed: {}", e)))?;
 
             if !exists {
@@ -175,30 +144,17 @@ impl RekordboxDatabase {
             }
         }
 
-        Err(RekordboxError::DatabaseError(
-            "Could not generate unused ID after max attempts".into(),
-        ))
+        Err(RekordboxError::DatabaseError("Could not generate unused ID after max attempts".into()))
     }
 }
 
 pub fn timestamp_ms() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_millis() as i64
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_millis() as i64
 }
 
 pub fn now_timestamp() -> String {
     let now = time::OffsetDateTime::now_utc();
-    format!(
-        "{:04}-{:02}-{:02} {:02}:{:02}:{:02}.000 +00:00",
-        now.year(),
-        now.month() as u8,
-        now.day(),
-        now.hour(),
-        now.minute(),
-        now.second()
-    )
+    format!("{:04}-{:02}-{:02} {:02}:{:02}:{:02}.000 +00:00", now.year(), now.month() as u8, now.day(), now.hour(), now.minute(), now.second())
 }
 
 pub fn today_date() -> String {

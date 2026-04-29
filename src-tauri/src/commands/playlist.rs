@@ -58,12 +58,7 @@ where
     let client = &*crate::services::http::HTTP_CLIENT;
     let url = build_playlist_url(playlist_id, &client_id, None);
 
-    let response = client
-        .get(&url)
-        .with_oauth(Some(&token))
-        .send()
-        .await
-        .map_err(|e| format!("Failed to fetch playlist: {}", e))?;
+    let response = client.get(&url).with_oauth(Some(&token)).send().await.map_err(|e| format!("Failed to fetch playlist: {}", e))?;
 
     if !response.status().is_success() {
         return Err(format!("Failed to fetch playlist: HTTP {}", response.status()));
@@ -92,11 +87,7 @@ where
         let status = put_response.status();
         let body = put_response.text().await.unwrap_or_default();
         log::error!("[{}] PUT failed: {} - {}", operation, status, body);
-        return Err(format!(
-            "Failed to update playlist: HTTP {} - {}",
-            status,
-            sanitize_error_body(body)
-        ));
+        return Err(format!("Failed to update playlist: HTTP {} - {}", status, sanitize_error_body(body)));
     }
 
     Ok(())
@@ -116,11 +107,7 @@ pub async fn add_track_to_playlist(playlist_id: u64, track_id: u64, app: tauri::
     })
     .await?;
 
-    log::info!(
-        "[add_track_to_playlist] Successfully added track {} to playlist {}",
-        track_id,
-        playlist_id
-    );
+    log::info!("[add_track_to_playlist] Successfully added track {} to playlist {}", track_id, playlist_id);
 
     Ok(())
 }
@@ -128,11 +115,7 @@ pub async fn add_track_to_playlist(playlist_id: u64, track_id: u64, app: tauri::
 #[tauri::command]
 #[specta::specta]
 pub async fn remove_track_from_playlist(playlist_id: u64, track_id: u64, app: tauri::AppHandle) -> Result<(), String> {
-    log::info!(
-        "[remove_track_from_playlist] Removing track {} from playlist {}",
-        track_id,
-        playlist_id
-    );
+    log::info!("[remove_track_from_playlist] Removing track {} from playlist {}", track_id, playlist_id);
 
     modify_playlist_tracks(playlist_id, &app, "remove_track_from_playlist", |ids| {
         let original_len = ids.len();
@@ -144,11 +127,7 @@ pub async fn remove_track_from_playlist(playlist_id: u64, track_id: u64, app: ta
     })
     .await?;
 
-    log::info!(
-        "[remove_track_from_playlist] Successfully removed track {} from playlist {}",
-        track_id,
-        playlist_id
-    );
+    log::info!("[remove_track_from_playlist] Successfully removed track {} from playlist {}", track_id, playlist_id);
 
     Ok(())
 }

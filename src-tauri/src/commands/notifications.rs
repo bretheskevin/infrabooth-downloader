@@ -1,16 +1,12 @@
 use tauri::Manager;
 
 use crate::commands::require_auth_and_cid;
-use crate::services::notifications::{
-    self, LastSeenActivityState, NotificationsCache, NotificationsPage, UnreadCountResult, FIRST_PAGE_TTL, UNREAD_PROBE_TTL,
-};
+use crate::services::notifications::{self, LastSeenActivityState, NotificationsCache, NotificationsPage, UnreadCountResult, FIRST_PAGE_TTL, UNREAD_PROBE_TTL};
 use crate::services::paths::get_app_data_dir;
 use crate::services::timestamp::parse_iso_timestamp;
 
 pub fn last_seen_activities_path(app: &tauri::AppHandle) -> std::path::PathBuf {
-    get_app_data_dir(app)
-        .unwrap_or_else(|_| std::path::PathBuf::from("."))
-        .join("seen_activities.json")
+    get_app_data_dir(app).unwrap_or_else(|_| std::path::PathBuf::from(".")).join("seen_activities.json")
 }
 
 #[tauri::command]
@@ -23,9 +19,7 @@ pub async fn get_unread_count(app: tauri::AppHandle) -> Result<UnreadCountResult
     let (latest_ts, was_fresh) = match cache.get_unread_probe(UNREAD_PROBE_TTL) {
         Some(ts) => (ts, false),
         None => {
-            let page = notifications::fetch_activities_page(&token, &client_id, None, 1)
-                .await
-                .map_err(|e| e.to_string())?;
+            let page = notifications::fetch_activities_page(&token, &client_id, None, 1).await.map_err(|e| e.to_string())?;
             let ts = page.items.first().and_then(|item| parse_iso_timestamp(item.created_at()));
             cache.set_unread_probe(ts);
             (ts, true)
@@ -60,9 +54,7 @@ pub async fn get_notifications_page(app: tauri::AppHandle, cursor: Option<String
         }
     }
 
-    let page = notifications::fetch_activities_page(&token, &client_id, cursor.as_deref(), 10)
-        .await
-        .map_err(|e| e.to_string())?;
+    let page = notifications::fetch_activities_page(&token, &client_id, cursor.as_deref(), 10).await.map_err(|e| e.to_string())?;
 
     if cursor.is_none() {
         cache.set_first_page(page.clone());

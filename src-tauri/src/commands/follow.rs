@@ -40,7 +40,5 @@ pub async fn check_follow_status(app: tauri::AppHandle, user_id: u64) -> Result<
     let datadome = app.state::<AuthState>().get_datadome();
     let (token, client_id) = require_auth_and_cid(&app).await?;
 
-    follow::check_follow_status(&token, &client_id, datadome.as_deref(), current_user_id, user_id)
-        .await
-        .map_err(|e| e.to_string())
+    follow::check_follow_status(&token, &client_id, datadome.as_deref(), current_user_id, user_id).await.map_err(|e| e.to_string())
 }

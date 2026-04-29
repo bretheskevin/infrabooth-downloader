@@ -52,10 +52,7 @@ pub struct LibraryPlaylistsBatchEvent {
 }
 
 pub fn emit_library_playlists_batch(app: &tauri::AppHandle, playlists: &[LibraryPlaylist]) {
-    let _ = app.emit(
-        LIBRARY_PLAYLISTS_BATCH,
-        LibraryPlaylistsBatchEvent { playlists: playlists.to_vec() },
-    );
+    let _ = app.emit(LIBRARY_PLAYLISTS_BATCH, LibraryPlaylistsBatchEvent { playlists: playlists.to_vec() });
 }
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
@@ -68,10 +65,7 @@ pub struct ArtistPlaylistsBatchEvent {
 pub fn make_playlist_batch_emitter(app: &tauri::AppHandle, entity_id: u64) -> impl Fn(&[ArtistPlaylist]) {
     let app = app.clone();
     move |batch: &[ArtistPlaylist]| {
-        let _ = app.emit(
-            ARTIST_PLAYLISTS_BATCH,
-            ArtistPlaylistsBatchEvent { entity_id, playlists: batch.to_vec() },
-        );
+        let _ = app.emit(ARTIST_PLAYLISTS_BATCH, ArtistPlaylistsBatchEvent { entity_id, playlists: batch.to_vec() });
     }
 }
 

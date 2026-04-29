@@ -54,9 +54,7 @@ pub fn detect_rekordbox(manual_db_path: Option<PathBuf>) -> Result<RekordboxConf
         return Ok(config);
     }
 
-    Err(RekordboxError::NotFound(
-        "Could not find Rekordbox installation. Set the database path manually in Settings.".into(),
-    ))
+    Err(RekordboxError::NotFound("Could not find Rekordbox installation. Set the database path manually in Settings.".into()))
 }
 
 pub fn default_rekordbox_data_directory_parent() -> Result<PathBuf, String> {
@@ -110,15 +108,11 @@ fn detect_from_options_json(pioneer_app_dir: &Path) -> Result<RekordboxConfig, R
         return Err(RekordboxError::NotFound("options.json not found".into()));
     }
 
-    let content =
-        std::fs::read_to_string(&options_path).map_err(|e| RekordboxError::NotFound(format!("Cannot read options.json: {}", e)))?;
+    let content = std::fs::read_to_string(&options_path).map_err(|e| RekordboxError::NotFound(format!("Cannot read options.json: {}", e)))?;
 
-    let data: serde_json::Value =
-        serde_json::from_str(&content).map_err(|e| RekordboxError::NotFound(format!("Invalid options.json: {}", e)))?;
+    let data: serde_json::Value = serde_json::from_str(&content).map_err(|e| RekordboxError::NotFound(format!("Invalid options.json: {}", e)))?;
 
-    let options = data["options"]
-        .as_array()
-        .ok_or_else(|| RekordboxError::NotFound("options.json missing 'options' array".into()))?;
+    let options = data["options"].as_array().ok_or_else(|| RekordboxError::NotFound("options.json missing 'options' array".into()))?;
 
     let db_path_str = options
         .iter()
@@ -165,10 +159,7 @@ fn validate_db_path(db_path: PathBuf) -> Result<RekordboxConfig, RekordboxError>
         return Err(RekordboxError::NotFound(format!("Database file not found: {}", db_path.display())));
     }
 
-    let db_dir = db_path
-        .parent()
-        .ok_or_else(|| RekordboxError::NotFound("Cannot determine database directory".into()))?
-        .to_path_buf();
+    let db_dir = db_path.parent().ok_or_else(|| RekordboxError::NotFound("Cannot determine database directory".into()))?.to_path_buf();
 
     // Only Rekordbox 6 is supported; update if adding v7+ support
     let version = "6".to_string();

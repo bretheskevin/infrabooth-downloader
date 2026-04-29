@@ -64,12 +64,7 @@ impl PlaylistXml {
 
     pub fn add_playlist(&mut self, playlist_id: &str, parent_id: &str, attribute: i32, timestamp_ms: i64) -> bool {
         let hex_id = decimal_to_hex(playlist_id);
-        if self
-            .document
-            .segments
-            .iter()
-            .any(|segment| matches!(segment, InnerSegment::Node(n) if n.id == hex_id))
-        {
+        if self.document.segments.iter().any(|segment| matches!(segment, InnerSegment::Node(n) if n.id == hex_id)) {
             return false;
         }
 
@@ -96,10 +91,7 @@ impl PlaylistXml {
         let hex_id = decimal_to_hex(playlist_id);
         let removed = self.document.remove_node(&hex_id);
         if !removed {
-            return Err(RekordboxError::XmlError(format!(
-                "Playlist {} ({}) not found in XML",
-                playlist_id, hex_id
-            )));
+            return Err(RekordboxError::XmlError(format!("Playlist {} ({}) not found in XML", playlist_id, hex_id)));
         }
         self.modified = true;
         Ok(())
@@ -115,11 +107,7 @@ impl PlaylistXml {
         log::info!("[rekordbox-xml] Saving XML to: {:?}", xml_path);
 
         let output = self.document.render();
-        log::info!(
-            "[rekordbox-xml] Rendered XML: {} bytes, {} segments",
-            output.len(),
-            self.document.segments.len()
-        );
+        log::info!("[rekordbox-xml] Rendered XML: {} bytes, {} segments", output.len(), self.document.segments.len());
 
         fs::write(&xml_path, &output).map_err(|e| {
             log::error!("[rekordbox-xml] Failed to write XML: {}", e);
@@ -155,8 +143,7 @@ impl XmlDocument {
 
     fn remove_node(&mut self, id: &str) -> bool {
         let initial_len = self.segments.len();
-        self.segments
-            .retain(|segment| !matches!(segment, InnerSegment::Node(node) if node.id == id));
+        self.segments.retain(|segment| !matches!(segment, InnerSegment::Node(node) if node.id == id));
         self.segments.len() != initial_len
     }
 
@@ -204,18 +191,11 @@ fn parse_node_attributes(e: &BytesStart) -> Result<XmlNode, RekordboxError> {
 }
 
 fn split_playlists_section(content: &str) -> Result<(&str, &str, &str), RekordboxError> {
-    let open_start = content
-        .find("<PLAYLISTS>")
-        .or_else(|| content.find("<PLAYLISTS "))
-        .ok_or_else(|| RekordboxError::XmlError("Missing PLAYLISTS tag".into()))?;
-    let open_end = content[open_start..]
-        .find('>')
-        .map(|idx| open_start + idx + 1)
-        .ok_or_else(|| RekordboxError::XmlError("Malformed PLAYLISTS tag".into()))?;
-    let close_start = content[open_end..]
-        .find("</PLAYLISTS>")
-        .map(|idx| open_end + idx)
-        .ok_or_else(|| RekordboxError::XmlError("Missing PLAYLISTS closing tag".into()))?;
+    let open_start =
+        content.find("<PLAYLISTS>").or_else(|| content.find("<PLAYLISTS ")).ok_or_else(|| RekordboxError::XmlError("Missing PLAYLISTS tag".into()))?;
+    let open_end = content[open_start..].find('>').map(|idx| open_start + idx + 1).ok_or_else(|| RekordboxError::XmlError("Malformed PLAYLISTS tag".into()))?;
+    let close_start =
+        content[open_end..].find("</PLAYLISTS>").map(|idx| open_end + idx).ok_or_else(|| RekordboxError::XmlError("Missing PLAYLISTS closing tag".into()))?;
 
     Ok((&content[..open_end], &content[open_end..close_start], &content[close_start..]))
 }
@@ -226,10 +206,7 @@ fn parse_inner_segments(inner_content: &str) -> Result<Vec<InnerSegment>, Rekord
 
     while let Some(relative_idx) = inner_content[cursor..].find("<NODE") {
         let start = cursor + relative_idx;
-        let end = inner_content[start..]
-            .find("/>")
-            .map(|idx| start + idx + 2)
-            .ok_or_else(|| RekordboxError::XmlError("Malformed NODE element".into()))?;
+        let end = inner_content[start..].find("/>").map(|idx| start + idx + 2).ok_or_else(|| RekordboxError::XmlError("Malformed NODE element".into()))?;
 
         if start > cursor {
             segments.push(InnerSegment::Raw(inner_content[cursor..start].to_string()));
@@ -271,15 +248,9 @@ fn render_node(node: &XmlNode) -> String {
 }
 
 fn decimal_to_hex(decimal_str: &str) -> String {
-    decimal_str
-        .parse::<i64>()
-        .map(|n| format!("{:X}", n))
-        .unwrap_or_else(|_| decimal_str.to_string())
+    decimal_str.parse::<i64>().map(|n| format!("{:X}", n)).unwrap_or_else(|_| decimal_str.to_string())
 }
 
 fn escape_xml_attr(s: &str) -> String {
-    s.replace('&', "&amp;")
-        .replace('"', "&quot;")
-        .replace('<', "&lt;")
-        .replace('>', "&gt;")
+    s.replace('&', "&amp;").replace('"', "&quot;").replace('<', "&lt;").replace('>', "&gt;")
 }

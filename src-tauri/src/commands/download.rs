@@ -70,19 +70,13 @@ pub async fn download_track_full(request: DownloadRequest, app: tauri::AppHandle
     let result_path = download_and_convert(&app, config, None).await.map_err(|e| {
         let _ = app.emit(
             events::DOWNLOAD_PROGRESS,
-            DownloadProgressEvent::failed(
-                track_id.clone(),
-                ErrorResponse { code: e.code().to_string(), message: e.to_string() },
-            ),
+            DownloadProgressEvent::failed(track_id.clone(), ErrorResponse { code: e.code().to_string(), message: e.to_string() }),
         );
         ErrorResponse::from(e)
     })?;
 
     let result_str = result_path.to_string_lossy().to_string();
-    let _ = app.emit(
-        events::DOWNLOAD_PROGRESS,
-        DownloadProgressEvent::complete(track_id, result_str.clone()),
-    );
+    let _ = app.emit(events::DOWNLOAD_PROGRESS, DownloadProgressEvent::complete(track_id, result_str.clone()));
 
     Ok(result_str)
 }
@@ -127,7 +121,14 @@ pub async fn start_download_queue(
         .tracks
         .into_iter()
         .enumerate()
-        .map(|(i, core)| QueueItem { core, track_number: if preserve_order { Some((i + 1) as u32) } else { None } })
+        .map(|(i, core)| QueueItem {
+            core,
+            track_number: if preserve_order {
+                Some((i + 1) as u32)
+            } else {
+                None
+            },
+        })
         .collect();
 
     let mut queue = DownloadQueue::new(items, request.album_name);
@@ -142,11 +143,7 @@ pub async fn start_download_queue(
 
     tokio::spawn(async move {
         let result = queue.process(app, ctx).await;
-        log::info!(
-            "[queue] Processing complete: {} succeeded, {} failed",
-            result.completed,
-            result.failed
-        );
+        log::info!("[queue] Processing complete: {} succeeded, {} failed", result.completed, result.failed);
     });
 
     Ok(())
@@ -165,9 +162,7 @@ pub async fn cancel_download_queue(cancel_state: State<'_, CancellationState>) -
 /// Respond to a rate limit choice prompt during download.
 #[tauri::command]
 #[specta::specta]
-pub async fn respond_to_rate_limit_choice(
-    choice: RateLimitChoice, rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>,
-) -> Result<(), ErrorResponse> {
+pub async fn respond_to_rate_limit_choice(choice: RateLimitChoice, rate_limit_choice_state: State<'_, Arc<RateLimitChoiceState>>) -> Result<(), ErrorResponse> {
     log::info!("[download] Rate limit choice received: {:?}", choice);
     rate_limit_choice_state.send_choice(choice);
     Ok(())
@@ -184,10 +179,7 @@ pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>) -> HashM
     if !dir.exists() {
         return HashMap::new();
     }
-    scan_existing_track_ids(&dir, &track_ids, false)
-        .into_iter()
-        .map(|(id, path)| (id, path.to_string_lossy().to_string()))
-        .collect()
+    scan_existing_track_ids(&dir, &track_ids, false).into_iter().map(|(id, path)| (id, path.to_string_lossy().to_string())).collect()
 }
 
 #[cfg(test)]

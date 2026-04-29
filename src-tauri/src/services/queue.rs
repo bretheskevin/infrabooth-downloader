@@ -71,10 +71,20 @@ struct QueueProgress {
 
 /// Result of a single track download in parallel processing.
 pub enum TrackOutcome {
-    Completed { track_id: String },
-    Failed { track_id: String, error_message: String },
-    Cancelled { track_id: String },
-    RateLimited { track_id: String, reset_time: Option<String> },
+    Completed {
+        track_id: String,
+    },
+    Failed {
+        track_id: String,
+        error_message: String,
+    },
+    Cancelled {
+        track_id: String,
+    },
+    RateLimited {
+        track_id: String,
+        reset_time: Option<String>,
+    },
 }
 
 /// Context for queue processing containing all shared state.
@@ -94,12 +104,7 @@ async fn execute_download<R: Runtime>(
 ) -> TrackOutcome {
     let track_id = config.track_id.clone();
 
-    let result = download_and_convert(
-        &app,
-        config,
-        Some(CancellationHandles { cancel_rx, active_child: child_handle, active_pid: pid_handle }),
-    )
-    .await;
+    let result = download_and_convert(&app, config, Some(CancellationHandles { cancel_rx, active_child: child_handle, active_pid: pid_handle })).await;
 
     // Deregister process tracking
     active_procs.lock().await.remove(&track_id);
@@ -107,10 +112,7 @@ async fn execute_download<R: Runtime>(
 
     match result {
         Ok(output_path) => {
-            let _ = app.emit(
-                events::DOWNLOAD_PROGRESS,
-                DownloadProgressEvent::complete(track_id.clone(), output_path.to_string_lossy().to_string()),
-            );
+            let _ = app.emit(events::DOWNLOAD_PROGRESS, DownloadProgressEvent::complete(track_id.clone(), output_path.to_string_lossy().to_string()));
             TrackOutcome::Completed { track_id }
         }
         Err(DownloadError::Cancelled) => TrackOutcome::Cancelled { track_id },
@@ -123,10 +125,7 @@ async fn execute_download<R: Runtime>(
             log::error!("[queue] Track {} failed: {}", track_id, e);
             let _ = app.emit(
                 events::DOWNLOAD_PROGRESS,
-                DownloadProgressEvent::failed(
-                    track_id.clone(),
-                    crate::models::ErrorResponse { code: e.code().to_string(), message: e.to_string() },
-                ),
+                DownloadProgressEvent::failed(track_id.clone(), crate::models::ErrorResponse { code: e.code().to_string(), message: e.to_string() }),
             );
             TrackOutcome::Failed { track_id, error_message: e.to_string() }
         }
@@ -169,8 +168,8 @@ async fn wait_for_user_choice<T: Copy>(
 
 /// Handle rate-limited outcome: pause queue, emit event, wait for user choice.
 async fn handle_rate_limit<R: Runtime>(
-    app: &AppHandle<R>, ctx: &QueueProcessContext, progress: &mut QueueProgress, track_lookup: &HashMap<String, (usize, QueueItem)>,
-    paused: &Arc<AtomicBool>, stopped: &Arc<AtomicBool>, pause_notify: &Arc<Notify>, track_id: String, reset_time: Option<String>,
+    app: &AppHandle<R>, ctx: &QueueProcessContext, progress: &mut QueueProgress, track_lookup: &HashMap<String, (usize, QueueItem)>, paused: &Arc<AtomicBool>,
+    stopped: &Arc<AtomicBool>, pause_notify: &Arc<Notify>, track_id: String, reset_time: Option<String>,
 ) {
     paused.store(true, Ordering::SeqCst);
 
@@ -178,10 +177,7 @@ async fn handle_rate_limit<R: Runtime>(
         events::DOWNLOAD_RATE_LIMITED,
         DownloadRateLimitedEvent {
             track_id: track_id.clone(),
-            track_title: track_lookup
-                .get(&track_id)
-                .map(|(_, item)| item.core.title.clone())
-                .unwrap_or_default(),
+            track_title: track_lookup.get(&track_id).map(|(_, item)| item.core.title.clone()).unwrap_or_default(),
             reset_time,
         },
     );
@@ -245,10 +241,7 @@ impl DownloadQueue {
         for idx in pending.drain(..) {
             let item = &items[idx];
             if existing_ids.contains(&item.core.track_id) {
-                let _ = app.emit(
-                    events::DOWNLOAD_PROGRESS,
-                    DownloadProgressEvent::skipped(item.core.track_id.clone()),
-                );
+                let _ = app.emit(events::DOWNLOAD_PROGRESS, DownloadProgressEvent::skipped(item.core.track_id.clone()));
                 skipped_count += 1;
             } else {
                 new_pending.push_back(idx);
@@ -276,11 +269,8 @@ impl DownloadQueue {
         // Pre-scan for already-downloaded tracks (blocking I/O on a dedicated thread)
         let track_ids: Vec<String> = self.items.iter().map(|item| item.core.track_id.clone()).collect();
         let scan_dir = ctx.output_dir.clone();
-        let existing_ids: HashSet<String> = tokio::task::spawn_blocking(move || scan_existing_track_ids(&scan_dir, &track_ids, false))
-            .await
-            .unwrap_or_default()
-            .into_keys()
-            .collect();
+        let existing_ids: HashSet<String> =
+            tokio::task::spawn_blocking(move || scan_existing_track_ids(&scan_dir, &track_ids, false)).await.unwrap_or_default().into_keys().collect();
 
         if !existing_ids.is_empty() {
             log::info!("[queue] Found {} already-downloaded tracks, skipping", existing_ids.len());
@@ -296,12 +286,8 @@ impl DownloadQueue {
         let stopped = Arc::new(AtomicBool::new(false));
         let pause_notify = Arc::new(Notify::new());
 
-        let track_lookup: HashMap<String, (usize, QueueItem)> = self
-            .items
-            .iter()
-            .enumerate()
-            .map(|(i, item)| (item.core.track_id.clone(), (i, item.clone())))
-            .collect();
+        let track_lookup: HashMap<String, (usize, QueueItem)> =
+            self.items.iter().enumerate().map(|(i, item)| (item.core.track_id.clone(), (i, item.clone()))).collect();
         let mut started_count = 0u32;
         let mut started_indices: std::collections::HashSet<usize> = std::collections::HashSet::new();
 
@@ -325,17 +311,7 @@ impl DownloadQueue {
             }
 
             // Phase 2: Spawn as many tasks as permits allow
-            self.spawn_pending_tasks(
-                &app,
-                &ctx,
-                &semaphore,
-                &mut join_set,
-                &mut progress,
-                &mut started_count,
-                &mut started_indices,
-                &paused,
-            )
-            .await;
+            self.spawn_pending_tasks(&app, &ctx, &semaphore, &mut join_set, &mut progress, &mut started_count, &mut started_indices, &paused).await;
 
             // Phase 3: Check if we're done
             if progress.pending.is_empty() && join_set.is_empty() {
@@ -359,9 +335,8 @@ impl DownloadQueue {
     /// Spawn download tasks for all pending items that have available semaphore permits.
     #[allow(clippy::too_many_arguments)]
     async fn spawn_pending_tasks<R: Runtime>(
-        &self, app: &AppHandle<R>, ctx: &QueueProcessContext, semaphore: &Arc<Semaphore>, join_set: &mut JoinSet<TrackOutcome>,
-        progress: &mut QueueProgress, started_count: &mut u32, started_indices: &mut std::collections::HashSet<usize>,
-        paused: &Arc<AtomicBool>,
+        &self, app: &AppHandle<R>, ctx: &QueueProcessContext, semaphore: &Arc<Semaphore>, join_set: &mut JoinSet<TrackOutcome>, progress: &mut QueueProgress,
+        started_count: &mut u32, started_indices: &mut std::collections::HashSet<usize>, paused: &Arc<AtomicBool>,
     ) {
         while !progress.pending.is_empty() && !paused.load(Ordering::SeqCst) {
             let permit = match semaphore.clone().try_acquire_owned() {
@@ -376,32 +351,19 @@ impl DownloadQueue {
                 *started_count += 1;
             }
 
-            let _ = app.emit(
-                events::QUEUE_PROGRESS,
-                QueueProgressEvent { current: *started_count, total: self.total_tracks, track_id: item.core.track_id.clone() },
-            );
+            let _ = app
+                .emit(events::QUEUE_PROGRESS, QueueProgressEvent { current: *started_count, total: self.total_tracks, track_id: item.core.track_id.clone() });
 
             let child_handle = Arc::new(Mutex::new(None));
             let pid_handle = Arc::new(Mutex::new(None));
-            ctx.active_processes.lock().await.insert(
-                item.core.track_id.clone(),
-                ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() },
-            );
+            ctx.active_processes.lock().await.insert(item.core.track_id.clone(), ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() });
 
             let config = self.build_pipeline_config(item, &ctx.output_dir, &progress.oauth_token);
             let app_clone = app.clone();
             let worker_cancel_rx = ctx.cancel_rx.clone();
             let active_procs = ctx.active_processes.clone();
 
-            join_set.spawn(execute_download(
-                app_clone,
-                config,
-                child_handle,
-                pid_handle,
-                worker_cancel_rx,
-                active_procs,
-                permit,
-            ));
+            join_set.spawn(execute_download(app_clone, config, child_handle, pid_handle, worker_cancel_rx, active_procs, permit));
         }
     }
 
@@ -409,9 +371,7 @@ impl DownloadQueue {
     fn build_pipeline_config(&self, item: &QueueItem, output_dir: &PathBuf, oauth_token: &Option<String>) -> PipelineConfig {
         // Skip playlist context for single tracks — numbering is meaningless
         let playlist_context = match item.track_number {
-            Some(track_num) if self.total_tracks > 1 => {
-                Some(PlaylistContext { track_position: track_num, total_tracks: self.total_tracks })
-            }
+            Some(track_num) if self.total_tracks > 1 => Some(PlaylistContext { track_position: track_num, total_tracks: self.total_tracks }),
             _ => None,
         };
 
@@ -452,15 +412,10 @@ impl DownloadQueue {
     }
 
     /// Emit the final queue-complete or queue-cancelled event.
-    fn emit_final_event<R: Runtime>(
-        &self, app: &AppHandle<R>, ctx: &QueueProcessContext, stopped: &Arc<AtomicBool>, progress: &QueueProgress,
-    ) {
+    fn emit_final_event<R: Runtime>(&self, app: &AppHandle<R>, ctx: &QueueProcessContext, stopped: &Arc<AtomicBool>, progress: &QueueProgress) {
         if *ctx.cancel_rx.borrow() || stopped.load(Ordering::SeqCst) {
             let cancelled = self.total_tracks - progress.completed - progress.failed;
-            let _ = app.emit(
-                events::QUEUE_CANCELLED,
-                QueueCancelledEvent { completed: progress.completed, cancelled, total: self.total_tracks },
-            );
+            let _ = app.emit(events::QUEUE_CANCELLED, QueueCancelledEvent { completed: progress.completed, cancelled, total: self.total_tracks });
         } else {
             let _ = app.emit(
                 events::QUEUE_COMPLETE,
@@ -477,8 +432,7 @@ impl DownloadQueue {
     /// Handle a completed task outcome from the JoinSet.
     async fn handle_outcome<R: Runtime>(
         result: Result<TrackOutcome, tokio::task::JoinError>, app: &AppHandle<R>, ctx: &QueueProcessContext, paused: &Arc<AtomicBool>,
-        stopped: &Arc<AtomicBool>, pause_notify: &Arc<Notify>, track_lookup: &HashMap<String, (usize, QueueItem)>,
-        progress: &mut QueueProgress,
+        stopped: &Arc<AtomicBool>, pause_notify: &Arc<Notify>, track_lookup: &HashMap<String, (usize, QueueItem)>, progress: &mut QueueProgress,
     ) {
         let outcome = match result {
             Ok(o) => o,
@@ -504,18 +458,7 @@ impl DownloadQueue {
             }
             TrackOutcome::RateLimited { track_id, reset_time } => {
                 log::warn!("[queue] Track {} rate limited, pausing queue", track_id);
-                handle_rate_limit(
-                    app,
-                    ctx,
-                    progress,
-                    track_lookup,
-                    paused,
-                    stopped,
-                    pause_notify,
-                    track_id,
-                    reset_time,
-                )
-                .await;
+                handle_rate_limit(app, ctx, progress, track_lookup, paused, stopped, pause_notify, track_id, reset_time).await;
             }
         }
     }

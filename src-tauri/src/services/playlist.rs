@@ -91,11 +91,7 @@ impl From<RawTrackInfo> for TrackInfo {
         }
 
         // Use publisher_metadata.artist if available, otherwise fall back to user.username
-        let artist_name = raw
-            .publisher_metadata
-            .and_then(|pm| pm.artist)
-            .filter(|a| !a.is_empty())
-            .unwrap_or_else(|| raw.user.username.clone());
+        let artist_name = raw.publisher_metadata.and_then(|pm| pm.artist).filter(|a| !a.is_empty()).unwrap_or_else(|| raw.user.username.clone());
 
         // Use track artwork if available, otherwise fall back to user avatar
         let artwork = raw.artwork_url.or(raw.user.avatar_url);
@@ -248,11 +244,7 @@ fn extract_json_array_from_html(html: &str, marker: &str) -> Option<String> {
 /// OAuth API via `fetch_playlist_info_via_api`.
 async fn fetch_hydration_data(url: &str) -> Result<Vec<HydrationItem>, ScApiError> {
     let client = &*crate::services::http::HTTP_CLIENT;
-    let response = client
-        .get(url)
-        .header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36")
-        .send()
-        .await?;
+    let response = client.get(url).header("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36").send().await?;
 
     if !response.status().is_success() {
         return Err(ScApiError::FetchFailed(format!("HTTP {}", response.status())));
@@ -264,16 +256,10 @@ async fn fetch_hydration_data(url: &str) -> Result<Vec<HydrationItem>, ScApiErro
 
     // Clean control characters that might break JSON parsing
     let original_len = json_str.len();
-    let cleaned: String = json_str
-        .chars()
-        .filter(|c| !c.is_control() || *c == '\n' || *c == '\r' || *c == '\t')
-        .collect();
+    let cleaned: String = json_str.chars().filter(|c| !c.is_control() || *c == '\n' || *c == '\r' || *c == '\t').collect();
 
     if cleaned.len() != original_len {
-        log::debug!(
-            "[soundcloud] Filtered {} control characters from hydration JSON",
-            original_len - cleaned.len()
-        );
+        log::debug!("[soundcloud] Filtered {} control characters from hydration JSON", original_len - cleaned.len());
     }
 
     serde_json::from_str(&cleaned).map_err(|e| {
@@ -349,9 +335,7 @@ where
 
 /// Fetches missing tracks in batches using batch API with parallel fallback.
 /// Returns all successfully fetched tracks.
-async fn fetch_missing_tracks_batched<F>(
-    missing_ids: Vec<u64>, cid: &str, oauth_token: Option<&str>, on_batch: &F,
-) -> Result<Vec<TrackInfo>, ScApiError>
+async fn fetch_missing_tracks_batched<F>(missing_ids: Vec<u64>, cid: &str, oauth_token: Option<&str>, on_batch: &F) -> Result<Vec<TrackInfo>, ScApiError>
 where
     F: Fn(&[TrackInfo]),
 {
@@ -361,11 +345,7 @@ where
 
     let mut fetched_tracks = fetch_tracks_by_ids(&missing_ids, cid, oauth_token, on_batch).await?;
 
-    log::info!(
-        "[soundcloud] Batch API returned {} of {} missing tracks",
-        fetched_tracks.len(),
-        missing_ids.len()
-    );
+    log::info!("[soundcloud] Batch API returned {} of {} missing tracks", fetched_tracks.len(), missing_ids.len());
 
     let fetched_ids: std::collections::HashSet<u64> = fetched_tracks.iter().map(|t| t.id).collect();
     let still_missing: Vec<u64> = missing_ids.iter().filter(|id| !fetched_ids.contains(id)).copied().collect();
@@ -393,9 +373,7 @@ where
 /// Resolves a mixed list of track data (full objects + ID stubs) into ordered TrackInfo.
 /// Extracts full tracks from the data, batch-fetches missing ones, and sorts by original order.
 /// Calls `on_batch` with each batch of resolved tracks for progressive loading.
-pub(crate) async fn resolve_tracks_from_mixed<F>(
-    tracks: &[Value], cid: &str, oauth_token: Option<&str>, on_batch: F,
-) -> Result<Vec<TrackInfo>, ScApiError>
+pub(crate) async fn resolve_tracks_from_mixed<F>(tracks: &[Value], cid: &str, oauth_token: Option<&str>, on_batch: F) -> Result<Vec<TrackInfo>, ScApiError>
 where
     F: Fn(&[TrackInfo]),
 {
@@ -403,11 +381,7 @@ where
 
     let (full_tracks, full_track_ids) = extract_and_report_full_tracks(tracks, &on_batch);
 
-    log::info!(
-        "[soundcloud] {} full tracks available, {} total IDs",
-        full_tracks.len(),
-        all_track_ids.len()
-    );
+    log::info!("[soundcloud] {} full tracks available, {} total IDs", full_tracks.len(), all_track_ids.len());
 
     let missing_ids: Vec<u64> = all_track_ids.iter().filter(|id| !full_track_ids.contains(id)).copied().collect();
 
@@ -463,11 +437,7 @@ where
                 }
             }
         } else {
-            log::warn!(
-                "[soundcloud] Batch fetch failed for {} tracks: HTTP {}",
-                chunk.len(),
-                response.status()
-            );
+            log::warn!("[soundcloud] Batch fetch failed for {} tracks: HTTP {}", chunk.len(), response.status());
         }
 
         // Rate limiting: small delay between batches (except after the last one)
@@ -504,9 +474,7 @@ pub(crate) async fn get_cid() -> Result<String, ScApiError> {
 
 /// Validates that a URL is a SoundCloud URL.
 fn is_valid_soundcloud_url(url: &str) -> bool {
-    url.starts_with("https://soundcloud.com/")
-        || url.starts_with("https://www.soundcloud.com/")
-        || url.starts_with("https://on.soundcloud.com/")
+    url.starts_with("https://soundcloud.com/") || url.starts_with("https://www.soundcloud.com/") || url.starts_with("https://on.soundcloud.com/")
 }
 
 fn extract_system_playlist_slug(url: &str) -> Option<&str> {
@@ -526,25 +494,18 @@ async fn fetch_system_playlist(slug: &str, oauth_token: Option<&str>) -> Result<
 
     let artwork = raw.artwork_url.or(raw.calculated_artwork_url);
     let track_count = raw.tracks.len() as u32;
-    let user = raw
-        .user
-        .map(|u| UserInfo { id: u.id, username: u.username, avatar_url: u.avatar_url })
-        .unwrap_or(UserInfo {
-            // id: 0 signals "no real user" — the frontend uses `artistId > 0` to gate profile links
-            id: 0,
-            username: "SoundCloud".to_string(),
-            avatar_url: None,
-        });
+    let user = raw.user.map(|u| UserInfo { id: u.id, username: u.username, avatar_url: u.avatar_url }).unwrap_or(UserInfo {
+        // id: 0 signals "no real user" — the frontend uses `artistId > 0` to gate profile links
+        id: 0,
+        username: "SoundCloud".to_string(),
+        avatar_url: None,
+    });
 
     log::info!("[soundcloud] System playlist '{}' has {} tracks", raw.title, track_count);
 
     let ordered_tracks = resolve_tracks_from_mixed(&raw.tracks, &cid, oauth_token, |_| {}).await?;
 
-    log::info!(
-        "[soundcloud] Final system playlist has {} of {} tracks",
-        ordered_tracks.len(),
-        track_count
-    );
+    log::info!("[soundcloud] Final system playlist has {} of {} tracks", ordered_tracks.len(), track_count);
 
     Ok(PlaylistInfo { id: 0, title: raw.title, user, artwork_url: artwork, track_count, tracks: ordered_tracks })
 }
@@ -582,28 +543,17 @@ pub async fn fetch_playlist_info(url: &str, oauth_token: Option<&str>) -> Result
     let playlist_data = match extract_playlist_from_hydration(&hydration) {
         Ok(p) => p,
         Err(e) => {
-            log::warn!(
-                "[soundcloud] Failed to extract playlist from hydration: {}, falling back to API v2",
-                e
-            );
+            log::warn!("[soundcloud] Failed to extract playlist from hydration: {}, falling back to API v2", e);
             return fetch_playlist_info_via_api(&url, oauth_token).await;
         }
     };
 
-    log::info!(
-        "[soundcloud] Found playlist '{}' with {} tracks in hydration",
-        playlist_data.title,
-        playlist_data.track_count
-    );
+    log::info!("[soundcloud] Found playlist '{}' with {} tracks in hydration", playlist_data.title, playlist_data.track_count);
 
     let cid = get_cid().await?;
     let ordered_tracks = resolve_tracks_from_mixed(&playlist_data.tracks, &cid, oauth_token, |_| {}).await?;
 
-    log::info!(
-        "[soundcloud] Final playlist has {} of {} tracks",
-        ordered_tracks.len(),
-        playlist_data.track_count
-    );
+    log::info!("[soundcloud] Final playlist has {} of {} tracks", ordered_tracks.len(), playlist_data.track_count);
 
     Ok(PlaylistInfo {
         id: playlist_data.id,
@@ -627,9 +577,7 @@ pub async fn fetch_track_info(url: &str, oauth_token: Option<&str>) -> Result<Tr
 /// Used by the library detail view to load tracklists without URL resolution.
 /// Handles mixed track data (full objects + ID stubs) from the API.
 /// Calls `on_batch` with each batch of resolved tracks for progressive loading.
-pub async fn fetch_playlist_by_id<F>(
-    id: u64, secret_token: Option<&str>, oauth_token: Option<&str>, on_batch: F,
-) -> Result<Vec<TrackInfo>, ScApiError>
+pub async fn fetch_playlist_by_id<F>(id: u64, secret_token: Option<&str>, oauth_token: Option<&str>, on_batch: F) -> Result<Vec<TrackInfo>, ScApiError>
 where
     F: Fn(&[TrackInfo]),
 {
@@ -983,25 +931,13 @@ mod tests {
 
     #[test]
     fn test_extract_system_playlist_slug() {
-        assert_eq!(
-            extract_system_playlist_slug("https://soundcloud.com/discover/sets/your-moods:526801914:1"),
-            Some("your-moods:526801914:1")
-        );
-        assert_eq!(
-            extract_system_playlist_slug("https://soundcloud.com/discover/sets/charts-top:all-music:us"),
-            Some("charts-top:all-music:us")
-        );
+        assert_eq!(extract_system_playlist_slug("https://soundcloud.com/discover/sets/your-moods:526801914:1"), Some("your-moods:526801914:1"));
+        assert_eq!(extract_system_playlist_slug("https://soundcloud.com/discover/sets/charts-top:all-music:us"), Some("charts-top:all-music:us"));
         assert_eq!(extract_system_playlist_slug("https://soundcloud.com/user/sets/my-playlist"), None);
         assert_eq!(extract_system_playlist_slug("https://soundcloud.com/discover"), None);
         assert_eq!(extract_system_playlist_slug("https://soundcloud.com/discover/sets/"), None);
-        assert_eq!(
-            extract_system_playlist_slug("https://soundcloud.com/discover/sets/your-moods:526801914:1?si=abc123"),
-            Some("your-moods:526801914:1")
-        );
-        assert_eq!(
-            extract_system_playlist_slug("https://soundcloud.com/discover/sets/charts-top:all-music:us#section"),
-            Some("charts-top:all-music:us")
-        );
+        assert_eq!(extract_system_playlist_slug("https://soundcloud.com/discover/sets/your-moods:526801914:1?si=abc123"), Some("your-moods:526801914:1"));
+        assert_eq!(extract_system_playlist_slug("https://soundcloud.com/discover/sets/charts-top:all-music:us#section"), Some("charts-top:all-music:us"));
     }
 
     // Hydration extraction tests
@@ -1145,10 +1081,7 @@ mod tests {
         let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
         let track = TrackInfo::from(raw);
         assert!(track.downloadable);
-        assert_eq!(
-            track.download_url,
-            Some("https://api-v2.soundcloud.com/tracks/123456/download".to_string())
-        );
+        assert_eq!(track.download_url, Some("https://api-v2.soundcloud.com/tracks/123456/download".to_string()));
     }
 
     #[test]

@@ -17,9 +17,7 @@ pub async fn get_conversations_page(app: tauri::AppHandle, offset: Option<u32>) 
         }
     }
 
-    let page = messages::fetch_conversations_page(&token, &client_id, user_id, offset, 10)
-        .await
-        .map_err(|e| e.to_string())?;
+    let page = messages::fetch_conversations_page(&token, &client_id, user_id, offset, 10).await.map_err(|e| e.to_string())?;
 
     if offset.is_none() {
         cache.set_first_conversations_page(page.clone());
@@ -34,9 +32,7 @@ pub async fn get_conversation_messages(app: tauri::AppHandle, other_user_id: u64
     let (token, client_id) = require_auth_and_cid(&app).await?;
     let user_id = require_user_id(&app)?;
 
-    let page = messages::fetch_conversation_messages(&token, &client_id, user_id, other_user_id, offset, 10)
-        .await
-        .map_err(|e| e.to_string())?;
+    let page = messages::fetch_conversation_messages(&token, &client_id, user_id, other_user_id, offset, 10).await.map_err(|e| e.to_string())?;
 
     Ok(page)
 }
@@ -53,9 +49,7 @@ pub async fn get_unread_conversations_flag(app: tauri::AppHandle) -> Result<bool
     let (token, client_id) = require_auth_and_cid(&app).await?;
     let user_id = require_user_id(&app)?;
 
-    let page = messages::fetch_conversations_page(&token, &client_id, user_id, None, 5)
-        .await
-        .map_err(|e| e.to_string())?;
+    let page = messages::fetch_conversations_page(&token, &client_id, user_id, None, 5).await.map_err(|e| e.to_string())?;
 
     let has_unread = page.items.iter().any(|c| !c.read);
     cache.set_unread(has_unread);
@@ -77,9 +71,7 @@ pub async fn mark_conversation_read(app: tauri::AppHandle, other_user_id: u64) -
     let user_id = require_user_id(&app)?;
     let cache = app.state::<MessagesCache>();
 
-    messages::mark_conversation_read(&token, &client_id, user_id, other_user_id)
-        .await
-        .map_err(|e| e.to_string())?;
+    messages::mark_conversation_read(&token, &client_id, user_id, other_user_id).await.map_err(|e| e.to_string())?;
 
     cache.clear();
 

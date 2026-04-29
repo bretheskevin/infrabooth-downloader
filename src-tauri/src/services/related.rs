@@ -19,19 +19,12 @@ pub async fn fetch_related_tracks(
     )
     .map_err(|e| DownloadError::StreamResolutionFailed(e.to_string()))?;
 
-    let response = client
-        .get(url)
-        .with_oauth(oauth_token)
-        .send()
-        .await
-        .map_err(|e| DownloadError::NetworkError(e.to_string()))?;
+    let response = client.get(url).with_oauth(oauth_token).send().await.map_err(|e| DownloadError::NetworkError(e.to_string()))?;
 
     let response = validate_sc_response(response, None).await?;
 
-    let body: RelatedTracksResponse = response
-        .json()
-        .await
-        .map_err(|e| DownloadError::StreamResolutionFailed(format!("Failed to parse related tracks: {}", e)))?;
+    let body: RelatedTracksResponse =
+        response.json().await.map_err(|e| DownloadError::StreamResolutionFailed(format!("Failed to parse related tracks: {}", e)))?;
 
     Ok(body.collection.into_iter().map(TrackInfo::from).collect())
 }

@@ -16,15 +16,7 @@ pub async fn like_track(
 ) -> (Option<String>, Result<(), LikeTrackError>) {
     log::info!("[like] Liking track {}", track_id);
     let url = try_none!(track_like_url(current_user_id, track_id, client_id));
-    let response = try_none!(
-        HTTP_CLIENT
-            .put(url)
-            .with_oauth(Some(oauth_token))
-            .with_datadome(datadome)
-            .header("Content-Length", "0")
-            .send()
-            .await
-    );
+    let response = try_none!(HTTP_CLIENT.put(url).with_oauth(Some(oauth_token)).with_datadome(datadome).header("Content-Length", "0").send().await);
     check_api_success(response, track_id, "liked", "like", LikeTrackError::ApiError).await
 }
 
@@ -33,13 +25,6 @@ pub async fn unlike_track(
 ) -> (Option<String>, Result<(), LikeTrackError>) {
     log::info!("[like] Unliking track {}", track_id);
     let url = try_none!(track_like_url(current_user_id, track_id, client_id));
-    let response = try_none!(
-        HTTP_CLIENT
-            .delete(url)
-            .with_oauth(Some(oauth_token))
-            .with_datadome(datadome)
-            .send()
-            .await
-    );
+    let response = try_none!(HTTP_CLIENT.delete(url).with_oauth(Some(oauth_token)).with_datadome(datadome).send().await);
     check_api_success(response, track_id, "unliked", "like", LikeTrackError::ApiError).await
 }

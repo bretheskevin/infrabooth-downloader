@@ -13,7 +13,5 @@ use crate::services::stream;
 #[specta::specta]
 pub async fn resolve_playback_url(track_id: u64, track_url: String, auth_state: State<'_, AuthState>) -> Result<String, ErrorResponse> {
     let oauth_token = auth_state.get_token();
-    stream::resolve_playback_url(track_id, &track_url, oauth_token.as_deref())
-        .await
-        .map_err(|e| e.into())
+    stream::resolve_playback_url(track_id, &track_url, oauth_token.as_deref()).await.map_err(|e| e.into())
 }

@@ -10,8 +10,7 @@ pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 /// Extracted from the SoundCloud web app bundle (look for `app_version` in network requests).
 /// May need periodic updating if SoundCloud rejects older versions.
 pub const SC_APP_VERSION: &str = "1776774633";
-pub const CHROME_USER_AGENT: &str =
-    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
+pub const CHROME_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
 pub const DEFAULT_PAGE_SIZE: usize = 20;
 pub const DEFAULT_PAGE_SIZE_STR: &str = "20";
@@ -40,17 +39,9 @@ pub async fn expand_short_link(url: &str) -> Result<String, String> {
         return Ok(normalized);
     }
 
-    let response = NO_REDIRECT_CLIENT
-        .head(normalized.as_str())
-        .send()
-        .await
-        .map_err(|e| format!("Failed to resolve short link: {}", e))?;
+    let response = NO_REDIRECT_CLIENT.head(normalized.as_str()).send().await.map_err(|e| format!("Failed to resolve short link: {}", e))?;
 
-    let location = response
-        .headers()
-        .get("location")
-        .and_then(|v| v.to_str().ok())
-        .map(|s| s.to_string());
+    let location = response.headers().get("location").and_then(|v| v.to_str().ok()).map(|s| s.to_string());
 
     log::debug!("[http] Short link {} resolved to: {:?}", url, location);
 
@@ -124,17 +115,10 @@ pub fn validate_api_response(status: rquest::StatusCode) -> Result<(), ApiRespon
     }
 }
 
-pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(
-    url: &str, client_id: &str, oauth_token: Option<&str>,
-) -> Result<T, ApiResponseError> {
+pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(url: &str, client_id: &str, oauth_token: Option<&str>) -> Result<T, ApiResponseError> {
     let resolve_url = format!("{}/resolve?url={}&client_id={}", API_V2_BASE, urlencoding::encode(url), client_id,);
 
-    let response = HTTP_CLIENT
-        .get(&resolve_url)
-        .with_oauth(oauth_token)
-        .send()
-        .await
-        .map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
+    let response = HTTP_CLIENT.get(&resolve_url).with_oauth(oauth_token).send().await.map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
 
     let status = response.status();
     if status != rquest::StatusCode::FOUND {
@@ -156,19 +140,12 @@ pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(
 
             log::info!("[http] Following resolve redirect to: {}", location);
 
-            let redirect_response = HTTP_CLIENT
-                .get(&location)
-                .with_oauth(oauth_token)
-                .send()
-                .await
-                .map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
+            let redirect_response =
+                HTTP_CLIENT.get(&location).with_oauth(oauth_token).send().await.map_err(|e| ApiResponseError::FetchFailed(e.to_string()))?;
 
             validate_api_response(redirect_response.status())?;
 
-            return redirect_response
-                .json()
-                .await
-                .map_err(|e| ApiResponseError::FetchFailed(e.to_string()));
+            return redirect_response.json().await.map_err(|e| ApiResponseError::FetchFailed(e.to_string()));
         }
     }
 
@@ -185,9 +162,7 @@ impl RequestBuilderExt for rquest::RequestBuilder {
 
     fn with_datadome(self, datadome: Option<&str>) -> Self {
         match datadome {
-            Some(dd) => self
-                .header("x-datadome-clientid", dd)
-                .header(rquest::header::COOKIE, format!("datadome={}", dd)),
+            Some(dd) => self.header("x-datadome-clientid", dd).header(rquest::header::COOKIE, format!("datadome={}", dd)),
             None => self,
         }
     }
@@ -222,30 +197,19 @@ where
     F: Fn(&[T]),
 {
     let mut all_items = Vec::new();
-    let initial_params: Vec<(String, String)> = rquest::Url::parse(&initial_url)
-        .map(|u| u.query_pairs().map(|(k, v)| (k.into_owned(), v.into_owned())).collect())
-        .unwrap_or_default();
+    let initial_params: Vec<(String, String)> =
+        rquest::Url::parse(&initial_url).map(|u| u.query_pairs().map(|(k, v)| (k.into_owned(), v.into_owned())).collect()).unwrap_or_default();
 
     let mut next_url: Option<String> = Some(initial_url);
 
     while let Some(url) = next_url.take() {
         log::info!("[{}] Fetching page {}", label, (all_items.len() / page_size) + 1);
 
-        let response = HTTP_CLIENT
-            .get(&url)
-            .with_oauth(token)
-            .with_datadome(datadome)
-            .send()
-            .await
-            .map_err(|e| format!("Failed to fetch {}: {}", label, e))?;
+        let response = HTTP_CLIENT.get(&url).with_oauth(token).with_datadome(datadome).send().await.map_err(|e| format!("Failed to fetch {}: {}", label, e))?;
 
         match validate_api_response(response.status()) {
             Err(ApiResponseError::AuthRequired) if !all_items.is_empty() => {
-                log::info!(
-                    "[{}] Auth required for next page, returning {} items collected so far",
-                    label,
-                    all_items.len()
-                );
+                log::info!("[{}] Auth required for next page, returning {} items collected so far", label, all_items.len());
                 break;
             }
             Err(e) => return Err(e.to_string()),
@@ -260,12 +224,7 @@ where
             format!("Failed to parse {}: {}", label, e)
         })?;
 
-        log::info!(
-            "[{}] Fetched {} items, has_more={}",
-            label,
-            api_response.collection.len(),
-            api_response.next_href.is_some()
-        );
+        log::info!("[{}] Fetched {} items, has_more={}", label, api_response.collection.len(), api_response.next_href.is_some());
 
         if !api_response.collection.is_empty() {
             let items: Vec<T> = api_response.collection.into_iter().filter_map(&map_item).collect();
@@ -337,19 +296,10 @@ pub async fn validate_sc_response(
 }
 
 pub fn extract_datadome_from_response(response: &rquest::Response) -> Option<String> {
-    let result = response
-        .headers()
-        .get_all("x-set-cookie")
-        .iter()
-        .chain(response.headers().get_all("set-cookie").iter())
-        .filter_map(|v| v.to_str().ok())
-        .find_map(|cookie_str| {
-            cookie_str
-                .strip_prefix("datadome=")
-                .and_then(|rest| rest.split(';').next())
-                .filter(|v| !v.is_empty())
-                .map(|v| v.to_string())
-        });
+    let result =
+        response.headers().get_all("x-set-cookie").iter().chain(response.headers().get_all("set-cookie").iter()).filter_map(|v| v.to_str().ok()).find_map(
+            |cookie_str| cookie_str.strip_prefix("datadome=").and_then(|rest| rest.split(';').next()).filter(|v| !v.is_empty()).map(|v| v.to_string()),
+        );
     if result.is_some() {
         log::debug!("[http] Extracted updated datadome cookie from response");
     }

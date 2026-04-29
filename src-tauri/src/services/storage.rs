@@ -11,10 +11,7 @@ pub struct CachedAuth {
 
 impl std::fmt::Debug for CachedAuth {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CachedAuth")
-            .field("oauth_token", &"[redacted]")
-            .field("user_id", &self.user_id)
-            .finish()
+        f.debug_struct("CachedAuth").field("oauth_token", &"[redacted]").field("user_id", &self.user_id).finish()
     }
 }
 
@@ -52,11 +49,7 @@ impl AuthState {
     }
 
     pub fn get_token(&self) -> Option<String> {
-        self.cached
-            .lock()
-            .expect("AuthState lock poisoned")
-            .as_ref()
-            .map(|a| a.oauth_token.clone())
+        self.cached.lock().expect("AuthState lock poisoned").as_ref().map(|a| a.oauth_token.clone())
     }
 
     pub fn get_datadome(&self) -> Option<String> {

@@ -3,8 +3,7 @@ use std::path::{Path, PathBuf};
 use crate::models::error::{ErrorResponse, HasErrorCode, RekordboxError};
 use crate::services::paths::get_app_data_dir;
 use crate::services::rekordbox::models::{
-    BackupInfo, BackupKind, DjmdPlaylist, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus,
-    ALL_TRACKS_PLAYLIST_NAME,
+    BackupInfo, BackupKind, DjmdPlaylist, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus, ALL_TRACKS_PLAYLIST_NAME,
 };
 use crate::services::rekordbox::{
     backup, config, content,
@@ -32,22 +31,13 @@ pub(super) fn resolve_rekordbox_config(manual_db_path: Option<String>) -> Result
     config::detect_rekordbox(manual_db_path.map(PathBuf::from)).map_err(ErrorResponse::from)
 }
 
-pub(super) fn is_content_in_playlist(
-    db: &database::RekordboxDatabase, playlist_id: &str, content_id: &str,
-) -> Result<bool, RekordboxError> {
+pub(super) fn is_content_in_playlist(db: &database::RekordboxDatabase, playlist_id: &str, content_id: &str) -> Result<bool, RekordboxError> {
     db.conn()
-        .query_row(
-            "SELECT COUNT(*) FROM djmdSongPlaylist WHERE PlaylistID = ?1 AND ContentID = ?2",
-            rusqlite::params![playlist_id, content_id],
-            |row| row.get::<_, i32>(0),
-        )
-        .map(|count| count > 0)
-        .map_err(|e| {
-            RekordboxError::DatabaseError(format!(
-                "Failed to check whether content {} is already in playlist {}: {}",
-                content_id, playlist_id, e
-            ))
+        .query_row("SELECT COUNT(*) FROM djmdSongPlaylist WHERE PlaylistID = ?1 AND ContentID = ?2", rusqlite::params![playlist_id, content_id], |row| {
+            row.get::<_, i32>(0)
         })
+        .map(|count| count > 0)
+        .map_err(|e| RekordboxError::DatabaseError(format!("Failed to check whether content {} is already in playlist {}: {}", content_id, playlist_id, e)))
 }
 
 fn restore_state_after_failure(err: RekordboxError, backup_path: &Path, db_dir: &Path) -> ErrorResponse {
@@ -96,7 +86,11 @@ impl RekordboxWriteContext {
         let xml = xml_sync::PlaylistXml::read_if_exists(&self.rb_config.db_dir)?;
         log::info!(
             "[rekordbox] XML playlist file: {}",
-            if xml.is_some() { "found" } else { "not found" }
+            if xml.is_some() {
+                "found"
+            } else {
+                "not found"
+            }
         );
 
         Ok(RekordboxSession { db, xml, db_dir: self.rb_config.db_dir.clone() })
@@ -212,12 +206,7 @@ pub fn detect_rekordbox(manual_db_path: Option<String>, _app: tauri::AppHandle) 
     let manual_db_path = manual_db_path.map(PathBuf::from);
 
     match config::detect_rekordbox(manual_db_path) {
-        Ok(cfg) => Ok(RekordboxStatus {
-            found: true,
-            version: Some(cfg.version),
-            db_path: Some(cfg.db_path.to_string_lossy().to_string()),
-            is_running,
-        }),
+        Ok(cfg) => Ok(RekordboxStatus { found: true, version: Some(cfg.version), db_path: Some(cfg.db_path.to_string_lossy().to_string()), is_running }),
         Err(RekordboxError::NotFound(_)) => Ok(RekordboxStatus { found: false, version: None, db_path: None, is_running }),
         Err(e) => Err(ErrorResponse::from(e)),
     }
@@ -263,9 +252,7 @@ pub fn export_to_rekordbox(
 
 #[tauri::command]
 #[specta::specta]
-pub fn list_rekordbox_playlists(
-    manual_db_path: Option<String>, _app: tauri::AppHandle,
-) -> Result<Vec<RekordboxPlaylistInfo>, ErrorResponse> {
+pub fn list_rekordbox_playlists(manual_db_path: Option<String>, _app: tauri::AppHandle) -> Result<Vec<RekordboxPlaylistInfo>, ErrorResponse> {
     let rb_config = resolve_rekordbox_config(manual_db_path)?;
     let db = database::RekordboxDatabase::open(&rb_config).map_err(ErrorResponse::from)?;
 
@@ -296,8 +283,7 @@ pub fn delete_rekordbox_playlist(playlist_id: String, manual_db_path: Option<Str
     ctx.handle_result((|| -> Result<(), RekordboxError> {
         let mut session = ctx.open_session()?;
 
-        let folder =
-            playlist::find_infrabooth_folder(&session.db).ok_or_else(|| RekordboxError::NotFound("InfraBooth folder not found".into()))?;
+        let folder = playlist::find_infrabooth_folder(&session.db).ok_or_else(|| RekordboxError::NotFound("InfraBooth folder not found".into()))?;
         let target = playlist::find_playlist_in_folder(&session.db, &playlist_id, &folder.id).ok_or_else(|| {
             let target_type = playlist::find_playlist_by_id(&session.db, &playlist_id)
                 .map(|pl| {
@@ -343,17 +329,14 @@ pub fn restore_rekordbox_backup(backup_path: String, manual_db_path: Option<Stri
 
     let rb_config = resolve_rekordbox_config(manual_db_path)?;
 
-    let path = std::fs::canonicalize(&backup_path)
-        .map_err(|e| ErrorResponse::from(RekordboxError::RestoreFailed(format!("Invalid backup path: {}", e))))?;
+    let path = std::fs::canonicalize(&backup_path).map_err(|e| ErrorResponse::from(RekordboxError::RestoreFailed(format!("Invalid backup path: {}", e))))?;
 
     let app_data_dir = get_app_data_dir(&app).map_err(app_data_dir_error)?;
     let backups_dir = std::fs::canonicalize(app_data_dir.join(backup::BACKUPS_DIR_NAME))
         .map_err(|e| ErrorResponse::from(RekordboxError::RestoreFailed(format!("Backups dir error: {}", e))))?;
 
     if !path.starts_with(&backups_dir) {
-        return Err(ErrorResponse::from(RekordboxError::RestoreFailed(
-            "Backup path is outside the backups directory".into(),
-        )));
+        return Err(ErrorResponse::from(RekordboxError::RestoreFailed("Backup path is outside the backups directory".into())));
     }
 
     backup::create_backup(&rb_config.db_dir, &app_data_dir, BackupKind::PreRestore).map_err(ErrorResponse::from)?;

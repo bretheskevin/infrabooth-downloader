@@ -68,9 +68,7 @@ pub struct UserSearchResponse {
 
 // === Service functions ===
 
-async fn search_api<Raw, Out>(
-    client_id: &str, query: &str, limit: u32, offset: u32, endpoint: &str,
-) -> Result<(Vec<Out>, Option<i64>), ScApiError>
+async fn search_api<Raw, Out>(client_id: &str, query: &str, limit: u32, offset: u32, endpoint: &str) -> Result<(Vec<Out>, Option<i64>), ScApiError>
 where
     Raw: serde::de::DeserializeOwned,
     Out: From<Raw>,

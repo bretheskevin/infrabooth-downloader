@@ -25,12 +25,8 @@ fn files_match(source_path: &Path, target_path: &Path) -> Result<bool, Rekordbox
     let mut src_buf = [0u8; 8192];
     let mut tgt_buf = [0u8; 8192];
     loop {
-        let n1 = src
-            .read(&mut src_buf)
-            .map_err(|e| RekordboxError::FileError(format!("Cannot read source: {}", e)))?;
-        let n2 = tgt
-            .read(&mut tgt_buf)
-            .map_err(|e| RekordboxError::FileError(format!("Cannot read target: {}", e)))?;
+        let n1 = src.read(&mut src_buf).map_err(|e| RekordboxError::FileError(format!("Cannot read source: {}", e)))?;
+        let n2 = tgt.read(&mut tgt_buf).map_err(|e| RekordboxError::FileError(format!("Cannot read target: {}", e)))?;
         if n1 != n2 || src_buf[..n1] != tgt_buf[..n2] {
             return Ok(false);
         }
@@ -48,18 +44,12 @@ pub fn copy_track_to_rekordbox(source_path: &Path, artist: &str, title: &str, re
     };
 
     let file_stem = if title.trim().is_empty() {
-        source_path
-            .file_stem()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_else(|| "untitled".to_string())
+        source_path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "untitled".to_string())
     } else {
         sanitize_name(title)
     };
 
-    let extension = source_path
-        .extension()
-        .map(|e| e.to_string_lossy().to_string())
-        .unwrap_or_else(|| "mp3".to_string());
+    let extension = source_path.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_else(|| "mp3".to_string());
 
     let artist_dir = rekordbox_root.join(&artist_dir_name);
     fs::create_dir_all(&artist_dir).map_err(|e| RekordboxError::FileError(format!("Cannot create artist dir: {}", e)))?;

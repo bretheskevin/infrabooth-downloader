@@ -7,8 +7,7 @@ use specta::Type;
 
 use crate::models::error::ScApiError;
 use crate::services::http::{
-    extract_datadome_from_response, sanitize_error_body, try_none, validate_api_response, RequestBuilderExt, ANTIBOT_BLOCKED, API_V2_BASE,
-    HTTP_CLIENT,
+    extract_datadome_from_response, sanitize_error_body, try_none, validate_api_response, RequestBuilderExt, ANTIBOT_BLOCKED, API_V2_BASE, HTTP_CLIENT,
 };
 
 // ---------------------------------------------------------------------------
@@ -146,11 +145,7 @@ fn raw_sender_to_user(s: &RawSender) -> MessageUser {
 }
 
 fn extract_offset_from_next_href(next_href: &str) -> Option<u32> {
-    rquest::Url::parse(next_href)
-        .ok()?
-        .query_pairs()
-        .find(|(k, _)| k == "offset")
-        .and_then(|(_, v)| v.parse().ok())
+    rquest::Url::parse(next_href).ok()?.query_pairs().find(|(k, _)| k == "offset").and_then(|(_, v)| v.parse().ok())
 }
 
 fn convert_conversations(raw: RawPaginatedResponse<RawConversation>, current_user_id: u64) -> ConversationsPage {
@@ -227,9 +222,7 @@ async fn resolve_embed(url: &str, client_id: &str, oauth_token: &str) -> Option<
                 tracks: Vec<RawPlaylistTrack>,
             }
             let playlist: RawPlaylist = serde_json::from_value(value).ok()?;
-            let artwork = playlist
-                .artwork_url
-                .or_else(|| playlist.tracks.iter().find_map(|t| t.artwork_url.clone()));
+            let artwork = playlist.artwork_url.or_else(|| playlist.tracks.iter().find_map(|t| t.artwork_url.clone()));
             Some(MessageEmbed::Playlist(MessagePlaylistEmbed {
                 id: playlist.id,
                 title: playlist.title,
@@ -266,12 +259,12 @@ async fn resolve_embed(url: &str, client_id: &str, oauth_token: &str) -> Option<
 }
 
 fn convert_messages(raw: RawPaginatedResponse<RawMessage>, other_user_id: u64, current_user_id: u64) -> MessagesPage {
-    let other_user = raw
-        .collection
-        .iter()
-        .find(|m| m.sender.id == other_user_id)
-        .map(|m| raw_sender_to_user(&m.sender))
-        .unwrap_or(MessageUser { id: other_user_id, username: String::new(), avatar_url: None, permalink_url: String::new() });
+    let other_user = raw.collection.iter().find(|m| m.sender.id == other_user_id).map(|m| raw_sender_to_user(&m.sender)).unwrap_or(MessageUser {
+        id: other_user_id,
+        username: String::new(),
+        avatar_url: None,
+        permalink_url: String::new(),
+    });
 
     let items = raw
         .collection
@@ -423,10 +416,7 @@ pub async fn fetch_conversation_messages(
 }
 
 pub async fn mark_conversation_read(oauth_token: &str, client_id: &str, user_id: u64, other_user_id: u64) -> Result<(), ScApiError> {
-    let url = format!(
-        "{}/users/{}/conversations/{}?client_id={}",
-        API_V2_BASE, user_id, other_user_id, client_id,
-    );
+    let url = format!("{}/users/{}/conversations/{}?client_id={}", API_V2_BASE, user_id, other_user_id, client_id,);
 
     log::debug!("[messages] Marking conversation with user {} as read", other_user_id);
 
@@ -444,21 +434,14 @@ pub async fn mark_conversation_read(oauth_token: &str, client_id: &str, user_id:
         return Err(ScApiError::FetchFailed(format!("mark_conversation_read returned HTTP {}", status)));
     }
 
-    log::debug!(
-        "[messages] Conversation with user {} marked as read (HTTP {})",
-        other_user_id,
-        status
-    );
+    log::debug!("[messages] Conversation with user {} marked as read (HTTP {})", other_user_id, status);
     Ok(())
 }
 
 pub async fn send_message(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, user_id: u64, other_user_id: u64, content: &str,
 ) -> (Option<String>, Result<(), ScApiError>) {
-    let url = format!(
-        "{}/users/{}/conversations/{}?client_id={}",
-        API_V2_BASE, user_id, other_user_id, client_id,
-    );
+    let url = format!("{}/users/{}/conversations/{}?client_id={}", API_V2_BASE, user_id, other_user_id, client_id,);
 
     let body = serde_json::json!({ "contents": content });
 

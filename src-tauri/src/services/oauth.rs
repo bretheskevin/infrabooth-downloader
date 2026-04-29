@@ -32,12 +32,7 @@ pub async fn verify_token(oauth_token: &str) -> Result<UserProfile, AuthError> {
 
     let client = &*HTTP_CLIENT;
     let url = format!("{}/me", API_V2_BASE);
-    let resp = client
-        .get(&url)
-        .query(&[("client_id", client_id.as_str())])
-        .with_oauth(Some(oauth_token))
-        .send()
-        .await?;
+    let resp = client.get(&url).query(&[("client_id", client_id.as_str())]).with_oauth(Some(oauth_token)).send().await?;
 
     if !resp.status().is_success() {
         return Err(AuthError::VerificationFailed(format!("API returned {}", resp.status())));

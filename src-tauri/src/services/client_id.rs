@@ -14,15 +14,11 @@ use crate::services::http::SOUNDCLOUD_URL;
 static CLIENT_ID_CACHE: Lazy<Mutex<Option<String>>> = Lazy::new(|| Mutex::new(None));
 static SCRIPT_URL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"<script[^>]+src="([^"]+)""#).unwrap());
 static CLIENT_ID_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"client_id\s*:\s*"([0-9a-zA-Z]{32})""#).unwrap());
-const USER_AGENT: &str =
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36";
+const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36";
 
 /// Extract `<script src="...">` URLs from HTML.
 fn extract_script_urls(html: &str) -> Vec<String> {
-    SCRIPT_URL_RE
-        .captures_iter(html)
-        .filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string()))
-        .collect()
+    SCRIPT_URL_RE.captures_iter(html).filter_map(|cap| cap.get(1).map(|m| m.as_str().to_string())).collect()
 }
 
 /// Extract client_id from a JavaScript source string.
@@ -64,9 +60,7 @@ async fn scrape_client_id() -> Result<String, DownloadError> {
         }
     }
 
-    Err(DownloadError::StreamResolutionFailed(
-        "Unable to extract client_id from SoundCloud JS bundles".to_string(),
-    ))
+    Err(DownloadError::StreamResolutionFailed("Unable to extract client_id from SoundCloud JS bundles".to_string()))
 }
 
 /// Get the current client_id, scraping from SoundCloud if not cached.

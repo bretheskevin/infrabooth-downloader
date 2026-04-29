@@ -24,11 +24,9 @@ fn test_full_export_flow_with_test_db() {
 
     let pl = playlist::create_playlist(&mut db, "Test Export", &folder.id).expect("Failed to create playlist");
 
-    let dest1 =
-        file_manager::copy_track_to_rekordbox(&track1_path, "Artist A", "Song One", &rekordbox_tracks_dir).expect("Copy track 1 failed");
+    let dest1 = file_manager::copy_track_to_rekordbox(&track1_path, "Artist A", "Song One", &rekordbox_tracks_dir).expect("Copy track 1 failed");
 
-    let dest2 =
-        file_manager::copy_track_to_rekordbox(&track2_path, "Artist B", "Song Two", &rekordbox_tracks_dir).expect("Copy track 2 failed");
+    let dest2 = file_manager::copy_track_to_rekordbox(&track2_path, "Artist B", "Song Two", &rekordbox_tracks_dir).expect("Copy track 2 failed");
 
     let metadata1 = TrackMetadata {
         title: "Song One".to_string(),

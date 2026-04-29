@@ -63,15 +63,11 @@ pub fn validate_url(input: &str) -> ValidationResult {
 
     match segments.as_slice() {
         // Private playlist: /user/sets/playlist-name/s-secrettoken
-        [_user, "sets", _playlist, secret] if secret.starts_with("s-") => {
-            ValidationResult { valid: true, url_type: Some(UrlType::Playlist), error: None }
-        }
+        [_user, "sets", _playlist, secret] if secret.starts_with("s-") => ValidationResult { valid: true, url_type: Some(UrlType::Playlist), error: None },
         // Regular playlist: /user/sets/playlist-name
         [_user, "sets", _playlist] => ValidationResult { valid: true, url_type: Some(UrlType::Playlist), error: None },
         // Private track: /user/track-name/s-secrettoken
-        [_user, track, secret] if *track != "sets" && secret.starts_with("s-") => {
-            ValidationResult { valid: true, url_type: Some(UrlType::Track), error: None }
-        }
+        [_user, track, secret] if *track != "sets" && secret.starts_with("s-") => ValidationResult { valid: true, url_type: Some(UrlType::Track), error: None },
         // Regular track: /user/track-name (2 segments, not "sets")
         [_user, track] if *track != "sets" => ValidationResult { valid: true, url_type: Some(UrlType::Track), error: None },
         // Profile: /user (1 segment only)

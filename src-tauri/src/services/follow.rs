@@ -49,15 +49,7 @@ pub async fn follow_user(
 ) -> (Option<String>, Result<(), FollowError>) {
     log::info!("[follow] Following user {}", target_user_id);
     let url = try_none!(signed_follow_url(current_user_id, target_user_id, client_id));
-    let response = try_none!(
-        HTTP_CLIENT
-            .post(url)
-            .with_oauth(Some(oauth_token))
-            .with_datadome(datadome)
-            .header("Content-Length", "0")
-            .send()
-            .await
-    );
+    let response = try_none!(HTTP_CLIENT.post(url).with_oauth(Some(oauth_token)).with_datadome(datadome).header("Content-Length", "0").send().await);
     check_api_success(response, target_user_id, "followed", "follow", FollowError::ApiError).await
 }
 
@@ -66,14 +58,7 @@ pub async fn unfollow_user(
 ) -> (Option<String>, Result<(), FollowError>) {
     log::info!("[follow] Unfollowing user {}", target_user_id);
     let url = try_none!(signed_follow_url(current_user_id, target_user_id, client_id));
-    let response = try_none!(
-        HTTP_CLIENT
-            .delete(url)
-            .with_oauth(Some(oauth_token))
-            .with_datadome(datadome)
-            .send()
-            .await
-    );
+    let response = try_none!(HTTP_CLIENT.delete(url).with_oauth(Some(oauth_token)).with_datadome(datadome).send().await);
     check_api_success(response, target_user_id, "unfollowed", "follow", FollowError::ApiError).await
 }
 
@@ -82,18 +67,10 @@ pub async fn check_follow_status(
 ) -> Result<bool, FollowError> {
     log::debug!("[follow] Checking follow status for user {}", target_user_id);
 
-    let url = Url::parse_with_params(
-        &format!("{}/users/{}/followings/ids", API_V2_BASE, current_user_id),
-        &[("client_id", client_id), ("limit", "5000")],
-    )
-    .map_err(|e| FollowError::NetworkError(format!("Failed to build URL: {}", e)))?;
+    let url = Url::parse_with_params(&format!("{}/users/{}/followings/ids", API_V2_BASE, current_user_id), &[("client_id", client_id), ("limit", "5000")])
+        .map_err(|e| FollowError::NetworkError(format!("Failed to build URL: {}", e)))?;
 
-    let response = HTTP_CLIENT
-        .get(url)
-        .with_oauth(Some(oauth_token))
-        .with_datadome(datadome)
-        .send()
-        .await?;
+    let response = HTTP_CLIENT.get(url).with_oauth(Some(oauth_token)).with_datadome(datadome).send().await?;
 
     if !response.status().is_success() {
         let code = response.status().as_u16();
@@ -107,16 +84,17 @@ pub async fn check_follow_status(
         collection: Vec<u64>,
     }
 
-    let data: FollowingIdsResponse = response
-        .json()
-        .await
-        .map_err(|e| FollowError::NetworkError(format!("Failed to parse followings: {}", e)))?;
+    let data: FollowingIdsResponse = response.json().await.map_err(|e| FollowError::NetworkError(format!("Failed to parse followings: {}", e)))?;
 
     let is_following = data.collection.contains(&target_user_id);
     log::debug!(
         "[follow] User {} is{}followed",
         target_user_id,
-        if is_following { " " } else { " NOT " }
+        if is_following {
+            " "
+        } else {
+            " NOT "
+        }
     );
     Ok(is_following)
 }

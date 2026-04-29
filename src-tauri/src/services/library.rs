@@ -144,11 +144,7 @@ impl LibraryCache {
 
     pub fn get_secret_token(&self, playlist_id: u64) -> Option<String> {
         let inner = self.inner.lock().expect("LibraryCache lock poisoned");
-        inner
-            .playlists
-            .iter()
-            .find(|p| p.id == playlist_id)
-            .and_then(|p| p.secret_token.clone())
+        inner.playlists.iter().find(|p| p.id == playlist_id).and_then(|p| p.secret_token.clone())
     }
 }
 
@@ -190,10 +186,7 @@ fn map_library_item(item: &LibraryItem) -> Option<LibraryPlaylist> {
 async fn fetch_library_page(oauth_token: &str, client_id: &str, cursor: Option<String>) -> Result<LibraryPageResponse, ScApiError> {
     let url = match cursor {
         Some(ref next_href) => next_href.clone(),
-        None => format!(
-            "{}/me/library/all?client_id={}&limit=50&linked_partitioning=1",
-            API_V2_BASE, client_id
-        ),
+        None => format!("{}/me/library/all?client_id={}&limit=50&linked_partitioning=1", API_V2_BASE, client_id),
     };
 
     let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;

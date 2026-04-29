@@ -11,11 +11,10 @@ use crate::models::error::RekordboxError;
 
 pub fn read_track_metadata(path: &Path) -> Result<TrackMetadata, RekordboxError> {
     let tag = id3::Tag::read_from_path(path).unwrap_or_else(|_| id3::Tag::new());
-    let title = tag.title().map(|s| s.to_string()).unwrap_or_else(|| {
-        path.file_stem()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_else(|| "Unknown".to_string())
-    });
+    let title = tag
+        .title()
+        .map(|s| s.to_string())
+        .unwrap_or_else(|| path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "Unknown".to_string()));
     let artist = tag.artist().map(|s| s.to_string()).unwrap_or_else(|| "Unknown Artist".to_string());
     let album = tag.album().map(|s| s.to_string());
     let duration_ms = tag.duration().map(|d| d as i64);
@@ -79,11 +78,7 @@ pub fn add_content(db: &mut RekordboxDatabase, file_path: &Path, metadata: &Trac
 
     let length_sec = metadata.duration_ms.map(|ms| (ms / 1000) as i32);
 
-    log::info!(
-        "[rekordbox-content] Inserting content into database: id={}, title={}",
-        id,
-        metadata.title
-    );
+    log::info!("[rekordbox-content] Inserting content into database: id={}, title={}", id, metadata.title);
     db.conn()
         .execute(
             "INSERT INTO djmdContent (
@@ -153,9 +148,7 @@ fn resolve_or_create_named_entity(db: &mut RekordboxDatabase, table: &str, name:
     let table = database::validate_table_name(table)?;
     let existing: Option<String> = db
         .conn()
-        .query_row(&format!("SELECT ID FROM {} WHERE Name = ?1", table), params![name], |row| {
-            row.get(0)
-        })
+        .query_row(&format!("SELECT ID FROM {} WHERE Name = ?1", table), params![name], |row| row.get(0))
         .optional()
         .map_err(|e| RekordboxError::DatabaseError(format!("{} lookup failed: {}", table, e)))?;
 
@@ -200,9 +193,7 @@ fn find_content_id_by_path(db: &RekordboxDatabase, path: &str) -> Result<Option<
 
 fn get_device_info(db: &RekordboxDatabase) -> Result<(String, String), RekordboxError> {
     db.conn()
-        .query_row("SELECT ID, MasterDBID FROM djmdDevice LIMIT 1", [], |row| {
-            Ok((row.get(0)?, row.get(1)?))
-        })
+        .query_row("SELECT ID, MasterDBID FROM djmdDevice LIMIT 1", [], |row| Ok((row.get(0)?, row.get(1)?)))
         .map_err(|e| RekordboxError::DatabaseError(format!("Device info query failed: {}", e)))
 }
 

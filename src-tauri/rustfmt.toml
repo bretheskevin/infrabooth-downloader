@@ -1,5 +1,5 @@
 fn_params_layout = "Compressed"
-use_small_heuristics = "Default"
-max_width = 140
+use_small_heuristics = "Off"
+max_width = 160
 array_width = 90
-struct_lit_width = 140
+struct_lit_width = 160

@@ -11,16 +11,8 @@ pub(crate) const BACKUPS_DIR_NAME: &str = "rekordbox-backups";
 
 fn build_backup_path(backups_dir: &Path) -> Result<PathBuf, RekordboxError> {
     let now = time::OffsetDateTime::now_utc();
-    let timestamp = format!(
-        "{:04}-{:02}-{:02}_{:02}{:02}{:02}_{:03}",
-        now.year(),
-        now.month() as u8,
-        now.day(),
-        now.hour(),
-        now.minute(),
-        now.second(),
-        now.millisecond()
-    );
+    let timestamp =
+        format!("{:04}-{:02}-{:02}_{:02}{:02}{:02}_{:03}", now.year(), now.month() as u8, now.day(), now.hour(), now.minute(), now.second(), now.millisecond());
 
     let primary = backups_dir.join(&timestamp);
     if !primary.exists() {
@@ -48,19 +40,16 @@ pub fn create_backup(db_dir: &Path, app_data_dir: &Path, kind: BackupKind) -> Re
     let xml_file = db_dir.join(MASTER_PLAYLISTS_XML);
 
     if db_file.exists() {
-        fs::copy(&db_file, backup_path.join(MASTER_DB_FILENAME))
-            .map_err(|e| RekordboxError::BackupFailed(format!("Cannot copy master.db: {}", e)))?;
+        fs::copy(&db_file, backup_path.join(MASTER_DB_FILENAME)).map_err(|e| RekordboxError::BackupFailed(format!("Cannot copy master.db: {}", e)))?;
     } else {
         return Err(RekordboxError::BackupFailed("master.db not found in database directory".into()));
     }
 
     if xml_file.exists() {
-        fs::copy(&xml_file, backup_path.join(MASTER_PLAYLISTS_XML))
-            .map_err(|e| RekordboxError::BackupFailed(format!("Cannot copy XML: {}", e)))?;
+        fs::copy(&xml_file, backup_path.join(MASTER_PLAYLISTS_XML)).map_err(|e| RekordboxError::BackupFailed(format!("Cannot copy XML: {}", e)))?;
     }
 
-    fs::write(backup_path.join(KIND_FILENAME), kind.to_string())
-        .map_err(|e| RekordboxError::BackupFailed(format!("Cannot write kind marker: {}", e)))?;
+    fs::write(backup_path.join(KIND_FILENAME), kind.to_string()).map_err(|e| RekordboxError::BackupFailed(format!("Cannot write kind marker: {}", e)))?;
 
     log::info!("Backup created ({}): {}", kind, backup_path.display());
     Ok(backup_path)
@@ -83,8 +72,7 @@ pub fn rotate_backups(app_data_dir: &Path, max_backups: usize) -> Result<(), Rek
 
     while entries.len() > max_backups {
         let oldest = entries.remove(0);
-        fs::remove_dir_all(&oldest)
-            .map_err(|e| RekordboxError::BackupFailed(format!("Cannot remove old backup {}: {}", oldest.display(), e)))?;
+        fs::remove_dir_all(&oldest).map_err(|e| RekordboxError::BackupFailed(format!("Cannot remove old backup {}: {}", oldest.display(), e)))?;
         log::info!("Removed old backup: {}", oldest.display());
     }
 
@@ -99,12 +87,10 @@ pub fn restore_backup(backup_path: &Path, db_dir: &Path) -> Result<(), Rekordbox
         return Err(RekordboxError::RestoreFailed("Backup does not contain master.db".into()));
     }
 
-    fs::copy(&db_backup, db_dir.join(MASTER_DB_FILENAME))
-        .map_err(|e| RekordboxError::RestoreFailed(format!("Cannot restore master.db: {}", e)))?;
+    fs::copy(&db_backup, db_dir.join(MASTER_DB_FILENAME)).map_err(|e| RekordboxError::RestoreFailed(format!("Cannot restore master.db: {}", e)))?;
 
     if xml_backup.exists() {
-        fs::copy(&xml_backup, db_dir.join(MASTER_PLAYLISTS_XML))
-            .map_err(|e| RekordboxError::RestoreFailed(format!("Cannot restore XML: {}", e)))?;
+        fs::copy(&xml_backup, db_dir.join(MASTER_PLAYLISTS_XML)).map_err(|e| RekordboxError::RestoreFailed(format!("Cannot restore XML: {}", e)))?;
     } else {
         let xml_target = db_dir.join(MASTER_PLAYLISTS_XML);
         if xml_target.exists() {

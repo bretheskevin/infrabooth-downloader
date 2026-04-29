@@ -7,9 +7,7 @@ use crate::services::search::{self, SearchResponse, UserSearchResponse};
 pub async fn search_tracks(query: String, limit: u32, offset: u32) -> Result<SearchResponse, ErrorResponse> {
     let client_id = client_id::get_client_id().await.map_err(ErrorResponse::from)?;
 
-    search::search_tracks(&client_id, &query, limit, offset)
-        .await
-        .map_err(ErrorResponse::from)
+    search::search_tracks(&client_id, &query, limit, offset).await.map_err(ErrorResponse::from)
 }
 
 #[tauri::command]
@@ -17,7 +15,5 @@ pub async fn search_tracks(query: String, limit: u32, offset: u32) -> Result<Sea
 pub async fn search_users(query: String, limit: u32, offset: u32) -> Result<UserSearchResponse, ErrorResponse> {
     let client_id = client_id::get_client_id().await.map_err(ErrorResponse::from)?;
 
-    search::search_users(&client_id, &query, limit, offset)
-        .await
-        .map_err(ErrorResponse::from)
+    search::search_users(&client_id, &query, limit, offset).await.map_err(ErrorResponse::from)
 }

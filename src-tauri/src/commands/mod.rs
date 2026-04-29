@@ -7,9 +7,7 @@ pub mod updater;
 
 pub fn require_user_id(app: &tauri::AppHandle) -> Result<u64, String> {
     use tauri::Manager;
-    app.state::<crate::services::storage::AuthState>()
-        .get_user_id()
-        .ok_or_else(|| "User ID not available — re-authenticate".to_string())
+    app.state::<crate::services::storage::AuthState>().get_user_id().ok_or_else(|| "User ID not available — re-authenticate".to_string())
 }
 
 pub async fn get_optional_auth_and_cid(app: &tauri::AppHandle) -> Result<(Option<String>, String), String> {
@@ -35,15 +33,13 @@ pub use auth::{check_auth, check_firefox_installed, open_in_firefox, refresh_aut
 pub use download::{cancel_download_queue, download_track_full, respond_to_rate_limit_choice, scan_existing_tracks, start_download_queue};
 pub use ffmpeg::test_ffmpeg;
 pub use playlist::{add_track_to_playlist, get_playlist_info, get_track_info, remove_track_from_playlist, validate_soundcloud_url};
-pub use settings::{
-    check_write_permission, get_app_data_path, get_default_download_path, get_feature_flags, get_log_path, validate_download_path,
-};
+pub use settings::{check_write_permission, get_app_data_path, get_default_download_path, get_feature_flags, get_log_path, validate_download_path};
 pub use updater::{check_for_updates, install_update};
 
 pub mod library;
 pub use library::{
-    clear_library_cache, clear_liked_tracks_cache, get_library_playlist_tracks, get_library_playlists, get_liked_tracks,
-    get_owned_playlists_for_track, resolve_library_artwork,
+    clear_library_cache, clear_liked_tracks_cache, get_library_playlist_tracks, get_library_playlists, get_liked_tracks, get_owned_playlists_for_track,
+    resolve_library_artwork,
 };
 
 pub mod search;
@@ -56,9 +52,7 @@ pub mod selections;
 pub use selections::get_selections;
 
 pub mod new_tracks;
-pub use new_tracks::{
-    get_artist_activity, get_artist_releases, get_followed_artists, get_release_tracks, mark_artist_releases_seen, mark_artist_seen,
-};
+pub use new_tracks::{get_artist_activity, get_artist_releases, get_followed_artists, get_release_tracks, mark_artist_releases_seen, mark_artist_seen};
 
 pub mod notifications;
 pub use notifications::{get_notifications_page, get_unread_count, mark_notifications_seen};
@@ -68,8 +62,8 @@ pub use related::fetch_related_tracks;
 
 pub mod artist;
 pub use artist::{
-    get_all_artist_tracks, get_artist_followers, get_artist_followings, get_artist_liked_tracks, get_artist_playlist_tracks,
-    get_artist_playlists, get_artist_profile, resolve_soundcloud_link, resolve_user,
+    get_all_artist_tracks, get_artist_followers, get_artist_followings, get_artist_liked_tracks, get_artist_playlist_tracks, get_artist_playlists,
+    get_artist_profile, resolve_soundcloud_link, resolve_user,
 };
 
 pub mod follow;
@@ -89,8 +83,7 @@ pub use rekordbox_export::{cancel_rekordbox_export, export_playlist_to_rekordbox
 
 pub mod messages;
 pub use messages::{
-    get_conversation_messages, get_conversations_page, get_unread_conversations_flag, mark_conversation_read, resolve_message_embed,
-    send_message,
+    get_conversation_messages, get_conversations_page, get_unread_conversations_flag, mark_conversation_read, resolve_message_embed, send_message,
 };
 
 pub use crate::services::paths::persist_json;

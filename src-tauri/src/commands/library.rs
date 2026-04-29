@@ -52,18 +52,14 @@ pub async fn clear_library_cache(app: tauri::AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
-pub async fn resolve_library_artwork(
-    playlist_id: u64, secret_token: Option<String>, app: tauri::AppHandle,
-) -> Result<Option<String>, String> {
+pub async fn resolve_library_artwork(playlist_id: u64, secret_token: Option<String>, app: tauri::AppHandle) -> Result<Option<String>, String> {
     if let Some(cached) = app.state::<LibraryCache>().get_artwork(playlist_id) {
         return Ok(cached);
     }
 
     let (token, cid) = super::require_auth_and_cid(&app).await?;
 
-    let artwork = resolve_artwork(&token, &cid, playlist_id, secret_token)
-        .await
-        .map_err(|e| e.to_string())?;
+    let artwork = resolve_artwork(&token, &cid, playlist_id, secret_token).await.map_err(|e| e.to_string())?;
 
     app.state::<LibraryCache>().set_artwork(playlist_id, artwork.clone());
     Ok(artwork)
@@ -83,9 +79,7 @@ pub async fn get_owned_playlists_for_track(track_id: u64, app: tauri::AppHandle)
         fetched
     };
 
-    fetch_owned_playlists_for_track(&token, &cid, track_id, &playlists, &cache)
-        .await
-        .map_err(|e| e.to_string())
+    fetch_owned_playlists_for_track(&token, &cid, track_id, &playlists, &cache).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -99,11 +93,7 @@ pub async fn get_library_playlist_tracks(playlist_id: u64, app: tauri::AppHandle
 
     match playlist::fetch_playlist_by_id(playlist_id, secret_token.as_deref(), Some(&token), on_batch).await {
         Ok(tracks) => {
-            log::info!(
-                "[get_library_playlist_tracks] Returning {} tracks for playlist {}",
-                tracks.len(),
-                playlist_id
-            );
+            log::info!("[get_library_playlist_tracks] Returning {} tracks for playlist {}", tracks.len(), playlist_id);
             Ok(tracks)
         }
         Err(e) => {

@@ -78,12 +78,7 @@ mod tests {
 
     #[test]
     fn own_artwork_takes_precedence() {
-        let raw = make_raw(
-            2,
-            "Has Art",
-            Some("https://playlist.jpg"),
-            vec![RawPlaylistTrack { artwork_url: Some("https://track.jpg".into()) }],
-        );
+        let raw = make_raw(2, "Has Art", Some("https://playlist.jpg"), vec![RawPlaylistTrack { artwork_url: Some("https://track.jpg".into()) }]);
         assert_eq!(raw.into_artist_playlist().artwork_url, Some("https://playlist.jpg".into()));
     }
 

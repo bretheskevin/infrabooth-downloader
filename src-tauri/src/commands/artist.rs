@@ -90,14 +90,10 @@ pub async fn get_artist_playlists(app: tauri::AppHandle, artist_id: u64) -> Resu
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_artist_playlist_tracks(
-    app: tauri::AppHandle, playlist_id: u64, secret_token: Option<String>,
-) -> Result<Vec<TrackInfo>, String> {
+pub async fn get_artist_playlist_tracks(app: tauri::AppHandle, playlist_id: u64, secret_token: Option<String>) -> Result<Vec<TrackInfo>, String> {
     let (token, _client_id) = get_optional_auth_and_cid(&app).await?;
 
     let on_batch = events::make_batch_emitter(&app, events::ARTIST_PLAYLIST_TRACKS_BATCH, playlist_id);
 
-    playlist::fetch_playlist_by_id(playlist_id, secret_token.as_deref(), token.as_deref(), on_batch)
-        .await
-        .map_err(|e| e.to_string())
+    playlist::fetch_playlist_by_id(playlist_id, secret_token.as_deref(), token.as_deref(), on_batch).await.map_err(|e| e.to_string())
 }

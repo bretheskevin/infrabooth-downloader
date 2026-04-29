@@ -76,8 +76,7 @@ pub async fn embed_metadata(file_path: &Path, metadata: TrackMetadata) -> Result
     }
 
     // Write tag to file
-    tag.write_to_path(file_path, Version::Id3v24)
-        .map_err(|e| MetadataError::WriteFailed(e.to_string()))?;
+    tag.write_to_path(file_path, Version::Id3v24).map_err(|e| MetadataError::WriteFailed(e.to_string()))?;
 
     Ok(())
 }
@@ -93,11 +92,7 @@ async fn download_artwork(url: &str) -> Result<Vec<u8>, MetadataError> {
     // Use higher resolution artwork (500x500 for quality without excessive size)
     let hq_url = url.replace("-large", "-t500x500");
 
-    let response = super::http::HTTP_CLIENT
-        .get(&hq_url)
-        .send()
-        .await
-        .map_err(|e| MetadataError::ArtworkFailed(e.to_string()))?;
+    let response = super::http::HTTP_CLIENT.get(&hq_url).send().await.map_err(|e| MetadataError::ArtworkFailed(e.to_string()))?;
 
     if !response.status().is_success() {
         return Err(MetadataError::ArtworkFailed(format!("HTTP {}", response.status())));

@@ -34,9 +34,7 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
     // Other callers wait here until the first one finishes.
     let _guard = state.lock_refresh().await;
 
-    let scan = tokio::task::spawn_blocking(|| scan_browser_cookies())
-        .await
-        .map_err(|e| e.to_string())?;
+    let scan = tokio::task::spawn_blocking(|| scan_browser_cookies()).await.map_err(|e| e.to_string())?;
 
     // Always store datadome — it's needed for all API calls, even without auth
     state.set_datadome(scan.datadome);
@@ -112,9 +110,7 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     app.state::<crate::services::notifications::NotificationsCache>().clear();
     app.state::<crate::services::messages::MessagesCache>().clear();
     let activities_path = crate::commands::notifications::last_seen_activities_path(&app);
-    let _ = app
-        .state::<crate::services::notifications::LastSeenActivityState>()
-        .clear_and_persist(&activities_path);
+    let _ = app.state::<crate::services::notifications::LastSeenActivityState>().clear_and_persist(&activities_path);
     let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(None));
     info!("User signed out");
     Ok(())
@@ -128,29 +124,18 @@ const WINDOWS_FIREFOX_FALLBACK_PATHS: &[&str] = &[
 
 #[cfg(target_os = "windows")]
 fn firefox_exe_from_registry() -> Option<String> {
-    let output = std::process::Command::new("reg")
-        .args(["query", r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\firefox.exe", "/ve"])
-        .output()
-        .ok()?;
+    let output =
+        std::process::Command::new("reg").args(["query", r"HKLM\SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\firefox.exe", "/ve"]).output().ok()?;
     if !output.status.success() {
         return None;
     }
     let stdout = String::from_utf8_lossy(&output.stdout);
-    stdout
-        .lines()
-        .find_map(|line| line.split("REG_SZ").nth(1))
-        .map(|s| s.trim().to_string())
-        .filter(|path| std::path::Path::new(path).exists())
+    stdout.lines().find_map(|line| line.split("REG_SZ").nth(1)).map(|s| s.trim().to_string()).filter(|path| std::path::Path::new(path).exists())
 }
 
 #[cfg(target_os = "windows")]
 fn find_firefox_exe() -> Option<String> {
-    firefox_exe_from_registry().or_else(|| {
-        WINDOWS_FIREFOX_FALLBACK_PATHS
-            .iter()
-            .find(|p| std::path::Path::new(p).exists())
-            .map(|p| p.to_string())
-    })
+    firefox_exe_from_registry().or_else(|| WINDOWS_FIREFOX_FALLBACK_PATHS.iter().find(|p| std::path::Path::new(p).exists()).map(|p| p.to_string()))
 }
 
 #[cfg(target_os = "macos")]
@@ -184,19 +169,13 @@ pub fn open_in_firefox() -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
         let firefox = find_firefox_exe().ok_or_else(|| "Firefox not found".to_string())?;
-        std::process::Command::new(firefox)
-            .arg(SOUNDCLOUD_URL)
-            .spawn()
-            .map_err(|e| format!("Failed to launch Firefox: {e}"))?;
+        std::process::Command::new(firefox).arg(SOUNDCLOUD_URL).spawn().map_err(|e| format!("Failed to launch Firefox: {e}"))?;
         return Ok(());
     }
 
     #[cfg(target_os = "macos")]
     {
-        std::process::Command::new("open")
-            .args(["-a", "Firefox", SOUNDCLOUD_URL])
-            .spawn()
-            .map_err(|e| format!("Failed to launch Firefox: {e}"))?;
+        std::process::Command::new("open").args(["-a", "Firefox", SOUNDCLOUD_URL]).spawn().map_err(|e| format!("Failed to launch Firefox: {e}"))?;
         return Ok(());
     }
 

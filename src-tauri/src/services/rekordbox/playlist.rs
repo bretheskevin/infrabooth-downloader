@@ -19,19 +19,13 @@ fn row_to_song(row: &rusqlite::Row) -> rusqlite::Result<DjmdSongPlaylist> {
 
 fn find_playlist_by_name_and_type(db: &RekordboxDatabase, name: &str, parent_id: &str, attribute: i32) -> Option<DjmdPlaylist> {
     db.conn()
-        .query_row(
-            &format!("{} WHERE Name = ?1 AND Attribute = ?2 AND ParentID = ?3", PLAYLIST_SELECT),
-            params![name, attribute, parent_id],
-            row_to_playlist,
-        )
+        .query_row(&format!("{} WHERE Name = ?1 AND Attribute = ?2 AND ParentID = ?3", PLAYLIST_SELECT), params![name, attribute, parent_id], row_to_playlist)
         .ok()
 }
 
 fn count_siblings(db: &RekordboxDatabase, parent_id: &str) -> Result<i32, RekordboxError> {
     db.conn()
-        .query_row("SELECT COUNT(*) FROM djmdPlaylist WHERE ParentID = ?1", params![parent_id], |row| {
-            row.get(0)
-        })
+        .query_row("SELECT COUNT(*) FROM djmdPlaylist WHERE ParentID = ?1", params![parent_id], |row| row.get(0))
         .map_err(|e| RekordboxError::DatabaseError(format!("Count siblings failed: {}", e)))
 }
 
@@ -56,8 +50,7 @@ fn reorder_siblings(db: &mut RekordboxDatabase, parent_id: &str) -> Result<(), R
             .prepare("UPDATE djmdPlaylist SET Seq = ?1 WHERE ID = ?2")
             .map_err(|e| RekordboxError::DatabaseError(format!("Reorder prepare failed: {}", e)))?;
         for (i, id) in ids.iter().enumerate() {
-            stmt.execute(params![(i + 1) as i32, id])
-                .map_err(|e| RekordboxError::DatabaseError(format!("Reorder update failed: {}", e)))?;
+            stmt.execute(params![(i + 1) as i32, id]).map_err(|e| RekordboxError::DatabaseError(format!("Reorder update failed: {}", e)))?;
         }
     }
 
@@ -79,16 +72,10 @@ fn deduplicate_name(db: &RekordboxDatabase, name: &str, parent_id: &str) -> Resu
             return Ok(candidate);
         }
     }
-    Err(RekordboxError::DatabaseError(format!(
-        "Too many playlists named '{}' (limit: {})",
-        name,
-        super::models::MAX_NAME_CONFLICTS
-    )))
+    Err(RekordboxError::DatabaseError(format!("Too many playlists named '{}' (limit: {})", name, super::models::MAX_NAME_CONFLICTS)))
 }
 
-fn insert_playlist_row(
-    db: &mut RekordboxDatabase, id: &str, name: &str, attribute: i32, parent_id: &str, seq: i32,
-) -> Result<(), RekordboxError> {
+fn insert_playlist_row(db: &mut RekordboxDatabase, id: &str, name: &str, attribute: i32, parent_id: &str, seq: i32) -> Result<(), RekordboxError> {
     let uuid = Uuid::new_v4().to_string();
     let now = database::now_timestamp();
 
@@ -112,9 +99,7 @@ pub fn find_infrabooth_folder(db: &RekordboxDatabase) -> Option<DjmdPlaylist> {
 }
 
 pub fn find_playlist_by_id(db: &RekordboxDatabase, playlist_id: &str) -> Option<DjmdPlaylist> {
-    db.conn()
-        .query_row(&format!("{} WHERE ID = ?1", PLAYLIST_SELECT), params![playlist_id], row_to_playlist)
-        .ok()
+    db.conn().query_row(&format!("{} WHERE ID = ?1", PLAYLIST_SELECT), params![playlist_id], row_to_playlist).ok()
 }
 
 pub fn find_playlist_in_folder(db: &RekordboxDatabase, playlist_id: &str, parent_id: &str) -> Option<DjmdPlaylist> {
@@ -154,9 +139,7 @@ pub fn create_playlist(db: &mut RekordboxDatabase, name: &str, parent_id: &str) 
 pub fn delete_playlist(db: &mut RekordboxDatabase, playlist_id: &str) -> Result<(), RekordboxError> {
     let parent_id: String = db
         .conn()
-        .query_row("SELECT ParentID FROM djmdPlaylist WHERE ID = ?1", params![playlist_id], |row| {
-            row.get(0)
-        })
+        .query_row("SELECT ParentID FROM djmdPlaylist WHERE ID = ?1", params![playlist_id], |row| row.get(0))
         .map_err(|e| RekordboxError::DatabaseError(format!("Playlist not found for delete: {}", e)))?;
 
     db.conn()
@@ -172,9 +155,7 @@ pub fn delete_playlist(db: &mut RekordboxDatabase, playlist_id: &str) -> Result<
     Ok(())
 }
 
-pub fn add_to_playlist(
-    db: &mut RekordboxDatabase, playlist_id: &str, content_id: &str, track_no: Option<i32>,
-) -> Result<DjmdSongPlaylist, RekordboxError> {
+pub fn add_to_playlist(db: &mut RekordboxDatabase, playlist_id: &str, content_id: &str, track_no: Option<i32>) -> Result<DjmdSongPlaylist, RekordboxError> {
     let current_count = count_playlist_songs(db, playlist_id)?;
     let target_pos = track_no.unwrap_or(current_count + 1);
 
@@ -239,10 +220,7 @@ pub fn find_playlist_by_name(db: &RekordboxDatabase, name: &str, parent_id: &str
 pub fn list_playlists_in_folder(db: &RekordboxDatabase, parent_id: &str) -> Result<Vec<DjmdPlaylist>, RekordboxError> {
     let mut stmt = db
         .conn()
-        .prepare(&format!(
-            "{} WHERE ParentID = ?1 AND Attribute = ?2 ORDER BY Seq ASC",
-            PLAYLIST_SELECT
-        ))
+        .prepare(&format!("{} WHERE ParentID = ?1 AND Attribute = ?2 ORDER BY Seq ASC", PLAYLIST_SELECT))
         .map_err(|e| RekordboxError::DatabaseError(format!("List playlists query failed: {}", e)))?;
 
     let playlists = stmt
@@ -256,10 +234,6 @@ pub fn list_playlists_in_folder(db: &RekordboxDatabase, parent_id: &str) -> Resu
 
 pub fn count_playlist_songs(db: &RekordboxDatabase, playlist_id: &str) -> Result<i32, RekordboxError> {
     db.conn()
-        .query_row(
-            "SELECT COUNT(*) FROM djmdSongPlaylist WHERE PlaylistID = ?1",
-            params![playlist_id],
-            |row| row.get(0),
-        )
+        .query_row("SELECT COUNT(*) FROM djmdSongPlaylist WHERE PlaylistID = ?1", params![playlist_id], |row| row.get(0))
         .map_err(|e| RekordboxError::DatabaseError(format!("Count songs failed: {}", e)))
 }

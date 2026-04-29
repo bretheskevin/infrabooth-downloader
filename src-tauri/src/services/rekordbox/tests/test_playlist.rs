@@ -112,14 +112,8 @@ fn test_add_to_playlist_tracks_shifted_rows_for_usn() {
     assert_eq!(inserted_song.track_no, 1);
     assert_eq!(updated_usn, initial_usn + 2);
 
-    let shifted_track_no: i32 = db
-        .conn()
-        .query_row(
-            "SELECT TrackNo FROM djmdSongPlaylist WHERE ContentID = ?1",
-            rusqlite::params![first_song.content_id],
-            |row| row.get(0),
-        )
-        .unwrap();
+    let shifted_track_no: i32 =
+        db.conn().query_row("SELECT TrackNo FROM djmdSongPlaylist WHERE ContentID = ?1", rusqlite::params![first_song.content_id], |row| row.get(0)).unwrap();
     assert_eq!(shifted_track_no, 2);
 }
 

@@ -12,9 +12,7 @@ use crate::services::cancellation::{ActiveProcess, CancellationState};
 use crate::services::events::REKORDBOX_EXPORT_PROGRESS;
 use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
 use crate::services::pipeline::{download_and_convert, CancellationHandles, PipelineConfig};
-use crate::services::rekordbox::models::{
-    ExportResult, ExportTrackRequest, RekordboxExportProgressEvent, RekordboxExportStatus, ALL_TRACKS_PLAYLIST_NAME,
-};
+use crate::services::rekordbox::models::{ExportResult, ExportTrackRequest, RekordboxExportProgressEvent, RekordboxExportStatus, ALL_TRACKS_PLAYLIST_NAME};
 use crate::services::rekordbox::{file_manager, playlist};
 use crate::services::storage::AuthState;
 
@@ -47,8 +45,8 @@ enum DownloadOutcome {
 }
 
 async fn download_track(
-    app: &tauri::AppHandle, track: &TrackCore, output_dir: PathBuf, oauth_token: Option<String>, existing_path: Option<PathBuf>,
-    total: u32, cancellation: Option<CancellationHandles>,
+    app: &tauri::AppHandle, track: &TrackCore, output_dir: PathBuf, oauth_token: Option<String>, existing_path: Option<PathBuf>, total: u32,
+    cancellation: Option<CancellationHandles>,
 ) -> DownloadOutcome {
     emit_progress(app, progress_event(track, total, RekordboxExportStatus::Downloading, None));
 
@@ -86,10 +84,7 @@ async fn download_track(
         Err(DownloadError::Cancelled) => DownloadOutcome::Cancelled,
         Err(e) => {
             let err_msg = e.to_string();
-            emit_progress(
-                app,
-                progress_event(track, total, RekordboxExportStatus::Error, Some(err_msg.clone())),
-            );
+            emit_progress(app, progress_event(track, total, RekordboxExportStatus::Error, Some(err_msg.clone())));
             DownloadOutcome::Failed(format!("{}: download failed — {}", track.title, err_msg))
         }
     }
@@ -99,10 +94,9 @@ async fn resolve_track_sources(
     app: &tauri::AppHandle, tracks: Vec<TrackCore>, output_dir: &Path, scan_dir: &Path, total: u32, max_concurrent: usize,
     cancel_state: &RekordboxExportCancellation,
 ) -> Result<(Vec<(TrackCore, PathBuf)>, Vec<String>, bool), ErrorResponse> {
-    tokio::fs::create_dir_all(output_dir).await.map_err(|e| ErrorResponse {
-        code: "DOWNLOAD_PATH_ERROR".to_string(),
-        message: format!("Failed to create export downloads directory: {}", e),
-    })?;
+    tokio::fs::create_dir_all(output_dir)
+        .await
+        .map_err(|e| ErrorResponse { code: "DOWNLOAD_PATH_ERROR".to_string(), message: format!("Failed to create export downloads directory: {}", e) })?;
 
     let track_ids: Vec<String> = tracks.iter().map(|t| t.track_id.clone()).collect();
     let scan_dir = scan_dir.to_path_buf();
@@ -138,10 +132,7 @@ async fn resolve_track_sources(
 
             let child_handle = Arc::new(Mutex::new(None));
             let pid_handle = Arc::new(Mutex::new(None));
-            procs.lock().await.insert(
-                track_id.clone(),
-                ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() },
-            );
+            procs.lock().await.insert(track_id.clone(), ActiveProcess { child: child_handle.clone(), pid: pid_handle.clone() });
 
             let cancellation = CancellationHandles { cancel_rx: worker_cancel_rx, active_child: child_handle, active_pid: pid_handle };
 
@@ -185,20 +176,14 @@ pub async fn export_playlist_to_rekordbox(
 ) -> Result<ExportResult, ErrorResponse> {
     cancel_state.reset();
 
-    log::info!(
-        "[rekordbox-export] Starting export of {} tracks to playlist '{}'",
-        tracks.len(),
-        playlist_name
-    );
+    log::info!("[rekordbox-export] Starting export of {} tracks to playlist '{}'", tracks.len(), playlist_name);
 
     let prepare_app = app.clone();
     log::info!("[rekordbox-export] Preparing write context...");
-    let ctx = tokio::task::spawn_blocking(move || RekordboxWriteContext::prepare(manual_db_path, &prepare_app))
-        .await
-        .map_err(|e| {
-            log::error!("[rekordbox-export] spawn_blocking join error during prepare: {}", e);
-            ErrorResponse { code: "TASK_JOIN_ERROR".to_string(), message: e.to_string() }
-        })??;
+    let ctx = tokio::task::spawn_blocking(move || RekordboxWriteContext::prepare(manual_db_path, &prepare_app)).await.map_err(|e| {
+        log::error!("[rekordbox-export] spawn_blocking join error during prepare: {}", e);
+        ErrorResponse { code: "TASK_JOIN_ERROR".to_string(), message: e.to_string() }
+    })??;
 
     log::info!("[rekordbox-export] Write context prepared. App data dir: {:?}", ctx.app_data_dir);
 
@@ -210,27 +195,15 @@ pub async fn export_playlist_to_rekordbox(
     log::info!("[rekordbox-export] Resolving track sources (download dir: {:?})...", export_dl_dir);
     let cancelled_err = || ErrorResponse { code: "CANCELLED".to_string(), message: "Export cancelled".to_string() };
 
-    let (resolved, download_errors, was_cancelled) = resolve_track_sources(
-        &app,
-        tracks,
-        &export_dl_dir,
-        &rekordbox_tracks_dir,
-        total,
-        max_concurrent,
-        &cancel_state,
-    )
-    .await?;
+    let (resolved, download_errors, was_cancelled) =
+        resolve_track_sources(&app, tracks, &export_dl_dir, &rekordbox_tracks_dir, total, max_concurrent, &cancel_state).await?;
 
     if was_cancelled {
         log::info!("[rekordbox-export] Export cancelled during download phase");
         return Err(cancelled_err());
     }
 
-    log::info!(
-        "[rekordbox-export] Track sources resolved: {} successful, {} errors",
-        resolved.len(),
-        download_errors.len()
-    );
+    log::info!("[rekordbox-export] Track sources resolved: {} successful, {} errors", resolved.len(), download_errors.len());
 
     if cancel_state.is_cancelled() {
         log::info!("[rekordbox-export] Export cancelled before database phase");
@@ -265,13 +238,7 @@ pub async fn export_playlist_to_rekordbox(
 
             log::info!("[rekordbox-export] Starting to export {} tracks...", resolved.len());
             for (idx, (track, source_path)) in resolved.iter().enumerate() {
-                log::info!(
-                    "[rekordbox-export] Exporting track {}/{}: {} (source: {:?})",
-                    idx + 1,
-                    resolved.len(),
-                    track.title,
-                    source_path
-                );
+                log::info!("[rekordbox-export] Exporting track {}/{}: {} (source: {:?})", idx + 1, resolved.len(), track.title, source_path);
                 emit_progress(&app, progress_event(track, total, RekordboxExportStatus::Exporting, None));
 
                 let export_req = ExportTrackRequest { source_path: source_path.to_string_lossy().to_string() };
@@ -304,12 +271,7 @@ pub async fn export_playlist_to_rekordbox(
                 }
             }
 
-            log::info!(
-                "[rekordbox-export] Export loop complete. Exported: {}, Skipped: {}, Errors: {}",
-                exported_count,
-                skipped_count,
-                errors.len()
-            );
+            log::info!("[rekordbox-export] Export loop complete. Exported: {}, Skipped: {}, Errors: {}", exported_count, skipped_count, errors.len());
 
             log::info!("[rekordbox-export] Committing database session...");
             session.commit()?;

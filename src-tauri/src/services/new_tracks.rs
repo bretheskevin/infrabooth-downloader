@@ -122,9 +122,7 @@ struct RawStreamPlaylistTrack {
 
 impl RawStreamPlaylist {
     fn resolved_artwork_url(&self) -> Option<String> {
-        self.artwork_url
-            .clone()
-            .or_else(|| self.tracks.iter().find_map(|t| t.artwork_url.clone()))
+        self.artwork_url.clone().or_else(|| self.tracks.iter().find_map(|t| t.artwork_url.clone()))
     }
 }
 
@@ -274,18 +272,13 @@ const THIRTY_DAYS_SECS: i64 = 30 * 24 * 60 * 60;
 const MAX_STREAM_PAGES: usize = 2;
 
 pub fn now_unix() -> i64 {
-    std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_secs() as i64
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap_or_default().as_secs() as i64
 }
 
 pub use crate::services::timestamp::parse_iso_timestamp;
 
 fn is_within_30_days(created_at: &str) -> bool {
-    parse_iso_timestamp(created_at)
-        .map(|ts| now_unix() - ts <= THIRTY_DAYS_SECS)
-        .unwrap_or(false)
+    parse_iso_timestamp(created_at).map(|ts| now_unix() - ts <= THIRTY_DAYS_SECS).unwrap_or(false)
 }
 
 pub async fn fetch_followed_artists_page(oauth_token: &str, url: &str) -> Result<FollowingsResponse, ScApiError> {
@@ -298,10 +291,7 @@ pub async fn fetch_followed_artists_page(oauth_token: &str, url: &str) -> Result
 
 pub async fn fetch_all_followed_artists(oauth_token: &str, client_id: &str, user_id: u64) -> Result<Vec<RawFollowedArtist>, ScApiError> {
     let mut all_artists = Vec::new();
-    let mut url = format!(
-        "{}/users/{}/followings?client_id={}&limit=200&linked_partitioning=1",
-        API_V2_BASE, user_id, client_id
-    );
+    let mut url = format!("{}/users/{}/followings?client_id={}&limit=200&linked_partitioning=1", API_V2_BASE, user_id, client_id);
 
     loop {
         let page = fetch_followed_artists_page(oauth_token, &url).await?;
@@ -332,9 +322,7 @@ fn sort_by_created_at_desc<T>(items: &mut [T], get_created_at: impl Fn(&T) -> &s
     });
 }
 
-pub fn compute_has_new<T>(
-    items: &[T], threshold: i64, get_created_at: impl Fn(&T) -> &str, is_original: impl Fn(&T) -> bool,
-) -> (bool, bool, bool) {
+pub fn compute_has_new<T>(items: &[T], threshold: i64, get_created_at: impl Fn(&T) -> &str, is_original: impl Fn(&T) -> bool) -> (bool, bool, bool) {
     let mut any_new = false;
     let mut any_original = false;
     for item in items {

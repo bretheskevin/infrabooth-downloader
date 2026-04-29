@@ -6,19 +6,17 @@ use std::sync::Arc;
 use std::sync::Once;
 
 use commands::{
-    add_track_to_playlist, cancel_download_queue, cancel_rekordbox_export, check_auth, check_firefox_installed, check_follow_status,
-    check_for_updates, check_write_permission, clear_library_cache, clear_liked_tracks_cache, delete_rekordbox_playlist, detect_rekordbox,
-    download_track_full, export_playlist_to_rekordbox, export_to_rekordbox, fetch_related_tracks, follow_user, get_all_artist_tracks,
-    get_app_data_path, get_artist_activity, get_artist_followers, get_artist_followings, get_artist_liked_tracks,
-    get_artist_playlist_tracks, get_artist_playlists, get_artist_profile, get_artist_releases, get_conversation_messages,
-    get_conversations_page, get_default_download_path, get_default_rekordbox_data_directory_parent, get_feature_flags,
-    get_followed_artists, get_library_playlist_tracks, get_library_playlists, get_liked_tracks, get_log_path, get_notifications_page,
-    get_owned_playlists_for_track, get_playlist_info, get_release_tracks, get_selections, get_track_info, get_unread_conversations_flag,
-    get_unread_count, install_update, like_track, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen,
-    mark_artist_seen, mark_conversation_read, mark_notifications_seen, open_in_firefox, quit_rekordbox, refresh_auth,
-    remove_track_from_playlist, resolve_library_artwork, resolve_message_embed, resolve_playback_url, resolve_soundcloud_link,
-    resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_tracks, search_users, send_message,
-    sign_out, start_download_queue, test_ffmpeg, unfollow_user, unlike_track, validate_download_path, validate_soundcloud_url,
+    add_track_to_playlist, cancel_download_queue, cancel_rekordbox_export, check_auth, check_firefox_installed, check_follow_status, check_for_updates,
+    check_write_permission, clear_library_cache, clear_liked_tracks_cache, delete_rekordbox_playlist, detect_rekordbox, download_track_full,
+    export_playlist_to_rekordbox, export_to_rekordbox, fetch_related_tracks, follow_user, get_all_artist_tracks, get_app_data_path, get_artist_activity,
+    get_artist_followers, get_artist_followings, get_artist_liked_tracks, get_artist_playlist_tracks, get_artist_playlists, get_artist_profile,
+    get_artist_releases, get_conversation_messages, get_conversations_page, get_default_download_path, get_default_rekordbox_data_directory_parent,
+    get_feature_flags, get_followed_artists, get_library_playlist_tracks, get_library_playlists, get_liked_tracks, get_log_path, get_notifications_page,
+    get_owned_playlists_for_track, get_playlist_info, get_release_tracks, get_selections, get_track_info, get_unread_conversations_flag, get_unread_count,
+    install_update, like_track, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, mark_conversation_read,
+    mark_notifications_seen, open_in_firefox, quit_rekordbox, refresh_auth, remove_track_from_playlist, resolve_library_artwork, resolve_message_embed,
+    resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_tracks,
+    search_users, send_message, sign_out, start_download_queue, test_ffmpeg, unfollow_user, unlike_track, validate_download_path, validate_soundcloud_url,
     RekordboxExportCancellation,
 };
 use services::cancellation::CancellationState;
@@ -60,10 +58,8 @@ fn install_panic_hook() {
                 "Unknown panic payload".to_string()
             };
 
-            let location = panic_info
-                .location()
-                .map(|loc| format!("{}:{}:{}", loc.file(), loc.line(), loc.column()))
-                .unwrap_or_else(|| "unknown location".to_string());
+            let location =
+                panic_info.location().map(|loc| format!("{}:{}:{}", loc.file(), loc.line(), loc.column())).unwrap_or_else(|| "unknown location".to_string());
 
             let backtrace = std::backtrace::Backtrace::force_capture();
 
@@ -109,16 +105,12 @@ fn get_crash_log_path() -> Result<std::path::PathBuf, String> {
     #[cfg(target_os = "windows")]
     {
         let app_data = std::env::var("APPDATA").map_err(|_| "APPDATA not set")?;
-        Ok(std::path::PathBuf::from(app_data)
-            .join("com.infrabooth.downloader")
-            .join("crash.log"))
+        Ok(std::path::PathBuf::from(app_data).join("com.infrabooth.downloader").join("crash.log"))
     }
     #[cfg(target_os = "macos")]
     {
         let home = std::env::var("HOME").map_err(|_| "HOME not set")?;
-        Ok(std::path::PathBuf::from(home)
-            .join("Library/Application Support/com.infrabooth.downloader")
-            .join("crash.log"))
+        Ok(std::path::PathBuf::from(home).join("Library/Application Support/com.infrabooth.downloader").join("crash.log"))
     }
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
@@ -222,10 +214,7 @@ pub fn run() {
     // Export TypeScript bindings in debug mode
     #[cfg(debug_assertions)]
     builder
-        .export(
-            Typescript::default().bigint(BigIntExportBehavior::Number).header("// @ts-nocheck"),
-            "../src/bindings.ts",
-        )
+        .export(Typescript::default().bigint(BigIntExportBehavior::Number).header("// @ts-nocheck"), "../src/bindings.ts")
         .expect("Failed to export typescript bindings");
 
     tauri::Builder::default()
@@ -328,7 +317,11 @@ pub fn run() {
                     .format(|out, message, record| {
                         let now = time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc());
                         let target = record.target();
-                        let clean_target = if target.contains("node_modules") { "webview" } else { target };
+                        let clean_target = if target.contains("node_modules") {
+                            "webview"
+                        } else {
+                            target
+                        };
                         out.finish(format_args!(
                             "[{:04}-{:02}-{:02} {:02}:{:02}][{}][{}] {}",
                             now.year(),

@@ -84,10 +84,6 @@ fn test_e2e_export_fixtures_to_rekordbox() {
     }
     db.flush_usn_and_commit().expect("DB commit failed");
 
-    log::info!(
-        "E2E done: {} tracks exported to playlist '{}'. Open Rekordbox to verify.",
-        exported,
-        pl.name
-    );
+    log::info!("E2E done: {} tracks exported to playlist '{}'. Open Rekordbox to verify.", exported, pl.name);
     assert_eq!(exported, mp3s.len());
 }

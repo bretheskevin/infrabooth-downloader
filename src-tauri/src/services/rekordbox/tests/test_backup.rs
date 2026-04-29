@@ -62,10 +62,7 @@ fn test_restore_backup_removes_xml_when_snapshot_has_none() {
 
     backup::restore_backup(&backup_path, db_dir.path()).expect("Restore failed");
 
-    assert!(
-        !db_dir.path().join("masterPlaylists6.xml").exists(),
-        "XML should be removed when it was absent from the backup snapshot"
-    );
+    assert!(!db_dir.path().join("masterPlaylists6.xml").exists(), "XML should be removed when it was absent from the backup snapshot");
 }
 
 #[test]

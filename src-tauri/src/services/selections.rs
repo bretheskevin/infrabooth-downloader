@@ -70,10 +70,7 @@ impl SelectionCache {
 }
 
 pub async fn fetch_selections(oauth_token: &str, client_id: &str) -> Result<Vec<Selection>, ScApiError> {
-    let url = format!(
-        "{}/mixed-selections?client_id={}&limit=50&linked_partitioning=1",
-        API_V2_BASE, client_id
-    );
+    let url = format!("{}/mixed-selections?client_id={}&limit=50&linked_partitioning=1", API_V2_BASE, client_id);
 
     let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
 
