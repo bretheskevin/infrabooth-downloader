@@ -92,7 +92,7 @@ export function ConversationPage() {
         <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-muted-foreground border-b border-border/30 bg-muted/30">
           <Folder className="h-3 w-3 shrink-0" />
           <span>{t('directMessages.savingTo')}</span>
-          <span className="truncate max-w-[200px] text-foreground/70">{folderName}</span>
+          <span className="truncate max-w-[200px] text-foreground/70 underline">{folderName}</span>
           {isCustomFolder && (
             <span className="text-muted-foreground/60">({t('library.detail.customFolder')})</span>
           )}
