@@ -502,7 +502,8 @@
     "send": "Envoyer",
     "sendError": "Échec de l'envoi du message",
     "followersCount_one": "{{count}} abonné",
-    "followersCount_other": "{{count}} abonnés"
+    "followersCount_other": "{{count}} abonnés",
+    "savingTo": "Enregistrement dans"
   },
   "newReleases": {
     "title": "Playlists / Albums récents",

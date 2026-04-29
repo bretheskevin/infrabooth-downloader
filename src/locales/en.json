@@ -502,7 +502,8 @@
     "send": "Send",
     "sendError": "Failed to send message",
     "followersCount_one": "{{count}} follower",
-    "followersCount_other": "{{count}} followers"
+    "followersCount_other": "{{count}} followers",
+    "savingTo": "Saving to"
   },
   "newReleases": {
     "title": "New Playlists / Albums",

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, ExternalLink, Link, Loader2, MoreVertical, SendHorizonal } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Folder, FolderOpen, Link, Loader2, MoreVertical, SendHorizonal } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,9 @@ import { useMessagesStore } from '../store';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useIsMiniPillVisible } from '@/features/player/hooks/useIsMiniPillVisible';
 import { useTrackDownload } from '@/hooks/useTrackDownload';
-import { useSettingsStore } from '@/features/settings/store';
+import { useFolderPath } from '@/hooks/useFolderPath';
+import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
+import { useIsDownloadEnabled } from '@/features/settings';
 
 export function ConversationPage() {
   const { t } = useTranslation();
@@ -28,8 +30,10 @@ export function ConversationPage() {
   const { sendMessage, isPending } = useSendMessage(conversation?.otherUserId ?? 0);
   const [inputValue, setInputValue] = useState('');
 
-  const downloadPath = useSettingsStore((s) => s.downloadPath);
-  const { downloadTrackCore, getTrackState } = useTrackDownload(downloadPath);
+  const isDownloadEnabled = useIsDownloadEnabled();
+  const { effectivePath, folderName, isCustomFolder, selectFolder } = useFolderPath(isDownloadEnabled);
+  const handleOpenFolder = useOpenDownloadFolder(effectivePath ?? null);
+  const { downloadTrackCore, getTrackState } = useTrackDownload(effectivePath ?? '');
   const trackDownload = { downloadTrackCore, getTrackState };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -83,6 +87,36 @@ export function ConversationPage() {
           </>
         )}
       </div>
+
+      {isDownloadEnabled && folderName && (
+        <div className="flex items-center gap-2 px-4 py-1.5 text-xs text-muted-foreground border-b border-border/30 bg-muted/30">
+          <Folder className="h-3 w-3 shrink-0" />
+          <span>{t('directMessages.savingTo')}</span>
+          <span className="truncate max-w-[200px] text-foreground/70">{folderName}</span>
+          {isCustomFolder && (
+            <span className="text-muted-foreground/60">({t('library.detail.customFolder')})</span>
+          )}
+          <div className="flex items-center gap-2 ml-auto shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={selectFolder}
+              className="h-auto px-1 py-0 text-xs hover:text-foreground transition-colors"
+            >
+              {t('settings.changeFolder')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenFolder}
+              className="h-auto px-1 py-0 text-xs inline-flex items-center gap-0.5 hover:text-foreground transition-colors"
+            >
+              <FolderOpen className="h-3 w-3" />
+              {t('settings.openFolder')}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {isLoading && (
         <div className="flex items-center justify-center py-8 flex-1">
