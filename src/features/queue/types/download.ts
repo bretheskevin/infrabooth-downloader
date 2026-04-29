@@ -9,6 +9,7 @@ export interface FailedTrack {
 
 export type FailureReasonCategory =
   | 'geo_blocked'
+  | 'drm_protected'
   | 'unavailable'
   | 'network'
   | 'other';

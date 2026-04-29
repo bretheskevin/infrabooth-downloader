@@ -1,9 +1,10 @@
 import type { FailedTrack, FailureReasonCategory } from '@/features/queue/types/download';
 import type { AppError } from '@/features/queue/types/errors';
-import { isGeoBlockedError, isUnavailableError } from '@/lib/errorMessages';
+import { isDrmProtectedError, isGeoBlockedError, isUnavailableError } from '@/lib/errorMessages';
 
 const categorizeError = (error: AppError): FailureReasonCategory => {
   if (isGeoBlockedError(error)) return 'geo_blocked';
+  if (isDrmProtectedError(error)) return 'drm_protected';
   if (error.code === 'NETWORK_ERROR') return 'network';
   if (isUnavailableError(error)) return 'unavailable';
   return 'other';

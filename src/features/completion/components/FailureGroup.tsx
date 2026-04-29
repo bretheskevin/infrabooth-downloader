@@ -14,6 +14,7 @@ interface FailureGroupProps {
 
 const CATEGORY_LABEL_KEYS: Record<FailureReasonCategory, string> = {
   geo_blocked: 'errors.groupGeoBlocked',
+  drm_protected: 'errors.groupDrmProtected',
   unavailable: 'errors.groupUnavailable',
   network: 'errors.groupNetwork',
   other: 'errors.groupOther',

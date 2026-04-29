@@ -90,6 +90,15 @@ export function getApiErrorMessage(error: unknown, t: TFunction, fallbackKey: st
   return isAntibotError(error) ? t('errors.antibotBlocked') : t(fallbackKey);
 }
 
+const DRM_PATTERNS = ['drm protected'] as const;
+
+export function isDrmProtectedError(error?: AppError): boolean {
+  if (!error) return false;
+  if (error.code !== 'DOWNLOAD_FAILED') return false;
+  const message = error.message?.toLowerCase() || '';
+  return DRM_PATTERNS.some((pattern) => message.includes(pattern));
+}
+
 /**
  * Patterns that indicate a track is unavailable (removed/private/deleted).
  */

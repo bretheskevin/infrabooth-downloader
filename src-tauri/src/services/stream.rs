@@ -230,15 +230,14 @@ fn score_transcoding(t: &Transcoding, prefer_hls: bool) -> i32 {
 /// Select the best transcoding from available options (prefers progressive for downloads).
 #[cfg(test)]
 pub fn select_best_transcoding(transcodings: &[Transcoding]) -> Option<&Transcoding> {
-    select_best(transcodings, false)
+    ranked_transcodings(transcodings, false).into_iter().next()
 }
 
-fn select_best(transcodings: &[Transcoding], prefer_hls: bool) -> Option<&Transcoding> {
-    if transcodings.is_empty() {
-        return None;
-    }
-
-    transcodings.iter().filter(|t| score_transcoding(t, prefer_hls) > -10000).max_by_key(|t| score_transcoding(t, prefer_hls))
+/// Return all viable transcodings sorted by score (highest first).
+fn ranked_transcodings(transcodings: &[Transcoding], prefer_hls: bool) -> Vec<&Transcoding> {
+    let mut viable: Vec<&Transcoding> = transcodings.iter().filter(|t| score_transcoding(t, prefer_hls) > -10000).collect();
+    viable.sort_by(|a, b| score_transcoding(b, prefer_hls).cmp(&score_transcoding(a, prefer_hls)));
+    viable
 }
 
 // ---------------------------------------------------------------------------
@@ -329,6 +328,7 @@ fn is_auth_retry_error(err: &DownloadError) -> bool {
 }
 
 /// Core resolve logic: fetch track data → select transcoding → resolve CDN URL.
+/// Tries all viable transcodings in ranked order before giving up.
 /// Retries once on 401/403 by invalidating client_id (only when no oauth_token).
 async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, DownloadError> {
     // Fast path: if transcodings were cached (from playlist/search fetch), skip
@@ -336,7 +336,7 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
     // `mut` so we can `.take()` on first attempt, leaving None for retry.
     let mut cached = opts.track_id.and_then(take_cached_transcodings);
 
-    for is_first_attempt in [true, false] {
+    'outer: for is_first_attempt in [true, false] {
         let cid = client_id::get_client_id().await?;
 
         let transcodings = cached.take().unwrap_or_default();
@@ -371,32 +371,56 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 
         log::info!("[stream] Found {} transcodings for track", transcodings.len());
 
-        let transcoding =
-            select_best(&transcodings, opts.prefer_hls).ok_or_else(|| DownloadError::StreamResolutionFailed("No suitable transcoding found".into()))?;
+        let has_drm_only = transcodings.iter().any(|t| {
+            let p = &t.format.protocol;
+            p.starts_with("ctr-") || p.starts_with("cbc-") || p == "encrypted-hls"
+        });
 
-        log::info!(
-            "[stream] Selected transcoding: protocol={}, mime={}, quality={}, preset={}",
-            transcoding.format.protocol,
-            transcoding.format.mime_type,
-            transcoding.quality,
-            transcoding.preset
-        );
+        let ranked = ranked_transcodings(&transcodings, opts.prefer_hls);
+        if ranked.is_empty() {
+            return if has_drm_only {
+                Err(DownloadError::TrackUnavailable("DRM protected".to_string()))
+            } else {
+                Err(DownloadError::StreamResolutionFailed("No suitable transcoding found".into()))
+            };
+        }
 
-        let cdn_url = match resolve_transcoding_url(transcoding, &cid, opts.oauth_token).await {
-            Ok(url) => url,
-            Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
-                log::warn!("[stream] Got auth error on transcoding resolve, refreshing client_id");
-                client_id::invalidate_client_id();
-                continue;
+        let mut last_error = None;
+        for (i, transcoding) in ranked.iter().enumerate() {
+            log::info!(
+                "[stream] {} transcoding [{}/{}]: protocol={}, mime={}, quality={}, preset={}",
+                if i == 0 { "Selected" } else { "Fallback" },
+                i + 1,
+                ranked.len(),
+                transcoding.format.protocol,
+                transcoding.format.mime_type,
+                transcoding.quality,
+                transcoding.preset
+            );
+
+            match resolve_transcoding_url(transcoding, &cid, opts.oauth_token).await {
+                Ok(cdn_url) => {
+                    log::info!("[stream] Resolved CDN URL ({}...)", &cdn_url[..cdn_url.len().min(80)]);
+                    let codec: StreamCodec = extract_codec(&transcoding.format.mime_type).into();
+                    return Ok(ResolvedTranscoding { cdn_url, codec });
+                }
+                Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
+                    log::warn!("[stream] Got auth error on transcoding resolve, refreshing client_id");
+                    client_id::invalidate_client_id();
+                    continue 'outer;
+                }
+                Err(e) => {
+                    log::warn!("[stream] Transcoding {} unavailable: {}", transcoding.preset, e);
+                    last_error = Some(e);
+                }
             }
-            Err(e) => return Err(e),
-        };
+        }
 
-        log::info!("[stream] Resolved CDN URL ({}...)", &cdn_url[..cdn_url.len().min(80)]);
-
-        let codec: StreamCodec = extract_codec(&transcoding.format.mime_type).into();
-
-        return Ok(ResolvedTranscoding { cdn_url, codec });
+        return Err(if has_drm_only {
+            DownloadError::TrackUnavailable("DRM protected".to_string())
+        } else {
+            last_error.unwrap_or_else(|| DownloadError::StreamResolutionFailed("All transcodings failed".into()))
+        });
     }
 
     Err(DownloadError::StreamResolutionFailed("Failed after client_id refresh".to_string()))
