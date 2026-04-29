@@ -11,6 +11,27 @@ export function findInfraboothFolderId(nodes: RekordboxTreeNode[]): string | nul
   return infrabooth?.id ?? null;
 }
 
+export function findPlaylistParentId(nodes: RekordboxTreeNode[], playlistName: string): string | null {
+  const playlist = nodes.find((n) => n.name === playlistName && n.attribute !== PLAYLIST_TYPE_FOLDER);
+  if (!playlist) return null;
+  return playlist.parentId === 'root' ? null : playlist.parentId;
+}
+
+export function getAncestorIds(nodes: RekordboxTreeNode[], folderId: string | null): Set<string> {
+  if (folderId === null) return new Set();
+  const parentMap = new Map<string, string>();
+  for (const node of nodes) {
+    parentMap.set(node.id, node.parentId);
+  }
+  const ancestors = new Set<string>();
+  let current: string | undefined = folderId;
+  while (current && current !== 'root') {
+    ancestors.add(current);
+    current = parentMap.get(current);
+  }
+  return ancestors;
+}
+
 export interface TreeNode {
   id: string;
   name: string;

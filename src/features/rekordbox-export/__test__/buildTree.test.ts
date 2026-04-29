@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import type { RekordboxTreeNode } from '@/bindings';
-import { buildTreeFromNodes, findInfraboothFolderId, type TreeNode } from '../utils/buildTree';
+import { buildTreeFromNodes, findInfraboothFolderId, findPlaylistParentId, getAncestorIds, type TreeNode } from '../utils/buildTree';
 
 function makeNode(id: string, name: string, parentId: string, attribute: number, seq: number): RekordboxTreeNode {
   return { id, name, parentId, attribute, seq };
@@ -95,5 +95,78 @@ describe('findInfraboothFolderId', () => {
       makeNode('ib-id', 'InfraBooth Downloader', 'some-parent', 1, 1),
     ];
     expect(findInfraboothFolderId(nodes)).toBeNull();
+  });
+});
+
+describe('findPlaylistParentId', () => {
+  it('returns null for empty array', () => {
+    expect(findPlaylistParentId([], 'My Playlist')).toBeNull();
+  });
+
+  it('returns null when playlist does not exist', () => {
+    const nodes: RekordboxTreeNode[] = [
+      makeNode('f1', 'Folder', 'root', 1, 1),
+    ];
+    expect(findPlaylistParentId(nodes, 'Missing')).toBeNull();
+  });
+
+  it('returns parent folder id when playlist exists in a folder', () => {
+    const nodes: RekordboxTreeNode[] = [
+      makeNode('f1', 'InfraBooth Downloader', 'root', 1, 1),
+      makeNode('p1', 'My Mix', 'f1', 0, 1),
+    ];
+    expect(findPlaylistParentId(nodes, 'My Mix')).toBe('f1');
+  });
+
+  it('returns null when playlist is at root level', () => {
+    const nodes: RekordboxTreeNode[] = [
+      makeNode('p1', 'My Mix', 'root', 0, 1),
+    ];
+    expect(findPlaylistParentId(nodes, 'My Mix')).toBeNull();
+  });
+
+  it('ignores folders with the same name', () => {
+    const nodes: RekordboxTreeNode[] = [
+      makeNode('f1', 'DJ Sets', 'root', 1, 1),
+    ];
+    expect(findPlaylistParentId(nodes, 'DJ Sets')).toBeNull();
+  });
+
+  it('returns parent of nested playlist', () => {
+    const nodes: RekordboxTreeNode[] = [
+      makeNode('f1', 'InfraBooth Downloader', 'root', 1, 1),
+      makeNode('f2', 'Sub Folder', 'f1', 1, 1),
+      makeNode('p1', 'Deep Playlist', 'f2', 0, 1),
+    ];
+    expect(findPlaylistParentId(nodes, 'Deep Playlist')).toBe('f2');
+  });
+});
+
+describe('getAncestorIds', () => {
+  it('returns empty set for null folderId', () => {
+    expect(getAncestorIds([], null)).toEqual(new Set());
+  });
+
+  it('returns single id for root-level folder', () => {
+    const nodes: RekordboxTreeNode[] = [
+      makeNode('f1', 'Folder', 'root', 1, 1),
+    ];
+    expect(getAncestorIds(nodes, 'f1')).toEqual(new Set(['f1']));
+  });
+
+  it('returns full ancestor chain for nested folder', () => {
+    const nodes: RekordboxTreeNode[] = [
+      makeNode('f1', 'Top', 'root', 1, 1),
+      makeNode('f2', 'Mid', 'f1', 1, 1),
+      makeNode('f3', 'Deep', 'f2', 1, 1),
+    ];
+    expect(getAncestorIds(nodes, 'f3')).toEqual(new Set(['f1', 'f2', 'f3']));
+  });
+
+  it('handles unknown folderId gracefully', () => {
+    const nodes: RekordboxTreeNode[] = [
+      makeNode('f1', 'Folder', 'root', 1, 1),
+    ];
+    expect(getAncestorIds(nodes, 'nonexistent')).toEqual(new Set(['nonexistent']));
   });
 });

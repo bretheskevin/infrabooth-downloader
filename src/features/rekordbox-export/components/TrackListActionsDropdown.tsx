@@ -27,7 +27,7 @@ import { Progress } from '@/components/ui/progress';
 import { useRekordboxDetection } from '../hooks/useRekordboxDetection';
 import { useRekordboxExport, type TrackStatus } from '../hooks/useRekordboxExport';
 import { useRekordboxTree } from '../hooks/useRekordboxTree';
-import { findInfraboothFolderId } from '../utils/buildTree';
+import { findInfraboothFolderId, findPlaylistParentId } from '../utils/buildTree';
 import { ExportPhaseSection } from './ExportPhaseSection';
 import { RekordboxTreePicker } from './RekordboxTreePicker';
 
@@ -160,8 +160,8 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
 
   const defaultFolderId = useMemo(() => {
     if (!treeData) return null;
-    return findInfraboothFolderId(treeData);
-  }, [treeData]);
+    return findPlaylistParentId(treeData, playlistName) ?? findInfraboothFolderId(treeData);
+  }, [treeData, playlistName]);
 
   const effectiveFolderId = selectedFolderId === undefined ? defaultFolderId : selectedFolderId;
 

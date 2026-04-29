@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronRight, ChevronDown, Folder, FolderOpen, ListMusic, Plus, RefreshCw } from 'lucide-react';
 import type { RekordboxTreeNode } from '@/bindings';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { buildTreeFromNodes, findInfraboothFolderId, type TreeNode } from '../utils/buildTree';
+import { buildTreeFromNodes, getAncestorIds, type TreeNode } from '../utils/buildTree';
 
 interface RekordboxTreePickerProps {
   nodes: RekordboxTreeNode[];
@@ -38,15 +38,15 @@ function TreeFolderNode({
   selectedFolderId,
   onSelectFolder,
   newPlaylistName,
-  defaultOpen,
+  expandedIds,
 }: {
   node: TreeNode;
   selectedFolderId: string | null;
   onSelectFolder: (folderId: string | null) => void;
   newPlaylistName: string;
-  defaultOpen: boolean;
+  expandedIds: Set<string>;
 }) {
-  const [open, setOpen] = useState(defaultOpen);
+  const [open, setOpen] = useState(expandedIds.has(node.id));
   const isSelected = selectedFolderId === node.id;
   const hasExistingPlaylist = isSelected && node.children.some((c) => !c.isFolder && c.name === newPlaylistName);
 
@@ -76,7 +76,7 @@ function TreeFolderNode({
                 selectedFolderId={selectedFolderId}
                 onSelectFolder={onSelectFolder}
                 newPlaylistName={newPlaylistName}
-                defaultOpen={false}
+                expandedIds={expandedIds}
               />
             ) : (
               <TreePlaylistNode key={child.id} node={child} isUpdateTarget={isSelected && child.name === newPlaylistName} />
@@ -93,7 +93,7 @@ export function RekordboxTreePicker({ nodes, selectedFolderId, onSelectFolder, n
   const { t } = useTranslation();
   const tree = useMemo(() => buildTreeFromNodes(nodes), [nodes]);
 
-  const infraboothId = useMemo(() => findInfraboothFolderId(nodes), [nodes]);
+  const expandedIds = useMemo(() => getAncestorIds(nodes, selectedFolderId), [nodes, selectedFolderId]);
 
   const isRootSelected = selectedFolderId === null;
   const rootHasExistingPlaylist = isRootSelected && tree.some((n) => !n.isFolder && n.name === newPlaylistName);
@@ -118,7 +118,7 @@ export function RekordboxTreePicker({ nodes, selectedFolderId, onSelectFolder, n
             selectedFolderId={selectedFolderId}
             onSelectFolder={onSelectFolder}
             newPlaylistName={newPlaylistName}
-            defaultOpen={node.id === infraboothId}
+            expandedIds={expandedIds}
           />
         ) : (
           <TreePlaylistNode key={node.id} node={node} isUpdateTarget={isRootSelected && node.name === newPlaylistName} />
