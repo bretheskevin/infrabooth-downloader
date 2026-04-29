@@ -29,11 +29,7 @@ static NO_REDIRECT_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
 });
 
 pub async fn expand_short_link(url: &str) -> Result<String, String> {
-    let normalized = if !url.starts_with("http://") && !url.starts_with("https://") {
-        format!("https://{}", url)
-    } else {
-        url.to_string()
-    };
+    let normalized = if !url.starts_with("http://") && !url.starts_with("https://") { format!("https://{}", url) } else { url.to_string() };
     let parsed = rquest::Url::parse(&normalized).map_err(|e| format!("Invalid URL: {}", e))?;
     if parsed.host_str() != Some("on.soundcloud.com") {
         return Ok(normalized);
@@ -171,13 +167,7 @@ impl RequestBuilderExt for rquest::RequestBuilder {
 pub fn build_sc_paginated_url(base_url: &str, client_id: &str) -> Result<rquest::Url, String> {
     rquest::Url::parse_with_params(
         base_url,
-        &[
-            ("client_id", client_id),
-            ("limit", DEFAULT_PAGE_SIZE_STR),
-            ("linked_partitioning", "1"),
-            ("app_version", SC_APP_VERSION),
-            ("app_locale", "en"),
-        ],
+        &[("client_id", client_id), ("limit", DEFAULT_PAGE_SIZE_STR), ("linked_partitioning", "1"), ("app_version", SC_APP_VERSION), ("app_locale", "en")],
     )
     .map_err(|e| format!("Failed to build URL: {}", e))
 }

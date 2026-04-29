@@ -104,15 +104,7 @@ pub fn scan_browser_cookies() -> CookieScanResult {
     }
 
     info!("No SoundCloud oauth_token found in any browser");
-    CookieScanResult {
-        cookie: None,
-        datadome: standalone_datadome,
-        warning: if appbound_hit {
-            Some(WARNING_APPBOUND_ENCRYPTION.to_string())
-        } else {
-            None
-        },
-    }
+    CookieScanResult { cookie: None, datadome: standalone_datadome, warning: if appbound_hit { Some(WARNING_APPBOUND_ENCRYPTION.to_string()) } else { None } }
 }
 
 #[cfg(test)]

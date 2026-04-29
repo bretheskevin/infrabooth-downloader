@@ -64,15 +64,8 @@ mod tests {
 
     #[test]
     fn artwork_falls_back_to_first_track() {
-        let raw = make_raw(
-            1,
-            "No Art",
-            None,
-            vec![
-                RawPlaylistTrack { artwork_url: None },
-                RawPlaylistTrack { artwork_url: Some("https://track2.jpg".into()) },
-            ],
-        );
+        let raw =
+            make_raw(1, "No Art", None, vec![RawPlaylistTrack { artwork_url: None }, RawPlaylistTrack { artwork_url: Some("https://track2.jpg".into()) }]);
         assert_eq!(raw.into_artist_playlist().artwork_url, Some("https://track2.jpg".into()));
     }
 

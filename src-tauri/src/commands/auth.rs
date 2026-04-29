@@ -117,10 +117,7 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
 }
 
 #[cfg(target_os = "windows")]
-const WINDOWS_FIREFOX_FALLBACK_PATHS: &[&str] = &[
-    r"C:\Program Files\Mozilla Firefox\firefox.exe",
-    r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe",
-];
+const WINDOWS_FIREFOX_FALLBACK_PATHS: &[&str] = &[r"C:\Program Files\Mozilla Firefox\firefox.exe", r"C:\Program Files (x86)\Mozilla Firefox\firefox.exe"];
 
 #[cfg(target_os = "windows")]
 fn firefox_exe_from_registry() -> Option<String> {

@@ -698,10 +698,7 @@ mod tests {
             permalink_url: "https://example.com".into(),
             is_album: true,
             set_type: None,
-            tracks: vec![
-                RawStreamPlaylistTrack { artwork_url: None },
-                RawStreamPlaylistTrack { artwork_url: Some("https://track2.jpg".into()) },
-            ],
+            tracks: vec![RawStreamPlaylistTrack { artwork_url: None }, RawStreamPlaylistTrack { artwork_url: Some("https://track2.jpg".into()) }],
         };
         assert_eq!(playlist.resolved_artwork_url(), Some("https://track2.jpg".into()));
 

@@ -581,11 +581,7 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
     let mut last_error: Option<String> = None;
     let mut last_percent: f32 = 0.0;
     let mut last_downloaded_bytes: Option<u64> = None;
-    let estimated_total_bytes: Option<u64> = if duration_ms > 0 {
-        Some(duration_ms * bytes_per_ms)
-    } else {
-        None
-    };
+    let estimated_total_bytes: Option<u64> = if duration_ms > 0 { Some(duration_ms * bytes_per_ms) } else { None };
 
     loop {
         if is_cancelled(cancel_rx) {

@@ -84,14 +84,7 @@ impl RekordboxWriteContext {
 
         log::info!("[rekordbox] Reading XML playlist file...");
         let xml = xml_sync::PlaylistXml::read_if_exists(&self.rb_config.db_dir)?;
-        log::info!(
-            "[rekordbox] XML playlist file: {}",
-            if xml.is_some() {
-                "found"
-            } else {
-                "not found"
-            }
-        );
+        log::info!("[rekordbox] XML playlist file: {}", if xml.is_some() { "found" } else { "not found" });
 
         Ok(RekordboxSession { db, xml, db_dir: self.rb_config.db_dir.clone() })
     }
@@ -286,13 +279,7 @@ pub fn delete_rekordbox_playlist(playlist_id: String, manual_db_path: Option<Str
         let folder = playlist::find_infrabooth_folder(&session.db).ok_or_else(|| RekordboxError::NotFound("InfraBooth folder not found".into()))?;
         let target = playlist::find_playlist_in_folder(&session.db, &playlist_id, &folder.id).ok_or_else(|| {
             let target_type = playlist::find_playlist_by_id(&session.db, &playlist_id)
-                .map(|pl| {
-                    if pl.attribute == 1 {
-                        "folder"
-                    } else {
-                        "playlist outside the InfraBooth folder"
-                    }
-                })
+                .map(|pl| if pl.attribute == 1 { "folder" } else { "playlist outside the InfraBooth folder" })
                 .unwrap_or("unknown playlist");
             RekordboxError::InvalidPlaylist(format!("Refusing to delete {} with ID {}", target_type, playlist_id))
         })?;

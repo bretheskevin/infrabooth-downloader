@@ -87,15 +87,7 @@ pub async fn check_follow_status(
     let data: FollowingIdsResponse = response.json().await.map_err(|e| FollowError::NetworkError(format!("Failed to parse followings: {}", e)))?;
 
     let is_following = data.collection.contains(&target_user_id);
-    log::debug!(
-        "[follow] User {} is{}followed",
-        target_user_id,
-        if is_following {
-            " "
-        } else {
-            " NOT "
-        }
-    );
+    log::debug!("[follow] User {} is{}followed", target_user_id, if is_following { " " } else { " NOT " });
     Ok(is_following)
 }
 

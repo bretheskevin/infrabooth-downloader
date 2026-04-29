@@ -33,49 +33,13 @@ pub struct PlaylistSummary {
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum NotificationItem {
-    Affiliation {
-        id: String,
-        created_at: String,
-        actor: ActorInfo,
-    },
-    TrackLike {
-        id: String,
-        created_at: String,
-        actor: ActorInfo,
-        track: TrackInfo,
-    },
-    TrackRepost {
-        id: String,
-        created_at: String,
-        actor: ActorInfo,
-        track: TrackInfo,
-    },
-    Comment {
-        id: String,
-        created_at: String,
-        actor: ActorInfo,
-        track: TrackInfo,
-        body: String,
-    },
-    Mention {
-        id: String,
-        created_at: String,
-        actor: ActorInfo,
-        track: TrackInfo,
-        body: String,
-    },
-    PlaylistLike {
-        id: String,
-        created_at: String,
-        actor: ActorInfo,
-        playlist: PlaylistSummary,
-    },
-    PlaylistRepost {
-        id: String,
-        created_at: String,
-        actor: ActorInfo,
-        playlist: PlaylistSummary,
-    },
+    Affiliation { id: String, created_at: String, actor: ActorInfo },
+    TrackLike { id: String, created_at: String, actor: ActorInfo, track: TrackInfo },
+    TrackRepost { id: String, created_at: String, actor: ActorInfo, track: TrackInfo },
+    Comment { id: String, created_at: String, actor: ActorInfo, track: TrackInfo, body: String },
+    Mention { id: String, created_at: String, actor: ActorInfo, track: TrackInfo, body: String },
+    PlaylistLike { id: String, created_at: String, actor: ActorInfo, playlist: PlaylistSummary },
+    PlaylistRepost { id: String, created_at: String, actor: ActorInfo, playlist: PlaylistSummary },
 }
 
 impl NotificationItem {

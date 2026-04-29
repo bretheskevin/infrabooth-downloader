@@ -121,14 +121,7 @@ pub async fn start_download_queue(
         .tracks
         .into_iter()
         .enumerate()
-        .map(|(i, core)| QueueItem {
-            core,
-            track_number: if preserve_order {
-                Some((i + 1) as u32)
-            } else {
-                None
-            },
-        })
+        .map(|(i, core)| QueueItem { core, track_number: if preserve_order { Some((i + 1) as u32) } else { None } })
         .collect();
 
     let mut queue = DownloadQueue::new(items, request.album_name);

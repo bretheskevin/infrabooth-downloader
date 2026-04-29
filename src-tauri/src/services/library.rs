@@ -251,11 +251,8 @@ pub async fn fetch_owned_playlists_for_track(
                     if let Ok(playlist_data) = resp.json::<PlaylistTracksResponse>().await {
                         let contains = playlist_data.tracks.iter().any(|t| t.id == track_id);
                         let was_cached = cached_artwork.is_some();
-                        let resolved_artwork: Option<String> = if already_has_artwork {
-                            None
-                        } else {
-                            cached_artwork.flatten().or_else(|| playlist_data.first_track_artwork())
-                        };
+                        let resolved_artwork: Option<String> =
+                            if already_has_artwork { None } else { cached_artwork.flatten().or_else(|| playlist_data.first_track_artwork()) };
                         let should_cache = !already_has_artwork && !was_cached;
                         Ok((pid, contains, resolved_artwork, should_cache))
                     } else {

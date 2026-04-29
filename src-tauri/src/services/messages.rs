@@ -179,11 +179,7 @@ async fn resolve_embed(url: &str, client_id: &str, oauth_token: &str) -> Option<
     use crate::services::http::{expand_short_link, resolve_sc_url};
     use crate::services::playlist::{RawTrackInfo, RawUserInfo};
 
-    let expanded = if url.contains("on.soundcloud.com") {
-        expand_short_link(url).await.ok()?
-    } else {
-        url.to_string()
-    };
+    let expanded = if url.contains("on.soundcloud.com") { expand_short_link(url).await.ok()? } else { url.to_string() };
 
     let value: serde_json::Value = resolve_sc_url(&expanded, client_id, Some(oauth_token)).await.ok()?;
     let kind = value.get("kind")?.as_str()?;
@@ -463,11 +459,7 @@ pub async fn send_message(
         let body = response.text().await.unwrap_or_default();
         log::error!("[messages] Failed to send message: HTTP {} - {}", status, body);
         let sanitized = sanitize_error_body(body);
-        let err = if sanitized == ANTIBOT_BLOCKED {
-            ScApiError::FetchFailed(sanitized)
-        } else {
-            validate_api_response(status).unwrap_err().into()
-        };
+        let err = if sanitized == ANTIBOT_BLOCKED { ScApiError::FetchFailed(sanitized) } else { validate_api_response(status).unwrap_err().into() };
         return (new_datadome, Err(err));
     }
 

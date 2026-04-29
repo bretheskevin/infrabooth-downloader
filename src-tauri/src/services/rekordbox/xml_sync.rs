@@ -68,11 +68,7 @@ impl PlaylistXml {
             return false;
         }
 
-        let parent_hex = if parent_id == "root" {
-            "0".to_string()
-        } else {
-            decimal_to_hex(parent_id)
-        };
+        let parent_hex = if parent_id == "root" { "0".to_string() } else { decimal_to_hex(parent_id) };
 
         let node = XmlNode {
             id: hex_id,

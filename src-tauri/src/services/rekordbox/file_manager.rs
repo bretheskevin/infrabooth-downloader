@@ -37,11 +37,7 @@ fn files_match(source_path: &Path, target_path: &Path) -> Result<bool, Rekordbox
 }
 
 pub fn copy_track_to_rekordbox(source_path: &Path, artist: &str, title: &str, rekordbox_root: &Path) -> Result<PathBuf, RekordboxError> {
-    let artist_dir_name = if artist.trim().is_empty() {
-        "Unknown Artist".to_string()
-    } else {
-        sanitize_name(artist)
-    };
+    let artist_dir_name = if artist.trim().is_empty() { "Unknown Artist".to_string() } else { sanitize_name(artist) };
 
     let file_stem = if title.trim().is_empty() {
         source_path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "untitled".to_string())

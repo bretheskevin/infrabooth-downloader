@@ -75,12 +75,7 @@ where
 {
     let url = Url::parse_with_params(
         &format!("{}/search/{}", API_V2_BASE, endpoint),
-        &[
-            ("q", query),
-            ("client_id", client_id),
-            ("limit", &limit.to_string()),
-            ("offset", &offset.to_string()),
-        ],
+        &[("q", query), ("client_id", client_id), ("limit", &limit.to_string()), ("offset", &offset.to_string())],
     )
     .map_err(|e| ScApiError::FetchFailed(e.to_string()))?;
 

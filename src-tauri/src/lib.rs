@@ -291,11 +291,7 @@ pub fn run() {
                 });
             }
 
-            let log_level = if cfg!(debug_assertions) {
-                log::LevelFilter::Debug
-            } else {
-                log::LevelFilter::Info
-            };
+            let log_level = if cfg!(debug_assertions) { log::LevelFilter::Debug } else { log::LevelFilter::Info };
 
             let log_dir = app.path().app_data_dir().expect("failed to resolve app data dir").join("logs");
             std::fs::create_dir_all(&log_dir).ok();
@@ -317,11 +313,7 @@ pub fn run() {
                     .format(|out, message, record| {
                         let now = time::OffsetDateTime::now_local().unwrap_or_else(|_| time::OffsetDateTime::now_utc());
                         let target = record.target();
-                        let clean_target = if target.contains("node_modules") {
-                            "webview"
-                        } else {
-                            target
-                        };
+                        let clean_target = if target.contains("node_modules") { "webview" } else { target };
                         out.finish(format_args!(
                             "[{:04}-{:02}-{:02} {:02}:{:02}][{}][{}] {}",
                             now.year(),

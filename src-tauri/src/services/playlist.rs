@@ -943,10 +943,7 @@ mod tests {
     // Hydration extraction tests
     #[test]
     fn test_extract_track_ids_from_full_objects() {
-        let tracks: Vec<Value> = vec![
-            serde_json::json!({"id": 123, "title": "Track 1"}),
-            serde_json::json!({"id": 456, "title": "Track 2"}),
-        ];
+        let tracks: Vec<Value> = vec![serde_json::json!({"id": 123, "title": "Track 1"}), serde_json::json!({"id": 456, "title": "Track 2"})];
         let ids = extract_track_ids(&tracks);
         assert_eq!(ids, vec![123, 456]);
     }
@@ -960,11 +957,7 @@ mod tests {
 
     #[test]
     fn test_extract_track_ids_mixed() {
-        let tracks: Vec<Value> = vec![
-            serde_json::json!({"id": 123, "title": "Track 1"}),
-            serde_json::json!(456),
-            serde_json::json!({"id": 789}),
-        ];
+        let tracks: Vec<Value> = vec![serde_json::json!({"id": 123, "title": "Track 1"}), serde_json::json!(456), serde_json::json!({"id": 789})];
         let ids = extract_track_ids(&tracks);
         assert_eq!(ids, vec![123, 456, 789]);
     }

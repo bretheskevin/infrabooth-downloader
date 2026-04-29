@@ -221,16 +221,8 @@ fn score_transcoding(t: &Transcoding, prefer_hls: bool) -> i32 {
         }
     };
 
-    let quality_bonus = if t.quality == "hq" {
-        100
-    } else {
-        0
-    };
-    let snipped_penalty = if t.snipped {
-        -1000
-    } else {
-        0
-    };
+    let quality_bonus = if t.quality == "hq" { 100 } else { 0 };
+    let snipped_penalty = if t.snipped { -1000 } else { 0 };
 
     codec_score + protocol_score + quality_bonus + snipped_penalty
 }
@@ -295,11 +287,7 @@ async fn fetch_track_data_with_fallback(
 async fn resolve_transcoding_url(transcoding: &Transcoding, client_id: &str, oauth_token: Option<&str>) -> Result<String, DownloadError> {
     let client = &*crate::services::http::HTTP_CLIENT;
 
-    let separator = if transcoding.url.contains('?') {
-        '&'
-    } else {
-        '?'
-    };
+    let separator = if transcoding.url.contains('?') { '&' } else { '?' };
     let url = format!("{}{}client_id={}", transcoding.url, separator, client_id);
 
     let response = client.get(&url).with_oauth(oauth_token).send().await.map_err(|e| DownloadError::StreamResolutionFailed(format!("Network error: {}", e)))?;
@@ -357,11 +345,7 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
         }
 
         let transcodings = if transcodings.is_empty() {
-            let track_id_for_fetch = if is_first_attempt {
-                opts.track_id
-            } else {
-                None
-            };
+            let track_id_for_fetch = if is_first_attempt { opts.track_id } else { None };
             let data = match fetch_track_data_with_fallback(track_id_for_fetch, opts.track_url, &cid, opts.oauth_token).await {
                 Ok(data) => data,
                 Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
@@ -428,14 +412,7 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 /// and returns full stream info including codec for encoding decisions.
 /// On 401/403, invalidates client_id and retries once.
 pub async fn resolve_stream_url(track_url: &str, oauth_token: Option<&str>) -> Result<StreamInfo, DownloadError> {
-    log::info!(
-        "[stream] resolve_stream_url called, oauth_token={}",
-        if oauth_token.is_some() {
-            "present"
-        } else {
-            "none"
-        }
-    );
+    log::info!("[stream] resolve_stream_url called, oauth_token={}", if oauth_token.is_some() { "present" } else { "none" });
 
     let resolved = resolve_inner(ResolveOptions { track_id: None, track_url, oauth_token, prefer_hls: false }).await?;
 
@@ -447,15 +424,7 @@ pub async fn resolve_stream_url(track_url: &str, oauth_token: Option<&str>) -> R
 /// Tries direct /tracks/{id} first (faster), then falls back to URL resolve.
 /// Selects the best HLS transcoding for browser streaming.
 pub async fn resolve_playback_url(track_id: u64, track_url: &str, oauth_token: Option<&str>) -> Result<String, DownloadError> {
-    log::info!(
-        "[stream] resolve_playback_url called for track_id={}, oauth={}",
-        track_id,
-        if oauth_token.is_some() {
-            "present"
-        } else {
-            "none"
-        }
-    );
+    log::info!("[stream] resolve_playback_url called for track_id={}, oauth={}", track_id, if oauth_token.is_some() { "present" } else { "none" });
 
     let resolved = resolve_inner(ResolveOptions { track_id: Some(track_id), track_url, oauth_token, prefer_hls: true }).await?;
 

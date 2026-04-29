@@ -71,20 +71,10 @@ struct QueueProgress {
 
 /// Result of a single track download in parallel processing.
 pub enum TrackOutcome {
-    Completed {
-        track_id: String,
-    },
-    Failed {
-        track_id: String,
-        error_message: String,
-    },
-    Cancelled {
-        track_id: String,
-    },
-    RateLimited {
-        track_id: String,
-        reset_time: Option<String>,
-    },
+    Completed { track_id: String },
+    Failed { track_id: String, error_message: String },
+    Cancelled { track_id: String },
+    RateLimited { track_id: String, reset_time: Option<String> },
 }
 
 /// Context for queue processing containing all shared state.
@@ -572,10 +562,7 @@ mod tests {
             completed: 8,
             failed: 2,
             total: 10,
-            failed_tracks: vec![
-                ("track1".to_string(), "Error 1".to_string()),
-                ("track2".to_string(), "Error 2".to_string()),
-            ],
+            failed_tracks: vec![("track1".to_string(), "Error 1".to_string()), ("track2".to_string(), "Error 2".to_string())],
         };
 
         let json = serde_json::to_string(&event).unwrap();
