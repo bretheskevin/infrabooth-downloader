@@ -236,7 +236,7 @@ pub fn select_best_transcoding(transcodings: &[Transcoding]) -> Option<&Transcod
 /// Return all viable transcodings sorted by score (highest first).
 fn ranked_transcodings(transcodings: &[Transcoding], prefer_hls: bool) -> Vec<&Transcoding> {
     let mut viable: Vec<&Transcoding> = transcodings.iter().filter(|t| score_transcoding(t, prefer_hls) > -10000).collect();
-    viable.sort_by(|a, b| score_transcoding(b, prefer_hls).cmp(&score_transcoding(a, prefer_hls)));
+    viable.sort_by_cached_key(|t| std::cmp::Reverse(score_transcoding(t, prefer_hls)));
     viable
 }
 
@@ -328,7 +328,6 @@ fn is_auth_retry_error(err: &DownloadError) -> bool {
 }
 
 /// Core resolve logic: fetch track data → select transcoding → resolve CDN URL.
-/// Tries all viable transcodings in ranked order before giving up.
 /// Retries once on 401/403 by invalidating client_id (only when no oauth_token).
 async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, DownloadError> {
     // Fast path: if transcodings were cached (from playlist/search fetch), skip
@@ -371,14 +370,14 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 
         log::info!("[stream] Found {} transcodings for track", transcodings.len());
 
-        let has_drm_only = transcodings.iter().any(|t| {
+        let has_drm = transcodings.iter().any(|t| {
             let p = &t.format.protocol;
             p.starts_with("ctr-") || p.starts_with("cbc-") || p == "encrypted-hls"
         });
 
         let ranked = ranked_transcodings(&transcodings, opts.prefer_hls);
         if ranked.is_empty() {
-            return if has_drm_only {
+            return if has_drm {
                 Err(DownloadError::TrackUnavailable("DRM protected".to_string()))
             } else {
                 Err(DownloadError::StreamResolutionFailed("No suitable transcoding found".into()))
@@ -416,7 +415,7 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
             }
         }
 
-        return Err(if has_drm_only {
+        return Err(if has_drm {
             DownloadError::TrackUnavailable("DRM protected".to_string())
         } else {
             last_error.unwrap_or_else(|| DownloadError::StreamResolutionFailed("All transcodings failed".into()))
@@ -592,7 +591,7 @@ mod tests {
     }
 
     #[test]
-    fn test_select_all_drm_returns_none() {
+    fn test_select_has_drm_returns_none() {
         let transcodings = vec![
             make_transcoding("ctr-aes-128", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_0", false),
             make_transcoding("cbc-aes-128", "audio/mpeg", "sq", "mp3_0", false),

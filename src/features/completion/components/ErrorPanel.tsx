@@ -25,6 +25,7 @@ const CATEGORY_ORDER: FailureReasonCategory[] = [
   'network',
   'other',
   'unavailable',
+  'drm_protected',
   'geo_blocked',
 ];
 
