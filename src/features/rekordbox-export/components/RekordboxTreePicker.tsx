@@ -52,11 +52,13 @@ function TreeFolderNode({
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
-      <button
-        type="button"
+      <div
+        role="button"
+        tabIndex={0}
         aria-selected={isSelected}
         className={`flex items-center gap-1 py-1 w-full text-left text-sm rounded-sm cursor-pointer hover:bg-accent/50 ${isSelected ? 'bg-accent' : ''}`}
         onClick={() => onSelectFolder(node.id)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectFolder(node.id); } }}
       >
         <CollapsibleTrigger asChild onClick={(e: React.MouseEvent) => e.stopPropagation()}>
           <button type="button" className="p-0.5 hover:bg-accent rounded-sm">
@@ -65,7 +67,7 @@ function TreeFolderNode({
         </CollapsibleTrigger>
         {open ? <FolderOpen className="h-3.5 w-3.5" /> : <Folder className="h-3.5 w-3.5" />}
         <span className="truncate">{node.name}</span>
-      </button>
+      </div>
       <CollapsibleContent>
         <div className="pl-4">
           {node.children.map((child) =>
