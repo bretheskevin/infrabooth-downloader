@@ -424,19 +424,29 @@ pub async fn fetch_conversation_messages(
 
 pub async fn mark_conversation_read(oauth_token: &str, client_id: &str, user_id: u64, other_user_id: u64) -> Result<(), ScApiError> {
     let url = format!(
-        "{}/users/{}/conversations/{}/mark_as_read?client_id={}",
+        "{}/users/{}/conversations/{}?client_id={}",
         API_V2_BASE, user_id, other_user_id, client_id,
     );
 
-    let response = HTTP_CLIENT.put(&url).with_oauth(Some(oauth_token)).send().await?;
+    log::debug!("[messages] Marking conversation with user {} as read", other_user_id);
 
-    if !response.status().is_success() {
+    let response = HTTP_CLIENT.put(&url)
+        .with_oauth(Some(oauth_token))
+        .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+        .body("read=true")
+        .send()
+        .await?;
+    let status = response.status();
+
+    if !status.is_success() {
+        log::error!("[messages] mark_conversation_read returned HTTP {}", status);
         return Err(ScApiError::FetchFailed(format!(
             "mark_conversation_read returned HTTP {}",
-            response.status()
+            status
         )));
     }
 
+    log::debug!("[messages] Conversation with user {} marked as read (HTTP {})", other_user_id, status);
     Ok(())
 }
 
