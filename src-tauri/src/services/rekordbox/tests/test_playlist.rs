@@ -128,3 +128,25 @@ fn test_list_playlists_in_folder() {
     assert_eq!(list[0].name, "PL1");
     assert_eq!(list[1].name, "PL2");
 }
+
+#[test]
+fn test_get_playlist_tree() {
+    let (_tmp, mut db) = setup_test_db();
+    let folder = playlist::find_or_create_infrabooth_folder(&mut db).unwrap();
+    playlist::create_playlist(&mut db, "PL1", &folder.id).unwrap();
+    playlist::create_playlist(&mut db, "PL2", &folder.id).unwrap();
+
+    let tree = playlist::get_playlist_tree(&db).unwrap();
+    assert_eq!(tree.len(), 3);
+
+    let folder_node = tree.iter().find(|n| n.id == folder.id).unwrap();
+    assert_eq!(folder_node.name, INFRABOOTH_FOLDER_NAME);
+    assert_eq!(folder_node.attribute, PLAYLIST_TYPE_FOLDER);
+    assert_eq!(folder_node.parent_id, "root");
+
+    let pl_nodes: Vec<_> = tree.iter().filter(|n| n.attribute == PLAYLIST_TYPE_PLAYLIST).collect();
+    assert_eq!(pl_nodes.len(), 2);
+    assert_eq!(pl_nodes[0].name, "PL1");
+    assert_eq!(pl_nodes[1].name, "PL2");
+    assert_eq!(pl_nodes[0].parent_id, folder.id);
+}

@@ -69,6 +69,7 @@ describe('api rekordbox commands', () => {
     expect(commands.exportToRekordbox).toHaveBeenCalledWith(
       [{ sourcePath: '/tmp/track.mp3' }],
       'All Tracks',
+      null,
       '/Users/test/rekordbox/master.db'
     );
   });

@@ -508,9 +508,9 @@ async getDefaultRekordboxDataDirectoryParent() : Promise<Result<string, string>>
     else return { status: "error", error: e  as any };
 }
 },
-async exportToRekordbox(tracks: ExportTrackRequest[], playlistName: string | null, manualDbPath: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
+async exportToRekordbox(tracks: ExportTrackRequest[], playlistName: string | null, parentFolderId: string | null, manualDbPath: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("export_to_rekordbox", { tracks, playlistName, manualDbPath }) };
+    return { status: "ok", data: await TAURI_INVOKE("export_to_rekordbox", { tracks, playlistName, parentFolderId, manualDbPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -519,6 +519,14 @@ async exportToRekordbox(tracks: ExportTrackRequest[], playlistName: string | nul
 async listRekordboxPlaylists(manualDbPath: string | null) : Promise<Result<RekordboxPlaylistInfo[], ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("list_rekordbox_playlists", { manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getRekordboxPlaylistTree(manualDbPath: string | null) : Promise<Result<RekordboxTreeNode[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_rekordbox_playlist_tree", { manualDbPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -551,9 +559,9 @@ async restoreRekordboxBackup(backupPath: string, manualDbPath: string | null) : 
 async quitRekordbox() : Promise<boolean> {
     return await TAURI_INVOKE("quit_rekordbox");
 },
-async exportPlaylistToRekordbox(tracks: TrackCore[], playlistName: string, maxConcurrent: number, manualDbPath: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
+async exportPlaylistToRekordbox(tracks: TrackCore[], playlistName: string, parentFolderId: string | null, maxConcurrent: number, manualDbPath: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("export_playlist_to_rekordbox", { tracks, playlistName, maxConcurrent, manualDbPath }) };
+    return { status: "ok", data: await TAURI_INVOKE("export_playlist_to_rekordbox", { tracks, playlistName, parentFolderId, maxConcurrent, manualDbPath }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -767,6 +775,7 @@ export type RekordboxExportProgressEvent = { trackId: string; trackTitle: string
 export type RekordboxExportStatus = "pending" | "downloading" | "downloaded" | "exporting" | "completed" | "error"
 export type RekordboxPlaylistInfo = { id: string; name: string; trackCount: number }
 export type RekordboxStatus = { found: boolean; version: string | null; dbPath: string | null; isRunning: boolean }
+export type RekordboxTreeNode = { id: string; name: string; attribute: number; parentId: string; seq: number }
 export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: ReleaseActivityType; created_at: string }
 export type ReleaseActivityType = "New" | "Repost"
 export type ReleaseInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; permalink_url: string; release_type: ReleaseType }

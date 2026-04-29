@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Disc3, EllipsisVertical, ExternalLink, Link, Send } from 'lucide-react';
+import { Disc3, EllipsisVertical, ExternalLink, Link, Loader2, Send } from 'lucide-react';
 import type { TrackInfo, RekordboxExportStatus } from '@/bindings';
 import { useLinkActions } from '@/hooks/useLinkActions';
 import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
 import { useIsSignedIn } from '@/features/auth/store';
 import { useMessagesStore, type ShareTrackInfo } from '@/features/messages/store';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,7 +26,10 @@ import {
 import { Progress } from '@/components/ui/progress';
 import { useRekordboxDetection } from '../hooks/useRekordboxDetection';
 import { useRekordboxExport, type TrackStatus } from '../hooks/useRekordboxExport';
+import { useRekordboxTree } from '../hooks/useRekordboxTree';
+import { findInfraboothFolderId } from '../utils/buildTree';
 import { ExportPhaseSection } from './ExportPhaseSection';
+import { RekordboxTreePicker } from './RekordboxTreePicker';
 
 interface TrackListActionsDropdownProps {
   tracks: TrackInfo[] | undefined;
@@ -149,8 +153,21 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
   const { data: rekordboxStatus } = useRekordboxDetection();
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
 
-  const { phase, trackStatuses, totalTracks, result, errorCode, openConfirm, startExport, cancel, close } =
+  const { phase, trackStatuses, totalTracks, result, errorCode, selectedFolderId, setSelectedFolderId, openConfirm, startExport, cancel, close } =
     useRekordboxExport(tracks, playlistName);
+
+  const { data: treeData, isLoading: treeLoading, isError: treeError, retry: retryTree } = useRekordboxTree(phase === 'confirm');
+
+  const defaultFolderId = useMemo(() => {
+    if (!treeData) return null;
+    return findInfraboothFolderId(treeData);
+  }, [treeData]);
+
+  const effectiveFolderId = selectedFolderId === undefined ? defaultFolderId : selectedFolderId;
+
+  const handleStartExport = () => {
+    startExport(effectiveFolderId);
+  };
 
   const trackCount = tracks?.length ?? 0;
   const isOpen = phase !== 'idle';
@@ -213,7 +230,7 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
       </DropdownMenu>
 
       <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { if (phase === 'exporting') cancel(); else close(); } }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg">
           {phase === 'confirm' && (
             <>
               <DialogHeader>
@@ -222,10 +239,30 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
                   {t('rekordboxExport.confirmMessage', { count: trackCount, playlist: playlistName })}
                 </DialogDescription>
               </DialogHeader>
-              <p className="text-xs text-muted-foreground">{t('rekordboxExport.confirmNote')}</p>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium">{t('rekordboxExport.destinationLabel')}</Label>
+                {treeLoading ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground py-4">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t('rekordboxExport.loadingTree')}
+                  </div>
+                ) : treeError ? (
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm text-destructive">{t('rekordboxExport.treeError')}</p>
+                    <Button variant="outline" size="sm" onClick={() => retryTree()}>{t('rekordboxExport.treeRetry')}</Button>
+                  </div>
+                ) : (
+                  <RekordboxTreePicker
+                    nodes={treeData ?? []}
+                    selectedFolderId={effectiveFolderId}
+                    onSelectFolder={setSelectedFolderId}
+                    newPlaylistName={playlistName}
+                  />
+                )}
+              </div>
               <DialogFooter>
                 <Button variant="outline" onClick={close}>{t('rekordboxExport.cancel')}</Button>
-                <Button onClick={startExport}>{t('rekordboxExport.start')}</Button>
+                <Button onClick={handleStartExport} disabled={treeLoading || treeError}>{t('rekordboxExport.start')}</Button>
               </DialogFooter>
             </>
           )}

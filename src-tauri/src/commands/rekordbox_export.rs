@@ -171,8 +171,8 @@ async fn resolve_track_sources(
 #[tauri::command]
 #[specta::specta]
 pub async fn export_playlist_to_rekordbox(
-    tracks: Vec<TrackCore>, playlist_name: String, max_concurrent: u32, manual_db_path: Option<String>, app: tauri::AppHandle,
-    cancel_state: State<'_, RekordboxExportCancellation>,
+    tracks: Vec<TrackCore>, playlist_name: String, parent_folder_id: Option<String>, max_concurrent: u32, manual_db_path: Option<String>,
+    app: tauri::AppHandle, cancel_state: State<'_, RekordboxExportCancellation>,
 ) -> Result<ExportResult, ErrorResponse> {
     cancel_state.reset();
 
@@ -218,15 +218,17 @@ pub async fn export_playlist_to_rekordbox(
             log::info!("[rekordbox-export] Database session opened successfully");
 
             log::info!("[rekordbox-export] Initializing InfraBooth folder...");
-            let folder = session.init_infrabooth_folder()?;
-            log::info!("[rekordbox-export] InfraBooth folder initialized: id={}", folder.id);
+            let infrabooth_folder = session.init_infrabooth_folder()?;
+            log::info!("[rekordbox-export] InfraBooth folder initialized: id={}", infrabooth_folder.id);
+
+            let target_parent_id = parent_folder_id.as_deref().unwrap_or(&infrabooth_folder.id);
 
             log::info!("[rekordbox-export] Finding/creating playlist '{}'...", playlist_name);
-            let named_pl = session.find_or_create_playlist(&playlist_name, &folder.id)?;
+            let named_pl = session.find_or_create_playlist(&playlist_name, target_parent_id)?;
             log::info!("[rekordbox-export] Playlist ready: id={}, name={}", named_pl.id, named_pl.name);
 
             log::info!("[rekordbox-export] Finding/creating all-tracks playlist...");
-            let all_tracks_pl = session.find_or_create_playlist(ALL_TRACKS_PLAYLIST_NAME, &folder.id)?;
+            let all_tracks_pl = session.find_or_create_playlist(ALL_TRACKS_PLAYLIST_NAME, &infrabooth_folder.id)?;
             log::info!("[rekordbox-export] All-tracks playlist ready: id={}", all_tracks_pl.id);
 
             let rekordbox_tracks_dir = file_manager::get_rekordbox_tracks_dir(&ctx.app_data_dir);

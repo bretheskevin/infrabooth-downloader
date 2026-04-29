@@ -576,6 +576,13 @@
     "cancel": "Annuler",
     "start": "Exporter",
     "rekordboxRunning": "Veuillez fermer Rekordbox avant d'exporter.",
-    "rekordboxNotConfigured": "Rekordbox non configuré"
+    "rekordboxNotConfigured": "Rekordbox non configuré",
+    "destinationLabel": "Dossier de destination",
+    "rootFolder": "Rekordbox (racine)",
+    "newPlaylistPreview": "{{name}} (nouveau)",
+    "loadingTree": "Chargement des playlists...",
+    "treeError": "Impossible de charger les playlists Rekordbox",
+    "treeRetry": "Réessayer",
+    "existingPlaylistUpdate": "(sera mis à jour)"
   }
 }

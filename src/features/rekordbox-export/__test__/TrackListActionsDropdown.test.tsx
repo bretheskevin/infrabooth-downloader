@@ -9,6 +9,7 @@ const mockOpenConfirm = vi.fn();
 const mockStartExport = vi.fn();
 const mockCancel = vi.fn();
 const mockClose = vi.fn();
+const mockSetSelectedFolderId = vi.fn();
 
 type ExportPhase = 'idle' | 'confirm' | 'exporting' | 'complete' | 'error';
 
@@ -19,6 +20,8 @@ let hookReturn = {
   result: null as ExportResult | null,
   errorCode: null as string | null,
   error: null as string | null,
+  selectedFolderId: undefined as string | null | undefined,
+  setSelectedFolderId: mockSetSelectedFolderId,
   openConfirm: mockOpenConfirm,
   startExport: mockStartExport,
   cancel: mockCancel,
@@ -33,6 +36,12 @@ vi.mock('../hooks/useRekordboxDetection', () => ({
 
 vi.mock('../hooks/useRekordboxExport', () => ({
   useRekordboxExport: () => hookReturn,
+}));
+
+let mockTreeReturn = { data: undefined as unknown, isLoading: false, isError: false };
+
+vi.mock('../hooks/useRekordboxTree', () => ({
+  useRekordboxTree: () => mockTreeReturn,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -71,8 +80,10 @@ describe('TrackListActionsDropdown', () => {
     hookReturn = {
       phase: 'idle', trackStatuses: new Map(), totalTracks: 0,
       result: null, errorCode: null, error: null,
+      selectedFolderId: undefined, setSelectedFolderId: mockSetSelectedFolderId,
       openConfirm: mockOpenConfirm, startExport: mockStartExport, cancel: mockCancel, close: mockClose,
     };
+    mockTreeReturn = { data: undefined, isLoading: false, isError: false };
   });
 
   it('renders the button', () => {
@@ -110,12 +121,29 @@ describe('TrackListActionsDropdown', () => {
     expect(mockOpenConfirm).toHaveBeenCalledOnce();
   });
 
-  it('shows confirm dialog with track count', () => {
+  it('shows confirm dialog with track count and destination label', () => {
     hookReturn.phase = 'confirm';
     render(<TrackListActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
     expect(screen.getByText('Export 1 tracks as "My Playlist"?')).toBeInTheDocument();
+    expect(screen.getByText('destinationLabel')).toBeInTheDocument();
     expect(screen.getByText('start')).toBeInTheDocument();
     expect(screen.getByText('cancel')).toBeInTheDocument();
+  });
+
+  it('shows loading state when tree is loading', () => {
+    hookReturn.phase = 'confirm';
+    mockTreeReturn = { data: undefined, isLoading: true, isError: false };
+    render(<TrackListActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
+    expect(screen.getByText('loadingTree')).toBeInTheDocument();
+    expect(screen.getByText('start')).toBeDisabled();
+  });
+
+  it('shows error state when tree fails to load', () => {
+    hookReturn.phase = 'confirm';
+    mockTreeReturn = { data: undefined, isLoading: false, isError: true };
+    render(<TrackListActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
+    expect(screen.getByText('treeError')).toBeInTheDocument();
+    expect(screen.getByText('start')).toBeDisabled();
   });
 
   it('calls startExport when export button clicked', async () => {

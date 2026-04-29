@@ -36,6 +36,7 @@ const INITIAL_STATE: ExportState = {
 
 export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName: string) {
   const [state, setState] = useState<ExportState>(INITIAL_STATE);
+  const [selectedFolderId, setSelectedFolderId] = useState<string | null | undefined>(undefined);
   const unlistenRef = useRef<UnlistenFn[]>([]);
   const cancelledRef = useRef(false);
 
@@ -64,7 +65,7 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
 
   const close = cleanup;
 
-  const startExport = useCallback(async () => {
+  const startExport = useCallback(async (folderId?: string | null) => {
     if (!tracks || tracks.length === 0) return;
 
     setState((s) => ({ ...s, phase: 'exporting', trackStatuses: new Map(), totalTracks: tracks.length }));
@@ -99,9 +100,10 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
 
     const trackCores = tracks.map(toTrackCore);
     const maxConcurrent = useSettingsStore.getState().maxConcurrentDownloads;
+    const effectiveFolder = folderId !== undefined ? folderId : selectedFolderId ?? null;
 
     try {
-      const result = await api.exportPlaylistToRekordbox(trackCores, playlistName, maxConcurrent);
+      const result = await api.exportPlaylistToRekordbox(trackCores, playlistName, effectiveFolder, maxConcurrent);
       setState((s) => ({ ...s, phase: 'complete', result }));
     } catch (err: unknown) {
       if (cancelledRef.current) return;
@@ -115,10 +117,12 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
       unlistenDownload();
       unlistenRef.current = [];
     }
-  }, [tracks, playlistName]);
+  }, [tracks, playlistName, selectedFolderId]);
 
   return {
     ...state,
+    selectedFolderId,
+    setSelectedFolderId,
     openConfirm,
     startExport,
     cancel,

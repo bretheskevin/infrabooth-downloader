@@ -21,6 +21,7 @@ import {
   type ExportTrackRequest,
   type TrackCore,
   type RekordboxPlaylistInfo,
+  type RekordboxTreeNode,
   type RekordboxStatus,
   type UnreadCountResult,
   type NotificationsPage,
@@ -120,17 +121,20 @@ export const api = {
   getDefaultRekordboxDataDirectoryParent: (): Promise<string> =>
     commands.getDefaultRekordboxDataDirectoryParent().then(unwrap),
 
-  exportToRekordbox: (tracks: ExportTrackRequest[], playlistName: string | null): Promise<ExportResult> =>
-    commands.exportToRekordbox(tracks, playlistName, getStoredRekordboxPathOverride()).then(unwrap),
+  exportToRekordbox: (tracks: ExportTrackRequest[], playlistName: string | null, parentFolderId: string | null = null): Promise<ExportResult> =>
+    commands.exportToRekordbox(tracks, playlistName, parentFolderId, getStoredRekordboxPathOverride()).then(unwrap),
 
-  exportPlaylistToRekordbox: (tracks: TrackCore[], playlistName: string, maxConcurrent: number): Promise<ExportResult> =>
-    commands.exportPlaylistToRekordbox(tracks, playlistName, maxConcurrent, getStoredRekordboxPathOverride()).then(unwrap),
+  exportPlaylistToRekordbox: (tracks: TrackCore[], playlistName: string, parentFolderId: string | null, maxConcurrent: number): Promise<ExportResult> =>
+    commands.exportPlaylistToRekordbox(tracks, playlistName, parentFolderId, maxConcurrent, getStoredRekordboxPathOverride()).then(unwrap),
 
   cancelRekordboxExport: (): Promise<void> =>
     commands.cancelRekordboxExport().then(unwrap).then(() => undefined),
 
   listRekordboxPlaylists: (): Promise<RekordboxPlaylistInfo[]> =>
     commands.listRekordboxPlaylists(getStoredRekordboxPathOverride()).then(unwrap),
+
+  getRekordboxPlaylistTree: (): Promise<RekordboxTreeNode[]> =>
+    commands.getRekordboxPlaylistTree(getStoredRekordboxPathOverride()).then(unwrap),
 
   deleteRekordboxPlaylist: (playlistId: string): Promise<void> =>
     commands.deleteRekordboxPlaylist(playlistId, getStoredRekordboxPathOverride()).then(unwrap).then(() => undefined),

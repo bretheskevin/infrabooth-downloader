@@ -70,6 +70,16 @@ pub struct RekordboxPlaylistInfo {
 
 #[derive(Debug, Clone, Serialize, Type)]
 #[serde(rename_all = "camelCase")]
+pub struct RekordboxTreeNode {
+    pub id: String,
+    pub name: String,
+    pub attribute: i32,
+    pub parent_id: String,
+    pub seq: i32,
+}
+
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
 pub enum BackupKind {
     Export,
     PreRestore,

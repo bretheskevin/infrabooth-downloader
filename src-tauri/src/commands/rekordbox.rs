@@ -3,7 +3,8 @@ use std::path::{Path, PathBuf};
 use crate::models::error::{ErrorResponse, HasErrorCode, RekordboxError};
 use crate::services::paths::get_app_data_dir;
 use crate::services::rekordbox::models::{
-    BackupInfo, BackupKind, DjmdPlaylist, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus, ALL_TRACKS_PLAYLIST_NAME,
+    BackupInfo, BackupKind, DjmdPlaylist, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus, RekordboxTreeNode,
+    ALL_TRACKS_PLAYLIST_NAME,
 };
 use crate::services::rekordbox::{
     backup, config, content,
@@ -214,16 +215,17 @@ pub fn get_default_rekordbox_data_directory_parent(_app: tauri::AppHandle) -> Re
 #[tauri::command]
 #[specta::specta]
 pub fn export_to_rekordbox(
-    tracks: Vec<ExportTrackRequest>, playlist_name: Option<String>, manual_db_path: Option<String>, app: tauri::AppHandle,
+    tracks: Vec<ExportTrackRequest>, playlist_name: Option<String>, parent_folder_id: Option<String>, manual_db_path: Option<String>, app: tauri::AppHandle,
 ) -> Result<ExportResult, ErrorResponse> {
     let ctx = RekordboxWriteContext::prepare(manual_db_path, &app)?;
 
     ctx.handle_result((|| -> Result<ExportResult, RekordboxError> {
         let mut session = ctx.open_session()?;
-        let folder = session.init_infrabooth_folder()?;
+        let infrabooth_folder = session.init_infrabooth_folder()?;
 
+        let target_parent_id = parent_folder_id.as_deref().unwrap_or(&infrabooth_folder.id);
         let target_playlist_name = playlist_name.as_deref().unwrap_or(ALL_TRACKS_PLAYLIST_NAME);
-        let pl = session.find_or_create_playlist(target_playlist_name, &folder.id)?;
+        let pl = session.find_or_create_playlist(target_playlist_name, target_parent_id)?;
 
         let rekordbox_tracks_dir = file_manager::get_rekordbox_tracks_dir(&ctx.app_data_dir);
         let mut exported_count = 0i32;
@@ -266,6 +268,14 @@ pub fn list_rekordbox_playlists(manual_db_path: Option<String>, _app: tauri::App
         .map_err(ErrorResponse::from)?;
 
     Ok(result)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn get_rekordbox_playlist_tree(manual_db_path: Option<String>, _app: tauri::AppHandle) -> Result<Vec<RekordboxTreeNode>, ErrorResponse> {
+    let rb_config = resolve_rekordbox_config(manual_db_path)?;
+    let db = database::RekordboxDatabase::open(&rb_config).map_err(ErrorResponse::from)?;
+    playlist::get_playlist_tree(&db).map_err(ErrorResponse::from)
 }
 
 #[tauri::command]

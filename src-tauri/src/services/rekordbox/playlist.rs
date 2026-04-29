@@ -2,7 +2,7 @@ use rusqlite::params;
 use uuid::Uuid;
 
 use super::database::{self, RekordboxDatabase};
-use super::models::{DjmdPlaylist, DjmdSongPlaylist, INFRABOOTH_FOLDER_NAME, PLAYLIST_TYPE_FOLDER, PLAYLIST_TYPE_PLAYLIST};
+use super::models::{DjmdPlaylist, DjmdSongPlaylist, RekordboxTreeNode, INFRABOOTH_FOLDER_NAME, PLAYLIST_TYPE_FOLDER, PLAYLIST_TYPE_PLAYLIST};
 use crate::models::error::RekordboxError;
 
 const PLAYLIST_SELECT: &str = "\
@@ -230,6 +230,18 @@ pub fn list_playlists_in_folder(db: &RekordboxDatabase, parent_id: &str) -> Resu
         .map_err(|e| RekordboxError::DatabaseError(format!("List playlists collect failed: {}", e)))?;
 
     Ok(playlists)
+}
+
+pub fn get_playlist_tree(db: &RekordboxDatabase) -> Result<Vec<RekordboxTreeNode>, RekordboxError> {
+    let mut stmt = db.conn().prepare(PLAYLIST_SELECT).map_err(|e| RekordboxError::DatabaseError(format!("Playlist tree query failed: {}", e)))?;
+
+    let nodes = stmt
+        .query_map([], |row| Ok(RekordboxTreeNode { id: row.get(0)?, name: row.get(2)?, attribute: row.get(3)?, parent_id: row.get(4)?, seq: row.get(1)? }))
+        .map_err(|e| RekordboxError::DatabaseError(format!("Playlist tree fetch failed: {}", e)))?
+        .collect::<Result<Vec<RekordboxTreeNode>, _>>()
+        .map_err(|e| RekordboxError::DatabaseError(format!("Playlist tree collect failed: {}", e)))?;
+
+    Ok(nodes)
 }
 
 pub fn count_playlist_songs(db: &RekordboxDatabase, playlist_id: &str) -> Result<i32, RekordboxError> {

@@ -74,8 +74,8 @@ pub use like::{like_track, unlike_track};
 
 pub mod rekordbox;
 pub use rekordbox::{
-    delete_rekordbox_playlist, detect_rekordbox, export_to_rekordbox, get_default_rekordbox_data_directory_parent, list_rekordbox_backups,
-    list_rekordbox_playlists, quit_rekordbox, restore_rekordbox_backup,
+    delete_rekordbox_playlist, detect_rekordbox, export_to_rekordbox, get_default_rekordbox_data_directory_parent, get_rekordbox_playlist_tree,
+    list_rekordbox_backups, list_rekordbox_playlists, quit_rekordbox, restore_rekordbox_backup,
 };
 
 pub mod rekordbox_export;

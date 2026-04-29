@@ -112,7 +112,7 @@ describe('useRekordboxExport', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('passes maxConcurrent from settings store', async () => {
+  it('passes maxConcurrent and null parentFolderId from settings store', async () => {
     mockExportPlaylistToRekordbox.mockResolvedValue(mockResult);
 
     const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
@@ -124,6 +124,60 @@ describe('useRekordboxExport', () => {
     expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(
       expect.any(Array),
       'Test Playlist',
+      null,
+      3,
+    );
+  });
+
+  it('starts with undefined selectedFolderId', () => {
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    expect(result.current.selectedFolderId).toBeUndefined();
+  });
+
+  it('updates selectedFolderId via setSelectedFolderId', () => {
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+
+    act(() => {
+      result.current.setSelectedFolderId('folder-123');
+    });
+
+    expect(result.current.selectedFolderId).toBe('folder-123');
+  });
+
+  it('passes selectedFolderId to export API', async () => {
+    mockExportPlaylistToRekordbox.mockResolvedValue(mockResult);
+
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+
+    act(() => {
+      result.current.setSelectedFolderId('folder-456');
+    });
+
+    await act(async () => {
+      await result.current.startExport();
+    });
+
+    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(
+      expect.any(Array),
+      'Test Playlist',
+      'folder-456',
+      3,
+    );
+  });
+
+  it('uses folderId override when passed to startExport', async () => {
+    mockExportPlaylistToRekordbox.mockResolvedValue(mockResult);
+
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+
+    await act(async () => {
+      await result.current.startExport('override-folder');
+    });
+
+    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(
+      expect.any(Array),
+      'Test Playlist',
+      'override-folder',
       3,
     );
   });
