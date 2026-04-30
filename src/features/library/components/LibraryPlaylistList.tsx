@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
+import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import { LibraryPlaylistItem } from './LibraryPlaylistItem';
 import { useLibraryStore } from '../store';
 import type { LibraryPlaylist } from '@/bindings';
@@ -48,6 +49,7 @@ function ScrollablePlaylistList({
   downloadingPlaylistId: number | null;
   animateRefresh: boolean;
 }) {
+  const isWidescreen = useIsWidescreen();
   const { parentRef, virtualItems, totalSize, getScrollOffset } = useVirtualizedList({
     count: playlists.length,
     itemHeight: PLAYLIST_ITEM_HEIGHT,
@@ -57,6 +59,25 @@ function ScrollablePlaylistList({
   useEffect(() => {
     return () => { useLibraryStore.getState().setListScrollTop(getScrollOffset()); };
   }, [getScrollOffset]);
+
+  if (isWidescreen) {
+    return (
+      <div
+        data-testid="widescreen-grid"
+        className={`grid grid-cols-[repeat(auto-fill,minmax(420px,1fr))] gap-1 flex-1 min-h-0 overflow-y-auto pr-2${animateRefresh ? ' library-list-refresh' : ''}`}
+      >
+        {playlists.map((playlist) => (
+          <LibraryPlaylistItem
+            key={playlist.id}
+            playlist={playlist}
+            onOpenDetail={() => onOpenDetail(playlist)}
+            onDownload={() => onDownload(playlist)}
+            isDownloading={downloadingPlaylistId === playlist.id}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <VirtualListContainer

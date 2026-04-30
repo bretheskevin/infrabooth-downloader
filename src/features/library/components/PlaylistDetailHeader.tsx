@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { Music } from 'lucide-react';
 import { DetailHeader } from '@/components/DetailHeader';
 import { ArtistLink } from '@/components/ArtistLink';
+import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import type { LibraryPlaylist } from '@/bindings';
 import { formatTotalDuration } from '@/lib/format';
 
@@ -23,13 +24,17 @@ export function PlaylistDetailHeader({
   actions,
 }: PlaylistDetailHeaderProps) {
   const { t } = useTranslation();
+  const isWidescreen = useIsWidescreen();
 
   return (
     <DetailHeader
       onBack={onBack}
       title={playlist.title}
       artwork={
-        <div className="w-12 h-12 rounded-lg bg-muted overflow-hidden shrink-0">
+        <div
+          data-testid="artwork-container"
+          className={`${isWidescreen ? 'w-[140px] h-[140px] rounded-xl' : 'w-12 h-12 rounded-lg'} bg-muted overflow-hidden shrink-0`}
+        >
           {artworkUrl ? (
             <img
               src={artworkUrl}
@@ -38,7 +43,7 @@ export function PlaylistDetailHeader({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <Music className="w-5 h-5" />
+              <Music data-testid="artwork-placeholder-icon" className={isWidescreen ? 'w-10 h-10' : 'w-5 h-5'} />
             </div>
           )}
         </div>
