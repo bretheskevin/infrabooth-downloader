@@ -1,7 +1,8 @@
-import { Search, Loader2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
-import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
-import { ApiError } from '@/lib/tauri';
+import { Search, Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
+import { ApiError } from "@/lib/tauri";
+import { useIsWidescreen } from "@/hooks/useIsWidescreen";
 
 interface SearchListShellProps {
   hasSearched: boolean;
@@ -31,7 +32,12 @@ export function SearchListShell({
   children,
 }: SearchListShellProps) {
   const { t } = useTranslation();
-  const { sentinelRef } = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
+  const isWidescreen = useIsWidescreen();
+  const { sentinelRef } = useInfiniteScroll({
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+  });
 
   if (!hasSearched) {
     return (
@@ -51,8 +57,11 @@ export function SearchListShell({
   }
 
   if (error) {
-    const isRateLimited = error instanceof ApiError && error.code === 'RATE_LIMITED';
-    const errorMessage = isRateLimited ? t('search.rateLimited') : fallbackErrorMessage;
+    const isRateLimited =
+      error instanceof ApiError && error.code === "RATE_LIMITED";
+    const errorMessage = isRateLimited
+      ? t("search.rateLimited")
+      : fallbackErrorMessage;
     return (
       <div className="flex items-center justify-center py-16">
         <p className="text-sm text-destructive">{errorMessage}</p>
@@ -69,7 +78,13 @@ export function SearchListShell({
   }
 
   return (
-    <div>
+    <div
+      className={
+        isWidescreen
+          ? "grid grid-cols-[repeat(auto-fill,minmax(440px,1fr))] gap-x-4"
+          : undefined
+      }
+    >
       {children}
       <div ref={sentinelRef} className="h-8 flex items-center justify-center">
         {isFetchingNextPage && (
