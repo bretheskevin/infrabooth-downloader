@@ -59,6 +59,16 @@ export function ArtistCarouselSection({
 
   if (displayedArtists.length === 0) return null;
 
+  const avatars = displayedArtists.map((artist) => (
+    <ArtistAvatar
+      key={artist.id}
+      artist={artist}
+      hasNew={getHasNew?.(artist)}
+      isSelected={selectedArtistId === artist.id}
+      onClick={() => onSelectArtist(artist)}
+    />
+  ));
+
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
@@ -76,27 +86,11 @@ export function ArtistCarouselSection({
       </div>
       {isWidescreen ? (
         <div className="grid grid-cols-[repeat(auto-fill,minmax(78px,1fr))] gap-3 py-1 px-1">
-          {displayedArtists.map((artist) => (
-            <ArtistAvatar
-              key={artist.id}
-              artist={artist}
-              hasNew={getHasNew?.(artist)}
-              isSelected={selectedArtistId === artist.id}
-              onClick={() => onSelectArtist(artist)}
-            />
-          ))}
+          {avatars}
         </div>
       ) : (
         <ScrollCarousel ariaLabelLeft={labels.scrollLeft} ariaLabelRight={labels.scrollRight}>
-          {displayedArtists.map((artist) => (
-            <ArtistAvatar
-              key={artist.id}
-              artist={artist}
-              hasNew={getHasNew?.(artist)}
-              isSelected={selectedArtistId === artist.id}
-              onClick={() => onSelectArtist(artist)}
-            />
-          ))}
+          {avatars}
         </ScrollCarousel>
       )}
     </div>

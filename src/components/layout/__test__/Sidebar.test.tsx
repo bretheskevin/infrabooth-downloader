@@ -111,11 +111,18 @@ describe("Sidebar", () => {
     expect(screen.getByText("Search")).toBeInTheDocument();
   });
 
-  it("should render activity section", () => {
-    render(<Sidebar {...defaultProps} />, { wrapper: QueryWrapper });
+  it("should render activity section when signed in", () => {
+    render(<Sidebar {...defaultProps} isSignedIn />, { wrapper: QueryWrapper });
     expect(screen.getByText("Activity")).toBeInTheDocument();
     expect(screen.getByText("Messages")).toBeInTheDocument();
     expect(screen.getByText("Notifications")).toBeInTheDocument();
+  });
+
+  it("should NOT render activity section when not signed in", () => {
+    render(<Sidebar {...defaultProps} isSignedIn={false} />, { wrapper: QueryWrapper });
+    expect(screen.queryByText("Activity")).not.toBeInTheDocument();
+    expect(screen.queryByText("Messages")).not.toBeInTheDocument();
+    expect(screen.queryByText("Notifications")).not.toBeInTheDocument();
   });
 
   it("should mark download as active when on download page", () => {
@@ -163,14 +170,14 @@ describe("Sidebar", () => {
 
   it("should show messages as active when messages page is open", () => {
     useMessagesStore.setState({ isPageOpen: true });
-    render(<Sidebar {...defaultProps} />, { wrapper: QueryWrapper });
+    render(<Sidebar {...defaultProps} isSignedIn />, { wrapper: QueryWrapper });
     const messagesButton = screen.getByText("Messages").closest("button");
     expect(messagesButton?.className).toContain("bg-primary/10");
   });
 
   it("should show notifications as active when notifications page is open", () => {
     useNotificationsStore.setState({ isPageOpen: true });
-    render(<Sidebar {...defaultProps} />, { wrapper: QueryWrapper });
+    render(<Sidebar {...defaultProps} isSignedIn />, { wrapper: QueryWrapper });
     const notificationsButton = screen
       .getByText("Notifications")
       .closest("button");

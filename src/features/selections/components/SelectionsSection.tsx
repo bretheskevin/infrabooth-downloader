@@ -11,6 +11,12 @@ import { useSelections } from '../hooks/useSelections';
 
 const CURATED_TITLES = ['Daily Drops', 'Weekly Wave'] as const;
 
+function selectionGridClassName(isWidescreen: boolean) {
+  return isWidescreen
+    ? "grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
+    : "grid grid-cols-2 sm:grid-cols-3 gap-3";
+}
+
 interface SelectionsSectionProps {
   onSelectMix: (mix: Selection) => void;
   onDownloadMix: (mix: Selection) => void;
@@ -19,7 +25,7 @@ interface SelectionsSectionProps {
 function LoadingSkeleton({ count = 3, isWidescreen = false }: { count?: number; isWidescreen?: boolean }) {
   const actualCount = isWidescreen ? Math.max(count, 4) : count;
   return (
-    <div className={isWidescreen ? "grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]" : "grid grid-cols-2 sm:grid-cols-3 gap-3"}>
+    <div className={selectionGridClassName(isWidescreen)}>
       {Array.from({ length: actualCount }).map((_, i) => (
         <div key={i} className="rounded-xl border border-border overflow-hidden">
           <Skeleton className="h-24 rounded-none" />
@@ -56,9 +62,7 @@ function SelectionGroup({
   onDownload,
   isWidescreen = false,
 }: SelectionGroupProps) {
-  const gridClassName = isWidescreen
-    ? "grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
-    : "grid grid-cols-2 sm:grid-cols-3 gap-3";
+  const gridClassName = selectionGridClassName(isWidescreen);
 
   return (
     <div className="space-y-3">

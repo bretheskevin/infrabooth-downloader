@@ -5,6 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { VirtualListContainer, VirtualRow } from '@/components/ui/virtual-list';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
+import { cn } from '@/lib/utils';
 import { LibraryPlaylistItem } from './LibraryPlaylistItem';
 import { useLibraryStore } from '../store';
 import type { LibraryPlaylist } from '@/bindings';
@@ -64,7 +65,7 @@ function ScrollablePlaylistList({
     return (
       <div
         data-testid="widescreen-grid"
-        className={`grid grid-cols-[repeat(auto-fill,minmax(420px,1fr))] gap-1 flex-1 min-h-0 overflow-y-auto pr-2${animateRefresh ? ' library-list-refresh' : ''}`}
+        className={cn("grid grid-cols-[repeat(auto-fill,minmax(420px,1fr))] content-start gap-1 flex-1 min-h-0 overflow-y-auto pr-2", animateRefresh && "library-list-refresh")}
       >
         {playlists.map((playlist) => (
           <LibraryPlaylistItem
@@ -83,7 +84,7 @@ function ScrollablePlaylistList({
     <VirtualListContainer
       parentRef={parentRef}
       totalSize={totalSize}
-      className={`flex-1 min-h-0 pr-2${animateRefresh ? ' library-list-refresh' : ''}`}
+      className={cn("flex-1 min-h-0 pr-2", animateRefresh && "library-list-refresh")}
     >
       {virtualItems.map((virtualItem) => {
         const playlist = playlists[virtualItem.index];

@@ -14,7 +14,7 @@ export function MessagesPage() {
   return (
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex items-center gap-2 mb-4">
-        <Button variant="ghost" size="icon" onClick={handleClose}>
+        <Button variant="ghost" size="icon" onClick={handleClose} aria-label={t('common.back')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h2 className="text-lg font-semibold">{t('directMessages.title')}</h2>

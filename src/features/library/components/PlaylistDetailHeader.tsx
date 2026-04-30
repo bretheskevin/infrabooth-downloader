@@ -3,6 +3,7 @@ import { Music } from 'lucide-react';
 import { DetailHeader } from '@/components/DetailHeader';
 import { ArtistLink } from '@/components/ArtistLink';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
+import { cn } from '@/lib/utils';
 import type { LibraryPlaylist } from '@/bindings';
 import { formatTotalDuration } from '@/lib/format';
 
@@ -33,7 +34,7 @@ export function PlaylistDetailHeader({
       artwork={
         <div
           data-testid="artwork-container"
-          className={`${isWidescreen ? 'w-[140px] h-[140px] rounded-xl' : 'w-12 h-12 rounded-lg'} bg-muted overflow-hidden shrink-0`}
+          className={cn("bg-muted overflow-hidden shrink-0", isWidescreen ? "w-[140px] h-[140px] rounded-xl" : "w-12 h-12 rounded-lg")}
         >
           {artworkUrl ? (
             <img
@@ -43,7 +44,7 @@ export function PlaylistDetailHeader({
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <Music data-testid="artwork-placeholder-icon" className={isWidescreen ? 'w-10 h-10' : 'w-5 h-5'} />
+              <Music data-testid="artwork-placeholder-icon" className={cn(isWidescreen ? "w-10 h-10" : "w-5 h-5")} />
             </div>
           )}
         </div>
