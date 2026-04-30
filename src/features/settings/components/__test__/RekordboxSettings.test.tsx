@@ -26,6 +26,13 @@ vi.mock('react-i18next', () => ({
       'settings.rekordboxSelectDirectory': 'Select Rekordbox directory',
       'settings.browse': 'Browse',
       'settings.notSet': 'Not set',
+      'settings.rekordboxDefaultExportLabel': 'Default export folder',
+      'settings.rekordboxDefaultExportDescription': 'Choose where new playlists are created in Rekordbox.',
+      'settings.rekordboxDefaultExportDefault': 'InfraBooth Downloader (default)',
+      'settings.rekordboxDefaultExportChange': 'Change',
+      'settings.rekordboxDefaultExportReset': 'Reset to default',
+      'settings.rekordboxDefaultExportDeleted': 'The saved export folder no longer exists in Rekordbox. Reset to default.',
+      'settings.rekordboxDefaultExportLoadingTree': 'Loading folders...',
     }[key] || key),
   }),
 }));
@@ -40,9 +47,19 @@ vi.mock('@/hooks', () => ({
   useFolderSelection: () => ({ selectFolder: mockSelectFolder, error: null }),
 }));
 
+const mockUseRekordboxTree = vi.fn().mockReturnValue({ data: undefined, isLoading: false, isError: false, retry: vi.fn() });
+
+vi.mock('@/features/rekordbox-export/hooks/useRekordboxTree', () => ({
+  useRekordboxTree: (...args: unknown[]) => mockUseRekordboxTree(...args),
+}));
+
+const mockSetRekordboxDefaultExportFolderId = vi.fn();
+
 const mockStoreState: Record<string, unknown> = {
   rekordboxPathOverride: '',
   setRekordboxPathOverride: mockSetRekordboxPathOverride,
+  rekordboxDefaultExportFolderId: null,
+  setRekordboxDefaultExportFolderId: mockSetRekordboxDefaultExportFolderId,
 };
 
 vi.mock('@/features/settings/store', () => ({
@@ -59,6 +76,8 @@ describe('RekordboxSettings', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockStoreState.rekordboxPathOverride = '';
+    mockStoreState.rekordboxDefaultExportFolderId = null;
+    mockUseRekordboxTree.mockReturnValue({ data: undefined, isLoading: false, isError: false, retry: vi.fn() });
   });
 
   it('shows success state when auto detection works', async () => {
@@ -147,5 +166,81 @@ describe('RekordboxSettings', () => {
 
     expect(await screen.findByText('Unable to check Rekordbox right now.')).toBeInTheDocument();
     expect(screen.getByText('Retry detection')).toBeInTheDocument();
+  });
+
+  describe('default export folder section', () => {
+    it('shows default export folder section when found and not running', async () => {
+      mockDetectRekordbox.mockResolvedValue({ found: true, version: '6', dbPath: '/auto/master.db', isRunning: false });
+
+      render(<RekordboxSettings />, { wrapper });
+
+      expect(await screen.findByText('Default export folder')).toBeInTheDocument();
+      expect(screen.getByText('InfraBooth Downloader (default)')).toBeInTheDocument();
+      expect(screen.getByText('Change')).toBeInTheDocument();
+    });
+
+    it('does not show default export folder section when running', async () => {
+      mockDetectRekordbox.mockResolvedValue({ found: true, version: '6', dbPath: '/auto/master.db', isRunning: true });
+
+      render(<RekordboxSettings />, { wrapper });
+
+      await screen.findByText('Running');
+      expect(screen.queryByText('Default export folder')).not.toBeInTheDocument();
+    });
+
+    it('shows resolved folder name when a folder is selected', async () => {
+      mockStoreState.rekordboxDefaultExportFolderId = 'folder-1';
+      mockUseRekordboxTree.mockReturnValue({
+        data: [
+          { id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 },
+        ],
+        isLoading: false,
+        isError: false,
+        retry: vi.fn(),
+      });
+      mockDetectRekordbox.mockResolvedValue({ found: true, version: '6', dbPath: '/auto/master.db', isRunning: false });
+
+      render(<RekordboxSettings />, { wrapper });
+
+      expect(await screen.findByText('My Folder')).toBeInTheDocument();
+      expect(screen.getByText('Reset to default')).toBeInTheDocument();
+    });
+
+    it('shows warning when stored folder does not exist in tree', async () => {
+      mockStoreState.rekordboxDefaultExportFolderId = 'nonexistent-folder';
+      mockUseRekordboxTree.mockReturnValue({
+        data: [
+          { id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 },
+        ],
+        isLoading: false,
+        isError: false,
+        retry: vi.fn(),
+      });
+      mockDetectRekordbox.mockResolvedValue({ found: true, version: '6', dbPath: '/auto/master.db', isRunning: false });
+
+      render(<RekordboxSettings />, { wrapper });
+
+      expect(await screen.findByText('The saved export folder no longer exists in Rekordbox. Reset to default.')).toBeInTheDocument();
+    });
+
+    it('resets default folder when reset button is clicked', async () => {
+      mockStoreState.rekordboxDefaultExportFolderId = 'folder-1';
+      mockUseRekordboxTree.mockReturnValue({
+        data: [
+          { id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 },
+        ],
+        isLoading: false,
+        isError: false,
+        retry: vi.fn(),
+      });
+      mockDetectRekordbox.mockResolvedValue({ found: true, version: '6', dbPath: '/auto/master.db', isRunning: false });
+
+      render(<RekordboxSettings />, { wrapper });
+
+      const resetButton = await screen.findByText('Reset to default');
+      await user.click(resetButton);
+
+      expect(mockSetRekordboxDefaultExportFolderId).toHaveBeenCalledWith(null);
+    });
   });
 });

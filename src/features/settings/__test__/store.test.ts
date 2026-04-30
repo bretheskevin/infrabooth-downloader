@@ -199,6 +199,32 @@ describe('settingsStore', () => {
     });
   });
 
+  describe('rekordboxDefaultExportFolderId', () => {
+    it('should have null as default', () => {
+      const { rekordboxDefaultExportFolderId } = useSettingsStore.getState();
+      expect(rekordboxDefaultExportFolderId).toBeNull();
+    });
+
+    it('should set rekordboxDefaultExportFolderId', () => {
+      useSettingsStore.getState().setRekordboxDefaultExportFolderId('folder-123');
+      expect(useSettingsStore.getState().rekordboxDefaultExportFolderId).toBe('folder-123');
+    });
+
+    it('should reset rekordboxDefaultExportFolderId to null', () => {
+      useSettingsStore.getState().setRekordboxDefaultExportFolderId('folder-123');
+      useSettingsStore.getState().setRekordboxDefaultExportFolderId(null);
+      expect(useSettingsStore.getState().rekordboxDefaultExportFolderId).toBeNull();
+    });
+
+    it('should persist rekordboxDefaultExportFolderId to localStorage', () => {
+      useSettingsStore.getState().setRekordboxDefaultExportFolderId('folder-456');
+
+      const stored = localStorage.getItem('sc-downloader-settings');
+      const parsed = JSON.parse(stored!);
+      expect(parsed.state.rekordboxDefaultExportFolderId).toBe('folder-456');
+    });
+  });
+
   describe('crossfade settings', () => {
     it('should have crossfadeEnabled as false by default', () => {
       const { crossfadeEnabled } = useSettingsStore.getState();

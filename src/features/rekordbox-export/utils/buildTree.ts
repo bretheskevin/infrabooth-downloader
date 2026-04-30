@@ -32,6 +32,10 @@ export function getAncestorIds(nodes: RekordboxTreeNode[], folderId: string | nu
   return ancestors;
 }
 
+export function folderExistsInTree(nodes: RekordboxTreeNode[], folderId: string): boolean {
+  return nodes.some((n) => n.id === folderId && n.attribute === PLAYLIST_TYPE_FOLDER);
+}
+
 export interface TreeNode {
   id: string;
   name: string;

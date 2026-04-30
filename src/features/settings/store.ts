@@ -10,6 +10,7 @@ export type MediaViewMode = 'card' | 'list';
 interface SettingsState {
   downloadPath: string;
   rekordboxPathOverride: string;
+  rekordboxDefaultExportFolderId: string | null;
   language: 'en' | 'fr';
   theme: Theme;
   maxConcurrentDownloads: number;
@@ -24,6 +25,7 @@ interface SettingsState {
   _hasHydrated: boolean;
   setDownloadPath: (path: string) => void;
   setRekordboxPathOverride: (path: string) => void;
+  setRekordboxDefaultExportFolderId: (id: string | null) => void;
   setLanguage: (lang: 'en' | 'fr') => void;
   setTheme: (theme: Theme) => void;
   setMaxConcurrentDownloads: (n: number) => void;
@@ -41,6 +43,7 @@ interface SettingsState {
 const PERSISTED_KEYS = [
   'downloadPath',
   'rekordboxPathOverride',
+  'rekordboxDefaultExportFolderId',
   'language',
   'theme',
   'maxConcurrentDownloads',
@@ -59,6 +62,7 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       downloadPath: '',
       rekordboxPathOverride: '',
+      rekordboxDefaultExportFolderId: null,
       language: 'en',
       theme: 'system',
       maxConcurrentDownloads: 3,
@@ -73,6 +77,7 @@ export const useSettingsStore = create<SettingsState>()(
       _hasHydrated: false,
       setDownloadPath: makeSetter('downloadPath', set),
       setRekordboxPathOverride: makeSetter('rekordboxPathOverride', set),
+      setRekordboxDefaultExportFolderId: makeSetter('rekordboxDefaultExportFolderId', set),
       setLanguage: makeSetter('language', set),
       setTheme: makeSetter('theme', set),
       setMaxConcurrentDownloads: makeClampedSetter('maxConcurrentDownloads', set, 1, 10),

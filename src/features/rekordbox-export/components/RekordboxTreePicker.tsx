@@ -10,7 +10,7 @@ interface RekordboxTreePickerProps {
   nodes: RekordboxTreeNode[];
   selectedFolderId: string | null;
   onSelectFolder: (folderId: string | null) => void;
-  newPlaylistName: string;
+  newPlaylistName?: string;
 }
 
 function NewPlaylistPreview({ name }: { name: string }) {
@@ -56,12 +56,12 @@ function TreeFolderNode({
   node: TreeNode;
   selectedFolderId: string | null;
   onSelectFolder: (folderId: string | null) => void;
-  newPlaylistName: string;
+  newPlaylistName?: string;
   expandedIds: Set<string>;
 }) {
   const [open, setOpen] = useState(expandedIds.has(node.id));
   const isSelected = selectedFolderId === node.id;
-  const hasExistingPlaylist = isSelected && node.children.some((c) => !c.isFolder && c.name === newPlaylistName);
+  const hasExistingPlaylist = newPlaylistName !== undefined && isSelected && node.children.some((c) => !c.isFolder && c.name === newPlaylistName);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -94,10 +94,10 @@ function TreeFolderNode({
                 expandedIds={expandedIds}
               />
             ) : (
-              <TreePlaylistNode key={child.id} node={child} isUpdateTarget={isSelected && child.name === newPlaylistName} />
+              <TreePlaylistNode key={child.id} node={child} isUpdateTarget={!!newPlaylistName && isSelected && child.name === newPlaylistName} />
             ),
           )}
-          {isSelected && !hasExistingPlaylist && <NewPlaylistPreview name={newPlaylistName} />}
+          {newPlaylistName !== undefined && isSelected && !hasExistingPlaylist && <NewPlaylistPreview name={newPlaylistName} />}
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -111,7 +111,7 @@ export function RekordboxTreePicker({ nodes, selectedFolderId, onSelectFolder, n
   const expandedIds = useMemo(() => getAncestorIds(nodes, selectedFolderId), [nodes, selectedFolderId]);
 
   const isRootSelected = selectedFolderId === null;
-  const rootHasExistingPlaylist = isRootSelected && tree.some((n) => !n.isFolder && n.name === newPlaylistName);
+  const rootHasExistingPlaylist = newPlaylistName !== undefined && isRootSelected && tree.some((n) => !n.isFolder && n.name === newPlaylistName);
 
   return (
     <div className="max-h-64 overflow-y-auto rounded-md border p-2 text-sm">
@@ -124,7 +124,7 @@ export function RekordboxTreePicker({ nodes, selectedFolderId, onSelectFolder, n
         <Folder className="h-3.5 w-3.5" />
         <span>{t('rekordboxExport.rootFolder')}</span>
       </button>
-      {isRootSelected && !rootHasExistingPlaylist && <NewPlaylistPreview name={newPlaylistName} />}
+      {newPlaylistName !== undefined && isRootSelected && !rootHasExistingPlaylist && <NewPlaylistPreview name={newPlaylistName} />}
       {tree.map((node) =>
         node.isFolder ? (
           <TreeFolderNode
@@ -136,7 +136,7 @@ export function RekordboxTreePicker({ nodes, selectedFolderId, onSelectFolder, n
             expandedIds={expandedIds}
           />
         ) : (
-          <TreePlaylistNode key={node.id} node={node} isUpdateTarget={isRootSelected && node.name === newPlaylistName} />
+          <TreePlaylistNode key={node.id} node={node} isUpdateTarget={!!newPlaylistName && isRootSelected && node.name === newPlaylistName} />
         ),
       )}
     </div>

@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { BackupSection } from './BackupSection';
+import { DefaultExportFolderSection } from './DefaultExportFolderSection';
 import { cn } from '@/lib/utils';
 import { api } from '@/lib/tauri';
 import { useSettingsStore } from '@/features/settings/store';
@@ -150,6 +151,12 @@ export function RekordboxSettings() {
               )}
             </div>
           </div>
+        </>
+      )}
+      {data?.found && !data.isRunning && (
+        <>
+          <Separator />
+          <DefaultExportFolderSection />
         </>
       )}
       {data?.found && (

@@ -5,6 +5,7 @@ import type { TrackInfo, RekordboxExportStatus } from '@/bindings';
 import { useLinkActions } from '@/hooks/useLinkActions';
 import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
 import { useIsSignedIn } from '@/features/auth/store';
+import { useSettingsStore } from '@/features/settings/store';
 import { useMessagesStore, type ShareTrackInfo } from '@/features/messages/store';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -27,7 +28,7 @@ import { Progress } from '@/components/ui/progress';
 import { useRekordboxDetection } from '../hooks/useRekordboxDetection';
 import { useRekordboxExport, type TrackStatus } from '../hooks/useRekordboxExport';
 import { useRekordboxTree } from '../hooks/useRekordboxTree';
-import { findInfraboothFolderId, findPlaylistParentId } from '../utils/buildTree';
+import { findInfraboothFolderId, findPlaylistParentId, folderExistsInTree } from '../utils/buildTree';
 import { ExportPhaseSection } from './ExportPhaseSection';
 import { RekordboxTreePicker } from './RekordboxTreePicker';
 
@@ -157,11 +158,16 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
     useRekordboxExport(tracks, playlistName);
 
   const { data: treeData, isLoading: treeLoading, isError: treeError, retry: retryTree } = useRekordboxTree(phase === 'confirm');
+  const storedDefaultFolderId = useSettingsStore((s) => s.rekordboxDefaultExportFolderId);
 
   const defaultFolderId = useMemo(() => {
     if (!treeData) return null;
-    return findPlaylistParentId(treeData, playlistName) ?? findInfraboothFolderId(treeData);
-  }, [treeData, playlistName]);
+    const playlistParent = findPlaylistParentId(treeData, playlistName);
+    if (playlistParent !== null) return playlistParent;
+    if (storedDefaultFolderId === 'root') return null;
+    if (storedDefaultFolderId && folderExistsInTree(treeData, storedDefaultFolderId)) return storedDefaultFolderId;
+    return findInfraboothFolderId(treeData);
+  }, [treeData, playlistName, storedDefaultFolderId]);
 
   const effectiveFolderId = selectedFolderId === undefined ? defaultFolderId : selectedFolderId;
 

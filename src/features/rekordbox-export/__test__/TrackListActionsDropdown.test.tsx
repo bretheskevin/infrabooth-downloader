@@ -1,7 +1,9 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { TrackInfo, ExportResult, RekordboxStatus } from '@/bindings';
+import type { TrackInfo, ExportResult, RekordboxStatus, RekordboxTreeNode } from '@/bindings';
+import { useSettingsStore } from '@/features/settings/store';
+import { TooltipProvider } from '@/components/ui/tooltip';
 import type { TrackStatus } from '../hooks/useRekordboxExport';
 import { TrackListActionsDropdown } from '../components/TrackListActionsDropdown';
 
@@ -251,5 +253,78 @@ describe('TrackListActionsDropdown', () => {
     hookReturn.error = 'Something unexpected happened';
     render(<TrackListActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
     expect(screen.getByText('error')).toBeInTheDocument();
+  });
+
+  describe('defaultFolderId priority chain', () => {
+    const FOLDER_ATTR = 1;
+    const PLAYLIST_ATTR = 0;
+
+    const makeTree = (...nodes: RekordboxTreeNode[]): RekordboxTreeNode[] => nodes;
+
+    const storedFolderId = 'stored-default-folder';
+    const infraboothFolderId = 'infrabooth-folder';
+
+    beforeEach(() => {
+      useSettingsStore.setState({ rekordboxDefaultExportFolderId: null });
+    });
+
+    it('uses stored default folder when playlist parent is not found', async () => {
+      const user = userEvent.setup();
+      hookReturn.phase = 'confirm';
+      mockTreeReturn = {
+        data: makeTree(
+          { id: storedFolderId, name: 'My Custom Folder', attribute: FOLDER_ATTR, parentId: 'root', seq: 0 },
+          { id: infraboothFolderId, name: 'InfraBooth Downloader', attribute: FOLDER_ATTR, parentId: 'root', seq: 1 },
+        ),
+        isLoading: false,
+        isError: false,
+      };
+      useSettingsStore.setState({ rekordboxDefaultExportFolderId: storedFolderId });
+
+      render(<TrackListActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
+      await user.click(screen.getByText('start'));
+      expect(mockStartExport).toHaveBeenCalledWith(storedFolderId);
+    });
+
+    it('prefers playlist parent over stored default', async () => {
+      const user = userEvent.setup();
+      hookReturn.phase = 'confirm';
+      const playlistParentId = 'parent-folder';
+      mockTreeReturn = {
+        data: makeTree(
+          { id: playlistParentId, name: 'Parent Folder', attribute: FOLDER_ATTR, parentId: 'root', seq: 0 },
+          { id: storedFolderId, name: 'My Custom Folder', attribute: FOLDER_ATTR, parentId: 'root', seq: 1 },
+          { id: 'playlist-1', name: 'My Playlist', attribute: PLAYLIST_ATTR, parentId: playlistParentId, seq: 0 },
+        ),
+        isLoading: false,
+        isError: false,
+      };
+      useSettingsStore.setState({ rekordboxDefaultExportFolderId: storedFolderId });
+
+      render(
+        <TooltipProvider>
+          <TrackListActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />
+        </TooltipProvider>,
+      );
+      await user.click(screen.getByText('start'));
+      expect(mockStartExport).toHaveBeenCalledWith(playlistParentId);
+    });
+
+    it('falls back to InfraBooth folder when stored default does not exist in tree', async () => {
+      const user = userEvent.setup();
+      hookReturn.phase = 'confirm';
+      mockTreeReturn = {
+        data: makeTree(
+          { id: infraboothFolderId, name: 'InfraBooth Downloader', attribute: FOLDER_ATTR, parentId: 'root', seq: 0 },
+        ),
+        isLoading: false,
+        isError: false,
+      };
+      useSettingsStore.setState({ rekordboxDefaultExportFolderId: 'non-existent-folder' });
+
+      render(<TrackListActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
+      await user.click(screen.getByText('start'));
+      expect(mockStartExport).toHaveBeenCalledWith(infraboothFolderId);
+    });
   });
 });
