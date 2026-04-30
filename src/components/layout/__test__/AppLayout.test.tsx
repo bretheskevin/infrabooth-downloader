@@ -154,5 +154,15 @@ describe("AppLayout", () => {
       expect(main?.className).not.toContain("container");
       expect(main?.className).not.toContain("mx-auto");
     });
+
+    it("should use px-8 padding on main element when widescreen", () => {
+      const { container } = render(
+        <AppLayout {...defaultProps}>
+          <div>Content</div>
+        </AppLayout>,
+      );
+      const main = container.querySelector("main");
+      expect(main?.className).toContain("px-8");
+    });
   });
 });

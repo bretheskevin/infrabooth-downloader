@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 
 import type { Selection } from '@/bindings';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 
 import { SelectionCard } from './SelectionCard';
 import { useSelections } from '../hooks/useSelections';
@@ -15,10 +16,11 @@ interface SelectionsSectionProps {
   onDownloadMix: (mix: Selection) => void;
 }
 
-function LoadingSkeleton({ count = 3 }: { count?: number }) {
+function LoadingSkeleton({ count = 3, isWidescreen = false }: { count?: number; isWidescreen?: boolean }) {
+  const actualCount = isWidescreen ? Math.max(count, 4) : count;
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-      {Array.from({ length: count }).map((_, i) => (
+    <div className={isWidescreen ? "grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]" : "grid grid-cols-2 sm:grid-cols-3 gap-3"}>
+      {Array.from({ length: actualCount }).map((_, i) => (
         <div key={i} className="rounded-xl border border-border overflow-hidden">
           <Skeleton className="h-24 rounded-none" />
           <div className="px-2.5 py-2 space-y-1.5">
@@ -40,6 +42,7 @@ interface SelectionGroupProps {
   label?: (mix: Selection) => string | undefined;
   onSelect: (mix: Selection) => void;
   onDownload: (mix: Selection) => void;
+  isWidescreen?: boolean;
 }
 
 function SelectionGroup({
@@ -51,7 +54,12 @@ function SelectionGroup({
   label,
   onSelect,
   onDownload,
+  isWidescreen = false,
 }: SelectionGroupProps) {
+  const gridClassName = isWidescreen
+    ? "grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
+    : "grid grid-cols-2 sm:grid-cols-3 gap-3";
+
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
@@ -60,9 +68,9 @@ function SelectionGroup({
       </div>
 
       {isLoading ? (
-        <LoadingSkeleton count={skeletonCount} />
+        <LoadingSkeleton count={skeletonCount} isWidescreen={isWidescreen} />
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className={gridClassName}>
           {items!.map((mix, i) => (
             <SelectionCard
               key={mix.id}
@@ -81,6 +89,7 @@ function SelectionGroup({
 
 export function SelectionsSection({ onSelectMix, onDownloadMix }: SelectionsSectionProps) {
   const { t } = useTranslation();
+  const isWidescreen = useIsWidescreen();
   const { data: allSelections, isLoading, isError, refetch } = useSelections();
   const personalMixes = useMemo(
     () => allSelections?.filter((s) => s.title.includes('Your Mix')),
@@ -125,6 +134,7 @@ export function SelectionsSection({ onSelectMix, onDownloadMix }: SelectionsSect
           isLoading={isLoading}
           onSelect={onSelectMix}
           onDownload={onDownloadMix}
+          isWidescreen={isWidescreen}
         />
       )}
 
@@ -138,6 +148,7 @@ export function SelectionsSection({ onSelectMix, onDownloadMix }: SelectionsSect
           label={(mix) => mix.title}
           onSelect={onSelectMix}
           onDownload={onDownloadMix}
+          isWidescreen={isWidescreen}
         />
       )}
     </div>

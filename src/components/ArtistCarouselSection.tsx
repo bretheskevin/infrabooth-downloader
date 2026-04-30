@@ -4,6 +4,7 @@ import { Switch } from '@/components/ui/switch';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { ScrollCarousel } from '@/components/ui/scroll-carousel';
 import { ArtistAvatar } from '@/components/ArtistAvatar';
+import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import type { FollowedArtist } from '@/bindings';
 
 interface CarouselLabels {
@@ -35,6 +36,7 @@ export function ArtistCarouselSection({
   hideReposts, onHideRepostsChange, hideRepostsId,
   filterFn, getHasNewAny, getHasNewOriginal,
 }: ArtistCarouselSectionProps) {
+  const isWidescreen = useIsWidescreen();
   const getHasNew = hideReposts ? getHasNewOriginal : getHasNewAny;
   const displayedArtists = useMemo(() => {
     const filtered = hideReposts ? artists.filter(filterFn) : artists;
@@ -72,17 +74,31 @@ export function ArtistCarouselSection({
           <span className="text-xs text-muted-foreground">{labels.hideReposts}</span>
         </Label>
       </div>
-      <ScrollCarousel ariaLabelLeft={labels.scrollLeft} ariaLabelRight={labels.scrollRight}>
-        {displayedArtists.map((artist) => (
-          <ArtistAvatar
-            key={artist.id}
-            artist={artist}
-            hasNew={getHasNew?.(artist)}
-            isSelected={selectedArtistId === artist.id}
-            onClick={() => onSelectArtist(artist)}
-          />
-        ))}
-      </ScrollCarousel>
+      {isWidescreen ? (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(78px,1fr))] gap-3 py-1 px-1">
+          {displayedArtists.map((artist) => (
+            <ArtistAvatar
+              key={artist.id}
+              artist={artist}
+              hasNew={getHasNew?.(artist)}
+              isSelected={selectedArtistId === artist.id}
+              onClick={() => onSelectArtist(artist)}
+            />
+          ))}
+        </div>
+      ) : (
+        <ScrollCarousel ariaLabelLeft={labels.scrollLeft} ariaLabelRight={labels.scrollRight}>
+          {displayedArtists.map((artist) => (
+            <ArtistAvatar
+              key={artist.id}
+              artist={artist}
+              hasNew={getHasNew?.(artist)}
+              isSelected={selectedArtistId === artist.id}
+              onClick={() => onSelectArtist(artist)}
+            />
+          ))}
+        </ScrollCarousel>
+      )}
     </div>
   );
 }
