@@ -209,6 +209,13 @@
     "rekordboxUnexpectedError": "Unable to check Rekordbox right now.",
     "rekordboxLoading": "Checking Rekordbox...",
     "rekordboxClearOverride": "Reset to auto-detection",
+    "rekordboxDefaultExportLabel": "Default export folder",
+    "rekordboxDefaultExportDescription": "Choose where new playlists are created in Rekordbox.",
+    "rekordboxDefaultExportDefault": "InfraBooth Downloader (default)",
+    "rekordboxDefaultExportChange": "Change",
+    "rekordboxDefaultExportReset": "Reset to default",
+    "rekordboxDefaultExportDeleted": "The saved export folder no longer exists in Rekordbox. Reset to default.",
+    "rekordboxDefaultExportLoadingTree": "Loading folders...",
     "backupsTitle": "Backups",
     "backupsDescription": "Your library is backed up automatically before each export.",
     "backupsEmpty": "No backups yet. A backup will be created automatically the next time you export tracks.",
@@ -583,6 +590,7 @@
     "loadingTree": "Loading playlists...",
     "treeError": "Could not load Rekordbox playlists",
     "treeRetry": "Retry",
-    "existingPlaylistUpdate": "(will be updated)"
+    "existingPlaylistUpdate": "(will be updated)",
+    "existingPlaylistUpdateTooltip": "New tracks will be added to the existing Rekordbox playlist.\nTracks no longer in the SoundCloud playlist won't be removed."
   }
 }

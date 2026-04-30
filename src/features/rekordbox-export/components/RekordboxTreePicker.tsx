@@ -1,8 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronRight, ChevronDown, Folder, FolderOpen, ListMusic, Plus, RefreshCw } from 'lucide-react';
+import { ChevronRight, ChevronDown, Folder, FolderOpen, ListMusic, Plus, RefreshCw, CircleHelp } from 'lucide-react';
 import type { RekordboxTreeNode } from '@/bindings';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { buildTreeFromNodes, getAncestorIds, type TreeNode } from '../utils/buildTree';
 
 interface RekordboxTreePickerProps {
@@ -28,7 +29,19 @@ function TreePlaylistNode({ node, isUpdateTarget }: { node: TreeNode; isUpdateTa
     <div className={`flex items-center gap-2 py-1 text-sm cursor-default ${isUpdateTarget ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
       {isUpdateTarget ? <RefreshCw className="h-3.5 w-3.5 text-primary" /> : <ListMusic className="h-3.5 w-3.5" />}
       <span className="truncate">{node.name}</span>
-      {isUpdateTarget && <span className="text-xs text-primary italic">{t('rekordboxExport.existingPlaylistUpdate')}</span>}
+      {isUpdateTarget && (
+        <>
+          <span className="text-xs text-primary italic">{t('rekordboxExport.existingPlaylistUpdate')}</span>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <CircleHelp className="h-3 w-3 text-muted-foreground cursor-help" />
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-64 whitespace-pre-line">
+              <p>{t('rekordboxExport.existingPlaylistUpdateTooltip')}</p>
+            </TooltipContent>
+          </Tooltip>
+        </>
+      )}
     </div>
   );
 }
