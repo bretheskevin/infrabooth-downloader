@@ -11,7 +11,6 @@ import { usePlayPauseToggle } from '@/hooks/usePlayPauseToggle';
 import { useHoverPreload } from '@/hooks/useHoverPreload';
 import { preloadOnHover, preloadImmediate } from '@/features/player/url-cache';
 import { getArtworkUrl } from '@/lib/soundcloud';
-import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { cn } from '@/lib/utils';
 import type { TrackInfo } from '@/bindings';
 
@@ -60,7 +59,7 @@ export function TrackListProvider({
 }: TrackListProviderProps) {
   const ctx = useMemo(
     () => ({ playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate }),
-    [playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection?.selectedIds, selection?.toggleTrack, animate],
+    [playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate],
   );
   return <TrackListContext.Provider value={ctx}>{children}</TrackListContext.Provider>;
 }
@@ -101,9 +100,6 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
     return storeState;
   }, [rawStoreState, ctx.downloadedIds, track.id]);
 
-  const filePath = rawStoreState?.filePath;
-  const handleOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
-
   // Play/pause/resume
   const handlePlayPause = usePlayPauseToggle({
     isCurrentlyPlaying,
@@ -131,7 +127,7 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
   const artworkUrl = useMemo(() => getArtworkUrl(track.artwork_url) ?? null, [track.artwork_url]);
 
   // Download action
-  const handleDownload = useCallback(() => ctx.downloadTrack(track), [ctx.downloadTrack, track]);
+  const handleDownload = useCallback(() => ctx.downloadTrack(track), [ctx, track]);
 
   // Animation
   const animationDelay = ctx.animate && index < MAX_STAGGER_ITEMS ? index * STAGGER_DELAY_MS : 0;
@@ -173,7 +169,6 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
       onMouseDown={handleMouseDown}
       subtitleSlot={subtitleSlot}
       onRemoveFromPlaylist={onRemoveFromPlaylist}
-      onOpenFileLocation={filePath ? handleOpenFileLocation : undefined}
       leftSlot={
         selection ? (
           <div

@@ -8,6 +8,7 @@ import { EXPANDED_BAR_HEIGHT } from "@/features/player/components/ExpandedBar";
 import { useIsDownloadEnabled } from "@/features/settings";
 import { useIsWidescreen } from "@/hooks/useIsWidescreen";
 import { Sidebar } from "./Sidebar";
+import { PlayerRail } from "@/features/player/components/PlayerRail";
 
 export type AppPage = "download" | "library" | "search";
 
@@ -81,17 +82,11 @@ export function AppLayout({
             isSignedIn={isSignedIn}
           />
           <div className="flex flex-1 flex-col min-h-0">
-            <main
-              className="flex-1 flex flex-col min-h-0 overflow-y-auto px-8 py-6 transition-[padding-bottom] duration-300 ease-in-out"
-              style={{
-                paddingBottom: expandedBarVisible
-                  ? EXPANDED_BAR_HEIGHT + 16
-                  : undefined,
-              }}
-            >
+            <main className="flex-1 flex flex-col min-h-0 overflow-y-auto px-8 py-6">
               {children}
             </main>
           </div>
+          <PlayerRail />
         </div>
       </div>
     );

@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { ListMusic, ChevronDown, Heart } from 'lucide-react';
@@ -7,17 +7,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { formatDuration } from '@/lib/format';
 import { getArtworkUrl } from '@/lib/soundcloud';
-import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { usePlayerStore } from '../store';
-import { useDownloadStateStore } from '@/hooks/useDownloadState';
+import { useCurrentTrackInfo } from '../hooks/useCurrentTrackInfo';
 import { ScrollingText } from './ScrollingText';
 import { SeekBar } from './SeekBar';
-import { TransportControls } from './TransportControls';
+import { PreviousButton, PlayPauseButton, NextButton, ShuffleButton } from './TransportButtons';
 import { VolumeControl } from './VolumeControl';
 import { TrackActionsDropdown } from '@/components/TrackActionsDropdown';
 import { useArtistProfileStore } from '@/features/artist-profile';
 import { useLikeTrack } from '@/hooks/useLikeTrack';
-import type { TrackInfo } from '@/bindings';
 
 export const EXPANDED_BAR_HEIGHT = 90;
 
@@ -44,25 +42,8 @@ export function ExpandedBar() {
     }))
   );
 
-  const trackInfo = useMemo(() => {
-    if (!currentTrack) return undefined;
-    return {
-      id: currentTrack.trackId,
-      title: currentTrack.title,
-      user: { id: currentTrack.artistId, username: currentTrack.artist, avatar_url: null },
-      artwork_url: currentTrack.artworkUrl,
-      duration: currentTrack.durationMs,
-      permalink_url: currentTrack.trackUrl,
-      waveform_url: currentTrack.waveformUrl,
-      downloadable: false,
-      download_url: null,
-    } satisfies TrackInfo;
-  }, [currentTrack]);
-
+  const trackInfo = useCurrentTrackInfo();
   const likeState = useLikeTrack(trackInfo);
-
-  const filePath = useDownloadStateStore((s) => s.states.get(String(currentTrack?.trackId ?? ''))?.filePath);
-  const handleOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
 
   if (!currentTrack || state === 'stopped') return null;
 
@@ -113,7 +94,12 @@ export function ExpandedBar() {
         </div>
 
         {/* Transport controls */}
-        <TransportControls className="gap-1 [&_button]:h-7 [&_button]:w-7 [&_button.rounded-full]:h-8 [&_button.rounded-full]:w-8 [&_svg]:h-3.5 [&_svg]:w-3.5" />
+        <div className="flex items-center gap-1">
+          <PreviousButton className="h-7 w-7" iconClassName="h-3.5 w-3.5" />
+          <PlayPauseButton className="h-8 w-8" iconClassName="h-3.5 w-3.5" />
+          <NextButton className="h-7 w-7" iconClassName="h-3.5 w-3.5" />
+          <ShuffleButton className="h-7 w-7" iconClassName="h-3.5 w-3.5" />
+        </div>
 
         {/* Volume */}
         <VolumeControl className="ml-2 gap-1.5 [&_button]:h-7 [&_button]:w-7 [&_svg]:h-3.5 [&_svg]:w-3.5 [&_.slider]:w-[60px]" />
@@ -142,7 +128,6 @@ export function ExpandedBar() {
           triggerClassName="h-7 w-7"
           contentSide="top"
           contentAlign="end"
-          onOpenFileLocation={filePath ? handleOpenFileLocation : undefined}
           likeState={likeState}
           shareInfo={{ trackId: currentTrack.trackId, title: currentTrack.title, artist: currentTrack.artist, artworkUrl: currentTrack.artworkUrl, permalinkUrl: currentTrack.trackUrl }}
         />

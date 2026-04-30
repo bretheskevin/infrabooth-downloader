@@ -1,5 +1,4 @@
 import { useTranslation } from 'react-i18next';
-import { open } from '@tauri-apps/plugin-shell';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePlayerStore } from '@/features/player';
 import type { PlaybackItem } from '@/features/player';
@@ -60,8 +59,6 @@ function renderTrackEmbed(embed: MessageTrackEmbed, trackDownload: TrackDownload
     <MessageTrackCard
       embed={embed}
       onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(embed)], 0)}
-      onCopyLink={() => void navigator.clipboard.writeText(embed.permalink_url)}
-      onOpenInBrowser={() => void open(embed.permalink_url)}
       onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(embed))}
       downloadState={trackDownload.getTrackState(embed.id)}
       onDownload={handleDownload}

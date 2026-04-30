@@ -16,3 +16,5 @@ export function getErrorString(error: unknown): string {
 export function getFolderName(path: string): string {
   return path.split(/[/\\]/).filter(Boolean).pop() ?? path;
 }
+
+export const noop = () => {};

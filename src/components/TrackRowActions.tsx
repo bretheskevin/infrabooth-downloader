@@ -18,12 +18,13 @@ import { cn } from '@/lib/utils';
 import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
 import type { LikeState } from '@/hooks/useLikeTrack';
 import { useMessagesStore, type ShareTrackInfo } from '@/features/messages/store';
+import { useDownloadStateStore } from '@/hooks/useDownloadState';
+import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
+import { useLinkActions } from '@/hooks/useLinkActions';
+import { useIsSignedIn } from '@/features/auth/store';
 
 export interface TrackMenuItemsProps {
-  onCopyLink: () => void;
-  onOpenInBrowser: () => void;
-  onOpenFileLocation?: () => void;
-  isSignedIn: boolean;
+  permalinkUrl: string;
   trackId: number;
   variant: 'context' | 'dropdown';
   onCloseMenu?: () => void;
@@ -49,8 +50,12 @@ export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLi
   );
 }
 
-export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation, isSignedIn, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue, likeState, shareInfo }: TrackMenuItemsProps) {
+export function TrackMenuItems({ permalinkUrl, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue, likeState, shareInfo }: TrackMenuItemsProps) {
   const { t } = useTranslation();
+  const isSignedIn = useIsSignedIn();
+  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl);
+  const filePath = useDownloadStateStore((s) => s.states.get(String(trackId))?.filePath);
+  const onOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
 
   const handleShareByDm = () => {
     if (!shareInfo) return;
@@ -63,8 +68,15 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation
   if (variant === 'context') {
     return (
       <>
-        <LinkContextMenuItems onCopyLink={onCopyLink} onOpenInBrowser={onOpenInBrowser} />
-        {onOpenFileLocation && (
+        <ContextMenuItem onClick={handleCopyLink}>
+          <Link className="mr-2 h-4 w-4" />
+          {t('trackMenu.copyLink')}
+        </ContextMenuItem>
+        <ContextMenuItem onClick={handleOpenInBrowser}>
+          <ExternalLink className="mr-2 h-4 w-4" />
+          {t('trackMenu.openInBrowser')}
+        </ContextMenuItem>
+        {filePath && (
           <ContextMenuItem onClick={onOpenFileLocation}>
             <FolderOpen className="mr-2 h-4 w-4" />
             {t('trackMenu.openFileLocation')}
@@ -106,15 +118,15 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation
 
   return (
     <>
-      <DropdownMenuItem onClick={onCopyLink}>
+      <DropdownMenuItem onClick={handleCopyLink}>
         <Link className="h-4 w-4" />
         {t('trackMenu.copyLink')}
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={onOpenInBrowser}>
+      <DropdownMenuItem onClick={handleOpenInBrowser}>
         <ExternalLink className="h-4 w-4" />
         {t('trackMenu.openInBrowser')}
       </DropdownMenuItem>
-      {onOpenFileLocation && (
+      {filePath && (
         <DropdownMenuItem onClick={onOpenFileLocation}>
           <FolderOpen className="h-4 w-4" />
           {t('trackMenu.openFileLocation')}
@@ -155,10 +167,7 @@ export function TrackMenuItems({ onCopyLink, onOpenInBrowser, onOpenFileLocation
 }
 
 interface TrackRowActionsContextContentProps {
-  onCopyLink: () => void;
-  onOpenInBrowser: () => void;
-  onOpenFileLocation?: () => void;
-  isSignedIn: boolean;
+  permalinkUrl: string;
   trackId: number;
   onCloseMenu: () => void;
   onRemoveFromPlaylist?: () => void;
@@ -168,10 +177,7 @@ interface TrackRowActionsContextContentProps {
 }
 
 export function TrackRowActionsContextContent({
-  onCopyLink,
-  onOpenInBrowser,
-  onOpenFileLocation,
-  isSignedIn,
+  permalinkUrl,
   trackId,
   onCloseMenu,
   onRemoveFromPlaylist,
@@ -182,10 +188,7 @@ export function TrackRowActionsContextContent({
   return (
     <ContextMenuContent>
       <TrackMenuItems
-        onCopyLink={onCopyLink}
-        onOpenInBrowser={onOpenInBrowser}
-        onOpenFileLocation={onOpenFileLocation}
-        isSignedIn={isSignedIn}
+        permalinkUrl={permalinkUrl}
         trackId={trackId}
         variant="context"
         onCloseMenu={onCloseMenu}
@@ -199,10 +202,7 @@ export function TrackRowActionsContextContent({
 }
 
 interface TrackRowActionsDropdownProps {
-  onCopyLink: () => void;
-  onOpenInBrowser: () => void;
-  onOpenFileLocation?: () => void;
-  isSignedIn: boolean;
+  permalinkUrl: string;
   trackId: number;
   dropdownMenuOpen: boolean;
   onDropdownMenuOpenChange: (open: boolean) => void;
@@ -214,10 +214,7 @@ interface TrackRowActionsDropdownProps {
 }
 
 export function TrackRowActionsDropdown({
-  onCopyLink,
-  onOpenInBrowser,
-  onOpenFileLocation,
-  isSignedIn,
+  permalinkUrl,
   trackId,
   dropdownMenuOpen,
   onDropdownMenuOpenChange,
@@ -244,10 +241,7 @@ export function TrackRowActionsDropdown({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <TrackMenuItems
-            onCopyLink={onCopyLink}
-            onOpenInBrowser={onOpenInBrowser}
-            onOpenFileLocation={onOpenFileLocation}
-            isSignedIn={isSignedIn}
+            permalinkUrl={permalinkUrl}
             trackId={trackId}
             variant="dropdown"
             onCloseMenu={closeMenu}

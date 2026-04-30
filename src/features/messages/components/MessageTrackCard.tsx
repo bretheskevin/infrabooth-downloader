@@ -1,41 +1,27 @@
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { MoreVertical } from 'lucide-react';
 import { formatDuration } from '@/lib/format';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { TrackMenuItems } from '@/components/TrackRowActions';
+import { TrackActionsDropdown } from '@/components/TrackActionsDropdown';
 import type { MessageTrackEmbed } from '@/bindings';
 import { ArtistLink } from '@/components/ArtistLink';
 import type { DownloadState } from '@/types/download';
 import { TrackDownloadAction } from '@/components/TrackDownloadAction';
-import { useDownloadStateStore } from '@/hooks/useDownloadState';
-import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 
 interface MessageTrackCardProps {
   embed: MessageTrackEmbed;
   onPlay: () => void;
-  onCopyLink: () => void;
-  onOpenInBrowser: () => void;
   onAddToQueue: () => void;
   downloadState: DownloadState;
   onDownload: () => void;
   onRetry: () => void;
 }
 
-export function MessageTrackCard({ embed, onPlay, onCopyLink, onOpenInBrowser, onAddToQueue, downloadState, onDownload, onRetry }: MessageTrackCardProps) {
-  const { t } = useTranslation();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const filePath = useDownloadStateStore((s) => s.states.get(String(embed.id))?.filePath);
-  const handleOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
-
+export function MessageTrackCard({ embed, onPlay, onAddToQueue, downloadState, onDownload, onRetry }: MessageTrackCardProps) {
   return (
     <div
       role="button"
       tabIndex={0}
-      onClick={() => { if (!dropdownOpen) onPlay(); }}
-      onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && !dropdownOpen) { e.preventDefault(); onPlay(); } }}
+      onClick={onPlay}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPlay(); } }}
       className="mt-1.5 flex items-center gap-3 rounded-lg border bg-muted/30 p-2.5 max-w-[420px] cursor-pointer transition-colors hover:bg-accent/50 w-full text-left"
     >
       <Avatar className="h-11 w-11 rounded-md flex-shrink-0">
@@ -49,25 +35,14 @@ export function MessageTrackCard({ embed, onPlay, onCopyLink, onOpenInBrowser, o
       <span className="text-xs text-muted-foreground flex-shrink-0">{formatDuration(embed.duration_ms)}</span>
       <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <TrackDownloadAction state={downloadState} onDownload={onDownload} onRetry={onRetry} />
-        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={t('trackMenu.moreActions')}>
-              <MoreVertical className="h-3.5 w-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <TrackMenuItems
-              onCopyLink={onCopyLink}
-              onOpenInBrowser={onOpenInBrowser}
-              onOpenFileLocation={filePath ? handleOpenFileLocation : undefined}
-              isSignedIn
-              trackId={Number(embed.id)}
-              variant="dropdown"
-              onCloseMenu={() => setDropdownOpen(false)}
-              onAddToQueue={onAddToQueue}
-            />
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <TrackActionsDropdown
+          trackId={Number(embed.id)}
+          permalinkUrl={embed.permalink_url}
+          triggerClassName="h-7 w-7"
+          contentSide="bottom"
+          contentAlign="end"
+          onAddToQueue={onAddToQueue}
+        />
       </div>
     </div>
   );

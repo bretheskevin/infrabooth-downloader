@@ -1,10 +1,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
-import { useLinkActions } from '@/hooks/useLinkActions';
 import { useLikeTrack } from '@/hooks/useLikeTrack';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
-import { useIsSignedIn } from '@/features/auth/store';
 import { usePlayerStore, buildPlaybackQueue } from '@/features/player';
 import { TrackRowContent } from '@/components/TrackRowContent';
 import { TrackRowActionsContextContent, TrackRowActionsDropdown } from '@/components/TrackRowActions';
@@ -28,7 +26,6 @@ interface TrackRowProps {
   onHoverEnd?: () => void;
   onMouseDown?: () => void;
   onRemoveFromPlaylist?: () => void;
-  onOpenFileLocation?: () => void;
 }
 
 export function TrackRow({
@@ -47,7 +44,6 @@ export function TrackRow({
   onHoverEnd,
   onMouseDown,
   onRemoveFromPlaylist,
-  onOpenFileLocation,
 }: TrackRowProps) {
   const [isRowHovered, setIsRowHovered] = useState(false);
   const [contextMenuKey, setContextMenuKey] = useState(0);
@@ -74,9 +70,7 @@ export function TrackRow({
     },
     [claimMenu],
   );
-  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(track.permalink_url);
   const likeState = useLikeTrack(track);
-  const isSignedIn = useIsSignedIn();
   const handleAddToQueue = useCallback(() => {
     const [item] = buildPlaybackQueue([track]);
     if (item) usePlayerStore.getState().addToQueue(item);
@@ -149,10 +143,7 @@ export function TrackRow({
             isLiked={likeState?.isLiked}
           />
           <TrackRowActionsDropdown
-            onCopyLink={handleCopyLink}
-            onOpenInBrowser={handleOpenInBrowser}
-            onOpenFileLocation={onOpenFileLocation}
-            isSignedIn={isSignedIn}
+            permalinkUrl={track.permalink_url}
             trackId={track.id}
             dropdownMenuOpen={dropdownMenuOpen}
             onDropdownMenuOpenChange={handleDropdownMenuOpenChange}
@@ -165,10 +156,7 @@ export function TrackRow({
         </div>
       </ContextMenuTrigger>
       <TrackRowActionsContextContent
-        onCopyLink={handleCopyLink}
-        onOpenInBrowser={handleOpenInBrowser}
-        onOpenFileLocation={onOpenFileLocation}
-        isSignedIn={isSignedIn}
+        permalinkUrl={track.permalink_url}
         trackId={track.id}
         onCloseMenu={() => setContextMenuKey((k) => k + 1)}
         onRemoveFromPlaylist={onRemoveFromPlaylist}

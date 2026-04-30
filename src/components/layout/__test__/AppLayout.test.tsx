@@ -39,6 +39,10 @@ vi.mock("@/features/player/components/ExpandedBar", () => ({
   EXPANDED_BAR_HEIGHT: 64,
 }));
 
+vi.mock("@/features/player/components/PlayerRail", () => ({
+  PlayerRail: () => <div data-testid="player-rail">PlayerRail</div>,
+}));
+
 vi.mock("@/features/settings", () => ({
   useIsDownloadEnabled: () => true,
 }));
@@ -163,6 +167,46 @@ describe("AppLayout", () => {
       );
       const main = container.querySelector("main");
       expect(main?.className).toContain("px-8");
+    });
+
+    it("should render PlayerRail when widescreen", () => {
+      render(
+        <AppLayout {...defaultProps}>
+          <div>Content</div>
+        </AppLayout>,
+      );
+      expect(screen.getByTestId("player-rail")).toBeInTheDocument();
+    });
+
+    it("should NOT have paddingBottom on main element when widescreen", () => {
+      const { container } = render(
+        <AppLayout {...defaultProps}>
+          <div>Content</div>
+        </AppLayout>,
+      );
+      const main = container.querySelector("main");
+      expect(main?.style.paddingBottom).toBe("");
+    });
+
+    it("should NOT have transition-padding-bottom class on main when widescreen", () => {
+      const { container } = render(
+        <AppLayout {...defaultProps}>
+          <div>Content</div>
+        </AppLayout>,
+      );
+      const main = container.querySelector("main");
+      expect(main?.className).not.toContain("transition-[padding-bottom]");
+    });
+  });
+
+  describe("narrow layout", () => {
+    it("should NOT render PlayerRail when not widescreen", () => {
+      render(
+        <AppLayout {...defaultProps}>
+          <div>Content</div>
+        </AppLayout>,
+      );
+      expect(screen.queryByTestId("player-rail")).not.toBeInTheDocument();
     });
   });
 });

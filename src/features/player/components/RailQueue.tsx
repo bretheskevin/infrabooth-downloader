@@ -5,13 +5,12 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 
-import { cn, noop } from "@/lib/utils";
+import { noop } from "@/lib/utils";
 import { VirtualListContainer, VirtualRow } from "@/components/ui/virtual-list";
-import { EXPANDED_BAR_HEIGHT } from "./ExpandedBar";
 import { QueuePanelItem } from "./QueuePanelItem";
 import { useQueueInteraction } from "../hooks/useQueueInteraction";
 
-export function QueuePanel({ closing }: { closing?: boolean }) {
+export function RailQueue() {
   const { t } = useTranslation();
   const {
     queue,
@@ -35,21 +34,16 @@ export function QueuePanel({ closing }: { closing?: boolean }) {
   } = useQueueInteraction();
 
   return (
-    <div
-      className={cn(
-        "fixed left-0 right-0 z-40 bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.08)] duration-250 max-h-[60vh] flex flex-col",
-        closing
-          ? "animate-out slide-out-to-bottom fill-mode-forwards"
-          : "animate-in slide-in-from-bottom",
-      )}
-      style={{ bottom: `${EXPANDED_BAR_HEIGHT}px` }}
-    >
-      <div className="px-4 py-2 border-b border-border/50">
-        <h3 className="text-xs font-semibold">{t("player.queue")}</h3>
-        <p className="text-[10px] text-muted-foreground">
-          {t("player.queueCount", { count: queue.length })}
-        </p>
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
+        <div>
+          <h3 className="text-xs font-semibold">{t("player.nextUp")}</h3>
+          <p className="text-[10px] text-muted-foreground">
+            {t("player.queueCount", { count: queue.length })}
+          </p>
+        </div>
       </div>
+
       {queue.length === 0 ? (
         <p className="py-6 text-center text-xs text-muted-foreground">
           {t("player.queueEmpty")}
