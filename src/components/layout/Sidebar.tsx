@@ -64,7 +64,10 @@ export function Sidebar({
   }, [userId, username]);
 
   return (
-    <aside className="w-[232px] shrink-0 border-r border-border bg-card/40 flex flex-col h-full overflow-y-auto">
+    <aside
+      data-testid="sidebar"
+      className="w-[232px] shrink-0 border-r border-border bg-card/40 flex flex-col h-full overflow-y-auto"
+    >
       <div className="px-4 pt-4 pb-2">
         <h1 className="text-sm font-semibold tracking-tight">
           {t("app.title")}
