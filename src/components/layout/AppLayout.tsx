@@ -81,7 +81,14 @@ export function AppLayout({
             isSignedIn={isSignedIn}
           />
           <div className="flex flex-1 flex-col min-h-0">
-            <main className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6">
+            <main
+              className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6 transition-[padding-bottom] duration-300 ease-in-out"
+              style={{
+                paddingBottom: expandedBarVisible
+                  ? EXPANDED_BAR_HEIGHT + 16
+                  : undefined,
+              }}
+            >
               {children}
             </main>
           </div>

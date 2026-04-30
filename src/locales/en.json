@@ -594,10 +594,9 @@
     "existingPlaylistUpdateTooltip": "New tracks will be added to the existing Rekordbox playlist.\nTracks no longer in the SoundCloud playlist won't be removed."
   },
   "sidebar": {
-    "workspace": "Workspace",
+    "workspace": "Music",
     "activity": "Activity",
     "pasteUrl": "Paste a link",
-    "discover": "Discover",
     "myLibrary": "My Library",
     "search": "Search",
     "messages": "Messages",

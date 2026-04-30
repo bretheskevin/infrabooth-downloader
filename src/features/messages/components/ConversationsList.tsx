@@ -1,15 +1,17 @@
 import { useTranslation } from 'react-i18next';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { ConversationRow } from './ConversationRow';
 import { useConversationsPage } from '../hooks/useConversationsPage';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
 interface ConversationsListProps {
+  containerClassName?: string;
   onClose: () => void;
 }
 
-export function ConversationsList({ onClose }: ConversationsListProps) {
+export function ConversationsList({ containerClassName, onClose }: ConversationsListProps) {
   const { t } = useTranslation();
   const { items, currentUserId, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
     useConversationsPage();
@@ -43,7 +45,7 @@ export function ConversationsList({ onClose }: ConversationsListProps) {
   }
 
   return (
-    <div className="max-h-[400px] overflow-y-auto py-1">
+    <div className={cn("max-h-[400px] overflow-y-auto py-1", containerClassName)}>
       {items.map((conv) => (
         <ConversationRow key={conv.id} conversation={conv} currentUserId={currentUserId} onClose={onClose} />
       ))}

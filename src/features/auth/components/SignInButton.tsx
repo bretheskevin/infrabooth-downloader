@@ -4,25 +4,11 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Loader2, RefreshCw, ExternalLink, Download } from 'lucide-react';
-import { checkAuth, checkFirefoxInstalled, openInFirefox } from '@/features/auth/api';
+import { checkFirefoxInstalled, openInFirefox } from '@/features/auth/api';
+import { useAuthCheck } from '@/features/auth/hooks/useAuthCheck';
 import { useCookieWarning, WARNING_APPBOUND_ENCRYPTION } from '@/features/auth/store';
 import { logger } from '@/lib/logger';
 import { open } from '@tauri-apps/plugin-shell';
-
-function useAuthCheck() {
-  const [isChecking, setIsChecking] = useState(false);
-  const handleCheck = async () => {
-    setIsChecking(true);
-    try {
-      await checkAuth();
-    } catch {
-      // Auth check failed — state event handles UI update
-    } finally {
-      setIsChecking(false);
-    }
-  };
-  return { isChecking, handleCheck };
-}
 
 function AppboundWarningButtons() {
   const { t } = useTranslation();

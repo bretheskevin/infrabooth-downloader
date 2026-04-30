@@ -14,7 +14,7 @@ import { ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { ArtistReleasesView, ReleaseTracklistView, useNewReleasesStore } from '@/features/new-releases';
 import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
 import { NotificationsPage, useNotificationsStore, playlistSummaryToLibraryPlaylist } from '@/features/notifications';
-import { ConversationPage, useMessagesStore } from '@/features/messages';
+import { ConversationPage, MessagesPage, useMessagesStore } from '@/features/messages';
 import { useSelectionsStore } from '@/features/selections';
 import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
 import { cn } from '@/lib/utils';
@@ -45,7 +45,8 @@ function PageContent({
   const selectedMix = useSelectionsStore((s) => s.selectedMix);
   const newReleasesView = useNewReleasesStore((s) => s.viewState);
   const isNotificationsPageOpen = useNotificationsStore((s) => s.isPageOpen);
-  const isConversationPageOpen = useMessagesStore((s) => s.isPageOpen);
+  const isMessagesPageOpen = useMessagesStore((s) => s.isPageOpen);
+  const selectedConversation = useMessagesStore((s) => s.selectedConversation);
   const notificationPlaylist = useNotificationsStore((s) => s.selectedPlaylist);
   const messagePlaylist = useMessagesStore((s) => s.selectedPlaylist);
 
@@ -53,7 +54,7 @@ function PageContent({
   const [slideClass, setSlideClass] = useState('');
   const prevHasOverlayRef = useRef(false);
   const hasNotificationOverlay = isNotificationsPageOpen || notificationPlaylist;
-  const hasOverlay = !!(selectedArtist || selectedMix || profileArtistId || newReleasesView.view !== 'carousel' || hasNotificationOverlay || isConversationPageOpen);
+  const hasOverlay = !!(selectedArtist || selectedMix || profileArtistId || newReleasesView.view !== 'carousel' || hasNotificationOverlay || isMessagesPageOpen);
 
   useLayoutEffect(() => {
     if (hasOverlay && !prevHasOverlayRef.current) {
@@ -122,10 +123,18 @@ function PageContent({
     );
   }
 
-  if (isConversationPageOpen) {
+  if (isMessagesPageOpen && selectedConversation) {
     return (
       <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
         <ConversationPage />
+      </section>
+    );
+  }
+
+  if (isMessagesPageOpen) {
+    return (
+      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <MessagesPage />
       </section>
     );
   }
@@ -231,14 +240,15 @@ function AppContent() {
   });
 
   const profileArtistId = useArtistProfileStore((s) => s.profileArtistId);
-  const isConversationPageOpen = useMessagesStore((s) => s.isPageOpen);
+  const isMessagesPageOpen = useMessagesStore((s) => s.isPageOpen);
+  const isNotificationsPageOpen = useNotificationsStore((s) => s.isPageOpen);
 
   return (
     <AppLayout
       activePage={activePage}
       onPageChange={handlePageChange}
       isSignedIn={isSignedIn}
-      hideTabs={!!profileArtistId || isConversationPageOpen}
+      hideTabs={!!profileArtistId || isMessagesPageOpen || isNotificationsPageOpen}
     >
       <PageContent
         activePage={activePage}

@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { NotificationsList } from './NotificationsList';
-import { useNotificationsStore } from '../store';
+import { ConversationsList } from './ConversationsList';
+import { useMessagesStore } from '../store';
 
-export function NotificationsPage() {
+export function MessagesPage() {
   const { t } = useTranslation();
 
   const handleClose = () => {
-    useNotificationsStore.getState().closePage();
+    useMessagesStore.getState().clear();
   };
 
   return (
@@ -17,14 +17,12 @@ export function NotificationsPage() {
         <Button variant="ghost" size="icon" onClick={handleClose}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <h2 className="text-lg font-semibold">{t('notifications.title')}</h2>
+        <h2 className="text-lg font-semibold">{t('directMessages.title')}</h2>
       </div>
 
-      <NotificationsList
+      <ConversationsList
         containerClassName="flex-1 min-h-0 overflow-y-auto"
-        sentinelClassName="h-4"
         onClose={handleClose}
-        markSeen
       />
     </div>
   );
