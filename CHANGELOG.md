@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.27.0] - 2026-04-30
+
+### Added
+
+- Destination folder picker for Rekordbox exports
+- Default export folder preference in settings
+- Download tracks directly from message embeds
+- Profile actions in conversation header
+
+### Fixed
+
+- Playback stopped when stream URL expired
+- Conversations were not marked as read
+- Rekordbox export re-downloaded already exported tracks
+
 ## [1.26.0] - 2026-04-24
 
 ### Added

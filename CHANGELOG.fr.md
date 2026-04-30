@@ -7,6 +7,21 @@ et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.27.0] - 2026-04-30
+
+### Added
+
+- Sélection du dossier de destination pour les exports Rekordbox
+- Préférence de dossier d'export par défaut dans les paramètres
+- Téléchargement des morceaux depuis les messages
+- Actions de profil dans l'en-tête de conversation
+
+### Fixed
+
+- La lecture s'arrêtait quand le flux expirait
+- Les conversations n'étaient pas marquées comme lues
+- L'export Rekordbox re-téléchargeait des morceaux déjà exportés
+
 ## [1.26.0] - 2026-04-24
 
 ### Added
