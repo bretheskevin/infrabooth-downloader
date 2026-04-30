@@ -106,7 +106,7 @@ Ask the user to confirm. If they request changes, apply and re-show the table. D
    - Update relevant architecture/conventions/project memories
    - Use `list_memories` → `read_memory` → `write_memory`/`edit_memory`
 
-6. Ask the user to confirm before pushing, then run:
+6. Push the commit and tag:
    ```bash
    git push origin main v<VERSION>
    ```

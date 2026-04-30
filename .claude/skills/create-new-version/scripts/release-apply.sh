@@ -9,9 +9,6 @@ NEW_VERSION="${1:?Usage: release-apply.sh <version> <en_changelog_file> <fr_chan
 EN_FILE="${2:?Missing English changelog file}"
 FR_FILE="${3:?Missing French changelog file}"
 
-EN_ENTRY=$(cat "$EN_FILE")
-FR_ENTRY=$(cat "$FR_FILE")
-
 echo "Applying release v${NEW_VERSION}..."
 
 # --- 1. Bump version in all config files ---
@@ -35,28 +32,12 @@ echo "  Updating Cargo.toml..."
 sed -i '' "s/^version = \".*\"/version = \"${NEW_VERSION}\"/" src-tauri/Cargo.toml
 
 # --- 2. Insert changelog entries after ## [Unreleased] ---
+# sed 'r' reads a file after the matched line — handles multiline content reliably
 echo "  Updating CHANGELOG.md..."
-# Use awk to insert after the ## [Unreleased] line (preserving blank line)
-awk -v entry="$EN_ENTRY" '
-  /^## \[Unreleased\]/ {
-    print
-    print ""
-    print entry
-    next
-  }
-  { print }
-' CHANGELOG.md > CHANGELOG.md.tmp && mv CHANGELOG.md.tmp CHANGELOG.md
+sed -i '' "/^## \[Unreleased\]/r ${EN_FILE}" CHANGELOG.md
 
 echo "  Updating CHANGELOG.fr.md..."
-awk -v entry="$FR_ENTRY" '
-  /^## \[Unreleased\]/ {
-    print
-    print ""
-    print entry
-    next
-  }
-  { print }
-' CHANGELOG.fr.md > CHANGELOG.fr.md.tmp && mv CHANGELOG.fr.md.tmp CHANGELOG.fr.md
+sed -i '' "/^## \[Unreleased\]/r ${FR_FILE}" CHANGELOG.fr.md
 
 # --- 3. Update lock files ---
 echo "  Updating package-lock.json..."
@@ -77,7 +58,12 @@ git commit -m "chore: release v${NEW_VERSION}"
 echo "  Creating tag v${NEW_VERSION}..."
 git tag "v${NEW_VERSION}"
 
+# --- 5. Push ---
+echo "  Pushing commit and tag..."
+git push origin main "v${NEW_VERSION}"
+
+# --- 6. Cleanup temp files ---
+rm -f "$EN_FILE" "$FR_FILE"
+
 echo ""
-echo "Done! Release v${NEW_VERSION} committed and tagged."
-echo ""
-echo "To publish: git push origin main v${NEW_VERSION}"
+echo "Done! Release v${NEW_VERSION} published."
