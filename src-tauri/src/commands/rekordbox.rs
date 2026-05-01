@@ -273,9 +273,23 @@ pub fn list_rekordbox_playlists(manual_db_path: Option<String>, _app: tauri::App
 #[tauri::command]
 #[specta::specta]
 pub fn get_rekordbox_playlist_tree(manual_db_path: Option<String>, _app: tauri::AppHandle) -> Result<Vec<RekordboxTreeNode>, ErrorResponse> {
-    let rb_config = resolve_rekordbox_config(manual_db_path)?;
-    let db = database::RekordboxDatabase::open(&rb_config).map_err(ErrorResponse::from)?;
-    playlist::get_playlist_tree(&db).map_err(ErrorResponse::from)
+    log::info!("[rekordbox] get_rekordbox_playlist_tree: manual_db_path={:?}", manual_db_path);
+    let rb_config = resolve_rekordbox_config(manual_db_path).map_err(|e| {
+        log::error!("[rekordbox] Config resolution failed: {} (code={})", e.message, e.code);
+        e
+    })?;
+    log::info!("[rekordbox] Config resolved: db_path={:?}", rb_config.db_path);
+    let db = database::RekordboxDatabase::open(&rb_config).map_err(|e| {
+        log::error!("[rekordbox] Database open failed: {}", e);
+        ErrorResponse::from(e)
+    })?;
+    log::info!("[rekordbox] Database opened successfully");
+    let nodes = playlist::get_playlist_tree(&db).map_err(|e| {
+        log::error!("[rekordbox] Playlist tree query failed: {}", e);
+        ErrorResponse::from(e)
+    })?;
+    log::info!("[rekordbox] Playlist tree loaded: {} nodes", nodes.len());
+    Ok(nodes)
 }
 
 #[tauri::command]

@@ -233,7 +233,8 @@ pub fn list_playlists_in_folder(db: &RekordboxDatabase, parent_id: &str) -> Resu
 }
 
 pub fn get_playlist_tree(db: &RekordboxDatabase) -> Result<Vec<RekordboxTreeNode>, RekordboxError> {
-    let mut stmt = db.conn().prepare(PLAYLIST_SELECT).map_err(|e| RekordboxError::DatabaseError(format!("Playlist tree query failed: {}", e)))?;
+    let query = format!("{} WHERE Name IS NOT NULL", PLAYLIST_SELECT);
+    let mut stmt = db.conn().prepare(&query).map_err(|e| RekordboxError::DatabaseError(format!("Playlist tree query failed: {}", e)))?;
 
     let nodes = stmt
         .query_map([], |row| Ok(RekordboxTreeNode { id: row.get(0)?, name: row.get(2)?, attribute: row.get(3)?, parent_id: row.get(4)?, seq: row.get(1)? }))
