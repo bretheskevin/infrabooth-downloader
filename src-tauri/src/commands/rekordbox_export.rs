@@ -221,7 +221,7 @@ pub async fn export_playlist_to_rekordbox(
             let infrabooth_folder = session.init_infrabooth_folder()?;
             log::info!("[rekordbox-export] InfraBooth folder initialized: id={}", infrabooth_folder.id);
 
-            let target_parent_id = parent_folder_id.as_deref().unwrap_or(&infrabooth_folder.id);
+            let target_parent_id = parent_folder_id.as_deref().unwrap_or("root");
 
             log::info!("[rekordbox-export] Finding/creating playlist '{}'...", playlist_name);
             let named_pl = session.find_or_create_playlist(&playlist_name, target_parent_id)?;
