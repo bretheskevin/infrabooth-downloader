@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { useQueryClient } from '@tanstack/react-query';
 import type { TrackInfo, ExportResult, RekordboxExportProgressEvent, RekordboxExportStatus, DownloadProgressEvent } from '@/bindings';
 import { api, ApiError } from '@/lib/tauri';
 import { toTrackCore } from '@/lib/trackMapping';
@@ -39,6 +40,7 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
   const [selectedFolderId, setSelectedFolderId] = useState<string | null | undefined>(undefined);
   const unlistenRef = useRef<UnlistenFn[]>([]);
   const cancelledRef = useRef(false);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     return () => {
@@ -105,6 +107,7 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
     try {
       const result = await api.exportPlaylistToRekordbox(trackCores, playlistName, effectiveFolder, maxConcurrent);
       setState((s) => ({ ...s, phase: 'complete', result }));
+      void queryClient.invalidateQueries({ queryKey: ['rekordbox-backups'] });
     } catch (err: unknown) {
       if (cancelledRef.current) return;
       const code = err instanceof ApiError ? err.code : null;
@@ -117,7 +120,7 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
       unlistenDownload();
       unlistenRef.current = [];
     }
-  }, [tracks, playlistName, selectedFolderId]);
+  }, [tracks, playlistName, selectedFolderId, queryClient]);
 
   return {
     ...state,
