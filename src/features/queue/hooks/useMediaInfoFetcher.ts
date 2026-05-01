@@ -43,19 +43,21 @@ export function useMediaInfoFetcher(): UseMediaInfoFetcherReturn {
     },
   });
 
+  const { mutate, reset } = mutation;
+
   const fetchInfo = useCallback(
     (url: string) => {
-      mutation.mutate(url);
+      mutate(url);
     },
-    [mutation]
+    [mutate]
   );
 
   const clear = useCallback(() => {
     setValidatedUrl(null);
     setMediaInfo(null);
     setValidation(null);
-    mutation.reset();
-  }, [mutation]);
+    reset();
+  }, [reset]);
 
   const error = useMemo(
     () => (mutation.error ? parseMediaError(mutation.error, t) : null),

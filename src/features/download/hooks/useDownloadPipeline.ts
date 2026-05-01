@@ -19,10 +19,12 @@ export function useDownloadPipeline(): PipelineView {
   const flow = useDownloadFlow();
   const completion = useDownloadCompletion();
 
+  const { setUrl } = flow;
+
   const onDownloadAnother = useCallback(() => {
     useQueueStore.getState().clearQueue();
-    flow.setUrl('');
-  }, [flow]);
+    setUrl('');
+  }, [setUrl]);
 
   if (completion.isComplete) {
     return { type: 'complete', completion, onDownloadAnother };
