@@ -21,9 +21,7 @@ fi
 
 if [ "$frontend_changed" -eq 1 ]; then
   echo "pre-commit: running frontend checks"
-  if [ -n "$frontend_ts_files" ]; then
-    printf '%s\n' "$frontend_ts_files" | xargs npx eslint --max-warnings=0 --
-  fi
+  npm run lint
   npm run typecheck
 fi
 

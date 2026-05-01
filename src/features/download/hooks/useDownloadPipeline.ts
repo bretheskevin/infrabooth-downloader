@@ -22,7 +22,7 @@ export function useDownloadPipeline(): PipelineView {
   const onDownloadAnother = useCallback(() => {
     useQueueStore.getState().clearQueue();
     flow.setUrl('');
-  }, [flow.setUrl]);
+  }, [flow]);
 
   if (completion.isComplete) {
     return { type: 'complete', completion, onDownloadAnother };
