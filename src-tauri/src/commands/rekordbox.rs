@@ -221,9 +221,9 @@ pub fn export_to_rekordbox(
 
     ctx.handle_result((|| -> Result<ExportResult, RekordboxError> {
         let mut session = ctx.open_session()?;
-        let infrabooth_folder = session.init_infrabooth_folder()?;
+        session.init_infrabooth_folder()?;
 
-        let target_parent_id = parent_folder_id.as_deref().unwrap_or(&infrabooth_folder.id);
+        let target_parent_id = parent_folder_id.as_deref().unwrap_or("root");
         let target_playlist_name = playlist_name.as_deref().unwrap_or(ALL_TRACKS_PLAYLIST_NAME);
         let pl = session.find_or_create_playlist(target_playlist_name, target_parent_id)?;
 

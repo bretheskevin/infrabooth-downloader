@@ -7,7 +7,8 @@ use crate::models::error::RekordboxError;
 
 const PLAYLIST_SELECT: &str = "\
     SELECT ID, Seq, Name, Attribute, ParentID \
-    FROM djmdPlaylist";
+    FROM djmdPlaylist \
+    WHERE rb_local_deleted = 0";
 
 fn row_to_playlist(row: &rusqlite::Row) -> rusqlite::Result<DjmdPlaylist> {
     Ok(DjmdPlaylist { id: row.get(0)?, seq: row.get(1)?, name: row.get(2)?, attribute: row.get(3)?, parent_id: row.get(4)? })
@@ -19,13 +20,13 @@ fn row_to_song(row: &rusqlite::Row) -> rusqlite::Result<DjmdSongPlaylist> {
 
 fn find_playlist_by_name_and_type(db: &RekordboxDatabase, name: &str, parent_id: &str, attribute: i32) -> Option<DjmdPlaylist> {
     db.conn()
-        .query_row(&format!("{} WHERE Name = ?1 AND Attribute = ?2 AND ParentID = ?3", PLAYLIST_SELECT), params![name, attribute, parent_id], row_to_playlist)
+        .query_row(&format!("{} AND Name = ?1 AND Attribute = ?2 AND ParentID = ?3", PLAYLIST_SELECT), params![name, attribute, parent_id], row_to_playlist)
         .ok()
 }
 
 fn count_siblings(db: &RekordboxDatabase, parent_id: &str) -> Result<i32, RekordboxError> {
     db.conn()
-        .query_row("SELECT COUNT(*) FROM djmdPlaylist WHERE ParentID = ?1", params![parent_id], |row| row.get(0))
+        .query_row("SELECT COUNT(*) FROM djmdPlaylist WHERE rb_local_deleted = 0 AND ParentID = ?1", params![parent_id], |row| row.get(0))
         .map_err(|e| RekordboxError::DatabaseError(format!("Count siblings failed: {}", e)))
 }
 
@@ -33,7 +34,7 @@ fn reorder_siblings(db: &mut RekordboxDatabase, parent_id: &str) -> Result<(), R
     let ids: Vec<String> = {
         let mut stmt = db
             .conn()
-            .prepare("SELECT ID FROM djmdPlaylist WHERE ParentID = ?1 ORDER BY Seq ASC")
+            .prepare("SELECT ID FROM djmdPlaylist WHERE rb_local_deleted = 0 AND ParentID = ?1 ORDER BY Seq ASC")
             .map_err(|e| RekordboxError::DatabaseError(format!("Reorder query failed: {}", e)))?;
 
         let ids = stmt
@@ -99,13 +100,13 @@ pub fn find_infrabooth_folder(db: &RekordboxDatabase) -> Option<DjmdPlaylist> {
 }
 
 pub fn find_playlist_by_id(db: &RekordboxDatabase, playlist_id: &str) -> Option<DjmdPlaylist> {
-    db.conn().query_row(&format!("{} WHERE ID = ?1", PLAYLIST_SELECT), params![playlist_id], row_to_playlist).ok()
+    db.conn().query_row(&format!("{} AND ID = ?1", PLAYLIST_SELECT), params![playlist_id], row_to_playlist).ok()
 }
 
 pub fn find_playlist_in_folder(db: &RekordboxDatabase, playlist_id: &str, parent_id: &str) -> Option<DjmdPlaylist> {
     db.conn()
         .query_row(
-            &format!("{} WHERE ID = ?1 AND ParentID = ?2 AND Attribute = ?3", PLAYLIST_SELECT),
+            &format!("{} AND ID = ?1 AND ParentID = ?2 AND Attribute = ?3", PLAYLIST_SELECT),
             params![playlist_id, parent_id, PLAYLIST_TYPE_PLAYLIST],
             row_to_playlist,
         )
@@ -132,14 +133,14 @@ pub fn create_playlist(db: &mut RekordboxDatabase, name: &str, parent_id: &str) 
     insert_playlist_row(db, &id, &final_name, PLAYLIST_TYPE_PLAYLIST, parent_id, seq)?;
 
     db.conn()
-        .query_row(&format!("{} WHERE ID = ?1", PLAYLIST_SELECT), params![id], row_to_playlist)
+        .query_row(&format!("{} AND ID = ?1", PLAYLIST_SELECT), params![id], row_to_playlist)
         .map_err(|e| RekordboxError::DatabaseError(format!("Playlist not found after insert: {}", e)))
 }
 
 pub fn delete_playlist(db: &mut RekordboxDatabase, playlist_id: &str) -> Result<(), RekordboxError> {
     let parent_id: String = db
         .conn()
-        .query_row("SELECT ParentID FROM djmdPlaylist WHERE ID = ?1", params![playlist_id], |row| row.get(0))
+        .query_row("SELECT ParentID FROM djmdPlaylist WHERE rb_local_deleted = 0 AND ID = ?1", params![playlist_id], |row| row.get(0))
         .map_err(|e| RekordboxError::DatabaseError(format!("Playlist not found for delete: {}", e)))?;
 
     db.conn()
@@ -220,7 +221,7 @@ pub fn find_playlist_by_name(db: &RekordboxDatabase, name: &str, parent_id: &str
 pub fn list_playlists_in_folder(db: &RekordboxDatabase, parent_id: &str) -> Result<Vec<DjmdPlaylist>, RekordboxError> {
     let mut stmt = db
         .conn()
-        .prepare(&format!("{} WHERE ParentID = ?1 AND Attribute = ?2 ORDER BY Seq ASC", PLAYLIST_SELECT))
+        .prepare(&format!("{} AND ParentID = ?1 AND Attribute = ?2 ORDER BY Seq ASC", PLAYLIST_SELECT))
         .map_err(|e| RekordboxError::DatabaseError(format!("List playlists query failed: {}", e)))?;
 
     let playlists = stmt
@@ -233,7 +234,8 @@ pub fn list_playlists_in_folder(db: &RekordboxDatabase, parent_id: &str) -> Resu
 }
 
 pub fn get_playlist_tree(db: &RekordboxDatabase) -> Result<Vec<RekordboxTreeNode>, RekordboxError> {
-    let mut stmt = db.conn().prepare(PLAYLIST_SELECT).map_err(|e| RekordboxError::DatabaseError(format!("Playlist tree query failed: {}", e)))?;
+    let query = format!("{} AND Name IS NOT NULL", PLAYLIST_SELECT);
+    let mut stmt = db.conn().prepare(&query).map_err(|e| RekordboxError::DatabaseError(format!("Playlist tree query failed: {}", e)))?;
 
     let nodes = stmt
         .query_map([], |row| Ok(RekordboxTreeNode { id: row.get(0)?, name: row.get(2)?, attribute: row.get(3)?, parent_id: row.get(4)?, seq: row.get(1)? }))

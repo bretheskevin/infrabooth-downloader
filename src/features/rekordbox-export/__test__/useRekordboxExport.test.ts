@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createElement, type ReactNode } from 'react';
 import type { TrackInfo, ExportResult } from '@/bindings';
 import { useRekordboxExport } from '../hooks/useRekordboxExport';
 
@@ -35,6 +37,14 @@ vi.mock('@/features/settings/store', () => ({
   },
 }));
 
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return ({ children }: { children: ReactNode }) =>
+    createElement(QueryClientProvider, { client: queryClient }, children);
+}
+
 const mockTrack: TrackInfo = {
   id: 1,
   title: 'Test Track',
@@ -64,7 +74,7 @@ describe('useRekordboxExport', () => {
   });
 
   it('starts in idle phase', () => {
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     expect(result.current.phase).toBe('idle');
     expect(result.current.trackStatuses.size).toBe(0);
@@ -75,7 +85,7 @@ describe('useRekordboxExport', () => {
   });
 
   it('transitions to confirm phase on openConfirm', () => {
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     act(() => {
       result.current.openConfirm();
@@ -85,7 +95,7 @@ describe('useRekordboxExport', () => {
   });
 
   it('transitions back to idle on close', () => {
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     act(() => {
       result.current.openConfirm();
@@ -101,7 +111,7 @@ describe('useRekordboxExport', () => {
   it('transitions to complete on successful export', async () => {
     mockExportPlaylistToRekordbox.mockResolvedValue(mockResult);
 
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     await act(async () => {
       await result.current.startExport();
@@ -115,7 +125,7 @@ describe('useRekordboxExport', () => {
   it('passes maxConcurrent and null parentFolderId from settings store', async () => {
     mockExportPlaylistToRekordbox.mockResolvedValue(mockResult);
 
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     await act(async () => {
       await result.current.startExport();
@@ -130,12 +140,12 @@ describe('useRekordboxExport', () => {
   });
 
   it('starts with undefined selectedFolderId', () => {
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
     expect(result.current.selectedFolderId).toBeUndefined();
   });
 
   it('updates selectedFolderId via setSelectedFolderId', () => {
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     act(() => {
       result.current.setSelectedFolderId('folder-123');
@@ -147,7 +157,7 @@ describe('useRekordboxExport', () => {
   it('passes selectedFolderId to export API', async () => {
     mockExportPlaylistToRekordbox.mockResolvedValue(mockResult);
 
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     act(() => {
       result.current.setSelectedFolderId('folder-456');
@@ -168,7 +178,7 @@ describe('useRekordboxExport', () => {
   it('uses folderId override when passed to startExport', async () => {
     mockExportPlaylistToRekordbox.mockResolvedValue(mockResult);
 
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     await act(async () => {
       await result.current.startExport('override-folder');
@@ -185,7 +195,7 @@ describe('useRekordboxExport', () => {
   it('transitions to error on failed export', async () => {
     mockExportPlaylistToRekordbox.mockRejectedValue(new Error('Export failed'));
 
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     await act(async () => {
       await result.current.startExport();
@@ -201,7 +211,7 @@ describe('useRekordboxExport', () => {
     const { ApiError } = await import('@/lib/tauri');
     mockExportPlaylistToRekordbox.mockRejectedValue(new ApiError('REKORDBOX_RUNNING', 'Rekordbox is running'));
 
-    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'));
+    const { result } = renderHook(() => useRekordboxExport([mockTrack], 'Test Playlist'), { wrapper: createWrapper() });
 
     await act(async () => {
       await result.current.startExport();

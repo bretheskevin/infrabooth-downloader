@@ -35,6 +35,11 @@ export default [
         ...globals.browser,
         ...globals.es2021,
         React: 'readonly',
+        MediaSessionPlaybackState: 'readonly',
+        MediaSessionAction: 'readonly',
+        MediaSessionActionHandler: 'readonly',
+        MediaImage: 'readonly',
+        MediaMetadata: 'readonly',
       },
     },
     plugins: {
@@ -50,7 +55,7 @@ export default [
       '@typescript-eslint/explicit-function-return-type': 'off',
       '@typescript-eslint/no-explicit-any': 'error',
       'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      'react-hooks/exhaustive-deps': 'error',
       'no-unused-vars': 'off',
     },
     settings: {
