@@ -23,6 +23,14 @@ vi.mock('@/features/artist-profile/store', () => ({
   useArtistProfileStore: { getState: () => ({ openProfile: vi.fn() }) },
 }));
 
+vi.mock('@/features/artist-profile/hooks/useArtistProfile', () => ({
+  useArtistProfile: () => ({ data: { avatar_url: 'https://example.com/avatar.jpg' } }),
+}));
+
+vi.mock('@/lib/soundcloud', () => ({
+  getArtworkUrl: (url: string | null) => url,
+}));
+
 const mockPlaylist: LibraryPlaylist = {
   id: 1,
   title: 'Test Playlist',
@@ -64,7 +72,7 @@ describe('PlaylistDetailHeader', () => {
     const container = screen.getByTestId('artwork-container');
     expect(container.className).toContain('w-[140px]');
     expect(container.className).toContain('h-[140px]');
-    expect(container.className).toContain('rounded-xl');
+    expect(container.className).toContain('rounded-2xl');
   });
 
   it('uses small placeholder icon in narrow mode', () => {
@@ -86,5 +94,40 @@ describe('PlaylistDetailHeader', () => {
     render(<PlaylistDetailHeader {...defaultProps} artworkUrl="https://example.com/art.jpg" />);
     const img = screen.getByRole('img');
     expect(img).toHaveAttribute('src', 'https://example.com/art.jpg');
+  });
+
+  it('does not render gradient background in widescreen hero', () => {
+    mockIsWidescreen = true;
+    const onPlayAll = vi.fn();
+    const onShuffle = vi.fn();
+    render(<PlaylistDetailHeader {...defaultProps} onPlayAll={onPlayAll} onShuffle={onShuffle} />);
+    const gradient = document.querySelector('.from-primary\\/\\[0\\.06\\]');
+    expect(gradient).toBeNull();
+  });
+
+  it('renders breadcrumb navigation in widescreen mode', () => {
+    mockIsWidescreen = true;
+    render(<PlaylistDetailHeader {...defaultProps} />);
+    expect(screen.getByText('library.detail.breadcrumbLibrary')).toBeTruthy();
+  });
+
+  it('renders standard DetailHeader in narrow mode', () => {
+    mockIsWidescreen = false;
+    render(<PlaylistDetailHeader {...defaultProps} />);
+    const gradient = document.querySelector('.from-primary\\/\\[0\\.06\\]');
+    expect(gradient).toBeNull();
+    expect(screen.queryByText('library.detail.breadcrumbLibrary')).toBeNull();
+  });
+
+  it('renders both action buttons with same size classes in widescreen', () => {
+    mockIsWidescreen = true;
+    const { container } = render(<PlaylistDetailHeader {...defaultProps} onPlayAll={vi.fn()} onShuffle={vi.fn()} />);
+    const buttons = container.querySelectorAll('.rounded-full');
+    const shuffleBtn = Array.from(buttons).find((b) => b.textContent?.includes('common.shuffle'));
+    const playAllBtn = Array.from(buttons).find((b) => b.textContent?.includes('library.detail.playAll'));
+    expect(shuffleBtn).toBeTruthy();
+    expect(playAllBtn).toBeTruthy();
+    expect(shuffleBtn!.className).not.toContain('shadow-glow-lg');
+    expect(playAllBtn!.className).not.toContain('shadow-glow-lg');
   });
 });

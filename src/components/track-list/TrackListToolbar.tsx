@@ -30,9 +30,7 @@ export function TrackListToolbar({
   return (
     <div className="flex items-center justify-between px-3">
       <div className="flex items-center gap-3">
-        {showSelectAll && (
-          <SelectAllCheckbox isAllSelected={isAllSelected} onToggleAll={onToggleAll} />
-        )}
+        {showSelectAll && <SelectAllCheckbox isAllSelected={isAllSelected} onToggleAll={onToggleAll} />}
         {onPlayShuffled && (
           <Button
             variant="ghost"
@@ -49,11 +47,7 @@ export function TrackListToolbar({
         {sort && (
           <>
             <SortSelect sort={sort} />
-            <SortDirectionSelect
-              value={sort.direction}
-              onChange={sort.onDirectionChange}
-              showIcon={false}
-            />
+            <SortDirectionSelect value={sort.direction} onChange={sort.onDirectionChange} showIcon={false} />
           </>
         )}
       </div>
@@ -72,7 +66,9 @@ function SortSelect({ sort }: { sort: SortConfig<SortField> }) {
       </SelectTrigger>
       <SelectContent>
         {sort.options.map(({ key, label }) => (
-          <SelectItem key={key} value={key}>{t(label)}</SelectItem>
+          <SelectItem key={key} value={key}>
+            {t(label)}
+          </SelectItem>
         ))}
       </SelectContent>
     </Select>

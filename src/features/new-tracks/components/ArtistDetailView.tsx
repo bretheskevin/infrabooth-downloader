@@ -38,10 +38,7 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
 
   const tracks = useMemo(() => filteredItems.map((item) => item.track), [filteredItems]);
 
-  const activityByTrackId = useMemo(
-    () => new Map(filteredItems.map((item) => [item.track.id, item])),
-    [filteredItems],
-  );
+  const activityByTrackId = useMemo(() => new Map(filteredItems.map((item) => [item.track.id, item])), [filteredItems]);
 
   const avatarUrl = getArtworkUrl(artist.avatar_url, 200);
 
@@ -55,24 +52,13 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
       resetKey={artist.id}
       header={({ actions, folderMetadata }) => (
         <DetailHeader
-          navigation={<Breadcrumb items={[
-            { label: t('newTracks.title'), onClick: onBack },
-            { label: artist.username },
-          ]} />}
-          artwork={
-            <ArtistAvatarImage
-              avatarUrl={avatarUrl}
-              username={artist.username}
-              className="w-12 h-12 shrink-0"
-            />
-          }
+          navigation={<Breadcrumb items={[{ label: t('newTracks.title'), onClick: onBack }, { label: artist.username }]} />}
+          artwork={<ArtistAvatarImage avatarUrl={avatarUrl} username={artist.username} className="w-12 h-12 shrink-0" />}
           title={artist.username}
           onTitleClick={() => useArtistProfileStore.getState().openProfile(artist.id, artist.username)}
           subtitle={
             <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
-              <span className="truncate">
-                {t('newTracks.trackCount', { count: filteredItems.length })}
-              </span>
+              <span className="truncate">{t('newTracks.trackCount', { count: filteredItems.length })}</span>
               {folderMetadata}
             </p>
           }
@@ -81,22 +67,21 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
       )}
       folder
       download={{ onDownloadTracks }}
-      filters={items.length > 0 ? {
-        options: ACTIVITY_FILTERS,
-        active: activityFilter,
-        onChange: setActivityFilter,
-      } : undefined}
+      filters={
+        items.length > 0
+          ? {
+              options: ACTIVITY_FILTERS,
+              active: activityFilter,
+              onChange: setActivityFilter,
+            }
+          : undefined
+      }
       trackList={{
         virtualized: false,
         subtitleSlot: (track) => {
           const item = activityByTrackId.get(track.id);
           if (!item) return null;
-          return (
-            <ActivityBadge
-              activityType={item.activity_type}
-              createdAt={item.created_at}
-            />
-          );
+          return <ActivityBadge activityType={item.activity_type} createdAt={item.created_at} />;
         },
       }}
       messages={{

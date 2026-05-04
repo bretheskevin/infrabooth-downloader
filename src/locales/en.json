@@ -344,7 +344,11 @@
       "downloadedCount_one": "{{count}} downloaded",
       "downloadedCount_other": "{{count}} downloaded",
       "customFolder": "custom",
-      "alreadyDownloaded": "Already downloaded"
+      "alreadyDownloaded": "Already downloaded",
+      "breadcrumbLibrary": "My Library",
+      "heroMeta_one": "Playlist · {{count}} track · {{duration}}",
+      "heroMeta_other": "Playlist · {{count}} tracks · {{duration}}",
+      "playAll": "Play all"
     }
   },
   "search": {

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Selection } from '@/bindings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
+import { cn } from '@/lib/utils';
 
 import { SelectionCard } from './SelectionCard';
 import { useSelections } from '../hooks/useSelections';
@@ -12,9 +13,7 @@ import { useSelections } from '../hooks/useSelections';
 const CURATED_TITLES = ['Daily Drops', 'Weekly Wave'] as const;
 
 function selectionGridClassName(isWidescreen: boolean) {
-  return isWidescreen
-    ? "grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]"
-    : "grid grid-cols-2 sm:grid-cols-3 gap-3";
+  return isWidescreen ? 'grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]' : 'grid grid-cols-2 sm:grid-cols-3 gap-3';
 }
 
 interface SelectionsSectionProps {
@@ -66,9 +65,10 @@ function SelectionGroup({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
+      <div className={cn('flex items-center gap-2', isWidescreen && 'border-b border-border/40 pb-2 mb-1')}>
         {icon}
-        <h3 className="text-sm font-semibold text-muted-foreground">{title}</h3>
+        <h3 className={cn('font-semibold text-muted-foreground', isWidescreen ? 'text-[15px]' : 'text-sm')}>{title}</h3>
+        {isWidescreen && items && <span className="text-xs text-muted-foreground tabular-nums">{items.length}</span>}
       </div>
 
       {isLoading ? (
@@ -95,15 +95,10 @@ export function SelectionsSection({ onSelectMix, onDownloadMix }: SelectionsSect
   const { t } = useTranslation();
   const isWidescreen = useIsWidescreen();
   const { data: allSelections, isLoading, isError, refetch } = useSelections();
-  const personalMixes = useMemo(
-    () => allSelections?.filter((s) => s.title.includes('Your Mix')),
-    [allSelections],
-  );
+  const personalMixes = useMemo(() => allSelections?.filter((s) => s.title.includes('Your Mix')), [allSelections]);
   const curatedPicks = useMemo(
     () =>
-      allSelections
-        ?.filter((s) => (CURATED_TITLES as readonly string[]).includes(s.title))
-        .sort((a, b) => a.title.localeCompare(b.title)),
+      allSelections?.filter((s) => (CURATED_TITLES as readonly string[]).includes(s.title)).sort((a, b) => a.title.localeCompare(b.title)),
     [allSelections],
   );
 
@@ -112,11 +107,7 @@ export function SelectionsSection({ onSelectMix, onDownloadMix }: SelectionsSect
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <AlertCircle className="h-4 w-4" />
         <span>{t('selections.loadError')}</span>
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="text-primary hover:underline"
-        >
+        <button type="button" onClick={() => void refetch()} className="text-primary hover:underline">
           {t('selections.retry')}
         </button>
       </div>

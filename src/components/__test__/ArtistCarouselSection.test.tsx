@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ArtistCarouselSection } from '../ArtistCarouselSection';
 import type { FollowedArtist } from '@/bindings';
@@ -10,13 +10,16 @@ vi.mock('react-i18next', () => ({
 }));
 
 vi.mock('@/components/ui/scroll-carousel', () => ({
-  ScrollCarousel: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="scroll-carousel">{children}</div>
-  ),
+  ScrollCarousel: ({ children }: { children: React.ReactNode }) => <div data-testid="scroll-carousel">{children}</div>,
 }));
 
 vi.mock('@/components/ui/refresh-button', () => ({
   RefreshButton: () => null,
+}));
+
+let mockIsWidescreen = false;
+vi.mock('@/hooks/useIsWidescreen', () => ({
+  useIsWidescreen: () => mockIsWidescreen,
 }));
 
 function makeArtist(overrides: Partial<FollowedArtist> & { id: number; username: string }): FollowedArtist {
@@ -60,13 +63,7 @@ describe('ArtistCarouselSection', () => {
         makeArtist({ id: 3, username: 'AnotherOld', has_new_releases: false }),
       ];
 
-      render(
-        <ArtistCarouselSection
-          {...defaultProps}
-          artists={artists}
-          getHasNewAny={(a) => a.has_new_releases}
-        />,
-      );
+      render(<ArtistCarouselSection {...defaultProps} artists={artists} getHasNewAny={(a) => a.has_new_releases} />);
 
       const buttons = screen.getAllByRole('button', { name: /Artist|Old/ });
       const names = buttons.map((b) => b.getAttribute('aria-label'));
@@ -81,13 +78,7 @@ describe('ArtistCarouselSection', () => {
         makeArtist({ id: 4, username: 'Fourth-Old', has_new_releases: false }),
       ];
 
-      render(
-        <ArtistCarouselSection
-          {...defaultProps}
-          artists={artists}
-          getHasNewAny={(a) => a.has_new_releases}
-        />,
-      );
+      render(<ArtistCarouselSection {...defaultProps} artists={artists} getHasNewAny={(a) => a.has_new_releases} />);
 
       const buttons = screen.getAllByRole('button', { name: /New|Old/ });
       const names = buttons.map((b) => b.getAttribute('aria-label'));
@@ -101,9 +92,7 @@ describe('ArtistCarouselSection', () => {
         makeArtist({ id: 3, username: 'Middle', has_new_releases: true }),
       ];
 
-      render(
-        <ArtistCarouselSection {...defaultProps} artists={artists} />,
-      );
+      render(<ArtistCarouselSection {...defaultProps} artists={artists} />);
 
       const buttons = screen.getAllByRole('button', { name: /Zebra|Alpha|Middle/ });
       const names = buttons.map((b) => b.getAttribute('aria-label'));
@@ -118,14 +107,7 @@ describe('ArtistCarouselSection', () => {
         makeArtist({ id: 2, username: 'OnlyReposts', has_original_releases: false }),
       ];
 
-      render(
-        <ArtistCarouselSection
-          {...defaultProps}
-          artists={artists}
-          hideReposts={true}
-          filterFn={(a) => a.has_original_releases}
-        />,
-      );
+      render(<ArtistCarouselSection {...defaultProps} artists={artists} hideReposts={true} filterFn={(a) => a.has_original_releases} />);
 
       expect(screen.getByLabelText('HasOriginal')).toBeInTheDocument();
       expect(screen.queryByLabelText('OnlyReposts')).not.toBeInTheDocument();
@@ -134,16 +116,25 @@ describe('ArtistCarouselSection', () => {
     it('sorts by getHasNewOriginal when hideReposts is true', () => {
       const artists = [
         makeArtist({
-          id: 1, username: 'AnyNewOnly',
-          has_new_releases: true, has_new_original_releases: false, has_original_releases: true,
+          id: 1,
+          username: 'AnyNewOnly',
+          has_new_releases: true,
+          has_new_original_releases: false,
+          has_original_releases: true,
         }),
         makeArtist({
-          id: 2, username: 'BothNew',
-          has_new_releases: true, has_new_original_releases: true, has_original_releases: true,
+          id: 2,
+          username: 'BothNew',
+          has_new_releases: true,
+          has_new_original_releases: true,
+          has_original_releases: true,
         }),
         makeArtist({
-          id: 3, username: 'NoNew',
-          has_new_releases: false, has_new_original_releases: false, has_original_releases: true,
+          id: 3,
+          username: 'NoNew',
+          has_new_releases: false,
+          has_new_original_releases: false,
+          has_original_releases: true,
         }),
       ];
 
@@ -188,21 +179,44 @@ describe('ArtistCarouselSection', () => {
 
   describe('empty and loading states', () => {
     it('returns null when loading', () => {
-      const { container } = render(
-        <ArtistCarouselSection
-          {...defaultProps}
-          artists={[]}
-          isLoading={true}
-        />,
-      );
+      const { container } = render(<ArtistCarouselSection {...defaultProps} artists={[]} isLoading={true} />);
       expect(container.innerHTML).toBe('');
     });
 
     it('returns null when no artists to display', () => {
-      const { container } = render(
-        <ArtistCarouselSection {...defaultProps} artists={[]} />,
-      );
+      const { container } = render(<ArtistCarouselSection {...defaultProps} artists={[]} />);
       expect(container.innerHTML).toBe('');
+    });
+  });
+
+  describe('widescreen header polish', () => {
+    afterEach(() => {
+      mockIsWidescreen = false;
+    });
+
+    it('applies editorial header styling when widescreen', () => {
+      mockIsWidescreen = true;
+      const artists = [makeArtist({ id: 1, username: 'Artist1' })];
+      render(<ArtistCarouselSection {...defaultProps} artists={artists} />);
+
+      const title = screen.getByText('Title');
+      expect(title.className).toContain('text-[15px]');
+
+      const headerRow = title.closest('div');
+      expect(headerRow?.className).toContain('border-b');
+      expect(headerRow?.className).toContain('border-border/40');
+      expect(headerRow?.className).toContain('pb-2');
+      expect(headerRow?.className).toContain('mb-1');
+    });
+
+    it('keeps default header styling when narrow', () => {
+      mockIsWidescreen = false;
+      const artists = [makeArtist({ id: 1, username: 'Artist1' })];
+      render(<ArtistCarouselSection {...defaultProps} artists={artists} />);
+
+      const title = screen.getByText('Title');
+      expect(title.className).toContain('text-sm');
+      expect(title.className).not.toContain('text-[15px]');
     });
   });
 });

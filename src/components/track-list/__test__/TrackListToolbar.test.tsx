@@ -47,4 +47,11 @@ describe('TrackListToolbar', () => {
     render(<TrackListToolbar {...baseProps} sort={undefined} />);
     expect(screen.queryByText('Playlist order')).not.toBeInTheDocument();
   });
+
+  it('does not render column headers', () => {
+    render(<TrackListToolbar {...baseProps} />);
+    expect(screen.queryByText('trackList.colTitle')).not.toBeInTheDocument();
+    expect(screen.queryByText('trackList.colArtist')).not.toBeInTheDocument();
+    expect(screen.queryByText('trackList.colDuration')).not.toBeInTheDocument();
+  });
 });

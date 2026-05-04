@@ -344,7 +344,11 @@
       "downloadedCount_one": "{{count}} téléchargé",
       "downloadedCount_other": "{{count}} téléchargés",
       "customFolder": "personnalisé",
-      "alreadyDownloaded": "Déjà téléchargé"
+      "alreadyDownloaded": "Déjà téléchargé",
+      "breadcrumbLibrary": "Ma bibliothèque",
+      "heroMeta_one": "Playlist · {{count}} piste · {{duration}}",
+      "heroMeta_other": "Playlist · {{count}} pistes · {{duration}}",
+      "playAll": "Tout lire"
     }
   },
   "search": {

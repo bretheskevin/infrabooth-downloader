@@ -18,22 +18,27 @@ interface ReleaseTracklistViewProps {
   onDownloadTracks: (tracks: TrackInfo[], title: string, outputDir?: string) => void | Promise<void>;
 }
 
-export function ReleaseTracklistView({
-  artist,
-  release,
-  onBackToReleases,
-  onBackToCarousel,
-  onDownloadTracks,
-}: ReleaseTracklistViewProps) {
+export function ReleaseTracklistView({ artist, release, onBackToReleases, onBackToCarousel, onDownloadTracks }: ReleaseTracklistViewProps) {
   const { t } = useTranslation();
   const info = release.release;
   const shareInfo: ShareTrackInfo | undefined = info.permalink_url
-    ? { trackId: info.id, title: info.title, artist: info.user.username, artworkUrl: info.artwork_url, permalinkUrl: info.permalink_url }
+    ? {
+        trackId: info.id,
+        title: info.title,
+        artist: info.user.username,
+        artworkUrl: info.artwork_url,
+        permalinkUrl: info.permalink_url,
+      }
     : undefined;
   const artworkUrl = getArtworkUrl(info.artwork_url, 300);
   const typeLabel = t(RELEASE_TYPE_KEYS[info.release_type]);
 
-  const { data: tracks, isLoading, error, refetch } = useQuery({
+  const {
+    data: tracks,
+    isLoading,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['release-tracks', info.id],
     queryFn: () => api.getReleaseTracks(info.id),
     staleTime: DEFAULT_STALE_TIME,
@@ -57,11 +62,15 @@ export function ReleaseTracklistView({
       resetKey={info.id}
       header={({ actions, folderMetadata }) => (
         <DetailHeader
-          navigation={<Breadcrumb items={[
-            { label: t('newReleases.title'), onClick: onBackToCarousel },
-            { label: artist.username, onClick: onBackToReleases },
-            { label: info.title },
-          ]} />}
+          navigation={
+            <Breadcrumb
+              items={[
+                { label: t('newReleases.title'), onClick: onBackToCarousel },
+                { label: artist.username, onClick: onBackToReleases },
+                { label: info.title },
+              ]}
+            />
+          }
           artwork={artwork}
           title={info.title}
           subtitle={

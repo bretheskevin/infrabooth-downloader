@@ -5,6 +5,7 @@ import { RefreshButton } from '@/components/ui/refresh-button';
 import { ScrollCarousel } from '@/components/ui/scroll-carousel';
 import { ArtistAvatar } from '@/components/ArtistAvatar';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
+import { cn } from '@/lib/utils';
 import type { FollowedArtist } from '@/bindings';
 
 interface CarouselLabels {
@@ -31,10 +32,19 @@ interface ArtistCarouselSectionProps {
 }
 
 export function ArtistCarouselSection({
-  labels, artists, isLoading, error, onRefresh,
-  selectedArtistId, onSelectArtist,
-  hideReposts, onHideRepostsChange, hideRepostsId,
-  filterFn, getHasNewAny, getHasNewOriginal,
+  labels,
+  artists,
+  isLoading,
+  error,
+  onRefresh,
+  selectedArtistId,
+  onSelectArtist,
+  hideReposts,
+  onHideRepostsChange,
+  hideRepostsId,
+  filterFn,
+  getHasNewAny,
+  getHasNewOriginal,
 }: ArtistCarouselSectionProps) {
   const isWidescreen = useIsWidescreen();
   const getHasNew = hideReposts ? getHasNewOriginal : getHasNewAny;
@@ -46,11 +56,14 @@ export function ArtistCarouselSection({
 
   if (isLoading) return null;
 
+  const sectionHeaderRow = cn('flex items-center gap-2', isWidescreen && 'border-b border-border/40 pb-2 mb-1');
+  const sectionHeaderTitle = cn('font-semibold', isWidescreen ? 'text-[15px]' : 'text-sm');
+
   if (error && artists.length === 0) {
     return (
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-semibold">{labels.title}</h3>
+        <div className={sectionHeaderRow}>
+          <h3 className={sectionHeaderTitle}>{labels.title}</h3>
           <RefreshButton onRefresh={onRefresh} aria-label={labels.title} />
         </div>
       </div>
@@ -71,8 +84,8 @@ export function ArtistCarouselSection({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-2">
-        <h3 className="text-sm font-semibold">{labels.title}</h3>
+      <div className={sectionHeaderRow}>
+        <h3 className={sectionHeaderTitle}>{labels.title}</h3>
         <RefreshButton onRefresh={onRefresh} aria-label={labels.title} />
         <Label htmlFor={hideRepostsId} className="flex items-center gap-1.5 ml-auto cursor-pointer">
           <Switch
@@ -85,9 +98,7 @@ export function ArtistCarouselSection({
         </Label>
       </div>
       {isWidescreen ? (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(78px,1fr))] gap-3 py-1 px-1">
-          {avatars}
-        </div>
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(78px,1fr))] gap-3 py-1 px-1">{avatars}</div>
       ) : (
         <ScrollCarousel ariaLabelLeft={labels.scrollLeft} ariaLabelRight={labels.scrollRight}>
           {avatars}

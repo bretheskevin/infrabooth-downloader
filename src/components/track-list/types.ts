@@ -30,6 +30,8 @@ export interface DownloadConfig {
 export interface TrackListRenderContext {
   actions: React.ReactNode;
   folderMetadata: React.ReactNode;
+  onPlayAll?: () => void;
+  onShuffle?: () => void;
 }
 
 export interface TrackListMessages {
@@ -38,9 +40,7 @@ export interface TrackListMessages {
   error?: string;
 }
 
-export interface TrackListViewProps<
-  F extends string = string,
-> {
+export interface TrackListViewProps<F extends string = string> {
   tracks: TrackInfo[] | undefined;
   isLoading: boolean;
   isStreaming?: boolean;

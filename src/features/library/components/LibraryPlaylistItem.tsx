@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useIsDownloadEnabled } from '@/features/settings';
 import { ArtistLink } from '@/components/ArtistLink';
+import { useIsWidescreen } from '@/hooks/useIsWidescreen';
+import { cn } from '@/lib/utils';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -15,17 +17,21 @@ interface LibraryPlaylistItemProps {
 
 export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDownloading }: LibraryPlaylistItemProps) {
   const { t } = useTranslation();
+  const isWidescreen = useIsWidescreen();
   const isDownloadEnabled = useIsDownloadEnabled();
   const needsArtwork = !playlist.artwork_url;
-  const { data: resolvedArtwork } = usePlaylistArtwork(
-    playlist.id,
-    playlist.secret_token,
-    needsArtwork,
-  );
+  const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secret_token, needsArtwork);
   const artworkUrl = playlist.artwork_url ?? resolvedArtwork ?? null;
 
   return (
-    <div className="relative flex items-center gap-3 w-full h-auto p-2.5 text-left justify-start rounded-md hover:bg-accent hover:text-accent-foreground">
+    <div
+      className={cn(
+        'relative flex items-center gap-3 w-full h-auto p-2.5 text-left justify-start',
+        isWidescreen
+          ? 'rounded-xl bg-card border border-border/60 hover:border-primary/30 hover:shadow-elevated transition-all'
+          : 'rounded-md hover:bg-accent hover:text-accent-foreground',
+      )}
+    >
       <button
         type="button"
         className="absolute inset-0 rounded-md focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
@@ -37,11 +43,14 @@ export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDown
           <img
             src={artworkUrl}
             alt={playlist.title}
-            className="w-12 h-12 rounded-md object-cover"
+            className={cn('object-cover', isWidescreen ? 'w-[52px] h-[52px] rounded-lg' : 'w-12 h-12 rounded-md')}
           />
         ) : (
           <div
-            className="w-12 h-12 rounded-md bg-secondary flex items-center justify-center"
+            className={cn(
+              'bg-secondary flex items-center justify-center',
+              isWidescreen ? 'w-[52px] h-[52px] rounded-lg' : 'w-12 h-12 rounded-md',
+            )}
             data-testid="library-item-artwork-placeholder"
           >
             <Music className="h-4 w-4 text-muted-foreground" />
@@ -56,7 +65,7 @@ export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDown
           className="relative z-10 block text-xs text-muted-foreground truncate max-w-full"
         />
       </div>
-      <span className="text-xs text-muted-foreground flex-shrink-0">
+      <span className={cn('text-xs text-muted-foreground flex-shrink-0', isWidescreen && 'tabular-nums')}>
         {t('download.trackCount', { count: playlist.track_count })}
       </span>
       {isDownloadEnabled && (
@@ -71,11 +80,7 @@ export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDown
             onDownload();
           }}
         >
-          {isDownloading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Download className="h-4 w-4" />
-          )}
+          {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
         </Button>
       )}
     </div>

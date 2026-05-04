@@ -1,7 +1,12 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LibraryPlaylistItem } from '../LibraryPlaylistItem';
 import type { LibraryPlaylist } from '@/bindings';
+
+let mockIsWidescreen = false;
+vi.mock('@/hooks/useIsWidescreen', () => ({
+  useIsWidescreen: () => mockIsWidescreen,
+}));
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -91,5 +96,59 @@ describe('LibraryPlaylistItem', () => {
     render(<LibraryPlaylistItem playlist={noUser} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'TestUser' })).not.toBeInTheDocument();
     expect(screen.getByText('TestUser')).toBeInTheDocument();
+  });
+
+  describe('widescreen card styling', () => {
+    afterEach(() => {
+      mockIsWidescreen = false;
+    });
+
+    it('applies widescreen card classes when widescreen', () => {
+      mockIsWidescreen = true;
+      render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+
+      const container = screen.getByRole('button', { name: /test playlist/i }).parentElement!;
+      expect(container.className).toContain('rounded-xl');
+      expect(container.className).toContain('bg-card');
+      expect(container.className).toContain('border-border/60');
+      expect(container.className).toContain('hover:shadow-elevated');
+    });
+
+    it('keeps narrow card classes when not widescreen', () => {
+      mockIsWidescreen = false;
+      render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+
+      const container = screen.getByRole('button', { name: /test playlist/i }).parentElement!;
+      expect(container.className).toContain('rounded-md');
+      expect(container.className).toContain('hover:bg-accent');
+    });
+
+    it('uses larger cover art when widescreen', () => {
+      mockIsWidescreen = true;
+      render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+
+      const img = screen.getByRole('img');
+      expect(img.className).toContain('w-[52px]');
+      expect(img.className).toContain('h-[52px]');
+      expect(img.className).toContain('rounded-lg');
+    });
+
+    it('uses default cover art size when narrow', () => {
+      mockIsWidescreen = false;
+      render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+
+      const img = screen.getByRole('img');
+      expect(img.className).toContain('w-12');
+      expect(img.className).toContain('h-12');
+      expect(img.className).toContain('rounded-md');
+    });
+
+    it('adds tabular-nums to track count when widescreen', () => {
+      mockIsWidescreen = true;
+      render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+
+      const trackCount = screen.getByText('10 tracks');
+      expect(trackCount.className).toContain('tabular-nums');
+    });
   });
 });

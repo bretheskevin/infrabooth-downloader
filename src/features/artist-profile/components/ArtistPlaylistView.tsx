@@ -16,23 +16,18 @@ interface ArtistPlaylistViewProps {
   onDownloadTracks: (tracks: TrackInfo[], title: string, outputDir?: string) => void | Promise<void>;
 }
 
-export function ArtistPlaylistView({
-  playlist,
-  artistName,
-  onBack,
-  onDownloadTracks,
-}: ArtistPlaylistViewProps) {
+export function ArtistPlaylistView({ playlist, artistName, onBack, onDownloadTracks }: ArtistPlaylistViewProps) {
   const { t } = useTranslation();
-  const {
-    data: tracks,
-    isLoading,
-    isStreaming,
-    error,
-    refetch,
-  } = useArtistPlaylistTracks(playlist.id, playlist.secret_token);
+  const { data: tracks, isLoading, isStreaming, error, refetch } = useArtistPlaylistTracks(playlist.id, playlist.secret_token);
 
   const shareInfo: ShareTrackInfo | undefined = playlist.permalink_url
-    ? { trackId: playlist.id, title: playlist.title, artist: artistName, artworkUrl: playlist.artwork_url, permalinkUrl: playlist.permalink_url }
+    ? {
+        trackId: playlist.id,
+        title: playlist.title,
+        artist: artistName,
+        artworkUrl: playlist.artwork_url,
+        permalinkUrl: playlist.permalink_url,
+      }
     : undefined;
 
   const artwork = <PlaylistArtwork artworkUrl={playlist.artwork_url} title={playlist.title} />;
@@ -48,20 +43,15 @@ export function ArtistPlaylistView({
       resetKey={playlist.id}
       header={({ actions, folderMetadata }) => (
         <DetailHeader
-          navigation={
-            <Breadcrumb
-              items={[
-                { label: artistName, onClick: onBack },
-                { label: playlist.title },
-              ]}
-            />
-          }
+          navigation={<Breadcrumb items={[{ label: artistName, onClick: onBack }, { label: playlist.title }]} />}
           artwork={artwork}
           title={playlist.title}
           subtitle={
             <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
               <span className="truncate">
-                {t('artistProfile.playlistTrackCount', { count: playlist.track_count })}
+                {t('artistProfile.playlistTrackCount', {
+                  count: playlist.track_count,
+                })}
               </span>
               {folderMetadata}
             </p>

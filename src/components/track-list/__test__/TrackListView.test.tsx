@@ -56,11 +56,21 @@ vi.mock('@/hooks/useTrackSelection', () => ({
 }));
 
 vi.mock('@/features/player/hooks/usePlayContext', () => ({
-  usePlayContext: () => ({ playTrack: mockPlayTrack, syncQueue: mockSyncQueue }),
+  usePlayContext: () => ({
+    playTrack: mockPlayTrack,
+    syncQueue: mockSyncQueue,
+  }),
+}));
+
+const mockPlayerStoreGetState = vi.fn(() => ({
+  isShuffled: false,
+  toggleShuffle: vi.fn(),
 }));
 
 vi.mock('@/features/player/store', () => ({
-  usePlayerStore: () => undefined,
+  usePlayerStore: Object.assign(() => undefined, {
+    getState: () => mockPlayerStoreGetState(),
+  }),
 }));
 
 vi.mock('@/hooks/useDownloadSelected', () => ({
@@ -89,7 +99,9 @@ vi.mock('@/components/PreserveOrderToggle', () => ({
   PreserveOrderToggle: () => <div data-testid="preserve-order-toggle" />,
 }));
 
-const toolbarSortRef: { current: import('@/components/track-list/types').SortConfig<import('@/lib/sort').SortField> | null } = { current: null };
+const toolbarSortRef: {
+  current: import('@/components/track-list/types').SortConfig<import('@/lib/sort').SortField> | null;
+} = { current: null };
 vi.mock('../TrackListToolbar', () => ({
   TrackListToolbar: (props: { sort: import('@/components/track-list/types').SortConfig<import('@/lib/sort').SortField> }) => {
     toolbarSortRef.current = props.sort;
@@ -127,9 +139,7 @@ describe('TrackListView', () => {
   };
 
   it('renders loading state when isLoading', () => {
-    const { container } = render(
-      <TrackListView {...defaultProps} isLoading />,
-    );
+    const { container } = render(<TrackListView {...defaultProps} isLoading />);
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
@@ -159,13 +169,7 @@ describe('TrackListView', () => {
 
   it('calls header render function with context', () => {
     const headerFn = vi.fn(() => <div data-testid="fn-header">FN</div>);
-    render(
-      <TrackListView
-        {...defaultProps}
-        tracks={[createTrack(1)]}
-        header={headerFn}
-      />,
-    );
+    render(<TrackListView {...defaultProps} tracks={[createTrack(1)]} header={headerFn} />);
     expect(headerFn).toHaveBeenCalledWith(
       expect.objectContaining({
         actions: expect.anything(),
@@ -193,9 +197,7 @@ describe('TrackListView', () => {
   it('resets sort state when resetKey changes', () => {
     const t1 = { ...createTrack(1), title: 'Zebra' };
     const t2 = { ...createTrack(2), title: 'Alpha' };
-    const { rerender } = render(
-      <TrackListView {...defaultProps} tracks={[t1, t2]} resetKey="a" />,
-    );
+    const { rerender } = render(<TrackListView {...defaultProps} tracks={[t1, t2]} resetKey="a" />);
     act(() => toolbarSortRef.current?.onChange('title'));
     expect(toolbarSortRef.current?.active).toBe('title');
 
@@ -240,24 +242,43 @@ describe('TrackListView', () => {
   });
 
   it('renders streaming indicator when streaming and has tracks', () => {
-    render(
-      <TrackListView
-        {...defaultProps}
-        tracks={[createTrack(1)]}
-        isStreaming
-      />,
-    );
+    render(<TrackListView {...defaultProps} tracks={[createTrack(1)]} isStreaming />);
     expect(screen.getByText('common.loadingTracks')).toBeInTheDocument();
   });
 
   it('does not render streaming indicator when not streaming', () => {
-    render(
-      <TrackListView
-        {...defaultProps}
-        tracks={[createTrack(1)]}
-        isStreaming={false}
-      />,
-    );
+    render(<TrackListView {...defaultProps} tracks={[createTrack(1)]} isStreaming={false} />);
     expect(screen.queryByText('common.loadingTracks')).not.toBeInTheDocument();
+  });
+
+  it('onPlayAll disables shuffle if currently active', () => {
+    const toggleShuffle = vi.fn();
+    mockPlayerStoreGetState.mockReturnValue({
+      isShuffled: true,
+      toggleShuffle,
+    });
+
+    const headerFn = vi.fn((_ctx) => <div data-testid="fn-header">FN</div>);
+    render(<TrackListView {...defaultProps} tracks={[createTrack(1), createTrack(2)]} header={headerFn} />);
+
+    const ctx = headerFn.mock.calls[headerFn.mock.calls.length - 1]![0];
+    expect(ctx.onPlayAll).toBeDefined();
+    act(() => ctx.onPlayAll!());
+    expect(toggleShuffle).toHaveBeenCalled();
+  });
+
+  it('onPlayAll does not call toggleShuffle when shuffle is inactive', () => {
+    const toggleShuffle = vi.fn();
+    mockPlayerStoreGetState.mockReturnValue({
+      isShuffled: false,
+      toggleShuffle,
+    });
+
+    const headerFn = vi.fn((_ctx) => <div data-testid="fn-header">FN</div>);
+    render(<TrackListView {...defaultProps} tracks={[createTrack(1), createTrack(2)]} header={headerFn} />);
+
+    const ctx = headerFn.mock.calls[headerFn.mock.calls.length - 1]![0];
+    act(() => ctx.onPlayAll!());
+    expect(toggleShuffle).not.toHaveBeenCalled();
   });
 });

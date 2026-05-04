@@ -19,6 +19,13 @@ if printf '%s\n' "$staged_files" | grep -Eq '^(src-tauri/.*\.(rs|toml)|src-tauri
   backend_changed=1
 fi
 
+prettier_files="$(printf '%s\n' "$staged_files" | grep -E '\.(ts|tsx|json|css|js)$' || true)"
+if [ -n "$prettier_files" ]; then
+  echo "pre-commit: formatting staged files"
+  printf '%s\0' "$prettier_files" | xargs -0 npx prettier --write
+  printf '%s\0' "$prettier_files" | xargs -0 git add
+fi
+
 if [ "$frontend_changed" -eq 1 ]; then
   echo "pre-commit: running frontend checks"
   npm run lint

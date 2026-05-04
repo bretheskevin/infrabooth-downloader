@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import { useIsDownloadEnabled } from '@/features/settings/hooks/useIsDownloadEnabled';
+import { useIsWidescreen } from '@/hooks/useIsWidescreen';
+import { cn } from '@/lib/utils';
 
 interface SelectionCardProps {
   mix: Selection;
@@ -18,6 +20,7 @@ interface SelectionCardProps {
 
 export function SelectionCard({ mix, index, label, onClick, onDownload }: SelectionCardProps) {
   const { t } = useTranslation();
+  const isWidescreen = useIsWidescreen();
   const isDownloadEnabled = useIsDownloadEnabled();
   const mixNumber = index + 1;
   const artworkUrl = mix.tracks[0]?.artwork_url ?? mix.artworkUrl ?? null;
@@ -45,16 +48,22 @@ export function SelectionCard({ mix, index, label, onClick, onDownload }: Select
       role="button"
       tabIndex={0}
       onClick={onClick}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } }}
-      className="group rounded-xl border border-border bg-card overflow-hidden text-left transition-transform hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer"
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={cn(
+        'group rounded-xl border bg-card overflow-hidden text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring cursor-pointer',
+        isWidescreen
+          ? 'border-border/60 transition-all hover:shadow-elevated hover:-translate-y-0.5'
+          : 'border-border transition-transform hover:scale-[1.02]',
+      )}
     >
       <div className="relative h-24 bg-secondary">
         {artworkUrl ? (
-          <img
-            src={getArtworkUrl(artworkUrl, 300) || undefined}
-            alt={mix.title}
-            className="h-full w-full object-cover"
-          />
+          <img src={getArtworkUrl(artworkUrl, 300) || undefined} alt={mix.title} className="h-full w-full object-cover" />
         ) : (
           <div className="h-full w-full flex items-center justify-center">
             <Music className="h-8 w-8 text-muted-foreground" />
@@ -64,9 +73,7 @@ export function SelectionCard({ mix, index, label, onClick, onDownload }: Select
           <span className="text-xs font-extrabold text-white tracking-wide">
             {label ? label.toUpperCase() : `${t('selections.cardLabel').toUpperCase()} ${mixNumber}`}
           </span>
-          <span className="text-[10px] text-white/70">
-            {t('selections.trackCount', { count: mix.trackCount })}
-          </span>
+          <span className="text-[10px] text-white/70">{t('selections.trackCount', { count: mix.trackCount })}</span>
         </div>
         {isDownloadEnabled && (
           <Tooltip>

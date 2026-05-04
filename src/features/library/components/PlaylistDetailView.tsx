@@ -34,7 +34,13 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
   }, []);
 
   const shareInfo: ShareTrackInfo | undefined = playlist.permalink_url
-    ? { trackId: playlist.id, title: playlist.title, artist: playlist.username, artworkUrl: playlist.artwork_url, permalinkUrl: playlist.permalink_url }
+    ? {
+        trackId: playlist.id,
+        title: playlist.title,
+        artist: playlist.username,
+        artworkUrl: playlist.artwork_url,
+        permalinkUrl: playlist.permalink_url,
+      }
     : undefined;
 
   return (
@@ -47,7 +53,7 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
         onRetry={refetch}
         title={playlist.title}
         resetKey={playlist.id}
-        header={({ actions, folderMetadata }) => (
+        header={({ actions, folderMetadata, onPlayAll, onShuffle }) => (
           <PlaylistDetailHeader
             playlist={playlist}
             artworkUrl={artworkUrl}
@@ -55,6 +61,8 @@ export function PlaylistDetailView({ playlist, initialTracks, onBack, onDownload
             onBack={onBack}
             folderMetadata={folderMetadata}
             actions={actions}
+            onPlayAll={onPlayAll}
+            onShuffle={onShuffle}
           />
         )}
         folder

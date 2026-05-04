@@ -12,6 +12,7 @@ import { getErrorMessageKey } from '@/lib/getErrorMessageKey';
 import { FolderMetadata } from '@/components/FolderMetadata';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
 import { TrackListActionsDropdown } from '@/features/rekordbox-export/components/TrackListActionsDropdown';
+import { usePlayerStore } from '@/features/player';
 import { useTrackListState } from './hooks/useTrackListState';
 import { TrackListToolbar } from './TrackListToolbar';
 import { TrackListItems } from './TrackListItems';
@@ -38,7 +39,10 @@ export function TrackListView<F extends string = string>({
 }: TrackListViewProps<F>) {
   const { t } = useTranslation();
 
-  const [sortState, setSortState] = useState<{ field: SortField; direction: SortDirection }>({
+  const [sortState, setSortState] = useState<{
+    field: SortField;
+    direction: SortDirection;
+  }>({
     field: 'default',
     direction: 'asc',
   });
@@ -91,12 +95,24 @@ export function TrackListView<F extends string = string>({
     </div>
   ) : null;
 
-  const rekordboxExportAction = hasData && !isLoading ? (
-    <TrackListActionsDropdown tracks={tracks} playlistName={title} permalinkUrl={permalinkUrl} shareInfo={shareInfo} />
-  ) : null;
+  const rekordboxExportAction =
+    hasData && !isLoading ? (
+      <TrackListActionsDropdown tracks={tracks} playlistName={title} permalinkUrl={permalinkUrl} shareInfo={shareInfo} />
+    ) : null;
+
+  const handlePlayAll = useCallback(() => {
+    const { isShuffled, toggleShuffle } = usePlayerStore.getState();
+    if (isShuffled) toggleShuffle();
+    state.playTrack(0);
+  }, [state]);
 
   const renderCtx: TrackListRenderContext = {
-    actions: <>{rekordboxExportAction}{downloadAllAction}</>,
+    actions: (
+      <>
+        {rekordboxExportAction}
+        {downloadAllAction}
+      </>
+    ),
     folderMetadata: (
       <FolderMetadata
         folderName={state.folder.folderName}
@@ -107,17 +123,13 @@ export function TrackListView<F extends string = string>({
         onOpenFolder={state.folder.handleOpenFolder}
       />
     ),
+    onPlayAll: hasData && !isLoading ? handlePlayAll : undefined,
+    onShuffle: canShuffle ? state.playShuffled : undefined,
   };
   const headerNode = typeof header === 'function' ? header(renderCtx) : header;
 
-  const onSortFieldChange = useCallback(
-    (field: SortField) => setSortState((s) => ({ ...s, field })),
-    [],
-  );
-  const onSortDirectionChange = useCallback(
-    (direction: SortDirection) => setSortState((s) => ({ ...s, direction })),
-    [],
-  );
+  const onSortFieldChange = useCallback((field: SortField) => setSortState((s) => ({ ...s, field })), []);
+  const onSortDirectionChange = useCallback((direction: SortDirection) => setSortState((s) => ({ ...s, direction })), []);
   const sortConfig = useMemo(
     () => ({
       options: TRACK_SORT_OPTIONS,
@@ -135,11 +147,7 @@ export function TrackListView<F extends string = string>({
 
       {showFilters && (
         <div className="px-3">
-          <FilterChips
-            options={filters.options}
-            active={filters.active}
-            onChange={filters.onChange}
-          />
+          <FilterChips options={filters.options} active={filters.active} onChange={filters.onChange} />
         </div>
       )}
 
@@ -171,14 +179,10 @@ export function TrackListView<F extends string = string>({
         </div>
       )}
 
-      {showEmptyNoData && (
-        <p className="text-sm text-muted-foreground text-center py-12">{t(messages.empty)}</p>
-      )}
+      {showEmptyNoData && <p className="text-sm text-muted-foreground text-center py-12">{t(messages.empty)}</p>}
 
       {showEmptyFiltered && (
-        <p className="text-sm text-muted-foreground text-center py-12">
-          {t(messages.noResults ?? 'common.noResults')}
-        </p>
+        <p className="text-sm text-muted-foreground text-center py-12">{t(messages.noResults ?? 'common.noResults')}</p>
       )}
 
       {showContent && (
@@ -197,7 +201,10 @@ export function TrackListView<F extends string = string>({
             downloadTrack={state.downloadTrack}
             isDownloadEnabled={state.isDownloadEnabled}
             downloadedIds={state.downloadedIds}
-            selection={{ selectedIds: state.selectedIds, toggleTrack: state.toggleTrack }}
+            selection={{
+              selectedIds: state.selectedIds,
+              toggleTrack: state.toggleTrack,
+            }}
             animate={state.shouldAnimate}
           >
             <TrackListItems
@@ -218,10 +225,7 @@ export function TrackListView<F extends string = string>({
             </div>
           )}
 
-          <SelectionActionBar
-            selectedCount={state.selectedCount}
-            onDownload={state.handleDownloadSelected}
-          />
+          <SelectionActionBar selectedCount={state.selectedCount} onDownload={state.handleDownloadSelected} />
         </>
       )}
     </div>

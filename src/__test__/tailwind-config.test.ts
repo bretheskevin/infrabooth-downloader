@@ -7,23 +7,17 @@ describe('Story 1.2 - Tailwind CSS Configuration', () => {
 
   describe('Task 1: Tailwind CSS Installation (AC: #1)', () => {
     it('should have tailwindcss as a dev dependency', () => {
-      const packageJson = JSON.parse(
-        readFileSync(resolve(rootDir, 'package.json'), 'utf-8')
-      );
+      const packageJson = JSON.parse(readFileSync(resolve(rootDir, 'package.json'), 'utf-8'));
       expect(packageJson.devDependencies).toHaveProperty('tailwindcss');
     });
 
     it('should have postcss as a dev dependency', () => {
-      const packageJson = JSON.parse(
-        readFileSync(resolve(rootDir, 'package.json'), 'utf-8')
-      );
+      const packageJson = JSON.parse(readFileSync(resolve(rootDir, 'package.json'), 'utf-8'));
       expect(packageJson.devDependencies).toHaveProperty('postcss');
     });
 
     it('should have autoprefixer as a dev dependency', () => {
-      const packageJson = JSON.parse(
-        readFileSync(resolve(rootDir, 'package.json'), 'utf-8')
-      );
+      const packageJson = JSON.parse(readFileSync(resolve(rootDir, 'package.json'), 'utf-8'));
       expect(packageJson.devDependencies).toHaveProperty('autoprefixer');
     });
 
@@ -92,9 +86,7 @@ describe('Story 1.2 - Tailwind CSS Configuration', () => {
     });
 
     it('should have required Shadcn dependencies installed', () => {
-      const packageJson = JSON.parse(
-        readFileSync(resolve(rootDir, 'package.json'), 'utf-8')
-      );
+      const packageJson = JSON.parse(readFileSync(resolve(rootDir, 'package.json'), 'utf-8'));
       const allDeps = {
         ...packageJson.dependencies,
         ...packageJson.devDependencies,
@@ -124,6 +116,16 @@ describe('Story 1.2 - Tailwind CSS Configuration', () => {
       expect(viteContent).toContain('resolve');
       expect(viteContent).toContain('alias');
       expect(viteContent).toContain('@');
+    });
+  });
+
+  describe('Widescreen animations', () => {
+    it('should have animate-equalizer defined in theme.extend.animation', async () => {
+      const configPath = resolve(rootDir, 'tailwind.config.js');
+      const config = await import(configPath);
+      const configObj = config.default || config;
+      expect(configObj.theme.extend.animation).toHaveProperty('equalizer');
+      expect(configObj.theme.extend.animation.equalizer).toContain('equalizer-bar');
     });
   });
 
