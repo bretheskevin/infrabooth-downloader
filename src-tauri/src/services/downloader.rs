@@ -339,10 +339,9 @@ struct FfmpegContext<'a> {
 fn append_common_ffmpeg_args(args: &mut Vec<String>, output_path: &Path) {
     let output_str = output_path.to_string_lossy().to_string();
 
-    // Select only the first audio stream — excludes video, subtitle, and data
-    // streams that can cause Rekordbox to classify the MP3 as "video file."
+    // Select only the first audio stream — explicit mapping excludes video,
+    // subtitle, and data streams that cause Rekordbox to classify MP3s as "video file."
     args.extend_from_slice(&["-map".to_string(), "0:a:0".to_string()]);
-    args.push("-vn".to_string());
 
     // Strip all source container metadata — our id3 crate writes clean tags afterward.
     args.extend_from_slice(&["-map_metadata".to_string(), "-1".to_string()]);
@@ -933,11 +932,8 @@ mod tests {
     }
 
     fn assert_common_ffmpeg_args(args: &[String]) {
-        assert!(args.contains(&"-map".to_string()));
-        assert!(args.contains(&"0:a:0".to_string()));
-        assert!(args.contains(&"-vn".to_string()));
-        assert!(args.contains(&"-map_metadata".to_string()));
-        assert!(args.contains(&"-1".to_string()));
+        assert!(args.windows(2).any(|w| w == ["-map", "0:a:0"]));
+        assert!(args.windows(2).any(|w| w == ["-map_metadata", "-1"]));
     }
 
     #[test]
