@@ -339,10 +339,12 @@ struct FfmpegContext<'a> {
 fn append_common_ffmpeg_args(args: &mut Vec<String>, output_path: &Path) {
     let output_str = output_path.to_string_lossy().to_string();
 
-    // Strip video streams — some sources embed artwork as a video track,
-    // which causes Rekordbox to classify the MP3 as a "video file".
-    // Artwork is embedded separately via ID3 APIC frames in metadata.rs.
-    args.push("-vn".to_string());
+    // Select only the first audio stream — explicit mapping excludes video,
+    // subtitle, and data streams that cause Rekordbox to classify MP3s as "video file."
+    args.extend_from_slice(&["-map".to_string(), "0:a:0".to_string()]);
+
+    // Strip all source container metadata — our id3 crate writes clean tags afterward.
+    args.extend_from_slice(&["-map_metadata".to_string(), "-1".to_string()]);
 
     // Progress reporting
     args.extend_from_slice(&["-progress".to_string(), "pipe:1".to_string()]);
@@ -929,6 +931,11 @@ mod tests {
         assert_eq!(detect_format_from_content_type("text/html"), OriginalFormat::Unknown);
     }
 
+    fn assert_common_ffmpeg_args(args: &[String]) {
+        assert!(args.windows(2).any(|w| w == ["-map", "0:a:0"]));
+        assert!(args.windows(2).any(|w| w == ["-map_metadata", "-1"]));
+    }
+
     #[test]
     fn test_build_ffmpeg_args_for_original_wav() {
         let args = build_ffmpeg_args_for_original(Path::new("/tmp/input.wav"), Path::new("/tmp/output.mp3"), OriginalFormat::Wav);
@@ -936,7 +943,7 @@ mod tests {
         let args = args.unwrap();
         assert!(args.contains(&"-b:a".to_string()));
         assert!(args.contains(&"320k".to_string()));
-        assert!(args.contains(&"-vn".to_string()));
+        assert_common_ffmpeg_args(&args);
     }
 
     #[test]
@@ -945,7 +952,7 @@ mod tests {
         assert!(args.is_some());
         let args = args.unwrap();
         assert!(args.contains(&"320k".to_string()));
-        assert!(args.contains(&"-vn".to_string()));
+        assert_common_ffmpeg_args(&args);
     }
 
     #[test]
@@ -960,6 +967,6 @@ mod tests {
         assert!(args.is_some());
         let args = args.unwrap();
         assert!(args.contains(&"256k".to_string()));
-        assert!(args.contains(&"-vn".to_string()));
+        assert_common_ffmpeg_args(&args);
     }
 }

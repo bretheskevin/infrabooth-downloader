@@ -63,10 +63,6 @@ pub fn add_content(db: &mut RekordboxDatabase, file_path: &Path, metadata: &Trac
     let (device_id, master_db_id) = get_device_info(db)?;
     log::debug!("[rekordbox-content] device_id: {}, master_db_id: {}", device_id, master_db_id);
 
-    log::debug!("[rekordbox-content] Getting content link...");
-    let content_link = get_content_link(db)?;
-    log::debug!("[rekordbox-content] content_link: {}", content_link);
-
     log::debug!("[rekordbox-content] Generating new content ID...");
     let id = db.generate_unused_id("djmdContent")?.to_string();
     let uuid = Uuid::new_v4().to_string();
@@ -74,37 +70,44 @@ pub fn add_content(db: &mut RekordboxDatabase, file_path: &Path, metadata: &Trac
     let today = database::today_date();
     log::debug!("[rekordbox-content] Generated id: {}, uuid: {}", id, uuid);
 
-    let search_str = build_search_str(&metadata.title, &metadata.artist, metadata.album.as_deref());
-
     let length_sec = metadata.duration_ms.map(|ms| (ms / 1000) as i32);
 
     log::info!("[rekordbox-content] Inserting content into database: id={}, title={}", id, metadata.title);
     db.conn()
         .execute(
             "INSERT INTO djmdContent (
-                ID, UUID, FolderPath, FileNameL, FileNameS, Title,
+                ID, UUID, FolderPath, FileNameL, Title,
                 ArtistID, AlbumID, GenreID, FileType, FileSize,
                 BitRate, Length, SampleRate, Analysed,
-                DateCreated, StockDate, SearchStr, ContentLink,
+                DateCreated, StockDate,
                 MasterDBID, MasterSongID, rb_file_id, DeviceID,
-                HotCueAutoLoad, rb_data_status, rb_local_data_status,
+                HotCueAutoLoad, DeliveryControl, VideoAssociate,
+                Rating, ReleaseYear, TrackNo, DiscNo,
+                ColorID, DJPlayCount,
+                SamplerTrackInfo, SamplerPlayOffset, SamplerGain,
+                LyricStatus,
+                rb_data_status, rb_local_data_status,
                 rb_local_deleted, rb_local_synced,
                 created_at, updated_at
             ) VALUES (
-                ?1, ?2, ?3, ?4, ?5, ?6,
-                ?7, ?8, ?9, ?10, ?11,
-                ?12, ?13, ?14, ?15,
-                ?16, ?17, ?18, ?19,
-                ?20, ?21, ?22, ?23,
-                ?24, ?25, ?26,
-                ?27, ?28,
-                ?29, ?30
+                ?1, ?2, ?3, ?4, ?5,
+                ?6, ?7, ?8, ?9, ?10,
+                ?11, ?12, ?13, ?14,
+                ?15, ?16,
+                ?17, ?18, ?19, ?20,
+                ?21, ?22, ?23,
+                ?24, ?25, ?26, ?27,
+                ?28, ?29,
+                ?30, ?31, ?32,
+                ?33,
+                ?34, ?35,
+                ?36, ?37,
+                ?38, ?39
             )",
             params![
                 id,
                 uuid,
                 folder_path,
-                file_name,
                 file_name,
                 metadata.title,
                 artist_id,
@@ -118,13 +121,23 @@ pub fn add_content(db: &mut RekordboxDatabase, file_path: &Path, metadata: &Trac
                 0_i32,
                 today,
                 today,
-                search_str,
-                content_link,
                 master_db_id,
-                uuid,
+                id,
                 uuid,
                 device_id,
                 "on",
+                "on",
+                "0",
+                0_i32,
+                0_i32,
+                0_i32,
+                0_i32,
+                0_i32,
+                0_i32,
+                0_i32,
+                0_i32,
+                0.0_f64,
+                0_i32,
                 0_i32,
                 0_i32,
                 0_i32,
@@ -195,17 +208,4 @@ fn get_device_info(db: &RekordboxDatabase) -> Result<(String, String), Rekordbox
     db.conn()
         .query_row("SELECT ID, MasterDBID FROM djmdDevice LIMIT 1", [], |row| Ok((row.get(0)?, row.get(1)?)))
         .map_err(|e| RekordboxError::DatabaseError(format!("Device info query failed: {}", e)))
-}
-
-fn get_content_link(db: &RekordboxDatabase) -> Result<i64, RekordboxError> {
-    db.conn()
-        .query_row("SELECT rb_local_usn FROM djmdMenuItems WHERE Name = 'TRACK'", [], |row| row.get(0))
-        .map_err(|e| RekordboxError::DatabaseError(format!("Content link query failed: {}", e)))
-}
-
-fn build_search_str(title: &str, artist: &str, album: Option<&str>) -> String {
-    match album {
-        Some(a) => format!("{} {} {}", title, artist, a),
-        None => format!("{} {}", title, artist),
-    }
 }

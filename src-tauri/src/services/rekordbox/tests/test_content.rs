@@ -27,13 +27,16 @@ fn test_add_content() {
         sample_rate: Some(44100),
     };
     let content_id = content::add_content(&mut db, &mp3_path, &metadata).expect("add_content failed");
-    let (title, file_type, analysed): (Option<String>, i32, i32) = db
+    let (title, file_type, analysed, video_associate): (Option<String>, i32, i32, String) = db
         .conn()
-        .query_row("SELECT Title, FileType, Analysed FROM djmdContent WHERE ID = ?1", params![content_id], |row| Ok((row.get(0)?, row.get(1)?, row.get(2)?)))
+        .query_row("SELECT Title, FileType, Analysed, VideoAssociate FROM djmdContent WHERE ID = ?1", params![content_id], |row| {
+            Ok((row.get(0)?, row.get(1)?, row.get(2)?, row.get(3)?))
+        })
         .expect("content not found in DB");
     assert_eq!(title.as_deref(), Some("Test Track"));
     assert_eq!(file_type, 1);
     assert_eq!(analysed, 0);
+    assert_eq!(video_associate, "0");
 }
 
 #[test]
