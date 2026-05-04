@@ -3,3 +3,6 @@ cad275db1bf9e22d497b74e2e016613b663c418d
 
 # style(rust): switch to use_small_heuristics=Max and fix warnings
 75858d8686ad559ea061449a5d812181877ec3e0
+
+# style: apply prettier formatting to entire frontend codebase
+a19d372241a15a0f6fcf1ec5de5d8910d2eda631
