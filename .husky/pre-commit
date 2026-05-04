@@ -22,8 +22,8 @@ fi
 prettier_files="$(printf '%s\n' "$staged_files" | grep -E '\.(ts|tsx|json|css|js)$' || true)"
 if [ -n "$prettier_files" ]; then
   echo "pre-commit: formatting staged files"
-  printf '%s\0' "$prettier_files" | xargs -0 npx prettier --write
-  printf '%s\0' "$prettier_files" | xargs -0 git add
+  printf '%s\0' $prettier_files | xargs -0 npx prettier --write
+  printf '%s\0' $prettier_files | xargs -0 git add
 fi
 
 if [ "$frontend_changed" -eq 1 ]; then
