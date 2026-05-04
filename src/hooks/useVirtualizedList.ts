@@ -3,7 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 
 interface UseVirtualizedListOptions {
   count: number;
-  itemHeight: number;
+  itemHeight: number | ((index: number) => number);
   overscan?: number;
   initialScrollOffset?: number;
 }
@@ -16,10 +16,12 @@ export function useVirtualizedList<T extends HTMLElement = HTMLDivElement>({
 }: UseVirtualizedListOptions) {
   const parentRef = useRef<T>(null);
 
+  const estimateSize = typeof itemHeight === 'function' ? itemHeight : () => itemHeight;
+
   const virtualizer = useVirtualizer({
     count,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => itemHeight,
+    estimateSize,
     overscan,
     initialOffset: initialScrollOffset,
   });

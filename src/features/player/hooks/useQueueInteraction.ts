@@ -9,6 +9,7 @@ import { usePlayerStore } from '../store';
 
 const actions = () => usePlayerStore.getState();
 const ITEM_HEIGHT = 44;
+const SECTION_HEADER_HEIGHT = 30;
 
 export function useQueueInteraction() {
   const { t } = useTranslation();
@@ -27,6 +28,16 @@ export function useQueueInteraction() {
 
   const itemIds = useMemo(() => queue.map((i) => i.trackId), [queue]);
 
+  const hasSectionHeader = useCallback(
+    (index: number): boolean => {
+      if (manualQueueCount > 0 && index === cursor + 1) return true;
+      if (index === stationStartIdx) return true;
+      if (manualQueueCount > 0 && index === cursor + 1 + manualQueueCount && index !== stationStartIdx) return true;
+      return false;
+    },
+    [manualQueueCount, cursor, stationStartIdx],
+  );
+
   const getSectionHeader = (index: number): string | undefined => {
     const isManualStart = manualQueueCount > 0 && index === cursor + 1;
     const showAutoHeader = manualQueueCount > 0 && index === cursor + 1 + manualQueueCount;
@@ -38,9 +49,14 @@ export function useQueueInteraction() {
     return undefined;
   };
 
+  const estimateSize = useCallback(
+    (index: number) => ITEM_HEIGHT + (hasSectionHeader(index) ? SECTION_HEADER_HEIGHT : 0),
+    [hasSectionHeader],
+  );
+
   const { parentRef, virtualItems, totalSize } = useVirtualizedList({
     count: queue.length,
-    itemHeight: ITEM_HEIGHT,
+    itemHeight: estimateSize,
     overscan: 5,
   });
 
