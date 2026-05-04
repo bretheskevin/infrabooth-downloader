@@ -52,7 +52,11 @@ vi.mock('@/components/ui/select', () => ({
     </button>
   ),
   SelectValue: ({ children }: { children: React.ReactNode }) => <span data-testid="select-value">{children}</span>,
-  SelectContent: ({ children }: { children: React.ReactNode }) => <div role="listbox" hidden>{children}</div>,
+  SelectContent: ({ children }: { children: React.ReactNode }) => (
+    <div role="listbox" hidden>
+      {children}
+    </div>
+  ),
   SelectItem: ({ children, value }: { children: React.ReactNode; value: string }) => (
     <div role="option" data-value={value}>
       {children}

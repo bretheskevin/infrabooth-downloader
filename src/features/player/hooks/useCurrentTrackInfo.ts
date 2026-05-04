@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { usePlayerStore } from "../store";
-import type { TrackInfo } from "@/bindings";
+import { useMemo } from 'react';
+import { usePlayerStore } from '../store';
+import type { TrackInfo } from '@/bindings';
 
 export function useCurrentTrackInfo(): TrackInfo | undefined {
   const currentTrack = usePlayerStore((s) => s.currentTrack);

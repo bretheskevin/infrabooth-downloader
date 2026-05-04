@@ -3,9 +3,7 @@ import { logger } from '@/lib/logger';
 import type { QueueState, QueueStateSlice } from './types';
 import { INITIAL_QUEUE_STATE } from './types';
 
-export const createQueueStateSlice: StateCreator<QueueState, [], [], QueueStateSlice> = (
-  set
-) => ({
+export const createQueueStateSlice: StateCreator<QueueState, [], [], QueueStateSlice> = (set) => ({
   tracks: [],
   currentIndex: 0,
   totalTracks: 0,
@@ -23,9 +21,7 @@ export const createQueueStateSlice: StateCreator<QueueState, [], [], QueueStateS
   },
 
   updateTrackStatus: (id, status, error, progress) => {
-    void logger.debug(
-      `[queueStore] Track ${id} status: ${status}${error ? ` (error: ${error.code})` : ''}`
-    );
+    void logger.debug(`[queueStore] Track ${id} status: ${status}${error ? ` (error: ${error.code})` : ''}`);
     set((state) => ({
       tracks: state.tracks.map((track) =>
         track.id === id
@@ -38,7 +34,7 @@ export const createQueueStateSlice: StateCreator<QueueState, [], [], QueueStateS
               totalBytes: Math.max(progress?.totalBytes ?? 0, track.totalBytes ?? 0) || undefined,
               filePath: progress?.filePath ?? track.filePath,
             }
-          : track
+          : track,
       ),
     }));
   },

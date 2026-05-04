@@ -56,9 +56,7 @@ function processEvent(event: DownloadProgressEvent) {
 
     const wasComplete = existing?.status === 'complete' || existing?.status === 'completed';
     const isComplete = event.status === 'complete' || event.status === 'completed';
-    const newCompleted = isComplete && !wasComplete
-      ? prev.completedCount + 1
-      : prev.completedCount;
+    const newCompleted = isComplete && !wasComplete ? prev.completedCount + 1 : prev.completedCount;
 
     return { states: newMap, completedCount: newCompleted };
   });
@@ -93,10 +91,7 @@ export function useDownloadState() {
     processEvent(event);
   }, []);
 
-  const getTrackState = useCallback(
-    (trackId: string) => states.get(trackId),
-    [states],
-  );
+  const getTrackState = useCallback((trackId: string) => states.get(trackId), [states]);
 
   const reconcile = useCallback((trackIds: string[]) => {
     useDownloadStateStore.setState((prev) => {

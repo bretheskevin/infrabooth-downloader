@@ -35,16 +35,12 @@ describe('RateLimitDialog', () => {
 
   it('should show rate limit explanation', () => {
     render(<RateLimitDialog {...defaultProps} />);
-    expect(
-      screen.getByText(/SoundCloud limits streaming requests to 15,000/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/SoundCloud limits streaming requests to 15,000/)).toBeInTheDocument();
   });
 
   it('should clarify it is not the app fault', () => {
     render(<RateLimitDialog {...defaultProps} />);
-    expect(
-      screen.getByText(/not an issue with the application/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/not an issue with the application/)).toBeInTheDocument();
   });
 
   it('should show retry button', () => {

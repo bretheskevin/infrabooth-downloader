@@ -21,13 +21,7 @@ export function FollowButton({ artistId, artistUsername }: FollowButtonProps) {
   const showSpinner = isLoading || isChecking;
 
   return (
-    <Button
-      variant={isFollowing ? 'default' : 'secondary'}
-      size="pill"
-      onClick={toggle}
-      disabled={showSpinner}
-      className="shadow-none"
-    >
+    <Button variant={isFollowing ? 'default' : 'secondary'} size="pill" onClick={toggle} disabled={showSpinner} className="shadow-none">
       {showSpinner ? (
         <Loader2 className="h-3.5 w-3.5 animate-spin" />
       ) : isFollowing ? (

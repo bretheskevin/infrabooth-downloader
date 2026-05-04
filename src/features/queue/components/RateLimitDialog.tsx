@@ -16,11 +16,7 @@ interface RateLimitDialogProps {
   onStop: () => void;
 }
 
-export function RateLimitDialog({
-  open,
-  onRetry,
-  onStop,
-}: RateLimitDialogProps) {
+export function RateLimitDialog({ open, onRetry, onStop }: RateLimitDialogProps) {
   const { t } = useTranslation();
 
   return (
@@ -28,17 +24,11 @@ export function RateLimitDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('download.rateLimitDialogTitle')}</AlertDialogTitle>
-          <AlertDialogDescription className="whitespace-pre-line">
-            {t('download.rateLimitDialogDescription')}
-          </AlertDialogDescription>
+          <AlertDialogDescription className="whitespace-pre-line">{t('download.rateLimitDialogDescription')}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={onStop}>
-            {t('download.rateLimitDialogStop')}
-          </AlertDialogCancel>
-          <AlertDialogAction onClick={onRetry}>
-            {t('download.rateLimitDialogRetry')}
-          </AlertDialogAction>
+          <AlertDialogCancel onClick={onStop}>{t('download.rateLimitDialogStop')}</AlertDialogCancel>
+          <AlertDialogAction onClick={onRetry}>{t('download.rateLimitDialogRetry')}</AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

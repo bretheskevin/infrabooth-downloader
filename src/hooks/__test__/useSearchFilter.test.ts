@@ -4,9 +4,39 @@ import { useSearchFilter } from '../useSearchFilter';
 import type { TrackInfo } from '@/bindings';
 
 const makeTracks = (): TrackInfo[] => [
-  { id: 1, title: 'Acid Rain', user: { id: 0, username: 'DJ Kandid', avatar_url: null }, artwork_url: null, duration: 240000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
-  { id: 2, title: 'Tekno Drive', user: { id: 0, username: 'Anetha', avatar_url: null }, artwork_url: null, duration: 300000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
-  { id: 3, title: 'Hard Pulse', user: { id: 0, username: 'SPFDJ', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+  {
+    id: 1,
+    title: 'Acid Rain',
+    user: { id: 0, username: 'DJ Kandid', avatar_url: null },
+    artwork_url: null,
+    duration: 240000,
+    permalink_url: '',
+    waveform_url: null,
+    downloadable: false,
+    download_url: null,
+  },
+  {
+    id: 2,
+    title: 'Tekno Drive',
+    user: { id: 0, username: 'Anetha', avatar_url: null },
+    artwork_url: null,
+    duration: 300000,
+    permalink_url: '',
+    waveform_url: null,
+    downloadable: false,
+    download_url: null,
+  },
+  {
+    id: 3,
+    title: 'Hard Pulse',
+    user: { id: 0, username: 'SPFDJ', avatar_url: null },
+    artwork_url: null,
+    duration: 180000,
+    permalink_url: '',
+    waveform_url: null,
+    downloadable: false,
+    download_url: null,
+  },
 ];
 
 describe('useSearchFilter', () => {
@@ -30,10 +60,7 @@ describe('useSearchFilter', () => {
   });
 
   it('updates filtered tracks when input tracks change', () => {
-    const { result, rerender } = renderHook(
-      ({ t }) => useSearchFilter(t),
-      { initialProps: { t: tracks } },
-    );
+    const { result, rerender } = renderHook(({ t }) => useSearchFilter(t), { initialProps: { t: tracks } });
 
     act(() => {
       result.current.setSearchQuery('acid');

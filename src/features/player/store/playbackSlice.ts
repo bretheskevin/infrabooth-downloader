@@ -5,13 +5,7 @@ import { logger } from '@/lib/logger';
 import { useSettingsStore } from '@/features/settings/store';
 import { audioEngine } from '../audio-engine';
 import { fetchStationTracks, fetchStationTracksWithRetry } from '../utils/autoplay';
-import {
-  resolveWithCache,
-  getCachedUrl,
-  preloadQueueSegments,
-  purgeStaleCache,
-  invalidateCachedUrl,
-} from '../url-cache';
+import { resolveWithCache, getCachedUrl, preloadQueueSegments, purgeStaleCache, invalidateCachedUrl } from '../url-cache';
 import type { PlaybackItem, PlaybackState } from '../types';
 import type { AutoplaySliceState, PlaybackSliceState, PlayerState } from './types';
 import type { AutoplaySliceActions } from './autoplaySlice';
@@ -91,13 +85,15 @@ async function handleAutoplay(set: SetFn, get: GetFn, nextCursor: number) {
 }
 
 function prefetchStationSilent(get: GetFn, seedTrackId: number) {
-  void fetchStationTracks(seedTrackId).then((newItems) => {
-    if (newItems.length > 0) {
-      get().appendStationTracks(newItems);
-    }
-  }).catch((e) => {
-    void logger.debug(`[player] Station prefetch failed (non-fatal): ${e}`);
-  });
+  void fetchStationTracks(seedTrackId)
+    .then((newItems) => {
+      if (newItems.length > 0) {
+        get().appendStationTracks(newItems);
+      }
+    })
+    .catch((e) => {
+      void logger.debug(`[player] Station prefetch failed (non-fatal): ${e}`);
+    });
 }
 
 function maybePrefetchStation(get: GetFn) {
@@ -105,9 +101,7 @@ function maybePrefetchStation(get: GetFn) {
   const remaining = queue.length - cursor - 1;
   if (remaining > STATION_PREFETCH_THRESHOLD) return;
 
-  const seedTrack = stationQueueCount > 0
-    ? queue[queue.length - 1]
-    : currentTrack;
+  const seedTrack = stationQueueCount > 0 ? queue[queue.length - 1] : currentTrack;
   if (!seedTrack) return;
 
   prefetchStationSilent(get, seedTrack.trackId);
@@ -121,11 +115,7 @@ function prefetchStationOnInit(get: GetFn) {
   prefetchStationSilent(get, seedTrack.trackId);
 }
 
-async function loadAndPlay(
-  track: PlaybackItem,
-  generation: number,
-  get: () => PlayerState & PlaybackSliceActions,
-) {
+async function loadAndPlay(track: PlaybackItem, generation: number, get: () => PlayerState & PlaybackSliceActions) {
   try {
     void logger.debug(`[player] Resolving URL for track ${track.trackId} (gen=${generation})`);
     const url = await resolveWithCache(track.trackId, track.trackUrl);
@@ -226,13 +216,7 @@ function settleAnyCrossfade(set: SetFn, get: GetFn) {
   set(CROSSFADE_RESET);
 }
 
-async function triggerCrossfade(
-  set: SetFn,
-  get: GetFn,
-  nextTrack: PlaybackItem,
-  thresholdMs: number,
-  generation: number,
-) {
+async function triggerCrossfade(set: SetFn, get: GetFn, nextTrack: PlaybackItem, thresholdMs: number, generation: number) {
   try {
     const url = await resolveWithCache(nextTrack.trackId, nextTrack.trackUrl);
     if (generation !== crossfadeGeneration) return;
@@ -284,12 +268,10 @@ function resolveCrossfadeForSkip(set: SetFn, get: GetFn) {
 
 export type PlaybackSlice = PlaybackSliceState & PlaybackSliceActions;
 
-export const createPlaybackSlice: StateCreator<
-  PlayerState & PlaybackSliceActions & AutoplaySliceActions,
-  [],
-  [],
-  PlaybackSlice
-> = (set, get) => ({
+export const createPlaybackSlice: StateCreator<PlayerState & PlaybackSliceActions & AutoplaySliceActions, [], [], PlaybackSlice> = (
+  set,
+  get,
+) => ({
   state: 'stopped',
   currentTrack: null,
   cursor: 0,
@@ -307,16 +289,8 @@ export const createPlaybackSlice: StateCreator<
     consecutiveFailures = 0;
     const vol = useSettingsStore.getState().playerVolume;
 
-    const {
-      isShuffled,
-      queue: prevQueue,
-      cursor: prevCursor,
-      manualQueueCount: prevManualCount,
-    } = get();
-    const manualTracks =
-      prevManualCount > 0
-        ? prevQueue.slice(prevCursor + 1, prevCursor + 1 + prevManualCount)
-        : [];
+    const { isShuffled, queue: prevQueue, cursor: prevCursor, manualQueueCount: prevManualCount } = get();
+    const manualTracks = prevManualCount > 0 ? prevQueue.slice(prevCursor + 1, prevCursor + 1 + prevManualCount) : [];
 
     let finalQueue = queue;
     let finalIndex = index;
@@ -492,18 +466,14 @@ export const createPlaybackSlice: StateCreator<
         urlRefreshCount++;
 
         if (urlRefreshCount > MAX_URL_REFRESH_PER_TRACK) {
-          void logger.error(
-            `[player] URL refresh limit reached for track ${currentTrack.trackId}, skipping`,
-          );
+          void logger.error(`[player] URL refresh limit reached for track ${currentTrack.trackId}, skipping`);
           toast.error(i18n.t('player.errorLoadTrack'));
           resetUrlRefreshTracking();
           skipOrStop(get);
           return;
         }
 
-        void logger.debug(
-          `[player] Refreshing URL for track ${currentTrack.trackId} at ${positionMs}ms (attempt ${urlRefreshCount})`,
-        );
+        void logger.debug(`[player] Refreshing URL for track ${currentTrack.trackId} at ${positionMs}ms (attempt ${urlRefreshCount})`);
         invalidateCachedUrl(currentTrack.trackId);
 
         const generation = ++loadGeneration;
@@ -560,4 +530,6 @@ export const createPlaybackSlice: StateCreator<
 
 export { shuffleQueueWithCurrent, splitStationTracks, trackIdSet, loadAndPlay };
 export const incrementLoadGeneration = () => ++loadGeneration;
-export const resetCrossfadeGeneration = () => { crossfadeGeneration = 0; };
+export const resetCrossfadeGeneration = () => {
+  crossfadeGeneration = 0;
+};

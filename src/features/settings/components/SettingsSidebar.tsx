@@ -16,10 +16,7 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
   const { t } = useTranslation();
   const isDownloadEnabled = useIsDownloadEnabled();
 
-  const visibleCategories = useMemo(
-    () => CATEGORIES.filter((c) => c.id !== 'playlists' || isDownloadEnabled),
-    [isDownloadEnabled]
-  );
+  const visibleCategories = useMemo(() => CATEGORIES.filter((c) => c.id !== 'playlists' || isDownloadEnabled), [isDownloadEnabled]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -48,7 +45,7 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
         tabs[nextIndex]?.focus();
       }
     },
-    [selectedCategory, onSelectCategory, visibleCategories]
+    [selectedCategory, onSelectCategory, visibleCategories],
   );
 
   return (
@@ -60,30 +57,28 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
       className="min-w-[140px] flex-shrink-0 bg-muted/50 border-r border-border p-2 pt-6 flex flex-col"
     >
       <div className="space-y-1">
-      {visibleCategories.map(({ id, icon: Icon, labelKey }) => {
-        const isSelected = selectedCategory === id;
-        return (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={isSelected}
-            aria-controls={`settings-tabpanel-${id}`}
-            id={`settings-tab-${id}`}
-            tabIndex={isSelected ? 0 : -1}
-            onClick={() => onSelectCategory(id)}
-            className={cn(
-              'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-              isSelected
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <Icon className="h-4 w-4" />
-            <span>{t(labelKey)}</span>
-          </button>
-        );
-      })}
+        {visibleCategories.map(({ id, icon: Icon, labelKey }) => {
+          const isSelected = selectedCategory === id;
+          return (
+            <button
+              key={id}
+              role="tab"
+              aria-selected={isSelected}
+              aria-controls={`settings-tabpanel-${id}`}
+              id={`settings-tab-${id}`}
+              tabIndex={isSelected ? 0 : -1}
+              onClick={() => onSelectCategory(id)}
+              className={cn(
+                'w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                isSelected ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{t(labelKey)}</span>
+            </button>
+          );
+        })}
       </div>
       <div className="mt-auto flex items-center justify-center gap-1 pb-2 text-[10px] text-muted-foreground">
         <span>{t('settings.madeWith')}</span>

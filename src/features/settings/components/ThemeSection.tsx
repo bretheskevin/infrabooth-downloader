@@ -1,12 +1,6 @@
 import { useCallback } from 'react';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/features/settings/store';
 import { announceToScreenReader } from '@/lib/accessibility';
@@ -31,15 +25,20 @@ export function ThemeSection() {
 
   const currentOption = THEME_OPTIONS.find((opt) => opt.value === theme) ?? THEME_OPTIONS[0];
 
-  const handleThemeChange = useCallback((newTheme: string) => {
-    if (!isValidTheme(newTheme)) return;
+  const handleThemeChange = useCallback(
+    (newTheme: string) => {
+      if (!isValidTheme(newTheme)) return;
 
-    setTheme(newTheme);
+      setTheme(newTheme);
 
-    announceToScreenReader(t('accessibility.themeChanged', {
-      theme: t(THEME_OPTIONS.find((opt) => opt.value === newTheme)?.labelKey ?? ''),
-    }));
-  }, [setTheme, t]);
+      announceToScreenReader(
+        t('accessibility.themeChanged', {
+          theme: t(THEME_OPTIONS.find((opt) => opt.value === newTheme)?.labelKey ?? ''),
+        }),
+      );
+    },
+    [setTheme, t],
+  );
 
   return (
     <div className="space-y-3">
@@ -47,9 +46,7 @@ export function ThemeSection() {
         <Label htmlFor="theme-select" className="text-base font-medium">
           {t('settings.theme')}
         </Label>
-        <p className="text-sm text-muted-foreground">
-          {t('settings.themeDescription')}
-        </p>
+        <p className="text-sm text-muted-foreground">{t('settings.themeDescription')}</p>
       </div>
 
       <Select value={theme} onValueChange={handleThemeChange}>

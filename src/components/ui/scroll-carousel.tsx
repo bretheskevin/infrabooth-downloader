@@ -9,7 +9,12 @@ interface ScrollCarouselProps {
   ariaLabelRight?: string;
 }
 
-export function ScrollCarousel({ children, className, ariaLabelLeft = 'Scroll left', ariaLabelRight = 'Scroll right' }: ScrollCarouselProps) {
+export function ScrollCarousel({
+  children,
+  className,
+  ariaLabelLeft = 'Scroll left',
+  ariaLabelRight = 'Scroll right',
+}: ScrollCarouselProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -46,11 +51,7 @@ export function ScrollCarousel({ children, className, ariaLabelLeft = 'Scroll le
           <ChevronLeft className="h-4 w-4" />
         </Button>
       )}
-      <div
-        ref={scrollRef}
-        onScroll={updateScrollState}
-        className={className ?? 'flex gap-3 overflow-x-auto scrollbar-none py-1 px-1'}
-      >
+      <div ref={scrollRef} onScroll={updateScrollState} className={className ?? 'flex gap-3 overflow-x-auto scrollbar-none py-1 px-1'}>
         {children}
       </div>
       {canScrollRight && (

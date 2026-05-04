@@ -4,8 +4,4 @@ export * from './types/download';
 export * from './types/errors';
 export { useQueueStore, waitForQueueIdle } from './store/index';
 export { startDownloadQueue, cancelDownloadQueue } from './api/download';
-export {
-  trackInfoToQueueTrack,
-  playlistTracksToQueueTracks,
-  queueTrackToDownloadRequest,
-} from './utils/transforms';
+export { trackInfoToQueueTrack, playlistTracksToQueueTracks, queueTrackToDownloadRequest } from './utils/transforms';

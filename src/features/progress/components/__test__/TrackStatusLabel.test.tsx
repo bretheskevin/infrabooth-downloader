@@ -67,22 +67,12 @@ describe('TrackStatusLabel', () => {
 
   describe('error messages', () => {
     it('should display error message when status is failed and error is provided', () => {
-      render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'GEO_BLOCKED', message: 'Track unavailable' }}
-        />
-      );
+      render(<TrackStatusLabel status="failed" error={{ code: 'GEO_BLOCKED', message: 'Track unavailable' }} />);
       expect(screen.getByText('Unavailable in your region')).toBeInTheDocument();
     });
 
     it('should display network error message', () => {
-      render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'NETWORK_ERROR', message: 'Connection lost' }}
-        />
-      );
+      render(<TrackStatusLabel status="failed" error={{ code: 'NETWORK_ERROR', message: 'Connection lost' }} />);
       expect(screen.getByText('Network error')).toBeInTheDocument();
     });
   });
@@ -131,33 +121,20 @@ describe('TrackStatusLabel', () => {
     });
 
     it('should apply warning color for geo-blocked error', () => {
-      render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'GEO_BLOCKED', message: 'Geo blocked' }}
-        />
-      );
+      render(<TrackStatusLabel status="failed" error={{ code: 'GEO_BLOCKED', message: 'Geo blocked' }} />);
       const label = screen.getByText('Unavailable in your region');
       expect(label).toHaveClass('text-warning');
     });
 
     it('should apply destructive color for download failed error', () => {
-      render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'DOWNLOAD_FAILED', message: 'Download failed' }}
-        />
-      );
+      render(<TrackStatusLabel status="failed" error={{ code: 'DOWNLOAD_FAILED', message: 'Download failed' }} />);
       const label = screen.getByText('Download failed');
       expect(label).toHaveClass('text-destructive');
     });
 
     it('should apply warning color for unavailable error', () => {
       render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable - may have been removed' }}
-        />
+        <TrackStatusLabel status="failed" error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable - may have been removed' }} />,
       );
       const label = screen.getByText('Track unavailable');
       expect(label).toHaveClass('text-warning');
@@ -170,48 +147,30 @@ describe('TrackStatusLabel', () => {
         <TrackStatusLabel
           status="failed"
           error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable - may have been removed or made private' }}
-        />
+        />,
       );
       expect(screen.getByText('Track unavailable')).toBeInTheDocument();
     });
 
     it('should render "Track unavailable" for private video error', () => {
       render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'DOWNLOAD_FAILED', message: 'Private video. Sign in if you have access' }}
-        />
+        <TrackStatusLabel status="failed" error={{ code: 'DOWNLOAD_FAILED', message: 'Private video. Sign in if you have access' }} />,
       );
       expect(screen.getByText('Track unavailable')).toBeInTheDocument();
     });
 
     it('should render "Track unavailable" for removed track error', () => {
-      render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'DOWNLOAD_FAILED', message: 'This track was removed by the uploader' }}
-        />
-      );
+      render(<TrackStatusLabel status="failed" error={{ code: 'DOWNLOAD_FAILED', message: 'This track was removed by the uploader' }} />);
       expect(screen.getByText('Track unavailable')).toBeInTheDocument();
     });
 
     it('should render "Track unavailable" for 404 error', () => {
-      render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'DOWNLOAD_FAILED', message: 'HTTP Error 404' }}
-        />
-      );
+      render(<TrackStatusLabel status="failed" error={{ code: 'DOWNLOAD_FAILED', message: 'HTTP Error 404' }} />);
       expect(screen.getByText('Track unavailable')).toBeInTheDocument();
     });
 
     it('should use warning color for unavailable errors', () => {
-      render(
-        <TrackStatusLabel
-          status="failed"
-          error={{ code: 'DOWNLOAD_FAILED', message: 'Video unavailable' }}
-        />
-      );
+      render(<TrackStatusLabel status="failed" error={{ code: 'DOWNLOAD_FAILED', message: 'Video unavailable' }} />);
       const label = screen.getByText('Track unavailable');
       expect(label).toHaveClass('text-warning');
     });

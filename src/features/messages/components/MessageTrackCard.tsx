@@ -21,7 +21,12 @@ export function MessageTrackCard({ embed, onPlay, onAddToQueue, downloadState, o
       role="button"
       tabIndex={0}
       onClick={onPlay}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPlay(); } }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onPlay();
+        }
+      }}
       className="mt-1.5 flex items-center gap-3 rounded-lg border bg-muted/30 p-2.5 max-w-[420px] cursor-pointer transition-colors hover:bg-accent/50 w-full text-left"
     >
       <Avatar className="h-11 w-11 rounded-md flex-shrink-0">

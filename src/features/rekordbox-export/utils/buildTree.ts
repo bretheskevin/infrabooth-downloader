@@ -5,9 +5,7 @@ const INFRABOOTH_FOLDER_NAME = 'InfraBooth Downloader';
 const PLAYLIST_TYPE_FOLDER = 1;
 
 export function findInfraboothFolderId(nodes: RekordboxTreeNode[]): string | null {
-  const infrabooth = nodes.find(
-    (n) => n.name === INFRABOOTH_FOLDER_NAME && n.parentId === 'root' && n.attribute === PLAYLIST_TYPE_FOLDER,
-  );
+  const infrabooth = nodes.find((n) => n.name === INFRABOOTH_FOLDER_NAME && n.parentId === 'root' && n.attribute === PLAYLIST_TYPE_FOLDER);
   return infrabooth?.id ?? null;
 }
 

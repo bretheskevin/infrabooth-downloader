@@ -30,9 +30,8 @@ export const useChangelogStore = create<ChangelogState>()(
         }
         state?._setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );
 
-export const useChangelogHydrated = () =>
-  useChangelogStore((state) => state._hasHydrated);
+export const useChangelogHydrated = () => useChangelogStore((state) => state._hasHydrated);

@@ -5,8 +5,7 @@ import { ProgressPanel } from '../ProgressPanel';
 import { useQueueStore } from '@/features/queue/store';
 import { createMockTracks } from '@/test/factories';
 
-const renderWithTooltip = (ui: React.ReactElement) =>
-  render(<TooltipProvider>{ui}</TooltipProvider>);
+const renderWithTooltip = (ui: React.ReactElement) => render(<TooltipProvider>{ui}</TooltipProvider>);
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({

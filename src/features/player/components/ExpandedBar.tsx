@@ -39,7 +39,7 @@ export function ExpandedBar() {
       positionMs: s.positionMs,
       durationMs: s.durationMs,
       isQueueOpen: s.isQueueOpen,
-    }))
+    })),
   );
 
   const trackInfo = useCurrentTrackInfo();
@@ -48,26 +48,21 @@ export function ExpandedBar() {
   if (!currentTrack || state === 'stopped') return null;
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t shadow-[0_-8px_24px_rgba(0,0,0,0.15)] animate-in slide-in-from-bottom duration-300" style={{ height: `${EXPANDED_BAR_HEIGHT}px` }}>
+    <div
+      className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t shadow-[0_-8px_24px_rgba(0,0,0,0.15)] animate-in slide-in-from-bottom duration-300"
+      style={{ height: `${EXPANDED_BAR_HEIGHT}px` }}
+    >
       <div className="flex items-center gap-2 px-4 pt-3">
-        <span className="text-[10px] text-muted-foreground min-w-[32px] text-right tabular-nums">
-          {formatDuration(positionMs)}
-        </span>
+        <span className="text-[10px] text-muted-foreground min-w-[32px] text-right tabular-nums">{formatDuration(positionMs)}</span>
         <SeekBar waveformUrl={currentTrack.waveformUrl ?? undefined} className="flex-1 h-8" />
-        <span className="text-[10px] text-muted-foreground min-w-[32px] tabular-nums">
-          {formatDuration(durationMs)}
-        </span>
+        <span className="text-[10px] text-muted-foreground min-w-[32px] tabular-nums">{formatDuration(durationMs)}</span>
       </div>
 
       <div className="flex items-center gap-3 px-4 pb-3.5 pt-1">
         {/* Artwork + info */}
         <div className="h-8 w-8 rounded-md bg-secondary flex-shrink-0 overflow-hidden">
           {currentTrack.artworkUrl && (
-            <img
-              src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined}
-              alt=""
-              className="h-full w-full object-cover"
-            />
+            <img src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />
           )}
         </div>
         <div className="flex-1 min-w-0">
@@ -129,11 +124,23 @@ export function ExpandedBar() {
           contentSide="top"
           contentAlign="end"
           likeState={likeState}
-          shareInfo={{ trackId: currentTrack.trackId, title: currentTrack.title, artist: currentTrack.artist, artworkUrl: currentTrack.artworkUrl, permalinkUrl: currentTrack.trackUrl }}
+          shareInfo={{
+            trackId: currentTrack.trackId,
+            title: currentTrack.title,
+            artist: currentTrack.artist,
+            artworkUrl: currentTrack.artworkUrl,
+            permalinkUrl: currentTrack.trackUrl,
+          }}
         />
 
         {/* Collapse */}
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => actions().toggleExpanded()} aria-label={t('player.collapse')}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          onClick={() => actions().toggleExpanded()}
+          aria-label={t('player.collapse')}
+        >
           <ChevronDown className="h-3.5 w-3.5" />
         </Button>
       </div>

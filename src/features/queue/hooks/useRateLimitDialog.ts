@@ -22,11 +22,12 @@ const INITIAL_STATE: RateLimitDialogState = {
 
 export function useRateLimitDialog() {
   const mapPayload = useMemo(
-    () => (payload: DownloadRateLimitedEvent): RateLimitDialogState => ({
-      isOpen: true,
-      trackTitle: payload.trackTitle,
-      resetTime: payload.resetTime,
-    }),
+    () =>
+      (payload: DownloadRateLimitedEvent): RateLimitDialogState => ({
+        isOpen: true,
+        trackTitle: payload.trackTitle,
+        resetTime: payload.resetTime,
+      }),
     [],
   );
 

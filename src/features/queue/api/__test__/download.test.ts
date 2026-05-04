@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import {
-  downloadTrack,
-  startDownloadQueue,
-  type DownloadRequest,
-  type StartQueueRequest,
-  type TrackCore,
-} from '../download';
+import { downloadTrack, startDownloadQueue, type DownloadRequest, type StartQueueRequest, type TrackCore } from '../download';
 
 // Mock the bindings module
 vi.mock('@/bindings', () => ({
@@ -23,7 +17,7 @@ const mockStartDownloadQueue = vi.mocked(commands.startDownloadQueue);
 
 // Helper to create a complete DownloadRequest
 const createDownloadRequest = (
-  partial: Partial<DownloadRequest> & Pick<DownloadRequest, 'trackUrl' | 'trackId' | 'title' | 'artist'>
+  partial: Partial<DownloadRequest> & Pick<DownloadRequest, 'trackUrl' | 'trackId' | 'title' | 'artist'>,
 ): DownloadRequest => ({
   album: null,
   trackNumber: null,
@@ -36,9 +30,7 @@ const createDownloadRequest = (
 });
 
 // Helper to create a complete TrackCore
-const createQueueItem = (
-  partial: Partial<TrackCore> & Pick<TrackCore, 'trackUrl' | 'trackId' | 'title' | 'artist'>
-): TrackCore => ({
+const createQueueItem = (partial: Partial<TrackCore> & Pick<TrackCore, 'trackUrl' | 'trackId' | 'title' | 'artist'>): TrackCore => ({
   artworkUrl: null,
   durationMs: 180000,
   downloadUrl: null,

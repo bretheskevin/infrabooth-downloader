@@ -15,7 +15,7 @@ export function PlaylistsTabContent({ onDownloadTracks }: PlaylistsTabContentPro
       searchQuery: s.searchQuery,
       filter: s.filter,
       libraryView: s.libraryView,
-    }))
+    })),
   );
   const [slideClass, setSlideClass] = useState('');
 
@@ -33,23 +33,14 @@ export function PlaylistsTabContent({ onDownloadTracks }: PlaylistsTabContentPro
   if (libraryView.view === 'detail') {
     return (
       <div key="detail" className={`flex-1 min-h-0 flex flex-col ${slideClass}`}>
-        <PlaylistDetailView
-          playlist={libraryView.playlist}
-          onBack={handleBackToList}
-          onDownloadTracks={onDownloadTracks}
-        />
+        <PlaylistDetailView playlist={libraryView.playlist} onBack={handleBackToList} onDownloadTracks={onDownloadTracks} />
       </div>
     );
   }
 
   return (
     <div key="list" className={`flex flex-col gap-4 flex-1 min-h-0 ${slideClass}`}>
-      <PlaylistListView
-        searchQuery={searchQuery}
-        filter={filter}
-        onOpenDetail={handleOpenDetail}
-        onDownloadTracks={onDownloadTracks}
-      />
+      <PlaylistListView searchQuery={searchQuery} filter={filter} onOpenDetail={handleOpenDetail} onDownloadTracks={onDownloadTracks} />
     </div>
   );
 }

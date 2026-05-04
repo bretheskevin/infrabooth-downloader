@@ -18,9 +18,39 @@ vi.mock('react-i18next', () => ({
 }));
 
 const mockArtists = [
-  { id: 1, username: 'Artist A', avatar_url: null, has_new_content: true, has_new_original_tracks: true, has_original_tracks: true, has_new_releases: false, has_new_original_releases: false, has_original_releases: false },
-  { id: 2, username: 'Artist B', avatar_url: null, has_new_content: true, has_new_original_tracks: false, has_original_tracks: false, has_new_releases: false, has_new_original_releases: false, has_original_releases: false },
-  { id: 3, username: 'Artist C', avatar_url: null, has_new_content: false, has_new_original_tracks: false, has_original_tracks: true, has_new_releases: false, has_new_original_releases: false, has_original_releases: false },
+  {
+    id: 1,
+    username: 'Artist A',
+    avatar_url: null,
+    has_new_content: true,
+    has_new_original_tracks: true,
+    has_original_tracks: true,
+    has_new_releases: false,
+    has_new_original_releases: false,
+    has_original_releases: false,
+  },
+  {
+    id: 2,
+    username: 'Artist B',
+    avatar_url: null,
+    has_new_content: true,
+    has_new_original_tracks: false,
+    has_original_tracks: false,
+    has_new_releases: false,
+    has_new_original_releases: false,
+    has_original_releases: false,
+  },
+  {
+    id: 3,
+    username: 'Artist C',
+    avatar_url: null,
+    has_new_content: false,
+    has_new_original_tracks: false,
+    has_original_tracks: true,
+    has_new_releases: false,
+    has_new_original_releases: false,
+    has_original_releases: false,
+  },
 ];
 
 vi.mock('@/hooks/useFollowedArtists', () => ({
@@ -33,9 +63,7 @@ vi.mock('@/hooks/useFollowedArtists', () => ({
 }));
 
 vi.mock('../store', () => ({
-  useNewTracksStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ selectedArtist: null })
-  ),
+  useNewTracksStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) => selector({ selectedArtist: null })),
 }));
 
 describe('NewTracksCarousel', () => {

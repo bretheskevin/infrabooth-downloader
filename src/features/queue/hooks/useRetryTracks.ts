@@ -47,10 +47,7 @@ export function useRetryTracks(): UseRetryTracksReturn {
     const failedTracks = prepareRetryFailed();
     if (failedTracks.length === 0) return;
 
-    await executeRetry(
-      failedTracks,
-      `[useRetryTracks] Retrying ${failedTracks.length} failed tracks`
-    );
+    await executeRetry(failedTracks, `[useRetryTracks] Retrying ${failedTracks.length} failed tracks`);
   }, []);
 
   const retrySingleTrack = useCallback(async (trackId: string) => {

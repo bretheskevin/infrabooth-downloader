@@ -25,25 +25,17 @@ export function OverallProgress({ className }: OverallProgressProps) {
     useShallow((state) => ({
       isCancelling: state.isCancelling,
       outputDir: state.outputDir,
-    }))
+    })),
   );
   const handleOpenFolder = useOpenDownloadFolder(outputDir);
 
-  const {
-    totalCount,
-    completedCount,
-    skippedCount,
-    percentage,
-    showPreparing,
-    showCancelButton,
-  } = useOverallProgressStats();
+  const { totalCount, completedCount, skippedCount, percentage, showPreparing, showCancelButton } = useOverallProgressStats();
 
   if (totalCount === 0) {
     return null;
   }
 
-  const translationKey =
-    totalCount === 1 ? 'download.progressSingle' : 'download.progress';
+  const translationKey = totalCount === 1 ? 'download.progressSingle' : 'download.progress';
 
   const progressText = t(translationKey, {
     current: completedCount,
@@ -69,31 +61,16 @@ export function OverallProgress({ className }: OverallProgressProps) {
     <div className={cn('space-y-3', className)}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          {showPreparing && (
-            <Spinner className="h-4 w-4 text-primary" />
-          )}
-          <span
-            aria-live="polite"
-            className="text-sm font-medium text-foreground"
-          >
-            {isCancelling
-              ? t('download.cancelling')
-              : showPreparing
-                ? t('download.preparingTracks')
-                : progressText}
+          {showPreparing && <Spinner className="h-4 w-4 text-primary" />}
+          <span aria-live="polite" className="text-sm font-medium text-foreground">
+            {isCancelling ? t('download.cancelling') : showPreparing ? t('download.preparingTracks') : progressText}
             {skippedCount > 0 && !isCancelling && !showPreparing && (
-              <span className="text-xs text-success ml-1">
-                {t('download.skippedCount', { count: skippedCount })}
-              </span>
+              <span className="text-xs text-success ml-1">{t('download.skippedCount', { count: skippedCount })}</span>
             )}
           </span>
         </div>
         <div className="flex items-center gap-3">
-          {!isCancelling && (
-            <span className="text-sm font-semibold tabular-nums text-primary">
-              {percentage}%
-            </span>
-          )}
+          {!isCancelling && <span className="text-sm font-semibold tabular-nums text-primary">{percentage}%</span>}
           <OpenFolderButton onClick={handleOpenFolder} />
           {showCancelButton && (
             <Tooltip>
@@ -106,11 +83,7 @@ export function OverallProgress({ className }: OverallProgressProps) {
                   className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                   aria-label={t('download.cancel')}
                 >
-                  {isCancelling ? (
-                    <Spinner className="h-4 w-4" />
-                  ) : (
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  )}
+                  {isCancelling ? <Spinner className="h-4 w-4" /> : <X className="h-4 w-4" aria-hidden="true" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>{t('download.cancel')}</TooltipContent>

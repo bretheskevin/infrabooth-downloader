@@ -131,9 +131,7 @@ describe('UpdateBanner', () => {
     const learnMoreButton = screen.getByRole('button', { name: 'Learn more' });
     fireEvent.click(learnMoreButton);
 
-    expect(mockOpen).toHaveBeenCalledWith(
-      'https://github.com/bretheskevin/infrabooth-downloader/releases/tag/v2.0.0'
-    );
+    expect(mockOpen).toHaveBeenCalledWith('https://github.com/bretheskevin/infrabooth-downloader/releases/tag/v2.0.0');
   });
 
   it('should have a dismiss button', () => {
@@ -325,9 +323,7 @@ describe('UpdateBanner', () => {
       expect(updateNow.tabIndex).not.toBe(-1);
       expect(learnMore.tabIndex).not.toBe(-1);
 
-      expect(
-        updateNow.compareDocumentPosition(learnMore) & Node.DOCUMENT_POSITION_FOLLOWING
-      ).toBeTruthy();
+      expect(updateNow.compareDocumentPosition(learnMore) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     });
   });
 

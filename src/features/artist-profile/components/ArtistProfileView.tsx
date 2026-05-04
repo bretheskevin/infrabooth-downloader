@@ -26,11 +26,7 @@ interface ArtistProfileViewProps {
   onDownloadTracks: (tracks: TrackInfo[], title: string, outputDir?: string) => void | Promise<void>;
 }
 
-export function ArtistProfileView({
-  artistId,
-  artistName,
-  onDownloadTracks,
-}: ArtistProfileViewProps) {
+export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: ArtistProfileViewProps) {
   const { t } = useTranslation();
   const activeFollowView = useArtistProfileStore((s) => s.activeFollowView);
   const [activeTab, setActiveTab] = useState<ProfileTab>('recent');
@@ -48,13 +44,18 @@ export function ArtistProfileView({
 
   const isPlaylistsTab = activeTab === 'playlists';
   const isLikesTab = activeTab === 'likes';
-  const sortOption: SortOption = (isPlaylistsTab || isLikesTab) ? 'recent' : activeTab;
+  const sortOption: SortOption = isPlaylistsTab || isLikesTab ? 'recent' : activeTab;
 
   const artistTracks = useArtistTracks(isLikesTab ? null : artistId, sortOption);
   const likedTracks = useArtistLikedTracks(isLikesTab ? artistId : null);
 
-  const { data: tracksData, isLoading: isTracksLoading, isStreaming, error: tracksError, refetch: refetchTracks } =
-    isLikesTab ? likedTracks : artistTracks;
+  const {
+    data: tracksData,
+    isLoading: isTracksLoading,
+    isStreaming,
+    error: tracksError,
+    refetch: refetchTracks,
+  } = isLikesTab ? likedTracks : artistTracks;
 
   const tracks = useMemo(() => tracksData ?? [], [tracksData]);
 
@@ -67,13 +68,7 @@ export function ArtistProfileView({
   }, [tracks, onDownloadTracks, username]);
 
   if (activeFollowView) {
-    return (
-      <ArtistFollowList
-        type={activeFollowView}
-        artistId={artistId}
-        artistName={username}
-      />
-    );
+    return <ArtistFollowList type={activeFollowView} artistId={artistId} artistName={username} />;
   }
 
   if (selectedPlaylist) {

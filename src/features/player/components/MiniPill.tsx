@@ -18,7 +18,7 @@ export function MiniPill() {
       currentTrack: s.currentTrack,
       positionMs: s.positionMs,
       durationMs: s.durationMs,
-    }))
+    })),
   );
 
   const [canInteract, setCanInteract] = useState(false);
@@ -57,11 +57,7 @@ export function MiniPill() {
             <div className="relative h-9 w-9 flex-shrink-0">
               <div className="h-9 w-9 rounded-full bg-primary-foreground/20 overflow-hidden">
                 {currentTrack.artworkUrl && (
-                  <img
-                    src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
+                  <img src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />
                 )}
               </div>
               {/* Progress ring */}
@@ -69,15 +65,27 @@ export function MiniPill() {
                 <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="2" />
                 {isLoading ? (
                   <circle
-                    cx="18" cy="18" r="16" fill="none" stroke="white" strokeWidth="2"
-                    strokeDasharray={circumference} strokeDashoffset={circumference * 0.75}
+                    cx="18"
+                    cy="18"
+                    r="16"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={circumference * 0.75}
                     strokeLinecap="round"
                     className="animate-spin origin-center"
                   />
                 ) : (
                   <circle
-                    cx="18" cy="18" r="16" fill="none" stroke="white" strokeWidth="2"
-                    strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+                    cx="18"
+                    cy="18"
+                    r="16"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeDasharray={circumference}
+                    strokeDashoffset={strokeDashoffset}
                     strokeLinecap="round"
                     className="transition-[stroke-dashoffset] duration-300"
                   />
@@ -85,13 +93,8 @@ export function MiniPill() {
               </svg>
             </div>
             <div className="max-w-[70px]">
-              <ScrollingText
-                text={currentTrack.title}
-                className="text-[10px] font-semibold text-primary-foreground"
-              />
-              <div className="text-[9px] text-primary-foreground/65 truncate">
-                {currentTrack.artist}
-              </div>
+              <ScrollingText text={currentTrack.title} className="text-[10px] font-semibold text-primary-foreground" />
+              <div className="text-[9px] text-primary-foreground/65 truncate">{currentTrack.artist}</div>
             </div>
           </button>
         </TooltipTrigger>

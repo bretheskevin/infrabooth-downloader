@@ -41,9 +41,7 @@ export function PlayPauseButton({ className, iconClassName }: TransportButtonPro
       onClick={isPlaying ? () => actions().pause() : () => actions().resume()}
       aria-label={isPlaying ? t('player.pause') : t('player.play')}
     >
-      {isPlaying
-        ? <Pause className={cn('h-5 w-5', iconClassName)} />
-        : <Play className={cn('h-5 w-5 ml-0.5', iconClassName)} />}
+      {isPlaying ? <Pause className={cn('h-5 w-5', iconClassName)} /> : <Play className={cn('h-5 w-5 ml-0.5', iconClassName)} />}
     </Button>
   );
 }
@@ -52,7 +50,13 @@ export function ShuffleButton({ className, iconClassName }: TransportButtonProps
   const { t } = useTranslation();
   const isShuffled = usePlayerStore((s) => s.isShuffled);
   return (
-    <Button variant="ghost" size="icon" className={cn(className, isShuffled && 'text-primary')} onClick={() => actions().toggleShuffle()} aria-label={t('player.shuffle')}>
+    <Button
+      variant="ghost"
+      size="icon"
+      className={cn(className, isShuffled && 'text-primary')}
+      onClick={() => actions().toggleShuffle()}
+      aria-label={t('player.shuffle')}
+    >
       <Shuffle className={cn('h-4 w-4', iconClassName)} />
     </Button>
   );

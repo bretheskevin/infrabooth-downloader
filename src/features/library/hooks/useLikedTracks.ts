@@ -8,10 +8,7 @@ import type { TracksBatchEvent } from '@/bindings';
 export function useLikedTracks(enabled: boolean) {
   const username = useAuthStore((s) => s.username);
 
-  const getTracksFromEvent = useCallback(
-    (payload: unknown) => (payload as TracksBatchEvent).tracks,
-    []
-  );
+  const getTracksFromEvent = useCallback((payload: unknown) => (payload as TracksBatchEvent).tracks, []);
 
   const query = useStreamedUserQuery({
     eventName: 'liked-tracks-batch',

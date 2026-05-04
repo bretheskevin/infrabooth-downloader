@@ -12,32 +12,20 @@ interface TrackPreviewProps {
   isDownloading?: boolean;
 }
 
-export function TrackPreview({
-  track,
-  onDownload,
-  isDownloading,
-}: TrackPreviewProps) {
+export function TrackPreview({ track, onDownload, isDownloading }: TrackPreviewProps) {
   const { t } = useTranslation();
 
   return (
     <Card className="mt-6 card-hover border-border/50 bg-card/80 backdrop-blur-sm" data-testid="track-preview">
       <CardContent className="p-5 space-y-5">
         <div className="flex items-center gap-5">
-          <ArtworkThumbnail
-            src={track.artwork_url}
-            alt={track.title}
-            testIdPrefix="track"
-            className="shadow-elevated"
-          />
+          <ArtworkThumbnail src={track.artwork_url} alt={track.title} testIdPrefix="track" className="shadow-elevated" />
 
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg truncate" data-testid="track-title">
               {track.title}
             </h3>
-            <p
-              className="text-sm text-muted-foreground truncate mt-0.5"
-              data-testid="track-artist"
-            >
+            <p className="text-sm text-muted-foreground truncate mt-0.5" data-testid="track-artist">
               {track.user.username}
             </p>
             <div className="flex items-center gap-3 mt-2 flex-wrap">

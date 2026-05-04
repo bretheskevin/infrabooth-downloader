@@ -3,18 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Search, Check, ListMusic } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
-import {
-  ContextMenuSub,
-  ContextMenuSubTrigger,
-  ContextMenuSubContent,
-  ContextMenuPortal,
-} from '@/components/ui/context-menu';
-import {
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuPortal,
-} from '@/components/ui/dropdown-menu';
+import { ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent, ContextMenuPortal } from '@/components/ui/context-menu';
+import { DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -63,11 +53,7 @@ function PlaylistRow({ playlist, onSelect, isAddingThis }: PlaylistRowProps) {
       <div className="relative w-8 h-8 shrink-0">
         <div className={cn('w-full h-full rounded bg-muted overflow-hidden', alreadyAdded && 'opacity-50')}>
           {playlist.artwork_url ? (
-            <img
-              src={getArtworkUrl(playlist.artwork_url, 47)!}
-              alt=""
-              className="w-full h-full object-cover"
-            />
+            <img src={getArtworkUrl(playlist.artwork_url, 47)!} alt="" className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <ListMusic className="h-4 w-4" />
@@ -81,11 +67,7 @@ function PlaylistRow({ playlist, onSelect, isAddingThis }: PlaylistRowProps) {
         )}
       </div>
       <span className={cn('flex-1 truncate', alreadyAdded && 'line-through')}>{playlist.title}</span>
-      {alreadyAdded && (
-        <span className="text-xs text-green-600 dark:text-green-400 shrink-0">
-          {t('trackMenu.added')}
-        </span>
-      )}
+      {alreadyAdded && <span className="text-xs text-green-600 dark:text-green-400 shrink-0">{t('trackMenu.added')}</span>}
     </button>
   );
 }
@@ -189,12 +171,7 @@ function PlaylistPickerContent({ trackId, onSuccess, onOpenChange }: PlaylistCon
           </p>
         ) : (
           filteredPlaylists.map((playlist) => (
-            <PlaylistRow
-              key={playlist.id}
-              playlist={playlist}
-              onSelect={handleSelect}
-              isAddingThis={addingToPlaylistId === playlist.id}
-            />
+            <PlaylistRow key={playlist.id} playlist={playlist} onSelect={handleSelect} isAddingThis={addingToPlaylistId === playlist.id} />
           ))
         )}
       </div>

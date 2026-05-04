@@ -8,13 +8,7 @@ interface SuccessMessageProps {
   isCancelled: boolean;
 }
 
-export function SuccessMessage({
-  completedCount,
-  totalCount,
-  cancelledCount,
-  isFullSuccess,
-  isCancelled,
-}: SuccessMessageProps) {
+export function SuccessMessage({ completedCount, totalCount, cancelledCount, isFullSuccess, isCancelled }: SuccessMessageProps) {
   const { t } = useTranslation();
 
   const getTitle = () => {
@@ -41,12 +35,8 @@ export function SuccessMessage({
 
   return (
     <div className="space-y-1 text-center">
-      <h2 className="text-xl font-semibold text-foreground">
-        {getTitle()}
-      </h2>
-      <p className="text-sm text-muted-foreground">
-        {getMessage()}
-      </p>
+      <h2 className="text-xl font-semibold text-foreground">{getTitle()}</h2>
+      <p className="text-sm text-muted-foreground">{getMessage()}</p>
     </div>
   );
 }

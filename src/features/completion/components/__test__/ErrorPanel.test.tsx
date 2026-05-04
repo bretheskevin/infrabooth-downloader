@@ -39,37 +39,19 @@ describe('ErrorPanel', () => {
   ];
 
   it('should render panel header with title', () => {
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={true}
-        onOpenChange={vi.fn()}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={true} onOpenChange={vi.fn()} />);
     expect(screen.getByText('Failed Downloads')).toBeInTheDocument();
   });
 
   it('should render close button', () => {
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={true}
-        onOpenChange={vi.fn()}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={true} onOpenChange={vi.fn()} />);
     expect(screen.getByRole('button', { name: /close error panel/i })).toBeInTheDocument();
   });
 
   it('should call onOpenChange when close button is clicked', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={true}
-        onOpenChange={onOpenChange}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={true} onOpenChange={onOpenChange} />);
 
     const closeButton = screen.getByRole('button', { name: /close error panel/i });
     await user.click(closeButton);
@@ -78,13 +60,7 @@ describe('ErrorPanel', () => {
   });
 
   it('should render list of failed tracks', () => {
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={true}
-        onOpenChange={vi.fn()}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={true} onOpenChange={vi.fn()} />);
 
     expect(screen.getByText('Track One')).toBeInTheDocument();
     expect(screen.getByText('Track Two')).toBeInTheDocument();
@@ -92,13 +68,7 @@ describe('ErrorPanel', () => {
   });
 
   it('should render artist names', () => {
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={true}
-        onOpenChange={vi.fn()}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={true} onOpenChange={vi.fn()} />);
 
     expect(screen.getByText('Artist A')).toBeInTheDocument();
     expect(screen.getByText('Artist B')).toBeInTheDocument();
@@ -106,26 +76,14 @@ describe('ErrorPanel', () => {
   });
 
   it('should have role="region" and aria-label', () => {
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={true}
-        onOpenChange={vi.fn()}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={true} onOpenChange={vi.fn()} />);
 
     const region = screen.getByRole('region', { name: /failed downloads/i });
     expect(region).toBeInTheDocument();
   });
 
   it('should be scrollable when content exceeds max height', () => {
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={true}
-        onOpenChange={vi.fn()}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={true} onOpenChange={vi.fn()} />);
 
     // The scroll area should exist
     const scrollArea = document.querySelector('[data-radix-scroll-area-viewport]');
@@ -135,39 +93,21 @@ describe('ErrorPanel', () => {
   it('should support Escape key to close panel', async () => {
     const user = userEvent.setup();
     const onOpenChange = vi.fn();
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={true}
-        onOpenChange={onOpenChange}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={true} onOpenChange={onOpenChange} />);
 
     await user.keyboard('{Escape}');
     expect(onOpenChange).toHaveBeenCalledWith(false);
   });
 
   it('should not render content when isOpen is false', () => {
-    render(
-      <ErrorPanel
-        failedTracks={mockTracks}
-        isOpen={false}
-        onOpenChange={vi.fn()}
-      />
-    );
+    render(<ErrorPanel failedTracks={mockTracks} isOpen={false} onOpenChange={vi.fn()} />);
 
     // Panel header should not be visible
     expect(screen.queryByText('Failed Downloads')).not.toBeInTheDocument();
   });
 
   it('should render nothing when failedTracks is empty', () => {
-    const { container } = render(
-      <ErrorPanel
-        failedTracks={[]}
-        isOpen={true}
-        onOpenChange={vi.fn()}
-      />
-    );
+    const { container } = render(<ErrorPanel failedTracks={[]} isOpen={true} onOpenChange={vi.fn()} />);
 
     expect(container).toBeEmptyDOMElement();
   });

@@ -12,8 +12,7 @@ vi.mock('react-i18next', () => ({
         'settings.crossfadeDescription': 'Smoothly transition between tracks',
         'settings.crossfadeDuration': 'Duration',
       };
-      if (key === 'settings.crossfadeSeconds' && opts?.count !== undefined)
-        return `${opts.count}s`;
+      if (key === 'settings.crossfadeSeconds' && opts?.count !== undefined) return `${opts.count}s`;
       return map[key] ?? key;
     },
   }),

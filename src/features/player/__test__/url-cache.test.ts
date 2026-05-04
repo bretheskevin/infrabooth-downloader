@@ -6,13 +6,7 @@ vi.mock('@/lib/tauri', () => ({
   },
 }));
 
-import {
-  getCachedUrl,
-  setCachedUrl,
-  preloadQueueSegments,
-  preloadSegmentAtTime,
-  purgeStaleCache,
-} from '../url-cache';
+import { getCachedUrl, setCachedUrl, preloadQueueSegments, preloadSegmentAtTime, purgeStaleCache } from '../url-cache';
 import { api } from '@/lib/tauri';
 
 const MANIFEST = `#EXTM3U
@@ -29,7 +23,8 @@ https://cdn.example.com/seg2.ts
 function mockFetch(responses: Record<string, { ok: boolean; text?: string; arrayBuffer?: ArrayBuffer }>) {
   return vi.fn((url: string) => {
     const resp = responses[url];
-    if (!resp) return Promise.resolve({ ok: false, text: () => Promise.resolve(''), arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) });
+    if (!resp)
+      return Promise.resolve({ ok: false, text: () => Promise.resolve(''), arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)) });
     return Promise.resolve({
       ok: resp.ok,
       text: () => Promise.resolve(resp.text ?? ''),
@@ -142,9 +137,7 @@ describe('url-cache segment preloading', () => {
       await preloadSegmentAtTime(43, 8000); // seg0 again
 
       // Manifest fetched once (cached), seg0 fetched once (deduplicated)
-      const seg0Calls = fetchMock.mock.calls.filter(
-        (c) => c[0] === 'https://cdn.example.com/seg0.ts',
-      );
+      const seg0Calls = fetchMock.mock.calls.filter((c) => c[0] === 'https://cdn.example.com/seg0.ts');
       expect(seg0Calls).toHaveLength(1);
     });
 
@@ -179,9 +172,7 @@ describe('url-cache segment preloading', () => {
       // Second attempt should retry and succeed
       await preloadSegmentAtTime(44, 5000);
 
-      const seg0Calls = fetchMock.mock.calls.filter(
-        (c) => c[0] === 'https://cdn.example.com/seg0.ts',
-      );
+      const seg0Calls = fetchMock.mock.calls.filter((c) => c[0] === 'https://cdn.example.com/seg0.ts');
       expect(seg0Calls).toHaveLength(2);
     });
   });
@@ -248,16 +239,11 @@ describe('url-cache segment preloading', () => {
       });
       vi.stubGlobal('fetch', fetchMock);
 
-      const tracks = [
-        { trackId: 300, trackUrl: 'https://soundcloud.com/track/300' },
-      ];
+      const tracks = [{ trackId: 300, trackUrl: 'https://soundcloud.com/track/300' }];
 
       // Preload once and wait for the fire-and-forget async to complete
       preloadQueueSegments(tracks);
-      await vi.waitFor(
-        () => expect(api.resolvePlaybackUrl).toHaveBeenCalledTimes(1),
-        { timeout: 2000 },
-      );
+      await vi.waitFor(() => expect(api.resolvePlaybackUrl).toHaveBeenCalledTimes(1), { timeout: 2000 });
       // Allow remaining microtasks (parseManifest + fetchSegment) to settle
       await new Promise((r) => setTimeout(r, 50));
 

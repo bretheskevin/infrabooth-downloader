@@ -7,8 +7,7 @@ import { open } from '@tauri-apps/plugin-shell';
 import { logger } from '@/lib/logger';
 import { useUpdateStore } from '../store';
 
-const RELEASES_BASE_URL =
-  'https://github.com/bretheskevin/infrabooth-downloader/releases';
+const RELEASES_BASE_URL = 'https://github.com/bretheskevin/infrabooth-downloader/releases';
 
 function formatBytes(bytes: number): string {
   const mb = bytes / (1024 * 1024);
@@ -40,7 +39,7 @@ export function UpdateBanner() {
       installUpdate: s.installUpdate,
       relaunchApp: s.relaunchApp,
       dismissUpdate: s.dismissUpdate,
-    }))
+    })),
   );
 
   if (!updateAvailable || dismissed || !updateInfo) {
@@ -51,7 +50,9 @@ export function UpdateBanner() {
 
   const handleLearnMore = () => {
     open(releaseUrl).catch(() => {
-      open(RELEASES_BASE_URL).catch((e) => void logger.warn(`[Update] Failed to open releases URL: ${e instanceof Error ? e.message : String(e)}`));
+      open(RELEASES_BASE_URL).catch(
+        (e) => void logger.warn(`[Update] Failed to open releases URL: ${e instanceof Error ? e.message : String(e)}`),
+      );
     });
   };
 
@@ -80,20 +81,13 @@ export function UpdateBanner() {
         };
 
   return (
-    <Alert
-      className={`${variant.bg} rounded-none border-x-0 border-t-0`}
-      role="status"
-      aria-live="polite"
-    >
+    <Alert className={`${variant.bg} rounded-none border-x-0 border-t-0`} role="status" aria-live="polite">
       <variant.Icon className={`h-4 w-4 ${variant.icon}`} />
       <AlertDescription className={`flex items-center justify-between flex-1 ${variant.text}`}>
         {installed ? (
           <span>
             {t('update.installedPrefix')}{' '}
-            <button
-              onClick={relaunchApp}
-              className="underline hover:no-underline font-medium cursor-pointer"
-            >
+            <button onClick={relaunchApp} className="underline hover:no-underline font-medium cursor-pointer">
               {t('update.restartLink')}
             </button>
           </span>
@@ -110,11 +104,7 @@ export function UpdateBanner() {
                 disabled={installing}
                 className="h-7 text-xs bg-sky-600 hover:bg-sky-700 text-white border-sky-600 hover:border-sky-700 dark:bg-sky-600 dark:hover:bg-sky-500 dark:border-sky-600 dark:hover:border-sky-500"
               >
-                {installing ? (
-                  <Loader2 className="h-3 w-3 mr-1.5 animate-spin" />
-                ) : (
-                  <Download className="h-3 w-3 mr-1.5" />
-                )}
+                {installing ? <Loader2 className="h-3 w-3 mr-1.5 animate-spin" /> : <Download className="h-3 w-3 mr-1.5" />}
                 {installing && downloadProgress?.totalBytes
                   ? `${formatBytes(downloadProgress.downloadedBytes)} / ${formatBytes(downloadProgress.totalBytes)} MB`
                   : installing

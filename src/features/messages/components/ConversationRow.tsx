@@ -15,33 +15,20 @@ interface ConversationRowProps {
   onClose: () => void;
 }
 
-function markConversationReadInCache(
-  queryClient: ReturnType<typeof useQueryClient>,
-  conversationId: string,
-) {
-  queryClient.setQueryData<InfiniteData<ConversationsPage>>(
-    ['directMessages', 'conversations'],
-    (old) => {
-      if (!old) return old;
-      return {
-        ...old,
-        pages: old.pages.map((page) => ({
-          ...page,
-          items: page.items.map((conv) =>
-            conv.id === conversationId ? { ...conv, read: true } : conv,
-          ),
-        })),
-      };
-    },
-  );
+function markConversationReadInCache(queryClient: ReturnType<typeof useQueryClient>, conversationId: string) {
+  queryClient.setQueryData<InfiniteData<ConversationsPage>>(['directMessages', 'conversations'], (old) => {
+    if (!old) return old;
+    return {
+      ...old,
+      pages: old.pages.map((page) => ({
+        ...page,
+        items: page.items.map((conv) => (conv.id === conversationId ? { ...conv, read: true } : conv)),
+      })),
+    };
+  });
 
-  const data = queryClient.getQueryData<InfiniteData<ConversationsPage>>([
-    'directMessages',
-    'conversations',
-  ]);
-  const hasOtherUnread = data?.pages.some((page) =>
-    page.items.some((conv) => conv.id !== conversationId && !conv.read),
-  );
+  const data = queryClient.getQueryData<InfiniteData<ConversationsPage>>(['directMessages', 'conversations']);
+  const hasOtherUnread = data?.pages.some((page) => page.items.some((conv) => conv.id !== conversationId && !conv.read));
   if (!hasOtherUnread) {
     queryClient.setQueryData(['directMessages', 'unread'], false);
   }
@@ -53,9 +40,7 @@ export function ConversationRow({ conversation, currentUserId, onClose }: Conver
   const { other_user, last_message_content, last_message_sender_id, last_message_at, read } = conversation;
 
   const isOwnMessage = last_message_sender_id === currentUserId;
-  const preview = isOwnMessage
-    ? `${t('directMessages.you')} : ${last_message_content}`
-    : last_message_content;
+  const preview = isOwnMessage ? `${t('directMessages.you')} : ${last_message_content}` : last_message_content;
 
   const handleClick = () => {
     if (!read) {
@@ -78,10 +63,7 @@ export function ConversationRow({ conversation, currentUserId, onClose }: Conver
   return (
     <button
       onClick={handleClick}
-      className={cn(
-        'w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50',
-        !read && 'bg-accent/30',
-      )}
+      className={cn('w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50', !read && 'bg-accent/30')}
     >
       <Avatar className="h-10 w-10 flex-shrink-0">
         <AvatarImage src={other_user.avatar_url ?? undefined} alt={other_user.username} />
@@ -92,13 +74,9 @@ export function ConversationRow({ conversation, currentUserId, onClose }: Conver
           <span className={cn('text-sm truncate', !read ? 'font-semibold' : 'font-medium text-muted-foreground')}>
             {other_user.username}
           </span>
-          <span className="text-xs text-muted-foreground flex-shrink-0">
-            {formatChatTimestamp(last_message_at, i18n.language)}
-          </span>
+          <span className="text-xs text-muted-foreground flex-shrink-0">{formatChatTimestamp(last_message_at, i18n.language)}</span>
         </div>
-        <p className={cn('text-xs truncate mt-0.5', !read ? 'text-foreground/80 font-medium' : 'text-muted-foreground')}>
-          {preview}
-        </p>
+        <p className={cn('text-xs truncate mt-0.5', !read ? 'text-foreground/80 font-medium' : 'text-muted-foreground')}>{preview}</p>
       </div>
       {!read && <div className="w-2 h-2 rounded-full bg-primary flex-shrink-0 self-center" />}
     </button>

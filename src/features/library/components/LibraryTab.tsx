@@ -18,7 +18,7 @@ export function LibraryTab({ onDownloadTracks }: LibraryTabProps) {
   const { activeTab } = useLibraryStore(
     useShallow((s) => ({
       activeTab: s.activeTab,
-    }))
+    })),
   );
 
   if (!isSignedIn) {

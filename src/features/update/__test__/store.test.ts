@@ -111,7 +111,9 @@ describe('updateStore', () => {
 
     it('should prevent concurrent checks', async () => {
       let resolveFirst: (value: unknown) => void;
-      const firstCall = new Promise((resolve) => { resolveFirst = resolve; });
+      const firstCall = new Promise((resolve) => {
+        resolveFirst = resolve;
+      });
       mockCheckForUpdates.mockReturnValueOnce(firstCall as never);
 
       // Start first check
@@ -131,7 +133,9 @@ describe('updateStore', () => {
 
     it('should set checkInProgress during check', async () => {
       let resolveCheck: (value: unknown) => void;
-      const checkPromise = new Promise((resolve) => { resolveCheck = resolve; });
+      const checkPromise = new Promise((resolve) => {
+        resolveCheck = resolve;
+      });
       mockCheckForUpdates.mockReturnValue(checkPromise as never);
 
       const promise = useUpdateStore.getState().checkForUpdates();
@@ -219,7 +223,9 @@ describe('updateStore', () => {
 
     it('should set installing during installation', async () => {
       let resolveInstall: (value: unknown) => void;
-      const installPromise = new Promise((resolve) => { resolveInstall = resolve; });
+      const installPromise = new Promise((resolve) => {
+        resolveInstall = resolve;
+      });
       mockInstallUpdate.mockReturnValue(installPromise as never);
 
       const promise = useUpdateStore.getState().installUpdate();
@@ -233,7 +239,9 @@ describe('updateStore', () => {
 
     it('should prevent concurrent installations', async () => {
       let resolveFirst: (value: unknown) => void;
-      const firstCall = new Promise((resolve) => { resolveFirst = resolve; });
+      const firstCall = new Promise((resolve) => {
+        resolveFirst = resolve;
+      });
       mockInstallUpdate.mockReturnValueOnce(firstCall as never);
 
       const firstPromise = useUpdateStore.getState().installUpdate();

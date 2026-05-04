@@ -5,8 +5,7 @@ import { useInfiniteSearchQuery } from './useInfiniteSearchQuery';
 import { useSearchStore } from '../store';
 import type { TrackInfo } from '@/bindings';
 
-const SOUNDCLOUD_URL_PATTERN =
-  /^(?:https?:\/\/)?(?:www\.)?(?:soundcloud\.com|on\.soundcloud\.com)\//i;
+const SOUNDCLOUD_URL_PATTERN = /^(?:https?:\/\/)?(?:www\.)?(?:soundcloud\.com|on\.soundcloud\.com)\//i;
 
 function isSoundCloudUrl(input: string): boolean {
   return SOUNDCLOUD_URL_PATTERN.test(input);

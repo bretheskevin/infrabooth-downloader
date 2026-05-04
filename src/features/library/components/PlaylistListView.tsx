@@ -19,12 +19,7 @@ interface PlaylistListViewProps {
   onDownloadTracks: (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => void | Promise<void>;
 }
 
-export function PlaylistListView({
-  searchQuery,
-  filter,
-  onOpenDetail,
-  onDownloadTracks,
-}: PlaylistListViewProps) {
+export function PlaylistListView({ searchQuery, filter, onOpenDetail, onDownloadTracks }: PlaylistListViewProps) {
   const { t } = useTranslation();
   const [quickDownloadFailedPlaylist, setQuickDownloadFailedPlaylist] = useState<string | null>(null);
   const [downloadingPlaylistId, setDownloadingPlaylistId] = useState<number | null>(null);
@@ -38,10 +33,7 @@ export function PlaylistListView({
 
   const { playlists, isLoading, error, refetch, clearCache } = useLibraryPlaylists(true);
 
-  const filtered = useMemo(
-    () => filterPlaylists(playlists, searchQuery, filter),
-    [playlists, searchQuery, filter],
-  );
+  const filtered = useMemo(() => filterPlaylists(playlists, searchQuery, filter), [playlists, searchQuery, filter]);
 
   const handleRetry = useCallback(() => {
     refetch();

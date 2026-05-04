@@ -19,8 +19,7 @@ interface NewReleasesState {
 export const useNewReleasesStore = create<NewReleasesState>((set, get) => ({
   viewState: { view: 'carousel' },
 
-  setSelectedArtist: (artist) =>
-    set({ viewState: { view: 'releases', artist, filter: 'all' } }),
+  setSelectedArtist: (artist) => set({ viewState: { view: 'releases', artist, filter: 'all' } }),
 
   setReleaseFilter: (filter) => {
     const current = get().viewState;

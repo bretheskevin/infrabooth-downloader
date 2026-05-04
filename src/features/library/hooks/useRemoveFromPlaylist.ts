@@ -7,16 +7,16 @@ async function optimisticRemove(queryClient: QueryClient, playlistId: number, tr
   const tracksKey = ['playlist-tracks', playlistId];
   const membershipKey = ['owned-playlists-for-track', trackId];
 
-  await Promise.all([
-    queryClient.cancelQueries({ queryKey: tracksKey }),
-    queryClient.cancelQueries({ queryKey: membershipKey }),
-  ]);
+  await Promise.all([queryClient.cancelQueries({ queryKey: tracksKey }), queryClient.cancelQueries({ queryKey: membershipKey })]);
 
   const previousTracks = queryClient.getQueryData<TrackInfo[]>(tracksKey);
   const previousMembership = queryClient.getQueryData<PlaylistForTrackPicker[]>(membershipKey);
 
   if (previousTracks) {
-    queryClient.setQueryData<TrackInfo[]>(tracksKey, previousTracks.filter((t) => t.id !== trackId));
+    queryClient.setQueryData<TrackInfo[]>(
+      tracksKey,
+      previousTracks.filter((t) => t.id !== trackId),
+    );
   }
   if (previousMembership) {
     queryClient.setQueryData<PlaylistForTrackPicker[]>(

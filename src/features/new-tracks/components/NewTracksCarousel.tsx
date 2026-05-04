@@ -20,10 +20,7 @@ export function NewTracksCarousel({ onSelectArtist }: NewTracksCarouselProps) {
   const selectedArtistId = useNewTracksStore((s) => s.selectedArtist?.id);
   const hideReposts = useSettingsStore((s) => s.hideReposts);
 
-  const handleHideRepostsChange = useCallback(
-    (checked: boolean) => useSettingsStore.getState().setHideReposts(checked),
-    [],
-  );
+  const handleHideRepostsChange = useCallback((checked: boolean) => useSettingsStore.getState().setHideReposts(checked), []);
 
   return (
     <ArtistCarouselSection

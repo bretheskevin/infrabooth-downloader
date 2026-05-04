@@ -30,23 +30,17 @@ describe('Project Structure (AC #3)', () => {
 
 describe('Tauri Configuration (AC #1)', () => {
   it('should have correct bundle identifier', () => {
-    const tauriConfig = JSON.parse(
-      readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8')
-    );
+    const tauriConfig = JSON.parse(readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8'));
     expect(tauriConfig.identifier).toBe('com.infrabooth.downloader');
   });
 
   it('should have correct product name', () => {
-    const tauriConfig = JSON.parse(
-      readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8')
-    );
+    const tauriConfig = JSON.parse(readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8'));
     expect(tauriConfig.productName).toBe('InfraBooth Downloader');
   });
 
   it('should have correct dev URL', () => {
-    const tauriConfig = JSON.parse(
-      readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8')
-    );
+    const tauriConfig = JSON.parse(readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8'));
     expect(tauriConfig.build.devUrl).toBe('http://localhost:5973');
   });
 });

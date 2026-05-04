@@ -10,9 +10,7 @@ const categorizeError = (error: AppError): FailureReasonCategory => {
   return 'other';
 };
 
-export function groupFailuresByReason(
-  tracks: FailedTrack[]
-): Map<FailureReasonCategory, FailedTrack[]> {
+export function groupFailuresByReason(tracks: FailedTrack[]): Map<FailureReasonCategory, FailedTrack[]> {
   const groups = new Map<FailureReasonCategory, FailedTrack[]>();
 
   for (const track of tracks) {

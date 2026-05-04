@@ -11,11 +11,7 @@ interface FailedTrackItemProps {
   isRetrying?: boolean;
 }
 
-export function FailedTrackItem({
-  track,
-  onRetry,
-  isRetrying = false,
-}: FailedTrackItemProps) {
+export function FailedTrackItem({ track, onRetry, isRetrying = false }: FailedTrackItemProps) {
   const { t } = useTranslation();
 
   return (
@@ -24,13 +20,11 @@ export function FailedTrackItem({
       className={cn(
         'group flex items-start gap-3 rounded-lg px-3 py-2.5',
         'border-l-2 border-warning/50',
-        'transition-colors hover:bg-muted/50'
+        'transition-colors hover:bg-muted/50',
       )}
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-foreground">
-          {track.title}
-        </p>
+        <p className="truncate text-sm font-medium text-foreground">{track.title}</p>
         <p className="truncate text-xs text-muted-foreground">{track.artist}</p>
         {track.error && (
           <div className="mt-1.5 flex items-start gap-1.5">
@@ -38,9 +32,7 @@ export function FailedTrackItem({
             <div className="text-xs text-destructive/80">
               <p className="line-clamp-1">{getErrorDisplayMessage(track.error, t)}</p>
               {getErrorDetailMessage(track.error, t) && (
-                <p className="text-muted-foreground/70 line-clamp-1">
-                  {getErrorDetailMessage(track.error, t)}
-                </p>
+                <p className="text-muted-foreground/70 line-clamp-1">{getErrorDetailMessage(track.error, t)}</p>
               )}
             </div>
           </div>
@@ -57,13 +49,10 @@ export function FailedTrackItem({
           className={cn(
             'h-7 w-7 p-0 opacity-0 transition-opacity flex-shrink-0 mt-0.5',
             'group-hover:opacity-100 focus-visible:opacity-100',
-            isRetrying && 'opacity-100'
+            isRetrying && 'opacity-100',
           )}
         >
-          <RefreshCw
-            className={cn('h-4 w-4', isRetrying && 'animate-spin')}
-            aria-hidden="true"
-          />
+          <RefreshCw className={cn('h-4 w-4', isRetrying && 'animate-spin')} aria-hidden="true" />
         </Button>
       )}
     </div>

@@ -29,42 +29,18 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
 
   switch (status) {
     case 'pending':
-      return (
-        <Clock
-          role="img"
-          aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-muted-foreground', className)}
-        />
-      );
+      return <Clock role="img" aria-label={ariaLabel} className={cn(baseClasses, 'text-muted-foreground', className)} />;
 
     case 'downloading':
     case 'converting':
-      return (
-        <Loader2
-          role="img"
-          aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-primary animate-spin', className)}
-        />
-      );
+      return <Loader2 role="img" aria-label={ariaLabel} className={cn(baseClasses, 'text-primary animate-spin', className)} />;
 
     case 'complete':
     case 'skipped':
-      return (
-        <CheckCircle2
-          role="img"
-          aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-success', className)}
-        />
-      );
+      return <CheckCircle2 role="img" aria-label={ariaLabel} className={cn(baseClasses, 'text-success', className)} />;
 
     case 'rate_limited':
-      return (
-        <Clock
-          role="img"
-          aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-warning', className)}
-        />
-      );
+      return <Clock role="img" aria-label={ariaLabel} className={cn(baseClasses, 'text-warning', className)} />;
 
     case 'failed': {
       // Check for unavailable error (uses warning icon/color)
@@ -81,25 +57,10 @@ export function TrackStatusIcon({ status, errorCode, error, className }: TrackSt
       const severity = getErrorSeverity(errorCode);
       if (severity === 'warning') {
         // Use specific aria-label for geo-blocked
-        const warningLabel =
-          errorCode === 'GEO_BLOCKED'
-            ? t('accessibility.geoRestrictionWarning')
-            : ariaLabel;
-        return (
-          <AlertTriangle
-            role="img"
-            aria-label={warningLabel}
-            className={cn(baseClasses, 'text-warning', className)}
-          />
-        );
+        const warningLabel = errorCode === 'GEO_BLOCKED' ? t('accessibility.geoRestrictionWarning') : ariaLabel;
+        return <AlertTriangle role="img" aria-label={warningLabel} className={cn(baseClasses, 'text-warning', className)} />;
       }
-      return (
-        <XCircle
-          role="img"
-          aria-label={ariaLabel}
-          className={cn(baseClasses, 'text-destructive', className)}
-        />
-      );
+      return <XCircle role="img" aria-label={ariaLabel} className={cn(baseClasses, 'text-destructive', className)} />;
     }
 
     default:

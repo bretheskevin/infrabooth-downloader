@@ -47,33 +47,16 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
       <DetailHeader
-        navigation={<Breadcrumb items={[
-          { label: t('newReleases.title'), onClick: onBack },
-          { label: artist.username },
-        ]} />}
-        artwork={
-          <ArtistAvatarImage
-            avatarUrl={avatarUrl}
-            username={artist.username}
-            className="w-12 h-12 shrink-0"
-          />
-        }
+        navigation={<Breadcrumb items={[{ label: t('newReleases.title'), onClick: onBack }, { label: artist.username }]} />}
+        artwork={<ArtistAvatarImage avatarUrl={avatarUrl} username={artist.username} className="w-12 h-12 shrink-0" />}
         title={artist.username}
         onTitleClick={() => useArtistProfileStore.getState().openProfile(artist.id, artist.username)}
-        subtitle={
-          <p className="text-xs text-muted-foreground">
-            {t('newReleases.releasesCount', { count: filteredItems.length })}
-          </p>
-        }
+        subtitle={<p className="text-xs text-muted-foreground">{t('newReleases.releasesCount', { count: filteredItems.length })}</p>}
       />
 
       {items.length > 0 && (
         <div className="flex items-center justify-between gap-3">
-          <FilterChips
-            options={RELEASE_FILTERS}
-            active={filter}
-            onChange={setReleaseFilter}
-          />
+          <FilterChips options={RELEASE_FILTERS} active={filter} onChange={setReleaseFilter} />
           <ViewModeToggle />
         </div>
       )}

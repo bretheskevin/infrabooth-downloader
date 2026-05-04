@@ -131,9 +131,7 @@ describe('useInitializeSettings', () => {
     });
 
     await waitFor(() => {
-      expect(logger.error).toHaveBeenCalledWith(
-        'Failed to get default download path: Failed'
-      );
+      expect(logger.error).toHaveBeenCalledWith('Failed to get default download path: Failed');
     });
     expect(mockSetDownloadPath).not.toHaveBeenCalled();
   });

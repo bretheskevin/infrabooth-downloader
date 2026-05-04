@@ -58,14 +58,19 @@ function ScrollablePlaylistList({
   });
 
   useEffect(() => {
-    return () => { useLibraryStore.getState().setListScrollTop(getScrollOffset()); };
+    return () => {
+      useLibraryStore.getState().setListScrollTop(getScrollOffset());
+    };
   }, [getScrollOffset]);
 
   if (isWidescreen) {
     return (
       <div
         data-testid="widescreen-grid"
-        className={cn("grid grid-cols-[repeat(auto-fill,minmax(420px,1fr))] content-start gap-1 flex-1 min-h-0 overflow-y-auto pr-2", animateRefresh && "library-list-refresh")}
+        className={cn(
+          'grid grid-cols-[repeat(auto-fill,minmax(420px,1fr))] content-start gap-1 flex-1 min-h-0 overflow-y-auto pr-2',
+          animateRefresh && 'library-list-refresh',
+        )}
       >
         {playlists.map((playlist) => (
           <LibraryPlaylistItem
@@ -84,7 +89,7 @@ function ScrollablePlaylistList({
     <VirtualListContainer
       parentRef={parentRef}
       totalSize={totalSize}
-      className={cn("flex-1 min-h-0 pr-2", animateRefresh && "library-list-refresh")}
+      className={cn('flex-1 min-h-0 pr-2', animateRefresh && 'library-list-refresh')}
     >
       {virtualItems.map((virtualItem) => {
         const playlist = playlists[virtualItem.index];
@@ -136,11 +141,7 @@ export function LibraryPlaylistList({
         : t('library.errorRetry');
 
     return (
-      <Button
-        variant="ghost"
-        onClick={onRetry}
-        className="w-full py-8 text-sm text-muted-foreground"
-      >
+      <Button variant="ghost" onClick={onRetry} className="w-full py-8 text-sm text-muted-foreground">
         {message}
       </Button>
     );
@@ -148,9 +149,7 @@ export function LibraryPlaylistList({
 
   if (isEmpty) {
     return (
-      <p className="text-center py-8 text-sm text-muted-foreground">
-        {isFiltered ? t('library.noResults') : t('library.emptyState')}
-      </p>
+      <p className="text-center py-8 text-sm text-muted-foreground">{isFiltered ? t('library.noResults') : t('library.emptyState')}</p>
     );
   }
 

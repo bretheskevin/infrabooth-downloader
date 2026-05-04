@@ -15,8 +15,7 @@ interface NotificationsListProps {
 
 export function NotificationsList({ containerClassName, sentinelClassName, onClose, markSeen = false }: NotificationsListProps) {
   const { t } = useTranslation();
-  const { items, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
-    useNotificationsPage();
+  const { items, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useNotificationsPage();
   useMarkNotificationsSeen(items, markSeen);
   const { sentinelRef } = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 

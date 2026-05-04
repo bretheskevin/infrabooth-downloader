@@ -13,7 +13,7 @@ export type PipelineView =
 
 export function useDownloadPipeline(): PipelineView {
   const { isProcessing, isInitializing } = useQueueStore(
-    useShallow((s) => ({ isProcessing: s.isProcessing, isInitializing: s.isInitializing }))
+    useShallow((s) => ({ isProcessing: s.isProcessing, isInitializing: s.isInitializing })),
   );
 
   const flow = useDownloadFlow();

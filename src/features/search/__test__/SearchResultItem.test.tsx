@@ -60,11 +60,7 @@ function renderSearchResult(overrides = {}) {
   return render(
     <TooltipProvider>
       <TrackListProvider {...props}>
-        <InteractiveTrackRow
-          track={mockTrack}
-          index={0}
-          className="border-b border-border/50 last:border-b-0"
-        />
+        <InteractiveTrackRow track={mockTrack} index={0} className="border-b border-border/50 last:border-b-0" />
       </TrackListProvider>
     </TooltipProvider>,
   );

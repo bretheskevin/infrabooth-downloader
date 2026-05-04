@@ -27,9 +27,7 @@ vi.mock('react-i18next', () => ({
 describe('ValidationFeedback', () => {
   describe('when validating', () => {
     it('should render nothing while validating (AC #1)', () => {
-      const { container } = render(
-        <ValidationFeedback result={null} isValidating={true} />
-      );
+      const { container } = render(<ValidationFeedback result={null} isValidating={true} />);
 
       expect(container.firstChild).toBeNull();
     });
@@ -37,9 +35,7 @@ describe('ValidationFeedback', () => {
 
   describe('when no result', () => {
     it('should render nothing when result is null (AC #4)', () => {
-      const { container } = render(
-        <ValidationFeedback result={null} isValidating={false} />
-      );
+      const { container } = render(<ValidationFeedback result={null} isValidating={false} />);
 
       expect(container.firstChild).toBeNull();
     });
@@ -53,17 +49,13 @@ describe('ValidationFeedback', () => {
     };
 
     it('should show success message for playlist (AC #2)', () => {
-      render(
-        <ValidationFeedback result={validPlaylistResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={validPlaylistResult} isValidating={false} />);
 
       expect(screen.getByText('Valid playlist URL')).toBeInTheDocument();
     });
 
     it('should show checkmark icon for success (AC #2)', () => {
-      render(
-        <ValidationFeedback result={validPlaylistResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={validPlaylistResult} isValidating={false} />);
 
       // The CheckCircle2 icon should be present
       const icon = document.querySelector('svg');
@@ -71,17 +63,13 @@ describe('ValidationFeedback', () => {
     });
 
     it('should have role="status" for success (AC #5)', () => {
-      render(
-        <ValidationFeedback result={validPlaylistResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={validPlaylistResult} isValidating={false} />);
 
       expect(screen.getByRole('status')).toBeInTheDocument();
     });
 
     it('should have aria-live="polite" for success announcements (AC #5)', () => {
-      render(
-        <ValidationFeedback result={validPlaylistResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={validPlaylistResult} isValidating={false} />);
 
       expect(screen.getByRole('status')).toHaveAttribute('aria-live', 'polite');
     });
@@ -95,9 +83,7 @@ describe('ValidationFeedback', () => {
     };
 
     it('should show success message for track (AC #2)', () => {
-      render(
-        <ValidationFeedback result={validTrackResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={validTrackResult} isValidating={false} />);
 
       expect(screen.getByText('Valid track URL')).toBeInTheDocument();
     });
@@ -111,33 +97,19 @@ describe('ValidationFeedback', () => {
     };
 
     it('should show success message for short link', () => {
-      render(
-        <ValidationFeedback result={validShortLinkResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={validShortLinkResult} isValidating={false} />);
 
       expect(screen.getByText('Valid SoundCloud link')).toBeInTheDocument();
     });
 
     it('should hide short link message when media is loaded', () => {
-      const { container } = render(
-        <ValidationFeedback
-          result={validShortLinkResult}
-          isValidating={false}
-          hideWhenMediaLoaded={true}
-        />
-      );
+      const { container } = render(<ValidationFeedback result={validShortLinkResult} isValidating={false} hideWhenMediaLoaded={true} />);
 
       expect(container.firstChild).toBeNull();
     });
 
     it('should show short link message when media is not loaded', () => {
-      render(
-        <ValidationFeedback
-          result={validShortLinkResult}
-          isValidating={false}
-          hideWhenMediaLoaded={false}
-        />
-      );
+      render(<ValidationFeedback result={validShortLinkResult} isValidating={false} hideWhenMediaLoaded={false} />);
 
       expect(screen.getByText('Valid SoundCloud link')).toBeInTheDocument();
     });
@@ -155,43 +127,33 @@ describe('ValidationFeedback', () => {
     };
 
     it('should show translated error message based on error code (AC #3)', () => {
-      render(
-        <ValidationFeedback result={errorResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={errorResult} isValidating={false} />);
 
       // The component now translates based on error code, not the raw message
       expect(screen.getByText('Not a SoundCloud URL')).toBeInTheDocument();
     });
 
     it('should show translated hint text below error (AC #3)', () => {
-      render(
-        <ValidationFeedback result={errorResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={errorResult} isValidating={false} />);
 
       // The component now translates based on error code, not the raw hint
       expect(screen.getByText('Paste a link from soundcloud.com')).toBeInTheDocument();
     });
 
     it('should have role="alert" for errors (AC #5)', () => {
-      render(
-        <ValidationFeedback result={errorResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={errorResult} isValidating={false} />);
 
       expect(screen.getByRole('alert')).toBeInTheDocument();
     });
 
     it('should have aria-live="assertive" for error announcements (AC #5)', () => {
-      render(
-        <ValidationFeedback result={errorResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={errorResult} isValidating={false} />);
 
       expect(screen.getByRole('alert')).toHaveAttribute('aria-live', 'assertive');
     });
 
     it('should show error icon (AC #3)', () => {
-      render(
-        <ValidationFeedback result={errorResult} isValidating={false} />
-      );
+      render(<ValidationFeedback result={errorResult} isValidating={false} />);
 
       // The AlertCircle icon should be present
       const icon = document.querySelector('svg');
@@ -212,18 +174,14 @@ describe('ValidationFeedback', () => {
     };
 
     it('should show fallback error message for unknown error codes (AC #3)', () => {
-      render(
-        <ValidationFeedback result={errorResultNoHint} isValidating={false} />
-      );
+      render(<ValidationFeedback result={errorResultNoHint} isValidating={false} />);
 
       // Unknown error codes fall back to invalidUrlFormat translation
       expect(screen.getByText('Invalid URL format')).toBeInTheDocument();
     });
 
     it('should not render hint paragraph when error code has no hint mapping', () => {
-      render(
-        <ValidationFeedback result={errorResultNoHint} isValidating={false} />
-      );
+      render(<ValidationFeedback result={errorResultNoHint} isValidating={false} />);
 
       const paragraphs = document.querySelectorAll('p');
       expect(paragraphs.length).toBe(0);

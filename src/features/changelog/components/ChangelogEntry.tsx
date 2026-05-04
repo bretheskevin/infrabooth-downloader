@@ -27,13 +27,8 @@ export function ChangelogEntry({ sections }: ChangelogEntryProps) {
   return (
     <div className="space-y-2">
       {sections.map((section) => (
-        <div
-          key={section.category}
-          className={`border-l-[3px] rounded-r-md px-3 py-2 ${CATEGORY_STYLES[section.category]}`}
-        >
-          <p className={`text-sm font-semibold ${CATEGORY_LABEL_STYLES[section.category]}`}>
-            {t(`changelog.${section.category}`)}
-          </p>
+        <div key={section.category} className={`border-l-[3px] rounded-r-md px-3 py-2 ${CATEGORY_STYLES[section.category]}`}>
+          <p className={`text-sm font-semibold ${CATEGORY_LABEL_STYLES[section.category]}`}>{t(`changelog.${section.category}`)}</p>
           <ul className="mt-1 space-y-0.5 list-disc list-inside">
             {section.items.map((item, i) => (
               <li key={i} className="text-sm text-muted-foreground leading-relaxed">

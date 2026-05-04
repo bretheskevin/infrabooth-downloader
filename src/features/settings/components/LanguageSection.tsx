@@ -1,11 +1,5 @@
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useTranslation } from 'react-i18next';
 import { useSettingsStore } from '@/features/settings/store';
 import { announceToScreenReader } from '@/lib/accessibility';
@@ -20,8 +14,7 @@ export function LanguageSection() {
   const language = useSettingsStore((state) => state.language);
   const setLanguage = useSettingsStore((state) => state.setLanguage);
 
-  const currentLabelKey =
-    SUPPORTED_LANGUAGES.find((lang) => lang.code === language)?.labelKey ?? 'settings.languageEnglish';
+  const currentLabelKey = SUPPORTED_LANGUAGES.find((lang) => lang.code === language)?.labelKey ?? 'settings.languageEnglish';
 
   const handleLanguageChange = (newLanguage: string) => {
     setLanguage(newLanguage as 'en' | 'fr');
@@ -38,9 +31,7 @@ export function LanguageSection() {
         <Label htmlFor="language-select" className="text-base font-medium">
           {t('settings.language')}
         </Label>
-        <p className="text-sm text-muted-foreground">
-          {t('settings.languageDescription')}
-        </p>
+        <p className="text-sm text-muted-foreground">{t('settings.languageDescription')}</p>
       </div>
 
       <Select value={language} onValueChange={handleLanguageChange}>

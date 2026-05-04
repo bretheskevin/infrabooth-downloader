@@ -14,7 +14,7 @@ export function useFollowedArtists() {
     queryFn: async () => {
       void logger.info('[new-tracks] Fetching followed artists...');
       const result = await api.getFollowedArtists();
-      void logger.info(`[new-tracks] Fetched ${result.length} artists, ${result.filter(a => a.has_new_content).length} with new content`);
+      void logger.info(`[new-tracks] Fetched ${result.length} artists, ${result.filter((a) => a.has_new_content).length} with new content`);
       return result;
     },
     enabled: isSignedIn,

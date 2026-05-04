@@ -27,9 +27,7 @@ export function ReleaseCard({ item, onClick }: ReleaseCardProps) {
         </span>
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent backdrop-blur-[2px] px-2 pb-1.5 pt-4">
           <p className="text-white text-xs font-semibold truncate">{item.release.title}</p>
-          <p className="text-white/70 text-[10px]">
-            {t('newReleases.trackCount', { count: item.release.track_count })}
-          </p>
+          <p className="text-white/70 text-[10px]">{t('newReleases.trackCount', { count: item.release.track_count })}</p>
         </div>
       </div>
       <div className="px-2 py-1.5">

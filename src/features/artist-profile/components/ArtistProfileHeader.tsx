@@ -13,12 +13,7 @@ interface ArtistProfileHeaderProps {
   followButton?: React.ReactNode;
 }
 
-export function ArtistProfileHeader({
-  profile,
-  isLoading,
-  actions,
-  followButton,
-}: ArtistProfileHeaderProps) {
+export function ArtistProfileHeader({ profile, isLoading, actions, followButton }: ArtistProfileHeaderProps) {
   const { t } = useTranslation();
 
   if (isLoading) {
@@ -37,27 +32,28 @@ export function ArtistProfileHeader({
     <div className="px-1">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          {profile.description && (
-            <ExpandableDescription description={profile.description} />
-          )}
+          {profile.description && <ExpandableDescription description={profile.description} />}
           <div className="flex items-center gap-4 mt-1.5 text-xs text-muted-foreground">
             <Button
               variant="link"
               onClick={() => useArtistProfileStore.getState().openFollowView('followers')}
               className="p-0 h-auto text-xs text-muted-foreground"
             >
-              <span><strong className="text-foreground">{formatCount(profile.followers_count)}</strong> {t('artistProfile.followers')}</span>
+              <span>
+                <strong className="text-foreground">{formatCount(profile.followers_count)}</strong> {t('artistProfile.followers')}
+              </span>
             </Button>
             <Button
               variant="link"
               onClick={() => useArtistProfileStore.getState().openFollowView('followings')}
               className="p-0 h-auto text-xs text-muted-foreground"
             >
-              <span><strong className="text-foreground">{formatCount(profile.followings_count)}</strong> {t('artistProfile.followings')}</span>
+              <span>
+                <strong className="text-foreground">{formatCount(profile.followings_count)}</strong> {t('artistProfile.followings')}
+              </span>
             </Button>
             <span>
-              <strong className="text-foreground">{formatCount(profile.track_count)}</strong>{' '}
-              {t('artistProfile.tracks')}
+              <strong className="text-foreground">{formatCount(profile.track_count)}</strong> {t('artistProfile.tracks')}
             </span>
             {followButton}
           </div>

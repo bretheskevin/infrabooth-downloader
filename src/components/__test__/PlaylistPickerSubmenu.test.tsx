@@ -4,11 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useAuthStore } from '@/features/auth/store';
 import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
 vi.mock('@/lib/tauri', () => ({
@@ -53,11 +49,7 @@ function SubmenuWrapper({ trackId }: { trackId: number }) {
 }
 
 function renderWithProviders(ui: React.ReactElement) {
-  return render(
-    <QueryClientProvider client={createQueryClient()}>
-      {ui}
-    </QueryClientProvider>
-  );
+  return render(<QueryClientProvider client={createQueryClient()}>{ui}</QueryClientProvider>);
 }
 
 async function openSubmenu(user: ReturnType<typeof userEvent.setup>) {
@@ -82,10 +74,7 @@ describe('Add to playlist logic', () => {
       function TestComponent() {
         const { addToPlaylist, addingToPlaylistId } = useAddToPlaylist();
         return (
-          <button
-            onClick={() => void addToPlaylist(1, 'Test Playlist', 123)}
-            disabled={addingToPlaylistId !== null}
-          >
+          <button onClick={() => void addToPlaylist(1, 'Test Playlist', 123)} disabled={addingToPlaylistId !== null}>
             Add
           </button>
         );
@@ -101,19 +90,13 @@ describe('Add to playlist logic', () => {
     });
 
     it('handles error when track is already in playlist', async () => {
-      (api.addTrackToPlaylist as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('Track already in this playlist')
-      );
+      (api.addTrackToPlaylist as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Track already in this playlist'));
 
       const { useAddToPlaylist } = await import('@/hooks/useAddToPlaylist');
 
       function TestComponent() {
         const { addToPlaylist } = useAddToPlaylist();
-        return (
-          <button onClick={() => void addToPlaylist(1, 'Test Playlist', 123)}>
-            Add
-          </button>
-        );
+        return <button onClick={() => void addToPlaylist(1, 'Test Playlist', 123)}>Add</button>;
       }
 
       renderWithProviders(<TestComponent />);
@@ -241,9 +224,7 @@ describe('Add to playlist logic', () => {
         { id: 3, title: 'Another Owned', artwork_url: null, contains_track: false },
       ];
       const search = 'another';
-      const filtered = playlists.filter((p) =>
-        p.title.toLowerCase().includes(search.toLowerCase())
-      );
+      const filtered = playlists.filter((p) => p.title.toLowerCase().includes(search.toLowerCase()));
 
       expect(filtered).toHaveLength(1);
       expect(filtered[0]?.title).toBe('Another Owned');
@@ -257,14 +238,12 @@ describe('Add to playlist logic', () => {
         { id: 2, title: 'Other Playlist', artwork_url: null, contains_track: false },
       ];
 
-      const playlistWithTrack = playlists.find(p => p.contains_track);
+      const playlistWithTrack = playlists.find((p) => p.contains_track);
       expect(playlistWithTrack?.id).toBe(1);
     });
 
     it('returns false when track is not in playlist', () => {
-      const playlists = [
-        { id: 1, title: 'My Playlist', artwork_url: null, contains_track: false },
-      ];
+      const playlists = [{ id: 1, title: 'My Playlist', artwork_url: null, contains_track: false }];
 
       const containsTrack = playlists[0]?.contains_track ?? false;
       expect(containsTrack).toBe(false);

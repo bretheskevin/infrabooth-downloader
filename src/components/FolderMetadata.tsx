@@ -37,9 +37,7 @@ export function FolderMetadata({
                 <Folder className="h-3 w-3 shrink-0" />
                 <span className="truncate">{folderName}</span>
                 {isCustomFolder && (
-                  <span className="text-[10px] text-muted-foreground/70 shrink-0">
-                    ({t('library.detail.customFolder')})
-                  </span>
+                  <span className="text-[10px] text-muted-foreground/70 shrink-0">({t('library.detail.customFolder')})</span>
                 )}
                 <ChevronRight className="h-3 w-3 shrink-0" />
               </button>

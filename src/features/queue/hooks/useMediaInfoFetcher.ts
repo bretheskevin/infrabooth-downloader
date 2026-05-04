@@ -49,7 +49,7 @@ export function useMediaInfoFetcher(): UseMediaInfoFetcherReturn {
     (url: string) => {
       mutate(url);
     },
-    [mutate]
+    [mutate],
   );
 
   const clear = useCallback(() => {
@@ -59,10 +59,7 @@ export function useMediaInfoFetcher(): UseMediaInfoFetcherReturn {
     reset();
   }, [reset]);
 
-  const error = useMemo(
-    () => (mutation.error ? parseMediaError(mutation.error, t) : null),
-    [mutation.error, t]
-  );
+  const error = useMemo(() => (mutation.error ? parseMediaError(mutation.error, t) : null), [mutation.error, t]);
 
   return {
     mediaInfo,

@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { SettingsSidebar } from './SettingsSidebar';
 import { GeneralSettings } from './GeneralSettings';
 import { PlaylistsSettings } from './PlaylistsSettings';
@@ -78,19 +72,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent
-        side="right"
-        className="w-[640px] sm:max-w-none p-0 gap-0"
-      >
+      <SheetContent side="right" className="w-[640px] sm:max-w-none p-0 gap-0">
         <SheetHeader className="sr-only">
           <SheetTitle>{t('settings.title')}</SheetTitle>
           <SheetDescription>{t('settings.description')}</SheetDescription>
         </SheetHeader>
         <div className="flex h-full">
-          <SettingsSidebar
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
+          <SettingsSidebar selectedCategory={selectedCategory} onSelectCategory={setSelectedCategory} />
           <div className="min-w-0 flex-1 relative">
             <ScrollShadow position="top" visible={showTopShadow} />
             <div

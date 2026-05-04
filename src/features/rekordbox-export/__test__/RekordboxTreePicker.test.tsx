@@ -32,13 +32,7 @@ function renderWithTooltip(ui: React.ReactElement) {
 
 describe('RekordboxTreePicker', () => {
   it('renders without newPlaylistName and does not show new playlist preview', () => {
-    renderWithTooltip(
-      <RekordboxTreePicker
-        nodes={mockNodes}
-        selectedFolderId={null}
-        onSelectFolder={vi.fn()}
-      />,
-    );
+    renderWithTooltip(<RekordboxTreePicker nodes={mockNodes} selectedFolderId={null} onSelectFolder={vi.fn()} />);
 
     expect(screen.getByText('Rekordbox (root)')).toBeInTheDocument();
     expect(screen.queryByText(/Will be created/)).not.toBeInTheDocument();
@@ -46,12 +40,7 @@ describe('RekordboxTreePicker', () => {
 
   it('renders with newPlaylistName and shows new playlist preview when folder selected', () => {
     renderWithTooltip(
-      <RekordboxTreePicker
-        nodes={mockNodes}
-        selectedFolderId={null}
-        onSelectFolder={vi.fn()}
-        newPlaylistName="Test Playlist"
-      />,
+      <RekordboxTreePicker nodes={mockNodes} selectedFolderId={null} onSelectFolder={vi.fn()} newPlaylistName="Test Playlist" />,
     );
 
     expect(screen.getByText('Rekordbox (root)')).toBeInTheDocument();

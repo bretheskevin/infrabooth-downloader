@@ -16,9 +16,7 @@ import { TrackListProvider } from '@/components/InteractiveTrackRow';
 
 export function SearchTab() {
   const { t } = useTranslation();
-  const { searchType, inputValue } = useSearchStore(
-    useShallow((s) => ({ searchType: s.searchType, inputValue: s.inputValue })),
-  );
+  const { searchType, inputValue } = useSearchStore(useShallow((s) => ({ searchType: s.searchType, inputValue: s.inputValue })));
   const { setSearchType, setInputValue } = useSearchStore.getState();
   const defaultPath = useSettingsStore((s) => s.downloadPath);
   const [downloadPath, setDownloadPath] = useState(defaultPath);
@@ -49,18 +47,12 @@ export function SearchTab() {
 
   const { playTrack } = usePlayContext(trackSearch.results);
 
-  const placeholder = searchType === 'tracks'
-    ? t('search.placeholder')
-    : t('search.placeholderArtists');
+  const placeholder = searchType === 'tracks' ? t('search.placeholder') : t('search.placeholderArtists');
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
       <SearchBar value={inputValue} onChange={setInputValue} placeholder={placeholder} autoFocus />
-      <Tabs
-        value={searchType}
-        onValueChange={(v) => setSearchType(v as SearchType)}
-        className="flex flex-col flex-1 min-h-0 gap-3"
-      >
+      <Tabs value={searchType} onValueChange={(v) => setSearchType(v as SearchType)} className="flex flex-col flex-1 min-h-0 gap-3">
         <div className="flex items-center justify-between pr-3">
           <TabsList variant="underline">
             <TabsTrigger value="tracks" className="text-xs px-2 py-1">
@@ -70,9 +62,7 @@ export function SearchTab() {
               {t('search.tabArtists')}
             </TabsTrigger>
           </TabsList>
-          {searchType === 'tracks' && (
-            <SearchFolderPicker path={downloadPath} onPathChange={setDownloadPath} />
-          )}
+          {searchType === 'tracks' && <SearchFolderPicker path={downloadPath} onPathChange={setDownloadPath} />}
         </div>
         <div className="flex-1 min-h-0 overflow-y-auto">
           <TabsContent value="tracks" className="mt-0">

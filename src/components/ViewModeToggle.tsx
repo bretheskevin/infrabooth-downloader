@@ -12,23 +12,12 @@ export function ViewModeToggle({ className }: { className?: string }) {
     <div
       role="group"
       aria-label={t('common.viewModeGroup')}
-      className={cn(
-        'inline-flex items-center rounded-md border border-border bg-muted/40 p-0.5',
-        className,
-      )}
+      className={cn('inline-flex items-center rounded-md border border-border bg-muted/40 p-0.5', className)}
     >
-      <ToggleButton
-        active={mode === 'card'}
-        onClick={() => setMode('card')}
-        label={t('common.viewModeCard')}
-      >
+      <ToggleButton active={mode === 'card'} onClick={() => setMode('card')} label={t('common.viewModeCard')}>
         <LayoutGrid className="h-4 w-4" />
       </ToggleButton>
-      <ToggleButton
-        active={mode === 'list'}
-        onClick={() => setMode('list')}
-        label={t('common.viewModeList')}
-      >
+      <ToggleButton active={mode === 'list'} onClick={() => setMode('list')} label={t('common.viewModeList')}>
         <List className="h-4 w-4" />
       </ToggleButton>
     </div>
@@ -52,9 +41,7 @@ function ToggleButton({ active, onClick, label, children }: ToggleButtonProps) {
       onClick={onClick}
       className={cn(
         'inline-flex h-7 w-7 items-center justify-center rounded-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
-        active
-          ? 'bg-background text-foreground shadow-sm'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+        active ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
     >
       {children}

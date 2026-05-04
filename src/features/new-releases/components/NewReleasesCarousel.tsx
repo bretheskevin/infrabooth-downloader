@@ -21,10 +21,7 @@ export function NewReleasesCarousel() {
     useNewReleasesStore.getState().setSelectedArtist(artist);
   }, []);
 
-  const handleHideRepostsChange = useCallback(
-    (checked: boolean) => useSettingsStore.getState().setHideReleasesReposts(checked),
-    [],
-  );
+  const handleHideRepostsChange = useCallback((checked: boolean) => useSettingsStore.getState().setHideReleasesReposts(checked), []);
 
   return (
     <ArtistCarouselSection

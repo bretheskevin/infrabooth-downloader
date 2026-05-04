@@ -11,12 +11,7 @@ interface TrackDownloadActionProps {
   variant?: 'ghost' | 'filled';
 }
 
-export function TrackDownloadAction({
-  state,
-  onDownload,
-  onRetry,
-  variant = 'ghost',
-}: TrackDownloadActionProps) {
+export function TrackDownloadAction({ state, onDownload, onRetry, variant = 'ghost' }: TrackDownloadActionProps) {
   const { t } = useTranslation();
 
   if (state.status === 'idle') {
@@ -47,11 +42,7 @@ export function TrackDownloadAction({
 
   if (state.status === 'downloading') {
     if ((state.progress ?? 0) > 0) {
-      return (
-        <span className="text-xs font-medium text-primary tabular-nums">
-          {Math.round(state.progress! * 100)}%
-        </span>
-      );
+      return <span className="text-xs font-medium text-primary tabular-nums">{Math.round(state.progress! * 100)}%</span>;
     }
     return (
       <div className="h-8 w-8 flex items-center justify-center">

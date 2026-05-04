@@ -13,14 +13,11 @@ export function useTauriEventDialog<TPayload, TState>(
     let mounted = true;
 
     const setupListener = async () => {
-      unlisten = await listen<TPayload>(
-        eventName,
-        (event) => {
-          if (mounted && event.payload) {
-            setState(memoizedMapPayload(event.payload));
-          }
+      unlisten = await listen<TPayload>(eventName, (event) => {
+        if (mounted && event.payload) {
+          setState(memoizedMapPayload(event.payload));
         }
-      );
+      });
     };
 
     setupListener();

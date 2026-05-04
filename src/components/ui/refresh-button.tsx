@@ -29,13 +29,7 @@ export function RefreshButton({
   }, [onRefresh]);
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={() => void handleClick()}
-      aria-label={ariaLabel}
-      className={className}
-    >
+    <Button variant="ghost" size="icon" onClick={() => void handleClick()} aria-label={ariaLabel} className={className}>
       <RefreshCw className={`${iconClassName}${isRefreshing ? ' animate-spin' : ''}`} />
     </Button>
   );

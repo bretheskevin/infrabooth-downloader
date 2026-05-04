@@ -43,11 +43,7 @@ vi.mock('react-i18next', () => ({
 // Mock DownloadBar to test PlaylistPreview in isolation
 vi.mock('../DownloadBar', () => ({
   DownloadBar: ({ onDownload, isDownloading }: { onDownload: () => void; isDownloading?: boolean }) => (
-    <button
-      data-testid="download-button"
-      onClick={onDownload}
-      disabled={isDownloading}
-    >
+    <button data-testid="download-button" onClick={onDownload} disabled={isDownloading}>
       Download
     </button>
   ),
@@ -60,8 +56,28 @@ const mockPlaylist: PlaylistInfo = {
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 47,
   tracks: [
-    { id: 1, title: 'Track 1', user: { id: 0, username: 'testuser', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
-    { id: 2, title: 'Track 2', user: { id: 0, username: 'testuser', avatar_url: null }, artwork_url: null, duration: 200000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+    {
+      id: 1,
+      title: 'Track 1',
+      user: { id: 0, username: 'testuser', avatar_url: null },
+      artwork_url: null,
+      duration: 180000,
+      permalink_url: '',
+      waveform_url: null,
+      downloadable: false,
+      download_url: null,
+    },
+    {
+      id: 2,
+      title: 'Track 2',
+      user: { id: 0, username: 'testuser', avatar_url: null },
+      artwork_url: null,
+      duration: 200000,
+      permalink_url: '',
+      waveform_url: null,
+      downloadable: false,
+      download_url: null,
+    },
   ],
 };
 
@@ -72,7 +88,17 @@ const mockSingleTrackPlaylist: PlaylistInfo = {
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 1,
   tracks: [
-    { id: 1, title: 'Track 1', user: { id: 0, username: 'testuser', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+    {
+      id: 1,
+      title: 'Track 1',
+      user: { id: 0, username: 'testuser', avatar_url: null },
+      artwork_url: null,
+      duration: 180000,
+      permalink_url: '',
+      waveform_url: null,
+      downloadable: false,
+      download_url: null,
+    },
   ],
 };
 
@@ -90,7 +116,9 @@ const mockPlaylistNoArtwork: PlaylistInfo = {
       artwork_url: null,
       duration: 180000,
       permalink_url: '',
-      waveform_url: null, downloadable: false, download_url: null,
+      waveform_url: null,
+      downloadable: false,
+      download_url: null,
     },
   ],
 };
@@ -109,7 +137,9 @@ const mockPlaylistWithTrackArtwork: PlaylistInfo = {
       artwork_url: 'https://i1.sndcdn.com/artworks-track1-large.jpg',
       duration: 180000,
       permalink_url: '',
-      waveform_url: null, downloadable: false, download_url: null,
+      waveform_url: null,
+      downloadable: false,
+      download_url: null,
     },
   ],
 };
@@ -121,36 +151,27 @@ describe('PlaylistPreview', () => {
 
   describe('display', () => {
     it('should render playlist title (AC #2)', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('playlist-title')).toHaveTextContent('Test Playlist');
     });
 
     it('should render creator name (AC #2)', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('playlist-creator')).toHaveTextContent('testuser');
     });
 
     it('should render track count (AC #2)', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('playlist-track-count')).toHaveTextContent('47 tracks');
     });
-
   });
 
   describe('artwork', () => {
     it('should render playlist artwork when URL is provided (AC #2)', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       const artwork = screen.getByTestId('playlist-artwork') as HTMLImageElement;
       expect(artwork).toBeInTheDocument();
@@ -158,27 +179,21 @@ describe('PlaylistPreview', () => {
     });
 
     it('should transform artwork URL to correct size (AC #2)', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       const artwork = screen.getByTestId('playlist-artwork') as HTMLImageElement;
       expect(artwork.src).toBe('https://i1.sndcdn.com/artworks-xxx-t67x67.jpg');
     });
 
     it('should render placeholder when artwork URL is null (AC #2)', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylistNoArtwork} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylistNoArtwork} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('playlist-artwork-placeholder')).toBeInTheDocument();
       expect(screen.queryByTestId('playlist-artwork')).not.toBeInTheDocument();
     });
 
     it('should fallback to first track artwork when playlist has no artwork', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylistWithTrackArtwork} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylistWithTrackArtwork} onDownload={vi.fn()} />);
 
       const artwork = screen.getByTestId('playlist-artwork') as HTMLImageElement;
       expect(artwork).toBeInTheDocument();
@@ -188,9 +203,7 @@ describe('PlaylistPreview', () => {
 
   describe('download button', () => {
     it('should render download button with correct text (AC #3)', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       const button = screen.getByTestId('download-button');
       expect(button).toHaveTextContent('Download');
@@ -198,42 +211,26 @@ describe('PlaylistPreview', () => {
 
     it('should call onDownload when button is clicked (AC #3)', () => {
       const onDownload = vi.fn();
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={onDownload} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={onDownload} />);
 
       fireEvent.click(screen.getByTestId('download-button'));
       expect(onDownload).toHaveBeenCalledTimes(1);
     });
 
     it('should disable button when isDownloading is true', () => {
-      render(
-        <PlaylistPreview
-          playlist={mockPlaylist}
-          onDownload={vi.fn()}
-          isDownloading={true}
-        />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} isDownloading={true} />);
 
       expect(screen.getByTestId('download-button')).toBeDisabled();
     });
 
     it('should not disable button when isDownloading is false', () => {
-      render(
-        <PlaylistPreview
-          playlist={mockPlaylist}
-          onDownload={vi.fn()}
-          isDownloading={false}
-        />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} isDownloading={false} />);
 
       expect(screen.getByTestId('download-button')).not.toBeDisabled();
     });
 
     it('should not disable button by default', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('download-button')).not.toBeDisabled();
     });
@@ -241,25 +238,19 @@ describe('PlaylistPreview', () => {
 
   describe('layout', () => {
     it('should render preview card', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('playlist-preview')).toBeInTheDocument();
     });
 
     it('should have proper CSS classes for truncation on title', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('playlist-title')).toHaveClass('truncate');
     });
 
     it('should have proper CSS classes for truncation on creator', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('playlist-creator')).toHaveClass('truncate');
     });
@@ -267,43 +258,33 @@ describe('PlaylistPreview', () => {
 
   describe('preserve order toggle', () => {
     it('should render the preserve order switch', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByTestId('preserve-order-switch')).toBeInTheDocument();
     });
 
     it('should render the label text', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.getByText('Number tracks')).toBeInTheDocument();
     });
 
     it('should be checked when preservePlaylistOrder is true', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       const switchEl = screen.getByTestId('preserve-order-switch');
       expect(switchEl).toHaveAttribute('data-state', 'checked');
     });
 
     it('should call setPreservePlaylistOrder when toggled', () => {
-      render(
-        <PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       fireEvent.click(screen.getByTestId('preserve-order-switch'));
       expect(mockSetPreservePlaylistOrder).toHaveBeenCalledWith(false);
     });
 
     it('should not render the toggle for single-track playlists', () => {
-      render(
-        <PlaylistPreview playlist={mockSingleTrackPlaylist} onDownload={vi.fn()} />
-      );
+      render(<PlaylistPreview playlist={mockSingleTrackPlaylist} onDownload={vi.fn()} />);
 
       expect(screen.queryByTestId('preserve-order-switch')).not.toBeInTheDocument();
     });
@@ -316,9 +297,7 @@ describe('PlaylistPreview', () => {
       render(<PlaylistPreview playlist={mockPlaylist} onDownload={vi.fn()} />);
 
       await waitFor(() => {
-        expect(screen.getByTestId('already-downloaded-count')).toHaveTextContent(
-          '2 already downloaded'
-        );
+        expect(screen.getByTestId('already-downloaded-count')).toHaveTextContent('2 already downloaded');
       });
     });
 

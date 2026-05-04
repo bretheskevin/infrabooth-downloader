@@ -37,8 +37,7 @@ vi.mock('../useDownloadInitiator', () => ({
 
 const mockSyncToQueue = vi.fn();
 vi.mock('../useSyncToQueue', () => ({
-  useSyncToQueue: (media: PlaylistInfo | TrackInfo | null) =>
-    mockSyncToQueue(media),
+  useSyncToQueue: (media: PlaylistInfo | TrackInfo | null) => mockSyncToQueue(media),
 }));
 
 const mockQueueStoreState = { isProcessing: false, isComplete: false };
@@ -139,9 +138,7 @@ describe('useDownloadFlow', () => {
       result.current.setUrl('https://soundcloud.com/artist/track');
     });
 
-    expect(mockUseUrlValidation).toHaveBeenCalledWith(
-      'https://soundcloud.com/artist/track'
-    );
+    expect(mockUseUrlValidation).toHaveBeenCalledWith('https://soundcloud.com/artist/track');
   });
 
   it('should call fetchInfo when URL is valid', () => {
@@ -157,9 +154,7 @@ describe('useDownloadFlow', () => {
       result.current.setUrl('https://soundcloud.com/artist/track');
     });
 
-    expect(mockMediaInfoFetcherState.fetchInfo).toHaveBeenCalledWith(
-      'https://soundcloud.com/artist/track'
-    );
+    expect(mockMediaInfoFetcherState.fetchInfo).toHaveBeenCalledWith('https://soundcloud.com/artist/track');
   });
 
   it('should expose validation result from useUrlValidation', () => {

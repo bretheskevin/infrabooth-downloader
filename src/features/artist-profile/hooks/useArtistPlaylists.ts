@@ -10,7 +10,7 @@ export function useArtistPlaylists(artistId: number | null) {
       const event = payload as ArtistPlaylistsBatchEvent;
       return event.entityId === artistId ? event.playlists : [];
     },
-    [artistId]
+    [artistId],
   );
 
   return useStreamedUserQuery<ArtistPlaylist>({

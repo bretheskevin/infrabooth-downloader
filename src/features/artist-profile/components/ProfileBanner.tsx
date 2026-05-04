@@ -28,11 +28,7 @@ export function ProfileBanner({ isLoading, bannerUrl, avatarUrl, username, perma
       {permalinkUrl && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 shrink-0 text-white/70 hover:text-white hover:bg-white/10"
-            >
+            <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0 text-white/70 hover:text-white hover:bg-white/10">
               <MoreVertical className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
@@ -67,9 +63,7 @@ export function ProfileBanner({ isLoading, bannerUrl, avatarUrl, username, perma
         <Skeleton className="h-24 w-full rounded-lg" />
       ) : (
         <div className="relative h-24 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-muted">
-          {bannerUrl && (
-            <img src={bannerUrl} alt="" loading="lazy" className="w-full h-full object-cover" />
-          )}
+          {bannerUrl && <img src={bannerUrl} alt="" loading="lazy" className="w-full h-full object-cover" />}
           <div className="absolute inset-0 flex items-center">
             {permalinkUrl ? (
               <ContextMenu>
@@ -78,7 +72,9 @@ export function ProfileBanner({ isLoading, bannerUrl, avatarUrl, username, perma
                   <LinkContextMenuItems onCopyLink={handleCopyLink} onOpenInBrowser={handleOpenInBrowser} />
                 </ContextMenuContent>
               </ContextMenu>
-            ) : badge}
+            ) : (
+              badge
+            )}
           </div>
         </div>
       )}

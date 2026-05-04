@@ -13,8 +13,7 @@ interface ConversationsListProps {
 
 export function ConversationsList({ containerClassName, onClose }: ConversationsListProps) {
   const { t } = useTranslation();
-  const { items, currentUserId, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } =
-    useConversationsPage();
+  const { items, currentUserId, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useConversationsPage();
   const { sentinelRef } = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
 
   if (isLoading) {
@@ -45,7 +44,7 @@ export function ConversationsList({ containerClassName, onClose }: Conversations
   }
 
   return (
-    <div className={cn("max-h-[400px] overflow-y-auto py-1", containerClassName)}>
+    <div className={cn('max-h-[400px] overflow-y-auto py-1', containerClassName)}>
       {items.map((conv) => (
         <ConversationRow key={conv.id} conversation={conv} currentUserId={currentUserId} onClose={onClose} />
       ))}

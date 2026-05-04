@@ -15,7 +15,7 @@ export function useSticky() {
           setIsStuck(!entry.isIntersecting);
         }
       },
-      { threshold: 0 }
+      { threshold: 0 },
     );
 
     observer.observe(sentinel);

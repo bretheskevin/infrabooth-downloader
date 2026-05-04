@@ -17,7 +17,10 @@ function AppboundWarningButtons() {
 
   useEffect(() => {
     if (firefoxInstalled) return;
-    const poll = () => checkFirefoxInstalled().then(setFirefoxInstalled).catch(() => setFirefoxInstalled(false));
+    const poll = () =>
+      checkFirefoxInstalled()
+        .then(setFirefoxInstalled)
+        .catch(() => setFirefoxInstalled(false));
     poll();
     const id = setInterval(poll, 5_000);
     return () => clearInterval(id);
@@ -55,18 +58,8 @@ function AppboundWarningButtons() {
       </Tooltip>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleCheck}
-            disabled={isChecking}
-            className="rounded-xl"
-          >
-            {isChecking ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <RefreshCw className="h-4 w-4" />
-            )}
+          <Button variant="ghost" size="sm" onClick={handleCheck} disabled={isChecking} className="rounded-xl">
+            {isChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
             {t('auth.retrySignIn')}
           </Button>
         </TooltipTrigger>
@@ -90,18 +83,8 @@ export function SignInButton() {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleCheck}
-          disabled={isChecking}
-          className="rounded-xl"
-        >
-          {isChecking ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <RefreshCw className="mr-2 h-4 w-4" />
-          )}
+        <Button variant="outline" size="sm" onClick={handleCheck} disabled={isChecking} className="rounded-xl">
+          {isChecking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
           {isChecking ? t('auth.checking') : t('auth.checkBrowser')}
         </Button>
       </TooltipTrigger>

@@ -24,9 +24,7 @@ describe('GeoBlockDetails', () => {
 
   it('should not show details by default', () => {
     render(<GeoBlockDetails />);
-    expect(
-      screen.queryByText('Geographic restriction by rights holder')
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('Geographic restriction by rights holder')).not.toBeInTheDocument();
   });
 
   it('should expand and show details on click', async () => {
@@ -36,12 +34,8 @@ describe('GeoBlockDetails', () => {
     const trigger = screen.getByText('Show details');
     await user.click(trigger);
 
-    expect(
-      screen.getByText('Geographic restriction by rights holder')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('This track will not retry automatically')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Geographic restriction by rights holder')).toBeInTheDocument();
+    expect(screen.getByText('This track will not retry automatically')).toBeInTheDocument();
   });
 
   it('should collapse on second click', async () => {
@@ -52,9 +46,7 @@ describe('GeoBlockDetails', () => {
 
     // Open
     await user.click(trigger);
-    expect(
-      screen.getByText('Geographic restriction by rights holder')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Geographic restriction by rights holder')).toBeInTheDocument();
 
     // Close
     await user.click(trigger);
@@ -79,9 +71,7 @@ describe('GeoBlockDetails', () => {
     // Press Enter to expand
     await user.keyboard('{Enter}');
 
-    expect(
-      screen.getByText('Geographic restriction by rights holder')
-    ).toBeInTheDocument();
+    expect(screen.getByText('Geographic restriction by rights holder')).toBeInTheDocument();
   });
 
   it('should have correct aria-expanded attribute', async () => {

@@ -21,9 +21,7 @@ export function PlaylistCard({ playlist, onClick }: PlaylistCardProps) {
         <PlaylistArtwork artworkUrl={playlist.artwork_url} title={playlist.title} size="lg" />
         <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/70 to-transparent backdrop-blur-[2px] px-2 pb-1.5 pt-4">
           <p className="text-white text-xs font-semibold truncate">{playlist.title}</p>
-          <p className="text-white/70 text-[10px]">
-            {t('artistProfile.playlistTrackCount', { count: playlist.track_count })}
-          </p>
+          <p className="text-white/70 text-[10px]">{t('artistProfile.playlistTrackCount', { count: playlist.track_count })}</p>
         </div>
       </div>
     </button>

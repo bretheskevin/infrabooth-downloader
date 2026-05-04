@@ -13,15 +13,9 @@ export function StreamModeSection() {
         <Label htmlFor="stream-mode" className="text-base font-medium">
           {t('settings.streamMode')}
         </Label>
-        <p className="text-sm text-muted-foreground">
-          {t('settings.streamModeDescription')}
-        </p>
+        <p className="text-sm text-muted-foreground">{t('settings.streamModeDescription')}</p>
       </div>
-      <Switch
-        id="stream-mode"
-        checked={streamMode}
-        onCheckedChange={useSettingsStore.getState().setStreamMode}
-      />
+      <Switch id="stream-mode" checked={streamMode} onCheckedChange={useSettingsStore.getState().setStreamMode} />
     </div>
   );
 }

@@ -1,8 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import type {
-  FailedTrack,
-  FailureReasonCategory,
-} from '@/features/queue/types/download';
+import type { FailedTrack, FailureReasonCategory } from '@/features/queue/types/download';
 import { FailedTrackItem } from './FailedTrackItem';
 
 interface FailureGroupProps {
@@ -22,12 +19,7 @@ const CATEGORY_LABEL_KEYS: Record<FailureReasonCategory, string> = {
 
 const RETRYABLE_CATEGORIES: FailureReasonCategory[] = ['network', 'other'];
 
-export function FailureGroup({
-  category,
-  tracks,
-  onRetryTrack,
-  isRetrying = false,
-}: FailureGroupProps) {
+export function FailureGroup({ category, tracks, onRetryTrack, isRetrying = false }: FailureGroupProps) {
   const { t } = useTranslation();
 
   if (tracks.length === 0) return null;
@@ -42,12 +34,7 @@ export function FailureGroup({
       </h4>
       <div className="space-y-0.5">
         {tracks.map((track) => (
-          <FailedTrackItem
-            key={track.id}
-            track={track}
-            onRetry={canRetry ? onRetryTrack : undefined}
-            isRetrying={isRetrying}
-          />
+          <FailedTrackItem key={track.id} track={track} onRetry={canRetry ? onRetryTrack : undefined} isRetrying={isRetrying} />
         ))}
       </div>
     </div>

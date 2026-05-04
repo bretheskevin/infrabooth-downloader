@@ -76,9 +76,7 @@ vi.mock('@/features/settings', () => ({
 }));
 
 vi.mock('@/features/settings/store', () => ({
-  useSettingsStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ downloadPath: '/test/downloads' }),
-  ),
+  useSettingsStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) => selector({ downloadPath: '/test/downloads' })),
 }));
 
 vi.mock('../hooks/useFollowArtist', () => ({
@@ -92,8 +90,7 @@ vi.mock('../hooks/useFollowArtist', () => ({
 
 vi.mock('@/features/auth/store', () => ({
   useIsSignedIn: () => false,
-  useAuthStore: (selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ isSignedIn: false, username: null }),
+  useAuthStore: (selector: (s: Record<string, unknown>) => unknown) => selector({ isSignedIn: false, username: null }),
 }));
 
 vi.mock('@/hooks/useTrackDownloadState', () => ({
@@ -118,9 +115,7 @@ vi.mock('@/hooks/useTrackSelection', () => ({
 
 vi.mock('@/features/player', () => ({
   usePlayContext: () => ({ playTrack: vi.fn() }),
-  usePlayerStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({ isQueueOpen: false }),
-  ),
+  usePlayerStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) => selector({ isQueueOpen: false })),
 }));
 
 vi.mock('@/features/player/hooks/useIsExpandedBarVisible', () => ({
@@ -248,13 +243,7 @@ describe('ArtistProfileView', () => {
   it('renders loading skeletons when profile is loading', () => {
     mockProfileState.isLoading = true;
 
-    const { container } = render(
-      <ArtistProfileView
-        artistId={42}
-        artistName="DJ Test"
-        onDownloadTracks={vi.fn()}
-      />,
-    );
+    const { container } = render(<ArtistProfileView artistId={42} artistName="DJ Test" onDownloadTracks={vi.fn()} />);
 
     const skeletons = container.querySelectorAll('[class*="animate-pulse"], [data-slot="skeleton"]');
     expect(skeletons.length).toBeGreaterThan(0);
@@ -263,13 +252,7 @@ describe('ArtistProfileView', () => {
   it('renders artist name in header when profile is loaded', () => {
     mockProfileState.data = mockProfile;
 
-    render(
-      <ArtistProfileView
-        artistId={42}
-        artistName="DJ Test"
-        onDownloadTracks={vi.fn()}
-      />,
-    );
+    render(<ArtistProfileView artistId={42} artistName="DJ Test" onDownloadTracks={vi.fn()} />);
 
     expect(screen.getAllByText('DJ Test').length).toBeGreaterThanOrEqual(1);
   });
@@ -277,13 +260,7 @@ describe('ArtistProfileView', () => {
   it('renders follower and track counts when profile is loaded', () => {
     mockProfileState.data = mockProfile;
 
-    render(
-      <ArtistProfileView
-        artistId={42}
-        artistName="DJ Test"
-        onDownloadTracks={vi.fn()}
-      />,
-    );
+    render(<ArtistProfileView artistId={42} artistName="DJ Test" onDownloadTracks={vi.fn()} />);
 
     expect(screen.getByText('12.5K')).toBeInTheDocument();
     expect(screen.getByText('artistProfile.followers')).toBeInTheDocument();
@@ -294,15 +271,8 @@ describe('ArtistProfileView', () => {
   it('renders description when profile has one', () => {
     mockProfileState.data = mockProfile;
 
-    render(
-      <ArtistProfileView
-        artistId={42}
-        artistName="DJ Test"
-        onDownloadTracks={vi.fn()}
-      />,
-    );
+    render(<ArtistProfileView artistId={42} artistName="DJ Test" onDownloadTracks={vi.fn()} />);
 
     expect(screen.getByText('An electronic music producer')).toBeInTheDocument();
   });
-
 });

@@ -37,10 +37,7 @@ export function DownloadTab({ onDownloadTracks }: DownloadTabProps) {
     case 'pending':
       return (
         <section className="space-y-4">
-          <div
-            className="flex flex-col items-center justify-center gap-4 py-16"
-            data-testid="download-starting"
-          >
+          <div className="flex flex-col items-center justify-center gap-4 py-16" data-testid="download-starting">
             <Spinner className="h-12 w-12 text-primary" />
             <div className="text-center space-y-1">
               <p className="text-lg font-medium">{t('download.startingDownload')}</p>

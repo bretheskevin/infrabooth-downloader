@@ -17,10 +17,7 @@ export function useConversationsPage() {
     gcTime: 5 * 60 * 1000,
   });
 
-  const items: ConversationSummary[] = useMemo(
-    () => query.data?.pages.flatMap((page) => page.items) ?? [],
-    [query.data],
-  );
+  const items: ConversationSummary[] = useMemo(() => query.data?.pages.flatMap((page) => page.items) ?? [], [query.data]);
 
   const currentUserId = query.data?.pages[0]?.current_user_id ?? 0;
 

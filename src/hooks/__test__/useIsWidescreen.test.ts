@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
-import { useIsWidescreen } from "../useIsWidescreen";
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
+import { useIsWidescreen } from '../useIsWidescreen';
 
-describe("useIsWidescreen", () => {
+describe('useIsWidescreen', () => {
   let listeners: Array<(e: { matches: boolean }) => void>;
   let currentMatches: boolean;
 
@@ -10,22 +10,16 @@ describe("useIsWidescreen", () => {
     listeners = [];
     currentMatches = false;
 
-    vi.spyOn(window, "matchMedia").mockImplementation((query: string) => {
-      expect(query).toBe("(min-width: 1200px)");
+    vi.spyOn(window, 'matchMedia').mockImplementation((query: string) => {
+      expect(query).toBe('(min-width: 1200px)');
       return {
         matches: currentMatches,
         media: query,
         onchange: null,
-        addEventListener: (
-          _event: string,
-          handler: (e: { matches: boolean }) => void,
-        ) => {
+        addEventListener: (_event: string, handler: (e: { matches: boolean }) => void) => {
           listeners.push(handler);
         },
-        removeEventListener: (
-          _event: string,
-          handler: (e: { matches: boolean }) => void,
-        ) => {
+        removeEventListener: (_event: string, handler: (e: { matches: boolean }) => void) => {
           listeners = listeners.filter((l) => l !== handler);
         },
         addListener: vi.fn(),
@@ -39,19 +33,19 @@ describe("useIsWidescreen", () => {
     vi.restoreAllMocks();
   });
 
-  it("should return false when viewport is narrow", () => {
+  it('should return false when viewport is narrow', () => {
     currentMatches = false;
     const { result } = renderHook(() => useIsWidescreen());
     expect(result.current).toBe(false);
   });
 
-  it("should return true when viewport is wide", () => {
+  it('should return true when viewport is wide', () => {
     currentMatches = true;
     const { result } = renderHook(() => useIsWidescreen());
     expect(result.current).toBe(true);
   });
 
-  it("should update when media query changes", () => {
+  it('should update when media query changes', () => {
     currentMatches = false;
     const { result } = renderHook(() => useIsWidescreen());
     expect(result.current).toBe(false);
@@ -66,7 +60,7 @@ describe("useIsWidescreen", () => {
     expect(result.current).toBe(true);
   });
 
-  it("should clean up listener on unmount", () => {
+  it('should clean up listener on unmount', () => {
     currentMatches = false;
     const { unmount } = renderHook(() => useIsWidescreen());
     expect(listeners).toHaveLength(1);

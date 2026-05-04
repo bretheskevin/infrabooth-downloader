@@ -12,12 +12,7 @@ export function ArtworkThumbnail({ src, alt, testIdPrefix, className }: ArtworkT
   return (
     <div className={cn('flex-shrink-0', className)}>
       {src ? (
-        <img
-          src={src}
-          alt={alt}
-          className="w-20 h-20 rounded-xl object-cover"
-          data-testid={`${testIdPrefix}-artwork`}
-        />
+        <img src={src} alt={alt} className="w-20 h-20 rounded-xl object-cover" data-testid={`${testIdPrefix}-artwork`} />
       ) : (
         <div
           className="w-20 h-20 rounded-xl bg-secondary flex items-center justify-center"

@@ -9,9 +9,7 @@ const PROJECT_ROOT = join(__dirname, '../..');
 describe('Story 1.3: App Shell Layout', () => {
   describe('Task 1: Tauri Window Configuration (AC #1)', () => {
     const getTauriConfig = () => {
-      return JSON.parse(
-        readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8')
-      );
+      return JSON.parse(readFileSync(join(PROJECT_ROOT, 'src-tauri/tauri.conf.json'), 'utf-8'));
     };
 
     it('should have default window width of 680 pixels (UX-7)', () => {
@@ -56,34 +54,22 @@ describe('Story 1.3: App Shell Layout', () => {
     });
 
     it('should export AppLayout as named export', () => {
-      const content = readFileSync(
-        join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'),
-        'utf-8'
-      );
+      const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'), 'utf-8');
       expect(content).toMatch(/export\s+(function|const)\s+AppLayout/);
     });
 
     it('should use semantic main element', () => {
-      const content = readFileSync(
-        join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'),
-        'utf-8'
-      );
+      const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'), 'utf-8');
       expect(content).toContain('<main');
     });
 
     it('should use gradient-subtle for theme support', () => {
-      const content = readFileSync(
-        join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'),
-        'utf-8'
-      );
+      const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'), 'utf-8');
       expect(content).toContain('gradient-subtle');
     });
 
     it('should use h-screen for fixed viewport height', () => {
-      const content = readFileSync(
-        join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'),
-        'utf-8'
-      );
+      const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/AppLayout.tsx'), 'utf-8');
       expect(content).toContain('h-screen');
     });
   });
@@ -94,34 +80,22 @@ describe('Story 1.3: App Shell Layout', () => {
     });
 
     it('should export Header as named export', () => {
-      const content = readFileSync(
-        join(PROJECT_ROOT, 'src/components/layout/Header.tsx'),
-        'utf-8'
-      );
+      const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/Header.tsx'), 'utf-8');
       expect(content).toMatch(/export\s+(function|const)\s+Header/);
     });
 
     it('should use semantic header element', () => {
-      const content = readFileSync(
-        join(PROJECT_ROOT, 'src/components/layout/Header.tsx'),
-        'utf-8'
-      );
+      const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/Header.tsx'), 'utf-8');
       expect(content).toContain('<header');
     });
 
     it('should display app title', () => {
-      const content = readFileSync(
-        join(PROJECT_ROOT, 'src/components/layout/Header.tsx'),
-        'utf-8'
-      );
+      const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/Header.tsx'), 'utf-8');
       expect(content).toContain('t("app.title")');
     });
 
     it('should have border for visual separation', () => {
-      const content = readFileSync(
-        join(PROJECT_ROOT, 'src/components/layout/Header.tsx'),
-        'utf-8'
-      );
+      const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/Header.tsx'), 'utf-8');
       expect(content).toContain('border-b');
     });
   });

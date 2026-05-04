@@ -1,11 +1,11 @@
-import { useSyncExternalStore } from "react";
+import { useSyncExternalStore } from 'react';
 
-const WIDESCREEN_QUERY = "(min-width: 1200px)";
+const WIDESCREEN_QUERY = '(min-width: 1200px)';
 
 function subscribe(callback: () => void) {
   const mql = window.matchMedia(WIDESCREEN_QUERY);
-  mql.addEventListener("change", callback);
-  return () => mql.removeEventListener("change", callback);
+  mql.addEventListener('change', callback);
+  return () => mql.removeEventListener('change', callback);
 }
 
 function getSnapshot() {

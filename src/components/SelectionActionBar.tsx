@@ -28,9 +28,7 @@ export function SelectionActionBar({ selectedCount, onDownload }: SelectionActio
       style={{ bottom }}
     >
       <div className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-background/80 backdrop-blur-xl border shadow-lg whitespace-nowrap">
-        <span className="text-sm font-medium">
-          {t('common.selected', { count: selectedCount })}
-        </span>
+        <span className="text-sm font-medium">{t('common.selected', { count: selectedCount })}</span>
         <Button size="sm" onClick={onDownload} className="gap-1.5">
           <Download className="h-3.5 w-3.5" />
           {t('common.download')}

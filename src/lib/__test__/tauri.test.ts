@@ -70,7 +70,7 @@ describe('api rekordbox commands', () => {
       [{ sourcePath: '/tmp/track.mp3' }],
       'All Tracks',
       null,
-      '/Users/test/rekordbox/master.db'
+      '/Users/test/rekordbox/master.db',
     );
   });
 

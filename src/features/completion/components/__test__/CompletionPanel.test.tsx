@@ -18,10 +18,7 @@ vi.mock('react-i18next', () => ({
         'completion.downloadAnother': 'Download Another',
         'completion.retryFailed': `Retry Failed (${options?.count})`,
         'completion.retryAll': 'Retry All',
-        'completion.tracksNeedAttention':
-          options?.count === 1
-            ? '1 track needs attention'
-            : `${options?.count} tracks need attention`,
+        'completion.tracksNeedAttention': options?.count === 1 ? '1 track needs attention' : `${options?.count} tracks need attention`,
         'completion.viewFailed': 'View details',
         'errors.panelTitle': 'Failed Downloads',
         'errors.closePanel': 'Close error panel',
@@ -52,9 +49,7 @@ const mockQueueState = {
 };
 
 vi.mock('@/features/queue/store', () => ({
-  useQueueStore: vi.fn((selector: (state: typeof mockQueueState) => unknown) =>
-    selector(mockQueueState)
-  ),
+  useQueueStore: vi.fn((selector: (state: typeof mockQueueState) => unknown) => selector(mockQueueState)),
 }));
 
 vi.mock('@/features/queue/hooks/useFailedTracks', () => ({
@@ -100,12 +95,8 @@ describe('CompletionPanel', () => {
 
     expect(screen.getByText('Download complete!')).toBeInTheDocument();
     expect(screen.getByText('All 10 tracks downloaded')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /open folder/i })
-    ).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /download another/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /open folder/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /download another/i })).toBeInTheDocument();
   });
 
   it('should render partial success state with error panel trigger', () => {
@@ -124,9 +115,7 @@ describe('CompletionPanel', () => {
       },
     ]);
 
-    render(
-      <CompletionPanel {...defaultProps} completedCount={8} failedCount={2} />
-    );
+    render(<CompletionPanel {...defaultProps} completedCount={8} failedCount={2} />);
 
     expect(screen.getByText('Download finished')).toBeInTheDocument();
     expect(screen.getByText('8 of 10 tracks downloaded')).toBeInTheDocument();
@@ -152,9 +141,7 @@ describe('CompletionPanel', () => {
 
   it('should call onDownloadAnother when Download Another is clicked', () => {
     const onDownloadAnother = vi.fn();
-    render(
-      <CompletionPanel {...defaultProps} onDownloadAnother={onDownloadAnother} />
-    );
+    render(<CompletionPanel {...defaultProps} onDownloadAnother={onDownloadAnother} />);
 
     fireEvent.click(screen.getByRole('button', { name: /download another/i }));
 
@@ -172,9 +159,7 @@ describe('CompletionPanel', () => {
       },
     ]);
 
-    render(
-      <CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />
-    );
+    render(<CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />);
 
     const viewDetailsButton = screen.getByRole('button', {
       name: /view details/i,
@@ -207,30 +192,14 @@ describe('CompletionPanel', () => {
   });
 
   it('should render cancelled state correctly', () => {
-    render(
-      <CompletionPanel
-        {...defaultProps}
-        completedCount={3}
-        cancelledCount={7}
-        isCancelled={true}
-      />
-    );
+    render(<CompletionPanel {...defaultProps} completedCount={3} cancelledCount={7} isCancelled={true} />);
 
     expect(screen.getByText('Download cancelled')).toBeInTheDocument();
-    expect(
-      screen.getByText('3 tracks downloaded before cancellation')
-    ).toBeInTheDocument();
+    expect(screen.getByText('3 tracks downloaded before cancellation')).toBeInTheDocument();
   });
 
   it('should render cancelled state with no tracks downloaded', () => {
-    render(
-      <CompletionPanel
-        {...defaultProps}
-        completedCount={0}
-        cancelledCount={10}
-        isCancelled={true}
-      />
-    );
+    render(<CompletionPanel {...defaultProps} completedCount={0} cancelledCount={10} isCancelled={true} />);
 
     expect(screen.getByText('Download cancelled')).toBeInTheDocument();
     expect(screen.getByText('No tracks were downloaded')).toBeInTheDocument();
@@ -246,13 +215,9 @@ describe('CompletionPanel', () => {
       },
     ]);
 
-    render(
-      <CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />
-    );
+    render(<CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />);
 
-    expect(
-      screen.getByRole('button', { name: /retry failed/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /retry failed/i })).toBeInTheDocument();
   });
 
   it('should call retryAllFailed when retry button is clicked', async () => {
@@ -273,9 +238,7 @@ describe('CompletionPanel', () => {
       },
     ]);
 
-    render(
-      <CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />
-    );
+    render(<CompletionPanel {...defaultProps} completedCount={9} failedCount={1} />);
 
     const retryButton = screen.getByRole('button', { name: /retry failed/i });
     await user.click(retryButton);

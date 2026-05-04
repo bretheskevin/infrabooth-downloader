@@ -35,11 +35,14 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
     return 'border-destructive ring-2 ring-destructive/30';
   }, [isValidating, validationResult]);
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    setValue(newValue);
-    onUrlChange(newValue);
-  }, [onUrlChange]);
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newValue = e.target.value;
+      setValue(newValue);
+      onUrlChange(newValue);
+    },
+    [onUrlChange],
+  );
 
   const handlePaste = useCallback((_e: React.ClipboardEvent<HTMLInputElement>) => {
     // Let the change event handle it, but we can add analytics here
@@ -74,7 +77,7 @@ export function UrlInput({ onUrlChange, disabled, className, isValidating, valid
           'focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:border-primary focus-visible:bg-background',
           'hover:bg-secondary/70 hover:border-border',
           borderClass,
-          className
+          className,
         )}
         aria-label={t('download.pasteUrl')}
       />

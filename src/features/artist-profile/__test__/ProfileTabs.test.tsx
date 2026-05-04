@@ -28,5 +28,4 @@ describe('ProfileTabs', () => {
     await userEvent.click(screen.getByText('artistProfile.sortPopular'));
     expect(onTabChange).toHaveBeenCalledWith('popular');
   });
-
 });

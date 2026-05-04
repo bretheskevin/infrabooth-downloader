@@ -223,10 +223,7 @@ describe('TrackCard', () => {
     it('should render failed track with correct accessibility', () => {
       render(<TrackCard track={mockFailedTrack} isCurrentTrack={false} />);
       const card = screen.getByRole('listitem');
-      expect(card).toHaveAttribute(
-        'aria-label',
-        `${mockFailedTrack.title} by ${mockFailedTrack.artist}`
-      );
+      expect(card).toHaveAttribute('aria-label', `${mockFailedTrack.title} by ${mockFailedTrack.artist}`);
     });
   });
 });

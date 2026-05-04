@@ -16,14 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { useRekordboxDetection } from '../hooks/useRekordboxDetection';
 import { useRekordboxExport, type TrackStatus } from '../hooks/useRekordboxExport';
@@ -79,7 +72,9 @@ function ExportingContent({ groups, totalTracks, completedCount, percent, isRegi
       <div className="space-y-3 overflow-hidden">
         <div className="space-y-1">
           <div className="flex justify-between text-[11px] text-muted-foreground">
-            <span>{completedCount} / {totalTracks}</span>
+            <span>
+              {completedCount} / {totalTracks}
+            </span>
             <span>{Math.round(percent)}%</span>
           </div>
           <Progress
@@ -143,7 +138,9 @@ function ExportingContent({ groups, totalTracks, completedCount, percent, isRegi
         </div>
       </div>
       <DialogFooter>
-        <Button variant="outline" onClick={onCancel}>{t('rekordboxExport.cancel')}</Button>
+        <Button variant="outline" onClick={onCancel}>
+          {t('rekordboxExport.cancel')}
+        </Button>
       </DialogFooter>
     </>
   );
@@ -154,8 +151,19 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
   const { data: rekordboxStatus } = useRekordboxDetection();
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
 
-  const { phase, trackStatuses, totalTracks, result, errorCode, selectedFolderId, setSelectedFolderId, openConfirm, startExport, cancel, close } =
-    useRekordboxExport(tracks, playlistName);
+  const {
+    phase,
+    trackStatuses,
+    totalTracks,
+    result,
+    errorCode,
+    selectedFolderId,
+    setSelectedFolderId,
+    openConfirm,
+    startExport,
+    cancel,
+    close,
+  } = useRekordboxExport(tracks, playlistName);
 
   const { data: treeData, isLoading: treeLoading, isError: treeError, retry: retryTree } = useRekordboxTree(phase === 'confirm');
   const storedDefaultFolderId = useSettingsStore((s) => s.rekordboxDefaultExportFolderId);
@@ -235,15 +243,21 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={isOpen} onOpenChange={(open) => { if (!open) { if (phase === 'exporting') cancel(); else close(); } }}>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            if (phase === 'exporting') cancel();
+            else close();
+          }
+        }}
+      >
         <DialogContent className="sm:max-w-lg">
           {phase === 'confirm' && (
             <>
               <DialogHeader>
                 <DialogTitle>{t('rekordboxExport.confirmTitle')}</DialogTitle>
-                <DialogDescription>
-                  {t('rekordboxExport.confirmMessage', { count: trackCount, playlist: playlistName })}
-                </DialogDescription>
+                <DialogDescription>{t('rekordboxExport.confirmMessage', { count: trackCount, playlist: playlistName })}</DialogDescription>
               </DialogHeader>
               <div className="space-y-2">
                 <Label className="text-xs font-medium">{t('rekordboxExport.destinationLabel')}</Label>
@@ -255,7 +269,9 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
                 ) : treeError ? (
                   <div className="flex items-center gap-2">
                     <p className="text-sm text-destructive">{t('rekordboxExport.treeError')}</p>
-                    <Button variant="outline" size="sm" onClick={() => retryTree()}>{t('rekordboxExport.treeRetry')}</Button>
+                    <Button variant="outline" size="sm" onClick={() => retryTree()}>
+                      {t('rekordboxExport.treeRetry')}
+                    </Button>
                   </div>
                 ) : (
                   <RekordboxTreePicker
@@ -267,8 +283,12 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
                 )}
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={close}>{t('rekordboxExport.cancel')}</Button>
-                <Button onClick={handleStartExport} disabled={treeLoading || treeError}>{t('rekordboxExport.start')}</Button>
+                <Button variant="outline" onClick={close}>
+                  {t('rekordboxExport.cancel')}
+                </Button>
+                <Button onClick={handleStartExport} disabled={treeLoading || treeError}>
+                  {t('rekordboxExport.start')}
+                </Button>
               </DialogFooter>
             </>
           )}

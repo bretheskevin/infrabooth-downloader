@@ -86,13 +86,7 @@ function getSlotAudio(slot: Slot): HTMLAudioElement {
       if (!slot.isOutgoing && currentState === 'playing') setState('loading');
     });
     el.addEventListener('seeked', () => {
-      if (
-        !slot.isOutgoing &&
-        currentState === 'loading' &&
-        slot.audio &&
-        !slot.audio.paused &&
-        slot.audio.readyState >= 3
-      ) {
+      if (!slot.isOutgoing && currentState === 'loading' && slot.audio && !slot.audio.paused && slot.audio.readyState >= 3) {
         setState('playing');
       }
     });
@@ -169,9 +163,7 @@ function loadSlot(slot: Slot, url: string, startPositionMs = 0) {
         urlRefreshAttempted = true;
         const positionMs = (slot.audio?.currentTime ?? 0) * 1000;
         stopSlotProgress(slot);
-        void logger.debug(
-          `[audio-engine] Fatal HLS network error (${data.details}); requesting URL refresh at ${positionMs}ms`,
-        );
+        void logger.debug(`[audio-engine] Fatal HLS network error (${data.details}); requesting URL refresh at ${positionMs}ms`);
         callbacks.onUrlExpired(positionMs);
         return;
       }
@@ -226,10 +218,7 @@ function startSlotProgress(slot: Slot) {
   stopSlotProgress(slot);
   slot.progressInterval = setInterval(() => {
     if (!slot.audio) return;
-    callbacks.onProgress(
-      slot.audio.currentTime * 1000,
-      (slot.audio.duration || 0) * 1000,
-    );
+    callbacks.onProgress(slot.audio.currentTime * 1000, (slot.audio.duration || 0) * 1000);
   }, 250);
 }
 
@@ -263,7 +252,7 @@ function startRamp(outgoing: Slot, incoming: Slot, durationMs: number) {
     const progress = Math.min(1, elapsed / durationMs);
     const vol = rampTargetVolume;
 
-    const fadeIn = Math.sin(progress * Math.PI / 2);
+    const fadeIn = Math.sin((progress * Math.PI) / 2);
     if (incoming.audio) incoming.audio.volume = vol * fadeIn;
 
     if (progress >= 1) {
@@ -293,9 +282,7 @@ export const audioEngine = {
     stopSlotProgress(activeSlot);
     destroySlotHls(activeSlot);
     setState('loading');
-    void logger.debug(
-      `[audio-engine] Loading into active slot (startPosition=${startPositionMs}ms): ${url.slice(0, 80)}...`,
-    );
+    void logger.debug(`[audio-engine] Loading into active slot (startPosition=${startPositionMs}ms): ${url.slice(0, 80)}...`);
     loadSlot(activeSlot, url, startPositionMs);
   },
 
@@ -410,7 +397,9 @@ export const audioEngine = {
       begin();
     } else {
       incomingAudio.addEventListener('canplay', () => begin(), { once: true });
-      crossfadePendingBegin = () => { cancelled = true; };
+      crossfadePendingBegin = () => {
+        cancelled = true;
+      };
     }
   },
 

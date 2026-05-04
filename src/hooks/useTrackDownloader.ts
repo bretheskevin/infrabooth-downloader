@@ -11,10 +11,7 @@ interface CachedTrackInfo {
 export function useTrackDownloader() {
   const trackInfoCache = useRef<Map<string, CachedTrackInfo>>(new Map());
 
-  const downloadTrack = useCallback(async (
-    track: TrackCore,
-    outputDir: string
-  ): Promise<void> => {
+  const downloadTrack = useCallback(async (track: TrackCore, outputDir: string): Promise<void> => {
     trackInfoCache.current.set(track.trackId, {
       title: track.title,
       artist: track.artist,

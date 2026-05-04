@@ -84,10 +84,7 @@ describe('useDownloadedTracks', () => {
     mockScanExistingTracks.mockResolvedValue({ '1': '/downloads/track-1.mp3' });
     const tracks = [makeTrack(1), makeTrack(2)];
 
-    const { result, rerender } = renderHook(
-      ({ path }) => useDownloadedTracks(tracks, path),
-      { initialProps: { path: '/path-a' } },
-    );
+    const { result, rerender } = renderHook(({ path }) => useDownloadedTracks(tracks, path), { initialProps: { path: '/path-a' } });
 
     await waitFor(() => {
       expect(result.current.downloadedCount).toBe(1);

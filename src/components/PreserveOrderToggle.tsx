@@ -48,22 +48,12 @@ export function PreserveOrderToggle({ variant = 'default' }: PreserveOrderToggle
   return (
     <div className="flex items-center justify-between">
       <div className="flex flex-col gap-0.5">
-        <Label
-          htmlFor={id}
-          className="text-sm font-medium cursor-pointer"
-        >
+        <Label htmlFor={id} className="text-sm font-medium cursor-pointer">
           {t('download.preserveOrder')}
         </Label>
-        <span className="text-xs text-muted-foreground">
-          {t('download.preserveOrderDescription')}
-        </span>
+        <span className="text-xs text-muted-foreground">{t('download.preserveOrderDescription')}</span>
       </div>
-      <Switch
-        id={id}
-        checked={preservePlaylistOrder}
-        onCheckedChange={setPreservePlaylistOrder}
-        data-testid="preserve-order-switch"
-      />
+      <Switch id={id} checked={preservePlaylistOrder} onCheckedChange={setPreservePlaylistOrder} data-testid="preserve-order-switch" />
     </div>
   );
 }

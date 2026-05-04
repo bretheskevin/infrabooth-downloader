@@ -39,22 +39,13 @@ export function PlaylistGrid({ artistId, onSelectPlaylist }: PlaylistGridProps) 
   }
 
   if (!playlists || playlists.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground text-center py-12">
-        {t('artistProfile.noPlaylists')}
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground text-center py-12">{t('artistProfile.noPlaylists')}</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <SearchBar
-          value={search}
-          onChange={setSearch}
-          placeholder={t('artistProfile.searchPlaylists')}
-          className="flex-1"
-        />
+        <SearchBar value={search} onChange={setSearch} placeholder={t('artistProfile.searchPlaylists')} className="flex-1" />
         <ViewModeToggle />
       </div>
       {filtered.length > 0 ? (
@@ -65,9 +56,7 @@ export function PlaylistGrid({ artistId, onSelectPlaylist }: PlaylistGridProps) 
           renderRow={(p) => <PlaylistListRow playlist={p} onClick={() => onSelectPlaylist(p)} />}
         />
       ) : !isStreaming ? (
-        <p className="text-sm text-muted-foreground text-center py-12">
-          {t('artistProfile.noPlaylistResults')}
-        </p>
+        <p className="text-sm text-muted-foreground text-center py-12">{t('artistProfile.noPlaylistResults')}</p>
       ) : null}
       {isStreaming && (
         <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">

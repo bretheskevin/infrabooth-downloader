@@ -26,12 +26,12 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
                 type="button"
                 onClick={item.onClick}
                 className="truncate max-w-[200px] text-primary hover:underline cursor-pointer"
-                aria-current={isLast ? "page" : undefined}
+                aria-current={isLast ? 'page' : undefined}
               >
                 {item.label}
               </button>
             ) : (
-              <span className="truncate max-w-[200px] text-foreground font-medium" aria-current={isLast ? "page" : undefined}>
+              <span className="truncate max-w-[200px] text-foreground font-medium" aria-current={isLast ? 'page' : undefined}>
                 {item.label}
               </span>
             )}

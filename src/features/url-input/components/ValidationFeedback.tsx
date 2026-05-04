@@ -25,10 +25,7 @@ const ERROR_CODE_TO_HINT_KEY: Record<string, string> = {
   PROFILE_URL: 'errors.profileNotSupportedHint',
 };
 
-function getTranslatedError(
-  code: string | undefined,
-  t: (key: string) => string
-): { message: string; hint: string | null } {
+function getTranslatedError(code: string | undefined, t: (key: string) => string): { message: string; hint: string | null } {
   if (!code) {
     return { message: t('errors.invalidUrlFormat'), hint: null };
   }
@@ -70,11 +67,7 @@ export function ValidationFeedback({ result, isValidating, hideWhenMediaLoaded }
     };
 
     return (
-      <div
-        className="flex items-center gap-2 text-sm text-success mt-2"
-        role="status"
-        aria-live="polite"
-      >
+      <div className="flex items-center gap-2 text-sm text-success mt-2" role="status" aria-live="polite">
         <CheckCircle2 className="h-4 w-4" />
         <span>{getSuccessMessage()}</span>
       </div>
@@ -85,20 +78,12 @@ export function ValidationFeedback({ result, isValidating, hideWhenMediaLoaded }
   const { message, hint } = getTranslatedError(result.error?.code, t);
 
   return (
-    <div
-      className="mt-2 space-y-1"
-      role="alert"
-      aria-live="assertive"
-    >
+    <div className="mt-2 space-y-1" role="alert" aria-live="assertive">
       <div className="flex items-center gap-2 text-sm text-destructive">
         <AlertCircle className="h-4 w-4" />
         <span>{message}</span>
       </div>
-      {hint && (
-        <p className="text-sm text-muted-foreground pl-6">
-          {hint}
-        </p>
-      )}
+      {hint && <p className="text-sm text-muted-foreground pl-6">{hint}</p>}
     </div>
   );
 }

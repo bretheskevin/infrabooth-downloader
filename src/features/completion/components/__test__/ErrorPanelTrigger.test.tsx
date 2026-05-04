@@ -8,9 +8,7 @@ vi.mock('react-i18next', () => ({
     t: (key: string, options?: { count?: number }) => {
       if (key === 'completion.tracksNeedAttention') {
         const count = options?.count ?? 0;
-        return count === 1
-          ? '1 track needs attention'
-          : `${count} tracks need attention`;
+        return count === 1 ? '1 track needs attention' : `${count} tracks need attention`;
       }
       if (key === 'completion.retryAll') return 'Retry All';
       if (key === 'completion.viewFailed') return 'View details';
@@ -23,9 +21,7 @@ vi.mock('react-i18next', () => ({
 describe('ErrorPanelTrigger', () => {
   it('should render nothing when failedCount is 0', () => {
     const onClick = vi.fn();
-    const { container } = render(
-      <ErrorPanelTrigger failedCount={0} onClick={onClick} />
-    );
+    const { container } = render(<ErrorPanelTrigger failedCount={0} onClick={onClick} />);
     expect(container).toBeEmptyDOMElement();
   });
 
@@ -61,9 +57,7 @@ describe('ErrorPanelTrigger', () => {
 
   it('should have aria-expanded attribute', () => {
     const onClick = vi.fn();
-    render(
-      <ErrorPanelTrigger failedCount={2} onClick={onClick} isExpanded={false} />
-    );
+    render(<ErrorPanelTrigger failedCount={2} onClick={onClick} isExpanded={false} />);
 
     const button = screen.getByRole('button');
     expect(button).toHaveAttribute('aria-expanded', 'false');
@@ -71,9 +65,7 @@ describe('ErrorPanelTrigger', () => {
 
   it('should reflect expanded state in aria-expanded', () => {
     const onClick = vi.fn();
-    render(
-      <ErrorPanelTrigger failedCount={2} onClick={onClick} isExpanded={true} />
-    );
+    render(<ErrorPanelTrigger failedCount={2} onClick={onClick} isExpanded={true} />);
 
     const button = screen.getByRole('button');
     expect(button).toHaveAttribute('aria-expanded', 'true');

@@ -61,8 +61,7 @@ export function Waveform({ samples, progress, onSeek, className }: WaveformProps
 
     const styles = getComputedStyle(canvas);
     const playedColor = styles.getPropertyValue('--primary').trim() || '221 83% 53%';
-    const unplayedColor =
-      styles.getPropertyValue('--muted-foreground').trim() || '215 16% 47%';
+    const unplayedColor = styles.getPropertyValue('--muted-foreground').trim() || '215 16% 47%';
     const hoverIndex = hoverProgress !== null ? Math.floor(hoverProgress * barCount) : -1;
 
     for (let i = 0; i < barCount; i++) {

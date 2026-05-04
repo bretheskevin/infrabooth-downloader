@@ -11,25 +11,10 @@ interface VirtualListContainerProps {
   children: ReactNode;
 }
 
-export function VirtualListContainer({
-  parentRef,
-  totalSize,
-  className,
-  listClassName,
-  ariaLabel,
-  children,
-}: VirtualListContainerProps) {
+export function VirtualListContainer({ parentRef, totalSize, className, listClassName, ariaLabel, children }: VirtualListContainerProps) {
   return (
-    <div
-      ref={parentRef}
-      className={cn('h-full overflow-auto', className)}
-      aria-label={ariaLabel}
-    >
-      <div
-        role="list"
-        className={cn('relative w-full', listClassName)}
-        style={{ height: `${totalSize}px` }}
-      >
+    <div ref={parentRef} className={cn('h-full overflow-auto', className)} aria-label={ariaLabel}>
+      <div role="list" className={cn('relative w-full', listClassName)} style={{ height: `${totalSize}px` }}>
         {children}
       </div>
     </div>

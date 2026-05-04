@@ -16,8 +16,7 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return ({ children }: { children: React.ReactNode }) =>
-    createElement(QueryClientProvider, { client: queryClient }, children);
+  return ({ children }: { children: React.ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 }
 
 describe('useArtistSearchQuery', () => {
@@ -77,7 +76,14 @@ describe('useArtistSearchQuery', () => {
   });
 
   it('returns flattened results from pages', async () => {
-    const mockUser = { id: 1, username: 'Artist1', avatar_url: null, followers_count: 100, track_count: 10, permalink_url: 'https://soundcloud.com/artist1' };
+    const mockUser = {
+      id: 1,
+      username: 'Artist1',
+      avatar_url: null,
+      followers_count: 100,
+      track_count: 10,
+      permalink_url: 'https://soundcloud.com/artist1',
+    };
     mockSearchUsers.mockResolvedValue({ collection: [mockUser], total_results: 1 });
     const { result } = renderHook(() => useArtistSearchQuery(), { wrapper: createWrapper() });
 

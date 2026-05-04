@@ -807,7 +807,14 @@ describe('playerStore', () => {
     it('next() should cancel crossfade when cursor not yet advanced', async () => {
       vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
       const queue = makeQueue(3);
-      usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing', crossfadePending: true, crossfadingTrackId: 2 });
+      usePlayerStore.setState({
+        queue,
+        cursor: 0,
+        currentTrack: queue[0]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
 
       await usePlayerStore.getState().next();
       expect(audioEngine.cancelCrossfade).toHaveBeenCalled();
@@ -818,7 +825,14 @@ describe('playerStore', () => {
     it('next() should settle crossfade when cursor already advanced', async () => {
       vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
       const queue = makeQueue(4);
-      usePlayerStore.setState({ queue, cursor: 1, currentTrack: queue[1]!, state: 'playing', crossfadePending: true, crossfadingTrackId: 2 });
+      usePlayerStore.setState({
+        queue,
+        cursor: 1,
+        currentTrack: queue[1]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 2,
+      });
 
       await usePlayerStore.getState().next();
       expect(audioEngine.settleCrossfade).toHaveBeenCalled();
@@ -830,7 +844,14 @@ describe('playerStore', () => {
     it('previous() should cancel crossfade when cursor not yet advanced', async () => {
       vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
       const queue = makeQueue(3);
-      usePlayerStore.setState({ queue, cursor: 1, currentTrack: queue[1]!, state: 'playing', crossfadePending: true, crossfadingTrackId: 3 });
+      usePlayerStore.setState({
+        queue,
+        cursor: 1,
+        currentTrack: queue[1]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 3,
+      });
 
       await usePlayerStore.getState().previous();
       expect(audioEngine.cancelCrossfade).toHaveBeenCalled();
@@ -841,7 +862,14 @@ describe('playerStore', () => {
     it('previous() should settle crossfade when cursor already advanced', async () => {
       vi.mocked(audioEngine.isCrossfading).mockReturnValue(true);
       const queue = makeQueue(4);
-      usePlayerStore.setState({ queue, cursor: 2, currentTrack: queue[2]!, state: 'playing', crossfadePending: true, crossfadingTrackId: 3 });
+      usePlayerStore.setState({
+        queue,
+        cursor: 2,
+        currentTrack: queue[2]!,
+        state: 'playing',
+        crossfadePending: true,
+        crossfadingTrackId: 3,
+      });
 
       await usePlayerStore.getState().previous();
       expect(audioEngine.settleCrossfade).toHaveBeenCalled();
@@ -1225,8 +1253,9 @@ describe('playerStore', () => {
       const resolveCallsBefore = vi.mocked(resolveWithCache).mock.calls.length;
       await cbs.onUrlExpired!(1000);
 
-      const resolveCallsForTrack1 = vi.mocked(resolveWithCache).mock.calls
-        .slice(resolveCallsBefore)
+      const resolveCallsForTrack1 = vi
+        .mocked(resolveWithCache)
+        .mock.calls.slice(resolveCallsBefore)
         .filter(([id]) => id === 1);
       expect(resolveCallsForTrack1).toHaveLength(0);
       await vi.waitFor(() => {

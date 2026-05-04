@@ -13,13 +13,7 @@ interface MarkSeenQueryOptions<T> {
   updateArtist: (artist: FollowedArtist) => FollowedArtist;
 }
 
-export function useMarkSeenQuery<T>({
-  artistId,
-  queryKey,
-  fetchFn,
-  markSeenFn,
-  updateArtist,
-}: MarkSeenQueryOptions<T>) {
+export function useMarkSeenQuery<T>({ artistId, queryKey, fetchFn, markSeenFn, updateArtist }: MarkSeenQueryOptions<T>) {
   const queryClient = useQueryClient();
   const markedRef = useRef<number | undefined>(undefined);
 

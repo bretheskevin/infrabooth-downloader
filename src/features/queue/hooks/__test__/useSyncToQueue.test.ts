@@ -17,8 +17,28 @@ const mockPlaylist: PlaylistInfo = {
   artwork_url: 'https://example.com/art.jpg',
   track_count: 2,
   tracks: [
-    { id: 1, title: 'Track 1', user: { id: 0, username: 'Artist1', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
-    { id: 2, title: 'Track 2', user: { id: 0, username: 'Artist2', avatar_url: null }, artwork_url: 'https://example.com/art2.jpg', duration: 240000, permalink_url: '', waveform_url: null, downloadable: false, download_url: null },
+    {
+      id: 1,
+      title: 'Track 1',
+      user: { id: 0, username: 'Artist1', avatar_url: null },
+      artwork_url: null,
+      duration: 180000,
+      permalink_url: '',
+      waveform_url: null,
+      downloadable: false,
+      download_url: null,
+    },
+    {
+      id: 2,
+      title: 'Track 2',
+      user: { id: 0, username: 'Artist2', avatar_url: null },
+      artwork_url: 'https://example.com/art2.jpg',
+      duration: 240000,
+      permalink_url: '',
+      waveform_url: null,
+      downloadable: false,
+      download_url: null,
+    },
   ],
 };
 
@@ -29,7 +49,9 @@ const mockTrack: TrackInfo = {
   artwork_url: 'https://example.com/track-art.jpg',
   duration: 185000,
   permalink_url: '',
-  waveform_url: null, downloadable: false, download_url: null,
+  waveform_url: null,
+  downloadable: false,
+  download_url: null,
 };
 
 describe('useSyncToQueue', () => {
@@ -87,10 +109,9 @@ describe('useSyncToQueue', () => {
   });
 
   it('should re-enqueue when media changes', () => {
-    const { rerender } = renderHook(
-      ({ media }) => useSyncToQueue(media),
-      { initialProps: { media: mockTrack as PlaylistInfo | TrackInfo | null } }
-    );
+    const { rerender } = renderHook(({ media }) => useSyncToQueue(media), {
+      initialProps: { media: mockTrack as PlaylistInfo | TrackInfo | null },
+    });
 
     expect(mockEnqueueTracks).toHaveBeenCalledTimes(1);
 
@@ -101,10 +122,9 @@ describe('useSyncToQueue', () => {
   });
 
   it('should not re-enqueue when media reference stays the same', () => {
-    const { rerender } = renderHook(
-      ({ media }) => useSyncToQueue(media),
-      { initialProps: { media: mockTrack as PlaylistInfo | TrackInfo | null } }
-    );
+    const { rerender } = renderHook(({ media }) => useSyncToQueue(media), {
+      initialProps: { media: mockTrack as PlaylistInfo | TrackInfo | null },
+    });
 
     expect(mockEnqueueTracks).toHaveBeenCalledTimes(1);
 
@@ -116,10 +136,9 @@ describe('useSyncToQueue', () => {
   });
 
   it('should handle transition from track to null', () => {
-    const { rerender } = renderHook(
-      ({ media }) => useSyncToQueue(media),
-      { initialProps: { media: mockTrack as PlaylistInfo | TrackInfo | null } }
-    );
+    const { rerender } = renderHook(({ media }) => useSyncToQueue(media), {
+      initialProps: { media: mockTrack as PlaylistInfo | TrackInfo | null },
+    });
 
     expect(mockEnqueueTracks).toHaveBeenCalledTimes(1);
 

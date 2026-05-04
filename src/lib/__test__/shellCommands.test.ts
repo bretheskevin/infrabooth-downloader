@@ -27,9 +27,7 @@ describe('shellCommands', () => {
       const mockReveal = vi.mocked(revealItemInDir);
       mockReveal.mockRejectedValueOnce(new Error('Permission denied'));
 
-      await expect(openDownloadFolder('/Users/test/Downloads')).rejects.toThrow(
-        'Could not open folder'
-      );
+      await expect(openDownloadFolder('/Users/test/Downloads')).rejects.toThrow('Could not open folder');
     });
 
     it('should handle empty path gracefully', async () => {

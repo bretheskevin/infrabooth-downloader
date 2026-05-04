@@ -25,9 +25,7 @@ export function parseFeatureFlags(source: string, defaults: FeatureFlags = DEFAU
     }
 
     if (value !== 'true' && value !== 'false') {
-      throw new Error(
-        `feature-flags.toml: flag "${key}" must be a boolean (true/false), got "${value}" on line ${index + 1}`,
-      );
+      throw new Error(`feature-flags.toml: flag "${key}" must be a boolean (true/false), got "${value}" on line ${index + 1}`);
     }
 
     flags[key as keyof FeatureFlags] = value === 'true';

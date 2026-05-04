@@ -10,12 +10,7 @@ export function ArtistAvatarImage({ avatarUrl, username, className }: ArtistAvat
   return (
     <div className={cn('rounded-full bg-muted overflow-hidden', className)}>
       {avatarUrl ? (
-        <img
-          src={avatarUrl}
-          alt={username}
-          className="w-full h-full object-cover"
-          loading="lazy"
-        />
+        <img src={avatarUrl} alt={username} className="w-full h-full object-cover" loading="lazy" />
       ) : (
         <div className="w-full h-full flex items-center justify-center text-muted-foreground text-lg font-medium">
           {username.charAt(0).toUpperCase()}

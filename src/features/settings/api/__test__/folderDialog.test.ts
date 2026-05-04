@@ -33,7 +33,7 @@ describe('selectFolder', () => {
     expect(open).toHaveBeenCalledWith(
       expect.objectContaining({
         defaultPath: '/Users/test',
-      })
+      }),
     );
   });
 
@@ -45,7 +45,7 @@ describe('selectFolder', () => {
     expect(open).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Choose Download Folder',
-      })
+      }),
     );
   });
 
@@ -64,5 +64,4 @@ describe('selectFolder', () => {
 
     expect(result).toBeNull();
   });
-
 });

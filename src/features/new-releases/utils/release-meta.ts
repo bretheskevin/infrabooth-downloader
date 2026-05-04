@@ -10,11 +10,7 @@ export interface ReleaseMeta {
   activityLabel: string;
 }
 
-export function getReleaseMeta(
-  item: ReleaseActivityItem,
-  t: TFunction,
-  artworkSize: ArtworkSize,
-): ReleaseMeta {
+export function getReleaseMeta(item: ReleaseActivityItem, t: TFunction, artworkSize: ArtworkSize): ReleaseMeta {
   const isRepost = item.activity_type === 'Repost';
   return {
     artworkUrl: getArtworkUrl(item.release.artwork_url, artworkSize),

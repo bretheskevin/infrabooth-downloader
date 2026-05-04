@@ -40,9 +40,7 @@ describe('ChangelogEntry', () => {
   });
 
   it('should render removed category when present', () => {
-    const withRemoved: ChangelogSection[] = [
-      { category: 'removed', items: ['Old feature'] },
-    ];
+    const withRemoved: ChangelogSection[] = [{ category: 'removed', items: ['Old feature'] }];
     render(<ChangelogEntry sections={withRemoved} />);
     expect(screen.getByText('Removed')).toBeInTheDocument();
     expect(screen.getByText('Old feature')).toBeInTheDocument();

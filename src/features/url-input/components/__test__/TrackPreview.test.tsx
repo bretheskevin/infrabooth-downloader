@@ -19,11 +19,7 @@ vi.mock('react-i18next', () => ({
 // Mock DownloadBar to test TrackPreview in isolation
 vi.mock('../DownloadBar', () => ({
   DownloadBar: ({ onDownload, isDownloading }: { onDownload: () => void; isDownloading?: boolean }) => (
-    <button
-      data-testid="download-button"
-      onClick={onDownload}
-      disabled={isDownloading}
-    >
+    <button data-testid="download-button" onClick={onDownload} disabled={isDownloading}>
       Download
     </button>
   ),
@@ -37,7 +33,9 @@ describe('TrackPreview', () => {
     artwork_url: 'https://example.com/artwork.jpg',
     duration: 185000, // 3:05
     permalink_url: 'https://soundcloud.com/test-artist/test-track',
-    waveform_url: null, downloadable: false, download_url: null,
+    waveform_url: null,
+    downloadable: false,
+    download_url: null,
   };
 
   const mockOnDownload = vi.fn();
@@ -50,9 +48,7 @@ describe('TrackPreview', () => {
     it('should render track title (AC #2)', () => {
       render(<TrackPreview track={mockTrack} onDownload={mockOnDownload} />);
 
-      expect(screen.getByTestId('track-title')).toHaveTextContent(
-        'Test Track Title'
-      );
+      expect(screen.getByTestId('track-title')).toHaveTextContent('Test Track Title');
     });
 
     it('should render artist name (AC #2)', () => {
@@ -72,7 +68,6 @@ describe('TrackPreview', () => {
 
       expect(screen.getByTestId('track-count')).toHaveTextContent('1 track');
     });
-
   });
 
   describe('artwork', () => {
@@ -109,25 +104,13 @@ describe('TrackPreview', () => {
     });
 
     it('should disable button when isDownloading is true', () => {
-      render(
-        <TrackPreview
-          track={mockTrack}
-          onDownload={mockOnDownload}
-          isDownloading={true}
-        />
-      );
+      render(<TrackPreview track={mockTrack} onDownload={mockOnDownload} isDownloading={true} />);
 
       expect(screen.getByTestId('download-button')).toBeDisabled();
     });
 
     it('should not disable button when isDownloading is false', () => {
-      render(
-        <TrackPreview
-          track={mockTrack}
-          onDownload={mockOnDownload}
-          isDownloading={false}
-        />
-      );
+      render(<TrackPreview track={mockTrack} onDownload={mockOnDownload} isDownloading={false} />);
 
       expect(screen.getByTestId('download-button')).not.toBeDisabled();
     });

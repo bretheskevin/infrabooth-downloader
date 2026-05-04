@@ -1,5 +1,5 @@
-import { create } from "zustand";
-import type { MessagePlaylistEmbed } from "@/bindings";
+import { create } from 'zustand';
+import type { MessagePlaylistEmbed } from '@/bindings';
 
 interface SelectedConversation {
   otherUserId: number;

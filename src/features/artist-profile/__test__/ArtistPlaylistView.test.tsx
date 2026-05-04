@@ -36,9 +36,7 @@ vi.mock('@/components/DetailHeader', () => ({
 }));
 
 vi.mock('@/components/ui/breadcrumb', () => ({
-  Breadcrumb: ({ items }: { items: { label: string }[] }) => (
-    <nav data-testid="breadcrumb">{items.map((i) => i.label).join(' > ')}</nav>
-  ),
+  Breadcrumb: ({ items }: { items: { label: string }[] }) => <nav data-testid="breadcrumb">{items.map((i) => i.label).join(' > ')}</nav>,
 }));
 
 const mockPlaylist: ArtistPlaylist = {

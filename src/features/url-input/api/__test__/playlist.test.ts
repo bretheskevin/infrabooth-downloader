@@ -88,16 +88,12 @@ describe('fetchPlaylistInfo', () => {
   it('should propagate errors from invoke', async () => {
     vi.mocked(invoke).mockRejectedValueOnce(new Error('Private content requires sign-in'));
 
-    await expect(fetchPlaylistInfo('https://soundcloud.com/user/sets/playlist')).rejects.toThrow(
-      'Private content requires sign-in'
-    );
+    await expect(fetchPlaylistInfo('https://soundcloud.com/user/sets/playlist')).rejects.toThrow('Private content requires sign-in');
   });
 
   it('should propagate network errors', async () => {
     vi.mocked(invoke).mockRejectedValueOnce(new Error('Network error'));
 
-    await expect(fetchPlaylistInfo('https://soundcloud.com/user/sets/playlist')).rejects.toThrow(
-      'Network error'
-    );
+    await expect(fetchPlaylistInfo('https://soundcloud.com/user/sets/playlist')).rejects.toThrow('Network error');
   });
 });

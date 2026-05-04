@@ -17,10 +17,7 @@ export function useNotificationsPage(enabled = true) {
     gcTime: 5 * 60 * 1000,
   });
 
-  const items: NotificationItem[] = useMemo(
-    () => query.data?.pages.flatMap((page) => page.items) ?? [],
-    [query.data],
-  );
+  const items: NotificationItem[] = useMemo(() => query.data?.pages.flatMap((page) => page.items) ?? [], [query.data]);
 
   return {
     items,

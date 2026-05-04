@@ -40,10 +40,7 @@ export function useSendMessage(otherUserId: number) {
         const firstPage = old.pages[0]!;
         return {
           ...old,
-          pages: [
-            { ...firstPage, items: [optimisticMessage, ...firstPage.items] },
-            ...old.pages.slice(1),
-          ],
+          pages: [{ ...firstPage, items: [optimisticMessage, ...firstPage.items] }, ...old.pages.slice(1)],
         };
       });
 

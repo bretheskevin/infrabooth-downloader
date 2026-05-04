@@ -14,7 +14,7 @@ export function TrackList() {
     useShallow((state) => ({
       tracks: state.tracks,
       isInitializing: state.isInitializing,
-    }))
+    })),
   );
 
   const { parentRef, virtualItems, totalSize } = useVirtualizedList({
@@ -23,19 +23,11 @@ export function TrackList() {
   });
 
   if (tracks.length === 0) {
-    return (
-      <div className="flex items-center justify-center h-32 text-muted-foreground">
-        {t('progress.trackList.emptyState')}
-      </div>
-    );
+    return <div className="flex items-center justify-center h-32 text-muted-foreground">{t('progress.trackList.emptyState')}</div>;
   }
 
   return (
-    <VirtualListContainer
-      parentRef={parentRef}
-      totalSize={totalSize}
-      ariaLabel={t('progress.trackList.ariaLabel', 'Download queue')}
-    >
+    <VirtualListContainer parentRef={parentRef} totalSize={totalSize} ariaLabel={t('progress.trackList.ariaLabel', 'Download queue')}>
       {virtualItems.map((virtualItem) => {
         const track = tracks[virtualItem.index];
         if (!track) return null;

@@ -10,12 +10,7 @@ interface UseTrackDownloadStateParams {
   extraRefreshKey?: number;
 }
 
-export function useTrackDownloadState({
-  tracks,
-  downloadPath,
-  enabled,
-  extraRefreshKey = 0,
-}: UseTrackDownloadStateParams) {
+export function useTrackDownloadState({ tracks, downloadPath, enabled, extraRefreshKey = 0 }: UseTrackDownloadStateParams) {
   const {
     downloadTrack,
     getTrackState: getRawTrackState,
@@ -23,12 +18,7 @@ export function useTrackDownloadState({
     reconcile,
   } = useTrackDownload(downloadPath);
 
-  const { downloadedIds, downloadedCount } = useDownloadedTracks(
-    tracks,
-    downloadPath,
-    enabled,
-    inlineCompletedCount + extraRefreshKey,
-  );
+  const { downloadedIds, downloadedCount } = useDownloadedTracks(tracks, downloadPath, enabled, inlineCompletedCount + extraRefreshKey);
 
   const getTrackState = useMergedTrackState(getRawTrackState, downloadedIds, reconcile);
 

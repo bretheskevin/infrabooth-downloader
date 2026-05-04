@@ -7,9 +7,4 @@ export interface FailedTrack {
   error: AppError;
 }
 
-export type FailureReasonCategory =
-  | 'geo_blocked'
-  | 'drm_protected'
-  | 'unavailable'
-  | 'network'
-  | 'other';
+export type FailureReasonCategory = 'geo_blocked' | 'drm_protected' | 'unavailable' | 'network' | 'other';

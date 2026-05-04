@@ -7,8 +7,7 @@ import { useQueueStore } from '@/features/queue/store';
 import type { Track } from '@/features/queue/types/track';
 import { createMockTracksWithStatuses } from '@/test/factories';
 
-const renderWithTooltip = (ui: React.ReactElement) =>
-  render(<TooltipProvider>{ui}</TooltipProvider>);
+const renderWithTooltip = (ui: React.ReactElement) => render(<TooltipProvider>{ui}</TooltipProvider>);
 
 // Mock the i18n hook
 vi.mock('react-i18next', () => ({
@@ -206,10 +205,7 @@ describe('OverallProgress', () => {
       renderWithTooltip(<OverallProgress />);
 
       const progressBar = screen.getByRole('progressbar');
-      expect(progressBar).toHaveAttribute(
-        'aria-label',
-        expect.stringContaining('1 of 3')
-      );
+      expect(progressBar).toHaveAttribute('aria-label', expect.stringContaining('1 of 3'));
     });
 
     it('should have aria-live="polite" on counter text', () => {
@@ -333,11 +329,13 @@ describe('OverallProgress', () => {
       expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '0');
 
       // Update first track to downloading - should hide preparing
-      const downloadingTracks: Track[] = mockTracks.map((track, idx) =>
-        idx === 0 ? { ...track, status: 'downloading' as const } : track
-      );
+      const downloadingTracks: Track[] = mockTracks.map((track, idx) => (idx === 0 ? { ...track, status: 'downloading' as const } : track));
       useQueueStore.setState({ tracks: downloadingTracks });
-      rerender(<TooltipProvider><OverallProgress /></TooltipProvider>);
+      rerender(
+        <TooltipProvider>
+          <OverallProgress />
+        </TooltipProvider>,
+      );
 
       expect(screen.queryByText('Preparing your tracks for download')).not.toBeInTheDocument();
       expect(screen.getByText('0 of 3 tracks')).toBeInTheDocument();
@@ -349,7 +347,11 @@ describe('OverallProgress', () => {
         return track;
       });
       useQueueStore.setState({ tracks: progressTracks });
-      rerender(<TooltipProvider><OverallProgress /></TooltipProvider>);
+      rerender(
+        <TooltipProvider>
+          <OverallProgress />
+        </TooltipProvider>,
+      );
 
       // Should now show 1 complete
       expect(screen.getByText('1 of 3 tracks')).toBeInTheDocument();
@@ -366,10 +368,14 @@ describe('OverallProgress', () => {
       for (let i = 0; i < 5; i++) {
         const updatedTracks = mockTracks.map((track, idx) => ({
           ...track,
-          status: idx < i ? 'complete' as const : idx === i ? 'downloading' as const : 'pending' as const,
+          status: idx < i ? ('complete' as const) : idx === i ? ('downloading' as const) : ('pending' as const),
         }));
         useQueueStore.setState({ tracks: updatedTracks });
-        rerender(<TooltipProvider><OverallProgress /></TooltipProvider>);
+        rerender(
+          <TooltipProvider>
+            <OverallProgress />
+          </TooltipProvider>,
+        );
       }
 
       // Final update: all complete
@@ -378,7 +384,11 @@ describe('OverallProgress', () => {
         status: 'complete' as const,
       }));
       useQueueStore.setState({ tracks: finalTracks });
-      rerender(<TooltipProvider><OverallProgress /></TooltipProvider>);
+      rerender(
+        <TooltipProvider>
+          <OverallProgress />
+        </TooltipProvider>,
+      );
 
       // Final state should show all complete
       expect(screen.getByText('5 of 5 tracks')).toBeInTheDocument();

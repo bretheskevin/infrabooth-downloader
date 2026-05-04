@@ -3,11 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Folder, Download, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useSettingsStore } from '@/features/settings';
 import { cn, getFolderName } from '@/lib/utils';
 import { useFolderSelection } from '@/hooks';
@@ -48,11 +44,7 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
   return (
     <div className="space-y-2" data-testid="download-bar">
       <div
-        className={cn(
-          'flex items-center gap-3 p-3 rounded-xl',
-          'bg-secondary/50 border border-border/30',
-          'transition-all duration-200'
-        )}
+        className={cn('flex items-center gap-3 p-3 rounded-xl', 'bg-secondary/50 border border-border/30', 'transition-all duration-200')}
       >
         <Tooltip>
           <TooltipTrigger asChild>
@@ -64,7 +56,7 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
                 'flex items-center gap-2.5 flex-1 min-w-0 text-left px-2 py-1.5 -ml-2 rounded-lg',
                 'hover:bg-secondary transition-colors',
                 'disabled:opacity-50 disabled:cursor-not-allowed',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring',
               )}
               aria-label={t('settings.selectFolder')}
               data-testid="folder-selector"
@@ -74,11 +66,7 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
               </div>
               <div className="flex-1 min-w-0">
                 <span className="block truncate text-sm font-medium">{folderName}</span>
-                {isOverridden && (
-                  <span className="block text-xs text-muted-foreground">
-                    {t('downloadBar.customLocation')}
-                  </span>
-                )}
+                {isOverridden && <span className="block text-xs text-muted-foreground">{t('downloadBar.customLocation')}</span>}
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
             </button>
@@ -113,12 +101,7 @@ export function DownloadBar({ onDownload, isDownloading = false }: DownloadBarPr
       </div>
 
       {error && (
-        <p
-          className="text-sm text-destructive px-1"
-          role="alert"
-          aria-live="assertive"
-          data-testid="folder-error"
-        >
+        <p className="text-sm text-destructive px-1" role="alert" aria-live="assertive" data-testid="folder-error">
           {error === 'permission_denied' && t('settings.permissionDenied')}
         </p>
       )}

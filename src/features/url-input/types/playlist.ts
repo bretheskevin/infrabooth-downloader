@@ -3,8 +3,6 @@ export type { UserInfo, TrackInfo, PlaylistInfo } from '@/bindings';
 
 import type { PlaylistInfo, TrackInfo } from '@/bindings';
 
-export function isPlaylist(
-  media: PlaylistInfo | TrackInfo | null
-): media is PlaylistInfo {
+export function isPlaylist(media: PlaylistInfo | TrackInfo | null): media is PlaylistInfo {
   return media !== null && 'tracks' in media;
 }

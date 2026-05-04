@@ -12,11 +12,7 @@ export interface TrackStatusBadgeProps {
 
 export function TrackStatusBadge({ status, error, className }: TrackStatusBadgeProps) {
   return (
-    <div
-      role="status"
-      aria-live="polite"
-      className={cn('flex items-center gap-1.5', className)}
-    >
+    <div role="status" aria-live="polite" className={cn('flex items-center gap-1.5', className)}>
       <TrackStatusIcon status={status} errorCode={error?.code} error={error} />
       <TrackStatusLabel status={status} error={error} />
     </div>

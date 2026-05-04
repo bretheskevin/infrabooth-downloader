@@ -41,8 +41,7 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: queryClient }, children);
+  return ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 }
 
 const mockTrack: TrackInfo = {
@@ -131,12 +130,7 @@ describe('useRekordboxExport', () => {
       await result.current.startExport();
     });
 
-    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(
-      expect.any(Array),
-      'Test Playlist',
-      null,
-      3,
-    );
+    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(expect.any(Array), 'Test Playlist', null, 3);
   });
 
   it('starts with undefined selectedFolderId', () => {
@@ -167,12 +161,7 @@ describe('useRekordboxExport', () => {
       await result.current.startExport();
     });
 
-    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(
-      expect.any(Array),
-      'Test Playlist',
-      'folder-456',
-      3,
-    );
+    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(expect.any(Array), 'Test Playlist', 'folder-456', 3);
   });
 
   it('uses folderId override when passed to startExport', async () => {
@@ -184,12 +173,7 @@ describe('useRekordboxExport', () => {
       await result.current.startExport('override-folder');
     });
 
-    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(
-      expect.any(Array),
-      'Test Playlist',
-      'override-folder',
-      3,
-    );
+    expect(mockExportPlaylistToRekordbox).toHaveBeenCalledWith(expect.any(Array), 'Test Playlist', 'override-folder', 3);
   });
 
   it('transitions to error on failed export', async () => {

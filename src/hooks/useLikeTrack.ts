@@ -24,8 +24,7 @@ export function useLikeTrack(track?: TrackInfo): LikeState | undefined {
   const likedStatus = useQuery({
     queryKey: likedQueryKey,
     queryFn: skipToken,
-    select: (data: TrackInfo[] | undefined) =>
-      track ? (data?.some((t) => t.id === track.id) ?? false) : false,
+    select: (data: TrackInfo[] | undefined) => (track ? (data?.some((t) => t.id === track.id) ?? false) : false),
   });
 
   const isLiked = likedStatus.data ?? false;

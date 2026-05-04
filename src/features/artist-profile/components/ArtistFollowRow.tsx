@@ -22,9 +22,7 @@ export function ArtistFollowRow({ artist, onClick }: ArtistFollowRowProps) {
     >
       <ArtistAvatarImage avatarUrl={avatarUrl} username={artist.username} className="w-10 h-10 shrink-0" />
       <div className="flex flex-col items-start min-w-0 flex-1 gap-0.5">
-        <span className="text-sm font-semibold text-foreground truncate max-w-full">
-          {artist.username}
-        </span>
+        <span className="text-sm font-semibold text-foreground truncate max-w-full">{artist.username}</span>
         <span className="text-xs text-muted-foreground">
           {formatCount(artist.track_count)} {t('artistProfile.tracks')}
         </span>

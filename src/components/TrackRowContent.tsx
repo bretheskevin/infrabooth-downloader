@@ -41,11 +41,7 @@ export function TrackRowContent({
   const showProgress = downloadProgress && downloadProgress.progress > 0;
 
   return (
-    <div
-      className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer"
-      onMouseDown={onMouseDown}
-      onClick={onPlayPause}
-    >
+    <div className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer" onMouseDown={onMouseDown} onClick={onPlayPause}>
       <PlayOverlay
         onPlay={onPlayPause}
         onPause={onPlayPause}
@@ -56,12 +52,7 @@ export function TrackRowContent({
       >
         <div className="w-8 h-8 rounded bg-muted overflow-hidden">
           {artworkUrl ? (
-            <img
-              src={artworkUrl}
-              alt=""
-              className="w-full h-full object-cover"
-              loading="lazy"
-            />
+            <img src={artworkUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <Music className="h-3.5 w-3.5" />
@@ -70,18 +61,17 @@ export function TrackRowContent({
         </div>
       </PlayOverlay>
       <div className="flex-1 min-w-0">
-        <p className={cn('text-sm font-medium truncate', isCurrentlyPlaying && 'text-primary')}>
-          {track.title}
-        </p>
+        <p className={cn('text-sm font-medium truncate', isCurrentlyPlaying && 'text-primary')}>{track.title}</p>
         <div className="flex items-center gap-1 min-w-0">
-          {isLiked && (
-            <Heart className="h-3 w-3 shrink-0 fill-primary text-primary" aria-hidden="true" />
-          )}
+          {isLiked && <Heart className="h-3 w-3 shrink-0 fill-primary text-primary" aria-hidden="true" />}
           {onArtistClick ? (
             <Button
               variant="ghost"
               className="text-xs text-muted-foreground truncate hover:text-foreground hover:bg-transparent h-auto p-0 block max-w-full text-left"
-              onClick={(e) => { e.stopPropagation(); onArtistClick(); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onArtistClick();
+              }}
               onMouseDown={(e) => e.stopPropagation()}
             >
               {track.user.username}
@@ -107,9 +97,7 @@ export function TrackRowContent({
           </div>
         )}
       </div>
-      <span className="text-xs text-muted-foreground tabular-nums shrink-0">
-        {formatDuration(track.duration)}
-      </span>
+      <span className="text-xs text-muted-foreground tabular-nums shrink-0">{formatDuration(track.duration)}</span>
     </div>
   );
 }

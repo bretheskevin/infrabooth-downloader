@@ -20,10 +20,10 @@ describe('GeoBlockTooltip', () => {
   it('should render children', () => {
     render(
       <TooltipProvider>
-      <GeoBlockTooltip>
-        <button>Trigger</button>
-      </GeoBlockTooltip>
-      </TooltipProvider>
+        <GeoBlockTooltip>
+          <button>Trigger</button>
+        </GeoBlockTooltip>
+      </TooltipProvider>,
     );
     expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument();
   });
@@ -32,10 +32,10 @@ describe('GeoBlockTooltip', () => {
     const user = userEvent.setup();
     render(
       <TooltipProvider>
-      <GeoBlockTooltip>
-        <button>Hover me</button>
-      </GeoBlockTooltip>
-      </TooltipProvider>
+        <GeoBlockTooltip>
+          <button>Hover me</button>
+        </GeoBlockTooltip>
+      </TooltipProvider>,
     );
 
     const trigger = screen.getByRole('button', { name: 'Hover me' });
@@ -56,10 +56,10 @@ describe('GeoBlockTooltip', () => {
     const user = userEvent.setup();
     render(
       <TooltipProvider>
-      <GeoBlockTooltip>
-        <button>Focus me</button>
-      </GeoBlockTooltip>
-      </TooltipProvider>
+        <GeoBlockTooltip>
+          <button>Focus me</button>
+        </GeoBlockTooltip>
+      </TooltipProvider>,
     );
 
     const trigger = screen.getByRole('button', { name: 'Focus me' });

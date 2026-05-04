@@ -20,12 +20,7 @@ export interface QueueSliceActions {
 
 export type QueueSlice = QueueSliceState & QueueSliceActions;
 
-export const createQueueSlice: StateCreator<
-  PlayerState & QueueSliceActions & PlaybackSliceActions,
-  [],
-  [],
-  QueueSlice
-> = (set, get) => ({
+export const createQueueSlice: StateCreator<PlayerState & QueueSliceActions & PlaybackSliceActions, [], [], QueueSlice> = (set, get) => ({
   queue: [],
   originalQueue: null,
   isShuffled: false,
@@ -150,7 +145,14 @@ export const createQueueSlice: StateCreator<
     }
 
     const newTrack = newQueue[newCursor] ?? null;
-    set({ queue: newQueue, cursor: newCursor, currentTrack: newTrack, originalQueue: newOriginalQueue, manualQueueCount: newManualCount, stationQueueCount: newStationCount });
+    set({
+      queue: newQueue,
+      cursor: newCursor,
+      currentTrack: newTrack,
+      originalQueue: newOriginalQueue,
+      manualQueueCount: newManualCount,
+      stationQueueCount: newStationCount,
+    });
     purgeStaleCache(trackIdSet(newQueue));
 
     if (removingCurrent && newTrack) {

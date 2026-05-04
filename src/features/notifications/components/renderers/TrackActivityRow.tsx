@@ -32,21 +32,11 @@ export function TrackActivityRow({ item, onClose }: TrackActivityRowProps) {
     <button type="button" onClick={handleTrackClick} className={NOTIFICATION_ROW_CLASS}>
       <ClickableAvatar actor={item.actor} onClose={onClose} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate">
-          {t(LABEL_KEY[item.kind], { actor: item.actor.username, track: item.track.title })}
-        </p>
-        {'body' in item && item.body && (
-          <p className="text-xs text-muted-foreground truncate">&ldquo;{item.body}&rdquo;</p>
-        )}
+        <p className="text-sm truncate">{t(LABEL_KEY[item.kind], { actor: item.actor.username, track: item.track.title })}</p>
+        {'body' in item && item.body && <p className="text-xs text-muted-foreground truncate">&ldquo;{item.body}&rdquo;</p>}
         <p className="text-xs text-muted-foreground">{formatRelativeTime(item.created_at, t)}</p>
       </div>
-      {item.track.artwork_url && (
-        <img
-          src={item.track.artwork_url}
-          alt=""
-          className="h-10 w-10 rounded bg-muted shrink-0 object-cover"
-        />
-      )}
+      {item.track.artwork_url && <img src={item.track.artwork_url} alt="" className="h-10 w-10 rounded bg-muted shrink-0 object-cover" />}
     </button>
   );
 }

@@ -16,11 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/tauri';
 import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
@@ -54,21 +50,14 @@ function BackupEntry({
           <TooltipContent>{absoluteTime}</TooltipContent>
         </Tooltip>
         <span className="text-muted-foreground">&middot;</span>
-        <span className="text-muted-foreground">
-          {t('settings.backupSize', { size: backup.sizeMb })}
-        </span>
+        <span className="text-muted-foreground">{t('settings.backupSize', { size: backup.sizeMb })}</span>
         {backup.kind === 'preRestore' && (
           <Badge variant="secondary" className="text-xs px-1.5 py-0">
             {t('settings.backupPreRestore')}
           </Badge>
         )}
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={disabled}
-        onClick={() => onRestore(backup)}
-      >
+      <Button variant="outline" size="sm" disabled={disabled} onClick={() => onRestore(backup)}>
         <RotateCcw className="mr-1 h-3.5 w-3.5" />
         {isRestoring ? t('settings.backupRestoring') : t('settings.backupRestore')}
       </Button>
@@ -101,9 +90,7 @@ export function BackupSection() {
         void queryClient.invalidateQueries({ queryKey: ['rekordbox-status'] });
       }
       const code = err instanceof ApiError ? err.code : null;
-      const description = isRunning
-        ? t('settings.rekordboxRunning')
-        : t(REKORDBOX_ERROR_KEYS[code ?? ''] ?? 'common.error');
+      const description = isRunning ? t('settings.rekordboxRunning') : t(REKORDBOX_ERROR_KEYS[code ?? ''] ?? 'common.error');
       toast.error(t('settings.backupRestoreError'), { description });
     },
     onSettled: () => setConfirmBackup(null),
@@ -122,9 +109,7 @@ export function BackupSection() {
   const latestBackup = sortedBackups[0];
   const olderBackups = sortedBackups.slice(1);
 
-  const confirmRelativeTime = confirmBackup
-    ? formatBackupRelativeTime(confirmBackup.timestamp, t)
-    : '';
+  const confirmRelativeTime = confirmBackup ? formatBackupRelativeTime(confirmBackup.timestamp, t) : '';
 
   return (
     <div className="space-y-3">
@@ -136,15 +121,11 @@ export function BackupSection() {
         <p className="text-sm text-muted-foreground">{t('settings.backupsDescription')}</p>
       </div>
 
-      {sortedBackups.length === 0 && (
-        <p className="text-sm text-muted-foreground italic">{t('settings.backupsEmpty')}</p>
-      )}
+      {sortedBackups.length === 0 && <p className="text-sm text-muted-foreground italic">{t('settings.backupsEmpty')}</p>}
 
       {latestBackup && (
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-            {t('settings.backupsLatest')}
-          </p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t('settings.backupsLatest')}</p>
           <BackupEntry
             backup={latestBackup}
             locale={i18n.language}
@@ -162,12 +143,8 @@ export function BackupSection() {
               variant="ghost"
               className="h-auto px-0 py-0 gap-1 text-sm text-muted-foreground hover:text-foreground hover:bg-transparent"
             >
-              <ChevronRight
-                className={cn('h-3.5 w-3.5 transition-transform', isOlderOpen && 'rotate-90')}
-              />
-              {isOlderOpen
-                ? t('settings.backupsHideOlder')
-                : t('settings.backupsShowOlder', { count: olderBackups.length })}
+              <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', isOlderOpen && 'rotate-90')} />
+              {isOlderOpen ? t('settings.backupsHideOlder') : t('settings.backupsShowOlder', { count: olderBackups.length })}
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="space-y-2 pt-2">
@@ -185,13 +162,16 @@ export function BackupSection() {
         </Collapsible>
       )}
 
-      <AlertDialog open={confirmBackup !== null} onOpenChange={(open) => { if (!open) setConfirmBackup(null); }}>
+      <AlertDialog
+        open={confirmBackup !== null}
+        onOpenChange={(open) => {
+          if (!open) setConfirmBackup(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('settings.backupRestoreTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('settings.backupRestoreDescription', { time: confirmRelativeTime })}
-            </AlertDialogDescription>
+            <AlertDialogDescription>{t('settings.backupRestoreDescription', { time: confirmRelativeTime })}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t('settings.backupRestoreCancel')}</AlertDialogCancel>

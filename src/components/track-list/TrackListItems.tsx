@@ -50,9 +50,7 @@ export function TrackListItems({
           track={track}
           index={index}
           subtitleSlot={subtitleSlot?.(track, index)}
-          onRemoveFromPlaylist={
-            onRemoveFromPlaylist ? () => onRemoveFromPlaylist(track) : undefined
-          }
+          onRemoveFromPlaylist={onRemoveFromPlaylist ? () => onRemoveFromPlaylist(track) : undefined}
         />
       ))}
     </div>
@@ -96,9 +94,7 @@ function VirtualizedTrackList({
               track={track}
               index={virtualItem.index}
               subtitleSlot={subtitleSlot?.(track, virtualItem.index)}
-              onRemoveFromPlaylist={
-                onRemoveFromPlaylist ? () => onRemoveFromPlaylist(track) : undefined
-              }
+              onRemoveFromPlaylist={onRemoveFromPlaylist ? () => onRemoveFromPlaylist(track) : undefined}
             />
           </VirtualRow>
         );

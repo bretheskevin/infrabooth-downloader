@@ -13,7 +13,7 @@ export interface QueueStateSlice {
     id: string,
     status: Track['status'],
     error?: Track['error'],
-    progress?: { percent?: number; downloadedBytes?: number; totalBytes?: number; filePath?: string }
+    progress?: { percent?: number; downloadedBytes?: number; totalBytes?: number; filePath?: string },
   ) => void;
   clearQueue: () => void;
   setInitializing: (isInitializing: boolean) => void;

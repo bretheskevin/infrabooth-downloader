@@ -19,16 +19,12 @@ describe('buildGitHubIssueUrl', () => {
 
   it('builds English bug report URL with version and platform', () => {
     const url = buildGitHubIssueUrl('bug', { appVersion: '1.21.1', lang: 'en' });
-    expect(url).toBe(
-      `${BASE}?template=bug_report_en.yml&version=1.21.1&platform=macOS+15.4+%28aarch64%29`
-    );
+    expect(url).toBe(`${BASE}?template=bug_report_en.yml&version=1.21.1&platform=macOS+15.4+%28aarch64%29`);
   });
 
   it('builds French bug report URL with version and platform', () => {
     const url = buildGitHubIssueUrl('bug', { appVersion: '1.21.1', lang: 'fr' });
-    expect(url).toBe(
-      `${BASE}?template=bug_report_fr.yml&version=1.21.1&platform=macOS+15.4+%28aarch64%29`
-    );
+    expect(url).toBe(`${BASE}?template=bug_report_fr.yml&version=1.21.1&platform=macOS+15.4+%28aarch64%29`);
   });
 
   it('builds English feature request URL without version or platform', () => {
@@ -48,9 +44,7 @@ describe('buildGitHubIssueUrl', () => {
     vi.mocked(os.arch).mockReturnValue('x86_64');
 
     const url = buildGitHubIssueUrl('bug', { appVersion: '2.0.0', lang: 'en' });
-    expect(url).toBe(
-      `${BASE}?template=bug_report_en.yml&version=2.0.0&platform=Windows+10.0.22631+%28x86_64%29`
-    );
+    expect(url).toBe(`${BASE}?template=bug_report_en.yml&version=2.0.0&platform=Windows+10.0.22631+%28x86_64%29`);
   });
 
   it('formats Linux platform correctly', async () => {
@@ -60,15 +54,11 @@ describe('buildGitHubIssueUrl', () => {
     vi.mocked(os.arch).mockReturnValue('x86_64');
 
     const url = buildGitHubIssueUrl('bug', { appVersion: '1.0.0', lang: 'en' });
-    expect(url).toBe(
-      `${BASE}?template=bug_report_en.yml&version=1.0.0&platform=Linux+6.5.0+%28x86_64%29`
-    );
+    expect(url).toBe(`${BASE}?template=bug_report_en.yml&version=1.0.0&platform=Linux+6.5.0+%28x86_64%29`);
   });
 
   it('defaults to en template for unknown language', () => {
     const url = buildGitHubIssueUrl('bug', { appVersion: '1.0.0', lang: 'de' });
-    expect(url).toBe(
-      `${BASE}?template=bug_report_en.yml&version=1.0.0&platform=macOS+15.4+%28aarch64%29`
-    );
+    expect(url).toBe(`${BASE}?template=bug_report_en.yml&version=1.0.0&platform=macOS+15.4+%28aarch64%29`);
   });
 });

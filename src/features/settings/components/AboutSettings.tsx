@@ -19,8 +19,16 @@ export function AboutSettings() {
   const [logPath, setLogPath] = useState('');
 
   useEffect(() => {
-    getAppDataPath().then(setAppDataPath).catch((e) => { void logger.error(`[AboutSettings] Failed to get app data path: ${e}`); });
-    getLogPath().then(setLogPath).catch((e) => { void logger.error(`[AboutSettings] Failed to get log path: ${e}`); });
+    getAppDataPath()
+      .then(setAppDataPath)
+      .catch((e) => {
+        void logger.error(`[AboutSettings] Failed to get app data path: ${e}`);
+      });
+    getLogPath()
+      .then(setLogPath)
+      .catch((e) => {
+        void logger.error(`[AboutSettings] Failed to get log path: ${e}`);
+      });
   }, []);
 
   const handleOpenAppData = async () => {
@@ -43,8 +51,7 @@ export function AboutSettings() {
     }
   };
 
-  const openIssue = (type: IssueType) =>
-    open(buildGitHubIssueUrl(type, { appVersion: appVersion || 'unknown', lang: i18n.language }));
+  const openIssue = (type: IssueType) => open(buildGitHubIssueUrl(type, { appVersion: appVersion || 'unknown', lang: i18n.language }));
 
   return (
     <>
@@ -63,9 +70,7 @@ export function AboutSettings() {
 
       {(appDataPath || logPath) && (
         <div className="space-y-2 pt-2">
-          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-            {t('settings.locationsSection')}
-          </h3>
+          <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('settings.locationsSection')}</h3>
           {appDataPath && (
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -74,7 +79,9 @@ export function AboutSettings() {
                   <TooltipTrigger asChild>
                     <p className="truncate font-mono text-[10px] text-muted-foreground">{appDataPath}</p>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" align="start">{appDataPath}</TooltipContent>
+                  <TooltipContent side="bottom" align="start">
+                    {appDataPath}
+                  </TooltipContent>
                 </Tooltip>
               </div>
               <Button
@@ -95,7 +102,9 @@ export function AboutSettings() {
                   <TooltipTrigger asChild>
                     <p className="truncate font-mono text-[10px] text-muted-foreground">{logPath}</p>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" align="start">{logPath}</TooltipContent>
+                  <TooltipContent side="bottom" align="start">
+                    {logPath}
+                  </TooltipContent>
                 </Tooltip>
               </div>
               <Button
@@ -112,9 +121,7 @@ export function AboutSettings() {
       )}
 
       <div className="space-y-2 pt-2">
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {t('settings.feedbackSection')}
-        </h3>
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{t('settings.feedbackSection')}</h3>
         <div className="grid grid-cols-2 gap-2">
           <Button variant="outline" size="sm" onClick={() => openIssue('bug')}>
             <Bug className="mr-2 h-4 w-4" />

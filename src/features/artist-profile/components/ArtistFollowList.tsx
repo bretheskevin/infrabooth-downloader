@@ -41,18 +41,9 @@ export function ArtistFollowList({ type, artistId, artistName }: ArtistFollowLis
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0 px-3">
-      <Breadcrumb
-        items={[
-          { label: artistName, onClick: () => useArtistProfileStore.getState().goBack() },
-          { label },
-        ]}
-      />
+      <Breadcrumb items={[{ label: artistName, onClick: () => useArtistProfileStore.getState().goBack() }, { label }]} />
 
-      <SearchBar
-        value={search}
-        onChange={setSearch}
-        placeholder={searchPlaceholder}
-      />
+      <SearchBar value={search} onChange={setSearch} placeholder={searchPlaceholder} />
 
       {isLoading ? (
         <TrackRowSkeletonList />

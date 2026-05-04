@@ -25,10 +25,7 @@ describe('useFailedTracks', () => {
   it('should return empty array when no tracks have failed', () => {
     vi.mocked(useQueueStore).mockImplementation((selector) =>
       selector({
-        tracks: [
-          createMockTrack('1', 'Track 1', 'Artist 1', 'complete'),
-          createMockTrack('2', 'Track 2', 'Artist 2', 'downloading'),
-        ],
+        tracks: [createMockTrack('1', 'Track 1', 'Artist 1', 'complete'), createMockTrack('2', 'Track 2', 'Artist 2', 'downloading')],
         currentIndex: 0,
         totalTracks: 2,
         isProcessing: true,
@@ -53,7 +50,7 @@ describe('useFailedTracks', () => {
         prepareRetryFailed: vi.fn(),
         prepareRetrySingle: vi.fn(),
         setRetrying: vi.fn(),
-      })
+      }),
     );
 
     const { result } = renderHook(() => useFailedTracks());
@@ -97,7 +94,7 @@ describe('useFailedTracks', () => {
         prepareRetryFailed: vi.fn(),
         prepareRetrySingle: vi.fn(),
         setRetrying: vi.fn(),
-      })
+      }),
     );
 
     const { result } = renderHook(() => useFailedTracks());
@@ -149,7 +146,7 @@ describe('useFailedTracks', () => {
         prepareRetryFailed: vi.fn(),
         prepareRetrySingle: vi.fn(),
         setRetrying: vi.fn(),
-      })
+      }),
     );
 
     const { result } = renderHook(() => useFailedTracks());
@@ -191,7 +188,7 @@ describe('useFailedTracks', () => {
         prepareRetryFailed: vi.fn(),
         prepareRetrySingle: vi.fn(),
         setRetrying: vi.fn(),
-      })
+      }),
     );
 
     const { result } = renderHook(() => useFailedTracks());

@@ -41,20 +41,32 @@ describe('Header', () => {
   });
 
   it('should render the app title from translations', () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     expect(screen.getByText('InfraBooth Downloader')).toBeInTheDocument();
   });
 
   it('should use the t function for the title', () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     const heading = screen.getByRole('heading', { level: 1 });
     expect(heading).toHaveTextContent('InfraBooth Downloader');
   });
 
   it('should update title when language changes to French', async () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     await act(async () => {
       await i18n.changeLanguage('fr');
@@ -65,7 +77,11 @@ describe('Header', () => {
   });
 
   it('should render AuthContainer with sign-in button when not authenticated', () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
   });
@@ -74,7 +90,13 @@ describe('Header', () => {
     useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
     const Wrapper = createQueryWrapper();
 
-    render(<Wrapper><TooltipProvider><Header /></TooltipProvider></Wrapper>);
+    render(
+      <Wrapper>
+        <TooltipProvider>
+          <Header />
+        </TooltipProvider>
+      </Wrapper>,
+    );
 
     // UserMenu displays username and quality badge in a dropdown trigger
     expect(screen.getByText('testuser')).toBeInTheDocument();
@@ -83,14 +105,22 @@ describe('Header', () => {
   });
 
   it('should render settings button', () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     const settingsButton = screen.getByRole('button', { name: /open settings/i });
     expect(settingsButton).toBeInTheDocument();
   });
 
   it('should open settings panel when settings button is clicked', async () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     const settingsButton = screen.getByRole('button', { name: /open settings/i });
     fireEvent.click(settingsButton);
@@ -104,7 +134,11 @@ describe('Header', () => {
   });
 
   it('should close settings panel when close button is clicked', async () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     // Open settings
     const settingsButton = screen.getByRole('button', { name: /open settings/i });
@@ -128,13 +162,21 @@ describe('Header', () => {
   });
 
   it('should display the app version', async () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     expect(await screen.findByText('Version 1.6.0')).toBeInTheDocument();
   });
 
   it('should have accessible settings button with aria-label', () => {
-    render(<TooltipProvider><Header /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <Header />
+      </TooltipProvider>,
+    );
 
     const settingsButton = screen.getByRole('button', { name: /open settings/i });
     expect(settingsButton).toHaveAttribute('aria-label', 'Open settings');

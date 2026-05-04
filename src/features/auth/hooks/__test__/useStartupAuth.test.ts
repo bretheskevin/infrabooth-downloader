@@ -63,9 +63,7 @@ describe('useStartupAuth', () => {
     renderHook(() => useStartupAuth());
 
     await waitFor(() => {
-      expect(logger.error).toHaveBeenCalledWith(
-        'Failed to check auth state on startup: Network error'
-      );
+      expect(logger.error).toHaveBeenCalledWith('Failed to check auth state on startup: Network error');
     });
   });
 

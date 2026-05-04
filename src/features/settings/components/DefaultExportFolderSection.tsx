@@ -48,9 +48,7 @@ export function DefaultExportFolderSection() {
         <p className="text-sm text-muted-foreground">{t('settings.rekordboxDefaultExportDescription')}</p>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-sm font-mono">
-          {resolvedFolderName ?? t('settings.rekordboxDefaultExportDefault')}
-        </span>
+        <span className="text-sm font-mono">{resolvedFolderName ?? t('settings.rekordboxDefaultExportDefault')}</span>
         <div className="flex gap-1">
           <Button variant="outline" size="sm" onClick={() => setShowTreePicker(!showTreePicker)}>
             {t('settings.rekordboxDefaultExportChange')}
@@ -63,24 +61,17 @@ export function DefaultExportFolderSection() {
         </div>
       </div>
       {!isStoredFolderValid && storedFolderId && treeData && (
-        <p className="text-sm text-amber-600 dark:text-amber-400">
-          {t('settings.rekordboxDefaultExportDeleted')}
-        </p>
+        <p className="text-sm text-amber-600 dark:text-amber-400">{t('settings.rekordboxDefaultExportDeleted')}</p>
       )}
-      {showTreePicker && (
-        treeLoading ? (
+      {showTreePicker &&
+        (treeLoading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
             <Loader2 className="h-4 w-4 animate-spin" />
             {t('settings.rekordboxDefaultExportLoadingTree')}
           </div>
         ) : treeData ? (
-          <RekordboxTreePicker
-            nodes={treeData}
-            selectedFolderId={treePickerFolderId}
-            onSelectFolder={handleSelectFolder}
-          />
-        ) : null
-      )}
+          <RekordboxTreePicker nodes={treeData} selectedFolderId={treePickerFolderId} onSelectFolder={handleSelectFolder} />
+        ) : null)}
     </div>
   );
 }

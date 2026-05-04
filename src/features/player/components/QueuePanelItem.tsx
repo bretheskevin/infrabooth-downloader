@@ -39,14 +39,10 @@ export const QueuePanelItem = memo(function QueuePanelItem({
   isDragOverlay,
 }: QueuePanelItemProps) {
   const { t } = useTranslation();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.trackId, disabled: isDragOverlay });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: item.trackId,
+    disabled: isDragOverlay,
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -86,62 +82,58 @@ export const QueuePanelItem = memo(function QueuePanelItem({
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-      <div
-        className="h-6 w-6 flex items-center justify-center text-muted-foreground"
-        aria-hidden="true"
-      >
-        <GripVertical className="h-3.5 w-3.5" />
-      </div>
-
-      {isCurrent ? (
-        <Music className="h-3 w-5 text-primary flex-shrink-0" aria-hidden="true" />
-      ) : (
-        <span className="text-[10px] text-muted-foreground w-5 text-center flex-shrink-0 tabular-nums">
-          {index + 1}
-        </span>
-      )}
-
-      <PlayOverlay
-        onPlay={handlePlayPause}
-        onPause={handlePlayPause}
-        isActive={isCurrent}
-        isPlaying={isCurrent && isPlayerPlaying}
-        forceShow={isRowHovered}
-        className="h-7 w-7 shrink-0"
-      >
-        <div className="h-7 w-7 rounded bg-secondary flex-shrink-0 overflow-hidden">
-          {item.artworkUrl ? (
-            <img src={getArtworkUrl(item.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-              <Music className="h-3 w-3" />
-            </div>
-          )}
+        <div className="h-6 w-6 flex items-center justify-center text-muted-foreground" aria-hidden="true">
+          <GripVertical className="h-3.5 w-3.5" />
         </div>
-      </PlayOverlay>
 
-      <div className="flex-1 min-w-0">
-        <div className={cn('text-[11px] truncate', isCurrent ? 'font-semibold text-primary' : 'font-medium')}>
-          {item.title}
-        </div>
-        <div className="text-[10px] text-muted-foreground truncate">{item.artist}</div>
-      </div>
+        {isCurrent ? (
+          <Music className="h-3 w-5 text-primary flex-shrink-0" aria-hidden="true" />
+        ) : (
+          <span className="text-[10px] text-muted-foreground w-5 text-center flex-shrink-0 tabular-nums">{index + 1}</span>
+        )}
 
-      <span className="text-[10px] text-muted-foreground tabular-nums">{formatDuration(item.durationMs)}</span>
-
-      {isCurrent ? (
-        <EqualizerBars className="h-6 w-6" />
-      ) : (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-6 w-6"
-          onClick={(e) => { e.stopPropagation(); onRemove(index); }}
-          aria-label={t('player.removeFromQueue')}
+        <PlayOverlay
+          onPlay={handlePlayPause}
+          onPause={handlePlayPause}
+          isActive={isCurrent}
+          isPlaying={isCurrent && isPlayerPlaying}
+          forceShow={isRowHovered}
+          className="h-7 w-7 shrink-0"
         >
-          <X className="h-3 w-3" />
-        </Button>
-      )}
+          <div className="h-7 w-7 rounded bg-secondary flex-shrink-0 overflow-hidden">
+            {item.artworkUrl ? (
+              <img src={getArtworkUrl(item.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <div className="h-full w-full flex items-center justify-center text-muted-foreground">
+                <Music className="h-3 w-3" />
+              </div>
+            )}
+          </div>
+        </PlayOverlay>
+
+        <div className="flex-1 min-w-0">
+          <div className={cn('text-[11px] truncate', isCurrent ? 'font-semibold text-primary' : 'font-medium')}>{item.title}</div>
+          <div className="text-[10px] text-muted-foreground truncate">{item.artist}</div>
+        </div>
+
+        <span className="text-[10px] text-muted-foreground tabular-nums">{formatDuration(item.durationMs)}</span>
+
+        {isCurrent ? (
+          <EqualizerBars className="h-6 w-6" />
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(index);
+            }}
+            aria-label={t('player.removeFromQueue')}
+          >
+            <X className="h-3 w-3" />
+          </Button>
+        )}
       </div>
     </div>
   );

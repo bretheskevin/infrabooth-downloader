@@ -48,12 +48,7 @@ describe('TrackStatusBadge', () => {
     });
 
     it('should render error message when failed with error', () => {
-      render(
-        <TrackStatusBadge
-          status="failed"
-          error={{ code: 'GEO_BLOCKED', message: 'Not available' }}
-        />
-      );
+      render(<TrackStatusBadge status="failed" error={{ code: 'GEO_BLOCKED', message: 'Not available' }} />);
       expect(screen.getByRole('img', { hidden: true })).toBeInTheDocument();
       expect(screen.getByText('Unavailable in your region')).toBeInTheDocument();
     });

@@ -31,14 +31,9 @@ export function ArtistAvatar({ artist, isSelected, onClick, hasNew }: ArtistAvat
             isSelected ? 'ring-primary' : 'ring-transparent',
           )}
         />
-        {showNew && (
-          <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full border-2 border-background" />
-        )}
+        {showNew && <div className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-orange-500 rounded-full border-2 border-background" />}
       </div>
-      <span className={cn(
-        'text-xs truncate w-full text-center',
-        isSelected ? 'text-foreground font-medium' : 'text-muted-foreground',
-      )}>
+      <span className={cn('text-xs truncate w-full text-center', isSelected ? 'text-foreground font-medium' : 'text-muted-foreground')}>
         {artist.username}
       </span>
     </Button>

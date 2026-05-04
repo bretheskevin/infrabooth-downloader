@@ -16,14 +16,7 @@ export function PlaylistArtwork({ artworkUrl, title, size = 'sm' }: PlaylistArtw
   const classes = sizeClasses[size];
 
   if (resolvedUrl) {
-    return (
-      <img
-        src={resolvedUrl}
-        alt={title}
-        className={`${classes} object-cover shrink-0`}
-        loading="lazy"
-      />
-    );
+    return <img src={resolvedUrl} alt={title} className={`${classes} object-cover shrink-0`} loading="lazy" />;
   }
 
   return (

@@ -28,7 +28,7 @@ export function useResolveEmbed(content: string) {
   });
 
   return {
-    embed: query.data ?? null as MessageEmbed | null,
+    embed: query.data ?? (null as MessageEmbed | null),
     scUrl: url,
     rawScUrl: rawUrl,
     isLoading: query.isLoading && !!url,

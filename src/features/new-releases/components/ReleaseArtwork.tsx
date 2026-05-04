@@ -9,23 +9,11 @@ interface ReleaseArtworkProps {
 
 export function ReleaseArtwork({ artworkUrl, title, className, fallbackClassName }: ReleaseArtworkProps) {
   if (artworkUrl) {
-    return (
-      <img
-        src={artworkUrl}
-        alt={title}
-        className={cn('h-full w-full object-cover', className)}
-        loading="lazy"
-      />
-    );
+    return <img src={artworkUrl} alt={title} className={cn('h-full w-full object-cover', className)} loading="lazy" />;
   }
 
   return (
-    <div
-      className={cn(
-        'flex h-full w-full items-center justify-center font-bold text-muted-foreground',
-        fallbackClassName,
-      )}
-    >
+    <div className={cn('flex h-full w-full items-center justify-center font-bold text-muted-foreground', fallbackClassName)}>
       {title.charAt(0).toUpperCase()}
     </div>
   );

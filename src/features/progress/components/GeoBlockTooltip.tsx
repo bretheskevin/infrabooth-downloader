@@ -9,11 +9,7 @@ export function GeoBlockTooltip({ children }: GeoBlockTooltipProps) {
   const { t } = useTranslation();
 
   return (
-    <StatusTooltip
-      descriptionId="geo-block-description"
-      mainText={t('errors.geoBlockedDetail')}
-      subText={t('errors.geoBlockedNoRetry')}
-    >
+    <StatusTooltip descriptionId="geo-block-description" mainText={t('errors.geoBlockedDetail')} subText={t('errors.geoBlockedNoRetry')}>
       {children}
     </StatusTooltip>
   );

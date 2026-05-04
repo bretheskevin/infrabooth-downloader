@@ -31,18 +31,16 @@ const initialLanguage = getInitialLanguage();
 // Set document lang attribute immediately for accessibility
 document.documentElement.lang = initialLanguage;
 
-i18n
-  .use(initReactI18next)
-  .init({
-    resources: {
-      en: { translation: en },
-      fr: { translation: fr },
-    },
-    lng: initialLanguage,
-    fallbackLng: 'en',
-    interpolation: {
-      escapeValue: false,
-    },
-  });
+i18n.use(initReactI18next).init({
+  resources: {
+    en: { translation: en },
+    fr: { translation: fr },
+  },
+  lng: initialLanguage,
+  fallbackLng: 'en',
+  interpolation: {
+    escapeValue: false,
+  },
+});
 
 export default i18n;

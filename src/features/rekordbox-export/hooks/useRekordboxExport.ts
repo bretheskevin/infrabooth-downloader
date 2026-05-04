@@ -67,60 +67,63 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
 
   const close = cleanup;
 
-  const startExport = useCallback(async (folderId?: string | null) => {
-    if (!tracks || tracks.length === 0) return;
+  const startExport = useCallback(
+    async (folderId?: string | null) => {
+      if (!tracks || tracks.length === 0) return;
 
-    setState((s) => ({ ...s, phase: 'exporting', trackStatuses: new Map(), totalTracks: tracks.length }));
+      setState((s) => ({ ...s, phase: 'exporting', trackStatuses: new Map(), totalTracks: tracks.length }));
 
-    const unlistenExport = await listen<RekordboxExportProgressEvent>('rekordbox-export-progress', (event) => {
-      const p = event.payload;
-      setState((s) => {
-        const updated = new Map(s.trackStatuses);
-        updated.set(p.trackId, {
-          trackId: p.trackId,
-          trackTitle: p.trackTitle,
-          status: p.status,
-          error: p.error ?? undefined,
+      const unlistenExport = await listen<RekordboxExportProgressEvent>('rekordbox-export-progress', (event) => {
+        const p = event.payload;
+        setState((s) => {
+          const updated = new Map(s.trackStatuses);
+          updated.set(p.trackId, {
+            trackId: p.trackId,
+            trackTitle: p.trackTitle,
+            status: p.status,
+            error: p.error ?? undefined,
+          });
+          return { ...s, trackStatuses: updated };
         });
-        return { ...s, trackStatuses: updated };
       });
-    });
 
-    const unlistenDownload = await listen<DownloadProgressEvent>('download-progress', (event) => {
-      const { trackId, percent } = event.payload;
-      if (percent == null) return;
-      setState((s) => {
-        const existing = s.trackStatuses.get(trackId);
-        if (!existing || existing.status !== 'downloading') return s;
-        const updated = new Map(s.trackStatuses);
-        updated.set(trackId, { ...existing, percent });
-        return { ...s, trackStatuses: updated };
+      const unlistenDownload = await listen<DownloadProgressEvent>('download-progress', (event) => {
+        const { trackId, percent } = event.payload;
+        if (percent == null) return;
+        setState((s) => {
+          const existing = s.trackStatuses.get(trackId);
+          if (!existing || existing.status !== 'downloading') return s;
+          const updated = new Map(s.trackStatuses);
+          updated.set(trackId, { ...existing, percent });
+          return { ...s, trackStatuses: updated };
+        });
       });
-    });
 
-    unlistenRef.current = [unlistenExport, unlistenDownload];
+      unlistenRef.current = [unlistenExport, unlistenDownload];
 
-    const trackCores = tracks.map(toTrackCore);
-    const maxConcurrent = useSettingsStore.getState().maxConcurrentDownloads;
-    const effectiveFolder = folderId !== undefined ? folderId : selectedFolderId ?? null;
+      const trackCores = tracks.map(toTrackCore);
+      const maxConcurrent = useSettingsStore.getState().maxConcurrentDownloads;
+      const effectiveFolder = folderId !== undefined ? folderId : (selectedFolderId ?? null);
 
-    try {
-      const result = await api.exportPlaylistToRekordbox(trackCores, playlistName, effectiveFolder, maxConcurrent);
-      setState((s) => ({ ...s, phase: 'complete', result }));
-      void queryClient.invalidateQueries({ queryKey: ['rekordbox-backups'] });
-    } catch (err: unknown) {
-      if (cancelledRef.current) return;
-      const code = err instanceof ApiError ? err.code : null;
-      if (code === 'CANCELLED') return;
-      const message = err instanceof Error ? err.message : String(err);
-      void logger.error(`[rekordbox-export] Export failed: ${message}`);
-      setState((s) => ({ ...s, phase: 'error', errorCode: code, error: message }));
-    } finally {
-      unlistenExport();
-      unlistenDownload();
-      unlistenRef.current = [];
-    }
-  }, [tracks, playlistName, selectedFolderId, queryClient]);
+      try {
+        const result = await api.exportPlaylistToRekordbox(trackCores, playlistName, effectiveFolder, maxConcurrent);
+        setState((s) => ({ ...s, phase: 'complete', result }));
+        void queryClient.invalidateQueries({ queryKey: ['rekordbox-backups'] });
+      } catch (err: unknown) {
+        if (cancelledRef.current) return;
+        const code = err instanceof ApiError ? err.code : null;
+        if (code === 'CANCELLED') return;
+        const message = err instanceof Error ? err.message : String(err);
+        void logger.error(`[rekordbox-export] Export failed: ${message}`);
+        setState((s) => ({ ...s, phase: 'error', errorCode: code, error: message }));
+      } finally {
+        unlistenExport();
+        unlistenDownload();
+        unlistenRef.current = [];
+      }
+    },
+    [tracks, playlistName, selectedFolderId, queryClient],
+  );
 
   return {
     ...state,

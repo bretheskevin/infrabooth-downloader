@@ -1,8 +1,4 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface StatusTooltipProps {
   children: React.ReactNode;
@@ -15,16 +11,9 @@ export function StatusTooltip({ children, descriptionId, mainText, subText }: St
   return (
     <Tooltip>
       <TooltipTrigger asChild>{children}</TooltipTrigger>
-      <TooltipContent
-        className="max-w-xs"
-        aria-describedby={descriptionId}
-      >
+      <TooltipContent className="max-w-xs" aria-describedby={descriptionId}>
         <p id={descriptionId}>{mainText}</p>
-        {subText && (
-          <p className="text-xs text-primary-foreground/70 mt-1">
-            {subText}
-          </p>
-        )}
+        {subText && <p className="text-xs text-primary-foreground/70 mt-1">{subText}</p>}
       </TooltipContent>
     </Tooltip>
   );

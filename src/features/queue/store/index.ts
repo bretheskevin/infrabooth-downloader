@@ -2,12 +2,7 @@ import { create } from 'zustand';
 import { useShallow } from 'zustand/react/shallow';
 import { logger } from '@/lib/logger';
 import { listen } from '@tauri-apps/api/event';
-import type {
-  DownloadProgressEvent,
-  QueueProgressEvent,
-  QueueCancelledEvent,
-  QueueCompleteEvent,
-} from '@/bindings';
+import type { DownloadProgressEvent, QueueProgressEvent, QueueCancelledEvent, QueueCompleteEvent } from '@/bindings';
 import type { TrackStatus } from '@/features/queue/types/track';
 import type { AppError } from '@/features/queue/types/errors';
 import type { QueueState } from './types';
@@ -33,17 +28,12 @@ function setupQueueEventListeners() {
     if (error) {
       void logger.error(`[queueStore] Track error: ${error.code} - ${error.message}`);
     }
-    store.getState().updateTrackStatus(
-      trackId,
-      status as TrackStatus,
-      error as AppError | undefined,
-      {
-        percent: percent ?? undefined,
-        downloadedBytes: downloadedBytes ?? undefined,
-        totalBytes: totalBytes ?? undefined,
-        filePath: filePath ?? undefined,
-      }
-    );
+    store.getState().updateTrackStatus(trackId, status as TrackStatus, error as AppError | undefined, {
+      percent: percent ?? undefined,
+      downloadedBytes: downloadedBytes ?? undefined,
+      totalBytes: totalBytes ?? undefined,
+      filePath: filePath ?? undefined,
+    });
   });
 
   listen<QueueProgressEvent>('queue-progress', (event) => {
@@ -52,16 +42,12 @@ function setupQueueEventListeners() {
   });
 
   listen<QueueCompleteEvent>('queue-complete', (event) => {
-    void logger.info(
-      `[queueStore] queue-complete: completed=${event.payload.completed}, failed=${event.payload.failed}`
-    );
+    void logger.info(`[queueStore] queue-complete: completed=${event.payload.completed}, failed=${event.payload.failed}`);
     store.getState().setQueueComplete(event.payload);
   });
 
   listen<QueueCancelledEvent>('queue-cancelled', (event) => {
-    void logger.info(
-      `[queueStore] queue-cancelled: completed=${event.payload.completed}, cancelled=${event.payload.cancelled}`
-    );
+    void logger.info(`[queueStore] queue-cancelled: completed=${event.payload.completed}, cancelled=${event.payload.cancelled}`);
     store.getState().setQueueCancelled(event.payload);
   });
 }
@@ -99,7 +85,7 @@ export const useQueueProgress = () =>
       isRetrying: s.isRetrying,
       currentIndex: s.currentIndex,
       totalTracks: s.totalTracks,
-    }))
+    })),
   );
 
 export const useQueueCompletion = () =>
@@ -110,5 +96,5 @@ export const useQueueCompletion = () =>
       completedCount: s.completedCount,
       failedCount: s.failedCount,
       cancelledCount: s.cancelledCount,
-    }))
+    })),
   );

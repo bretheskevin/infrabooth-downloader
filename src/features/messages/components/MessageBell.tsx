@@ -21,9 +21,7 @@ export function MessageBell() {
           className="relative text-muted-foreground hover:text-foreground hover:bg-secondary/80"
         >
           <Mail className="h-5 w-5" />
-          {hasUnread && (
-            <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />
-          )}
+          {hasUnread && <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-destructive" />}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96 p-0" align="end">

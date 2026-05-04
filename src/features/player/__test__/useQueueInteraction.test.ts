@@ -1,29 +1,29 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 
-vi.mock("react-i18next", () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
-      if (key === "player.nextUp") return "Next up";
-      if (key === "player.stationSection") return "Station";
-      if (key === "player.queueSection") return "Queue";
+      if (key === 'player.nextUp') return 'Next up';
+      if (key === 'player.stationSection') return 'Station';
+      if (key === 'player.queueSection') return 'Queue';
       return key;
     },
   }),
 }));
 
-vi.mock("@dnd-kit/core", () => ({
+vi.mock('@dnd-kit/core', () => ({
   KeyboardSensor: vi.fn(),
   PointerSensor: vi.fn(),
   useSensor: vi.fn((_sensor: unknown, opts: unknown) => ({ opts })),
   useSensors: vi.fn((...args: unknown[]) => args),
 }));
 
-vi.mock("@dnd-kit/sortable", () => ({
+vi.mock('@dnd-kit/sortable', () => ({
   sortableKeyboardCoordinates: vi.fn(),
 }));
 
-vi.mock("@/hooks/useVirtualizedList", () => ({
+vi.mock('@/hooks/useVirtualizedList', () => ({
   useVirtualizedList: vi.fn(() => ({
     parentRef: { current: null },
     virtualItems: [],
@@ -40,7 +40,7 @@ const mockState = {
     durationMs: number;
   }>,
   cursor: -1,
-  state: "playing" as string,
+  state: 'playing' as string,
   manualQueueCount: 0,
   stationQueueCount: 0,
 };
@@ -53,33 +53,30 @@ const mockActions = {
   reorderQueue: vi.fn(),
 };
 
-vi.mock("../store", () => ({
-  usePlayerStore: Object.assign(
-    (selector: (s: typeof mockState) => unknown) => selector(mockState),
-    {
-      getState: () => mockActions,
-    },
-  ),
+vi.mock('../store', () => ({
+  usePlayerStore: Object.assign((selector: (s: typeof mockState) => unknown) => selector(mockState), {
+    getState: () => mockActions,
+  }),
 }));
 
-import { useQueueInteraction } from "../hooks/useQueueInteraction";
+import { useQueueInteraction } from '../hooks/useQueueInteraction';
 
-describe("useQueueInteraction", () => {
+describe('useQueueInteraction', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockState.queue = [];
     mockState.cursor = -1;
-    mockState.state = "playing";
+    mockState.state = 'playing';
     mockState.manualQueueCount = 0;
     mockState.stationQueueCount = 0;
   });
 
-  it("returns queue and cursor from store", () => {
+  it('returns queue and cursor from store', () => {
     mockState.queue = [
       {
         trackId: 1,
-        title: "A",
-        artist: "X",
+        title: 'A',
+        artist: 'X',
         artworkUrl: null,
         durationMs: 1000,
       },
@@ -91,25 +88,25 @@ describe("useQueueInteraction", () => {
     expect(result.current.cursor).toBe(0);
   });
 
-  it("returns playerState from store", () => {
-    mockState.state = "paused";
+  it('returns playerState from store', () => {
+    mockState.state = 'paused';
     const { result } = renderHook(() => useQueueInteraction());
-    expect(result.current.playerState).toBe("paused");
+    expect(result.current.playerState).toBe('paused');
   });
 
-  it("computes itemIds from queue trackIds", () => {
+  it('computes itemIds from queue trackIds', () => {
     mockState.queue = [
       {
         trackId: 10,
-        title: "A",
-        artist: "X",
+        title: 'A',
+        artist: 'X',
         artworkUrl: null,
         durationMs: 1000,
       },
       {
         trackId: 20,
-        title: "B",
-        artist: "Y",
+        title: 'B',
+        artist: 'Y',
         artworkUrl: null,
         durationMs: 2000,
       },
@@ -119,32 +116,32 @@ describe("useQueueInteraction", () => {
     expect(result.current.itemIds).toEqual([10, 20]);
   });
 
-  it("returns sensors array", () => {
+  it('returns sensors array', () => {
     const { result } = renderHook(() => useQueueInteraction());
     expect(result.current.sensors).toBeDefined();
   });
 
-  it("returns virtualization props", () => {
+  it('returns virtualization props', () => {
     const { result } = renderHook(() => useQueueInteraction());
     expect(result.current.parentRef).toBeDefined();
     expect(result.current.virtualItems).toBeDefined();
     expect(result.current.totalSize).toBeDefined();
   });
 
-  describe("getSectionHeader", () => {
-    it("returns nextUp for manual queue start", () => {
+  describe('getSectionHeader', () => {
+    it('returns nextUp for manual queue start', () => {
       mockState.queue = [
         {
           trackId: 1,
-          title: "Current",
-          artist: "X",
+          title: 'Current',
+          artist: 'X',
           artworkUrl: null,
           durationMs: 1000,
         },
         {
           trackId: 2,
-          title: "Manual",
-          artist: "Y",
+          title: 'Manual',
+          artist: 'Y',
           artworkUrl: null,
           durationMs: 2000,
         },
@@ -153,22 +150,22 @@ describe("useQueueInteraction", () => {
       mockState.manualQueueCount = 1;
 
       const { result } = renderHook(() => useQueueInteraction());
-      expect(result.current.getSectionHeader(1)).toBe("Next up");
+      expect(result.current.getSectionHeader(1)).toBe('Next up');
     });
 
-    it("returns station section header at station start", () => {
+    it('returns station section header at station start', () => {
       mockState.queue = [
         {
           trackId: 1,
-          title: "A",
-          artist: "X",
+          title: 'A',
+          artist: 'X',
           artworkUrl: null,
           durationMs: 1000,
         },
         {
           trackId: 2,
-          title: "Station",
-          artist: "Y",
+          title: 'Station',
+          artist: 'Y',
           artworkUrl: null,
           durationMs: 2000,
         },
@@ -177,15 +174,15 @@ describe("useQueueInteraction", () => {
       mockState.stationQueueCount = 1;
 
       const { result } = renderHook(() => useQueueInteraction());
-      expect(result.current.getSectionHeader(1)).toBe("Station");
+      expect(result.current.getSectionHeader(1)).toBe('Station');
     });
 
-    it("returns undefined for non-header positions", () => {
+    it('returns undefined for non-header positions', () => {
       mockState.queue = [
         {
           trackId: 1,
-          title: "A",
-          artist: "X",
+          title: 'A',
+          artist: 'X',
           artworkUrl: null,
           durationMs: 1000,
         },
@@ -197,8 +194,8 @@ describe("useQueueInteraction", () => {
     });
   });
 
-  describe("drag handlers", () => {
-    it("handleDragStart sets activeId", () => {
+  describe('drag handlers', () => {
+    it('handleDragStart sets activeId', () => {
       const { result } = renderHook(() => useQueueInteraction());
       expect(result.current.activeId).toBeNull();
 
@@ -211,19 +208,19 @@ describe("useQueueInteraction", () => {
       expect(result.current.activeId).toBe(42);
     });
 
-    it("handleDragEnd resets activeId and calls reorderQueue", () => {
+    it('handleDragEnd resets activeId and calls reorderQueue', () => {
       mockState.queue = [
         {
           trackId: 1,
-          title: "A",
-          artist: "X",
+          title: 'A',
+          artist: 'X',
           artworkUrl: null,
           durationMs: 1000,
         },
         {
           trackId: 2,
-          title: "B",
-          artist: "Y",
+          title: 'B',
+          artist: 'Y',
           artworkUrl: null,
           durationMs: 2000,
         },
@@ -248,7 +245,7 @@ describe("useQueueInteraction", () => {
       expect(mockActions.reorderQueue).toHaveBeenCalledWith(0, 1);
     });
 
-    it("handleDragCancel resets activeId", () => {
+    it('handleDragCancel resets activeId', () => {
       const { result } = renderHook(() => useQueueInteraction());
 
       act(() => {
@@ -265,45 +262,45 @@ describe("useQueueInteraction", () => {
     });
   });
 
-  describe("item callbacks", () => {
-    it("handlePlay calls skipTo", () => {
+  describe('item callbacks', () => {
+    it('handlePlay calls skipTo', () => {
       const { result } = renderHook(() => useQueueInteraction());
       result.current.handlePlay(3);
       expect(mockActions.skipTo).toHaveBeenCalledWith(3);
     });
 
-    it("handlePause calls pause", () => {
+    it('handlePause calls pause', () => {
       const { result } = renderHook(() => useQueueInteraction());
       result.current.handlePause();
       expect(mockActions.pause).toHaveBeenCalled();
     });
 
-    it("handleResume calls resume", () => {
+    it('handleResume calls resume', () => {
       const { result } = renderHook(() => useQueueInteraction());
       result.current.handleResume();
       expect(mockActions.resume).toHaveBeenCalled();
     });
 
-    it("handleRemove calls removeFromQueue", () => {
+    it('handleRemove calls removeFromQueue', () => {
       const { result } = renderHook(() => useQueueInteraction());
       result.current.handleRemove(5);
       expect(mockActions.removeFromQueue).toHaveBeenCalledWith(5);
     });
   });
 
-  describe("active item tracking", () => {
-    it("returns null activeItem when no drag", () => {
+  describe('active item tracking', () => {
+    it('returns null activeItem when no drag', () => {
       const { result } = renderHook(() => useQueueInteraction());
       expect(result.current.activeItem).toBeNull();
       expect(result.current.activeIndex).toBe(-1);
     });
 
-    it("returns activeItem and activeIndex during drag", () => {
+    it('returns activeItem and activeIndex during drag', () => {
       mockState.queue = [
         {
           trackId: 10,
-          title: "Track",
-          artist: "Artist",
+          title: 'Track',
+          artist: 'Artist',
           artworkUrl: null,
           durationMs: 1000,
         },

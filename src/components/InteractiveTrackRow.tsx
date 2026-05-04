@@ -111,17 +111,11 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
   });
 
   // Hover preload (always active)
-  const boundHover = useCallback(
-    () => preloadOnHover(track.id, track.permalink_url),
-    [track.id, track.permalink_url],
-  );
+  const boundHover = useCallback(() => preloadOnHover(track.id, track.permalink_url), [track.id, track.permalink_url]);
   const { onHoverStart, onHoverEnd } = useHoverPreload(boundHover);
 
   // Mouse-down preload (always active)
-  const handleMouseDown = useCallback(
-    () => preloadImmediate(track.id, track.permalink_url),
-    [track.id, track.permalink_url],
-  );
+  const handleMouseDown = useCallback(() => preloadImmediate(track.id, track.permalink_url), [track.id, track.permalink_url]);
 
   // Artwork
   const artworkUrl = useMemo(() => getArtworkUrl(track.artwork_url) ?? null, [track.artwork_url]);
@@ -145,11 +139,7 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
     ? cn(
         'group border transition-[background-color,border-color] duration-150',
         animationDelay > 0 && 'track-row-stagger',
-        isSelected
-          ? 'bg-primary/5 border-primary/20'
-          : isCurrentlyPlaying
-            ? 'border-transparent'
-            : 'border-transparent hover:bg-muted/50',
+        isSelected ? 'bg-primary/5 border-primary/20' : isCurrentlyPlaying ? 'border-transparent' : 'border-transparent hover:bg-muted/50',
         className,
       )
     : className;
@@ -172,10 +162,7 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
       leftSlot={
         selection ? (
           <div
-            className={cn(
-              'flex items-center gap-3 shrink-0 self-stretch -my-2 py-2 -ml-3 pl-3',
-              !isDisabled && 'cursor-pointer',
-            )}
+            className={cn('flex items-center gap-3 shrink-0 self-stretch -my-2 py-2 -ml-3 pl-3', !isDisabled && 'cursor-pointer')}
             onClick={!isDisabled ? handleToggle : undefined}
           >
             <Checkbox

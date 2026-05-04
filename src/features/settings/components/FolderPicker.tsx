@@ -20,22 +20,13 @@ export function FolderPicker() {
       <div className="flex items-center gap-2">
         <Tooltip>
           <TooltipTrigger asChild>
-            <span
-              className="flex-1 truncate text-sm text-muted-foreground"
-              aria-label={t('settings.currentPath', { path: downloadPath })}
-            >
+            <span className="flex-1 truncate text-sm text-muted-foreground" aria-label={t('settings.currentPath', { path: downloadPath })}>
               {downloadPath || t('settings.notSet')}
             </span>
           </TooltipTrigger>
-          <TooltipContent className="max-w-sm break-all">
-            {downloadPath || t('settings.notSet')}
-          </TooltipContent>
+          <TooltipContent className="max-w-sm break-all">{downloadPath || t('settings.notSet')}</TooltipContent>
         </Tooltip>
-        <Button
-          variant="outline"
-          onClick={selectFolder}
-          aria-label={t('settings.selectFolder')}
-        >
+        <Button variant="outline" onClick={selectFolder} aria-label={t('settings.selectFolder')}>
           {t('settings.browse')}
         </Button>
       </div>

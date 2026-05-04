@@ -70,7 +70,6 @@ describe('queueStore', () => {
       const { failedCount } = useQueueStore.getState();
       expect(failedCount).toBe(0);
     });
-
   });
 
   describe('enqueueTracks', () => {
@@ -322,7 +321,5 @@ describe('queueStore', () => {
       expect(state.completedCount).toBe(0);
       expect(state.failedCount).toBe(0);
     });
-
   });
-
 });

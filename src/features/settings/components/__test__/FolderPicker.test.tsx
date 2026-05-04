@@ -51,13 +51,21 @@ describe('FolderPicker', () => {
   });
 
   it('renders current download path', () => {
-    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <FolderPicker />
+      </TooltipProvider>,
+    );
 
     expect(screen.getByText('/Users/test/Downloads')).toBeInTheDocument();
   });
 
   it('renders browse button with correct label', () => {
-    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <FolderPicker />
+      </TooltipProvider>,
+    );
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     expect(browseButton).toBeInTheDocument();
@@ -68,7 +76,11 @@ describe('FolderPicker', () => {
     vi.mocked(open).mockResolvedValue('/Users/test/NewFolder');
     vi.mocked(invoke).mockResolvedValue(true);
 
-    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <FolderPicker />
+      </TooltipProvider>,
+    );
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     fireEvent.click(browseButton);
@@ -86,7 +98,11 @@ describe('FolderPicker', () => {
     vi.mocked(open).mockResolvedValue('/Users/test/NewFolder');
     vi.mocked(invoke).mockResolvedValue(true);
 
-    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <FolderPicker />
+      </TooltipProvider>,
+    );
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     fireEvent.click(browseButton);
@@ -103,15 +119,17 @@ describe('FolderPicker', () => {
     vi.mocked(open).mockResolvedValue('/Users/test/ReadOnlyFolder');
     vi.mocked(invoke).mockResolvedValue(false);
 
-    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <FolderPicker />
+      </TooltipProvider>,
+    );
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     fireEvent.click(browseButton);
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent(
-        'Cannot write to this folder. Please select a different location.'
-      );
+      expect(screen.getByRole('alert')).toHaveTextContent('Cannot write to this folder. Please select a different location.');
     });
 
     expect(mockSetDownloadPath).not.toHaveBeenCalled();
@@ -120,7 +138,11 @@ describe('FolderPicker', () => {
   it('does not update store when user cancels dialog', async () => {
     vi.mocked(open).mockResolvedValue(null);
 
-    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <FolderPicker />
+      </TooltipProvider>,
+    );
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     fireEvent.click(browseButton);
@@ -134,7 +156,11 @@ describe('FolderPicker', () => {
   });
 
   it('has accessible aria labels', () => {
-    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <FolderPicker />
+      </TooltipProvider>,
+    );
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     expect(browseButton).toHaveAttribute('aria-label', 'Select download folder');
@@ -144,7 +170,11 @@ describe('FolderPicker', () => {
   });
 
   it('is keyboard navigable', () => {
-    render(<TooltipProvider><FolderPicker /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <FolderPicker />
+      </TooltipProvider>,
+    );
 
     const browseButton = screen.getByRole('button', { name: /select download folder/i });
     browseButton.focus();

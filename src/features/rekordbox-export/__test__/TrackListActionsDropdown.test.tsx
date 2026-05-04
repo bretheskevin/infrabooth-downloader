@@ -80,10 +80,18 @@ describe('TrackListActionsDropdown', () => {
     vi.clearAllMocks();
     mockDetectionData = { found: true, version: '6', dbPath: '/fake', isRunning: false };
     hookReturn = {
-      phase: 'idle', trackStatuses: new Map(), totalTracks: 0,
-      result: null, errorCode: null, error: null,
-      selectedFolderId: undefined, setSelectedFolderId: mockSetSelectedFolderId,
-      openConfirm: mockOpenConfirm, startExport: mockStartExport, cancel: mockCancel, close: mockClose,
+      phase: 'idle',
+      trackStatuses: new Map(),
+      totalTracks: 0,
+      result: null,
+      errorCode: null,
+      error: null,
+      selectedFolderId: undefined,
+      setSelectedFolderId: mockSetSelectedFolderId,
+      openConfirm: mockOpenConfirm,
+      startExport: mockStartExport,
+      cancel: mockCancel,
+      close: mockClose,
     };
     mockTreeReturn = { data: undefined, isLoading: false, isError: false };
   });
@@ -314,9 +322,7 @@ describe('TrackListActionsDropdown', () => {
       const user = userEvent.setup();
       hookReturn.phase = 'confirm';
       mockTreeReturn = {
-        data: makeTree(
-          { id: infraboothFolderId, name: 'InfraBooth Downloader', attribute: FOLDER_ATTR, parentId: 'root', seq: 0 },
-        ),
+        data: makeTree({ id: infraboothFolderId, name: 'InfraBooth Downloader', attribute: FOLDER_ATTR, parentId: 'root', seq: 0 }),
         isLoading: false,
         isError: false,
       };

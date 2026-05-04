@@ -6,12 +6,7 @@ export interface AutoplaySliceActions {
   appendStationTracks: (items: PlaybackItem[]) => void;
 }
 
-type AutoplaySlice = StateCreator<
-  PlayerState & AutoplaySliceActions,
-  [],
-  [],
-  AutoplaySliceState & AutoplaySliceActions
->;
+type AutoplaySlice = StateCreator<PlayerState & AutoplaySliceActions, [], [], AutoplaySliceState & AutoplaySliceActions>;
 
 export const createAutoplaySlice: AutoplaySlice = (set, get) => ({
   stationQueueCount: 0,

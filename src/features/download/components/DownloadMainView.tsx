@@ -20,16 +20,7 @@ export function DownloadMainView({ flow, onDownloadTracks }: DownloadMainViewPro
   const isSignedIn = useIsSignedIn();
   const isDownloadEnabled = useIsDownloadEnabled();
 
-  const {
-    url,
-    setUrl,
-    validation,
-    isValidating,
-    media,
-    isLoading,
-    error,
-    handleDownload,
-  } = flow;
+  const { url, setUrl, validation, isValidating, media, isLoading, error, handleDownload } = flow;
 
   const [showSuccess, setShowSuccess] = useState(false);
   useEffect(() => {
@@ -41,13 +32,9 @@ export function DownloadMainView({ flow, onDownloadTracks }: DownloadMainViewPro
     setShowSuccess(false);
   }, [validation]);
 
-  const errorOrValidation = error
-    ? { valid: false as const, urlType: null, error: { ...error, hint: error.hint ?? null } }
-    : validation;
+  const errorOrValidation = error ? { valid: false as const, urlType: null, error: { ...error, hint: error.hint ?? null } } : validation;
 
-  const displayResult = validation?.valid
-    ? (showSuccess ? validation : null)
-    : errorOrValidation;
+  const displayResult = validation?.valid ? (showSuccess ? validation : null) : errorOrValidation;
 
   const handleSelectArtist = useCallback((artist: FollowedArtist) => {
     const hideReposts = useSettingsStore.getState().hideReposts;
@@ -69,48 +56,30 @@ export function DownloadMainView({ flow, onDownloadTracks }: DownloadMainViewPro
             isValidating={!isLoading && !media && isValidating}
             validationResult={isLoading || media ? null : displayResult}
           />
-          <ValidationFeedback
-            result={errorOrValidation}
-            isValidating={isValidating}
-            hideWhenMediaLoaded={media !== null || isLoading}
-          />
+          <ValidationFeedback result={errorOrValidation} isValidating={isValidating} hideWhenMediaLoaded={media !== null || isLoading} />
           {isLoading && (
-            <div
-              className="flex items-center gap-2 text-sm text-muted-foreground mt-4"
-              data-testid="playlist-loading"
-            >
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mt-4" data-testid="playlist-loading">
               <Spinner className="h-4 w-4" />
               {t('download.fetchingPlaylist')}
             </div>
           )}
           {media && !isLoading && isPlaylist(media) && (
-            <PlaylistPreview
-              playlist={media}
-              onDownload={handleDownload}
-              isDownloading={false}
-            />
+            <PlaylistPreview playlist={media} onDownload={handleDownload} isDownloading={false} />
           )}
-          {media && !isLoading && !isPlaylist(media) && (
-            <TrackPreview
-              track={media}
-              onDownload={handleDownload}
-              isDownloading={false}
-            />
-          )}
+          {media && !isLoading && !isPlaylist(media) && <TrackPreview track={media} onDownload={handleDownload} isDownloading={false} />}
         </>
       )}
       {isSignedIn && <NewTracksCarousel onSelectArtist={handleSelectArtist} />}
       {isSignedIn && <NewReleasesCarousel />}
       {isSignedIn ? (
-        <SelectionsSection
-          onSelectMix={handleSelectMix}
-          onDownloadMix={(mix) => onDownloadTracks(mix.tracks, mix.title)}
-        />
-      ) : !isDownloadEnabled && (
-        <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-          <p className="text-sm font-medium">{t('discover.signInTitle')}</p>
-          <p className="text-xs text-muted-foreground">{t('discover.signInDescription')}</p>
-        </div>
+        <SelectionsSection onSelectMix={handleSelectMix} onDownloadMix={(mix) => onDownloadTracks(mix.tracks, mix.title)} />
+      ) : (
+        !isDownloadEnabled && (
+          <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+            <p className="text-sm font-medium">{t('discover.signInTitle')}</p>
+            <p className="text-xs text-muted-foreground">{t('discover.signInDescription')}</p>
+          </div>
+        )
       )}
     </section>
   );

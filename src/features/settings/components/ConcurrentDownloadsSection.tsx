@@ -11,12 +11,8 @@ export function ConcurrentDownloadsSection() {
   return (
     <div className="space-y-3">
       <div>
-        <Label className="text-base font-medium">
-          {t('settings.concurrentDownloads')}
-        </Label>
-        <p className="text-sm text-muted-foreground">
-          {t('settings.concurrentDownloadsDescription')}
-        </p>
+        <Label className="text-base font-medium">{t('settings.concurrentDownloads')}</Label>
+        <p className="text-sm text-muted-foreground">{t('settings.concurrentDownloadsDescription')}</p>
       </div>
       <div className="flex items-center gap-3">
         <Slider

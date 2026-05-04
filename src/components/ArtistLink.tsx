@@ -18,11 +18,7 @@ export function ArtistLink({ userId, username, className }: ArtistLinkProps) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      className={cn('hover:underline hover:text-foreground text-left', className)}
-    >
+    <button type="button" onClick={handleClick} className={cn('hover:underline hover:text-foreground text-left', className)}>
       {username}
     </button>
   );

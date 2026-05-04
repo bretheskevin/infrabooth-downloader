@@ -14,17 +14,16 @@ interface DownloadCompletionState {
 }
 
 export function useDownloadCompletion(): DownloadCompletionState {
-  const { isComplete, completedCount, failedCount, cancelledCount, isCancelled, totalCount } =
-    useQueueStore(
-      useShallow((state) => ({
-        isComplete: state.isComplete,
-        completedCount: state.completedCount,
-        failedCount: state.failedCount,
-        cancelledCount: state.cancelledCount,
-        isCancelled: state.isCancelled,
-        totalCount: state.totalTracks,
-      }))
-    );
+  const { isComplete, completedCount, failedCount, cancelledCount, isCancelled, totalCount } = useQueueStore(
+    useShallow((state) => ({
+      isComplete: state.isComplete,
+      completedCount: state.completedCount,
+      failedCount: state.failedCount,
+      cancelledCount: state.cancelledCount,
+      isCancelled: state.isCancelled,
+      totalCount: state.totalTracks,
+    })),
+  );
 
   return {
     isComplete,

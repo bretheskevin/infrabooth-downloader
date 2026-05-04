@@ -1,12 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChangelogEntry } from './ChangelogEntry';
 import type { ChangelogSection } from '../utils/parseChangelog';
@@ -30,7 +23,12 @@ export function WhatsNewDialog({ open, onDismiss, version, date, sections }: Wha
   const formattedDate = date ? formatDate(date, i18n.language) : null;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => { if (!isOpen) onDismiss(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onDismiss();
+      }}
+    >
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
           <DialogTitle>{t('changelog.whatsNew', { version })}</DialogTitle>

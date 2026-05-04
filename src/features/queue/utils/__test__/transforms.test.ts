@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  trackInfoToQueueTrack,
-  playlistTracksToQueueTracks,
-  queueTrackToDownloadRequest,
-} from '../transforms';
+import { trackInfoToQueueTrack, playlistTracksToQueueTracks, queueTrackToDownloadRequest } from '../transforms';
 import type { TrackInfo } from '@/features/url-input';
 import type { Track } from '@/features/queue/types/track';
 
@@ -14,7 +10,9 @@ const mockTrack: TrackInfo = {
   artwork_url: 'https://example.com/art.jpg',
   duration: 180000,
   permalink_url: '',
-  waveform_url: null, downloadable: false, download_url: null,
+  waveform_url: null,
+  downloadable: false,
+  download_url: null,
 };
 
 const mockTrackNoArtwork: TrackInfo = {
@@ -24,7 +22,9 @@ const mockTrackNoArtwork: TrackInfo = {
   artwork_url: null,
   duration: 120000,
   permalink_url: '',
-  waveform_url: null, downloadable: false, download_url: null,
+  waveform_url: null,
+  downloadable: false,
+  download_url: null,
 };
 
 describe('trackInfoToQueueTrack', () => {

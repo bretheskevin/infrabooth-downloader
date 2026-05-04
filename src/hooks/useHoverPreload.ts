@@ -5,9 +5,7 @@ import { useCallback, useRef } from 'react';
  * Takes a callback that starts the preload and returns a cancel function.
  * Returns stable `onHoverStart` / `onHoverEnd` handlers for TrackRow.
  */
-export function useHoverPreload(
-  onHover: (() => (() => void) | undefined) | undefined,
-) {
+export function useHoverPreload(onHover: (() => (() => void) | undefined) | undefined) {
   const cancelRef = useRef<(() => void) | null>(null);
 
   const onHoverStart = useCallback(() => {

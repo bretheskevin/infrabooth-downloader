@@ -16,25 +16,15 @@ export function CrossfadeSection() {
           <Label htmlFor="crossfade" className="text-base font-medium">
             {t('settings.crossfade')}
           </Label>
-          <p className="text-sm text-muted-foreground">
-            {t('settings.crossfadeDescription')}
-          </p>
+          <p className="text-sm text-muted-foreground">{t('settings.crossfadeDescription')}</p>
         </div>
-        <Switch
-          id="crossfade"
-          checked={crossfadeEnabled}
-          onCheckedChange={useSettingsStore.getState().setCrossfadeEnabled}
-        />
+        <Switch id="crossfade" checked={crossfadeEnabled} onCheckedChange={useSettingsStore.getState().setCrossfadeEnabled} />
       </div>
       {crossfadeEnabled && (
         <div className="space-y-2 pl-4">
           <div className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">
-              {t('settings.crossfadeDuration')}
-            </span>
-            <span className="text-sm font-mono w-6 text-right">
-              {t('settings.crossfadeSeconds', { count: crossfadeDuration })}
-            </span>
+            <span className="text-sm text-muted-foreground">{t('settings.crossfadeDuration')}</span>
+            <span className="text-sm font-mono w-6 text-right">{t('settings.crossfadeSeconds', { count: crossfadeDuration })}</span>
           </div>
           <Slider
             aria-label={t('settings.crossfadeDuration')}
@@ -42,9 +32,7 @@ export function CrossfadeSection() {
             max={12}
             step={1}
             value={[crossfadeDuration]}
-            onValueChange={([v]) =>
-              v !== undefined && useSettingsStore.getState().setCrossfadeDuration(v)
-            }
+            onValueChange={([v]) => v !== undefined && useSettingsStore.getState().setCrossfadeDuration(v)}
           />
         </div>
       )}

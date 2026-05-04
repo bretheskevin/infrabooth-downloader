@@ -20,7 +20,7 @@ function renderUrlInput(props: React.ComponentProps<typeof UrlInput>) {
   return render(
     <TooltipProvider>
       <UrlInput {...props} />
-    </TooltipProvider>
+    </TooltipProvider>,
   );
 }
 

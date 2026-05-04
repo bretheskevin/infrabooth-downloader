@@ -25,7 +25,7 @@ export const usePlayerState = () =>
       positionMs: s.positionMs,
       durationMs: s.durationMs,
       volume: s.volume,
-    }))
+    })),
   );
 
 export const usePlayerUI = () =>
@@ -33,7 +33,7 @@ export const usePlayerUI = () =>
     useShallow((s) => ({
       isExpanded: s.isExpanded,
       isQueueOpen: s.isQueueOpen,
-    }))
+    })),
   );
 
 export type { PlayerState };

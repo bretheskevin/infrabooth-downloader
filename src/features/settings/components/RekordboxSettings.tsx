@@ -16,9 +16,21 @@ import { useFolderSelection } from '@/hooks';
 import { useRekordboxDetection } from '@/features/rekordbox-export/hooks/useRekordboxDetection';
 
 const STATUS_BADGE_CONFIG = {
-  running: { icon: AlertCircle, labelKey: 'settings.rekordboxRunningBadge', className: 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400' },
-  found: { icon: CheckCircle2, labelKey: 'settings.rekordboxFound', className: 'border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400' },
-  notFound: { icon: AlertCircle, labelKey: 'settings.rekordboxNotFoundBadge', className: 'border-destructive/20 bg-destructive/10 text-destructive' },
+  running: {
+    icon: AlertCircle,
+    labelKey: 'settings.rekordboxRunningBadge',
+    className: 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400',
+  },
+  found: {
+    icon: CheckCircle2,
+    labelKey: 'settings.rekordboxFound',
+    className: 'border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400',
+  },
+  notFound: {
+    icon: AlertCircle,
+    labelKey: 'settings.rekordboxNotFoundBadge',
+    className: 'border-destructive/20 bg-destructive/10 text-destructive',
+  },
 } as const;
 
 function StatusBadge({ variant }: { variant: keyof typeof STATUS_BADGE_CONFIG }) {
@@ -59,9 +71,11 @@ export function RekordboxSettings() {
 
   function handleQuitRekordbox() {
     setIsQuitting(true);
-    void api.quitRekordbox().then(() => setTimeout(() => {
-      void refetch().finally(() => setIsQuitting(false));
-    }, 1500));
+    void api.quitRekordbox().then(() =>
+      setTimeout(() => {
+        void refetch().finally(() => setIsQuitting(false));
+      }, 1500),
+    );
   }
 
   function handleClearOverride() {
@@ -89,9 +103,7 @@ export function RekordboxSettings() {
         </div>
       )}
 
-      {isLoading && (
-        <p className="text-sm text-muted-foreground">{t('settings.rekordboxLoading')}</p>
-      )}
+      {isLoading && <p className="text-sm text-muted-foreground">{t('settings.rekordboxLoading')}</p>}
 
       {isError && (
         <div className="flex items-center gap-2">
@@ -109,9 +121,7 @@ export function RekordboxSettings() {
           <div className="space-y-3">
             <div className="space-y-1">
               <Label className="text-base font-medium">{t('settings.rekordboxManualLabel')}</Label>
-              {data && !data.found && (
-                <p className="text-sm text-muted-foreground">{t('settings.rekordboxNotFound')}</p>
-              )}
+              {data && !data.found && <p className="text-sm text-muted-foreground">{t('settings.rekordboxNotFound')}</p>}
             </div>
             <div className="flex items-center gap-2">
               <Tooltip>
@@ -123,26 +133,15 @@ export function RekordboxSettings() {
                     </span>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent className="max-w-sm break-all">
-                  {rekordboxPathOverride || t('settings.notSet')}
-                </TooltipContent>
+                <TooltipContent className="max-w-sm break-all">{rekordboxPathOverride || t('settings.notSet')}</TooltipContent>
               </Tooltip>
-              <Button
-                variant="outline"
-                onClick={() => void selectFolder()}
-                aria-label={t('settings.rekordboxSelectDirectory')}
-              >
+              <Button variant="outline" onClick={() => void selectFolder()} aria-label={t('settings.rekordboxSelectDirectory')}>
                 {t('settings.browse')}
               </Button>
               {rekordboxPathOverride && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleClearOverride}
-                      aria-label={t('settings.rekordboxClearOverride')}
-                    >
+                    <Button variant="ghost" size="icon" onClick={handleClearOverride} aria-label={t('settings.rekordboxClearOverride')}>
                       <X className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>

@@ -21,10 +21,7 @@ export function MessagesPage() {
         <h2 className="text-lg font-semibold">{t('directMessages.title')}</h2>
       </div>
 
-      <ConversationsList
-        containerClassName="max-h-none flex-1 min-h-0 overflow-y-auto"
-        onClose={noop}
-      />
+      <ConversationsList containerClassName="max-h-none flex-1 min-h-0 overflow-y-auto" onClose={noop} />
     </div>
   );
 }

@@ -26,9 +26,7 @@ export function useOverallProgressStats(): OverallProgressStats {
     }
   }
 
-  const hasActiveTrack = tracks.some(
-    (track) => track.status === 'downloading' || track.status === 'converting'
-  );
+  const hasActiveTrack = tracks.some((track) => track.status === 'downloading' || track.status === 'converting');
   const hasPendingTrack = tracks.some((track) => track.status === 'pending');
 
   const percentage = totalCount > 0 ? Math.floor((completedCount / totalCount) * 100) : 0;

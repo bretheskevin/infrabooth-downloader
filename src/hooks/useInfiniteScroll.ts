@@ -7,12 +7,7 @@ interface UseInfiniteScrollOptions {
   threshold?: number;
 }
 
-export function useInfiniteScroll({
-  hasNextPage,
-  isFetchingNextPage,
-  fetchNextPage,
-  threshold = 0.1,
-}: UseInfiniteScrollOptions) {
+export function useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage, threshold = 0.1 }: UseInfiniteScrollOptions) {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

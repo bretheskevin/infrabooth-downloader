@@ -60,15 +60,5 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
     return statusColorClasses[status];
   };
 
-  return (
-    <span
-      className={cn(
-        'text-xs font-medium',
-        getColorClass(),
-        className
-      )}
-    >
-      {getStatusText()}
-    </span>
-  );
+  return <span className={cn('text-xs font-medium', getColorClass(), className)}>{getStatusText()}</span>;
 }

@@ -2,9 +2,7 @@ import type { StateCreator } from 'zustand';
 import { logger } from '@/lib/logger';
 import type { QueueState, QueueProgressSlice } from './types';
 
-export const createQueueProgressSlice: StateCreator<QueueState, [], [], QueueProgressSlice> = (
-  set
-) => ({
+export const createQueueProgressSlice: StateCreator<QueueState, [], [], QueueProgressSlice> = (set) => ({
   isComplete: false,
   isCancelling: false,
   isCancelled: false,
@@ -23,9 +21,7 @@ export const createQueueProgressSlice: StateCreator<QueueState, [], [], QueuePro
   },
 
   setQueueComplete: (result) => {
-    void logger.info(
-      `[queueStore] Queue complete: ${result.completed} completed, ${result.failed} failed`
-    );
+    void logger.info(`[queueStore] Queue complete: ${result.completed} completed, ${result.failed} failed`);
     set({
       isProcessing: false,
       isComplete: true,
@@ -37,9 +33,7 @@ export const createQueueProgressSlice: StateCreator<QueueState, [], [], QueuePro
   },
 
   setQueueCancelled: (result) => {
-    void logger.info(
-      `[queueStore] Queue cancelled: ${result.completed} completed, ${result.cancelled} cancelled`
-    );
+    void logger.info(`[queueStore] Queue cancelled: ${result.completed} completed, ${result.cancelled} cancelled`);
     set({
       isProcessing: false,
       isComplete: true,

@@ -49,9 +49,7 @@ vi.mock('@/features/player/hooks/usePlayContext', () => ({
 
 vi.mock('@/features/player/store', () => ({
   usePlayerStore: (selector: (state: { currentTrack: { trackId: number } | null }) => unknown) =>
-    selector
-      ? selector({ currentTrack: mockCurrentTrackId != null ? { trackId: mockCurrentTrackId } : null })
-      : undefined,
+    selector ? selector({ currentTrack: mockCurrentTrackId != null ? { trackId: mockCurrentTrackId } : null }) : undefined,
 }));
 
 vi.mock('@/hooks/useDownloadSelected', () => ({
@@ -72,14 +70,15 @@ vi.mock('@/hooks/useOpenDownloadFolder', () => ({
   useOpenDownloadFolder: () => vi.fn(),
 }));
 
-const createTrack = (id: number) => ({
-  id,
-  title: `Track ${id}`,
-  user: { id: 0, username: 'Artist', avatar_url: null },
-  duration: 180000,
-  artwork_url: null,
-  permalink_url: `https://soundcloud.com/artist/track-${id}`,
-}) as TrackInfo;
+const createTrack = (id: number) =>
+  ({
+    id,
+    title: `Track ${id}`,
+    user: { id: 0, username: 'Artist', avatar_url: null },
+    duration: 180000,
+    artwork_url: null,
+    permalink_url: `https://soundcloud.com/artist/track-${id}`,
+  }) as TrackInfo;
 
 describe('useTrackListState', () => {
   const baseConfig = {
@@ -102,17 +101,13 @@ describe('useTrackListState', () => {
 
   it('shows search when tracks at or above threshold', () => {
     const tracks = Array.from({ length: 5 }, (_, i) => createTrack(i));
-    const { result } = renderHook(() =>
-      useTrackListState({ ...baseConfig, tracks }),
-    );
+    const { result } = renderHook(() => useTrackListState({ ...baseConfig, tracks }));
     expect(result.current.showSearch).toBe(true);
   });
 
   it('hides search when searchThreshold is omitted', () => {
     const tracks = Array.from({ length: 10 }, (_, i) => createTrack(i));
-    const { result } = renderHook(() =>
-      useTrackListState({ ...baseConfig, tracks, searchThreshold: undefined }),
-    );
+    const { result } = renderHook(() => useTrackListState({ ...baseConfig, tracks, searchThreshold: undefined }));
     expect(result.current.showSearch).toBe(false);
   });
 
@@ -127,9 +122,7 @@ describe('useTrackListState', () => {
   });
 
   it('returns empty displayTracks when tracks is undefined', () => {
-    const { result } = renderHook(() =>
-      useTrackListState({ ...baseConfig, tracks: undefined }),
-    );
+    const { result } = renderHook(() => useTrackListState({ ...baseConfig, tracks: undefined }));
     expect(result.current.displayTracks).toHaveLength(0);
     expect(result.current.showSearch).toBe(false);
   });
@@ -148,10 +141,9 @@ describe('useTrackListState', () => {
 
     it('does not call syncQueue when streaming ends without playTrack called', () => {
       mockCurrentTrackId = 1;
-      const { rerender } = renderHook(
-        ({ isStreaming }) => useTrackListState({ ...baseConfig, isStreaming }),
-        { initialProps: { isStreaming: true } },
-      );
+      const { rerender } = renderHook(({ isStreaming }) => useTrackListState({ ...baseConfig, isStreaming }), {
+        initialProps: { isStreaming: true },
+      });
 
       rerender({ isStreaming: false });
 
@@ -160,10 +152,9 @@ describe('useTrackListState', () => {
 
     it('calls syncQueue when streaming ends after playTrack was called', () => {
       mockCurrentTrackId = 1;
-      const { result, rerender } = renderHook(
-        ({ isStreaming }) => useTrackListState({ ...baseConfig, isStreaming }),
-        { initialProps: { isStreaming: false } },
-      );
+      const { result, rerender } = renderHook(({ isStreaming }) => useTrackListState({ ...baseConfig, isStreaming }), {
+        initialProps: { isStreaming: false },
+      });
 
       act(() => result.current.playTrack(0));
       rerender({ isStreaming: true });

@@ -44,9 +44,16 @@ export function ConversationPage() {
     setInputValue('');
   };
 
-  const displayUser = otherUser?.username ? otherUser : conversation
-    ? { id: conversation.otherUserId, username: conversation.username, avatar_url: conversation.avatarUrl, permalink_url: conversation.permalinkUrl }
-    : null;
+  const displayUser = otherUser?.username
+    ? otherUser
+    : conversation
+      ? {
+          id: conversation.otherUserId,
+          username: conversation.username,
+          avatar_url: conversation.avatarUrl,
+          permalink_url: conversation.permalinkUrl,
+        }
+      : null;
 
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(displayUser?.permalink_url ?? '');
 
@@ -93,9 +100,7 @@ export function ConversationPage() {
           <Folder className="h-3 w-3 shrink-0" />
           <span>{t('directMessages.savingTo')}</span>
           <span className="truncate max-w-[200px] text-foreground/70 underline">{folderName}</span>
-          {isCustomFolder && (
-            <span className="text-muted-foreground/60">({t('library.detail.customFolder')})</span>
-          )}
+          {isCustomFolder && <span className="text-muted-foreground/60">({t('library.detail.customFolder')})</span>}
           <div className="flex items-center gap-2 ml-auto shrink-0">
             <Button
               variant="ghost"
@@ -168,12 +173,7 @@ export function ConversationPage() {
             className="flex-1"
             autoComplete="off"
           />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={!inputValue.trim() || isPending}
-            aria-label={t('directMessages.send')}
-          >
+          <Button type="submit" size="icon" disabled={!inputValue.trim() || isPending} aria-label={t('directMessages.send')}>
             <SendHorizonal className="h-4 w-4" />
           </Button>
         </form>

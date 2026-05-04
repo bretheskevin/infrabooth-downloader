@@ -7,7 +7,7 @@ export interface FetchError {
 }
 
 export function parseMediaError(err: unknown, t: TFunction): FetchError {
-  const message = typeof err === 'string' ? err : (err as Error)?.message ?? '';
+  const message = typeof err === 'string' ? err : ((err as Error)?.message ?? '');
 
   if (message.includes('Rate limited') || message.includes('429') || message.includes('rate limit')) {
     return {

@@ -7,7 +7,7 @@ describe('PlayOverlay', () => {
     render(
       <PlayOverlay onPlay={vi.fn()}>
         <img alt="artwork" />
-      </PlayOverlay>
+      </PlayOverlay>,
     );
     expect(screen.getByAltText('artwork')).toBeInTheDocument();
   });
@@ -16,7 +16,7 @@ describe('PlayOverlay', () => {
     const { container } = render(
       <PlayOverlay onPlay={vi.fn()}>
         <div>art</div>
-      </PlayOverlay>
+      </PlayOverlay>,
     );
     fireEvent.mouseEnter(container.firstChild!);
     expect(screen.getByTestId('play-overlay-icon')).toBeInTheDocument();
@@ -27,7 +27,7 @@ describe('PlayOverlay', () => {
     const { container } = render(
       <PlayOverlay onPlay={onPlay}>
         <div>art</div>
-      </PlayOverlay>
+      </PlayOverlay>,
     );
     fireEvent.mouseEnter(container.firstChild!);
     fireEvent.click(screen.getByTestId('play-overlay-icon'));

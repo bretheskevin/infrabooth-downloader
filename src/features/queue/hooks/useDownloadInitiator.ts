@@ -24,13 +24,9 @@ export function useDownloadInitiator() {
         throw new Error('No output directory configured');
       }
 
-      const queueTracks = isPlaylist(mediaInfo)
-        ? playlistTracksToQueueTracks(mediaInfo.tracks)
-        : [trackInfoToQueueTrack(mediaInfo)];
+      const queueTracks = isPlaylist(mediaInfo) ? playlistTracksToQueueTracks(mediaInfo.tracks) : [trackInfoToQueueTrack(mediaInfo)];
 
-      void logger.info(
-        `[useDownloadInitiator] Initiating download for ${queueTracks.length} tracks`
-      );
+      void logger.info(`[useDownloadInitiator] Initiating download for ${queueTracks.length} tracks`);
 
       const albumName = isPlaylist(mediaInfo) ? mediaInfo.title : undefined;
 
@@ -50,14 +46,7 @@ export function useDownloadInitiator() {
         throw error;
       }
     },
-    [
-      enqueueTracks,
-      setInitializing,
-      setOutputDir,
-      defaultDownloadPath,
-      maxConcurrentDownloads,
-      preservePlaylistOrder,
-    ]
+    [enqueueTracks, setInitializing, setOutputDir, defaultDownloadPath, maxConcurrentDownloads, preservePlaylistOrder],
   );
 
   return { initiateDownload };

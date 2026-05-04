@@ -2,10 +2,7 @@ import type { StateCreator } from 'zustand';
 import { logger } from '@/lib/logger';
 import type { QueueState, QueueRetrySlice } from './types';
 
-export const createQueueRetrySlice: StateCreator<QueueState, [], [], QueueRetrySlice> = (
-  set,
-  get
-) => ({
+export const createQueueRetrySlice: StateCreator<QueueState, [], [], QueueRetrySlice> = (set, get) => ({
   isRetrying: false,
 
   prepareRetryFailed: () => {
@@ -20,11 +17,7 @@ export const createQueueRetrySlice: StateCreator<QueueState, [], [], QueueRetryS
     void logger.info(`[queueStore] Preparing retry for ${failedTracks.length} failed tracks`);
 
     set((s) => ({
-      tracks: s.tracks.map((track) =>
-        track.status === 'failed'
-          ? { ...track, status: 'pending' as const, error: undefined }
-          : track
-      ),
+      tracks: s.tracks.map((track) => (track.status === 'failed' ? { ...track, status: 'pending' as const, error: undefined } : track)),
       isComplete: false,
       isCancelled: false,
       failedCount: 0,
@@ -46,9 +39,7 @@ export const createQueueRetrySlice: StateCreator<QueueState, [], [], QueueRetryS
     void logger.info(`[queueStore] Preparing retry for track: ${track.title}`);
 
     set((s) => ({
-      tracks: s.tracks.map((t) =>
-        t.id === trackId ? { ...t, status: 'pending' as const, error: undefined } : t
-      ),
+      tracks: s.tracks.map((t) => (t.id === trackId ? { ...t, status: 'pending' as const, error: undefined } : t)),
       isComplete: false,
       isCancelled: false,
       failedCount: Math.max(0, s.failedCount - 1),

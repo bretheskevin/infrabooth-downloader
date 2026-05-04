@@ -11,9 +11,7 @@ interface SeekBarProps {
 }
 
 export function SeekBar({ waveformUrl, className }: SeekBarProps) {
-  const { positionMs, durationMs } = usePlayerStore(
-    useShallow((s) => ({ positionMs: s.positionMs, durationMs: s.durationMs }))
-  );
+  const { positionMs, durationMs } = usePlayerStore(useShallow((s) => ({ positionMs: s.positionMs, durationMs: s.durationMs })));
 
   const { samples, isLoading } = useWaveform(waveformUrl ?? null);
 
@@ -36,12 +34,7 @@ export function SeekBar({ waveformUrl, className }: SeekBarProps) {
 
   return (
     <div className={cn('relative h-12 w-full', className)}>
-      <Waveform
-        samples={samples}
-        progress={progress}
-        onSeek={handleSeek}
-        className="h-full"
-      />
+      <Waveform samples={samples} progress={progress} onSeek={handleSeek} className="h-full" />
     </div>
   );
 }

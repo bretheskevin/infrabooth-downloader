@@ -22,9 +22,7 @@ export function PlaylistListRow({ playlist, onClick }: PlaylistListRowProps) {
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{playlist.title}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {t('artistProfile.playlistTrackCount', { count: playlist.track_count })}
-        </p>
+        <p className="truncate text-xs text-muted-foreground">{t('artistProfile.playlistTrackCount', { count: playlist.track_count })}</p>
       </div>
     </button>
   );

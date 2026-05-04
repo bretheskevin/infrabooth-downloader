@@ -30,7 +30,11 @@ describe('SignInButton', () => {
   });
 
   it('should render check browser login button', () => {
-    render(<TooltipProvider><SignInButton /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <SignInButton />
+      </TooltipProvider>,
+    );
 
     expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
   });
@@ -40,7 +44,7 @@ describe('SignInButton', () => {
     render(
       <TooltipProvider>
         <SignInButton />
-      </TooltipProvider>
+      </TooltipProvider>,
     );
 
     const button = screen.getByRole('button', { name: /Check browser login/i });
@@ -54,10 +58,17 @@ describe('SignInButton', () => {
     // Make checkAuth hang so we can observe loading state
     let resolveCheck: (value: boolean) => void;
     vi.mocked(auth.checkAuth).mockImplementation(
-      () => new Promise<boolean>((resolve) => { resolveCheck = resolve; })
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveCheck = resolve;
+        }),
     );
 
-    render(<TooltipProvider><SignInButton /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <SignInButton />
+      </TooltipProvider>,
+    );
 
     const button = screen.getByRole('button', { name: /Check browser login/i });
 
@@ -77,7 +88,11 @@ describe('SignInButton', () => {
   it('should call checkAuth on click', async () => {
     vi.mocked(auth.checkAuth).mockResolvedValue(true);
 
-    render(<TooltipProvider><SignInButton /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <SignInButton />
+      </TooltipProvider>,
+    );
 
     const button = screen.getByRole('button', { name: /Check browser login/i });
 
@@ -91,10 +106,17 @@ describe('SignInButton', () => {
   it('should disable button while checking', async () => {
     let resolveCheck: (value: boolean) => void;
     vi.mocked(auth.checkAuth).mockImplementation(
-      () => new Promise<boolean>((resolve) => { resolveCheck = resolve; })
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveCheck = resolve;
+        }),
     );
 
-    render(<TooltipProvider><SignInButton /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <SignInButton />
+      </TooltipProvider>,
+    );
 
     const button = screen.getByRole('button', { name: /Check browser login/i });
 
@@ -113,7 +135,11 @@ describe('SignInButton', () => {
   it('should re-enable button after check completes successfully', async () => {
     vi.mocked(auth.checkAuth).mockResolvedValue(true);
 
-    render(<TooltipProvider><SignInButton /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <SignInButton />
+      </TooltipProvider>,
+    );
 
     const button = screen.getByRole('button', { name: /Check browser login/i });
 
@@ -129,7 +155,11 @@ describe('SignInButton', () => {
   it('should re-enable button after check fails', async () => {
     vi.mocked(auth.checkAuth).mockRejectedValue(new Error('Failed'));
 
-    render(<TooltipProvider><SignInButton /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <SignInButton />
+      </TooltipProvider>,
+    );
 
     const button = screen.getByRole('button', { name: /Check browser login/i });
 
@@ -145,10 +175,17 @@ describe('SignInButton', () => {
   it('should prevent double-clicks when checking', async () => {
     let resolveCheck: (value: boolean) => void;
     vi.mocked(auth.checkAuth).mockImplementation(
-      () => new Promise<boolean>((resolve) => { resolveCheck = resolve; })
+      () =>
+        new Promise<boolean>((resolve) => {
+          resolveCheck = resolve;
+        }),
     );
 
-    render(<TooltipProvider><SignInButton /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <SignInButton />
+      </TooltipProvider>,
+    );
 
     const button = screen.getByRole('button', { name: /Check browser login/i });
 
@@ -171,7 +208,11 @@ describe('SignInButton', () => {
   });
 
   it('should be keyboard accessible', () => {
-    render(<TooltipProvider><SignInButton /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <SignInButton />
+      </TooltipProvider>,
+    );
 
     const button = screen.getByRole('button', { name: /Check browser login/i });
 

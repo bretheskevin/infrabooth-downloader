@@ -17,8 +17,7 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  return ({ children }: { children: ReactNode }) =>
-    createElement(QueryClientProvider, { client: queryClient }, children);
+  return ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 }
 
 const mockNodes: RekordboxTreeNode[] = [

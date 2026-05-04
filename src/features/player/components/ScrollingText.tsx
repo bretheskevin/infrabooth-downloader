@@ -21,10 +21,7 @@ export function ScrollingText({ text, className }: { text: string; className?: s
 
   return (
     <div ref={containerRef} className={cn('overflow-hidden whitespace-nowrap', className)}>
-      <span
-        ref={textRef}
-        className={cn('inline-flex gap-8', shouldScroll && 'animate-marquee')}
-      >
+      <span ref={textRef} className={cn('inline-flex gap-8', shouldScroll && 'animate-marquee')}>
         <span>{text}</span>
         {shouldScroll && <span aria-hidden="true">{text}</span>}
       </span>

@@ -9,10 +9,7 @@ export function UnavailableTrackTooltip({ children }: UnavailableTrackTooltipPro
   const { t } = useTranslation();
 
   return (
-    <StatusTooltip
-      descriptionId="unavailable-track-description"
-      mainText={t('errors.trackUnavailableDetail')}
-    >
+    <StatusTooltip descriptionId="unavailable-track-description" mainText={t('errors.trackUnavailableDetail')}>
       {children}
     </StatusTooltip>
   );

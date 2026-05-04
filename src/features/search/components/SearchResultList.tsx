@@ -26,9 +26,7 @@ export function SearchResultList({
 }: SearchResultListProps) {
   const { t } = useTranslation();
 
-  const fallbackErrorMessage = isUrlMode
-    ? t('search.errorResolve')
-    : t('search.errorSearch');
+  const fallbackErrorMessage = isUrlMode ? t('search.errorResolve') : t('search.errorSearch');
 
   return (
     <SearchListShell
@@ -44,12 +42,7 @@ export function SearchResultList({
       fetchNextPage={fetchNextPage}
     >
       {results.map((track, index) => (
-        <InteractiveTrackRow
-          key={track.id}
-          track={track}
-          index={index}
-          className="border-b border-border/50 last:border-b-0"
-        />
+        <InteractiveTrackRow key={track.id} track={track} index={index} className="border-b border-border/50 last:border-b-0" />
       ))}
     </SearchListShell>
   );

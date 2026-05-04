@@ -43,11 +43,7 @@ export function PlayOverlay({ onPlay, onPause, isActive, isPlaying, forceShow, c
   };
 
   return (
-    <div
-      className={cn('relative group', className)}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
+    <div className={cn('relative group', className)} onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
       {children}
       {(isHovered || forceShow || showOverlay) && (
         <div
@@ -57,16 +53,12 @@ export function PlayOverlay({ onPlay, onPause, isActive, isPlaying, forceShow, c
           aria-label={isPlaying ? t('player.pause') : t('player.play')}
           className={cn(
             'absolute inset-0 flex items-center justify-center rounded-md bg-black/40 transition-opacity duration-150 cursor-pointer',
-            (isHovered || forceShow) ? 'opacity-100' : 'opacity-50',
+            isHovered || forceShow ? 'opacity-100' : 'opacity-50',
           )}
           onClick={handleClick}
           onKeyDown={handleKeyDown}
         >
-          {isPlaying ? (
-            <Pause className="h-4 w-4 text-white fill-white" />
-          ) : (
-            <Play className="h-4 w-4 text-white fill-white" />
-          )}
+          {isPlaying ? <Pause className="h-4 w-4 text-white fill-white" /> : <Play className="h-4 w-4 text-white fill-white" />}
         </div>
       )}
     </div>

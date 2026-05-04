@@ -1,13 +1,6 @@
 import type { AppError } from './errors';
 
-export type TrackStatus =
-  | 'pending'
-  | 'downloading'
-  | 'converting'
-  | 'complete'
-  | 'failed'
-  | 'rate_limited'
-  | 'skipped';
+export type TrackStatus = 'pending' | 'downloading' | 'converting' | 'complete' | 'failed' | 'rate_limited' | 'skipped';
 
 export interface Track {
   id: string;

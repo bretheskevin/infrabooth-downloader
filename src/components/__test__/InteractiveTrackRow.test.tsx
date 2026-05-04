@@ -61,10 +61,7 @@ type ProviderProps = typeof defaultProviderProps & {
   animate?: boolean;
 };
 
-function renderWithProvider(
-  ui: React.ReactElement,
-  providerProps: ProviderProps = defaultProviderProps,
-) {
+function renderWithProvider(ui: React.ReactElement, providerProps: ProviderProps = defaultProviderProps) {
   return render(
     <TooltipProvider>
       <TrackListProvider {...providerProps}>{ui}</TrackListProvider>
@@ -156,21 +153,15 @@ describe('InteractiveTrackRow', () => {
   });
 
   it('shows completed state for filesystem-downloaded tracks', () => {
-    const { container } = renderWithProvider(
-      <InteractiveTrackRow track={mockTrack} index={0} />,
-      { ...defaultProviderProps, downloadedIds: new Set([123]) },
-    );
+    const { container } = renderWithProvider(<InteractiveTrackRow track={mockTrack} index={0} />, {
+      ...defaultProviderProps,
+      downloadedIds: new Set([123]),
+    });
     expect(container.querySelector('.text-green-600')).toBeInTheDocument();
   });
 
   it('renders subtitleSlot when provided', () => {
-    renderWithProvider(
-      <InteractiveTrackRow
-        track={mockTrack}
-        index={0}
-        subtitleSlot={<span data-testid="badge">Repost</span>}
-      />,
-    );
+    renderWithProvider(<InteractiveTrackRow track={mockTrack} index={0} subtitleSlot={<span data-testid="badge">Repost</span>} />);
     expect(screen.getByTestId('badge')).toBeInTheDocument();
   });
 });

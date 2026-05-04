@@ -42,26 +42,14 @@ export function useTrackListState(config: UseTrackListStateConfig) {
     resetLocalPath();
   }, [config.resetKey, setSearchQuery, resetLocalPath]);
 
-  const {
-    downloadTrack,
-    downloadedIds,
-    downloadedCount,
-  } = useTrackDownloadState({
+  const { downloadTrack, downloadedIds, downloadedCount } = useTrackDownloadState({
     tracks: stableTracks.length > 0 ? stableTracks : undefined,
     downloadPath: downloadPath ?? '',
     enabled: !config.isLoading,
   });
 
-  const {
-    selectedIds,
-    toggleTrack,
-    toggleAll,
-    clearSelection,
-    selectedCount,
-    isAllSelected,
-    selectedTracks,
-    selectableCount,
-  } = useTrackSelection(filteredTracks, downloadedIds);
+  const { selectedIds, toggleTrack, toggleAll, clearSelection, selectedCount, isAllSelected, selectedTracks, selectableCount } =
+    useTrackSelection(filteredTracks, downloadedIds);
 
   const { playTrack: rawPlayTrack, syncQueue, playShuffled: rawPlayShuffled } = usePlayContext(filteredTracks);
 
@@ -99,13 +87,7 @@ export function useTrackListState(config: UseTrackListStateConfig) {
     }
   }, [stableTracks, onDownloadTracks, config.title, downloadPath]);
 
-  const handleDownloadSelected = useDownloadSelected(
-    selectedTracks,
-    clearSelection,
-    onDownloadTracks,
-    config.title,
-    downloadPath,
-  );
+  const handleDownloadSelected = useDownloadSelected(selectedTracks, clearSelection, onDownloadTracks, config.title, downloadPath);
 
   const prevCountRef = useRef(0);
   const shouldAnimate = prevCountRef.current === 0 && stableTracks.length > 0;

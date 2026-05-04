@@ -30,7 +30,12 @@ export function RemoveFromPlaylistDialog({
   const { t } = useTranslation();
 
   return (
-    <AlertDialog open={open} onOpenChange={(isOpen) => { if (!isOpen && !isRemoving) onCancel(); }}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(isOpen) => {
+        if (!isOpen && !isRemoving) onCancel();
+      }}
+    >
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('trackMenu.removeFromPlaylistTitle')}</AlertDialogTitle>
@@ -46,7 +51,11 @@ export function RemoveFromPlaylistDialog({
           <AlertDialogCancel onClick={onCancel} disabled={isRemoving}>
             {t('trackMenu.removeFromPlaylistCancel')}
           </AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm} disabled={isRemoving} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <AlertDialogAction
+            onClick={onConfirm}
+            disabled={isRemoving}
+            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+          >
             {isRemoving ? t('trackMenu.removing') : t('trackMenu.removeFromPlaylistConfirm')}
           </AlertDialogAction>
         </AlertDialogFooter>

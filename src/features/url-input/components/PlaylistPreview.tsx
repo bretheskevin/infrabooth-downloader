@@ -15,11 +15,7 @@ interface PlaylistPreviewProps {
   isDownloading?: boolean;
 }
 
-export function PlaylistPreview({
-  playlist,
-  onDownload,
-  isDownloading = false,
-}: PlaylistPreviewProps) {
+export function PlaylistPreview({ playlist, onDownload, isDownloading = false }: PlaylistPreviewProps) {
   const { t } = useTranslation();
   const downloadPath = useSettingsStore((s) => s.downloadPath);
   const [existingCount, setExistingCount] = useState(0);
@@ -37,33 +33,26 @@ export function PlaylistPreview({
       .catch(() => setExistingCount(0));
   }, [downloadPath, playlist.id, playlist.tracks]);
 
-  const artworkUrl = getArtworkUrl(
-    playlist.artwork_url ?? playlist.tracks[0]?.artwork_url ?? null
-  );
+  const artworkUrl = getArtworkUrl(playlist.artwork_url ?? playlist.tracks[0]?.artwork_url ?? null);
 
   return (
     <Card className="mt-6 card-hover border-border/50 bg-card/80 backdrop-blur-sm" data-testid="playlist-preview">
       <CardContent className="p-5 space-y-5">
         <div className="flex items-center gap-5">
-          <ArtworkThumbnail
-            src={artworkUrl}
-            alt={playlist.title}
-            testIdPrefix="playlist"
-            className="shadow-elevated"
-          />
+          <ArtworkThumbnail src={artworkUrl} alt={playlist.title} testIdPrefix="playlist" className="shadow-elevated" />
 
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg truncate" data-testid="playlist-title">
               {playlist.title}
             </h3>
-            <p
-              className="text-sm text-muted-foreground truncate mt-0.5"
-              data-testid="playlist-creator"
-            >
+            <p className="text-sm text-muted-foreground truncate mt-0.5" data-testid="playlist-creator">
               {playlist.user.username}
             </p>
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs font-medium px-2 py-1 rounded-md bg-secondary text-secondary-foreground" data-testid="playlist-track-count">
+              <span
+                className="text-xs font-medium px-2 py-1 rounded-md bg-secondary text-secondary-foreground"
+                data-testid="playlist-track-count"
+              >
                 {t('download.trackCount', { count: playlist.track_count })}
               </span>
               {existingCount > 0 && (

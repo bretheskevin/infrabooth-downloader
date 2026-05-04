@@ -3,13 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Search, SendHorizonal } from 'lucide-react';
 import { toast } from 'sonner';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -27,13 +21,7 @@ function TrackPreview({ track }: { track: ShareTrackInfo }) {
   return (
     <div className="flex items-center gap-3 p-3 rounded-md bg-muted/50 overflow-hidden">
       <div className="h-10 w-10 rounded bg-secondary flex-shrink-0 overflow-hidden">
-        {track.artworkUrl && (
-          <img
-            src={getArtworkUrl(track.artworkUrl) ?? undefined}
-            alt=""
-            className="h-full w-full object-cover"
-          />
-        )}
+        {track.artworkUrl && <img src={getArtworkUrl(track.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium truncate">{track.title}</p>
@@ -57,9 +45,7 @@ function ConversationPickerRow({
   const { t } = useTranslation();
   const { other_user, last_message_content, last_message_sender_id } = conversation;
   const isOwnMessage = last_message_sender_id === currentUserId;
-  const preview = isOwnMessage
-    ? `${t('directMessages.you')} : ${last_message_content}`
-    : last_message_content;
+  const preview = isOwnMessage ? `${t('directMessages.you')} : ${last_message_content}` : last_message_content;
 
   return (
     <button
@@ -89,8 +75,7 @@ function ShareTrackDialogBody({ track, onClose }: { track: ShareTrackInfo; onClo
   const [messageText, setMessageText] = useState('');
   const [filter, setFilter] = useState('');
 
-  const { items, currentUserId, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } =
-    useConversationsPage();
+  const { items, currentUserId, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } = useConversationsPage();
   useEffect(() => {
     if (hasNextPage && !isFetchingNextPage) {
       void fetchNextPage();
@@ -109,8 +94,7 @@ function ShareTrackDialogBody({ track, onClose }: { track: ShareTrackInfo; onClo
   });
 
   const sendMutation = useMutation({
-    mutationFn: ({ otherUserId, content }: { otherUserId: number; content: string }) =>
-      api.sendMessage(otherUserId, content),
+    mutationFn: ({ otherUserId, content }: { otherUserId: number; content: string }) => api.sendMessage(otherUserId, content),
     onSuccess: (_data, { otherUserId }) => {
       toast.success(t('shareTrack.success'));
       void queryClient.invalidateQueries({ queryKey: ['directMessages', 'conversations'] });
@@ -126,9 +110,7 @@ function ShareTrackDialogBody({ track, onClose }: { track: ShareTrackInfo; onClo
   const handleSend = () => {
     if (!selectedUserId) return;
     const trimmed = messageText.trim();
-    const content = trimmed
-      ? `${trimmed}\n${track.permalinkUrl}`
-      : track.permalinkUrl;
+    const content = trimmed ? `${trimmed}\n${track.permalinkUrl}` : track.permalinkUrl;
     sendMutation.mutate({ otherUserId: selectedUserId, content });
   };
 
@@ -139,7 +121,9 @@ function ShareTrackDialogBody({ track, onClose }: { track: ShareTrackInfo; onClo
         <DialogDescription className="sr-only">{t('shareTrack.description')}</DialogDescription>
       </DialogHeader>
 
-      <div className="px-4 pb-3 overflow-hidden"><TrackPreview track={track} /></div>
+      <div className="px-4 pb-3 overflow-hidden">
+        <TrackPreview track={track} />
+      </div>
 
       <div className="px-4 pb-2">
         <div className="relative">
@@ -196,7 +180,10 @@ function ShareTrackDialogBody({ track, onClose }: { track: ShareTrackInfo; onClo
 
       {selectedUserId && (
         <form
-          onSubmit={(e) => { e.preventDefault(); handleSend(); }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
           className="flex items-center gap-2 border-t px-4 py-3"
         >
           <Input
@@ -207,15 +194,8 @@ function ShareTrackDialogBody({ track, onClose }: { track: ShareTrackInfo; onClo
             autoComplete="off"
             autoFocus
           />
-          <Button
-            type="submit"
-            size="icon"
-            disabled={sendMutation.isPending}
-            aria-label={t('shareTrack.send')}
-          >
-            {sendMutation.isPending
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <SendHorizonal className="h-4 w-4" />}
+          <Button type="submit" size="icon" disabled={sendMutation.isPending} aria-label={t('shareTrack.send')}>
+            {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizonal className="h-4 w-4" />}
           </Button>
         </form>
       )}
@@ -231,7 +211,12 @@ export function ShareTrackDialog() {
   };
 
   return (
-    <Dialog open={shareTrack !== null} onOpenChange={(open) => { if (!open) handleClose(); }}>
+    <Dialog
+      open={shareTrack !== null}
+      onOpenChange={(open) => {
+        if (!open) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-lg p-0 gap-0">
         {shareTrack && <ShareTrackDialogBody track={shareTrack} onClose={handleClose} />}
       </DialogContent>

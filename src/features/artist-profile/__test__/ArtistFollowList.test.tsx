@@ -23,12 +23,8 @@ vi.mock('@/hooks/useVirtualizedList', () => ({
 }));
 
 vi.mock('@/components/ui/virtual-list', () => ({
-  VirtualListContainer: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="virtual-list">{children}</div>
-  ),
-  VirtualRow: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="virtual-row">{children}</div>
-  ),
+  VirtualListContainer: ({ children }: { children: React.ReactNode }) => <div data-testid="virtual-list">{children}</div>,
+  VirtualRow: ({ children }: { children: React.ReactNode }) => <div data-testid="virtual-row">{children}</div>,
 }));
 
 const mockGoBack = vi.fn();
@@ -100,9 +96,7 @@ describe('ArtistFollowList', () => {
 
   it('renders loading skeletons when loading', () => {
     mockFollowListState.isLoading = true;
-    const { container } = render(
-      <ArtistFollowList type="followers" artistId={42} artistName="DJ Test" />,
-    );
+    const { container } = render(<ArtistFollowList type="followers" artistId={42} artistName="DJ Test" />);
     const skeletons = container.querySelectorAll('[class*="animate-pulse"], [data-slot="skeleton"]');
     expect(skeletons.length).toBeGreaterThan(0);
   });
@@ -149,9 +143,7 @@ describe('ArtistFollowList', () => {
   it('shows streaming indicator when streaming', () => {
     mockFollowListState.data = mockArtists;
     mockFollowListState.isStreaming = true;
-    const { container } = render(
-      <ArtistFollowList type="followers" artistId={42} artistName="DJ Test" />,
-    );
+    const { container } = render(<ArtistFollowList type="followers" artistId={42} artistName="DJ Test" />);
     expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
 

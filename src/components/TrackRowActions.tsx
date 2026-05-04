@@ -2,11 +2,7 @@ import { useCallback } from 'react';
 import { Heart, Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Send, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import {
-  ContextMenuContent,
-  ContextMenuItem,
-  ContextMenuSeparator,
-} from '@/components/ui/context-menu';
+import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,7 +46,16 @@ export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLi
   );
 }
 
-export function TrackMenuItems({ permalinkUrl, trackId, variant, onCloseMenu, onRemoveFromPlaylist, onAddToQueue, likeState, shareInfo }: TrackMenuItemsProps) {
+export function TrackMenuItems({
+  permalinkUrl,
+  trackId,
+  variant,
+  onCloseMenu,
+  onRemoveFromPlaylist,
+  onAddToQueue,
+  likeState,
+  shareInfo,
+}: TrackMenuItemsProps) {
   const { t } = useTranslation();
   const isSignedIn = useIsSignedIn();
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl);

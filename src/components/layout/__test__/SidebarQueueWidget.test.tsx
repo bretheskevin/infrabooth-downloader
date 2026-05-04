@@ -1,22 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
-import { SidebarQueueWidget } from "../SidebarQueueWidget";
-import { useQueueStore } from "@/features/queue/store";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { SidebarQueueWidget } from '../SidebarQueueWidget';
+import { useQueueStore } from '@/features/queue/store';
 
-vi.mock("react-i18next", () => ({
+vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, params?: Record<string, unknown>) => {
       const translations: Record<string, string> = {
-        "sidebar.downloading": "Downloading...",
-        "sidebar.noActiveDownload": "No active download",
-        "sidebar.queueProgress": `${params?.completed}/${params?.total}`,
+        'sidebar.downloading': 'Downloading...',
+        'sidebar.noActiveDownload': 'No active download',
+        'sidebar.queueProgress': `${params?.completed}/${params?.total}`,
       };
       return translations[key] || key;
     },
   }),
 }));
 
-describe("SidebarQueueWidget", () => {
+describe('SidebarQueueWidget', () => {
   beforeEach(() => {
     useQueueStore.setState({
       tracks: [],
@@ -29,21 +29,21 @@ describe("SidebarQueueWidget", () => {
     });
   });
 
-  it("should show idle message when not processing", () => {
+  it('should show idle message when not processing', () => {
     render(<SidebarQueueWidget />);
-    expect(screen.getByText("No active download")).toBeInTheDocument();
+    expect(screen.getByText('No active download')).toBeInTheDocument();
   });
 
-  it("should show current track name when downloading", () => {
+  it('should show current track name when downloading', () => {
     useQueueStore.setState({
       tracks: [
         {
-          id: "1",
-          title: "Cool Track",
-          artist: "DJ Test",
+          id: '1',
+          title: 'Cool Track',
+          artist: 'DJ Test',
           artworkUrl: null,
           durationMs: 300000,
-          status: "downloading",
+          status: 'downloading',
         },
       ],
       currentIndex: 0,
@@ -53,28 +53,28 @@ describe("SidebarQueueWidget", () => {
     });
 
     render(<SidebarQueueWidget />);
-    expect(screen.getByText("Cool Track")).toBeInTheDocument();
-    expect(screen.getByText("Downloading...")).toBeInTheDocument();
+    expect(screen.getByText('Cool Track')).toBeInTheDocument();
+    expect(screen.getByText('Downloading...')).toBeInTheDocument();
   });
 
-  it("should show progress counter", () => {
+  it('should show progress counter', () => {
     useQueueStore.setState({
       tracks: [
         {
-          id: "1",
-          title: "Track 1",
-          artist: "Artist",
+          id: '1',
+          title: 'Track 1',
+          artist: 'Artist',
           artworkUrl: null,
           durationMs: 300000,
-          status: "complete",
+          status: 'complete',
         },
         {
-          id: "2",
-          title: "Track 2",
-          artist: "Artist",
+          id: '2',
+          title: 'Track 2',
+          artist: 'Artist',
           artworkUrl: null,
           durationMs: 300000,
-          status: "downloading",
+          status: 'downloading',
         },
       ],
       currentIndex: 1,
@@ -84,19 +84,19 @@ describe("SidebarQueueWidget", () => {
     });
 
     render(<SidebarQueueWidget />);
-    expect(screen.getByText("1/2")).toBeInTheDocument();
+    expect(screen.getByText('1/2')).toBeInTheDocument();
   });
 
-  it("should render a progress bar when downloading", () => {
+  it('should render a progress bar when downloading', () => {
     useQueueStore.setState({
       tracks: [
         {
-          id: "1",
-          title: "Track 1",
-          artist: "Artist",
+          id: '1',
+          title: 'Track 1',
+          artist: 'Artist',
           artworkUrl: null,
           durationMs: 300000,
-          status: "downloading",
+          status: 'downloading',
           percent: 50,
         },
       ],
@@ -107,6 +107,6 @@ describe("SidebarQueueWidget", () => {
     });
 
     render(<SidebarQueueWidget />);
-    expect(screen.getByRole("progressbar")).toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toBeInTheDocument();
   });
 });

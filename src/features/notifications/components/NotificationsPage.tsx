@@ -20,12 +20,7 @@ export function NotificationsPage() {
         <h2 className="text-lg font-semibold">{t('notifications.title')}</h2>
       </div>
 
-      <NotificationsList
-        containerClassName="flex-1 min-h-0 overflow-y-auto"
-        sentinelClassName="h-4"
-        onClose={handleClose}
-        markSeen
-      />
+      <NotificationsList containerClassName="flex-1 min-h-0 overflow-y-auto" sentinelClassName="h-4" onClose={handleClose} markSeen />
     </div>
   );
 }

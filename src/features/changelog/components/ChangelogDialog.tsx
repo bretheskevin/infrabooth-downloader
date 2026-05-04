@@ -1,18 +1,8 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChangelogEntry } from './ChangelogEntry';
 import { parseChangelog, compareVersions } from '../utils/parseChangelog';
 import { useChangelogStore } from '../store';
@@ -29,10 +19,7 @@ export function ChangelogDialog({ open, onOpenChange }: ChangelogDialogProps) {
   const currentVersion = useAppVersion();
   const lastSeenVersion = useChangelogStore((s) => s.lastSeenVersion);
 
-  const entries = useMemo(
-    () => parseChangelog(CHANGELOGS[i18n.language] ?? changelogEn),
-    [i18n.language],
-  );
+  const entries = useMemo(() => parseChangelog(CHANGELOGS[i18n.language] ?? changelogEn), [i18n.language]);
 
   const shouldExpand = (version: string) => {
     if (version === currentVersion) return true;
@@ -57,9 +44,7 @@ export function ChangelogDialog({ open, onOpenChange }: ChangelogDialogProps) {
                 <CollapsibleTrigger className="flex items-center justify-between w-full py-2 px-1 text-left hover:bg-muted/50 rounded-md group">
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-sm">v{entry.version}</span>
-                    {entry.date && (
-                      <span className="text-xs text-muted-foreground">{entry.date}</span>
-                    )}
+                    {entry.date && <span className="text-xs text-muted-foreground">{entry.date}</span>}
                     {isCurrent && (
                       <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
                         {t('changelog.current')}

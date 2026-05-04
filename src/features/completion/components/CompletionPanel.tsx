@@ -36,8 +36,7 @@ export function CompletionPanel({
   const panelRef = useRef<HTMLDivElement>(null);
   const [isErrorPanelOpen, setIsErrorPanelOpen] = useState(false);
   const failedTracks = useFailedTracks();
-  const { retryAllFailed, retrySingleTrack, isRetrying, canRetry } =
-    useRetryTracks();
+  const { retryAllFailed, retrySingleTrack, isRetrying, canRetry } = useRetryTracks();
   const handleOpenFolder = useOpenDownloadFolder(outputDir);
 
   const isFullSuccess = failedCount === 0 && !isCancelled;
@@ -76,20 +75,8 @@ export function CompletionPanel({
     >
       <CardContent className="pt-8 pb-2 text-center">
         <div className="flex flex-col items-center gap-5">
-          <div
-            className={cn(
-              'flex items-center justify-center rounded-2xl',
-              isCancelled ? 'bg-secondary p-4' : 'bg-success/10 p-2'
-            )}
-          >
-            {isCancelled ? (
-              <XCircle
-                className="h-10 w-10 text-muted-foreground"
-                aria-hidden="true"
-              />
-            ) : (
-              <AnimatedCheckmark size={56} />
-            )}
+          <div className={cn('flex items-center justify-center rounded-2xl', isCancelled ? 'bg-secondary p-4' : 'bg-success/10 p-2')}>
+            {isCancelled ? <XCircle className="h-10 w-10 text-muted-foreground" aria-hidden="true" /> : <AnimatedCheckmark size={56} />}
           </div>
 
           <SuccessMessage
@@ -132,10 +119,7 @@ export function CompletionPanel({
             aria-label={t('completion.retryFailed', { count: failedCount })}
             className="gap-2 rounded-xl h-11 px-5"
           >
-            <RefreshCw
-              className={cn('h-4 w-4', isRetrying && 'animate-spin')}
-              aria-hidden="true"
-            />
+            <RefreshCw className={cn('h-4 w-4', isRetrying && 'animate-spin')} aria-hidden="true" />
             {t('completion.retryFailed', { count: failedCount })}
           </Button>
         )}

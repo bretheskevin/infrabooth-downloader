@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import type { RekordboxTreeNode } from '@/bindings';
-import { buildTreeFromNodes, findInfraboothFolderId, findPlaylistParentId, folderExistsInTree, getAncestorIds, type TreeNode } from '../utils/buildTree';
+import {
+  buildTreeFromNodes,
+  findInfraboothFolderId,
+  findPlaylistParentId,
+  folderExistsInTree,
+  getAncestorIds,
+  type TreeNode,
+} from '../utils/buildTree';
 
 function makeNode(id: string, name: string, parentId: string, attribute: number, seq: number): RekordboxTreeNode {
   return { id, name, parentId, attribute, seq };
@@ -12,10 +19,7 @@ describe('buildTreeFromNodes', () => {
   });
 
   it('builds a flat list of root folders', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('1', 'Folder A', 'root', 1, 2),
-      makeNode('2', 'Folder B', 'root', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('1', 'Folder A', 'root', 1, 2), makeNode('2', 'Folder B', 'root', 1, 1)];
     const result = buildTreeFromNodes(nodes);
     expect(result).toHaveLength(2);
     expect(result[0]!.name).toBe('Folder B');
@@ -35,10 +39,7 @@ describe('buildTreeFromNodes', () => {
   });
 
   it('distinguishes folders from playlists by attribute', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('1', 'My Folder', 'root', 1, 1),
-      makeNode('2', 'My Playlist', 'root', 0, 2),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('1', 'My Folder', 'root', 1, 1), makeNode('2', 'My Playlist', 'root', 0, 2)];
     const result = buildTreeFromNodes(nodes);
     expect(result[0]!.isFolder).toBe(true);
     expect(result[1]!.isFolder).toBe(false);
@@ -60,10 +61,7 @@ describe('buildTreeFromNodes', () => {
   });
 
   it('handles orphan nodes gracefully', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('1', 'Orphan', 'nonexistent', 1, 1),
-      makeNode('2', 'Root', 'root', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('1', 'Orphan', 'nonexistent', 1, 1), makeNode('2', 'Root', 'root', 1, 1)];
     const result = buildTreeFromNodes(nodes);
     expect(result).toHaveLength(1);
     expect(result[0]!.name).toBe('Root');
@@ -84,16 +82,12 @@ describe('findInfraboothFolderId', () => {
   });
 
   it('returns null when InfraBooth Downloader is not a folder', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('ib-id', 'InfraBooth Downloader', 'root', 0, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('ib-id', 'InfraBooth Downloader', 'root', 0, 1)];
     expect(findInfraboothFolderId(nodes)).toBeNull();
   });
 
   it('returns null when InfraBooth Downloader is not at root', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('ib-id', 'InfraBooth Downloader', 'some-parent', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('ib-id', 'InfraBooth Downloader', 'some-parent', 1, 1)];
     expect(findInfraboothFolderId(nodes)).toBeNull();
   });
 });
@@ -104,31 +98,22 @@ describe('findPlaylistParentId', () => {
   });
 
   it('returns null when playlist does not exist', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('f1', 'Folder', 'root', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('f1', 'Folder', 'root', 1, 1)];
     expect(findPlaylistParentId(nodes, 'Missing')).toBeNull();
   });
 
   it('returns parent folder id when playlist exists in a folder', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('f1', 'InfraBooth Downloader', 'root', 1, 1),
-      makeNode('p1', 'My Mix', 'f1', 0, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('f1', 'InfraBooth Downloader', 'root', 1, 1), makeNode('p1', 'My Mix', 'f1', 0, 1)];
     expect(findPlaylistParentId(nodes, 'My Mix')).toBe('f1');
   });
 
   it('returns null when playlist is at root level', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('p1', 'My Mix', 'root', 0, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('p1', 'My Mix', 'root', 0, 1)];
     expect(findPlaylistParentId(nodes, 'My Mix')).toBeNull();
   });
 
   it('ignores folders with the same name', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('f1', 'DJ Sets', 'root', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('f1', 'DJ Sets', 'root', 1, 1)];
     expect(findPlaylistParentId(nodes, 'DJ Sets')).toBeNull();
   });
 
@@ -148,9 +133,7 @@ describe('getAncestorIds', () => {
   });
 
   it('returns single id for root-level folder', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('f1', 'Folder', 'root', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('f1', 'Folder', 'root', 1, 1)];
     expect(getAncestorIds(nodes, 'f1')).toEqual(new Set(['f1']));
   });
 
@@ -164,32 +147,24 @@ describe('getAncestorIds', () => {
   });
 
   it('handles unknown folderId gracefully', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('f1', 'Folder', 'root', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('f1', 'Folder', 'root', 1, 1)];
     expect(getAncestorIds(nodes, 'nonexistent')).toEqual(new Set(['nonexistent']));
   });
 });
 
 describe('folderExistsInTree', () => {
   it('returns true when folder exists with matching id', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('f1', 'My Folder', 'root', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('f1', 'My Folder', 'root', 1, 1)];
     expect(folderExistsInTree(nodes, 'f1')).toBe(true);
   });
 
   it('returns false when id does not exist', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('f1', 'My Folder', 'root', 1, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('f1', 'My Folder', 'root', 1, 1)];
     expect(folderExistsInTree(nodes, 'nonexistent')).toBe(false);
   });
 
   it('returns false when id exists but is a playlist (not a folder)', () => {
-    const nodes: RekordboxTreeNode[] = [
-      makeNode('p1', 'My Playlist', 'root', 0, 1),
-    ];
+    const nodes: RekordboxTreeNode[] = [makeNode('p1', 'My Playlist', 'root', 0, 1)];
     expect(folderExistsInTree(nodes, 'p1')).toBe(false);
   });
 

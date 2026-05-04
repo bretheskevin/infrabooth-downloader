@@ -219,9 +219,7 @@ describe('autoplay station', () => {
       const queue = makeQueue(1);
       usePlayerStore.setState({ queue, cursor: 0, currentTrack: queue[0]!, state: 'playing' });
 
-      vi.mocked(api.fetchRelatedTracks)
-        .mockRejectedValueOnce(new Error('Transient error'))
-        .mockResolvedValueOnce(makeRelatedTracks(10));
+      vi.mocked(api.fetchRelatedTracks).mockRejectedValueOnce(new Error('Transient error')).mockResolvedValueOnce(makeRelatedTracks(10));
 
       const cbs = extractCallbacks();
       cbs.onEnded!();

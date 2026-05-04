@@ -13,16 +13,17 @@ interface UseMediaFetchReturn {
   error: FetchError | null;
 }
 
-export function useMediaFetch(
-  url: string,
-  validation: ValidationResult | null
-): UseMediaFetchReturn {
+export function useMediaFetch(url: string, validation: ValidationResult | null): UseMediaFetchReturn {
   const { t } = useTranslation();
 
   const isEnabled = !!url && !!validation?.valid;
   const urlType = validation?.valid ? validation.urlType : null;
 
-  const { data, isFetching, error: queryError } = useQuery({
+  const {
+    data,
+    isFetching,
+    error: queryError,
+  } = useQuery({
     queryKey: ['media', url, urlType],
     queryFn: () => fetchMediaInfo(url, urlType),
     enabled: isEnabled,

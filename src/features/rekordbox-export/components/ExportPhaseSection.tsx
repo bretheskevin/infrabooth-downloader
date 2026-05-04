@@ -35,20 +35,13 @@ export function ExportPhaseSection({
       </div>
       <div className="border border-border rounded-md overflow-hidden">
         {visible.map((track) => (
-          <div
-            key={track.trackId}
-            className="flex items-center gap-2 px-2 py-1.5 text-xs border-b border-border last:border-b-0"
-          >
+          <div key={track.trackId} className="flex items-center gap-2 px-2 py-1.5 text-xs border-b border-border last:border-b-0">
             {showSpinner && <Loader2 className="h-3 w-3 animate-spin shrink-0" />}
             <span className="truncate flex-1 min-w-0">{track.trackTitle}</span>
             {track.percent != null && track.percent > 0 && (
-              <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">
-                {Math.round(track.percent * 100)}%
-              </span>
+              <span className="text-[10px] text-muted-foreground tabular-nums shrink-0">{Math.round(track.percent * 100)}%</span>
             )}
-            {showError && track.error && (
-              <div className="text-[10px] text-destructive truncate max-w-[50%]">{track.error}</div>
-            )}
+            {showError && track.error && <div className="text-[10px] text-destructive truncate max-w-[50%]">{track.error}</div>}
           </div>
         ))}
         {hiddenCount > 0 && (

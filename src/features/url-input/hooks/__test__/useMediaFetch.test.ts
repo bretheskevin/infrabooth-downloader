@@ -25,7 +25,17 @@ const mockPlaylist = {
   artwork_url: 'https://example.com/art.jpg',
   track_count: 5,
   tracks: [
-    { id: 1, title: 'Track 1', user: { id: 0, username: 'Artist1', avatar_url: null }, artwork_url: null, duration: 180000, permalink_url: 'https://soundcloud.com/artist1/track-1', waveform_url: null, downloadable: false, download_url: null },
+    {
+      id: 1,
+      title: 'Track 1',
+      user: { id: 0, username: 'Artist1', avatar_url: null },
+      artwork_url: null,
+      duration: 180000,
+      permalink_url: 'https://soundcloud.com/artist1/track-1',
+      waveform_url: null,
+      downloadable: false,
+      download_url: null,
+    },
   ],
 };
 
@@ -36,7 +46,9 @@ const mockTrack = {
   artwork_url: 'https://example.com/track-art.jpg',
   duration: 240000,
   permalink_url: 'https://soundcloud.com/testartist/test-track',
-  waveform_url: null, downloadable: false, download_url: null,
+  waveform_url: null,
+  downloadable: false,
+  download_url: null,
 };
 
 const validTrackValidation: ValidationResult = { valid: true, urlType: 'track', error: null };
@@ -52,13 +64,10 @@ describe('useMediaFetch', () => {
 
   describe('when validation is null', () => {
     it('should return null data and no loading', () => {
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: null },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: null },
+        wrapper: createQueryWrapper(),
+      });
 
       expect(result.current.data).toBeNull();
       expect(result.current.isLoading).toBe(false);
@@ -66,13 +75,10 @@ describe('useMediaFetch', () => {
     });
 
     it('should not call fetch functions', () => {
-      renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: null },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: null },
+        wrapper: createQueryWrapper(),
+      });
 
       expect(mockFetchMediaInfo).not.toHaveBeenCalled();
     });
@@ -80,13 +86,10 @@ describe('useMediaFetch', () => {
 
   describe('when validation is invalid', () => {
     it('should return null data and no loading', () => {
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://example.com', validation: invalidValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://example.com', validation: invalidValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       expect(result.current.data).toBeNull();
       expect(result.current.isLoading).toBe(false);
@@ -98,13 +101,10 @@ describe('useMediaFetch', () => {
     it('should fetch playlist info', async () => {
       mockFetchMediaInfo.mockResolvedValue(mockPlaylist);
 
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/sets/playlist', validation: validPlaylistValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/sets/playlist', validation: validPlaylistValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -112,22 +112,16 @@ describe('useMediaFetch', () => {
 
       expect(result.current.data).toEqual(mockPlaylist);
       expect(result.current.error).toBeNull();
-      expect(mockFetchMediaInfo).toHaveBeenCalledWith(
-        'https://soundcloud.com/artist/sets/playlist',
-        'playlist'
-      );
+      expect(mockFetchMediaInfo).toHaveBeenCalledWith('https://soundcloud.com/artist/sets/playlist', 'playlist');
     });
   });
 
   describe('when validation is valid for track', () => {
     it('should fetch track info', async () => {
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track-name', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track-name', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -135,32 +129,23 @@ describe('useMediaFetch', () => {
 
       expect(result.current.data).toEqual(mockTrack);
       expect(result.current.error).toBeNull();
-      expect(mockFetchMediaInfo).toHaveBeenCalledWith(
-        'https://soundcloud.com/artist/track-name',
-        'track'
-      );
+      expect(mockFetchMediaInfo).toHaveBeenCalledWith('https://soundcloud.com/artist/track-name', 'track');
     });
   });
 
   describe('when validation is valid for short link', () => {
     it('should fetch with null urlType', async () => {
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://on.soundcloud.com/abc123XYZ', validation: validShortLinkValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://on.soundcloud.com/abc123XYZ', validation: validShortLinkValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
       });
 
       expect(result.current.data).toEqual(mockTrack);
-      expect(mockFetchMediaInfo).toHaveBeenCalledWith(
-        'https://on.soundcloud.com/abc123XYZ',
-        null
-      );
+      expect(mockFetchMediaInfo).toHaveBeenCalledWith('https://on.soundcloud.com/abc123XYZ', null);
     });
   });
 
@@ -168,13 +153,10 @@ describe('useMediaFetch', () => {
     it('should map "not found" error to INVALID_URL', async () => {
       mockFetchMediaInfo.mockRejectedValue(new Error('Track not found'));
 
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -189,17 +171,12 @@ describe('useMediaFetch', () => {
     });
 
     it('should map "region" error to GEO_BLOCKED', async () => {
-      mockFetchMediaInfo.mockRejectedValue(
-        new Error('Content not available in your region')
-      );
+      mockFetchMediaInfo.mockRejectedValue(new Error('Content not available in your region'));
 
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -214,13 +191,10 @@ describe('useMediaFetch', () => {
     it('should map "GeoBlocked" error to GEO_BLOCKED', async () => {
       mockFetchMediaInfo.mockRejectedValue(new Error('GeoBlocked'));
 
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -235,13 +209,10 @@ describe('useMediaFetch', () => {
     it('should map unknown error to FETCH_FAILED', async () => {
       mockFetchMediaInfo.mockRejectedValue(new Error('Network error'));
 
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -256,13 +227,10 @@ describe('useMediaFetch', () => {
     it('should handle Tauri string errors (not Error objects)', async () => {
       mockFetchMediaInfo.mockRejectedValue('HTTP 401 Unauthorized: session expired');
 
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -278,13 +246,10 @@ describe('useMediaFetch', () => {
     it('should map 401 error to AUTH_EXPIRED', async () => {
       mockFetchMediaInfo.mockRejectedValue(new Error('HTTP 401 Unauthorized'));
 
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -300,13 +265,10 @@ describe('useMediaFetch', () => {
     it('should map AuthRequired error to AUTH_REQUIRED', async () => {
       mockFetchMediaInfo.mockRejectedValue('Private content requires sign-in');
 
-      const { result } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.isLoading).toBe(false);
@@ -321,13 +283,10 @@ describe('useMediaFetch', () => {
 
   describe('when validation changes', () => {
     it('should clear data when validation becomes invalid', async () => {
-      const { result, rerender } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result, rerender } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.data).toEqual(mockTrack);
@@ -340,17 +299,12 @@ describe('useMediaFetch', () => {
     });
 
     it('should clear previous error when fetching new URL', async () => {
-      mockFetchMediaInfo
-        .mockRejectedValueOnce(new Error('Track not found'))
-        .mockResolvedValueOnce(mockTrack);
+      mockFetchMediaInfo.mockRejectedValueOnce(new Error('Track not found')).mockResolvedValueOnce(mockTrack);
 
-      const { result, rerender } = renderHook(
-        ({ url, validation }) => useMediaFetch(url, validation),
-        {
-          initialProps: { url: 'https://soundcloud.com/artist/bad-track', validation: validTrackValidation },
-          wrapper: createQueryWrapper(),
-        }
-      );
+      const { result, rerender } = renderHook(({ url, validation }) => useMediaFetch(url, validation), {
+        initialProps: { url: 'https://soundcloud.com/artist/bad-track', validation: validTrackValidation },
+        wrapper: createQueryWrapper(),
+      });
 
       await waitFor(() => {
         expect(result.current.error).not.toBeNull();

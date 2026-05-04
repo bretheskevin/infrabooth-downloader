@@ -4,7 +4,8 @@ import { commands } from '@/bindings';
 import { useArtistProfileStore } from '@/features/artist-profile/store';
 import { normalizeShortUrl } from '@/lib/soundcloud';
 
-const LINKIFY_REGEX = /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(https?:\/\/soundcloud\.com\/([\w][\w-]*[\w]|[\w])(?=[^\w/-]|$))|((?:https?:\/\/)?on\.soundcloud\.com\/[a-zA-Z0-9]+)|(https?:\/\/[^\s<>"{}|\\^`[\]]+[^\s<>"{}|\\^`[\].,;:!?)'\]])|(@[\w][\w-]*[\w]|@[\w])/g;
+const LINKIFY_REGEX =
+  /([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})|(https?:\/\/soundcloud\.com\/([\w][\w-]*[\w]|[\w])(?=[^\w/-]|$))|((?:https?:\/\/)?on\.soundcloud\.com\/[a-zA-Z0-9]+)|(https?:\/\/[^\s<>"{}|\\^`[\]]+[^\s<>"{}|\\^`[\].,;:!?)'\]])|(@[\w][\w-]*[\w]|@[\w])/g;
 
 function isHttpUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://');
@@ -98,7 +99,9 @@ function MentionLink({ username }: { username: string }) {
       setResolved(result);
       setChecked(true);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [username]);
 
   if (!checked) {
@@ -143,25 +146,25 @@ function ShortLink({ url }: { url: string }) {
     e.preventDefault();
     e.stopPropagation();
     setResolving(true);
-    commands.resolveSoundcloudLink(url).then((result) => {
-      if (result.status === 'ok' && result.data.kind === 'user' && result.data.user_id && result.data.username) {
-        openProfile(result.data.user_id, result.data.username);
-      } else if (isHttpUrl(url)) {
-        void open(url);
-      }
-    }).catch(() => {
-      if (isHttpUrl(url)) void open(url);
-    }).finally(() => {
-      setResolving(false);
-    });
+    commands
+      .resolveSoundcloudLink(url)
+      .then((result) => {
+        if (result.status === 'ok' && result.data.kind === 'user' && result.data.user_id && result.data.username) {
+          openProfile(result.data.user_id, result.data.username);
+        } else if (isHttpUrl(url)) {
+          void open(url);
+        }
+      })
+      .catch(() => {
+        if (isHttpUrl(url)) void open(url);
+      })
+      .finally(() => {
+        setResolving(false);
+      });
   };
 
   return (
-    <a
-      href={url}
-      onClick={handleClick}
-      className={`underline hover:text-foreground ${resolving ? 'opacity-50 pointer-events-none' : ''}`}
-    >
+    <a href={url} onClick={handleClick} className={`underline hover:text-foreground ${resolving ? 'opacity-50 pointer-events-none' : ''}`}>
       {url}
     </a>
   );
@@ -180,25 +183,26 @@ export function linkifyText(text: string): ReactNode[] {
     const [full, email, , scUrlUsername, scShortUrl, genericUrl] = match;
     if (email) {
       parts.push(
-        <a
-          key={index}
-          href={`mailto:${email}`}
-          onClick={(e) => e.stopPropagation()}
-          className="underline hover:text-foreground"
-        >
+        <a key={index} href={`mailto:${email}`} onClick={(e) => e.stopPropagation()} className="underline hover:text-foreground">
           {email}
         </a>,
       );
     } else if (scShortUrl) {
       parts.push(<ShortLink key={index} url={normalizeShortUrl(scShortUrl)} />);
     } else if (genericUrl) {
-      parts.push(<ExternalLink key={index} href={genericUrl}>{genericUrl}</ExternalLink>);
+      parts.push(
+        <ExternalLink key={index} href={genericUrl}>
+          {genericUrl}
+        </ExternalLink>,
+      );
     } else if (scUrlUsername && scUrlUsername.length >= 3) {
       parts.push(<MentionLink key={index} username={scUrlUsername} />);
     } else if (scUrlUsername) {
       const scUrl = `https://soundcloud.com/${scUrlUsername}`;
       parts.push(
-        <ExternalLink key={index} href={scUrl}>soundcloud.com/{scUrlUsername}</ExternalLink>,
+        <ExternalLink key={index} href={scUrl}>
+          soundcloud.com/{scUrlUsername}
+        </ExternalLink>,
       );
     } else {
       const username = full.slice(1);

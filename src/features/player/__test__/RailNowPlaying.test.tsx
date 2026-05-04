@@ -37,21 +37,15 @@ vi.mock('../components/SeekBar', () => ({
 }));
 
 vi.mock('../components/TransportControls', () => ({
-  TransportControls: ({ className }: { className?: string }) => (
-    <div data-testid="transport-controls" className={className} />
-  ),
+  TransportControls: ({ className }: { className?: string }) => <div data-testid="transport-controls" className={className} />,
 }));
 
 vi.mock('../components/VolumeControl', () => ({
-  VolumeControl: ({ className }: { className?: string }) => (
-    <div data-testid="volume-control" className={className} />
-  ),
+  VolumeControl: ({ className }: { className?: string }) => <div data-testid="volume-control" className={className} />,
 }));
 
 vi.mock('@/components/ArtistLink', () => ({
-  ArtistLink: ({ username }: { username: string }) => (
-    <span data-testid="artist-link">{username}</span>
-  ),
+  ArtistLink: ({ username }: { username: string }) => <span data-testid="artist-link">{username}</span>,
 }));
 
 vi.mock('react-i18next', () => ({
@@ -87,8 +81,8 @@ function setupStore(overrides: Record<string, unknown> = {}) {
     volume: 0.75,
     ...overrides,
   };
-  (usePlayerStore as unknown as ReturnType<typeof vi.fn>).mockImplementation(
-    (selector: (s: typeof defaults) => unknown) => selector(defaults)
+  (usePlayerStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: (s: typeof defaults) => unknown) =>
+    selector(defaults),
   );
 }
 

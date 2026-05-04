@@ -76,7 +76,9 @@ describe('parseChangelog', () => {
   });
 
   it('should strip link reference definitions', () => {
-    const withLinks = SAMPLE_CHANGELOG + '\n[1.6.0]: https://github.com/example/compare/v1.5.0...v1.6.0\n[1.5.0]: https://github.com/example/compare/v1.4.0...v1.5.0';
+    const withLinks =
+      SAMPLE_CHANGELOG +
+      '\n[1.6.0]: https://github.com/example/compare/v1.5.0...v1.6.0\n[1.5.0]: https://github.com/example/compare/v1.4.0...v1.5.0';
     const entries = parseChangelog(withLinks);
     expect(entries).toHaveLength(2);
     // Items should not contain link references

@@ -1,12 +1,7 @@
 import { api } from '@/lib/tauri';
 import { logger } from '@/lib/logger';
 
-export type {
-  DownloadRequest,
-  StartQueueRequest,
-  TrackCore,
-  ErrorResponse,
-} from '@/bindings';
+export type { DownloadRequest, StartQueueRequest, TrackCore, ErrorResponse } from '@/bindings';
 
 /**
  * Download a track and convert it to MP3 with metadata.
@@ -45,9 +40,7 @@ export async function downloadTrack(request: Parameters<typeof api.downloadTrack
  *
  * @param request - Queue request containing tracks and optional album name
  */
-export async function startDownloadQueue(
-  request: Parameters<typeof api.startDownloadQueue>[0]
-): Promise<void> {
+export async function startDownloadQueue(request: Parameters<typeof api.startDownloadQueue>[0]): Promise<void> {
   logger.info(`[download] Starting download queue with ${request.tracks.length} tracks`);
   if (request.albumName) {
     logger.debug(`[download] Album name: ${request.albumName}`);

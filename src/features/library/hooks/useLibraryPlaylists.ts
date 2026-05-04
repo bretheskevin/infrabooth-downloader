@@ -7,10 +7,7 @@ import type { LibraryPlaylist, LibraryPlaylistsBatchEvent } from '@/bindings';
 export function useLibraryPlaylists(enabled: boolean) {
   const username = useAuthStore((s) => s.username);
 
-  const getPlaylistsFromEvent = useCallback(
-    (payload: unknown) => (payload as LibraryPlaylistsBatchEvent).playlists,
-    []
-  );
+  const getPlaylistsFromEvent = useCallback((payload: unknown) => (payload as LibraryPlaylistsBatchEvent).playlists, []);
 
   const query = useStreamedUserQuery<LibraryPlaylist>({
     eventName: 'library-playlists-batch',

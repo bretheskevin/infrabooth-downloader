@@ -55,29 +55,21 @@ describe('useUrlValidation', () => {
     const validResult = createValidResult('playlist');
     mockValidateUrl.mockResolvedValue(validResult);
 
-    const { result } = renderHook(
-      () => useUrlValidation('https://soundcloud.com/artist/sets/playlist'),
-      { wrapper: createQueryWrapper() }
-    );
+    const { result } = renderHook(() => useUrlValidation('https://soundcloud.com/artist/sets/playlist'), { wrapper: createQueryWrapper() });
 
     await waitFor(() => {
       expect(result.current.isValidating).toBe(false);
     });
 
     expect(result.current.result).toEqual(validResult);
-    expect(mockValidateUrl).toHaveBeenCalledWith(
-      'https://soundcloud.com/artist/sets/playlist'
-    );
+    expect(mockValidateUrl).toHaveBeenCalledWith('https://soundcloud.com/artist/sets/playlist');
   });
 
   it('should validate URL and return invalid result', async () => {
     const invalidResult = createInvalidResult('INVALID_FORMAT', 'Invalid URL format');
     mockValidateUrl.mockResolvedValue(invalidResult);
 
-    const { result } = renderHook(
-      () => useUrlValidation('https://example.com/not-soundcloud'),
-      { wrapper: createQueryWrapper() }
-    );
+    const { result } = renderHook(() => useUrlValidation('https://example.com/not-soundcloud'), { wrapper: createQueryWrapper() });
 
     await waitFor(() => {
       expect(result.current.isValidating).toBe(false);
@@ -90,13 +82,10 @@ describe('useUrlValidation', () => {
     const validResult = createValidResult('track');
     mockValidateUrl.mockResolvedValue(validResult);
 
-    const { result, rerender } = renderHook(
-      ({ url }) => useUrlValidation(url),
-      {
-        initialProps: { url: 'https://soundcloud.com/artist/track' },
-        wrapper: createQueryWrapper(),
-      }
-    );
+    const { result, rerender } = renderHook(({ url }) => useUrlValidation(url), {
+      initialProps: { url: 'https://soundcloud.com/artist/track' },
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.result).toEqual(validResult);
@@ -127,10 +116,7 @@ describe('useUrlValidation', () => {
     const trackResult = createValidResult('track');
     mockValidateUrl.mockResolvedValue(trackResult);
 
-    const { result } = renderHook(
-      () => useUrlValidation('https://soundcloud.com/artist/track-name'),
-      { wrapper: createQueryWrapper() }
-    );
+    const { result } = renderHook(() => useUrlValidation('https://soundcloud.com/artist/track-name'), { wrapper: createQueryWrapper() });
 
     await waitFor(() => {
       expect(result.current.result).toEqual(trackResult);
@@ -146,10 +132,7 @@ describe('useUrlValidation', () => {
     const playlistResult = createValidResult('playlist');
     mockValidateUrl.mockResolvedValue(playlistResult);
 
-    const { result } = renderHook(
-      () => useUrlValidation('https://soundcloud.com/artist/sets/playlist'),
-      { wrapper: createQueryWrapper() }
-    );
+    const { result } = renderHook(() => useUrlValidation('https://soundcloud.com/artist/sets/playlist'), { wrapper: createQueryWrapper() });
 
     await waitFor(() => {
       expect(result.current.result).toEqual(playlistResult);
@@ -167,13 +150,10 @@ describe('useUrlValidation', () => {
 
     mockValidateUrl.mockResolvedValueOnce(result1).mockResolvedValueOnce(result2);
 
-    const { result, rerender } = renderHook(
-      ({ url }) => useUrlValidation(url),
-      {
-        initialProps: { url: 'https://soundcloud.com/artist/track' },
-        wrapper: createQueryWrapper(),
-      }
-    );
+    const { result, rerender } = renderHook(({ url }) => useUrlValidation(url), {
+      initialProps: { url: 'https://soundcloud.com/artist/track' },
+      wrapper: createQueryWrapper(),
+    });
 
     await waitFor(() => {
       expect(result.current.result).toEqual(result1);

@@ -7,7 +7,7 @@ function renderDownloadBar(props: React.ComponentProps<typeof DownloadBar>) {
   return render(
     <TooltipProvider>
       <DownloadBar {...props} />
-    </TooltipProvider>
+    </TooltipProvider>,
   );
 }
 
@@ -40,8 +40,7 @@ vi.mock('@tauri-apps/api/core', () => ({
 
 const mockDownloadPath = '/Users/test/Downloads';
 vi.mock('@/features/settings/store', () => ({
-  useSettingsStore: (selector: (state: { downloadPath: string }) => string) =>
-    selector({ downloadPath: mockDownloadPath }),
+  useSettingsStore: (selector: (state: { downloadPath: string }) => string) => selector({ downloadPath: mockDownloadPath }),
 }));
 
 describe('DownloadBar', () => {
@@ -258,10 +257,7 @@ describe('DownloadBar', () => {
     it('folder selector has aria-label', () => {
       renderDownloadBar({ onDownload: mockOnDownload });
 
-      expect(screen.getByTestId('folder-selector')).toHaveAttribute(
-        'aria-label',
-        'Select download folder'
-      );
+      expect(screen.getByTestId('folder-selector')).toHaveAttribute('aria-label', 'Select download folder');
     });
 
     it('folder selector is keyboard accessible', () => {

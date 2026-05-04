@@ -46,7 +46,7 @@ export function getCachedUrl(trackId: number): string | null {
 
 /** Store a resolved URL in the cache. */
 export function setCachedUrl(trackId: number, url: string): void {
-  const expiresAt = extractUrlExpiration(url) ?? (Date.now() + URL_TTL_MS);
+  const expiresAt = extractUrlExpiration(url) ?? Date.now() + URL_TTL_MS;
   cache.set(trackId, { url, expiresAt });
 }
 
@@ -77,10 +77,7 @@ function resolveOne(trackId: number, trackUrl: string): Promise<string> {
 }
 
 /** Resolve a playback URL, reusing cache or in-flight preload. */
-export async function resolveWithCache(
-  trackId: number,
-  trackUrl: string,
-): Promise<string> {
+export async function resolveWithCache(trackId: number, trackUrl: string): Promise<string> {
   const cached = getCachedUrl(trackId);
   if (cached) return cached;
   void logger.debug(`[url-cache] Cache miss for track ${trackId}, refetching URL`);
@@ -150,9 +147,7 @@ async function parseManifest(trackId: number): Promise<ParsedSegment[] | null> {
         const durationMs = duration * 1000;
         const urlLine = lines[i + 1]?.trim();
         if (urlLine && !urlLine.startsWith('#')) {
-          const url = urlLine.startsWith('http')
-            ? urlLine
-            : new URL(urlLine, hlsUrl).href;
+          const url = urlLine.startsWith('http') ? urlLine : new URL(urlLine, hlsUrl).href;
           segments.push({ url, startMs: currentTimeMs, endMs: currentTimeMs + durationMs });
           currentTimeMs += durationMs;
         }
@@ -183,20 +178,14 @@ async function fetchSegment(url: string): Promise<void> {
  * Preload the next `limit` tracks in a queue starting from `fromIndex`.
  * Resolves their playback URLs and fetches the first HLS segment of each.
  */
-export function preloadQueueSegments(
-  tracks: Array<{ trackId: number; trackUrl: string }>,
-  fromIndex = 0,
-  limit = 1,
-): void {
-  const toPreload = tracks
-    .slice(fromIndex, fromIndex + limit)
-    .filter((t) => {
-      const needsRefresh = segmentPreloaded.has(t.trackId) && !isCacheValid(t.trackId);
-      if (needsRefresh) {
-        void logger.debug(`[url-cache] Expired URL for track ${t.trackId}, re-preloading`);
-      }
-      return !segmentPreloaded.has(t.trackId) || needsRefresh;
-    });
+export function preloadQueueSegments(tracks: Array<{ trackId: number; trackUrl: string }>, fromIndex = 0, limit = 1): void {
+  const toPreload = tracks.slice(fromIndex, fromIndex + limit).filter((t) => {
+    const needsRefresh = segmentPreloaded.has(t.trackId) && !isCacheValid(t.trackId);
+    if (needsRefresh) {
+      void logger.debug(`[url-cache] Expired URL for track ${t.trackId}, re-preloading`);
+    }
+    return !segmentPreloaded.has(t.trackId) || needsRefresh;
+  });
   if (toPreload.length === 0) return;
 
   void (async () => {

@@ -5,18 +5,9 @@ interface AnimatedCheckmarkProps {
   size?: number;
 }
 
-export function AnimatedCheckmark({
-  className,
-  size = 48,
-}: AnimatedCheckmarkProps) {
+export function AnimatedCheckmark({ className, size = 48 }: AnimatedCheckmarkProps) {
   return (
-    <svg
-      className={cn('text-success', className)}
-      width={size}
-      height={size}
-      viewBox="0 0 52 52"
-      aria-hidden="true"
-    >
+    <svg className={cn('text-success', className)} width={size} height={size} viewBox="0 0 52 52" aria-hidden="true">
       <circle
         className="motion-safe:animate-[checkmark-circle_0.4s_ease-out_forwards]"
         cx="26"

@@ -29,17 +29,18 @@ export function DetailHeader({
 
   return (
     <div className="space-y-2">
-      {navigation ?? (onBack && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="gap-1.5 -ml-2 h-7 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          {backLabel ?? t('common.back')}
-        </Button>
-      ))}
+      {navigation ??
+        (onBack && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onBack}
+            className="gap-1.5 -ml-2 h-7 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {backLabel ?? t('common.back')}
+          </Button>
+        ))}
       <div className="flex items-center gap-3">
         {artwork}
         <div className="min-w-0 flex-1">
@@ -48,7 +49,9 @@ export function DetailHeader({
               <button type="button" onClick={onTitleClick} className="hover:underline cursor-pointer text-left">
                 {title}
               </button>
-            ) : title}
+            ) : (
+              title
+            )}
           </h2>
           {subtitle}
         </div>

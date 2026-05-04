@@ -15,9 +15,7 @@ vi.mock('@/features/player', () => ({
   usePlayerStore: {
     getState: vi.fn(() => ({ play: vi.fn() })),
   },
-  buildPlaybackQueue: vi.fn((tracks: { id: number; title: string }[]) =>
-    tracks.map((t) => ({ trackId: t.id, title: t.title })),
-  ),
+  buildPlaybackQueue: vi.fn((tracks: { id: number; title: string }[]) => tracks.map((t) => ({ trackId: t.id, title: t.title }))),
 }));
 
 vi.mock('../store', () => ({

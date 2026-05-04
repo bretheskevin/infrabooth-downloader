@@ -1,74 +1,60 @@
-import * as React from "react"
-import * as TabsPrimitive from "@radix-ui/react-tabs"
-import { cva, type VariantProps } from "class-variance-authority"
+import * as React from 'react';
+import * as TabsPrimitive from '@radix-ui/react-tabs';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-import { cn } from "@/lib/utils"
+import { cn } from '@/lib/utils';
 
-const Tabs = TabsPrimitive.Root
+const Tabs = TabsPrimitive.Root;
 
-const TabsVariantContext = React.createContext<"default" | "underline">("default")
+const TabsVariantContext = React.createContext<'default' | 'underline'>('default');
 
-const tabsListVariants = cva(
-  "inline-flex items-center justify-center text-muted-foreground",
-  {
-    variants: {
-      variant: {
-        default: "h-9 rounded-lg bg-muted p-1",
-        underline: "h-auto gap-1 border-b border-border bg-transparent p-0",
-      },
+const tabsListVariants = cva('inline-flex items-center justify-center text-muted-foreground', {
+  variants: {
+    variant: {
+      default: 'h-9 rounded-lg bg-muted p-1',
+      underline: 'h-auto gap-1 border-b border-border bg-transparent p-0',
     },
-    defaultVariants: {
-      variant: "default",
-    },
-  }
-)
+  },
+  defaultVariants: {
+    variant: 'default',
+  },
+});
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
-  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> &
-    VariantProps<typeof tabsListVariants>
+  React.ComponentPropsWithoutRef<typeof TabsPrimitive.List> & VariantProps<typeof tabsListVariants>
 >(({ className, variant, ...props }, ref) => (
-  <TabsVariantContext.Provider value={variant ?? "default"}>
-    <TabsPrimitive.List
-      ref={ref}
-      className={cn(tabsListVariants({ variant }), className)}
-      {...props}
-    />
+  <TabsVariantContext.Provider value={variant ?? 'default'}>
+    <TabsPrimitive.List ref={ref} className={cn(tabsListVariants({ variant }), className)} {...props} />
   </TabsVariantContext.Provider>
-))
-TabsList.displayName = TabsPrimitive.List.displayName
+));
+TabsList.displayName = TabsPrimitive.List.displayName;
 
 const tabsTriggerVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+  'inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         default:
-          "rounded-md px-3 py-1 ring-offset-background data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow",
+          'rounded-md px-3 py-1 ring-offset-background data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow',
         underline:
-          "rounded-none border-b-2 border-transparent px-3 py-1.5 data-[state=active]:border-primary data-[state=active]:text-foreground",
+          'rounded-none border-b-2 border-transparent px-3 py-1.5 data-[state=active]:border-primary data-[state=active]:text-foreground',
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: 'default',
     },
-  }
-)
+  },
+);
 
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
 >(({ className, ...props }, ref) => {
-  const variant = React.useContext(TabsVariantContext)
-  return (
-    <TabsPrimitive.Trigger
-      ref={ref}
-      className={cn(tabsTriggerVariants({ variant }), className)}
-      {...props}
-    />
-  )
-})
-TabsTrigger.displayName = TabsPrimitive.Trigger.displayName
+  const variant = React.useContext(TabsVariantContext);
+  return <TabsPrimitive.Trigger ref={ref} className={cn(tabsTriggerVariants({ variant }), className)} {...props} />;
+});
+TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
@@ -77,12 +63,12 @@ const TabsContent = React.forwardRef<
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
-      "mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-      className
+      'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+      className,
     )}
     {...props}
   />
-))
-TabsContent.displayName = TabsPrimitive.Content.displayName
+));
+TabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { Tabs, TabsList, TabsTrigger, TabsContent }
+export { Tabs, TabsList, TabsTrigger, TabsContent };

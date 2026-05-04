@@ -37,26 +37,14 @@ describe('SuccessMessage', () => {
   });
 
   it('should render partial success message when some tracks failed', () => {
-    render(
-      <SuccessMessage
-        {...defaultProps}
-        completedCount={8}
-        isFullSuccess={false}
-      />
-    );
+    render(<SuccessMessage {...defaultProps} completedCount={8} isFullSuccess={false} />);
 
     expect(screen.getByText('Download finished')).toBeInTheDocument();
     expect(screen.getByText('8 of 10 tracks downloaded')).toBeInTheDocument();
   });
 
   it('should render single track success', () => {
-    render(
-      <SuccessMessage
-        {...defaultProps}
-        completedCount={1}
-        totalCount={1}
-      />
-    );
+    render(<SuccessMessage {...defaultProps} completedCount={1} totalCount={1} />);
 
     expect(screen.getByText('Download complete!')).toBeInTheDocument();
     expect(screen.getByText('All 1 tracks downloaded')).toBeInTheDocument();
@@ -70,30 +58,14 @@ describe('SuccessMessage', () => {
   });
 
   it('should render cancelled message when download was cancelled with some tracks downloaded', () => {
-    render(
-      <SuccessMessage
-        {...defaultProps}
-        completedCount={3}
-        cancelledCount={7}
-        isFullSuccess={false}
-        isCancelled={true}
-      />
-    );
+    render(<SuccessMessage {...defaultProps} completedCount={3} cancelledCount={7} isFullSuccess={false} isCancelled={true} />);
 
     expect(screen.getByText('Download cancelled')).toBeInTheDocument();
     expect(screen.getByText('3 tracks downloaded before cancellation')).toBeInTheDocument();
   });
 
   it('should render cancelled message when download was cancelled with no tracks downloaded', () => {
-    render(
-      <SuccessMessage
-        {...defaultProps}
-        completedCount={0}
-        cancelledCount={10}
-        isFullSuccess={false}
-        isCancelled={true}
-      />
-    );
+    render(<SuccessMessage {...defaultProps} completedCount={0} cancelledCount={10} isFullSuccess={false} isCancelled={true} />);
 
     expect(screen.getByText('Download cancelled')).toBeInTheDocument();
     expect(screen.getByText('No tracks were downloaded')).toBeInTheDocument();

@@ -51,23 +51,13 @@ describe('TrackStatusIcon', () => {
     });
 
     it('should render warning icon for failed status with warning error', () => {
-      render(
-        <TrackStatusIcon
-          status="failed"
-          errorCode="GEO_BLOCKED"
-        />
-      );
+      render(<TrackStatusIcon status="failed" errorCode="GEO_BLOCKED" />);
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveClass('text-warning');
     });
 
     it('should render error icon for failed status with error code', () => {
-      render(
-        <TrackStatusIcon
-          status="failed"
-          errorCode="DOWNLOAD_FAILED"
-        />
-      );
+      render(<TrackStatusIcon status="failed" errorCode="DOWNLOAD_FAILED" />);
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveClass('text-destructive');
     });
@@ -78,20 +68,14 @@ describe('TrackStatusIcon', () => {
           status="failed"
           errorCode="DOWNLOAD_FAILED"
           error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable - may have been removed' }}
-        />
+        />,
       );
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveClass('text-warning');
     });
 
     it('should render warning icon for private video error', () => {
-      render(
-        <TrackStatusIcon
-          status="failed"
-          errorCode="DOWNLOAD_FAILED"
-          error={{ code: 'DOWNLOAD_FAILED', message: 'Private video' }}
-        />
-      );
+      render(<TrackStatusIcon status="failed" errorCode="DOWNLOAD_FAILED" error={{ code: 'DOWNLOAD_FAILED', message: 'Private video' }} />);
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveClass('text-warning');
     });
@@ -167,11 +151,7 @@ describe('TrackStatusIcon', () => {
 
     it('should have specific aria-label for unavailable errors', () => {
       render(
-        <TrackStatusIcon
-          status="failed"
-          errorCode="DOWNLOAD_FAILED"
-          error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable' }}
-        />
+        <TrackStatusIcon status="failed" errorCode="DOWNLOAD_FAILED" error={{ code: 'DOWNLOAD_FAILED', message: 'Track unavailable' }} />,
       );
       const icon = screen.getByRole('img', { hidden: true });
       expect(icon).toHaveAttribute('aria-label', 'Track unavailable - external restriction');

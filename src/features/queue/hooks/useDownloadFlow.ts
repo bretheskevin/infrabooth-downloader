@@ -72,7 +72,7 @@ export function useDownloadFlow(initialUrl = ''): UseDownloadFlowReturn {
         setIsPending(false);
       }
     },
-    [media, initiateDownload]
+    [media, initiateDownload],
   );
 
   return {

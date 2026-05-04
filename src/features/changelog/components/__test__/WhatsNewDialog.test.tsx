@@ -29,97 +29,41 @@ const mockSections: ChangelogSection[] = [
 
 describe('WhatsNewDialog', () => {
   it('should render dialog when open', () => {
-    render(
-      <WhatsNewDialog
-        open={true}
-        onDismiss={() => {}}
-        version="1.6.0"
-        date="2026-03-11"
-        sections={mockSections}
-      />
-    );
+    render(<WhatsNewDialog open={true} onDismiss={() => {}} version="1.6.0" date="2026-03-11" sections={mockSections} />);
     expect(screen.getByText("What's new in v1.6.0")).toBeInTheDocument();
   });
 
   it('should show release date as description', () => {
-    render(
-      <WhatsNewDialog
-        open={true}
-        onDismiss={() => {}}
-        version="1.6.0"
-        date="2026-03-11"
-        sections={mockSections}
-      />
-    );
+    render(<WhatsNewDialog open={true} onDismiss={() => {}} version="1.6.0" date="2026-03-11" sections={mockSections} />);
     // Date is formatted via Intl.DateTimeFormat with dateStyle: 'long'
     expect(screen.getByText(/^Released /)).toBeInTheDocument();
   });
 
   it('should show fallback description when date is null', () => {
-    render(
-      <WhatsNewDialog
-        open={true}
-        onDismiss={() => {}}
-        version="1.6.0"
-        date={null}
-        sections={mockSections}
-      />
-    );
+    render(<WhatsNewDialog open={true} onDismiss={() => {}} version="1.6.0" date={null} sections={mockSections} />);
     expect(screen.getByText('Version history and release notes')).toBeInTheDocument();
   });
 
   it('should render changelog sections', () => {
-    render(
-      <WhatsNewDialog
-        open={true}
-        onDismiss={() => {}}
-        version="1.6.0"
-        date={null}
-        sections={mockSections}
-      />
-    );
+    render(<WhatsNewDialog open={true} onDismiss={() => {}} version="1.6.0" date={null} sections={mockSections} />);
     expect(screen.getByText('New feature')).toBeInTheDocument();
     expect(screen.getByText('Bug fix')).toBeInTheDocument();
   });
 
   it('should call onDismiss when "Got it" is clicked', () => {
     const onDismiss = vi.fn();
-    render(
-      <WhatsNewDialog
-        open={true}
-        onDismiss={onDismiss}
-        version="1.6.0"
-        date={null}
-        sections={mockSections}
-      />
-    );
+    render(<WhatsNewDialog open={true} onDismiss={onDismiss} version="1.6.0" date={null} sections={mockSections} />);
     fireEvent.click(screen.getByRole('button', { name: 'Got it' }));
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 
   it('should not render when open is false', () => {
-    render(
-      <WhatsNewDialog
-        open={false}
-        onDismiss={() => {}}
-        version="1.6.0"
-        date={null}
-        sections={mockSections}
-      />
-    );
+    render(<WhatsNewDialog open={false} onDismiss={() => {}} version="1.6.0" date={null} sections={mockSections} />);
     expect(screen.queryByText("What's new in v1.6.0")).not.toBeInTheDocument();
   });
 
   it('should show generic message when sections is empty', () => {
-    render(
-      <WhatsNewDialog
-        open={true}
-        onDismiss={() => {}}
-        version="1.6.0"
-        date={null}
-        sections={[]}
-      />
-    );
+    render(<WhatsNewDialog open={true} onDismiss={() => {}} version="1.6.0" date={null} sections={[]} />);
     expect(screen.getByText("What's new in v1.6.0")).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Got it' })).toBeInTheDocument();
   });

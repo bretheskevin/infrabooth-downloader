@@ -38,7 +38,11 @@ describe('AuthContainer', () => {
   });
 
   it('should render SignInButton when not signed in', () => {
-    render(<TooltipProvider><AuthContainer /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <AuthContainer />
+      </TooltipProvider>,
+    );
 
     expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
   });
@@ -46,7 +50,11 @@ describe('AuthContainer', () => {
   it('should render UserMenu when signed in with username', () => {
     useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
-    render(<TooltipProvider><AuthContainer /></TooltipProvider>);
+    render(
+      <TooltipProvider>
+        <AuthContainer />
+      </TooltipProvider>,
+    );
 
     // UserMenu shows username and quality badge in a dropdown trigger button
     expect(screen.getByText('testuser')).toBeInTheDocument();
@@ -55,7 +63,11 @@ describe('AuthContainer', () => {
   });
 
   it('should switch from SignInButton to UserMenu when auth state changes', () => {
-    const { rerender } = render(<TooltipProvider><AuthContainer /></TooltipProvider>);
+    const { rerender } = render(
+      <TooltipProvider>
+        <AuthContainer />
+      </TooltipProvider>,
+    );
 
     // Initially shows check browser login button
     expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
@@ -66,7 +78,11 @@ describe('AuthContainer', () => {
     });
 
     // Rerender to pick up state change
-    rerender(<TooltipProvider><AuthContainer /></TooltipProvider>);
+    rerender(
+      <TooltipProvider>
+        <AuthContainer />
+      </TooltipProvider>,
+    );
 
     // Now shows user menu with username
     expect(screen.getByText('testuser')).toBeInTheDocument();
@@ -74,7 +90,11 @@ describe('AuthContainer', () => {
   });
 
   it('should have transition classes for smooth state changes', () => {
-    const { container } = render(<TooltipProvider><AuthContainer /></TooltipProvider>);
+    const { container } = render(
+      <TooltipProvider>
+        <AuthContainer />
+      </TooltipProvider>,
+    );
 
     const wrapper = container.firstChild;
     expect(wrapper).toHaveClass('transition-opacity', 'duration-200');

@@ -29,17 +29,11 @@ export function PlaylistActivityRow({ item, onClose }: PlaylistActivityRowProps)
     <button type="button" onClick={handlePlaylistClick} className={NOTIFICATION_ROW_CLASS}>
       <ClickableAvatar actor={item.actor} onClose={onClose} />
       <div className="flex-1 min-w-0">
-        <p className="text-sm truncate">
-          {t(LABEL_KEY[item.kind], { actor: item.actor.username, playlist: item.playlist.title })}
-        </p>
+        <p className="text-sm truncate">{t(LABEL_KEY[item.kind], { actor: item.actor.username, playlist: item.playlist.title })}</p>
         <p className="text-xs text-muted-foreground">{formatRelativeTime(item.created_at, t)}</p>
       </div>
       {item.playlist.artwork_url && (
-        <img
-          src={item.playlist.artwork_url}
-          alt=""
-          className="h-10 w-10 rounded bg-muted shrink-0 object-cover"
-        />
+        <img src={item.playlist.artwork_url} alt="" className="h-10 w-10 rounded bg-muted shrink-0 object-cover" />
       )}
     </button>
   );

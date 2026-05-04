@@ -19,10 +19,10 @@ describe('UnavailableTrackTooltip', () => {
   it('should render children', () => {
     render(
       <TooltipProvider>
-      <UnavailableTrackTooltip>
-        <button>Trigger</button>
-      </UnavailableTrackTooltip>
-      </TooltipProvider>
+        <UnavailableTrackTooltip>
+          <button>Trigger</button>
+        </UnavailableTrackTooltip>
+      </TooltipProvider>,
     );
     expect(screen.getByRole('button', { name: 'Trigger' })).toBeInTheDocument();
   });
@@ -32,10 +32,10 @@ describe('UnavailableTrackTooltip', () => {
 
     render(
       <TooltipProvider>
-      <UnavailableTrackTooltip>
-        <button>Trigger</button>
-      </UnavailableTrackTooltip>
-      </TooltipProvider>
+        <UnavailableTrackTooltip>
+          <button>Trigger</button>
+        </UnavailableTrackTooltip>
+      </TooltipProvider>,
     );
 
     const trigger = screen.getByRole('button', { name: 'Trigger' });
@@ -51,10 +51,10 @@ describe('UnavailableTrackTooltip', () => {
 
     render(
       <TooltipProvider>
-      <UnavailableTrackTooltip>
-        <button>Trigger</button>
-      </UnavailableTrackTooltip>
-      </TooltipProvider>
+        <UnavailableTrackTooltip>
+          <button>Trigger</button>
+        </UnavailableTrackTooltip>
+      </TooltipProvider>,
     );
 
     const trigger = screen.getByRole('button', { name: 'Trigger' });

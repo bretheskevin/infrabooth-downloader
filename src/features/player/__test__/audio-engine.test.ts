@@ -93,7 +93,13 @@ describe('audioEngine', () => {
   });
 
   describe('HLS error handling', () => {
-    let hlsInstance: { on: ReturnType<typeof vi.fn>; loadSource: ReturnType<typeof vi.fn>; attachMedia: ReturnType<typeof vi.fn>; destroy: ReturnType<typeof vi.fn>; recoverMediaError: ReturnType<typeof vi.fn> };
+    let hlsInstance: {
+      on: ReturnType<typeof vi.fn>;
+      loadSource: ReturnType<typeof vi.fn>;
+      attachMedia: ReturnType<typeof vi.fn>;
+      destroy: ReturnType<typeof vi.fn>;
+      recoverMediaError: ReturnType<typeof vi.fn>;
+    };
 
     beforeEach(async () => {
       const Hls = (await import('hls.js')).default;

@@ -1,11 +1,7 @@
 import type { LibraryPlaylist } from '@/bindings';
 import type { LibraryFilter } from '../types';
 
-export function filterPlaylists(
-  playlists: LibraryPlaylist[],
-  searchQuery: string,
-  filter: LibraryFilter,
-): LibraryPlaylist[] {
+export function filterPlaylists(playlists: LibraryPlaylist[], searchQuery: string, filter: LibraryFilter): LibraryPlaylist[] {
   const query = searchQuery.trim().toLowerCase();
 
   return playlists.filter((p) => {

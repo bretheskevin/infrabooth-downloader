@@ -4,11 +4,13 @@ import { ArtistSearchResultItem } from '../components/ArtistSearchResultItem';
 import type { UserSearchResult } from '@/bindings';
 
 vi.mock('react-i18next', () => ({
-  useTranslation: () => ({ t: (key: string, opts?: Record<string, unknown>) => {
-    if (key === 'search.followers') return `${opts?.value} followers`;
-    if (key === 'search.tracks') return `${opts?.value} tracks`;
-    return key;
-  }}),
+  useTranslation: () => ({
+    t: (key: string, opts?: Record<string, unknown>) => {
+      if (key === 'search.followers') return `${opts?.value} followers`;
+      if (key === 'search.tracks') return `${opts?.value} tracks`;
+      return key;
+    },
+  }),
 }));
 
 const mockOpenProfile = vi.fn();

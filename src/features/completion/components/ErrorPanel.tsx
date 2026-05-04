@@ -5,10 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import type {
-  FailedTrack,
-  FailureReasonCategory,
-} from '@/features/queue/types/download';
+import type { FailedTrack, FailureReasonCategory } from '@/features/queue/types/download';
 import { groupFailuresByReason } from '@/features/completion/utils/groupFailuresByReason';
 import { FailureGroup } from './FailureGroup';
 
@@ -21,21 +18,9 @@ interface ErrorPanelProps {
 }
 
 // Retryable categories (network, other) listed first, then non-retryable (unavailable, geo_blocked)
-const CATEGORY_ORDER: FailureReasonCategory[] = [
-  'network',
-  'other',
-  'unavailable',
-  'drm_protected',
-  'geo_blocked',
-];
+const CATEGORY_ORDER: FailureReasonCategory[] = ['network', 'other', 'unavailable', 'drm_protected', 'geo_blocked'];
 
-export function ErrorPanel({
-  failedTracks,
-  isOpen,
-  onOpenChange,
-  onRetryTrack,
-  isRetrying = false,
-}: ErrorPanelProps) {
+export function ErrorPanel({ failedTracks, isOpen, onOpenChange, onRetryTrack, isRetrying = false }: ErrorPanelProps) {
   const { t } = useTranslation();
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -66,13 +51,11 @@ export function ErrorPanel({
           className={cn(
             'mt-3 overflow-hidden rounded-lg',
             'border border-border/50 bg-card/80 backdrop-blur-md',
-            'shadow-sm dark:border-border/30 dark:bg-card/70'
+            'shadow-sm dark:border-border/30 dark:bg-card/70',
           )}
         >
           <div className="flex items-center justify-between border-b border-border/50 px-4 py-2">
-            <h3 className="text-sm font-semibold text-foreground">
-              {t('errors.panelTitle')}
-            </h3>
+            <h3 className="text-sm font-semibold text-foreground">{t('errors.panelTitle')}</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -90,13 +73,7 @@ export function ErrorPanel({
                 const tracks = groupedFailures.get(category);
                 if (!tracks || tracks.length === 0) return null;
                 return (
-                  <FailureGroup
-                    key={category}
-                    category={category}
-                    tracks={tracks}
-                    onRetryTrack={onRetryTrack}
-                    isRetrying={isRetrying}
-                  />
+                  <FailureGroup key={category} category={category} tracks={tracks} onRetryTrack={onRetryTrack} isRetrying={isRetrying} />
                 );
               })}
             </div>

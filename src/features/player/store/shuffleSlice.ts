@@ -11,12 +11,10 @@ export interface ShuffleSliceActions {
 
 export type ShuffleSlice = ShuffleSliceActions;
 
-export const createShuffleSlice: StateCreator<
-  PlayerState & ShuffleSliceActions & PlaybackSliceActions,
-  [],
-  [],
-  ShuffleSlice
-> = (set, get) => ({
+export const createShuffleSlice: StateCreator<PlayerState & ShuffleSliceActions & PlaybackSliceActions, [], [], ShuffleSlice> = (
+  set,
+  get,
+) => ({
   toggleShuffle: () => {
     const { queue, cursor, currentTrack, isShuffled, originalQueue, stationQueueCount } = get();
 

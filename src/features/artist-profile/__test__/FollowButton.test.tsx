@@ -39,12 +39,7 @@ describe('FollowButton', () => {
 
   async function renderButton(props?: { artistUsername?: string }) {
     const { FollowButton } = await import('../components/FollowButton');
-    return render(
-      <FollowButton
-        artistId={42}
-        artistUsername={props?.artistUsername ?? 'otherArtist'}
-      />,
-    );
+    return render(<FollowButton artistId={42} artistUsername={props?.artistUsername ?? 'otherArtist'} />);
   }
 
   it('renders Follow when not following', async () => {

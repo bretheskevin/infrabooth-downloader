@@ -23,7 +23,7 @@ export function UserMenu() {
       userId: state.userId,
       plan: state.plan,
       avatarUrl: state.avatarUrl,
-    }))
+    })),
   );
   const isGoPlus = plan != null && plan !== '' && plan !== 'Free';
 
@@ -49,10 +49,7 @@ export function UserMenu() {
           </Avatar>
           <span className="text-sm font-medium">{username}</span>
           {isGoPlus && (
-            <Badge
-              variant="secondary"
-              className="bg-primary/10 text-primary border-0 font-semibold"
-            >
+            <Badge variant="secondary" className="bg-primary/10 text-primary border-0 font-semibold">
               {t('auth.qualityBadge', 'Go+ 256kbps')}
             </Badge>
           )}

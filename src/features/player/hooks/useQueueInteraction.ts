@@ -1,50 +1,40 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
-import {
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-  type DragStartEvent,
-} from "@dnd-kit/core";
-import { sortableKeyboardCoordinates } from "@dnd-kit/sortable";
-import { useShallow } from "zustand/react/shallow";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { KeyboardSensor, PointerSensor, useSensor, useSensors, type DragEndEvent, type DragStartEvent } from '@dnd-kit/core';
+import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
+import { useShallow } from 'zustand/react/shallow';
 
-import { useVirtualizedList } from "@/hooks/useVirtualizedList";
-import { usePlayerStore } from "../store";
+import { useVirtualizedList } from '@/hooks/useVirtualizedList';
+import { usePlayerStore } from '../store';
 
 const actions = () => usePlayerStore.getState();
 const ITEM_HEIGHT = 44;
 
 export function useQueueInteraction() {
   const { t } = useTranslation();
-  const { queue, cursor, playerState, manualQueueCount, stationQueueCount } =
-    usePlayerStore(
-      useShallow((s) => ({
-        queue: s.queue,
-        cursor: s.cursor,
-        playerState: s.state,
-        manualQueueCount: s.manualQueueCount,
-        stationQueueCount: s.stationQueueCount,
-      })),
-    );
+  const { queue, cursor, playerState, manualQueueCount, stationQueueCount } = usePlayerStore(
+    useShallow((s) => ({
+      queue: s.queue,
+      cursor: s.cursor,
+      playerState: s.state,
+      manualQueueCount: s.manualQueueCount,
+      stationQueueCount: s.stationQueueCount,
+    })),
+  );
 
   const [activeId, setActiveId] = useState<number | null>(null);
-  const stationStartIdx =
-    stationQueueCount > 0 ? queue.length - stationQueueCount : -1;
+  const stationStartIdx = stationQueueCount > 0 ? queue.length - stationQueueCount : -1;
 
   const itemIds = useMemo(() => queue.map((i) => i.trackId), [queue]);
 
   const getSectionHeader = (index: number): string | undefined => {
     const isManualStart = manualQueueCount > 0 && index === cursor + 1;
-    const showAutoHeader =
-      manualQueueCount > 0 && index === cursor + 1 + manualQueueCount;
+    const showAutoHeader = manualQueueCount > 0 && index === cursor + 1 + manualQueueCount;
     const isStationStart = index === stationStartIdx;
 
-    if (isManualStart) return t("player.nextUp");
-    if (isStationStart) return t("player.stationSection");
-    if (showAutoHeader && !isStationStart) return t("player.queueSection");
+    if (isManualStart) return t('player.nextUp');
+    if (isStationStart) return t('player.stationSection');
+    if (showAutoHeader && !isStationStart) return t('player.queueSection');
     return undefined;
   };
 
@@ -91,17 +81,10 @@ export function useQueueInteraction() {
   const handlePlay = useCallback((i: number) => void actions().skipTo(i), []);
   const handlePause = useCallback(() => actions().pause(), []);
   const handleResume = useCallback(() => actions().resume(), []);
-  const handleRemove = useCallback(
-    (i: number) => actions().removeFromQueue(i),
-    [],
-  );
+  const handleRemove = useCallback((i: number) => actions().removeFromQueue(i), []);
 
-  const activeItem =
-    activeId !== null ? queue.find((item) => item.trackId === activeId) : null;
-  const activeIndex =
-    activeId !== null
-      ? queue.findIndex((item) => item.trackId === activeId)
-      : -1;
+  const activeItem = activeId !== null ? queue.find((item) => item.trackId === activeId) : null;
+  const activeIndex = activeId !== null ? queue.findIndex((item) => item.trackId === activeId) : -1;
 
   return {
     queue,

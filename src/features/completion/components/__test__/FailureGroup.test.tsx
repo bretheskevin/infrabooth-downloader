@@ -22,10 +22,7 @@ const createMockTrack = (id: string, title: string, artist: string) =>
   createMockFailedTrack({ id, title, artist, errorCode: 'GEO_BLOCKED', errorMessage: 'Not available' });
 
 describe('FailureGroup', () => {
-  const mockTracks = [
-    createMockTrack('1', 'Track One', 'Artist A'),
-    createMockTrack('2', 'Track Two', 'Artist B'),
-  ];
+  const mockTracks = [createMockTrack('1', 'Track One', 'Artist A'), createMockTrack('2', 'Track Two', 'Artist B')];
 
   it('should render group header with category label and count', () => {
     render(<FailureGroup category="geo_blocked" tracks={mockTracks} />);

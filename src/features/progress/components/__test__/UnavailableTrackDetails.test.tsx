@@ -23,9 +23,7 @@ describe('UnavailableTrackDetails', () => {
 
   it('should not show details content initially', () => {
     render(<UnavailableTrackDetails />);
-    expect(
-      screen.queryByText('This track may have been removed or made private')
-    ).not.toBeInTheDocument();
+    expect(screen.queryByText('This track may have been removed or made private')).not.toBeInTheDocument();
   });
 
   it('should expand details when clicked', async () => {
@@ -35,9 +33,7 @@ describe('UnavailableTrackDetails', () => {
     const trigger = screen.getByText('Show details');
     await user.click(trigger);
 
-    expect(
-      screen.getByText('This track may have been removed or made private')
-    ).toBeInTheDocument();
+    expect(screen.getByText('This track may have been removed or made private')).toBeInTheDocument();
   });
 
   it('should collapse details when clicked again', async () => {
@@ -48,9 +44,7 @@ describe('UnavailableTrackDetails', () => {
 
     // Expand
     await user.click(trigger);
-    expect(
-      screen.getByText('This track may have been removed or made private')
-    ).toBeInTheDocument();
+    expect(screen.getByText('This track may have been removed or made private')).toBeInTheDocument();
 
     // Collapse
     await user.click(trigger);

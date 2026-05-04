@@ -101,9 +101,8 @@ export const useSettingsStore = create<SettingsState>()(
         }
         state?._setHasHydrated(true);
       },
-    }
-  )
+    },
+  ),
 );
 
-export const useSettingsHydrated = () =>
-  useSettingsStore((state) => state._hasHydrated);
+export const useSettingsHydrated = () => useSettingsStore((state) => state._hasHydrated);

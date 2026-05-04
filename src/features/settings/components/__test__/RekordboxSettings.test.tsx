@@ -10,30 +10,32 @@ const mockSelectFolder = vi.fn();
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
-    t: (key: string) => ({
-      'settings.categoryRekordbox': 'Rekordbox',
-      'settings.rekordboxDescription': 'Download tracks and export them directly to Rekordbox.',
-      'settings.rekordboxFound': 'Detected',
-      'settings.rekordboxNotFoundBadge': 'Not found',
-      'settings.rekordboxRunningBadge': 'Running',
-      'settings.rekordboxNotFound': 'Rekordbox not found automatically. Choose your Rekordbox data directory if you use a custom location.',
-      'settings.rekordboxRunning': 'Close Rekordbox before exporting or managing playlists.',
-      'settings.rekordboxManualLabel': 'Rekordbox data directory',
-      'settings.rekordboxUnexpectedError': 'Unable to check Rekordbox right now.',
-      'settings.rekordboxLoading': 'Checking Rekordbox...',
-      'settings.rekordboxRetry': 'Retry detection',
-      'settings.rekordboxClearOverride': 'Reset to auto-detection',
-      'settings.rekordboxSelectDirectory': 'Select Rekordbox directory',
-      'settings.browse': 'Browse',
-      'settings.notSet': 'Not set',
-      'settings.rekordboxDefaultExportLabel': 'Default export folder',
-      'settings.rekordboxDefaultExportDescription': 'Choose where new playlists are created in Rekordbox.',
-      'settings.rekordboxDefaultExportDefault': 'InfraBooth Downloader (default)',
-      'settings.rekordboxDefaultExportChange': 'Change',
-      'settings.rekordboxDefaultExportReset': 'Reset to default',
-      'settings.rekordboxDefaultExportDeleted': 'The saved export folder no longer exists in Rekordbox. Reset to default.',
-      'settings.rekordboxDefaultExportLoadingTree': 'Loading folders...',
-    }[key] || key),
+    t: (key: string) =>
+      ({
+        'settings.categoryRekordbox': 'Rekordbox',
+        'settings.rekordboxDescription': 'Download tracks and export them directly to Rekordbox.',
+        'settings.rekordboxFound': 'Detected',
+        'settings.rekordboxNotFoundBadge': 'Not found',
+        'settings.rekordboxRunningBadge': 'Running',
+        'settings.rekordboxNotFound':
+          'Rekordbox not found automatically. Choose your Rekordbox data directory if you use a custom location.',
+        'settings.rekordboxRunning': 'Close Rekordbox before exporting or managing playlists.',
+        'settings.rekordboxManualLabel': 'Rekordbox data directory',
+        'settings.rekordboxUnexpectedError': 'Unable to check Rekordbox right now.',
+        'settings.rekordboxLoading': 'Checking Rekordbox...',
+        'settings.rekordboxRetry': 'Retry detection',
+        'settings.rekordboxClearOverride': 'Reset to auto-detection',
+        'settings.rekordboxSelectDirectory': 'Select Rekordbox directory',
+        'settings.browse': 'Browse',
+        'settings.notSet': 'Not set',
+        'settings.rekordboxDefaultExportLabel': 'Default export folder',
+        'settings.rekordboxDefaultExportDescription': 'Choose where new playlists are created in Rekordbox.',
+        'settings.rekordboxDefaultExportDefault': 'InfraBooth Downloader (default)',
+        'settings.rekordboxDefaultExportChange': 'Change',
+        'settings.rekordboxDefaultExportReset': 'Reset to default',
+        'settings.rekordboxDefaultExportDeleted': 'The saved export folder no longer exists in Rekordbox. Reset to default.',
+        'settings.rekordboxDefaultExportLoadingTree': 'Loading folders...',
+      })[key] || key,
   }),
 }));
 
@@ -154,7 +156,9 @@ describe('RekordboxSettings', () => {
     expect(header).toContainElement(notFoundBadge);
     expect(notFoundBadge).toHaveClass('bg-destructive/10');
     expect(notFoundBadge).toHaveClass('text-destructive');
-    expect(await screen.findByText('Rekordbox not found automatically. Choose your Rekordbox data directory if you use a custom location.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Rekordbox not found automatically. Choose your Rekordbox data directory if you use a custom location.'),
+    ).toBeInTheDocument();
     expect(screen.getByText('Rekordbox data directory')).toBeInTheDocument();
     expect(screen.getByText('Browse')).toBeInTheDocument();
   });
@@ -191,9 +195,7 @@ describe('RekordboxSettings', () => {
     it('shows resolved folder name when a folder is selected', async () => {
       mockStoreState.rekordboxDefaultExportFolderId = 'folder-1';
       mockUseRekordboxTree.mockReturnValue({
-        data: [
-          { id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 },
-        ],
+        data: [{ id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 }],
         isLoading: false,
         isError: false,
         retry: vi.fn(),
@@ -209,9 +211,7 @@ describe('RekordboxSettings', () => {
     it('shows warning when stored folder does not exist in tree', async () => {
       mockStoreState.rekordboxDefaultExportFolderId = 'nonexistent-folder';
       mockUseRekordboxTree.mockReturnValue({
-        data: [
-          { id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 },
-        ],
+        data: [{ id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 }],
         isLoading: false,
         isError: false,
         retry: vi.fn(),
@@ -226,9 +226,7 @@ describe('RekordboxSettings', () => {
     it('resets default folder when reset button is clicked', async () => {
       mockStoreState.rekordboxDefaultExportFolderId = 'folder-1';
       mockUseRekordboxTree.mockReturnValue({
-        data: [
-          { id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 },
-        ],
+        data: [{ id: 'folder-1', name: 'My Folder', attribute: 1, parentId: 'root', seq: 1 }],
         isLoading: false,
         isError: false,
         retry: vi.fn(),

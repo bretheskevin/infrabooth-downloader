@@ -48,9 +48,7 @@ describe('useRetryTracks', () => {
     it('should return false when no failed tracks', () => {
       const mockState = createMockState({ failedCount: 0 });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
 
       const { result } = renderHook(() => useRetryTracks());
       expect(result.current.canRetry).toBe(false);
@@ -59,9 +57,7 @@ describe('useRetryTracks', () => {
     it('should return false when processing', () => {
       const mockState = createMockState({ failedCount: 2, isProcessing: true });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
 
       const { result } = renderHook(() => useRetryTracks());
       expect(result.current.canRetry).toBe(false);
@@ -70,9 +66,7 @@ describe('useRetryTracks', () => {
     it('should return false when already retrying', () => {
       const mockState = createMockState({ failedCount: 2, isRetrying: true });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
 
       const { result } = renderHook(() => useRetryTracks());
       expect(result.current.canRetry).toBe(false);
@@ -81,9 +75,7 @@ describe('useRetryTracks', () => {
     it('should return true when has failures and not processing', () => {
       const mockState = createMockState({ failedCount: 2 });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
 
       const { result } = renderHook(() => useRetryTracks());
       expect(result.current.canRetry).toBe(true);
@@ -94,9 +86,7 @@ describe('useRetryTracks', () => {
     it('should not retry when no failed tracks', async () => {
       const mockState = createMockState();
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (useQueueStore as any).getState = vi.fn(() => mockState);
 
@@ -119,9 +109,7 @@ describe('useRetryTracks', () => {
         prepareRetryFailed: vi.fn(() => failedTracks),
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (useQueueStore as any).getState = vi.fn(() => mockState);
       vi.mocked(startDownloadQueue).mockResolvedValue(undefined);
@@ -142,7 +130,8 @@ describe('useRetryTracks', () => {
             title: 'Track 1',
             artist: 'Artist 1',
             artworkUrl: null,
-            durationMs: undefined, downloadUrl: null,
+            durationMs: undefined,
+            downloadUrl: null,
           },
           {
             trackUrl: 'https://api.soundcloud.com/tracks/2',
@@ -150,7 +139,8 @@ describe('useRetryTracks', () => {
             title: 'Track 2',
             artist: 'Artist 2',
             artworkUrl: 'http://art.jpg',
-            durationMs: undefined, downloadUrl: null,
+            durationMs: undefined,
+            downloadUrl: null,
           },
         ],
         albumName: null,
@@ -161,17 +151,13 @@ describe('useRetryTracks', () => {
     });
 
     it('should reset retrying state on error', async () => {
-      const failedTracks = [
-        { id: '1', title: 'Track 1', artist: 'Artist 1', artworkUrl: null, status: 'failed' as const },
-      ];
+      const failedTracks = [{ id: '1', title: 'Track 1', artist: 'Artist 1', artworkUrl: null, status: 'failed' as const }];
       const mockState = createMockState({
         failedCount: 1,
         prepareRetryFailed: vi.fn(() => failedTracks),
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (useQueueStore as any).getState = vi.fn(() => mockState);
       vi.mocked(startDownloadQueue).mockRejectedValue(new Error('Network error'));
@@ -192,9 +178,7 @@ describe('useRetryTracks', () => {
         prepareRetrySingle: vi.fn(() => null),
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (useQueueStore as any).getState = vi.fn(() => mockState);
 
@@ -220,9 +204,7 @@ describe('useRetryTracks', () => {
         prepareRetrySingle: vi.fn(() => track),
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (useQueueStore as any).getState = vi.fn(() => mockState);
       vi.mocked(startDownloadQueue).mockResolvedValue(undefined);
@@ -243,7 +225,8 @@ describe('useRetryTracks', () => {
             title: 'Track 1',
             artist: 'Artist 1',
             artworkUrl: null,
-            durationMs: undefined, downloadUrl: null,
+            durationMs: undefined,
+            downloadUrl: null,
           },
         ],
         albumName: null,
@@ -266,9 +249,7 @@ describe('useRetryTracks', () => {
         prepareRetrySingle: vi.fn(() => track),
       });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      vi.mocked(useQueueStore).mockImplementation((selector: any) =>
-        typeof selector === 'function' ? selector(mockState) : mockState
-      );
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (useQueueStore as any).getState = vi.fn(() => mockState);
       vi.mocked(startDownloadQueue).mockRejectedValue(new Error('Network error'));

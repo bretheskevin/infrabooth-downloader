@@ -43,11 +43,11 @@ vi.mock('@/hooks/useVirtualizedList', () => ({
 
 vi.mock('@/components/ui/virtual-list', () => ({
   VirtualListContainer: ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <div data-testid="virtual-list-container" className={className}>{children}</div>
+    <div data-testid="virtual-list-container" className={className}>
+      {children}
+    </div>
   ),
-  VirtualRow: ({ children }: { children: React.ReactNode }) => (
-    <div data-testid="virtual-row">{children}</div>
-  ),
+  VirtualRow: ({ children }: { children: React.ReactNode }) => <div data-testid="virtual-row">{children}</div>,
 }));
 
 const makePlaylists = (count: number): LibraryPlaylist[] =>

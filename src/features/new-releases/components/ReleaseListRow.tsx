@@ -25,9 +25,7 @@ export function ReleaseListRow({ item, onClick }: ReleaseListRowProps) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-            {typeLabel}
-          </span>
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">{typeLabel}</span>
           <p className="truncate text-sm font-medium">{item.release.title}</p>
         </div>
         <p className={cn('truncate text-xs', isRepost ? 'text-orange-500' : 'text-muted-foreground')}>

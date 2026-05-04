@@ -11,11 +11,7 @@ const GLASSMORPHISM_STYLES = [
   'dark:bg-card/90',
 ] as const;
 
-const TRANSPARENT_STYLES = [
-  'bg-card/50',
-  'border border-border/20',
-  'shadow-sm',
-] as const;
+const TRANSPARENT_STYLES = ['bg-card/50', 'border border-border/20', 'shadow-sm'] as const;
 
 interface ProgressPanelProps {
   className?: string;
@@ -25,24 +21,15 @@ export function ProgressPanel({ className }: ProgressPanelProps) {
   const { sentinelRef, isStuck } = useSticky();
 
   return (
-    <div
-      data-testid="progress-panel"
-      className={cn('flex flex-col h-full', className)}
-    >
+    <div data-testid="progress-panel" className={cn('flex flex-col h-full', className)}>
       <div ref={sentinelRef} className="h-0 w-full" aria-hidden="true" />
 
-      <div
-        className={cn(
-          'sticky top-0 z-10 px-2 pb-3',
-          'transition-[padding] duration-300 ease-out',
-          isStuck && 'pt-3'
-        )}
-      >
+      <div className={cn('sticky top-0 z-10 px-2 pb-3', 'transition-[padding] duration-300 ease-out', isStuck && 'pt-3')}>
         <div
           className={cn(
             'px-4 py-3 rounded-xl',
             'transition-all duration-300 ease-out',
-            isStuck ? GLASSMORPHISM_STYLES : TRANSPARENT_STYLES
+            isStuck ? GLASSMORPHISM_STYLES : TRANSPARENT_STYLES,
           )}
         >
           <OverallProgress />

@@ -7,8 +7,7 @@ vi.mock('react-i18next', () => ({
     t: (key: string) => {
       const translations: Record<string, string> = {
         'download.preserveOrder': 'Number tracks',
-        'download.preserveOrderDescription':
-          'Prefix filenames with track position (e.g. 01 - Artist - Title)',
+        'download.preserveOrderDescription': 'Prefix filenames with track position (e.g. 01 - Artist - Title)',
       };
       return translations[key] || key;
     },
@@ -38,19 +37,13 @@ describe('PlaylistOrderSection', () => {
     render(<PlaylistOrderSection />);
 
     expect(screen.getByText('Number tracks')).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        'Prefix filenames with track position (e.g. 01 - Artist - Title)'
-      )
-    ).toBeInTheDocument();
+    expect(screen.getByText('Prefix filenames with track position (e.g. 01 - Artist - Title)')).toBeInTheDocument();
   });
 
   it('renders the switch', () => {
     render(<PlaylistOrderSection />);
 
-    expect(
-      screen.getByTestId('preserve-order-switch')
-    ).toBeInTheDocument();
+    expect(screen.getByTestId('preserve-order-switch')).toBeInTheDocument();
   });
 
   it('calls setPreservePlaylistOrder when toggled', () => {

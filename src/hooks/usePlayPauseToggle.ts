@@ -9,14 +9,7 @@ interface UsePlayPauseToggleParams {
   index: number;
 }
 
-export function usePlayPauseToggle({
-  isCurrentlyPlaying,
-  isPlayerPlaying,
-  onPlay,
-  onPause,
-  onResume,
-  index,
-}: UsePlayPauseToggleParams) {
+export function usePlayPauseToggle({ isCurrentlyPlaying, isPlayerPlaying, onPlay, onPause, onResume, index }: UsePlayPauseToggleParams) {
   return useCallback(() => {
     if (isCurrentlyPlaying && isPlayerPlaying) {
       onPause?.();

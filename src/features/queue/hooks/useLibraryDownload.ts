@@ -27,8 +27,7 @@ export function useLibraryDownload({ onNavigateToDownload }: UseLibraryDownloadO
   const executeDownload = useCallback(
     async (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => {
       const { isComplete, failedCount, clearQueue } = useQueueStore.getState();
-      const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } =
-        useSettingsStore.getState();
+      const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } = useSettingsStore.getState();
 
       if (isComplete && failedCount > 0) return;
       if (isComplete) clearQueue();

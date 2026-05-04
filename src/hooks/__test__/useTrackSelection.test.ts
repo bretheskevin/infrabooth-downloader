@@ -3,8 +3,7 @@ import { renderHook, act } from '@testing-library/react';
 import { useTrackSelection } from '../useTrackSelection';
 import type { TrackInfo } from '@/bindings';
 
-const createTrack = (id: number) =>
-  ({ id, title: `Track ${id}` }) as TrackInfo;
+const createTrack = (id: number) => ({ id, title: `Track ${id}` }) as TrackInfo;
 
 const tracks = [createTrack(1), createTrack(2), createTrack(3)];
 

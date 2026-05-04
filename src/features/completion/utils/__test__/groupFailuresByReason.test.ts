@@ -2,17 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { groupFailuresByReason } from '../groupFailuresByReason';
 import { createMockFailedTrack } from '@/test/factories';
 
-const createMockTrack = (
-  id: string,
-  errorCode: Parameters<typeof createMockFailedTrack>[0]['errorCode'],
-  errorMessage: string,
-) => createMockFailedTrack({ id, errorCode, errorMessage });
+const createMockTrack = (id: string, errorCode: Parameters<typeof createMockFailedTrack>[0]['errorCode'], errorMessage: string) =>
+  createMockFailedTrack({ id, errorCode, errorMessage });
 
 describe('groupFailuresByReason', () => {
   it('should categorize GEO_BLOCKED errors as geo_blocked', () => {
-    const tracks = [
-      createMockTrack('1', 'GEO_BLOCKED', 'Not available in your region'),
-    ];
+    const tracks = [createMockTrack('1', 'GEO_BLOCKED', 'Not available in your region')];
 
     const result = groupFailuresByReason(tracks);
     const geoBlocked = result.get('geo_blocked');
@@ -23,9 +18,7 @@ describe('groupFailuresByReason', () => {
   });
 
   it('should categorize NETWORK_ERROR errors as network', () => {
-    const tracks = [
-      createMockTrack('1', 'NETWORK_ERROR', 'Connection failed'),
-    ];
+    const tracks = [createMockTrack('1', 'NETWORK_ERROR', 'Connection failed')];
 
     const result = groupFailuresByReason(tracks);
     const network = result.get('network');
@@ -36,9 +29,7 @@ describe('groupFailuresByReason', () => {
   });
 
   it('should categorize DOWNLOAD_FAILED with unavailable message as unavailable', () => {
-    const tracks = [
-      createMockTrack('1', 'DOWNLOAD_FAILED', 'Track unavailable'),
-    ];
+    const tracks = [createMockTrack('1', 'DOWNLOAD_FAILED', 'Track unavailable')];
 
     const result = groupFailuresByReason(tracks);
     const unavailable = result.get('unavailable');
@@ -49,9 +40,7 @@ describe('groupFailuresByReason', () => {
   });
 
   it('should categorize DOWNLOAD_FAILED with private message as unavailable', () => {
-    const tracks = [
-      createMockTrack('1', 'DOWNLOAD_FAILED', 'This track is private'),
-    ];
+    const tracks = [createMockTrack('1', 'DOWNLOAD_FAILED', 'This track is private')];
 
     const result = groupFailuresByReason(tracks);
 
@@ -59,9 +48,7 @@ describe('groupFailuresByReason', () => {
   });
 
   it('should categorize DOWNLOAD_FAILED with removed message as unavailable', () => {
-    const tracks = [
-      createMockTrack('1', 'DOWNLOAD_FAILED', 'Track has been removed'),
-    ];
+    const tracks = [createMockTrack('1', 'DOWNLOAD_FAILED', 'Track has been removed')];
 
     const result = groupFailuresByReason(tracks);
 
@@ -69,9 +56,7 @@ describe('groupFailuresByReason', () => {
   });
 
   it('should categorize DOWNLOAD_FAILED without specific keywords as other', () => {
-    const tracks = [
-      createMockTrack('1', 'DOWNLOAD_FAILED', 'Unknown error occurred'),
-    ];
+    const tracks = [createMockTrack('1', 'DOWNLOAD_FAILED', 'Unknown error occurred')];
 
     const result = groupFailuresByReason(tracks);
 
@@ -79,9 +64,7 @@ describe('groupFailuresByReason', () => {
   });
 
   it('should categorize unmatched error codes as other', () => {
-    const tracks = [
-      createMockTrack('1', 'CONVERSION_FAILED', 'Something went wrong'),
-    ];
+    const tracks = [createMockTrack('1', 'CONVERSION_FAILED', 'Something went wrong')];
 
     const result = groupFailuresByReason(tracks);
 

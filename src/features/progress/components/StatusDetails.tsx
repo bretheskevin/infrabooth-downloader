@@ -1,10 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,17 +19,9 @@ export function StatusDetails({ content }: StatusDetailsProps) {
         aria-expanded={isOpen}
       >
         {t('errors.showDetails')}
-        <ChevronDown
-          className={cn(
-            'h-3 w-3 transition-transform duration-200',
-            isOpen && 'rotate-180'
-          )}
-          aria-hidden="true"
-        />
+        <ChevronDown className={cn('h-3 w-3 transition-transform duration-200', isOpen && 'rotate-180')} aria-hidden="true" />
       </CollapsibleTrigger>
-      <CollapsibleContent className="text-xs text-muted-foreground mt-1">
-        {content}
-      </CollapsibleContent>
+      <CollapsibleContent className="text-xs text-muted-foreground mt-1">{content}</CollapsibleContent>
     </Collapsible>
   );
 }

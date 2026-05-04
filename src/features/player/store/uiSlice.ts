@@ -12,12 +12,7 @@ export interface UISliceActions {
 
 export type UISlice = UISliceState & UISliceActions;
 
-export const createUISlice: StateCreator<
-  PlayerState & UISliceActions,
-  [],
-  [],
-  UISlice
-> = (set) => ({
+export const createUISlice: StateCreator<PlayerState & UISliceActions, [], [], UISlice> = (set) => ({
   isExpanded: false,
   isQueueOpen: false,
   volume: 1.0,

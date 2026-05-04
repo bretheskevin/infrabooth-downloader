@@ -26,7 +26,9 @@ function NewPlaylistPreview({ name }: { name: string }) {
 function TreePlaylistNode({ node, isUpdateTarget }: { node: TreeNode; isUpdateTarget?: boolean }) {
   const { t } = useTranslation();
   return (
-    <div className={`flex items-center gap-2 py-1 text-sm cursor-default ${isUpdateTarget ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>
+    <div
+      className={`flex items-center gap-2 py-1 text-sm cursor-default ${isUpdateTarget ? 'text-foreground font-medium' : 'text-muted-foreground'}`}
+    >
       {isUpdateTarget ? <RefreshCw className="h-3.5 w-3.5 text-primary" /> : <ListMusic className="h-3.5 w-3.5" />}
       <span className="truncate">{node.name}</span>
       {isUpdateTarget && (
@@ -61,7 +63,8 @@ function TreeFolderNode({
 }) {
   const [open, setOpen] = useState(expandedIds.has(node.id));
   const isSelected = selectedFolderId === node.id;
-  const hasExistingPlaylist = newPlaylistName !== undefined && isSelected && node.children.some((c) => !c.isFolder && c.name === newPlaylistName);
+  const hasExistingPlaylist =
+    newPlaylistName !== undefined && isSelected && node.children.some((c) => !c.isFolder && c.name === newPlaylistName);
 
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
@@ -71,7 +74,12 @@ function TreeFolderNode({
         aria-selected={isSelected}
         className={`flex items-center gap-1 py-1 w-full text-left text-sm rounded-sm cursor-pointer hover:bg-accent/50 ${isSelected ? 'bg-accent' : ''}`}
         onClick={() => onSelectFolder(node.id)}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectFolder(node.id); } }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onSelectFolder(node.id);
+          }
+        }}
       >
         <CollapsibleTrigger asChild onClick={(e: React.MouseEvent) => e.stopPropagation()}>
           <button type="button" className="p-0.5 hover:bg-accent rounded-sm">
@@ -94,7 +102,11 @@ function TreeFolderNode({
                 expandedIds={expandedIds}
               />
             ) : (
-              <TreePlaylistNode key={child.id} node={child} isUpdateTarget={!!newPlaylistName && isSelected && child.name === newPlaylistName} />
+              <TreePlaylistNode
+                key={child.id}
+                node={child}
+                isUpdateTarget={!!newPlaylistName && isSelected && child.name === newPlaylistName}
+              />
             ),
           )}
           {newPlaylistName !== undefined && isSelected && !hasExistingPlaylist && <NewPlaylistPreview name={newPlaylistName} />}
@@ -111,7 +123,8 @@ export function RekordboxTreePicker({ nodes, selectedFolderId, onSelectFolder, n
   const expandedIds = useMemo(() => getAncestorIds(nodes, selectedFolderId), [nodes, selectedFolderId]);
 
   const isRootSelected = selectedFolderId === null;
-  const rootHasExistingPlaylist = newPlaylistName !== undefined && isRootSelected && tree.some((n) => !n.isFolder && n.name === newPlaylistName);
+  const rootHasExistingPlaylist =
+    newPlaylistName !== undefined && isRootSelected && tree.some((n) => !n.isFolder && n.name === newPlaylistName);
 
   return (
     <div className="max-h-64 overflow-y-auto rounded-md border p-2 text-sm">
@@ -136,7 +149,11 @@ export function RekordboxTreePicker({ nodes, selectedFolderId, onSelectFolder, n
             expandedIds={expandedIds}
           />
         ) : (
-          <TreePlaylistNode key={node.id} node={node} isUpdateTarget={!!newPlaylistName && isRootSelected && node.name === newPlaylistName} />
+          <TreePlaylistNode
+            key={node.id}
+            node={node}
+            isUpdateTarget={!!newPlaylistName && isRootSelected && node.name === newPlaylistName}
+          />
         ),
       )}
     </div>

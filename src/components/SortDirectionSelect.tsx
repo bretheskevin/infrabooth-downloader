@@ -13,9 +13,12 @@ export function SortDirectionSelect({ value, onChange, showIcon = true }: SortDi
   const { t } = useTranslation();
 
   return (
-    <Select value={value} onValueChange={(v) => {
-      if (SORT_DIRECTIONS.includes(v as SortDirection)) onChange(v as SortDirection);
-    }}>
+    <Select
+      value={value}
+      onValueChange={(v) => {
+        if (SORT_DIRECTIONS.includes(v as SortDirection)) onChange(v as SortDirection);
+      }}
+    >
       <SelectTrigger className="h-7 text-xs w-auto gap-1.5 px-2">
         {showIcon && <ArrowUpDown className="h-3 w-3 shrink-0" />}
         <SelectValue />

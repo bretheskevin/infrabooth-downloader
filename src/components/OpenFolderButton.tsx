@@ -11,23 +11,13 @@ interface OpenFolderButtonProps {
   className?: string;
 }
 
-export function OpenFolderButton({
-  onClick,
-  size = 'default',
-  showLabel = false,
-  className,
-}: OpenFolderButtonProps) {
+export function OpenFolderButton({ onClick, size = 'default', showLabel = false, className }: OpenFolderButtonProps) {
   const { t } = useTranslation();
   const label = t('completion.openFolder');
 
   if (showLabel) {
     return (
-      <Button
-        variant="outline"
-        onClick={onClick}
-        aria-label={label}
-        className={cn('gap-2 rounded-xl h-11 px-5', className)}
-      >
+      <Button variant="outline" onClick={onClick} aria-label={label} className={cn('gap-2 rounded-xl h-11 px-5', className)}>
         <FolderOpen className="h-4 w-4" aria-hidden="true" />
         {label}
       </Button>
@@ -45,11 +35,7 @@ export function OpenFolderButton({
           variant="ghost"
           size="icon"
           onClick={onClick}
-          className={cn(
-            buttonSize,
-            'rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors',
-            className,
-          )}
+          className={cn(buttonSize, 'rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors', className)}
           aria-label={label}
         >
           <Icon className={iconSize} aria-hidden="true" />

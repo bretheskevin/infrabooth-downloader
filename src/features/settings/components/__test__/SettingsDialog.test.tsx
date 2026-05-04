@@ -23,8 +23,7 @@ vi.mock('@tauri-apps/api/app', () => ({
 }));
 
 vi.mock('@/features/changelog', () => ({
-  ChangelogDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="changelog-dialog">Changelog Dialog</div> : null,
+  ChangelogDialog: ({ open }: { open: boolean }) => (open ? <div data-testid="changelog-dialog">Changelog Dialog</div> : null),
 }));
 
 vi.mock('../LanguageSection', () => ({

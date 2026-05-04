@@ -32,11 +32,7 @@ export function TracksTabContent({ onDownloadTracks }: TracksTabContentProps) {
         <div className="flex items-center justify-between pb-2">
           <div>
             <h2 className="text-lg font-semibold">{t('library.tracks.title')}</h2>
-            {!isLoading && (
-              <p className="text-sm text-muted-foreground">
-                {t('download.trackCount', { count: tracks.length })}
-              </p>
-            )}
+            {!isLoading && <p className="text-sm text-muted-foreground">{t('download.trackCount', { count: tracks.length })}</p>}
           </div>
           <div className="flex items-center gap-2">{actions}</div>
         </div>
