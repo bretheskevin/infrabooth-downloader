@@ -1,0 +1,100 @@
+import type { LibraryPlaylist, ArtistPlaylist, MessagePlaylistEmbed, PlaylistSummary, Selection, TrackInfo } from '@/bindings';
+
+export interface PlaylistData {
+  id: number;
+  title: string;
+  artworkUrl: string | null;
+  trackCount: number;
+  permalinkUrl: string;
+  secretToken: string | null;
+  username: string | null;
+  userId: number | null;
+  duration: number | null;
+  isOwned: boolean;
+}
+
+export function fromLibraryPlaylist(p: LibraryPlaylist): PlaylistData {
+  return {
+    id: p.id,
+    title: p.title,
+    artworkUrl: p.artwork_url,
+    trackCount: p.track_count,
+    permalinkUrl: p.permalink_url,
+    secretToken: p.secret_token,
+    username: p.username,
+    userId: p.user_id,
+    duration: p.duration,
+    isOwned: p.is_owned,
+  };
+}
+
+export function fromArtistPlaylist(p: ArtistPlaylist, artistName: string, authUserId: number | null): PlaylistData {
+  return {
+    id: p.id,
+    title: p.title,
+    artworkUrl: p.artwork_url,
+    trackCount: p.track_count,
+    permalinkUrl: p.permalink_url,
+    secretToken: p.secret_token ?? null,
+    username: p.user?.username ?? artistName,
+    userId: p.user?.id ?? null,
+    duration: p.duration ?? null,
+    isOwned: p.user?.id != null && p.user.id === authUserId,
+  };
+}
+
+export function fromMessagePlaylistEmbed(p: MessagePlaylistEmbed): PlaylistData {
+  return {
+    id: p.id,
+    title: p.title,
+    artworkUrl: p.artwork_url,
+    trackCount: p.track_count,
+    permalinkUrl: p.permalink_url,
+    secretToken: p.secret_token,
+    username: p.artist,
+    userId: p.artist_id,
+    duration: null,
+    isOwned: false,
+  };
+}
+
+export function fromNotificationPlaylist(p: PlaylistSummary, authUserId: number | null): PlaylistData {
+  return {
+    id: p.id,
+    title: p.title,
+    artworkUrl: p.artwork_url,
+    trackCount: p.track_count,
+    permalinkUrl: p.permalink_url,
+    secretToken: null,
+    username: p.user.username,
+    userId: p.user.id,
+    duration: null,
+    isOwned: p.user.id === authUserId,
+  };
+}
+
+// DJB2 hash, forced negative to avoid collision with real SoundCloud IDs (always positive)
+function stableNumericId(str: string): number {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0;
+  }
+  return hash > 0 ? -hash : hash || -1;
+}
+
+export function fromSelection(s: Selection): PlaylistData {
+  const totalDuration = s.tracks.reduce((sum: number, t: TrackInfo) => sum + t.duration, 0);
+
+  return {
+    id: stableNumericId(s.id),
+    title: s.title,
+    artworkUrl: s.artworkUrl,
+    trackCount: s.trackCount,
+    permalinkUrl: '',
+    secretToken: null,
+    username: 'SoundCloud',
+    userId: null,
+    duration: totalDuration,
+    isOwned: false,
+  };
+}

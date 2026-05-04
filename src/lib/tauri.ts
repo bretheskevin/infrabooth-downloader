@@ -185,7 +185,8 @@ export const api = {
   resolveLibraryArtwork: (playlistId: number, secretToken: string | null): Promise<string | null> =>
     commands.resolveLibraryArtwork(playlistId, secretToken).then(unwrap),
 
-  getLibraryPlaylistTracks: (playlistId: number): Promise<TrackInfo[]> => commands.getLibraryPlaylistTracks(playlistId).then(unwrap),
+  getPlaylistTracks: (playlistId: number, secretToken: string | null): Promise<TrackInfo[]> =>
+    commands.getPlaylistTracks(playlistId, secretToken).then(unwrap),
 
   addTrackToPlaylist: (playlistId: number, trackId: number): Promise<void> =>
     commands
@@ -232,9 +233,6 @@ export const api = {
   getArtistLikedTracks: (artistId: number): Promise<TrackInfo[]> => commands.getArtistLikedTracks(artistId).then(unwrap),
 
   getArtistPlaylists: (artistId: number): Promise<ArtistPlaylist[]> => commands.getArtistPlaylists(artistId).then(unwrap),
-
-  getArtistPlaylistTracks: (playlistId: number, secretToken: string | null = null): Promise<TrackInfo[]> =>
-    commands.getArtistPlaylistTracks(playlistId, secretToken).then(unwrap),
 
   getArtistReleases: (artistId: number): Promise<ReleaseActivityItem[]> => commands.getArtistReleases(artistId).then(unwrap),
 

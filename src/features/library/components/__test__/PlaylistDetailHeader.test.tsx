@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import { PlaylistDetailHeader } from '../PlaylistDetailHeader';
-import type { LibraryPlaylist } from '@/bindings';
+import { PlaylistDetailHeader } from '@/components/playlist-detail';
+import type { PlaylistData } from '@/components/playlist-detail';
 
 let mockIsWidescreen = false;
 
@@ -31,18 +31,17 @@ vi.mock('@/lib/soundcloud', () => ({
   getArtworkUrl: (url: string | null) => url,
 }));
 
-const mockPlaylist: LibraryPlaylist = {
+const mockPlaylist: PlaylistData = {
   id: 1,
   title: 'Test Playlist',
   username: 'TestUser',
-  user_id: 99,
-  artwork_url: null,
-  track_count: 10,
+  userId: 99,
+  artworkUrl: null,
+  trackCount: 10,
   duration: 3600000,
-  permalink_url: 'https://soundcloud.com/test/sets/test',
-  is_owned: true,
-  is_public: true,
-  secret_token: null,
+  permalinkUrl: 'https://soundcloud.com/test/sets/test',
+  isOwned: true,
+  secretToken: null,
 };
 
 describe('PlaylistDetailHeader', () => {
@@ -50,7 +49,7 @@ describe('PlaylistDetailHeader', () => {
     playlist: mockPlaylist,
     artworkUrl: null,
     trackCount: 10,
-    onBack: vi.fn(),
+    breadcrumbItems: [{ label: 'Library', onClick: vi.fn() }],
     folderMetadata: null,
   };
 
@@ -105,18 +104,17 @@ describe('PlaylistDetailHeader', () => {
     expect(gradient).toBeNull();
   });
 
-  it('renders breadcrumb navigation in widescreen mode', () => {
+  it('renders breadcrumb label in widescreen mode', () => {
     mockIsWidescreen = true;
     render(<PlaylistDetailHeader {...defaultProps} />);
-    expect(screen.getByText('library.detail.breadcrumbLibrary')).toBeTruthy();
+    expect(screen.getByText('Library')).toBeTruthy();
   });
 
-  it('renders standard DetailHeader in narrow mode', () => {
+  it('renders breadcrumb navigation in narrow mode', () => {
     mockIsWidescreen = false;
     render(<PlaylistDetailHeader {...defaultProps} />);
     const gradient = document.querySelector('.from-primary\\/\\[0\\.06\\]');
     expect(gradient).toBeNull();
-    expect(screen.queryByText('library.detail.breadcrumbLibrary')).toBeNull();
   });
 
   it('renders both action buttons with same size classes in widescreen', () => {

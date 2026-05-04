@@ -84,23 +84,14 @@ pub async fn get_owned_playlists_for_track(track_id: u64, app: tauri::AppHandle)
 
 #[tauri::command]
 #[specta::specta]
-pub async fn get_library_playlist_tracks(playlist_id: u64, app: tauri::AppHandle) -> Result<Vec<TrackInfo>, String> {
-    let (token, _cid) = super::require_auth_and_cid(&app).await?;
+pub async fn get_playlist_tracks(playlist_id: u64, secret_token: Option<String>, app: tauri::AppHandle) -> Result<Vec<TrackInfo>, String> {
+    let (token, _cid) = super::get_optional_auth_and_cid(&app).await?;
 
-    let secret_token = app.state::<LibraryCache>().get_secret_token(playlist_id);
+    let resolved_secret = secret_token.or_else(|| app.state::<LibraryCache>().get_secret_token(playlist_id));
 
     let on_batch = events::make_batch_emitter(&app, events::PLAYLIST_TRACKS_BATCH, playlist_id);
 
-    match playlist::fetch_playlist_by_id(playlist_id, secret_token.as_deref(), Some(&token), on_batch).await {
-        Ok(tracks) => {
-            log::info!("[get_library_playlist_tracks] Returning {} tracks for playlist {}", tracks.len(), playlist_id);
-            Ok(tracks)
-        }
-        Err(e) => {
-            log::error!("[get_library_playlist_tracks] Error: {}", e);
-            Err(e.to_string())
-        }
-    }
+    playlist::fetch_playlist_by_id(playlist_id, resolved_secret.as_deref(), token.as_deref(), on_batch).await.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

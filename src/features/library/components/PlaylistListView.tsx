@@ -54,7 +54,7 @@ export function PlaylistListView({ searchQuery, filter, onOpenDetail, onDownload
       if (downloadingPlaylistId) return;
       setDownloadingPlaylistId(playlist.id);
       try {
-        const tracks = await api.getLibraryPlaylistTracks(playlist.id);
+        const tracks = await api.getPlaylistTracks(playlist.id, playlist.secret_token);
         onDownloadTracks(tracks, playlist.title);
       } catch (err) {
         void logger.error(`[PlaylistListView] Quick download failed: ${err instanceof Error ? err.message : String(err)}`);

@@ -9,14 +9,14 @@ import { AppDialogs } from '@/components/AppDialogs';
 import { AppProviders } from '@/providers/AppProviders';
 import { useLibraryDownload } from '@/features/queue';
 import { useIsSignedIn } from '@/features/auth/store';
-import { ArtistProfileView, ArtistPlaylistView, useArtistProfileStore } from '@/features/artist-profile';
+import { ArtistProfileView, useArtistProfileStore } from '@/features/artist-profile';
 import { ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { ArtistReleasesView, ReleaseTracklistView, useNewReleasesStore } from '@/features/new-releases';
-import { PlaylistDetailView } from '@/features/library/components/PlaylistDetailView';
-import { NotificationsPage, useNotificationsStore, playlistSummaryToLibraryPlaylist } from '@/features/notifications';
+import { PlaylistDetailView, fromMessagePlaylistEmbed, fromNotificationPlaylist, fromSelection } from '@/components/playlist-detail';
+import { NotificationsPage, useNotificationsStore } from '@/features/notifications';
 import { ConversationPage, MessagesPage, useMessagesStore } from '@/features/messages';
 import { useSelectionsStore } from '@/features/selections';
-import { toLibraryPlaylist } from '@/features/selections/utils/adapter';
+import { useAuthStore } from '@/features/auth/store';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import type { TrackInfo } from '@/bindings';
@@ -38,6 +38,7 @@ function PageContent({
   handleDownloadTracks: (tracks: TrackInfo[], title: string) => void | Promise<void>;
 }) {
   const isSignedIn = useIsSignedIn();
+  const authUserId = useAuthStore((s) => s.userId);
   const { profileArtistId, profileArtistName } = useArtistProfileStore(
     useShallow((s) => ({
       profileArtistId: s.profileArtistId,
@@ -98,10 +99,9 @@ function PageContent({
   if (messagePlaylist) {
     return (
       <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
-        <ArtistPlaylistView
-          playlist={messagePlaylist}
-          artistName={t('directMessages.title')}
-          onBack={() => useMessagesStore.getState().closePlaylist()}
+        <PlaylistDetailView
+          playlist={fromMessagePlaylistEmbed(messagePlaylist)}
+          breadcrumbItems={[{ label: t('directMessages.title'), onClick: () => useMessagesStore.getState().closePlaylist() }]}
           onDownloadTracks={handleDownloadTracks}
         />
       </section>
@@ -109,12 +109,11 @@ function PageContent({
   }
 
   if (notificationPlaylist) {
-    const libraryPlaylist = playlistSummaryToLibraryPlaylist(notificationPlaylist);
     return (
       <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
         <PlaylistDetailView
-          playlist={libraryPlaylist}
-          onBack={() => useNotificationsStore.getState().closePlaylist()}
+          playlist={fromNotificationPlaylist(notificationPlaylist, authUserId)}
+          breadcrumbItems={[{ label: t('notifications.title'), onClick: () => useNotificationsStore.getState().closePlaylist() }]}
           onDownloadTracks={handleDownloadTracks}
         />
       </section>
@@ -165,9 +164,9 @@ function PageContent({
     return (
       <section key="mix-detail" className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
         <PlaylistDetailView
-          playlist={toLibraryPlaylist(selectedMix)}
+          playlist={fromSelection(selectedMix)}
           initialTracks={selectedMix.tracks}
-          onBack={handleBackFromMix}
+          breadcrumbItems={[{ label: selectedMix.shortTitle, onClick: handleBackFromMix }]}
           onDownloadTracks={handleDownloadTracks}
         />
       </section>

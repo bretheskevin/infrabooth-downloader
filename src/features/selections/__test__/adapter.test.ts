@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { toLibraryPlaylist } from '../utils/adapter';
+import { fromSelection } from '@/components/playlist-detail';
 import type { Selection } from '@/bindings';
 
 function makeSelection(overrides: Partial<Selection> = {}): Selection {
@@ -37,62 +37,61 @@ function makeSelection(overrides: Partial<Selection> = {}): Selection {
   };
 }
 
-describe('toLibraryPlaylist', () => {
-  it('maps selection fields to LibraryPlaylist', () => {
+describe('fromSelection', () => {
+  it('maps selection fields to PlaylistData', () => {
     const selection = makeSelection();
-    const result = toLibraryPlaylist(selection);
+    const result = fromSelection(selection);
 
     expect(result.title).toBe('Daily Mix 1');
     expect(result.username).toBe('SoundCloud');
-    expect(result.user_id).toBeNull();
-    expect(result.artwork_url).toBe('https://example.com/art.jpg');
-    expect(result.track_count).toBe(2);
-    expect(result.is_owned).toBe(false);
-    expect(result.is_public).toBe(true);
-    expect(result.secret_token).toBeNull();
-    expect(result.permalink_url).toBe('');
+    expect(result.userId).toBeNull();
+    expect(result.artworkUrl).toBe('https://example.com/art.jpg');
+    expect(result.trackCount).toBe(2);
+    expect(result.isOwned).toBe(false);
+    expect(result.secretToken).toBeNull();
+    expect(result.permalinkUrl).toBe('');
   });
 
   it('computes total duration from tracks', () => {
     const selection = makeSelection();
-    const result = toLibraryPlaylist(selection);
+    const result = fromSelection(selection);
 
     expect(result.duration).toBe(420000);
   });
 
   it('produces a negative numeric ID', () => {
     const selection = makeSelection();
-    const result = toLibraryPlaylist(selection);
+    const result = fromSelection(selection);
 
     expect(result.id).toBeLessThan(0);
   });
 
   it('produces deterministic IDs for the same input', () => {
-    const a = toLibraryPlaylist(makeSelection());
-    const b = toLibraryPlaylist(makeSelection());
+    const a = fromSelection(makeSelection());
+    const b = fromSelection(makeSelection());
 
     expect(a.id).toBe(b.id);
   });
 
   it('produces different IDs for different selections', () => {
-    const a = toLibraryPlaylist(makeSelection({ id: 'daily-mix:0' }));
-    const b = toLibraryPlaylist(makeSelection({ id: 'daily-mix:1' }));
+    const a = fromSelection(makeSelection({ id: 'daily-mix:0' }));
+    const b = fromSelection(makeSelection({ id: 'daily-mix:1' }));
 
     expect(a.id).not.toBe(b.id);
   });
 
   it('handles null artwork', () => {
     const selection = makeSelection({ artworkUrl: null });
-    const result = toLibraryPlaylist(selection);
+    const result = fromSelection(selection);
 
-    expect(result.artwork_url).toBeNull();
+    expect(result.artworkUrl).toBeNull();
   });
 
   it('handles empty tracks array', () => {
     const selection = makeSelection({ tracks: [] as Selection['tracks'], trackCount: 0 });
-    const result = toLibraryPlaylist(selection);
+    const result = fromSelection(selection);
 
     expect(result.duration).toBe(0);
-    expect(result.track_count).toBe(0);
+    expect(result.trackCount).toBe(0);
   });
 });

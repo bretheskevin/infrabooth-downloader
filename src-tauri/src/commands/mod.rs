@@ -38,7 +38,7 @@ pub use updater::{check_for_updates, install_update};
 
 pub mod library;
 pub use library::{
-    clear_library_cache, clear_liked_tracks_cache, get_library_playlist_tracks, get_library_playlists, get_liked_tracks, get_owned_playlists_for_track,
+    clear_library_cache, clear_liked_tracks_cache, get_library_playlists, get_liked_tracks, get_owned_playlists_for_track, get_playlist_tracks,
     resolve_library_artwork,
 };
 
@@ -62,8 +62,8 @@ pub use related::fetch_related_tracks;
 
 pub mod artist;
 pub use artist::{
-    get_all_artist_tracks, get_artist_followers, get_artist_followings, get_artist_liked_tracks, get_artist_playlist_tracks, get_artist_playlists,
-    get_artist_profile, resolve_soundcloud_link, resolve_user,
+    get_all_artist_tracks, get_artist_followers, get_artist_followings, get_artist_liked_tracks, get_artist_playlists, get_artist_profile,
+    resolve_soundcloud_link, resolve_user,
 };
 
 pub mod follow;

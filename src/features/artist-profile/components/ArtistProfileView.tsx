@@ -16,7 +16,8 @@ import { FollowButton } from './FollowButton';
 import { ProfileBanner } from './ProfileBanner';
 import { ProfileTabs, type ProfileTab } from './ProfileTabs';
 import { PlaylistGrid } from './PlaylistGrid';
-import { ArtistPlaylistView } from './ArtistPlaylistView';
+import { PlaylistDetailView, fromArtistPlaylist } from '@/components/playlist-detail';
+import { useAuthStore } from '@/features/auth/store';
 import { useArtistProfileStore } from '../store';
 import type { TrackInfo, ArtistPlaylist, SortOption } from '@/bindings';
 
@@ -28,6 +29,7 @@ interface ArtistProfileViewProps {
 
 export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: ArtistProfileViewProps) {
   const { t } = useTranslation();
+  const authUserId = useAuthStore((s) => s.userId);
   const activeFollowView = useArtistProfileStore((s) => s.activeFollowView);
   const [activeTab, setActiveTab] = useState<ProfileTab>('recent');
   const [selectedPlaylist, setSelectedPlaylist] = useState<ArtistPlaylist | null>(null);
@@ -73,10 +75,9 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
 
   if (selectedPlaylist) {
     return (
-      <ArtistPlaylistView
-        playlist={selectedPlaylist}
-        artistName={username}
-        onBack={() => setSelectedPlaylist(null)}
+      <PlaylistDetailView
+        playlist={fromArtistPlaylist(selectedPlaylist, username, authUserId)}
+        breadcrumbItems={[{ label: username, onClick: () => setSelectedPlaylist(null) }]}
         onDownloadTracks={onDownloadTracks}
       />
     );

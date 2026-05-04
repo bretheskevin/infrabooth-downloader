@@ -42,6 +42,16 @@ pub struct ArtistPlaylist {
     pub created_at: String,
     pub permalink_url: String,
     pub secret_token: Option<String>,
+    #[serde(default)]
+    pub duration: Option<u64>,
+    #[serde(default)]
+    pub user: Option<ArtistPlaylistUser>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct ArtistPlaylistUser {
+    pub id: u64,
+    pub username: String,
 }
 
 #[derive(Debug, Clone, Serialize, Type)]

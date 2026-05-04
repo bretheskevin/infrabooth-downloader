@@ -1,52 +1,55 @@
 import { useTranslation } from 'react-i18next';
 import { ArrowLeft, Music, Play, Shuffle, ChevronRight } from 'lucide-react';
-import { DetailHeader } from '@/components/DetailHeader';
 import { ArtistLink } from '@/components/ArtistLink';
 import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { Button } from '@/components/ui/button';
-import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import { useArtistProfile } from '@/features/artist-profile/hooks/useArtistProfile';
 import { getArtworkUrl } from '@/lib/soundcloud';
-import type { LibraryPlaylist } from '@/bindings';
 import { formatTotalDuration } from '@/lib/format';
+import type { BreadcrumbItem } from '@/components/ui/breadcrumb';
+import type { PlaylistData } from './types';
 
-interface PlaylistDetailHeaderProps {
-  playlist: LibraryPlaylist;
+interface PlaylistHeroHeaderProps {
+  playlist: PlaylistData;
   artworkUrl: string | null;
   trackCount: number;
-  onBack: () => void;
+  breadcrumbItems: BreadcrumbItem[];
   folderMetadata: React.ReactNode;
   actions?: React.ReactNode;
   onPlayAll?: () => void;
   onShuffle?: () => void;
 }
 
-function HeroHeader({
+export function PlaylistHeroHeader({
   playlist,
   artworkUrl,
   trackCount,
-  onBack,
+  breadcrumbItems,
   folderMetadata,
   actions,
   onPlayAll,
   onShuffle,
-}: PlaylistDetailHeaderProps) {
+}: PlaylistHeroHeaderProps) {
   const { t } = useTranslation();
-  const { data: profile } = useArtistProfile(playlist.user_id);
+  const { data: profile } = useArtistProfile(playlist.userId);
   const userAvatarUrl = getArtworkUrl(profile?.avatar_url ?? null, 200);
+
+  const backItem = breadcrumbItems[0];
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1 text-xs text-muted-foreground">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onBack}
-          className="gap-1.5 -ml-2 h-7 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" />
-          {t('library.detail.breadcrumbLibrary')}
-        </Button>
+        {backItem?.onClick && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={backItem.onClick}
+            className="gap-1.5 -ml-2 h-7 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            {backItem.label}
+          </Button>
+        )}
         <ChevronRight className="h-3 w-3" />
         <span className="truncate text-foreground">{playlist.title}</span>
       </div>
@@ -68,15 +71,20 @@ function HeroHeader({
 
           <div className="flex flex-col justify-center gap-2 min-w-0">
             <span className="text-xs text-muted-foreground">
-              {t('library.detail.heroMeta', {
-                count: trackCount,
-                duration: formatTotalDuration(playlist.duration),
-              })}
+              {playlist.duration != null && playlist.duration > 0
+                ? t('library.detail.heroMeta', { count: trackCount, duration: formatTotalDuration(playlist.duration) })
+                : t('library.detail.tracks', { count: trackCount })}
             </span>
             <h1 className="text-[34px] font-bold leading-tight tracking-tight truncate">{playlist.title}</h1>
             <div className="flex items-center gap-2">
-              <ArtistAvatarImage avatarUrl={userAvatarUrl} username={playlist.username} className="w-5 h-5 text-[10px]" />
-              <ArtistLink userId={playlist.user_id} username={playlist.username} className="text-sm" />
+              {playlist.userId != null ? (
+                <>
+                  <ArtistAvatarImage avatarUrl={userAvatarUrl} username={playlist.username ?? ''} className="w-5 h-5 text-[10px]" />
+                  <ArtistLink userId={playlist.userId} username={playlist.username ?? ''} className="text-sm" />
+                </>
+              ) : playlist.username ? (
+                <span className="text-sm text-muted-foreground">{playlist.username}</span>
+              ) : null}
             </div>
             <div className="flex items-center gap-2 mt-1">
               {onShuffle && (
@@ -104,47 +112,5 @@ function HeroHeader({
         </div>
       </div>
     </div>
-  );
-}
-
-export function PlaylistDetailHeader(props: PlaylistDetailHeaderProps) {
-  const isWidescreen = useIsWidescreen();
-
-  if (isWidescreen) {
-    return <HeroHeader {...props} />;
-  }
-
-  return <NarrowHeader {...props} />;
-}
-
-function NarrowHeader({ playlist, artworkUrl, trackCount, onBack, folderMetadata, actions }: PlaylistDetailHeaderProps) {
-  const { t } = useTranslation();
-
-  return (
-    <DetailHeader
-      onBack={onBack}
-      title={playlist.title}
-      artwork={
-        <div data-testid="artwork-container" className="bg-muted overflow-hidden shrink-0 w-12 h-12 rounded-lg">
-          {artworkUrl ? (
-            <img src={artworkUrl} alt={playlist.title} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <Music data-testid="artwork-placeholder-icon" className="w-5 h-5" />
-            </div>
-          )}
-        </div>
-      }
-      subtitle={
-        <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
-          <span className="truncate min-w-0">
-            <ArtistLink userId={playlist.user_id} username={playlist.username} />
-            {` · ${t('library.detail.tracks', { count: trackCount })} · ${formatTotalDuration(playlist.duration)}`}
-          </span>
-          {folderMetadata}
-        </div>
-      }
-      actions={actions}
-    />
   );
 }

@@ -254,14 +254,6 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async getLibraryPlaylistTracks(playlistId: number): Promise<Result<TrackInfo[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_library_playlist_tracks', { playlistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
   async getOwnedPlaylistsForTrack(trackId: number): Promise<Result<PlaylistForTrackPicker[], string>> {
     try {
       return { status: 'ok', data: await TAURI_INVOKE('get_owned_playlists_for_track', { trackId }) };
@@ -432,9 +424,9 @@ export const commands = {
       else return { status: 'error', error: e as any };
     }
   },
-  async getArtistPlaylistTracks(playlistId: number, secretToken: string | null): Promise<Result<TrackInfo[], string>> {
+  async getPlaylistTracks(playlistId: number, secretToken: string | null): Promise<Result<TrackInfo[], string>> {
     try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_artist_playlist_tracks', { playlistId, secretToken }) };
+      return { status: 'ok', data: await TAURI_INVOKE('get_playlist_tracks', { playlistId, secretToken }) };
     } catch (e) {
       if (e instanceof Error) throw e;
       else return { status: 'error', error: e as any };
@@ -717,7 +709,10 @@ export type ArtistPlaylist = {
   created_at: string;
   permalink_url: string;
   secret_token: string | null;
+  duration?: number | null;
+  user?: ArtistPlaylistUser | null;
 };
+export type ArtistPlaylistUser = { id: number; username: string };
 export type ArtistPlaylistsBatchEvent = { entityId: number; playlists: ArtistPlaylist[] };
 export type ArtistProfile = {
   id: number;

@@ -57,6 +57,8 @@ mod tests {
                 created_at: "2026-01-01T00:00:00Z".into(),
                 permalink_url: format!("https://soundcloud.com/user/sets/{}", title.to_lowercase().replace(' ', "-")),
                 secret_token: None,
+                duration: None,
+                user: None,
             },
             tracks,
         }

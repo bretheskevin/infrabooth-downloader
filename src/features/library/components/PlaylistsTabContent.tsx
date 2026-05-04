@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import type { LibraryPlaylist, TrackInfo } from '@/bindings';
+import { PlaylistDetailView, fromLibraryPlaylist } from '@/components/playlist-detail';
 import { libraryActions, useLibraryStore } from '../store';
-import { PlaylistDetailView } from './PlaylistDetailView';
 import { PlaylistListView } from './PlaylistListView';
 
 interface PlaylistsTabContentProps {
@@ -10,6 +11,7 @@ interface PlaylistsTabContentProps {
 }
 
 export function PlaylistsTabContent({ onDownloadTracks }: PlaylistsTabContentProps) {
+  const { t } = useTranslation();
   const { searchQuery, filter, libraryView } = useLibraryStore(
     useShallow((s) => ({
       searchQuery: s.searchQuery,
@@ -33,7 +35,15 @@ export function PlaylistsTabContent({ onDownloadTracks }: PlaylistsTabContentPro
   if (libraryView.view === 'detail') {
     return (
       <div key="detail" className={`flex-1 min-h-0 flex flex-col ${slideClass}`}>
-        <PlaylistDetailView playlist={libraryView.playlist} onBack={handleBackToList} onDownloadTracks={onDownloadTracks} />
+        <PlaylistDetailView
+          playlist={fromLibraryPlaylist(libraryView.playlist)}
+          breadcrumbItems={[{ label: t('library.detail.breadcrumbLibrary'), onClick: handleBackToList }]}
+          onDownloadTracks={onDownloadTracks}
+          scrollPreservation={{
+            get: () => useLibraryStore.getState().detailScrollTop,
+            set: (offset) => useLibraryStore.getState().setDetailScrollTop(offset),
+          }}
+        />
       </div>
     );
   }
