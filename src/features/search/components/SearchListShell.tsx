@@ -2,7 +2,6 @@ import { Search, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { ApiError } from '@/lib/tauri';
-import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 
 interface SearchListShellProps {
   hasSearched: boolean;
@@ -32,7 +31,6 @@ export function SearchListShell({
   children,
 }: SearchListShellProps) {
   const { t } = useTranslation();
-  const isWidescreen = useIsWidescreen();
   const { sentinelRef } = useInfiniteScroll({
     hasNextPage,
     isFetchingNextPage,
@@ -75,7 +73,7 @@ export function SearchListShell({
   }
 
   return (
-    <div className={isWidescreen ? 'grid grid-cols-[repeat(auto-fill,minmax(440px,1fr))] gap-x-4' : undefined}>
+    <div>
       {children}
       <div ref={sentinelRef} className="h-8 flex items-center justify-center">
         {isFetchingNextPage && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
