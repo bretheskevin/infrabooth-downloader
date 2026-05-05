@@ -127,4 +127,65 @@ describe('NotificationRow', () => {
     await userEvent.click(screen.getByRole('button'));
     expect(onClose).toHaveBeenCalledOnce();
   });
+
+  it('uses div[role=button] instead of button element to avoid nested interactive elements', () => {
+    const item: NotificationItem = {
+      kind: 'track_like',
+      id: 'uuid-6',
+      created_at: '2026-04-12T02:00:00Z',
+      actor: baseActor,
+      track: baseTrack,
+    };
+    const { container } = render(<NotificationRow item={item} onClose={onClose} />, { wrapper: createQueryWrapper() });
+    const outerRow = container.firstElementChild as HTMLElement;
+    expect(outerRow.tagName).toBe('DIV');
+    expect(outerRow.getAttribute('role')).toBe('button');
+    expect(outerRow.getAttribute('tabindex')).toBe('0');
+  });
+
+  it('activates track row via keyboard Enter key', async () => {
+    const { usePlayerStore } = await import('@/features/player');
+    const playMock = vi.fn();
+    vi.mocked(usePlayerStore.getState).mockReturnValue({ play: playMock } as never);
+
+    const item: NotificationItem = {
+      kind: 'track_like',
+      id: 'uuid-7',
+      created_at: '2026-04-12T02:00:00Z',
+      actor: baseActor,
+      track: baseTrack,
+    };
+    const { container } = render(<NotificationRow item={item} onClose={onClose} />, { wrapper: createQueryWrapper() });
+    const outerRow = container.firstElementChild as HTMLElement;
+    outerRow.focus();
+    await userEvent.keyboard('{Enter}');
+    expect(playMock).toHaveBeenCalled();
+  });
+
+  it('uses div[role=button] for affiliation row', () => {
+    const item: NotificationItem = {
+      kind: 'affiliation',
+      id: 'uuid-8',
+      created_at: '2026-04-12T02:00:00Z',
+      actor: baseActor,
+    };
+    const { container } = render(<NotificationRow item={item} onClose={onClose} />, { wrapper: createQueryWrapper() });
+    const outerRow = container.firstElementChild as HTMLElement;
+    expect(outerRow.tagName).toBe('DIV');
+    expect(outerRow.getAttribute('role')).toBe('button');
+  });
+
+  it('uses div[role=button] for playlist row', () => {
+    const item: NotificationItem = {
+      kind: 'playlist_like',
+      id: 'uuid-9',
+      created_at: '2026-04-12T02:00:00Z',
+      actor: baseActor,
+      playlist: basePlaylist,
+    };
+    const { container } = render(<NotificationRow item={item} onClose={onClose} />, { wrapper: createQueryWrapper() });
+    const outerRow = container.firstElementChild as HTMLElement;
+    expect(outerRow.tagName).toBe('DIV');
+    expect(outerRow.getAttribute('role')).toBe('button');
+  });
 });

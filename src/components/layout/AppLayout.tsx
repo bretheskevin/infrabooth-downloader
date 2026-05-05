@@ -9,6 +9,9 @@ import { useIsDownloadEnabled } from '@/features/settings';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import { Sidebar } from './Sidebar';
 import { PlayerRail } from '@/features/player/components/PlayerRail';
+import { useMessagesStore } from '@/features/messages/store';
+import { useNotificationsStore, WidescreenNotificationsPage } from '@/features/notifications';
+import { cn } from '@/lib/utils';
 
 export type AppPage = 'download' | 'library' | 'search';
 
@@ -57,6 +60,8 @@ function PageNav({ activePage, onPageChange, isSignedIn }: PageNavProps) {
 export function AppLayout({ children, activePage, onPageChange, isSignedIn, hideTabs }: AppLayoutProps) {
   const expandedBarVisible = useIsExpandedBarVisible();
   const isWidescreen = useIsWidescreen();
+  const isMessagesPageOpen = useMessagesStore((s) => s.isPageOpen);
+  const isNotificationsPageOpen = useNotificationsStore((s) => s.isPageOpen);
 
   if (isWidescreen) {
     return (
@@ -64,8 +69,17 @@ export function AppLayout({ children, activePage, onPageChange, isSignedIn, hide
         <UpdateBanner />
         <div className="flex flex-1 min-h-0">
           <Sidebar activePage={activePage} onPageChange={onPageChange} isSignedIn={isSignedIn} />
+          {isNotificationsPageOpen && (
+            <div className="w-[420px] shrink-0 border-r border-border bg-background flex flex-col min-h-0 overflow-hidden">
+              <WidescreenNotificationsPage />
+            </div>
+          )}
           <div className="flex flex-1 flex-col min-h-0">
-            <main className="flex-1 flex flex-col min-h-0 overflow-y-auto px-8 py-6">{children}</main>
+            <main
+              className={cn('flex-1 flex flex-col min-h-0', isMessagesPageOpen ? 'px-0 py-0 overflow-hidden' : 'px-8 py-6 overflow-y-auto')}
+            >
+              {children}
+            </main>
           </div>
           <PlayerRail />
         </div>

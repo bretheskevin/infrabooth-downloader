@@ -19,7 +19,7 @@ import { useFolderPath } from '@/hooks/useFolderPath';
 import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { useIsDownloadEnabled } from '@/features/settings';
 
-export function ConversationPage() {
+export function ConversationPage({ onBack }: { onBack?: () => void }) {
   const { t } = useTranslation();
   const conversation = useMessagesStore((s) => s.selectedConversation);
 
@@ -57,11 +57,11 @@ export function ConversationPage() {
 
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(displayUser?.permalink_url ?? '');
 
-  const handleClose = () => useMessagesStore.getState().clear();
+  const handleClose = onBack ?? (() => useMessagesStore.getState().clear());
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="flex items-center gap-3 pb-3 border-b">
+      <div className="flex items-center gap-3 pb-3 border-b shrink-0">
         <Button variant="ghost" size="icon" onClick={handleClose} aria-label={t('common.back')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
@@ -165,7 +165,7 @@ export function ConversationPage() {
       )}
 
       {!isLoading && !error && conversation && (
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t pt-3 px-4">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 border-t py-3 px-4 shrink-0">
           <Input
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

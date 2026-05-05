@@ -25,7 +25,7 @@ export function MessageBell() {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96 p-0" align="end">
-        <ConversationsList onClose={() => setOpen(false)} />
+        <ConversationsList containerClassName="max-h-[400px]" onClose={() => setOpen(false)} />
       </PopoverContent>
     </Popover>
   );

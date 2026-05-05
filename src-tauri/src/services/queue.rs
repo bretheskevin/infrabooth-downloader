@@ -189,6 +189,8 @@ async fn handle_rate_limit<R: Runtime>(
     })
     .await;
 
+    ctx.rate_limit_choice_state.reset();
+
     match action {
         Some(PauseAction::RetryTrack(idx)) => {
             progress.pending.push_front(idx);

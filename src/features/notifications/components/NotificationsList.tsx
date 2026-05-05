@@ -11,9 +11,10 @@ interface NotificationsListProps {
   sentinelClassName?: string;
   onClose: () => void;
   markSeen?: boolean;
+  variant?: 'compact' | 'widescreen';
 }
 
-export function NotificationsList({ containerClassName, sentinelClassName, onClose, markSeen = false }: NotificationsListProps) {
+export function NotificationsList({ containerClassName, sentinelClassName, onClose, markSeen = false, variant }: NotificationsListProps) {
   const { t } = useTranslation();
   const { items, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useNotificationsPage();
   useMarkNotificationsSeen(items, markSeen);
@@ -49,7 +50,7 @@ export function NotificationsList({ containerClassName, sentinelClassName, onClo
   return (
     <div className={containerClassName}>
       {items.map((item) => (
-        <NotificationRow key={item.id} item={item} onClose={onClose} />
+        <NotificationRow key={item.id} item={item} onClose={onClose} variant={variant} />
       ))}
       <div ref={sentinelRef} className={sentinelClassName ?? 'h-1'} />
       {isFetchingNextPage && (

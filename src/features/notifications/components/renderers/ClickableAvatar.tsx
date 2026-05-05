@@ -4,9 +4,10 @@ import { openActorProfile } from '../../utils';
 interface ClickableAvatarProps {
   actor: ActorInfo;
   onClose: () => void;
+  size?: number;
 }
 
-export function ClickableAvatar({ actor, onClose }: ClickableAvatarProps) {
+export function ClickableAvatar({ actor, onClose, size = 32 }: ClickableAvatarProps) {
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     openActorProfile(actor, onClose);
@@ -28,7 +29,8 @@ export function ClickableAvatar({ actor, onClose }: ClickableAvatarProps) {
       tabIndex={0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
-      className="h-8 w-8 rounded-full bg-muted shrink-0 object-cover cursor-pointer hover:ring-2 hover:ring-primary/50"
+      style={{ width: size, height: size }}
+      className="rounded-full bg-muted shrink-0 object-cover cursor-pointer hover:ring-2 hover:ring-primary/50"
     />
   );
 }

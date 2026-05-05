@@ -14,7 +14,8 @@ import { ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { ArtistReleasesView, ReleaseTracklistView, useNewReleasesStore } from '@/features/new-releases';
 import { PlaylistDetailView, fromMessagePlaylistEmbed, fromNotificationPlaylist, fromSelection } from '@/components/playlist-detail';
 import { NotificationsPage, useNotificationsStore } from '@/features/notifications';
-import { ConversationPage, MessagesPage, useMessagesStore } from '@/features/messages';
+import { ConversationPage, MessagesPage, WidescreenMessagesLayout, useMessagesStore } from '@/features/messages';
+import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import { useSelectionsStore } from '@/features/selections';
 import { useAuthStore } from '@/features/auth/store';
 import { cn } from '@/lib/utils';
@@ -54,10 +55,11 @@ function PageContent({
   const notificationPlaylist = useNotificationsStore((s) => s.selectedPlaylist);
   const messagePlaylist = useMessagesStore((s) => s.selectedPlaylist);
 
+  const isWidescreen = useIsWidescreen();
   const { t } = useTranslation();
   const [slideClass, setSlideClass] = useState('');
   const prevHasOverlayRef = useRef(false);
-  const hasNotificationOverlay = isNotificationsPageOpen || notificationPlaylist;
+  const hasNotificationOverlay = (isNotificationsPageOpen && !isWidescreen) || notificationPlaylist;
   const hasOverlay = !!(
     selectedArtist ||
     selectedMix ||
@@ -128,6 +130,14 @@ function PageContent({
     );
   }
 
+  if (isMessagesPageOpen && isWidescreen) {
+    return (
+      <section className={cn('flex-1 min-h-0 flex flex-col', slideClass)}>
+        <WidescreenMessagesLayout />
+      </section>
+    );
+  }
+
   if (isMessagesPageOpen && selectedConversation) {
     return (
       <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
@@ -144,7 +154,7 @@ function PageContent({
     );
   }
 
-  if (isNotificationsPageOpen) {
+  if (isNotificationsPageOpen && !isWidescreen) {
     return (
       <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
         <NotificationsPage />

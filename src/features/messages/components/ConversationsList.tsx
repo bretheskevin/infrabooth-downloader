@@ -6,12 +6,14 @@ import { ConversationRow } from './ConversationRow';
 import { useConversationsPage } from '../hooks/useConversationsPage';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 
+const noop = () => {};
+
 interface ConversationsListProps {
   containerClassName?: string;
-  onClose: () => void;
+  onClose?: () => void;
 }
 
-export function ConversationsList({ containerClassName, onClose }: ConversationsListProps) {
+export function ConversationsList({ containerClassName, onClose = noop }: ConversationsListProps) {
   const { t } = useTranslation();
   const { items, currentUserId, isLoading, error, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useConversationsPage();
   const { sentinelRef } = useInfiniteScroll({ hasNextPage, isFetchingNextPage, fetchNextPage });
@@ -44,7 +46,7 @@ export function ConversationsList({ containerClassName, onClose }: Conversations
   }
 
   return (
-    <div className={cn('max-h-[400px] overflow-y-auto py-1', containerClassName)}>
+    <div className={cn('overflow-y-auto py-1', containerClassName)}>
       {items.map((conv) => (
         <ConversationRow key={conv.id} conversation={conv} currentUserId={currentUserId} onClose={onClose} />
       ))}

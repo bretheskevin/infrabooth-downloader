@@ -158,9 +158,9 @@ describe('Sidebar', () => {
     expect(onPageChange).toHaveBeenCalledWith('download');
   });
 
-  it('should show queue widget', () => {
+  it('should not show queue widget when idle', () => {
     render(<Sidebar {...defaultProps} />, { wrapper: QueryWrapper });
-    expect(screen.getByText('No active download')).toBeInTheDocument();
+    expect(screen.queryByText('No active download')).not.toBeInTheDocument();
   });
 
   it('should render settings button', () => {
@@ -180,5 +180,53 @@ describe('Sidebar', () => {
     render(<Sidebar {...defaultProps} isSignedIn />, { wrapper: QueryWrapper });
     const notificationsButton = screen.getByText('Notifications').closest('button');
     expect(notificationsButton?.className).toContain('bg-primary/10');
+  });
+
+  it('should toggle notifications panel closed when clicking Notifications while already open', () => {
+    useNotificationsStore.setState({ isPageOpen: true });
+    render(<Sidebar {...defaultProps} isSignedIn />, { wrapper: QueryWrapper });
+    fireEvent.click(screen.getByText('Notifications'));
+    expect(useNotificationsStore.getState().isPageOpen).toBe(false);
+  });
+
+  it('should restore previous active page visually when notifications panel is closed', () => {
+    useNotificationsStore.setState({ isPageOpen: true });
+    render(<Sidebar {...defaultProps} activePage="library" isSignedIn />, { wrapper: QueryWrapper });
+    fireEvent.click(screen.getByText('Notifications'));
+    expect(useNotificationsStore.getState().isPageOpen).toBe(false);
+    const libraryButton = screen.getByText('My Library').closest('button');
+    expect(libraryButton?.className).toContain('bg-primary/10');
+  });
+
+  it('should toggle messages panel closed when clicking Messages while already open', () => {
+    useMessagesStore.setState({ isPageOpen: true });
+    render(<Sidebar {...defaultProps} isSignedIn />, { wrapper: QueryWrapper });
+    fireEvent.click(screen.getByText('Messages'));
+    expect(useMessagesStore.getState().isPageOpen).toBe(false);
+  });
+
+  it('should restore previous active page visually when messages panel is closed', () => {
+    useMessagesStore.setState({ isPageOpen: true });
+    render(<Sidebar {...defaultProps} activePage="library" isSignedIn />, { wrapper: QueryWrapper });
+    fireEvent.click(screen.getByText('Messages'));
+    expect(useMessagesStore.getState().isPageOpen).toBe(false);
+    const libraryButton = screen.getByText('My Library').closest('button');
+    expect(libraryButton?.className).toContain('bg-primary/10');
+  });
+
+  it('should close Messages when opening Notifications', () => {
+    useMessagesStore.setState({ isPageOpen: true });
+    render(<Sidebar {...defaultProps} isSignedIn />, { wrapper: QueryWrapper });
+    fireEvent.click(screen.getByText('Notifications'));
+    expect(useNotificationsStore.getState().isPageOpen).toBe(true);
+    expect(useMessagesStore.getState().isPageOpen).toBe(false);
+  });
+
+  it('should close Notifications when opening Messages', () => {
+    useNotificationsStore.setState({ isPageOpen: true });
+    render(<Sidebar {...defaultProps} isSignedIn />, { wrapper: QueryWrapper });
+    fireEvent.click(screen.getByText('Messages'));
+    expect(useMessagesStore.getState().isPageOpen).toBe(true);
+    expect(useNotificationsStore.getState().isPageOpen).toBe(false);
   });
 });

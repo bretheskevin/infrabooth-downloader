@@ -46,9 +46,27 @@ export function Sidebar({ activePage, onPageChange, isSignedIn }: SidebarProps) 
 
   const isOverlayOpen = isMessagesOpen || isNotificationsOpen;
 
-  const handleOpenMessages = () => useMessagesStore.getState().openPage();
+  const handleOpenMessages = () => {
+    if (isMessagesOpen) {
+      useMessagesStore.getState().clear();
+    } else {
+      if (isNotificationsOpen) {
+        useNotificationsStore.getState().closePage();
+      }
+      useMessagesStore.getState().openPage();
+    }
+  };
 
-  const handleOpenNotifications = () => useNotificationsStore.getState().openPage();
+  const handleOpenNotifications = () => {
+    if (isNotificationsOpen) {
+      useNotificationsStore.getState().closePage();
+    } else {
+      if (isMessagesOpen) {
+        useMessagesStore.getState().clear();
+      }
+      useNotificationsStore.getState().openPage();
+    }
+  };
 
   function handleOpenProfile() {
     if (userId && username) {

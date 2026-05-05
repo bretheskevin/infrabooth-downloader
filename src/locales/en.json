@@ -491,6 +491,15 @@
     "empty": "No notifications yet",
     "error": "Couldn't load notifications",
     "retry": "Retry",
+    "subtitle": "Activity from your artists and friends.",
+    "follow": "Follow",
+    "following": "Following",
+    "filter": {
+      "all": "All",
+      "mentions": "Mentions",
+      "likes": "Likes",
+      "follows": "Follows"
+    },
     "label": {
       "affiliation": "{{actor}} followed you",
       "track_like": "{{actor}} liked {{track}}",
@@ -515,7 +524,8 @@
     "sendError": "Failed to send message",
     "followersCount_one": "{{count}} follower",
     "followersCount_other": "{{count}} followers",
-    "savingTo": "Saving to"
+    "savingTo": "Saving to",
+    "selectConversation": "Select a conversation"
   },
   "newReleases": {
     "title": "New Playlists / Albums",
@@ -608,6 +618,7 @@
     "settings": "Settings",
     "queueProgress": "{{completed}}/{{total}}",
     "downloading": "Downloading...",
+    "preparing": "Preparing...",
     "noActiveDownload": "No active download"
   }
 }

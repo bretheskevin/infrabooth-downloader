@@ -491,6 +491,15 @@
     "empty": "Aucune notification",
     "error": "Impossible de charger les notifications",
     "retry": "Réessayer",
+    "subtitle": "Activité de vos artistes et amis.",
+    "follow": "Suivre",
+    "following": "Suivi",
+    "filter": {
+      "all": "Tout",
+      "mentions": "Mentions",
+      "likes": "Likes",
+      "follows": "Abonnements"
+    },
     "label": {
       "affiliation": "{{actor}} vous suit",
       "track_like": "{{actor}} a aimé {{track}}",
@@ -515,7 +524,8 @@
     "sendError": "Échec de l'envoi du message",
     "followersCount_one": "{{count}} abonné",
     "followersCount_other": "{{count}} abonnés",
-    "savingTo": "Enregistrement dans"
+    "savingTo": "Enregistrement dans",
+    "selectConversation": "Sélectionnez une conversation"
   },
   "newReleases": {
     "title": "Playlists / Albums récents",
@@ -608,6 +618,7 @@
     "settings": "Réglages",
     "queueProgress": "{{completed}}/{{total}}",
     "downloading": "Téléchargement...",
+    "preparing": "Préparation...",
     "noActiveDownload": "Aucun téléchargement"
   }
 }
