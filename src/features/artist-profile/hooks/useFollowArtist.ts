@@ -38,6 +38,7 @@ export function useFollowArtist(artistId: number): UseFollowArtistResult {
     onSuccess: () => {
       queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], true);
       void queryClient.invalidateQueries({ queryKey: [...FOLLOWED_ARTISTS_KEY] });
+      void queryClient.invalidateQueries({ queryKey: ['artist-profile', artistId] });
       void logger.info(`[follow] Followed user ${artistId}`);
     },
     onError: (err) => {
@@ -56,6 +57,7 @@ export function useFollowArtist(artistId: number): UseFollowArtistResult {
     onSuccess: () => {
       queryClient.setQueryData([FOLLOW_STATUS_KEY, artistId], false);
       void queryClient.invalidateQueries({ queryKey: [...FOLLOWED_ARTISTS_KEY] });
+      void queryClient.invalidateQueries({ queryKey: ['artist-profile', artistId] });
       void logger.info(`[follow] Unfollowed user ${artistId}`);
     },
     onError: (err) => {
