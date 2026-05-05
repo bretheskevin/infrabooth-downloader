@@ -6,6 +6,18 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.28.0] - 2026-05-05
+
+### Added
+
+- Amélioration de la présentation en plein écran
+
+### Fixed
+
+- L'export Rekordbox pouvait ne pas fonctionner dans certains cas
+- Les playlists supprimées apparaissaient dans l'export Rekordbox
+- L'export Rekordbox visait le mauvais dossier racine
+- Les morceaux se superposaient dans la file d'attente
 
 ## [1.27.0] - 2026-04-30
 
