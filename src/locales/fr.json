@@ -121,7 +121,6 @@
     "networkError": "Pas de connexion internet",
     "downloadFailed": "Échec du téléchargement",
     "conversionFailed": "Échec de la conversion",
-    "integrityCheckFailed": "Vérification d'intégrité du binaire FFmpeg échouée — altération possible détectée",
     "trackNotFound": "Piste non trouvée",
     "trackNotFoundHint": "Cette piste a peut-être été supprimée ou rendue privée",
     "fetchFailed": "Impossible de charger le contenu",

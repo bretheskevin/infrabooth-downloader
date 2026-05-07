@@ -641,8 +641,6 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
 async fn run_ffmpeg_sidecar<R: tauri::Runtime>(
     app: &AppHandle<R>, args: &[String], track_id: &str, duration_ms: u64, bytes_per_ms: u64, output_file: &Path, ctx: &FfmpegContext<'_>,
 ) -> Result<(), DownloadError> {
-    crate::services::ffmpeg::verify_integrity().await?;
-
     let shell = app.shell();
     let (mut rx, child) = shell.sidecar("ffmpeg").map_err(|_| DownloadError::BinaryNotFound)?.args(args).spawn().map_err(|_| DownloadError::BinaryNotFound)?;
 

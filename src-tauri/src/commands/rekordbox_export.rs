@@ -234,8 +234,6 @@ pub async fn export_playlist_to_rekordbox(
             let rekordbox_tracks_dir = file_manager::get_rekordbox_tracks_dir(&ctx.app_data_dir);
             log::info!("[rekordbox-export] Rekordbox tracks dir: {:?}", rekordbox_tracks_dir);
 
-            let allowed_source_dirs: Vec<PathBuf> =
-                [export_dl_dir, rekordbox_tracks_dir.clone()].into_iter().filter_map(|p| std::fs::canonicalize(p).ok()).collect();
             let mut exported_count = 0i32;
             let mut skipped_count = 0i32;
             let mut errors: Vec<String> = download_errors;
@@ -247,7 +245,7 @@ pub async fn export_playlist_to_rekordbox(
 
                 let export_req = ExportTrackRequest { source_path: source_path.to_string_lossy().to_string() };
 
-                match export_single_track(&mut session.db, &export_req, &named_pl.id, &rekordbox_tracks_dir, &allowed_source_dirs) {
+                match export_single_track(&mut session.db, &export_req, &named_pl.id, &rekordbox_tracks_dir) {
                     Ok((exported, content_id)) => {
                         if exported {
                             exported_count += 1;

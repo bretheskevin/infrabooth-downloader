@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::models::error::{ErrorResponse, HasErrorCode, RekordboxError};
-use crate::services::paths::{get_app_data_dir, get_downloads_dir, is_within_allowed_dirs};
+use crate::services::paths::get_app_data_dir;
 use crate::services::rekordbox::models::{
     BackupInfo, BackupKind, DjmdPlaylist, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus, RekordboxTreeNode,
     ALL_TRACKS_PLAYLIST_NAME,
@@ -147,23 +147,11 @@ impl RekordboxSession {
     }
 }
 
-fn validate_source_path(source: &Path, allowed_dirs: &[PathBuf]) -> Result<PathBuf, String> {
-    let canonical = std::fs::canonicalize(source).map_err(|e| format!("{}: invalid source path — {}", source.display(), e))?;
-
-    if !is_within_allowed_dirs(&canonical, allowed_dirs) {
-        return Err(format!("{}: source path is outside allowed directories", source.display()));
-    }
-
-    Ok(canonical)
-}
-
 pub(super) fn export_single_track(
-    db: &mut database::RekordboxDatabase, track: &ExportTrackRequest, playlist_id: &str, rekordbox_tracks_dir: &Path, allowed_source_dirs: &[PathBuf],
+    db: &mut database::RekordboxDatabase, track: &ExportTrackRequest, playlist_id: &str, rekordbox_tracks_dir: &Path,
 ) -> Result<(bool, String), String> {
     let source = PathBuf::from(&track.source_path);
     log::debug!("[rekordbox] export_single_track: source={:?}", source);
-
-    let source = validate_source_path(&source, allowed_source_dirs)?;
 
     log::debug!("[rekordbox] Reading track metadata...");
     let metadata = content::read_track_metadata(&source).map_err(|e| {
@@ -240,14 +228,12 @@ pub fn export_to_rekordbox(
         let pl = session.find_or_create_playlist(target_playlist_name, target_parent_id)?;
 
         let rekordbox_tracks_dir = file_manager::get_rekordbox_tracks_dir(&ctx.app_data_dir);
-        let allowed_source_dirs: Vec<PathBuf> =
-            [Some(ctx.app_data_dir.clone()), get_downloads_dir(&app).ok()].into_iter().flatten().filter_map(|p| std::fs::canonicalize(p).ok()).collect();
         let mut exported_count = 0i32;
         let mut skipped_count = 0i32;
         let mut errors: Vec<String> = Vec::new();
 
         for track in &tracks {
-            match export_single_track(&mut session.db, track, &pl.id, &rekordbox_tracks_dir, &allowed_source_dirs) {
+            match export_single_track(&mut session.db, track, &pl.id, &rekordbox_tracks_dir) {
                 Ok((true, _)) => exported_count += 1,
                 Ok((false, _)) => skipped_count += 1,
                 Err(e) => errors.push(e),

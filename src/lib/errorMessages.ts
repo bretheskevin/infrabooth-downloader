@@ -12,7 +12,6 @@ export const ERROR_CODE_TO_I18N_KEY: Record<ErrorCode, string> = {
   STREAM_RESOLUTION_FAILED: 'errors.downloadFailed',
   CANCELLED: 'errors.downloadFailed',
   AUTH_REFRESH_FAILED: 'errors.notSignedIn',
-  INTEGRITY_CHECK_FAILED: 'errors.integrityCheckFailed',
 };
 
 export const ERROR_CODE_TO_DETAIL_KEY: Partial<Record<ErrorCode, string>> = {
