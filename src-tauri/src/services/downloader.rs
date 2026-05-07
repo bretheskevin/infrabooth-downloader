@@ -627,11 +627,11 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
     Ok(())
 }
 
-/// Spawn FFmpeg sidecar, register process handles, run event loop, and verify output.
-/// This is the shared implementation for both stream transcoding and original file conversion.
 async fn run_ffmpeg_sidecar<R: tauri::Runtime>(
     app: &AppHandle<R>, args: &[String], track_id: &str, duration_ms: u64, bytes_per_ms: u64, output_file: &Path, ctx: &FfmpegContext<'_>,
 ) -> Result<(), DownloadError> {
+    crate::services::ffmpeg::verify_integrity().await?;
+
     let shell = app.shell();
     let (mut rx, child) = shell.sidecar("ffmpeg").map_err(|_| DownloadError::BinaryNotFound)?.args(args).spawn().map_err(|_| DownloadError::BinaryNotFound)?;
 

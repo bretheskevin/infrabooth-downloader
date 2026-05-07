@@ -22,12 +22,16 @@ impl<T: HasErrorCode + std::fmt::Display> From<T> for ErrorResponse {
 pub enum FfmpegError {
     #[error("FFmpeg binary not found")]
     BinaryNotFound,
+
+    #[error("FFmpeg binary integrity check failed — possible tampering detected")]
+    IntegrityCheckFailed,
 }
 
 impl HasErrorCode for FfmpegError {
     fn code(&self) -> &'static str {
         match self {
             FfmpegError::BinaryNotFound => "BINARY_NOT_FOUND",
+            FfmpegError::IntegrityCheckFailed => "INTEGRITY_CHECK_FAILED",
         }
     }
 }
@@ -147,6 +151,9 @@ pub enum DownloadError {
 
     #[error("Stream resolution failed: {0}")]
     StreamResolutionFailed(String),
+
+    #[error("FFmpeg binary integrity check failed — possible tampering detected")]
+    IntegrityCheckFailed,
 }
 
 impl HasErrorCode for DownloadError {
@@ -162,6 +169,16 @@ impl HasErrorCode for DownloadError {
             DownloadError::AuthRequired(_) => "AUTH_REQUIRED",
             DownloadError::Cancelled => "CANCELLED",
             DownloadError::StreamResolutionFailed(_) => "STREAM_RESOLUTION_FAILED",
+            DownloadError::IntegrityCheckFailed => "INTEGRITY_CHECK_FAILED",
+        }
+    }
+}
+
+impl From<FfmpegError> for DownloadError {
+    fn from(err: FfmpegError) -> Self {
+        match err {
+            FfmpegError::BinaryNotFound => DownloadError::BinaryNotFound,
+            FfmpegError::IntegrityCheckFailed => DownloadError::IntegrityCheckFailed,
         }
     }
 }

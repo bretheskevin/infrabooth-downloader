@@ -121,6 +121,7 @@
     "networkError": "No internet connection",
     "downloadFailed": "Download failed",
     "conversionFailed": "Conversion failed",
+    "integrityCheckFailed": "FFmpeg binary integrity check failed — possible tampering detected",
     "trackNotFound": "Track not found",
     "trackNotFoundHint": "This track may have been removed or made private",
     "fetchFailed": "Failed to load content",

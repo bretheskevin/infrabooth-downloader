@@ -10,6 +10,7 @@ export type ErrorCode =
   | 'AUTH_REQUIRED'
   | 'STREAM_RESOLUTION_FAILED'
   | 'CANCELLED'
-  | 'AUTH_REFRESH_FAILED';
+  | 'AUTH_REFRESH_FAILED'
+  | 'INTEGRITY_CHECK_FAILED';
 
 export type AppError = ErrorResponse & { code: ErrorCode };
