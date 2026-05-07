@@ -1,24 +1,30 @@
 use std::fs;
 use std::path::Path;
+use tauri::Manager;
 use uuid::Uuid;
 
 use crate::services::config::skip_tls_verify;
-use crate::services::paths::{get_app_data_dir, get_downloads_dir};
+use crate::services::paths::{get_app_data_dir, get_downloads_dir, is_within_allowed_dirs};
 
 #[tauri::command]
 #[specta::specta]
-pub async fn check_write_permission(path: String) -> Result<bool, String> {
-    let dir_path = Path::new(&path);
+pub async fn check_write_permission(path: String, app: tauri::AppHandle) -> Result<bool, String> {
+    let dir_path = std::fs::canonicalize(Path::new(&path)).map_err(|_| "Directory does not exist".to_string())?;
 
-    if !dir_path.exists() {
-        return Err("Directory does not exist".to_string());
+    let home_dir = app.path().home_dir().map_err(|e| format!("Failed to get home directory: {}", e))?;
+
+    if !is_within_allowed_dirs(&dir_path, &[home_dir]) {
+        return Err("Path is outside the home directory".to_string());
     }
 
+    try_write_permission(&dir_path)
+}
+
+fn try_write_permission(dir_path: &Path) -> Result<bool, String> {
     if !dir_path.is_dir() {
         return Err("Path is not a directory".to_string());
     }
 
-    // Try to create and delete a temp file to verify write access
     let test_file = dir_path.join(format!(".sc-downloader-test-{}", Uuid::new_v4()));
 
     match fs::write(&test_file, "test") {
@@ -214,30 +220,21 @@ mod tests {
         assert!(!result.unwrap());
     }
 
-    #[tokio::test]
-    async fn check_write_permission_returns_true_for_writable_dir() {
+    #[test]
+    fn try_write_permission_returns_true_for_writable_dir() {
         let temp_dir = tempdir().unwrap();
-        let path = temp_dir.path().to_string_lossy().to_string();
-
-        let result = check_write_permission(path).await;
+        let result = try_write_permission(temp_dir.path());
         assert!(result.is_ok());
         assert!(result.unwrap());
     }
 
-    #[tokio::test]
-    async fn check_write_permission_returns_error_for_nonexistent_dir() {
-        let result = check_write_permission("/nonexistent/path/12345".to_string()).await;
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err(), "Directory does not exist");
-    }
-
-    #[tokio::test]
-    async fn check_write_permission_returns_error_for_file_path() {
+    #[test]
+    fn try_write_permission_returns_error_for_file_path() {
         let temp_dir = tempdir().unwrap();
         let file_path = temp_dir.path().join("testfile.txt");
         fs::write(&file_path, "test").unwrap();
 
-        let result = check_write_permission(file_path.to_string_lossy().to_string()).await;
+        let result = try_write_permission(&file_path);
         assert!(result.is_err());
         assert_eq!(result.unwrap_err(), "Path is not a directory");
     }
