@@ -1,5 +1,7 @@
 #[cfg(test)]
 pub mod auth_choice;
+
+pub mod audit_logger;
 pub mod cancellation;
 pub mod client_id;
 pub mod config;
