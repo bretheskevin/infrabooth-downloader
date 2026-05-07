@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::models::error::{ErrorResponse, HasErrorCode, RekordboxError};
-use crate::services::paths::{get_app_data_dir, get_downloads_dir};
+use crate::services::paths::{get_app_data_dir, get_downloads_dir, is_within_allowed_dirs};
 use crate::services::rekordbox::models::{
     BackupInfo, BackupKind, DjmdPlaylist, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus, RekordboxTreeNode,
     ALL_TRACKS_PLAYLIST_NAME,
@@ -150,13 +150,11 @@ impl RekordboxSession {
 fn validate_source_path(source: &Path, allowed_dirs: &[PathBuf]) -> Result<PathBuf, String> {
     let canonical = std::fs::canonicalize(source).map_err(|e| format!("{}: invalid source path — {}", source.display(), e))?;
 
-    for dir in allowed_dirs {
-        if canonical.starts_with(dir) {
-            return Ok(canonical);
-        }
+    if !is_within_allowed_dirs(&canonical, allowed_dirs) {
+        return Err(format!("{}: source path is outside allowed directories", source.display()));
     }
 
-    Err(format!("{}: source path is outside allowed directories", source.display()))
+    Ok(canonical)
 }
 
 pub(super) fn export_single_track(
