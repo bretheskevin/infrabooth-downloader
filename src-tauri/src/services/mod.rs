@@ -30,6 +30,8 @@ pub mod queue;
 pub mod rekordbox;
 pub mod related;
 pub mod search;
+pub mod secure_storage;
+pub mod security_config;
 pub mod selections;
 pub mod sidecar;
 pub mod storage;
