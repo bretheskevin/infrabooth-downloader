@@ -47,6 +47,7 @@ tauri-plugin-clipboard-manager = "2"
 once_cell = "1"
 dirs = "6"
 time = { version = "0.3.41", features = ["formatting", "local-offset", "parsing"] }
+keyring = "2.1"
 tauri-plugin-process = "2.3.1"
 rusqlite = { version = "0.31", features = ["bundled-sqlcipher"] }
 sysinfo = "0.38"
