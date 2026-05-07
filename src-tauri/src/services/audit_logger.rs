@@ -17,7 +17,7 @@ pub enum AuditEventType {
     DownloadCompleted,
     DownloadFailed,
     TokenRefresh,
-    SessionTimeout,
+
     UnauthorizedAccess,
     RateLimitExceeded,
     SecuritySettingsChanged,
@@ -34,7 +34,7 @@ impl std::fmt::Display for AuditEventType {
             AuditEventType::DownloadCompleted => write!(f, "DOWNLOAD_COMPLETED"),
             AuditEventType::DownloadFailed => write!(f, "DOWNLOAD_FAILED"),
             AuditEventType::TokenRefresh => write!(f, "TOKEN_REFRESH"),
-            AuditEventType::SessionTimeout => write!(f, "SESSION_TIMEOUT"),
+
             AuditEventType::UnauthorizedAccess => write!(f, "UNAUTHORIZED_ACCESS"),
             AuditEventType::RateLimitExceeded => write!(f, "RATE_LIMIT_EXCEEDED"),
             AuditEventType::SecuritySettingsChanged => write!(f, "SECURITY_SETTINGS_CHANGED"),
@@ -103,12 +103,6 @@ impl AuditLogger {
     pub fn log_token_refresh(success: bool, reason: &str) {
         let details = format!("reason={}", reason);
         Self::log_event(AuditEventType::TokenRefresh, &details, success);
-    }
-
-    /// Log session timeout.
-    pub fn log_session_timeout(username: &str, session_age_secs: u64) {
-        let details = format!("user={} | session_age_secs={}", username, session_age_secs);
-        Self::log_event(AuditEventType::SessionTimeout, &details, true);
     }
 
     /// Log unauthorized access attempt.

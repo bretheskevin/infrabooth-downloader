@@ -14,17 +14,16 @@ This document outlines the security improvements implemented in InfraBooth Downl
   - Protects against MITM parameter injection
   - Allows localhost HTTP for development
 
-### ✅ Phase 2: Secure Token Storage & Session Management
+### ✅ Phase 2: Secure Token Storage
 - **Status**: Implemented
 - **Files**:
-  - `src-tauri/src/services/secure_storage.rs` (180 lines)
-  - `src-tauri/src/services/security_config.rs` (43 lines)
+  - `src-tauri/src/services/secure_storage.rs` (100 lines)
+  - `src-tauri/src/services/security_config.rs` (20 lines)
   - `src-tauri/Cargo.toml` (keyring = "2.1")
 - **Benefits**:
   - Tokens stored in OS secure storage (Keychain/Credential Manager)
-  - Session timeout: 30 minutes max
-  - Inactivity timeout: 20 minutes
   - Tokens cleared from memory on logout
+  - Cross-platform credential management
 
 ### ✅ Phase 3: Audit Logging & Documentation
 - **Status**: Implemented
@@ -40,23 +39,7 @@ This document outlines the security improvements implemented in InfraBooth Downl
 
 ## Short-Term Recommendations (2-3 sprints)
 
-### 1. Frontend Session Heartbeat
-**Priority**: High
-**Effort**: 1 sprint
-**Description**: Implement a frontend heartbeat that sends periodic "keep-alive" signals to the backend. This resets the inactivity timeout while the app is in use.
-
-```typescript
-// Frontend heartbeat example
-setInterval(async () => {
-  if (isAppFocused && isAuthenticated) {
-    await invoke('keep_alive');
-  }
-}, 5 * 60 * 1000); // Every 5 minutes
-```
-
-**Why**: Users expect persistent sessions while app is open. Heartbeat prevents timeout during active use.
-
-### 2. HTTP Security Headers
+### 1. HTTP Security Headers
 **Priority**: High
 **Effort**: 2-3 days
 **Files**: `src-tauri/src/lib.rs` (Tauri config)
@@ -68,23 +51,19 @@ setInterval(async () => {
 
 **Why**: Mitigates common web vulnerabilities in embedded webview.
 
-### 3. Token Storage Integration
+### 2. Token Storage Integration
 **Priority**: Medium
-**Effort**: 2 sprints
+**Effort**: 1 sprint
 **Description**: Wire `SecureTokenStore` into the auth flow:
 - Store tokens in keyring during login
 - Retrieve from keyring on app startup
-- Integrate expiry check with auth command
 
 ```rust
 // In auth command
 let token = secure_store.retrieve_token().await?;
-if !secure_store.is_token_valid(MAX_SESSION_AGE).await {
-    return Err("Session expired".into());
-}
 ```
 
-**Why**: Currently, `SecureTokenStore` exists but isn't integrated into the main auth pipeline.
+**Why**: Ensures tokens are persisted securely across app restarts.
 
 ---
 
@@ -199,8 +178,8 @@ Run these tests before each release:
 
 - [ ] **HTTPS Enforcement**: Verify all SoundCloud API calls use HTTPS. Disable network adapter, confirm app doesn't fallback to HTTP.
 - [ ] **URL Encoding**: Add special characters to playlist secrets, verify they're encoded in requests.
-- [ ] **Session Timeout**: Log in, wait 31 minutes without activity, verify automatic logout.
-- [ ] **Token Storage**: Check that tokens are NOT in plaintext in app memory or logs.
+- [ ] **Token Storage**: Check that tokens are stored in system keyring. Verify they're NOT in plaintext in app memory or logs.
+- [ ] **Token Persistence**: Log out and back in, verify token is retrieved from keyring.
 - [ ] **Rate Limiting**: Attempt 10 auth requests in 30 seconds, verify 6th+ are blocked.
 - [ ] **Error Messages**: Verify error messages don't leak sensitive info (tokens, paths, IPs).
 - [ ] **Unauthorized Access**: Manually craft invalid auth tokens, verify rejection.
@@ -218,11 +197,6 @@ Run these tests before each release:
 ### Failed Authentication
 ```
 [AUDIT] 2026-05-07T10:31:12.456789Z | AUTH_FAILURE | FAILURE | user=bob@example.com | reason=invalid_token
-```
-
-### Session Timeout
-```
-[AUDIT] 2026-05-07T11:00:00.000000Z | SESSION_TIMEOUT | SUCCESS | user=alice@example.com | session_age_secs=1800
 ```
 
 ### Unauthorized Access
@@ -291,12 +265,11 @@ grep "\[AUDIT\].*FAILURE" app.log
 
 ## Timeline for Next Steps
 
-1. **Week 1-2**: Implement frontend heartbeat (short-term #1)
-2. **Week 2-3**: Add HTTP security headers (short-term #2)
-3. **Week 4+**: Integrate token storage into auth pipeline (short-term #3)
-4. **Month 2-3**: Certificate pinning (medium-term #1)
-5. **Month 3+**: Rate limiting and input validation (medium-term #3-4)
-6. **Quarter 2+**: Security testing automation and code signing
+1. **Week 1-2**: Add HTTP security headers (short-term #1)
+2. **Week 2-3**: Integrate token storage into auth pipeline (short-term #2)
+3. **Month 1-2**: Certificate pinning (medium-term #1)
+4. **Month 2+**: Rate limiting and input validation (medium-term #3-4)
+5. **Quarter 2+**: Security testing automation and code signing
 
 ---
 
