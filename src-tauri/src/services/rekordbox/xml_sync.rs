@@ -35,11 +35,14 @@ struct XmlNode {
 impl PlaylistXml {
     pub fn read_if_exists(db_dir: &Path) -> Result<Option<Self>, RekordboxError> {
         let xml_path = db_dir.join(MASTER_PLAYLISTS_XML);
-        if !xml_path.exists() {
-            return Ok(None);
+        match fs::read_to_string(&xml_path) {
+            Ok(content) => {
+                let document = XmlDocument::parse(&content)?;
+                Ok(Some(Self { document, modified: false }))
+            }
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(RekordboxError::XmlError(format!("Cannot read XML: {}", e))),
         }
-
-        Self::read(db_dir).map(Some)
     }
 
     pub fn read(db_dir: &Path) -> Result<Self, RekordboxError> {
