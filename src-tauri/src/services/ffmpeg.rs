@@ -6,20 +6,26 @@ use crate::services::sidecar::{compute_sha256, get_sidecar_version, resolve_side
 const CHECKSUMS: &str = include_str!("../../binaries/checksums.txt");
 
 #[cfg(all(target_arch = "aarch64", target_os = "macos"))]
-const BINARY_NAME: &str = "ffmpeg-aarch64-apple-darwin";
+const CHECKSUM_ENTRY: &str = "ffmpeg-aarch64-apple-darwin";
 
 #[cfg(all(target_arch = "x86_64", target_os = "macos"))]
-const BINARY_NAME: &str = "ffmpeg-x86_64-apple-darwin";
+const CHECKSUM_ENTRY: &str = "ffmpeg-x86_64-apple-darwin";
 
 #[cfg(all(target_arch = "x86_64", target_os = "windows", target_env = "msvc"))]
-const BINARY_NAME: &str = "ffmpeg-x86_64-pc-windows-msvc.exe";
+const CHECKSUM_ENTRY: &str = "ffmpeg-x86_64-pc-windows-msvc.exe";
+
+#[cfg(not(target_os = "windows"))]
+const RUNTIME_BINARY: &str = "ffmpeg";
+
+#[cfg(target_os = "windows")]
+const RUNTIME_BINARY: &str = "ffmpeg.exe";
 
 static INTEGRITY_VERIFIED: OnceCell<bool> = OnceCell::const_new();
 
 fn expected_hash() -> Option<&'static str> {
     CHECKSUMS.lines().find_map(|line| {
         let (hash, name) = line.split_once("  ")?;
-        (name == BINARY_NAME).then_some(hash)
+        (name == CHECKSUM_ENTRY).then_some(hash)
     })
 }
 
@@ -27,12 +33,12 @@ fn do_verify() -> bool {
     let expected = match expected_hash() {
         Some(h) => h,
         None => {
-            log::error!("[ffmpeg] No expected hash found for {}", BINARY_NAME);
+            log::error!("[ffmpeg] No expected hash found for {}", CHECKSUM_ENTRY);
             return false;
         }
     };
 
-    let path = match resolve_sidecar_path(BINARY_NAME) {
+    let path = match resolve_sidecar_path(RUNTIME_BINARY) {
         Ok(p) => p,
         Err(e) => {
             log::error!("[ffmpeg] Failed to resolve sidecar path: {}", e);
