@@ -286,6 +286,10 @@ async fn fetch_track_data_with_fallback(
 async fn resolve_transcoding_url(transcoding: &Transcoding, client_id: &str, oauth_token: Option<&str>) -> Result<String, DownloadError> {
     let client = &*crate::services::http::HTTP_CLIENT;
 
+    if !crate::services::http::is_trusted_domain(&transcoding.url) {
+        return Err(DownloadError::StreamResolutionFailed("Untrusted transcoding domain".to_string()));
+    }
+
     let separator = if transcoding.url.contains('?') { '&' } else { '?' };
     let url = format!("{}{}client_id={}", transcoding.url, separator, client_id);
 

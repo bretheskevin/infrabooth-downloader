@@ -366,7 +366,12 @@ async fn try_original_download(
         return None;
     }
 
-    let client = rquest::Client::new();
+    if !crate::services::http::is_trusted_domain(download_url) {
+        log::warn!("[downloader] Refusing to send credentials to untrusted domain: {}", download_url);
+        return None;
+    }
+
+    let client = &*crate::services::http::HTTP_CLIENT;
 
     let mut request = client.get(download_url);
     if let Some(token) = oauth_token {
@@ -385,6 +390,12 @@ async fn try_original_download(
     // Try to parse as JSON redirect, otherwise treat as audio
     let (audio_bytes, content_type) = if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&body) {
         let redirect_uri = json.get("redirectUri")?.as_str()?;
+
+        if !crate::services::http::is_trusted_domain(redirect_uri) {
+            log::warn!("[downloader] Refusing to follow redirect to untrusted domain: {}", redirect_uri);
+            return None;
+        }
+
         log::info!("[downloader] Following redirect to CDN");
 
         if is_cancelled(cancel_rx) {

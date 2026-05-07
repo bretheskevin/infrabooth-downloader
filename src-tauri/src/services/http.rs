@@ -111,6 +111,28 @@ pub fn validate_api_response(status: rquest::StatusCode) -> Result<(), ApiRespon
     }
 }
 
+pub fn is_trusted_domain(raw_url: &str) -> bool {
+    let Ok(parsed) = url::Url::parse(raw_url) else {
+        return false;
+    };
+
+    if parsed.scheme() != "https" {
+        return false;
+    }
+
+    let Some(host) = parsed.host_str() else {
+        return false;
+    };
+
+    const TRUSTED_DOMAINS: &[&str] = &["api-v2.soundcloud.com", "api.soundcloud.com"];
+
+    if TRUSTED_DOMAINS.contains(&host) {
+        return true;
+    }
+
+    host == "sndcdn.com" || host.ends_with(".sndcdn.com")
+}
+
 pub async fn resolve_sc_url<T: serde::de::DeserializeOwned>(url: &str, client_id: &str, oauth_token: Option<&str>) -> Result<T, ApiResponseError> {
     let resolve_url = format!("{}/resolve?url={}&client_id={}", API_V2_BASE, urlencoding::encode(url), client_id,);
 
@@ -328,5 +350,55 @@ pub async fn check_api_success<E>(
         let body = response.text().await.unwrap_or_default();
         log::error!("[{}] Failed to {} {}: HTTP {} - {}", tag, action, entity_id, status, body);
         (new_datadome, Err(make_error(status, sanitize_error_body(body))))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_trusted_api_v2() {
+        assert!(is_trusted_domain("https://api-v2.soundcloud.com/media/123"));
+    }
+
+    #[test]
+    fn test_trusted_api_v1() {
+        assert!(is_trusted_domain("https://api.soundcloud.com/tracks/123/download"));
+    }
+
+    #[test]
+    fn test_trusted_cdn_subdomain() {
+        assert!(is_trusted_domain("https://cf-hls-media.sndcdn.com/media/abc"));
+    }
+
+    #[test]
+    fn test_trusted_cdn_bare() {
+        assert!(is_trusted_domain("https://sndcdn.com/something"));
+    }
+
+    #[test]
+    fn test_untrusted_domain() {
+        assert!(!is_trusted_domain("https://evil.com/steal-token"));
+    }
+
+    #[test]
+    fn test_untrusted_http_scheme() {
+        assert!(!is_trusted_domain("http://api-v2.soundcloud.com/media/123"));
+    }
+
+    #[test]
+    fn test_untrusted_subdomain_spoof() {
+        assert!(!is_trusted_domain("https://api-v2.soundcloud.com.evil.com/media"));
+    }
+
+    #[test]
+    fn test_untrusted_suffix_spoof() {
+        assert!(!is_trusted_domain("https://notsndcdn.com/media"));
+    }
+
+    #[test]
+    fn test_invalid_url() {
+        assert!(!is_trusted_domain("not-a-url"));
     }
 }
