@@ -3,1049 +3,922 @@
 
 /** user-defined commands **/
 
+
 export const commands = {
-  async checkAuth(): Promise<Result<boolean, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('check_auth') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Re-verifies auth on demand (e.g., after download 401/403).
-   * First tries to re-verify the cached token (cheap API call) before
-   * falling back to a full browser cookie scan (expensive I/O).
-   * If no valid token is found, emits `auth-reauth-needed` so the frontend can prompt the user.
-   */
-  async refreshAuth(): Promise<Result<boolean, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('refresh_auth') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Signs out by clearing cached auth state and emitting signed-out event.
-   *
-   * Note: This does NOT delete the browser cookie — the user remains logged in
-   * to SoundCloud in their browser. It only clears the app's cached token.
-   */
-  async signOut(): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('sign_out') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async validateSoundcloudUrl(url: string): Promise<ValidationResult> {
-    return await TAURI_INVOKE('validate_soundcloud_url', { url });
-  },
-  async addTrackToPlaylist(playlistId: number, trackId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('add_track_to_playlist', { playlistId, trackId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async removeTrackFromPlaylist(playlistId: number, trackId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('remove_track_from_playlist', { playlistId, trackId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getPlaylistInfo(url: string): Promise<Result<PlaylistInfo, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_playlist_info', { url }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getTrackInfo(url: string): Promise<Result<TrackInfo, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_track_info', { url }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Test the FFmpeg sidecar by getting its version.
-   *
-   * This command verifies that the FFmpeg binary is properly bundled
-   * and can be executed as a Tauri sidecar.
-   */
-  async testFfmpeg(): Promise<Result<string, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('test_ffmpeg') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Download and convert a track to MP3 with metadata embedding.
-   *
-   * This command orchestrates the full download pipeline:
-   * 1. Resolves stream URL via SoundCloud API v2
-   * 2. Downloads and converts to MP3 via ffmpeg
-   * 3. Embeds ID3 metadata (title, artist, album, track number, artwork)
-   * 4. Emits progress events throughout the process
-   */
-  async downloadTrackFull(request: DownloadRequest): Promise<Result<string, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('download_track_full', { request }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Start processing a download queue.
-   *
-   * This command accepts a list of tracks and processes them in parallel.
-   * Progress events are emitted via:
-   * - `queue-progress`: Overall queue progress (X of Y)
-   * - `download-progress`: Per-track status
-   * - `queue-complete`: Final results when queue finishes
-   * - `queue-cancelled`: When queue is cancelled by user
-   */
-  async startDownloadQueue(request: StartQueueRequest): Promise<Result<null, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('start_download_queue', { request }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Cancel the current download queue.
-   */
-  async cancelDownloadQueue(): Promise<Result<null, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('cancel_download_queue') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Respond to a rate limit choice prompt during download.
-   */
-  async respondToRateLimitChoice(choice: RateLimitChoice): Promise<Result<null, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('respond_to_rate_limit_choice', { choice }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async checkWritePermission(path: string): Promise<Result<boolean, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('check_write_permission', { path }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getAppDataPath(): Promise<Result<string, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_app_data_path') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getDefaultDownloadPath(): Promise<Result<string, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_default_download_path') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getLogPath(): Promise<Result<string, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_log_path') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getFeatureFlags(): Promise<Result<string, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_feature_flags') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async validateDownloadPath(path: string): Promise<Result<boolean, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('validate_download_path', { path }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Checks for available updates silently.
-   *
-   * Network errors and timeouts are handled gracefully — the app continues
-   * normally without showing errors to the user (FR27 compliance).
-   *
-   * # Returns
-   * * `Ok(Some(UpdateInfo))` - Update available with version, notes, and date
-   * * `Ok(None)` - No update available, or check failed silently
-   */
-  async checkForUpdates(): Promise<Result<UpdateInfo | null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('check_for_updates') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Downloads and installs an available update.
-   *
-   * This will download the update in the background and install it.
-   * On most platforms, the app will need to restart to apply the update.
-   *
-   * # Returns
-   * * `Ok(())` - Update downloaded and installed successfully
-   * * `Err(String)` - Error message if installation fails
-   */
-  async installUpdate(): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('install_update') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getLibraryPlaylists(): Promise<Result<LibraryPlaylist[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_library_playlists') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async resolveLibraryArtwork(playlistId: number, secretToken: string | null): Promise<Result<string | null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('resolve_library_artwork', { playlistId, secretToken }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async clearLibraryCache(): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('clear_library_cache') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getOwnedPlaylistsForTrack(trackId: number): Promise<Result<PlaylistForTrackPicker[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_owned_playlists_for_track', { trackId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async scanExistingTracks(outputDir: string, trackIds: string[]): Promise<Partial<{ [key in string]: string }>> {
-    return await TAURI_INVOKE('scan_existing_tracks', { outputDir, trackIds });
-  },
-  async searchTracks(query: string, limit: number, offset: number): Promise<Result<SearchResponse, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('search_tracks', { query, limit, offset }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async searchUsers(query: string, limit: number, offset: number): Promise<Result<UserSearchResponse, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('search_users', { query, limit, offset }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  /**
-   * Resolve a track ID to an HLS playback URL.
-   *
-   * Calls SoundCloud's `/tracks/{urn}/streams` endpoint (with fallback to
-   * the legacy transcodings approach) and returns a signed HLS playlist URL
-   * ready for the frontend audio element.
-   */
-  async resolvePlaybackUrl(trackId: number, trackUrl: string): Promise<Result<string, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('resolve_playback_url', { trackId, trackUrl }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getSelections(): Promise<Result<Selection[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_selections') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getFollowedArtists(forceRefresh: boolean): Promise<Result<FollowedArtist[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_followed_artists', { forceRefresh }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getArtistActivity(artistId: number): Promise<Result<ActivityItem[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_artist_activity', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getArtistReleases(artistId: number): Promise<Result<ReleaseActivityItem[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_artist_releases', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getReleaseTracks(releaseId: number): Promise<Result<TrackInfo[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_release_tracks', { releaseId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async markArtistSeen(artistId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('mark_artist_seen', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async markArtistReleasesSeen(artistId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('mark_artist_releases_seen', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async fetchRelatedTracks(trackId: number, limit: number): Promise<Result<TrackInfo[], ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('fetch_related_tracks', { trackId, limit }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getArtistProfile(artistId: number): Promise<Result<ArtistProfile, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_artist_profile', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getAllArtistTracks(artistId: number, sort: SortOption): Promise<Result<TrackInfo[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_all_artist_tracks', { artistId, sort }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getArtistLikedTracks(artistId: number): Promise<Result<TrackInfo[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_artist_liked_tracks', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getArtistFollowers(artistId: number): Promise<Result<ArtistProfile[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_artist_followers', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getArtistFollowings(artistId: number): Promise<Result<ArtistProfile[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_artist_followings', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async resolveUser(permalink: string): Promise<Result<ArtistProfile, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('resolve_user', { permalink }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async resolveSoundcloudLink(url: string): Promise<Result<ResolvedLink, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('resolve_soundcloud_link', { url }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getArtistPlaylists(artistId: number): Promise<Result<ArtistPlaylist[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_artist_playlists', { artistId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getPlaylistTracks(playlistId: number, secretToken: string | null): Promise<Result<TrackInfo[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_playlist_tracks', { playlistId, secretToken }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async followUser(userId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('follow_user', { userId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async unfollowUser(userId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('unfollow_user', { userId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async checkFollowStatus(userId: number): Promise<Result<boolean, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('check_follow_status', { userId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async likeTrack(trackId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('like_track', { trackId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async unlikeTrack(trackId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('unlike_track', { trackId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async checkFirefoxInstalled(): Promise<boolean> {
-    return await TAURI_INVOKE('check_firefox_installed');
-  },
-  async openInFirefox(): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('open_in_firefox') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async detectRekordbox(manualDbPath: string | null): Promise<Result<RekordboxStatus, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('detect_rekordbox', { manualDbPath }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getDefaultRekordboxDataDirectoryParent(): Promise<Result<string, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_default_rekordbox_data_directory_parent') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async exportToRekordbox(
-    tracks: ExportTrackRequest[],
-    playlistName: string | null,
-    parentFolderId: string | null,
-    manualDbPath: string | null,
-  ): Promise<Result<ExportResult, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('export_to_rekordbox', { tracks, playlistName, parentFolderId, manualDbPath }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async listRekordboxPlaylists(manualDbPath: string | null): Promise<Result<RekordboxPlaylistInfo[], ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('list_rekordbox_playlists', { manualDbPath }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getRekordboxPlaylistTree(manualDbPath: string | null): Promise<Result<RekordboxTreeNode[], ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_rekordbox_playlist_tree', { manualDbPath }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async deleteRekordboxPlaylist(playlistId: string, manualDbPath: string | null): Promise<Result<null, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('delete_rekordbox_playlist', { playlistId, manualDbPath }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async listRekordboxBackups(): Promise<Result<BackupInfo[], ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('list_rekordbox_backups') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async restoreRekordboxBackup(backupPath: string, manualDbPath: string | null): Promise<Result<null, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('restore_rekordbox_backup', { backupPath, manualDbPath }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async quitRekordbox(): Promise<boolean> {
-    return await TAURI_INVOKE('quit_rekordbox');
-  },
-  async exportPlaylistToRekordbox(
-    tracks: TrackCore[],
-    playlistName: string,
-    parentFolderId: string | null,
-    maxConcurrent: number,
-    manualDbPath: string | null,
-  ): Promise<Result<ExportResult, ErrorResponse>> {
-    try {
-      return {
-        status: 'ok',
-        data: await TAURI_INVOKE('export_playlist_to_rekordbox', { tracks, playlistName, parentFolderId, maxConcurrent, manualDbPath }),
-      };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async cancelRekordboxExport(): Promise<Result<null, ErrorResponse>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('cancel_rekordbox_export') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getUnreadCount(): Promise<Result<UnreadCountResult, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_unread_count') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getNotificationsPage(cursor: string | null): Promise<Result<NotificationsPage, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_notifications_page', { cursor }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async markNotificationsSeen(latestCreatedAt: string): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('mark_notifications_seen', { latestCreatedAt }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getConversationsPage(offset: number | null): Promise<Result<ConversationsPage, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_conversations_page', { offset }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getConversationMessages(otherUserId: number, offset: number | null): Promise<Result<MessagesPage, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_conversation_messages', { otherUserId, offset }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getUnreadConversationsFlag(): Promise<Result<boolean, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_unread_conversations_flag') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async markConversationRead(otherUserId: number): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('mark_conversation_read', { otherUserId }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async resolveMessageEmbed(url: string): Promise<Result<MessageEmbed | null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('resolve_message_embed', { url }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async sendMessage(otherUserId: number, content: string): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('send_message', { otherUserId, content }) };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async getLikedTracks(): Promise<Result<TrackInfo[], string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('get_liked_tracks') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-  async clearLikedTracksCache(): Promise<Result<null, string>> {
-    try {
-      return { status: 'ok', data: await TAURI_INVOKE('clear_liked_tracks_cache') };
-    } catch (e) {
-      if (e instanceof Error) throw e;
-      else return { status: 'error', error: e as any };
-    }
-  },
-};
+async checkAuth() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_auth") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Re-verifies auth on demand (e.g., after download 401/403).
+ * First tries to re-verify the cached token (cheap API call) before
+ * falling back to a full browser cookie scan (expensive I/O).
+ * If no valid token is found, emits `auth-reauth-needed` so the frontend can prompt the user.
+ */
+async refreshAuth() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("refresh_auth") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Signs out by clearing cached auth state and emitting signed-out event.
+ * 
+ * Note: This does NOT delete the browser cookie — the user remains logged in
+ * to SoundCloud in their browser. It only clears the app's cached token.
+ */
+async signOut() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("sign_out") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async validateSoundcloudUrl(url: string) : Promise<ValidationResult> {
+    return await TAURI_INVOKE("validate_soundcloud_url", { url });
+},
+async addTrackToPlaylist(playlistId: number, trackId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("add_track_to_playlist", { playlistId, trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeTrackFromPlaylist(playlistId: number, trackId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_track_from_playlist", { playlistId, trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getPlaylistInfo(url: string) : Promise<Result<PlaylistInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_playlist_info", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getTrackInfo(url: string) : Promise<Result<TrackInfo, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_track_info", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Test the FFmpeg sidecar by getting its version.
+ * 
+ * This command verifies that the FFmpeg binary is properly bundled
+ * and can be executed as a Tauri sidecar.
+ */
+async testFfmpeg() : Promise<Result<string, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("test_ffmpeg") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Download and convert a track to MP3 with metadata embedding.
+ * 
+ * This command orchestrates the full download pipeline:
+ * 1. Resolves stream URL via SoundCloud API v2
+ * 2. Downloads and converts to MP3 via ffmpeg
+ * 3. Embeds ID3 metadata (title, artist, album, track number, artwork)
+ * 4. Emits progress events throughout the process
+ */
+async downloadTrackFull(request: DownloadRequest) : Promise<Result<string, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("download_track_full", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Start processing a download queue.
+ * 
+ * This command accepts a list of tracks and processes them in parallel.
+ * Progress events are emitted via:
+ * - `queue-progress`: Overall queue progress (X of Y)
+ * - `download-progress`: Per-track status
+ * - `queue-complete`: Final results when queue finishes
+ * - `queue-cancelled`: When queue is cancelled by user
+ */
+async startDownloadQueue(request: StartQueueRequest) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_download_queue", { request }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Cancel the current download queue.
+ */
+async cancelDownloadQueue() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cancel_download_queue") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Respond to a rate limit choice prompt during download.
+ */
+async respondToRateLimitChoice(choice: RateLimitChoice) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("respond_to_rate_limit_choice", { choice }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async checkWritePermission(path: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_write_permission", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getAppDataPath() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_app_data_path") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getDefaultDownloadPath() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_default_download_path") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getLogPath() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_log_path") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getFeatureFlags() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_feature_flags") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async validateDownloadPath(path: string) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("validate_download_path", { path }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async isTlsVerifyDisabled() : Promise<boolean> {
+    return await TAURI_INVOKE("is_tls_verify_disabled");
+},
+async enableTlsVerify() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("enable_tls_verify") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Checks for available updates silently.
+ * 
+ * Network errors and timeouts are handled gracefully — the app continues
+ * normally without showing errors to the user (FR27 compliance).
+ * 
+ * # Returns
+ * * `Ok(Some(UpdateInfo))` - Update available with version, notes, and date
+ * * `Ok(None)` - No update available, or check failed silently
+ */
+async checkForUpdates() : Promise<Result<UpdateInfo | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_for_updates") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Downloads and installs an available update.
+ * 
+ * This will download the update in the background and install it.
+ * On most platforms, the app will need to restart to apply the update.
+ * 
+ * # Returns
+ * * `Ok(())` - Update downloaded and installed successfully
+ * * `Err(String)` - Error message if installation fails
+ */
+async installUpdate() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("install_update") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getLibraryPlaylists() : Promise<Result<LibraryPlaylist[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_library_playlists") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async resolveLibraryArtwork(playlistId: number, secretToken: string | null) : Promise<Result<string | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("resolve_library_artwork", { playlistId, secretToken }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearLibraryCache() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_library_cache") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getOwnedPlaylistsForTrack(trackId: number) : Promise<Result<PlaylistForTrackPicker[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_owned_playlists_for_track", { trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async scanExistingTracks(outputDir: string, trackIds: string[]) : Promise<Partial<{ [key in string]: string }>> {
+    return await TAURI_INVOKE("scan_existing_tracks", { outputDir, trackIds });
+},
+async searchTracks(query: string, limit: number, offset: number) : Promise<Result<SearchResponse, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_tracks", { query, limit, offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async searchUsers(query: string, limit: number, offset: number) : Promise<Result<UserSearchResponse, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_users", { query, limit, offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+/**
+ * Resolve a track ID to an HLS playback URL.
+ * 
+ * Calls SoundCloud's `/tracks/{urn}/streams` endpoint (with fallback to
+ * the legacy transcodings approach) and returns a signed HLS playlist URL
+ * ready for the frontend audio element.
+ */
+async resolvePlaybackUrl(trackId: number, trackUrl: string) : Promise<Result<string, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("resolve_playback_url", { trackId, trackUrl }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getSelections() : Promise<Result<Selection[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_selections") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getFollowedArtists(forceRefresh: boolean) : Promise<Result<FollowedArtist[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_followed_artists", { forceRefresh }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistActivity(artistId: number) : Promise<Result<ActivityItem[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_activity", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistReleases(artistId: number) : Promise<Result<ReleaseActivityItem[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_releases", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getReleaseTracks(releaseId: number) : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_release_tracks", { releaseId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async markArtistSeen(artistId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("mark_artist_seen", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async markArtistReleasesSeen(artistId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("mark_artist_releases_seen", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async fetchRelatedTracks(trackId: number, limit: number) : Promise<Result<TrackInfo[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("fetch_related_tracks", { trackId, limit }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistProfile(artistId: number) : Promise<Result<ArtistProfile, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_profile", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getAllArtistTracks(artistId: number, sort: SortOption) : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_all_artist_tracks", { artistId, sort }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistLikedTracks(artistId: number) : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_liked_tracks", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistFollowers(artistId: number) : Promise<Result<ArtistProfile[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_followers", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistFollowings(artistId: number) : Promise<Result<ArtistProfile[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_followings", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async resolveUser(permalink: string) : Promise<Result<ArtistProfile, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("resolve_user", { permalink }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async resolveSoundcloudLink(url: string) : Promise<Result<ResolvedLink, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("resolve_soundcloud_link", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getArtistPlaylists(artistId: number) : Promise<Result<ArtistPlaylist[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_playlists", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getPlaylistTracks(playlistId: number, secretToken: string | null) : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_playlist_tracks", { playlistId, secretToken }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async followUser(userId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("follow_user", { userId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async unfollowUser(userId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unfollow_user", { userId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async checkFollowStatus(userId: number) : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("check_follow_status", { userId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async likeTrack(trackId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("like_track", { trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async unlikeTrack(trackId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unlike_track", { trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async checkFirefoxInstalled() : Promise<boolean> {
+    return await TAURI_INVOKE("check_firefox_installed");
+},
+async openInFirefox() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("open_in_firefox") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async detectRekordbox(manualDbPath: string | null) : Promise<Result<RekordboxStatus, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("detect_rekordbox", { manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getDefaultRekordboxDataDirectoryParent() : Promise<Result<string, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_default_rekordbox_data_directory_parent") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async exportToRekordbox(tracks: ExportTrackRequest[], playlistName: string | null, parentFolderId: string | null, manualDbPath: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_to_rekordbox", { tracks, playlistName, parentFolderId, manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listRekordboxPlaylists(manualDbPath: string | null) : Promise<Result<RekordboxPlaylistInfo[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_rekordbox_playlists", { manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getRekordboxPlaylistTree(manualDbPath: string | null) : Promise<Result<RekordboxTreeNode[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_rekordbox_playlist_tree", { manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async deleteRekordboxPlaylist(playlistId: string, manualDbPath: string | null) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_rekordbox_playlist", { playlistId, manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listRekordboxBackups() : Promise<Result<BackupInfo[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_rekordbox_backups") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async restoreRekordboxBackup(backupPath: string, manualDbPath: string | null) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("restore_rekordbox_backup", { backupPath, manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async quitRekordbox() : Promise<boolean> {
+    return await TAURI_INVOKE("quit_rekordbox");
+},
+async exportPlaylistToRekordbox(tracks: TrackCore[], playlistName: string, parentFolderId: string | null, maxConcurrent: number, manualDbPath: string | null) : Promise<Result<ExportResult, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("export_playlist_to_rekordbox", { tracks, playlistName, parentFolderId, maxConcurrent, manualDbPath }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async cancelRekordboxExport() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("cancel_rekordbox_export") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getUnreadCount() : Promise<Result<UnreadCountResult, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_unread_count") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getNotificationsPage(cursor: string | null) : Promise<Result<NotificationsPage, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_notifications_page", { cursor }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async markNotificationsSeen(latestCreatedAt: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("mark_notifications_seen", { latestCreatedAt }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getConversationsPage(offset: number | null) : Promise<Result<ConversationsPage, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_conversations_page", { offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getConversationMessages(otherUserId: number, offset: number | null) : Promise<Result<MessagesPage, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_conversation_messages", { otherUserId, offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getUnreadConversationsFlag() : Promise<Result<boolean, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_unread_conversations_flag") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async markConversationRead(otherUserId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("mark_conversation_read", { otherUserId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async resolveMessageEmbed(url: string) : Promise<Result<MessageEmbed | null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("resolve_message_embed", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async sendMessage(otherUserId: number, content: string) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("send_message", { otherUserId, content }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async getLikedTracks() : Promise<Result<TrackInfo[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_liked_tracks") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearLikedTracksCache() : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_liked_tracks_cache") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+}
+}
 
 /** user-defined events **/
 
+
 export const events = __makeEvents__<{
-  artistPlaylistsBatchEvent: ArtistPlaylistsBatchEvent;
-  artistProfilesBatchEvent: ArtistProfilesBatchEvent;
-  downloadProgressEvent: DownloadProgressEvent;
-  libraryPlaylistsBatchEvent: LibraryPlaylistsBatchEvent;
-  queueCancelledEvent: QueueCancelledEvent;
-  queueCompleteEvent: QueueCompleteEvent;
-  queueProgressEvent: QueueProgressEvent;
-  rekordboxExportProgressEvent: RekordboxExportProgressEvent;
-  tracksBatchEvent: TracksBatchEvent;
+artistPlaylistsBatchEvent: ArtistPlaylistsBatchEvent,
+artistProfilesBatchEvent: ArtistProfilesBatchEvent,
+downloadProgressEvent: DownloadProgressEvent,
+libraryPlaylistsBatchEvent: LibraryPlaylistsBatchEvent,
+queueCancelledEvent: QueueCancelledEvent,
+queueCompleteEvent: QueueCompleteEvent,
+queueProgressEvent: QueueProgressEvent,
+rekordboxExportProgressEvent: RekordboxExportProgressEvent,
+tracksBatchEvent: TracksBatchEvent
 }>({
-  artistPlaylistsBatchEvent: 'artist-playlists-batch-event',
-  artistProfilesBatchEvent: 'artist-profiles-batch-event',
-  downloadProgressEvent: 'download-progress-event',
-  libraryPlaylistsBatchEvent: 'library-playlists-batch-event',
-  queueCancelledEvent: 'queue-cancelled-event',
-  queueCompleteEvent: 'queue-complete-event',
-  queueProgressEvent: 'queue-progress-event',
-  rekordboxExportProgressEvent: 'rekordbox-export-progress-event',
-  tracksBatchEvent: 'tracks-batch-event',
-});
+artistPlaylistsBatchEvent: "artist-playlists-batch-event",
+artistProfilesBatchEvent: "artist-profiles-batch-event",
+downloadProgressEvent: "download-progress-event",
+libraryPlaylistsBatchEvent: "library-playlists-batch-event",
+queueCancelledEvent: "queue-cancelled-event",
+queueCompleteEvent: "queue-complete-event",
+queueProgressEvent: "queue-progress-event",
+rekordboxExportProgressEvent: "rekordbox-export-progress-event",
+tracksBatchEvent: "tracks-batch-event"
+})
 
 /** user-defined constants **/
 
+
+
 /** user-defined types **/
 
-export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string };
-export type ActivityType = 'Track' | 'Repost';
-export type ActorInfo = { id: number; username: string; avatar_url: string | null; permalink_url: string };
-export type ArtistPlaylist = {
-  id: number;
-  title: string;
-  artwork_url: string | null;
-  track_count: number;
-  created_at: string;
-  permalink_url: string;
-  secret_token: string | null;
-  duration?: number | null;
-  user?: ArtistPlaylistUser | null;
-};
-export type ArtistPlaylistUser = { id: number; username: string };
-export type ArtistPlaylistsBatchEvent = { entityId: number; playlists: ArtistPlaylist[] };
-export type ArtistProfile = {
-  id: number;
-  username: string;
-  avatar_url: string | null;
-  description: string | null;
-  followers_count: number;
-  followings_count: number;
-  track_count: number;
-  permalink_url: string;
-  visuals?: VisualsWrapper | null;
-};
-export type ArtistProfilesBatchEvent = { entityId: number; profiles: ArtistProfile[] };
-export type BackupInfo = { path: string; timestamp: string; sizeMb: number; kind: BackupKind };
-export type BackupKind = 'export' | 'preRestore';
-export type ConversationMessage = { content: string; sender_id: number; sent_at: string; track_embed: MessageTrackEmbed | null };
-export type ConversationSummary = {
-  id: string;
-  other_user: MessageUser;
-  last_message_content: string;
-  last_message_sender_id: number;
-  last_message_at: string;
-  read: boolean;
-};
-export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null };
-export type DownloadProgressEvent = {
-  trackId: string;
-  status: string;
-  percent?: number | null;
-  downloadedBytes?: number | null;
-  totalBytes?: number | null;
-  error?: ErrorResponse | null;
-  filePath?: string | null;
-};
-export type DownloadRequest = {
-  /**
-   * SoundCloud API URL for the track (e.g., `https://api.soundcloud.com/tracks/123`)
-   */
-  trackUrl: string;
-  /**
-   * SoundCloud track ID as string
-   */
-  trackId: string;
-  /**
-   * Track title
-   */
-  title: string;
-  /**
-   * Artist/uploader name
-   */
-  artist: string;
-  /**
-   * URL to track artwork image
-   */
-  artworkUrl: string | null;
-  /**
-   * Track duration in milliseconds
-   */
-  durationMs: number;
-  /**
-   * URL to download original file (if artist enabled free download)
-   */
-  downloadUrl: string | null;
-} & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null };
-export type ErrorResponse = { code: string; message: string };
-export type ExportResult = { exportedCount: number; skippedCount: number; playlistName: string; errors: string[] };
-export type ExportTrackRequest = { sourcePath: string };
-export type FollowedArtist = {
-  id: number;
-  username: string;
-  avatar_url: string | null;
-  has_new_content: boolean;
-  has_new_original_tracks: boolean;
-  has_original_tracks: boolean;
-  has_new_releases: boolean;
-  has_new_original_releases: boolean;
-  has_original_releases: boolean;
-};
-export type LibraryPlaylist = {
-  id: number;
-  title: string;
-  username: string;
-  user_id: number | null;
-  artwork_url: string | null;
-  track_count: number;
-  duration: number;
-  permalink_url: string;
-  is_owned: boolean;
-  is_public: boolean;
-  secret_token: string | null;
-};
-export type LibraryPlaylistsBatchEvent = { playlists: LibraryPlaylist[] };
-export type MessageEmbed =
-  | ({ kind: 'Track' } & MessageTrackEmbed)
-  | ({ kind: 'Playlist' } & MessagePlaylistEmbed)
-  | ({ kind: 'User' } & MessageUserEmbed);
-export type MessagePlaylistEmbed = {
-  id: number;
-  title: string;
-  artist: string;
-  artist_id: number;
-  artwork_url: string | null;
-  track_count: number;
-  permalink_url: string;
-  secret_token: string | null;
-};
-export type MessageTrackEmbed = {
-  id: number;
-  title: string;
-  artist: string;
-  artist_id: number;
-  artwork_url: string | null;
-  waveform_url: string | null;
-  duration_ms: number;
-  permalink_url: string;
-};
-export type MessageUser = { id: number; username: string; avatar_url: string | null; permalink_url: string };
-export type MessageUserEmbed = { id: number; username: string; avatar_url: string | null; followers_count: number; permalink_url: string };
-export type MessagesPage = { items: ConversationMessage[]; other_user: MessageUser; current_user_id: number; next_offset: number | null };
-export type NotificationItem =
-  | { kind: 'affiliation'; id: string; created_at: string; actor: ActorInfo }
-  | { kind: 'track_like'; id: string; created_at: string; actor: ActorInfo; track: TrackInfo }
-  | { kind: 'track_repost'; id: string; created_at: string; actor: ActorInfo; track: TrackInfo }
-  | { kind: 'comment'; id: string; created_at: string; actor: ActorInfo; track: TrackInfo; body: string }
-  | { kind: 'mention'; id: string; created_at: string; actor: ActorInfo; track: TrackInfo; body: string }
-  | { kind: 'playlist_like'; id: string; created_at: string; actor: ActorInfo; playlist: PlaylistSummary }
-  | { kind: 'playlist_repost'; id: string; created_at: string; actor: ActorInfo; playlist: PlaylistSummary };
-export type NotificationsPage = { items: NotificationItem[]; next_cursor: string | null };
-export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean };
+export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
+export type ActivityType = "Track" | "Repost"
+export type ActorInfo = { id: number; username: string; avatar_url: string | null; permalink_url: string }
+export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string; secret_token: string | null; duration?: number | null; user?: ArtistPlaylistUser | null }
+export type ArtistPlaylistUser = { id: number; username: string }
+export type ArtistPlaylistsBatchEvent = { entityId: number; playlists: ArtistPlaylist[] }
+export type ArtistProfile = { id: number; username: string; avatar_url: string | null; description: string | null; followers_count: number; followings_count: number; track_count: number; permalink_url: string; visuals?: VisualsWrapper | null }
+export type ArtistProfilesBatchEvent = { entityId: number; profiles: ArtistProfile[] }
+export type BackupInfo = { path: string; timestamp: string; sizeMb: number; kind: BackupKind }
+export type BackupKind = "export" | "preRestore"
+export type ConversationMessage = { content: string; sender_id: number; sent_at: string; track_embed: MessageTrackEmbed | null }
+export type ConversationSummary = { id: string; other_user: MessageUser; last_message_content: string; last_message_sender_id: number; last_message_at: string; read: boolean }
+export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null }
+export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null; filePath?: string | null }
+export type DownloadRequest = ({ 
+/**
+ * SoundCloud API URL for the track (e.g., `https://api.soundcloud.com/tracks/123`)
+ */
+trackUrl: string; 
+/**
+ * SoundCloud track ID as string
+ */
+trackId: string; 
+/**
+ * Track title
+ */
+title: string; 
+/**
+ * Artist/uploader name
+ */
+artist: string; 
+/**
+ * URL to track artwork image
+ */
+artworkUrl: string | null; 
+/**
+ * Track duration in milliseconds
+ */
+durationMs: number; 
+/**
+ * URL to download original file (if artist enabled free download)
+ */
+downloadUrl: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
+export type ErrorResponse = { code: string; message: string }
+export type ExportResult = { exportedCount: number; skippedCount: number; playlistName: string; errors: string[] }
+export type ExportTrackRequest = { sourcePath: string }
+export type FollowedArtist = { id: number; username: string; avatar_url: string | null; has_new_content: boolean; has_new_original_tracks: boolean; has_original_tracks: boolean; has_new_releases: boolean; has_new_original_releases: boolean; has_original_releases: boolean }
+export type LibraryPlaylist = { id: number; title: string; username: string; user_id: number | null; artwork_url: string | null; track_count: number; duration: number; permalink_url: string; is_owned: boolean; is_public: boolean; secret_token: string | null }
+export type LibraryPlaylistsBatchEvent = { playlists: LibraryPlaylist[] }
+export type MessageEmbed = ({ kind: "Track" } & MessageTrackEmbed) | ({ kind: "Playlist" } & MessagePlaylistEmbed) | ({ kind: "User" } & MessageUserEmbed)
+export type MessagePlaylistEmbed = { id: number; title: string; artist: string; artist_id: number; artwork_url: string | null; track_count: number; permalink_url: string; secret_token: string | null }
+export type MessageTrackEmbed = { id: number; title: string; artist: string; artist_id: number; artwork_url: string | null; waveform_url: string | null; duration_ms: number; permalink_url: string }
+export type MessageUser = { id: number; username: string; avatar_url: string | null; permalink_url: string }
+export type MessageUserEmbed = { id: number; username: string; avatar_url: string | null; followers_count: number; permalink_url: string }
+export type MessagesPage = { items: ConversationMessage[]; other_user: MessageUser; current_user_id: number; next_offset: number | null }
+export type NotificationItem = { kind: "affiliation"; id: string; created_at: string; actor: ActorInfo } | { kind: "track_like"; id: string; created_at: string; actor: ActorInfo; track: TrackInfo } | { kind: "track_repost"; id: string; created_at: string; actor: ActorInfo; track: TrackInfo } | { kind: "comment"; id: string; created_at: string; actor: ActorInfo; track: TrackInfo; body: string } | { kind: "mention"; id: string; created_at: string; actor: ActorInfo; track: TrackInfo; body: string } | { kind: "playlist_like"; id: string; created_at: string; actor: ActorInfo; playlist: PlaylistSummary } | { kind: "playlist_repost"; id: string; created_at: string; actor: ActorInfo; playlist: PlaylistSummary }
+export type NotificationsPage = { items: NotificationItem[]; next_cursor: string | null }
+export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }
 /**
  * Playlist information from SoundCloud API.
  */
-export type PlaylistInfo = {
-  id: number;
-  title: string;
-  user: UserInfo;
-  artwork_url: string | null;
-  track_count: number;
-  tracks: TrackInfo[];
-};
-export type PlaylistSummary = {
-  id: number;
-  title: string;
-  artwork_url: string | null;
-  permalink_url: string;
-  track_count: number;
-  user: UserInfo;
-};
+export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
+export type PlaylistSummary = { id: number; title: string; artwork_url: string | null; permalink_url: string; track_count: number; user: UserInfo }
 /**
  * Event payload for queue cancellation.
  */
-export type QueueCancelledEvent = { completed: number; cancelled: number; total: number };
+export type QueueCancelledEvent = { completed: number; cancelled: number; total: number }
 /**
  * Event payload for queue completion.
  */
-export type QueueCompleteEvent = { completed: number; failed: number; total: number; failedTracks: [string, string][] };
+export type QueueCompleteEvent = { completed: number; failed: number; total: number; failedTracks: ([string, string])[] }
 /**
  * Event payload for queue progress updates.
  */
-export type QueueProgressEvent = { current: number; total: number; trackId: string };
-export type RateLimitChoice = 'retry' | 'stop';
-export type RekordboxExportProgressEvent = {
-  trackId: string;
-  trackTitle: string;
-  status: RekordboxExportStatus;
-  totalTracks: number;
-  error: string | null;
-};
-export type RekordboxExportStatus = 'pending' | 'downloading' | 'downloaded' | 'exporting' | 'completed' | 'error';
-export type RekordboxPlaylistInfo = { id: string; name: string; trackCount: number };
-export type RekordboxStatus = { found: boolean; version: string | null; dbPath: string | null; isRunning: boolean };
-export type RekordboxTreeNode = { id: string; name: string; attribute: number; parentId: string; seq: number };
-export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: ReleaseActivityType; created_at: string };
-export type ReleaseActivityType = 'New' | 'Repost';
-export type ReleaseInfo = {
-  id: number;
-  title: string;
-  user: UserInfo;
-  artwork_url: string | null;
-  track_count: number;
-  permalink_url: string;
-  release_type: ReleaseType;
-};
-export type ReleaseType = 'Album' | 'EP' | 'Single' | 'Compilation' | 'Playlist';
-export type ResolvedLink = { kind: string; user_id: number | null; username: string | null };
-export type SearchResponse = { collection: TrackInfo[]; total_results: number | null };
-export type Selection = {
-  id: string;
-  title: string;
-  shortTitle: string;
-  artworkUrl: string | null;
-  trackCount: number;
-  tracks: TrackInfo[];
-};
-export type SortOption = 'recent' | 'popular';
-export type StartQueueRequest = {
-  tracks: TrackCore[];
-  albumName: string | null;
-  outputDir: string | null;
-  maxConcurrent: number | null;
-  preserveOrder: boolean | null;
-};
+export type QueueProgressEvent = { current: number; total: number; trackId: string }
+export type RateLimitChoice = "retry" | "stop"
+export type RekordboxExportProgressEvent = { trackId: string; trackTitle: string; status: RekordboxExportStatus; totalTracks: number; error: string | null }
+export type RekordboxExportStatus = "pending" | "downloading" | "downloaded" | "exporting" | "completed" | "error"
+export type RekordboxPlaylistInfo = { id: string; name: string; trackCount: number }
+export type RekordboxStatus = { found: boolean; version: string | null; dbPath: string | null; isRunning: boolean }
+export type RekordboxTreeNode = { id: string; name: string; attribute: number; parentId: string; seq: number }
+export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: ReleaseActivityType; created_at: string }
+export type ReleaseActivityType = "New" | "Repost"
+export type ReleaseInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; permalink_url: string; release_type: ReleaseType }
+export type ReleaseType = "Album" | "EP" | "Single" | "Compilation" | "Playlist"
+export type ResolvedLink = { kind: string; user_id: number | null; username: string | null }
+export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
+export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
+export type SortOption = "recent" | "popular"
+export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }
 /**
  * Core track data shared across all track-related types.
- *
+ * 
  * This struct contains the essential fields that identify and describe a track.
  * It is embedded via `#[serde(flatten)]` in `QueueItemRequest`, `QueueItem`,
  * and `DownloadRequest` to avoid field duplication.
  */
-export type TrackCore = {
-  /**
-   * SoundCloud API URL for the track (e.g., `https://api.soundcloud.com/tracks/123`)
-   */
-  trackUrl: string;
-  /**
-   * SoundCloud track ID as string
-   */
-  trackId: string;
-  /**
-   * Track title
-   */
-  title: string;
-  /**
-   * Artist/uploader name
-   */
-  artist: string;
-  /**
-   * URL to track artwork image
-   */
-  artworkUrl: string | null;
-  /**
-   * Track duration in milliseconds
-   */
-  durationMs: number;
-  /**
-   * URL to download original file (if artist enabled free download)
-   */
-  downloadUrl: string | null;
-};
+export type TrackCore = { 
+/**
+ * SoundCloud API URL for the track (e.g., `https://api.soundcloud.com/tracks/123`)
+ */
+trackUrl: string; 
+/**
+ * SoundCloud track ID as string
+ */
+trackId: string; 
+/**
+ * Track title
+ */
+title: string; 
+/**
+ * Artist/uploader name
+ */
+artist: string; 
+/**
+ * URL to track artwork image
+ */
+artworkUrl: string | null; 
+/**
+ * Track duration in milliseconds
+ */
+durationMs: number; 
+/**
+ * URL to download original file (if artist enabled free download)
+ */
+downloadUrl: string | null }
 /**
  * Track information from SoundCloud API.
  */
-export type TrackInfo = {
-  id: number;
-  title: string;
-  user: UserInfo;
-  artwork_url: string | null;
-  /**
-   * Duration in milliseconds.
-   */
-  duration: number;
-  permalink_url: string;
-  /**
-   * URL to fetch waveform data (JSON with samples array).
-   */
-  waveform_url: string | null;
-  /**
-   * Whether the track has free download enabled.
-   */
-  downloadable: boolean;
-  /**
-   * URL to download the original file (requires OAuth token).
-   */
-  download_url: string | null;
-};
-export type TracksBatchEvent = { entityId: number; tracks: TrackInfo[] };
-export type UnreadCountResult = { unread: boolean; latest_created_at: string | null };
+export type TrackInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; 
+/**
+ * Duration in milliseconds.
+ */
+duration: number; permalink_url: string; 
+/**
+ * URL to fetch waveform data (JSON with samples array).
+ */
+waveform_url: string | null; 
+/**
+ * Whether the track has free download enabled.
+ */
+downloadable: boolean; 
+/**
+ * URL to download the original file (requires OAuth token).
+ */
+download_url: string | null }
+export type TracksBatchEvent = { entityId: number; tracks: TrackInfo[] }
+export type UnreadCountResult = { unread: boolean; latest_created_at: string | null }
 /**
  * Information about an available update.
  */
-export type UpdateInfo = { version: string; body: string | null; date: string | null };
-export type UrlType = 'playlist' | 'track';
-export type UserInfo = { id: number; username: string; avatar_url: string | null };
-export type UserSearchResponse = { collection: UserSearchResult[]; total_results: number | null };
-export type UserSearchResult = {
-  id: number;
-  username: string;
-  avatar_url: string | null;
-  followers_count: number;
-  track_count: number;
-  permalink_url: string;
-};
-export type ValidationError = { code: string; message: string; hint: string | null };
-export type ValidationResult = { valid: boolean; urlType: UrlType | null; error: ValidationError | null };
-export type VisualItem = { visual_url: string };
+export type UpdateInfo = { version: string; body: string | null; date: string | null }
+export type UrlType = "playlist" | "track"
+export type UserInfo = { id: number; username: string; avatar_url: string | null }
+export type UserSearchResponse = { collection: UserSearchResult[]; total_results: number | null }
+export type UserSearchResult = { id: number; username: string; avatar_url: string | null; followers_count: number; track_count: number; permalink_url: string }
+export type ValidationError = { code: string; message: string; hint: string | null }
+export type ValidationResult = { valid: boolean; urlType: UrlType | null; error: ValidationError | null }
+export type VisualItem = { visual_url: string }
 /**
  * API shape: `{ visuals: { visuals: [{ visual_url: "..." }] } }`
  */
-export type VisualsWrapper = { visuals: VisualItem[] };
+export type VisualsWrapper = { visuals: VisualItem[] }
 
 /** tauri-specta globals **/
 
-import { invoke as TAURI_INVOKE, Channel as TAURI_CHANNEL } from '@tauri-apps/api/core';
-import * as TAURI_API_EVENT from '@tauri-apps/api/event';
-import { type WebviewWindow as __WebviewWindow__ } from '@tauri-apps/api/webviewWindow';
+import {
+	invoke as TAURI_INVOKE,
+	Channel as TAURI_CHANNEL,
+} from "@tauri-apps/api/core";
+import * as TAURI_API_EVENT from "@tauri-apps/api/event";
+import { type WebviewWindow as __WebviewWindow__ } from "@tauri-apps/api/webviewWindow";
 
 type __EventObj__<T> = {
-  listen: (cb: TAURI_API_EVENT.EventCallback<T>) => ReturnType<typeof TAURI_API_EVENT.listen<T>>;
-  once: (cb: TAURI_API_EVENT.EventCallback<T>) => ReturnType<typeof TAURI_API_EVENT.once<T>>;
-  emit: null extends T ? (payload?: T) => ReturnType<typeof TAURI_API_EVENT.emit> : (payload: T) => ReturnType<typeof TAURI_API_EVENT.emit>;
+	listen: (
+		cb: TAURI_API_EVENT.EventCallback<T>,
+	) => ReturnType<typeof TAURI_API_EVENT.listen<T>>;
+	once: (
+		cb: TAURI_API_EVENT.EventCallback<T>,
+	) => ReturnType<typeof TAURI_API_EVENT.once<T>>;
+	emit: null extends T
+		? (payload?: T) => ReturnType<typeof TAURI_API_EVENT.emit>
+		: (payload: T) => ReturnType<typeof TAURI_API_EVENT.emit>;
 };
 
-export type Result<T, E> = { status: 'ok'; data: T } | { status: 'error'; error: E };
+export type Result<T, E> =
+	| { status: "ok"; data: T }
+	| { status: "error"; error: E };
 
-function __makeEvents__<T extends Record<string, any>>(mappings: Record<keyof T, string>) {
-  return new Proxy(
-    {} as unknown as {
-      [K in keyof T]: __EventObj__<T[K]> & {
-        (handle: __WebviewWindow__): __EventObj__<T[K]>;
-      };
-    },
-    {
-      get: (_, event) => {
-        const name = mappings[event as keyof T];
+function __makeEvents__<T extends Record<string, any>>(
+	mappings: Record<keyof T, string>,
+) {
+	return new Proxy(
+		{} as unknown as {
+			[K in keyof T]: __EventObj__<T[K]> & {
+				(handle: __WebviewWindow__): __EventObj__<T[K]>;
+			};
+		},
+		{
+			get: (_, event) => {
+				const name = mappings[event as keyof T];
 
-        return new Proxy((() => {}) as any, {
-          apply: (_, __, [window]: [__WebviewWindow__]) => ({
-            listen: (arg: any) => window.listen(name, arg),
-            once: (arg: any) => window.once(name, arg),
-            emit: (arg: any) => window.emit(name, arg),
-          }),
-          get: (_, command: keyof __EventObj__<any>) => {
-            switch (command) {
-              case 'listen':
-                return (arg: any) => TAURI_API_EVENT.listen(name, arg);
-              case 'once':
-                return (arg: any) => TAURI_API_EVENT.once(name, arg);
-              case 'emit':
-                return (arg: any) => TAURI_API_EVENT.emit(name, arg);
-            }
-          },
-        });
-      },
-    },
-  );
+				return new Proxy((() => {}) as any, {
+					apply: (_, __, [window]: [__WebviewWindow__]) => ({
+						listen: (arg: any) => window.listen(name, arg),
+						once: (arg: any) => window.once(name, arg),
+						emit: (arg: any) => window.emit(name, arg),
+					}),
+					get: (_, command: keyof __EventObj__<any>) => {
+						switch (command) {
+							case "listen":
+								return (arg: any) => TAURI_API_EVENT.listen(name, arg);
+							case "once":
+								return (arg: any) => TAURI_API_EVENT.once(name, arg);
+							case "emit":
+								return (arg: any) => TAURI_API_EVENT.emit(name, arg);
+						}
+					},
+				});
+			},
+		},
+	);
 }

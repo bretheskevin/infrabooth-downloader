@@ -115,6 +115,14 @@ export const api = {
 
   validateDownloadPath: (path: string): Promise<boolean> => commands.validateDownloadPath(path).then(unwrap),
 
+  isTlsVerifyDisabled: (): Promise<boolean> => commands.isTlsVerifyDisabled(),
+
+  enableTlsVerify: (): Promise<void> =>
+    commands
+      .enableTlsVerify()
+      .then(unwrap)
+      .then(() => {}),
+
   detectRekordbox: (manualDbPath?: string): Promise<RekordboxStatus> => commands.detectRekordbox(manualDbPath ?? null).then(unwrap),
 
   getDefaultRekordboxDataDirectoryParent: (): Promise<string> => commands.getDefaultRekordboxDataDirectoryParent().then(unwrap),

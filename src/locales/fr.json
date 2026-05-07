@@ -3,6 +3,10 @@
     "title": "InfraBooth Downloader",
     "version": "Version {{version}}"
   },
+  "security": {
+    "tlsDisabled": "Vérification TLS désactivée",
+    "tlsDisabledTooltip": "La vérification des certificats TLS est désactivée via config.json. Tout le trafic réseau est vulnérable à l'interception. Cliquez pour réactiver (effectif après redémarrage)."
+  },
   "common": {
     "back": "Retour",
     "done": "Terminé",

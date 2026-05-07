@@ -3,6 +3,10 @@
     "title": "InfraBooth Downloader",
     "version": "Version {{version}}"
   },
+  "security": {
+    "tlsDisabled": "TLS verification disabled",
+    "tlsDisabledTooltip": "TLS certificate verification is disabled via config.json. All network traffic is vulnerable to interception. Click to re-enable (takes effect after restart)."
+  },
   "common": {
     "back": "Back",
     "done": "Done",

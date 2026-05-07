@@ -2,6 +2,7 @@ use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 
+use crate::services::config::skip_tls_verify;
 use crate::services::paths::{get_app_data_dir, get_downloads_dir};
 
 #[tauri::command]
@@ -165,6 +166,18 @@ pub fn validate_download_path(path: String) -> Result<bool, String> {
     }
 
     Ok(true)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn is_tls_verify_disabled() -> bool {
+    skip_tls_verify()
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn enable_tls_verify() -> Result<(), String> {
+    crate::services::config::enable_tls_verify()
 }
 
 #[cfg(test)]

@@ -16,6 +16,7 @@ import { SettingsDialog } from '@/features/settings';
 import { Separator } from '@/components/ui/separator';
 import { SidebarNavItem } from './SidebarNavItem';
 import { SidebarQueueWidget } from './SidebarQueueWidget';
+import { TlsWarningSidebarItem } from './TlsWarningBadge';
 import type { AppPage } from './AppLayout';
 
 interface SidebarProps {
@@ -141,6 +142,8 @@ export function Sidebar({ activePage, onPageChange, isSignedIn }: SidebarProps) 
             <span className="truncate">{username}</span>
           </Button>
         )}
+
+        <TlsWarningSidebarItem className={sidebarActionClass} />
 
         <Button variant="ghost" onClick={() => setSettingsOpen(true)} className={sidebarActionClass}>
           <Settings className="size-4" />

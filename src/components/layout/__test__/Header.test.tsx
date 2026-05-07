@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, act, fireEvent } from '@testing-library/react';
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { Header } from '../Header';
 import i18n from '@/lib/i18n';
 import { useAuthStore } from '@/features/auth/store';
@@ -33,6 +32,8 @@ vi.mock('@tauri-apps/api/app', () => ({
 }));
 
 describe('Header', () => {
+  const Wrapper = createQueryWrapper();
+
   beforeEach(async () => {
     useAuthStore.setState({ isSignedIn: false, username: null, plan: null });
     await act(async () => {
@@ -42,9 +43,9 @@ describe('Header', () => {
 
   it('should render the app title from translations', () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     expect(screen.getByText('InfraBooth Downloader')).toBeInTheDocument();
@@ -52,9 +53,9 @@ describe('Header', () => {
 
   it('should use the t function for the title', () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     const heading = screen.getByRole('heading', { level: 1 });
@@ -63,9 +64,9 @@ describe('Header', () => {
 
   it('should update title when language changes to French', async () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     await act(async () => {
@@ -78,9 +79,9 @@ describe('Header', () => {
 
   it('should render AuthContainer with sign-in button when not authenticated', () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
@@ -88,13 +89,10 @@ describe('Header', () => {
 
   it('should render AuthContainer with UserMenu when authenticated', () => {
     useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
-    const Wrapper = createQueryWrapper();
 
     render(
       <Wrapper>
-        <TooltipProvider>
-          <Header />
-        </TooltipProvider>
+        <Header />
       </Wrapper>,
     );
 
@@ -106,9 +104,9 @@ describe('Header', () => {
 
   it('should render settings button', () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     const settingsButton = screen.getByRole('button', { name: /open settings/i });
@@ -117,9 +115,9 @@ describe('Header', () => {
 
   it('should open settings panel when settings button is clicked', async () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     const settingsButton = screen.getByRole('button', { name: /open settings/i });
@@ -135,9 +133,9 @@ describe('Header', () => {
 
   it('should close settings panel when close button is clicked', async () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     // Open settings
@@ -163,9 +161,9 @@ describe('Header', () => {
 
   it('should display the app version', async () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     expect(await screen.findByText('Version 1.6.0')).toBeInTheDocument();
@@ -173,9 +171,9 @@ describe('Header', () => {
 
   it('should have accessible settings button with aria-label', () => {
     render(
-      <TooltipProvider>
+      <Wrapper>
         <Header />
-      </TooltipProvider>,
+      </Wrapper>,
     );
 
     const settingsButton = screen.getByRole('button', { name: /open settings/i });

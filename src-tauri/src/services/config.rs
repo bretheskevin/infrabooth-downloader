@@ -47,3 +47,18 @@ impl Config {
 pub fn skip_tls_verify() -> bool {
     CONFIG.skip_tls_verify
 }
+
+pub fn enable_tls_verify() -> Result<(), String> {
+    let Some(config_path) = Config::config_path() else {
+        return Err("Could not determine config path".to_string());
+    };
+
+    let mut json = Config::read_config_file();
+    json["skip_tls_verify"] = serde_json::Value::Bool(false);
+
+    let content = serde_json::to_string_pretty(&json).map_err(|e| format!("Failed to serialize config: {}", e))?;
+    std::fs::write(&config_path, &content).map_err(|e| format!("Failed to write config: {}", e))?;
+
+    log::info!("[config] TLS verification re-enabled in {:?}", config_path);
+    Ok(())
+}

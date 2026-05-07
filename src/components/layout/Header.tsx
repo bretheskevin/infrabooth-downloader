@@ -9,6 +9,7 @@ import { useIsSignedIn } from '@/features/auth/store';
 import { SettingsDialog } from '@/features/settings/components/SettingsDialog';
 import { useMenuSettingsListener } from '@/features/settings/hooks/useMenuSettingsListener';
 import { useAppVersion } from '@/hooks';
+import { TlsWarningBadge } from './TlsWarningBadge';
 
 export function Header() {
   const { t } = useTranslation();
@@ -30,6 +31,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center gap-1">
+          <TlsWarningBadge />
           {isSignedIn && <MessageBell />}
           {isSignedIn && <NotificationBell />}
           <AuthContainer />
