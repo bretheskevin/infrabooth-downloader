@@ -8,6 +8,7 @@ pub mod downloader;
 pub mod events;
 pub mod ffmpeg;
 pub mod http;
+pub mod https_enforcer;
 pub mod metadata;
 pub mod oauth;
 pub mod paths;

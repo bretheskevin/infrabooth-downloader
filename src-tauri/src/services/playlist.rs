@@ -186,7 +186,8 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
 pub fn build_playlist_url(id: u64, client_id: &str, secret_token: Option<&str>) -> String {
     let mut url = format!("{}/playlists/{}?representation=full&client_id={}", API_V2_BASE, id, client_id);
     if let Some(token) = secret_token {
-        url.push_str(&format!("&secret_token={}", token));
+        let encoded_token = urlencoding::encode(token);
+        url.push_str(&format!("&secret_token={}", encoded_token));
     }
     url
 }
