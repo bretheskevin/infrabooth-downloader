@@ -1,3 +1,4 @@
+pub mod audit_logger;
 #[cfg(test)]
 pub mod auth_choice;
 pub mod cancellation;
