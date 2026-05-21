@@ -56,12 +56,8 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
           artwork={<ArtistAvatarImage avatarUrl={avatarUrl} username={artist.username} className="w-12 h-12 shrink-0" />}
           title={artist.username}
           onTitleClick={() => useArtistProfileStore.getState().openProfile(artist.id, artist.username)}
-          subtitle={
-            <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
-              <span className="truncate">{t('newTracks.trackCount', { count: filteredItems.length })}</span>
-              {folderMetadata}
-            </p>
-          }
+          subtitle={t('newTracks.trackCount', { count: filteredItems.length })}
+          folderMetadata={folderMetadata}
           actions={actions}
         />
       )}

@@ -51,7 +51,7 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
         artwork={<ArtistAvatarImage avatarUrl={avatarUrl} username={artist.username} className="w-12 h-12 shrink-0" />}
         title={artist.username}
         onTitleClick={() => useArtistProfileStore.getState().openProfile(artist.id, artist.username)}
-        subtitle={<p className="text-xs text-muted-foreground">{t('newReleases.releasesCount', { count: filteredItems.length })}</p>}
+        subtitle={t('newReleases.releasesCount', { count: filteredItems.length })}
       />
 
       {items.length > 0 && (

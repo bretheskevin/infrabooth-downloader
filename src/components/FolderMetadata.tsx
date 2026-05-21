@@ -26,7 +26,6 @@ export function FolderMetadata({
     <>
       {isDownloadEnabled && folderName && (
         <span className="inline-flex items-center gap-1 shrink-0">
-          <span className="text-border">&middot;</span>
           <Tooltip>
             <TooltipTrigger asChild>
               <button

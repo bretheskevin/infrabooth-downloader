@@ -10,6 +10,7 @@ interface DetailHeaderProps {
   title: string;
   onTitleClick?: () => void;
   subtitle?: React.ReactNode;
+  folderMetadata?: React.ReactNode;
   actions?: React.ReactNode;
   children?: React.ReactNode;
 }
@@ -22,10 +23,13 @@ export function DetailHeader({
   title,
   onTitleClick,
   subtitle,
+  folderMetadata,
   actions,
   children,
 }: DetailHeaderProps) {
   const { t } = useTranslation();
+
+  const subtitleNode = subtitle ? <p className="text-xs text-muted-foreground truncate min-w-0">{subtitle}</p> : null;
 
   return (
     <div className="space-y-2">
@@ -53,10 +57,11 @@ export function DetailHeader({
               title
             )}
           </h2>
-          {subtitle}
+          {subtitleNode}
         </div>
         {actions}
       </div>
+      {folderMetadata && <div className="flex items-center gap-1 text-xs">{folderMetadata}</div>}
       {children}
     </div>
   );

@@ -107,7 +107,7 @@ export function PlaylistHeroHeader({
       <div className="px-2 space-y-1">
         <span className="text-xs text-muted-foreground">{t('settings.downloadLocation')}</span>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 min-w-0 -ml-1.5">{folderMetadata}</div>
+          <div className="flex items-center gap-1 min-w-0">{folderMetadata}</div>
           {actions && <div className="flex items-center justify-end ml-auto">{actions}</div>}
         </div>
       </div>

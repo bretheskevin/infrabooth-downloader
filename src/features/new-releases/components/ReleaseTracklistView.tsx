@@ -73,14 +73,8 @@ export function ReleaseTracklistView({ artist, release, onBackToReleases, onBack
           }
           artwork={artwork}
           title={info.title}
-          subtitle={
-            <p className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
-              <span className="truncate">
-                {artist.username} · {typeLabel} · {t('newReleases.trackCount', { count: info.track_count })}
-              </span>
-              {folderMetadata}
-            </p>
-          }
+          subtitle={`${artist.username} · ${typeLabel} · ${t('newReleases.trackCount', { count: info.track_count })}`}
+          folderMetadata={folderMetadata}
           actions={actions}
         />
       )}

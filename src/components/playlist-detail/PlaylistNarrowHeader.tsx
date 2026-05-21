@@ -44,18 +44,16 @@ export function PlaylistNarrowHeader({
       }
       title={playlist.title}
       subtitle={
-        <div className="text-xs text-muted-foreground flex flex-wrap items-center gap-1 min-w-0">
-          <span className="truncate min-w-0">
-            {playlist.userId != null ? (
-              <ArtistLink userId={playlist.userId} username={playlist.username ?? ''} />
-            ) : playlist.username ? (
-              playlist.username
-            ) : null}
-            {` · ${t('library.detail.tracks', { count: trackCount })}${durationText}`}
-          </span>
-          {folderMetadata}
-        </div>
+        <>
+          {playlist.userId != null ? (
+            <ArtistLink userId={playlist.userId} username={playlist.username ?? ''} />
+          ) : playlist.username ? (
+            playlist.username
+          ) : null}
+          {` · ${t('library.detail.tracks', { count: trackCount })}${durationText}`}
+        </>
       }
+      folderMetadata={folderMetadata}
       actions={actions}
     />
   );
