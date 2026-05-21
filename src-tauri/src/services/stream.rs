@@ -154,6 +154,8 @@ fn extract_codec(mime_type: &str) -> Codec {
 
 /// Normalize protocol from API format.protocol field and URL.
 fn normalize_protocol(protocol: &str, url: &str) -> Protocol {
+    // CENC-encrypted HLS (FairPlay CBCS / Widevine CTR / PlayReady) requires a CDM
+    // that FFmpeg doesn't have. Plain encrypted-hls (AES-128) is handled natively.
     if protocol.starts_with("ctr-") || protocol.starts_with("cbc-") {
         return Protocol::Unknown;
     }
@@ -373,16 +375,27 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
         }
 
         log::info!("[stream] Found {} transcodings for track", transcodings.len());
+        for t in &transcodings {
+            let score = score_transcoding(t, opts.prefer_hls);
+            log::info!(
+                "[stream]   transcoding: protocol={}, mime={}, quality={}, preset={}, score={}",
+                t.format.protocol,
+                t.format.mime_type,
+                t.quality,
+                t.preset,
+                score
+            );
+        }
 
         let has_drm = transcodings.iter().any(|t| {
             let p = &t.format.protocol;
-            p.starts_with("ctr-") || p.starts_with("cbc-") || p == "encrypted-hls"
+            p.starts_with("ctr-") || p.starts_with("cbc-")
         });
 
         let ranked = ranked_transcodings(&transcodings, opts.prefer_hls);
         if ranked.is_empty() {
             return if has_drm {
-                Err(DownloadError::TrackUnavailable("DRM protected".to_string()))
+                Err(DownloadError::TrackUnavailable("DRM protected (FairPlay/Widevine CENC)".to_string()))
             } else {
                 Err(DownloadError::StreamResolutionFailed("No suitable transcoding found".into()))
             };
@@ -526,6 +539,16 @@ mod tests {
         assert_eq!(normalize_protocol("cbc-aes-128", "https://api.soundcloud.com/media/test"), Protocol::Unknown);
     }
 
+    #[test]
+    fn test_normalize_protocol_drm_cbc_encrypted_hls() {
+        assert_eq!(normalize_protocol("cbc-encrypted-hls", "https://api.soundcloud.com/media/test"), Protocol::Unknown);
+    }
+
+    #[test]
+    fn test_normalize_protocol_drm_ctr_encrypted_hls() {
+        assert_eq!(normalize_protocol("ctr-encrypted-hls", "https://api.soundcloud.com/media/test"), Protocol::Unknown);
+    }
+
     // --- Transcoding selection tests ---
 
     #[test]
@@ -571,11 +594,11 @@ mod tests {
     #[test]
     fn test_select_skips_drm() {
         let transcodings = vec![
-            make_transcoding("ctr-aes-128", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_0", false),
-            make_transcoding("hls", "audio/mpeg", "sq", "mp3_0", false),
+            make_transcoding("ctr-encrypted-hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_encrypted", false),
+            make_transcoding("hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_plain", false),
         ];
         let best = select_best_transcoding(&transcodings).unwrap();
-        assert_eq!(best.preset, "mp3_0");
+        assert_eq!(best.preset, "aac_plain");
     }
 
     #[test]
@@ -595,10 +618,10 @@ mod tests {
     }
 
     #[test]
-    fn test_select_has_drm_returns_none() {
+    fn test_select_all_drm_returns_none() {
         let transcodings = vec![
-            make_transcoding("ctr-aes-128", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_0", false),
-            make_transcoding("cbc-aes-128", "audio/mpeg", "sq", "mp3_0", false),
+            make_transcoding("ctr-encrypted-hls", "audio/mp4; codecs=\"mp4a.40.2\"", "hq", "aac_256k", false),
+            make_transcoding("cbc-encrypted-hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_160k", false),
         ];
         assert!(select_best_transcoding(&transcodings).is_none());
     }
