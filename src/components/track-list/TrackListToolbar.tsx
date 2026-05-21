@@ -4,6 +4,7 @@ import { SelectAllCheckbox } from '@/components/SelectAllCheckbox';
 import { SortDirectionSelect } from '@/components/SortDirectionSelect';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import type { SortField } from '@/lib/sort';
 import type { SortConfig } from './types';
 
@@ -25,13 +26,14 @@ export function TrackListToolbar({
   onPlayShuffled,
 }: TrackListToolbarProps) {
   const { t } = useTranslation();
+  const isWidescreen = useIsWidescreen();
   const showSelectAll = isDownloadEnabled && hasSelectableTracks;
 
   return (
     <div className="flex items-center justify-between px-3">
       <div className="flex items-center gap-3">
         {showSelectAll && <SelectAllCheckbox isAllSelected={isAllSelected} onToggleAll={onToggleAll} />}
-        {onPlayShuffled && (
+        {onPlayShuffled && !isWidescreen && (
           <Button
             variant="ghost"
             size="sm"
