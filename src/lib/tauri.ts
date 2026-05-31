@@ -14,6 +14,7 @@ import {
   type ActivityItem,
   type ArtistProfile,
   type UserSearchResponse,
+  type PlaylistSearchResponse,
   type ReleaseActivityItem,
   type SortOption,
   type ArtistPlaylist,
@@ -217,6 +218,9 @@ export const api = {
 
   searchUsers: (query: string, limit: number, offset: number): Promise<UserSearchResponse> =>
     commands.searchUsers(query, limit, offset).then(unwrap),
+
+  searchPlaylists: (query: string, limit: number, offset: number): Promise<PlaylistSearchResponse> =>
+    commands.searchPlaylists(query, limit, offset).then(unwrap),
 
   // Player
   resolvePlaybackUrl: (trackId: number, trackUrl: string): Promise<string> => commands.resolvePlaybackUrl(trackId, trackUrl).then(unwrap),

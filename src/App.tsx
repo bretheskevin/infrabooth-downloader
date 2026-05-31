@@ -12,7 +12,14 @@ import { useIsSignedIn } from '@/features/auth/store';
 import { ArtistProfileView, useArtistProfileStore } from '@/features/artist-profile';
 import { ArtistDetailView, useNewTracksStore } from '@/features/new-tracks';
 import { ArtistReleasesView, ReleaseTracklistView, useNewReleasesStore } from '@/features/new-releases';
-import { PlaylistDetailView, fromMessagePlaylistEmbed, fromNotificationPlaylist, fromSelection } from '@/components/playlist-detail';
+import {
+  PlaylistDetailView,
+  fromArtistPlaylist,
+  fromMessagePlaylistEmbed,
+  fromNotificationPlaylist,
+  fromSelection,
+} from '@/components/playlist-detail';
+import { useSelectedPlaylistStore } from '@/features/search/selected-playlist-store';
 import { NotificationsPage, useNotificationsStore } from '@/features/notifications';
 import { ConversationPage, MessagesPage, WidescreenMessagesLayout, useMessagesStore } from '@/features/messages';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
@@ -29,6 +36,7 @@ function clearDetailOverlays() {
   useNewReleasesStore.getState().goBackToCarousel();
   useNotificationsStore.getState().clear();
   useMessagesStore.getState().clear();
+  useSelectedPlaylistStore.getState().closePlaylist();
 }
 
 function PageContent({
@@ -54,6 +62,7 @@ function PageContent({
   const selectedConversation = useMessagesStore((s) => s.selectedConversation);
   const notificationPlaylist = useNotificationsStore((s) => s.selectedPlaylist);
   const messagePlaylist = useMessagesStore((s) => s.selectedPlaylist);
+  const searchPlaylist = useSelectedPlaylistStore((s) => s.selectedPlaylist);
 
   const isWidescreen = useIsWidescreen();
   const { t } = useTranslation();
@@ -66,7 +75,8 @@ function PageContent({
     profileArtistId ||
     newReleasesView.view !== 'carousel' ||
     hasNotificationOverlay ||
-    isMessagesPageOpen
+    isMessagesPageOpen ||
+    searchPlaylist
   );
 
   useLayoutEffect(() => {
@@ -116,6 +126,18 @@ function PageContent({
         <PlaylistDetailView
           playlist={fromNotificationPlaylist(notificationPlaylist, authUserId)}
           breadcrumbItems={[{ label: t('notifications.title'), onClick: () => useNotificationsStore.getState().closePlaylist() }]}
+          onDownloadTracks={handleDownloadTracks}
+        />
+      </section>
+    );
+  }
+
+  if (searchPlaylist) {
+    return (
+      <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
+        <PlaylistDetailView
+          playlist={fromArtistPlaylist(searchPlaylist, '', authUserId)}
+          breadcrumbItems={[{ label: t('search.tabLabel'), onClick: () => useSelectedPlaylistStore.getState().closePlaylist() }]}
           onDownloadTracks={handleDownloadTracks}
         />
       </section>

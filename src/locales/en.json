@@ -373,7 +373,13 @@
     "emptyStateArtists": "Search for artists on SoundCloud",
     "noArtistResults": "No artists found",
     "followers": "{{value}} followers",
-    "tracks": "{{value}} tracks"
+    "tracks": "{{value}} tracks",
+    "tabPlaylists": "Playlists",
+    "placeholderPlaylists": "Search for playlists...",
+    "emptyStatePlaylists": "Search for playlists on SoundCloud",
+    "noPlaylistResults": "No playlists found",
+    "playlistTrackCount_one": "{{count}} track",
+    "playlistTrackCount_other": "{{count}} tracks"
   },
   "changelog": {
     "whatsNew": "What's new in v{{version}}",

@@ -5,9 +5,11 @@ import { SearchBar } from '@/components/ui/search-bar';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { SearchResultList } from './SearchResultList';
 import { ArtistSearchResultList } from './ArtistSearchResultList';
+import { PlaylistSearchResultList } from './PlaylistSearchResultList';
 import { SearchFolderPicker } from './SearchFolderPicker';
 import { useSearchQuery } from '../hooks/useSearchQuery';
 import { useArtistSearchQuery } from '../hooks/useArtistSearchQuery';
+import { usePlaylistSearchQuery } from '../hooks/usePlaylistSearchQuery';
 import { useSearchStore, type SearchType } from '../store';
 import { useSettingsStore, useIsDownloadEnabled } from '@/features/settings';
 import { useTrackDownloadState } from '@/hooks/useTrackDownloadState';
@@ -28,6 +30,7 @@ export function SearchTab() {
 
   const trackSearch = useSearchQuery();
   const artistSearch = useArtistSearchQuery();
+  const playlistSearch = usePlaylistSearchQuery();
 
   const [scanKey, setScanKey] = useState(0);
   const prevInputRef = useRef(inputValue);
@@ -47,7 +50,11 @@ export function SearchTab() {
 
   const { playTrack } = usePlayContext(trackSearch.results);
 
-  const placeholder = searchType === 'tracks' ? t('search.placeholder') : t('search.placeholderArtists');
+  const placeholder = {
+    tracks: t('search.placeholder'),
+    artists: t('search.placeholderArtists'),
+    playlists: t('search.placeholderPlaylists'),
+  }[searchType];
 
   return (
     <div className="flex flex-col gap-3 flex-1 min-h-0">
@@ -60,6 +67,9 @@ export function SearchTab() {
             </TabsTrigger>
             <TabsTrigger value="artists" className="text-xs px-2 py-1">
               {t('search.tabArtists')}
+            </TabsTrigger>
+            <TabsTrigger value="playlists" className="text-xs px-2 py-1">
+              {t('search.tabPlaylists')}
             </TabsTrigger>
           </TabsList>
           {searchType === 'tracks' && <SearchFolderPicker path={downloadPath} onPathChange={setDownloadPath} />}
@@ -94,6 +104,17 @@ export function SearchTab() {
               fetchNextPage={artistSearch.fetchNextPage}
               error={artistSearch.error}
               hasSearched={artistSearch.hasSearched}
+            />
+          </TabsContent>
+          <TabsContent value="playlists" className="mt-0">
+            <PlaylistSearchResultList
+              results={playlistSearch.results}
+              isLoading={playlistSearch.isLoading}
+              isFetchingNextPage={playlistSearch.isFetchingNextPage}
+              hasNextPage={playlistSearch.hasNextPage}
+              fetchNextPage={playlistSearch.fetchNextPage}
+              error={playlistSearch.error}
+              hasSearched={playlistSearch.hasSearched}
             />
           </TabsContent>
         </div>

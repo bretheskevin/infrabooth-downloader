@@ -3,6 +3,7 @@ use specta::Type;
 
 use url::Url;
 
+use crate::models::artist::ArtistPlaylist;
 use crate::models::error::ScApiError;
 use crate::services::http::{validate_api_response, API_V2_BASE, HTTP_CLIENT};
 use crate::services::playlist::{RawTrackInfo, TrackInfo};
@@ -60,9 +61,39 @@ impl From<RawUserInfo> for UserSearchResult {
     }
 }
 
+// === Playlist search internal deserialization types ===
+
+#[derive(Debug, Deserialize)]
+struct RawPlaylistSearchItem {
+    #[serde(flatten)]
+    base: ArtistPlaylist,
+    #[serde(default)]
+    tracks: Vec<RawPlaylistSearchTrack>,
+}
+
+#[derive(Debug, Deserialize)]
+struct RawPlaylistSearchTrack {
+    artwork_url: Option<String>,
+}
+
+impl From<RawPlaylistSearchItem> for ArtistPlaylist {
+    fn from(mut raw: RawPlaylistSearchItem) -> Self {
+        if raw.base.artwork_url.is_none() {
+            raw.base.artwork_url = raw.tracks.iter().find_map(|t| t.artwork_url.clone());
+        }
+        raw.base
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, Type)]
 pub struct UserSearchResponse {
     pub collection: Vec<UserSearchResult>,
+    pub total_results: Option<i64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Type)]
+pub struct PlaylistSearchResponse {
+    pub collection: Vec<ArtistPlaylist>,
     pub total_results: Option<i64>,
 }
 
@@ -97,6 +128,11 @@ pub async fn search_tracks(client_id: &str, query: &str, limit: u32, offset: u32
 pub async fn search_users(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<UserSearchResponse, ScApiError> {
     let (collection, total_results) = search_api::<RawUserInfo, UserSearchResult>(client_id, query, limit, offset, "users").await?;
     Ok(UserSearchResponse { collection, total_results })
+}
+
+pub async fn search_playlists(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<PlaylistSearchResponse, ScApiError> {
+    let (collection, total_results) = search_api::<RawPlaylistSearchItem, ArtistPlaylist>(client_id, query, limit, offset, "playlists_without_albums").await?;
+    Ok(PlaylistSearchResponse { collection, total_results })
 }
 
 #[cfg(test)]
@@ -280,5 +316,100 @@ mod tests {
         let json = serde_json::to_string(&response).unwrap();
         assert!(json.contains("\"id\":1"));
         assert!(json.contains("\"total_results\":1"));
+    }
+
+    #[test]
+    fn test_playlist_search_api_response_deserializes() {
+        let json = r#"{
+            "collection": [
+                {
+                    "id": 789,
+                    "title": "Chill Vibes",
+                    "artwork_url": "https://i1.sndcdn.com/artworks-abc.jpg",
+                    "track_count": 15,
+                    "created_at": "2026-01-01T00:00:00Z",
+                    "permalink_url": "https://soundcloud.com/user/sets/chill-vibes",
+                    "tracks": []
+                }
+            ],
+            "total_results": 5
+        }"#;
+        let response: ApiSearchResponse<RawPlaylistSearchItem> = serde_json::from_str(json).unwrap();
+        assert_eq!(response.collection.len(), 1);
+        assert_eq!(response.collection[0].base.title, "Chill Vibes");
+        assert_eq!(response.total_results, Some(5));
+    }
+
+    #[test]
+    fn test_playlist_artwork_falls_back_to_first_track() {
+        let json = r#"{
+            "id": 1,
+            "title": "No Art",
+            "artwork_url": null,
+            "track_count": 2,
+            "created_at": "2026-01-01T00:00:00Z",
+            "permalink_url": "https://soundcloud.com/user/sets/no-art",
+            "tracks": [
+                { "artwork_url": null },
+                { "artwork_url": "https://track2.jpg" }
+            ]
+        }"#;
+        let raw: RawPlaylistSearchItem = serde_json::from_str(json).unwrap();
+        let playlist = ArtistPlaylist::from(raw);
+        assert_eq!(playlist.artwork_url, Some("https://track2.jpg".into()));
+    }
+
+    #[test]
+    fn test_playlist_own_artwork_takes_precedence() {
+        let json = r#"{
+            "id": 2,
+            "title": "Has Art",
+            "artwork_url": "https://own-art.jpg",
+            "track_count": 1,
+            "created_at": "2026-01-01T00:00:00Z",
+            "permalink_url": "https://soundcloud.com/user/sets/has-art",
+            "tracks": [
+                { "artwork_url": "https://track-art.jpg" }
+            ]
+        }"#;
+        let raw: RawPlaylistSearchItem = serde_json::from_str(json).unwrap();
+        let playlist = ArtistPlaylist::from(raw);
+        assert_eq!(playlist.artwork_url, Some("https://own-art.jpg".into()));
+    }
+
+    #[test]
+    fn test_playlist_no_artwork_anywhere() {
+        let json = r#"{
+            "id": 3,
+            "title": "Empty",
+            "artwork_url": null,
+            "track_count": 0,
+            "created_at": "2026-01-01T00:00:00Z",
+            "permalink_url": "https://soundcloud.com/user/sets/empty",
+            "tracks": []
+        }"#;
+        let raw: RawPlaylistSearchItem = serde_json::from_str(json).unwrap();
+        let playlist = ArtistPlaylist::from(raw);
+        assert_eq!(playlist.artwork_url, None);
+    }
+
+    #[test]
+    fn test_playlist_search_response_serializes() {
+        let response = PlaylistSearchResponse {
+            collection: vec![ArtistPlaylist {
+                id: 1,
+                title: "Test".into(),
+                artwork_url: None,
+                track_count: 0,
+                created_at: "2026-01-01T00:00:00Z".into(),
+                permalink_url: "https://soundcloud.com/user/sets/test".into(),
+                secret_token: None,
+                duration: None,
+                user: None,
+            }],
+            total_results: Some(1),
+        };
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("\"title\":\"Test\""));
     }
 }
