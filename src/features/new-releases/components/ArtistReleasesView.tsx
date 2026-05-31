@@ -77,13 +77,14 @@ export function ArtistReleasesView({ artist, filter, onBack }: ArtistReleasesVie
       )}
 
       {!isLoading && filteredItems.length > 0 && (
-        <CardListView
-          items={filteredItems}
-          getKey={(i) => `${i.release.id}-${i.activity_type}`}
-          renderCard={(i) => <ReleaseCard item={i} onClick={() => selectRelease(i)} />}
-          renderRow={(i) => <ReleaseListRow item={i} onClick={() => selectRelease(i)} />}
-          className="overflow-y-auto"
-        />
+        <div className="flex-1 min-h-0 overflow-y-auto">
+          <CardListView
+            items={filteredItems}
+            getKey={(i) => `${i.release.id}-${i.activity_type}`}
+            renderCard={(i) => <ReleaseCard item={i} onClick={() => selectRelease(i)} />}
+            renderRow={(i) => <ReleaseListRow item={i} onClick={() => selectRelease(i)} />}
+          />
+        </div>
       )}
     </div>
   );
