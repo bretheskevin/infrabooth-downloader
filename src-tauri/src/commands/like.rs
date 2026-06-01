@@ -1,5 +1,6 @@
 use tauri::Manager;
 
+use crate::services::library::LibraryCache;
 use crate::services::like;
 use crate::services::liked_tracks::LikedTracksCache;
 use crate::services::storage::AuthState;
@@ -35,5 +36,37 @@ pub async fn unlike_track(app: tauri::AppHandle, track_id: u64) -> Result<(), St
     result.map_err(|e| e.to_string())?;
 
     app.state::<LikedTracksCache>().clear();
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn like_playlist(app: tauri::AppHandle, playlist_id: u64) -> Result<(), String> {
+    let current_user_id = require_user_id(&app)?;
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
+    let (token, client_id) = require_auth_and_cid(&app).await?;
+
+    let (new_datadome, result) = like::like_playlist(&token, &client_id, datadome.as_deref(), current_user_id, playlist_id).await;
+    state.update_datadome(new_datadome);
+    result.map_err(|e| e.to_string())?;
+
+    app.state::<LibraryCache>().clear();
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn unlike_playlist(app: tauri::AppHandle, playlist_id: u64) -> Result<(), String> {
+    let current_user_id = require_user_id(&app)?;
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
+    let (token, client_id) = require_auth_and_cid(&app).await?;
+
+    let (new_datadome, result) = like::unlike_playlist(&token, &client_id, datadome.as_deref(), current_user_id, playlist_id).await;
+    state.update_datadome(new_datadome);
+    result.map_err(|e| e.to_string())?;
+
+    app.state::<LibraryCache>().clear();
     Ok(())
 }

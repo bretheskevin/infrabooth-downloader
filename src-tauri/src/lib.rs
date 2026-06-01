@@ -13,11 +13,11 @@ use commands::{
     get_conversation_messages, get_conversations_page, get_default_download_path, get_default_rekordbox_data_directory_parent, get_feature_flags,
     get_followed_artists, get_library_playlists, get_liked_tracks, get_log_path, get_notifications_page, get_owned_playlists_for_track, get_playlist_info,
     get_playlist_tracks, get_rekordbox_playlist_tree, get_release_tracks, get_selections, get_track_info, get_unread_conversations_flag, get_unread_count,
-    install_update, is_tls_verify_disabled, like_track, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen,
-    mark_conversation_read, mark_notifications_seen, open_in_firefox, quit_rekordbox, refresh_auth, remove_track_from_playlist, resolve_library_artwork,
-    resolve_message_embed, resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup,
-    scan_existing_tracks, search_playlists, search_tracks, search_users, send_message, sign_out, start_download_queue, test_ffmpeg, unfollow_user,
-    unlike_track, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
+    install_update, is_tls_verify_disabled, like_playlist, like_track, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen,
+    mark_artist_seen, mark_conversation_read, mark_notifications_seen, open_in_firefox, quit_rekordbox, refresh_auth, remove_track_from_playlist,
+    resolve_library_artwork, resolve_message_embed, resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice,
+    restore_rekordbox_backup, scan_existing_tracks, search_playlists, search_tracks, search_users, send_message, sign_out, start_download_queue, test_ffmpeg,
+    unfollow_user, unlike_playlist, unlike_track, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
 };
 use services::cancellation::CancellationState;
 use services::events;
@@ -188,6 +188,8 @@ pub fn run() {
             check_follow_status,
             like_track,
             unlike_track,
+            like_playlist,
+            unlike_playlist,
             check_firefox_installed,
             open_in_firefox,
             detect_rekordbox,

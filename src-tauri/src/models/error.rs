@@ -242,6 +242,7 @@ macro_rules! define_api_error {
 
 define_api_error!(FollowError, "FOLLOW_API_ERROR");
 define_api_error!(LikeTrackError, "LIKE_TRACK_API_ERROR");
+define_api_error!(LikePlaylistError, "LIKE_PLAYLIST_API_ERROR");
 
 #[derive(Debug, Error, Serialize)]
 pub enum RekordboxError {
@@ -476,5 +477,30 @@ mod tests {
         let err = FollowError::ApiError(403, "Forbidden".to_string());
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "FOLLOW_API_ERROR");
+    }
+
+    #[test]
+    fn test_like_playlist_api_error_message() {
+        let err = LikePlaylistError::ApiError(403, "Forbidden".to_string());
+        assert_eq!(err.to_string(), "API error (403): Forbidden");
+    }
+
+    #[test]
+    fn test_like_playlist_network_error_message() {
+        let err = LikePlaylistError::NetworkError("timeout".to_string());
+        assert_eq!(err.to_string(), "Network error: timeout");
+    }
+
+    #[test]
+    fn test_like_playlist_error_codes() {
+        assert_eq!(LikePlaylistError::ApiError(500, "err".to_string()).code(), "LIKE_PLAYLIST_API_ERROR");
+        assert_eq!(LikePlaylistError::NetworkError("err".to_string()).code(), "NETWORK_ERROR");
+    }
+
+    #[test]
+    fn test_error_response_from_like_playlist_api_error() {
+        let err = LikePlaylistError::ApiError(403, "Forbidden".to_string());
+        let response: ErrorResponse = err.into();
+        assert_eq!(response.code, "LIKE_PLAYLIST_API_ERROR");
     }
 }

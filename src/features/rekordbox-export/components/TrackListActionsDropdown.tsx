@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Disc3, EllipsisVertical, ExternalLink, Link, Loader2, Send } from 'lucide-react';
+import { Disc3, EllipsisVertical, ExternalLink, Heart, Link, Loader2, Send } from 'lucide-react';
 import type { TrackInfo, RekordboxExportStatus } from '@/bindings';
+import { cn } from '@/lib/utils';
 import { useLinkActions } from '@/hooks/useLinkActions';
+import type { LikeState } from '@/hooks/useLikeTrack';
 import { REKORDBOX_ERROR_KEYS } from '@/lib/rekordboxErrors';
 import { useIsSignedIn } from '@/features/auth/store';
 import { useSettingsStore } from '@/features/settings/store';
@@ -31,6 +33,7 @@ interface TrackListActionsDropdownProps {
   permalinkUrl?: string;
   disabled?: boolean;
   shareInfo?: ShareTrackInfo;
+  likeState?: LikeState;
 }
 
 const MAX_VISIBLE_TRACKS = 3;
@@ -146,7 +149,14 @@ function ExportingContent({ groups, totalTracks, completedCount, percent, isRegi
   );
 }
 
-export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, disabled, shareInfo }: TrackListActionsDropdownProps) {
+export function TrackListActionsDropdown({
+  tracks,
+  playlistName,
+  permalinkUrl,
+  disabled,
+  shareInfo,
+  likeState,
+}: TrackListActionsDropdownProps) {
   const { t } = useTranslation();
   const { data: rekordboxStatus } = useRekordboxDetection();
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
@@ -193,7 +203,7 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
   const isSignedIn = useIsSignedIn();
   const canShare = isSignedIn && !!shareInfo;
 
-  if (!showRekordbox && !showLinks && !canShare) return null;
+  if (!showRekordbox && !showLinks && !canShare && !likeState) return null;
 
   const isRegistering = groups.exporting.length > 0 || groups.completed.length > 0;
   const completedCount = groups.downloaded.length + groups.exporting.length + groups.completed.length + groups.error.length;
@@ -214,6 +224,13 @@ export function TrackListActionsDropdown({ tracks, playlistName, permalinkUrl, d
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
+          {likeState && (
+            <DropdownMenuItem onClick={likeState.onToggle} disabled={likeState.isLoading}>
+              <Heart className={cn('h-3.5 w-3.5', likeState.isLiked && 'fill-primary text-primary')} />
+              {t(likeState.isLiked ? 'playlistMenu.unlike' : 'playlistMenu.like')}
+            </DropdownMenuItem>
+          )}
+          {likeState && (showLinks || showRekordbox || canShare) && <DropdownMenuSeparator />}
           {showLinks && (
             <>
               <DropdownMenuItem onClick={handleCopyLink}>

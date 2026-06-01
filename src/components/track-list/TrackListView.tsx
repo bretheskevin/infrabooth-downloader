@@ -34,6 +34,7 @@ export function TrackListView<F extends string = string>({
   filters,
   permalinkUrl,
   shareInfo,
+  playlistLikeState,
   messages,
   resetKey,
 }: TrackListViewProps<F>) {
@@ -97,7 +98,13 @@ export function TrackListView<F extends string = string>({
 
   const rekordboxExportAction =
     hasData && !isLoading ? (
-      <TrackListActionsDropdown tracks={tracks} playlistName={title} permalinkUrl={permalinkUrl} shareInfo={shareInfo} />
+      <TrackListActionsDropdown
+        tracks={tracks}
+        playlistName={title}
+        permalinkUrl={permalinkUrl}
+        shareInfo={shareInfo}
+        likeState={playlistLikeState}
+      />
     ) : null;
 
   const handlePlayAll = useCallback(() => {

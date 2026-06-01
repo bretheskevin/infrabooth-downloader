@@ -470,6 +470,12 @@
     "unlikeError": "Failed to unlike track",
     "shareByDm": "Share"
   },
+  "playlistMenu": {
+    "like": "Like",
+    "unlike": "Unlike",
+    "likeError": "Failed to like playlist",
+    "unlikeError": "Failed to unlike playlist"
+  },
   "shareTrack": {
     "title": "Send track",
     "description": "Send a track via direct message",

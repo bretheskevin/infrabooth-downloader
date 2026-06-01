@@ -5,6 +5,8 @@ import type { BreadcrumbItem } from '@/components/ui/breadcrumb';
 import { TrackListView } from '@/components/track-list/TrackListView';
 import { usePlaylistArtwork } from '@/features/library/hooks/usePlaylistArtwork';
 import { useRemoveFromPlaylist } from '@/features/library/hooks/useRemoveFromPlaylist';
+import { useIsSignedIn } from '@/features/auth/store';
+import { useLikePlaylist, type LikePlaylistInput } from '@/hooks/useLikePlaylist';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
 import { RemoveFromPlaylistDialog } from './RemoveFromPlaylistDialog';
 import { usePlaylistTracks } from './usePlaylistTracks';
@@ -28,6 +30,7 @@ export function PlaylistDetailView({
   onDownloadTracks,
   scrollPreservation,
 }: PlaylistDetailViewProps) {
+  const isSignedIn = useIsSignedIn();
   const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id, playlist.secretToken, initialTracks);
 
   const needsArtwork = !playlist.artworkUrl && !initialTracks;
@@ -58,6 +61,21 @@ export function PlaylistDetailView({
         }
       : undefined;
 
+  const likeInput: LikePlaylistInput | undefined = !playlist.isOwned
+    ? {
+        id: playlist.id,
+        title: playlist.title,
+        artwork_url: playlist.artworkUrl,
+        permalink_url: playlist.permalinkUrl,
+        track_count: playlist.trackCount,
+        username: playlist.username,
+        user_id: playlist.userId,
+        duration: playlist.duration,
+      }
+    : undefined;
+
+  const likeState = useLikePlaylist(isSignedIn ? likeInput : undefined);
+
   return (
     <>
       <TrackListView
@@ -83,6 +101,7 @@ export function PlaylistDetailView({
         folder
         permalinkUrl={playlist.permalinkUrl}
         shareInfo={shareInfo}
+        playlistLikeState={likeState}
         download={{ onDownloadTracks }}
         trackList={{
           virtualized: true,

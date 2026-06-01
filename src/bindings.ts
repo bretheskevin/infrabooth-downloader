@@ -492,6 +492,22 @@ async unlikeTrack(trackId: number) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async likePlaylist(playlistId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("like_playlist", { playlistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async unlikePlaylist(playlistId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("unlike_playlist", { playlistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async checkFirefoxInstalled() : Promise<boolean> {
     return await TAURI_INVOKE("check_firefox_installed");
 },

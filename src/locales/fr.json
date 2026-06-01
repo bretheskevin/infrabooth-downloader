@@ -470,6 +470,12 @@
     "unlikeError": "Échec du retrait des titres likés",
     "shareByDm": "Partager"
   },
+  "playlistMenu": {
+    "like": "Ajouter aux playlists likées",
+    "unlike": "Retirer des playlists likées",
+    "likeError": "Échec de l'ajout aux playlists likées",
+    "unlikeError": "Échec du retrait des playlists likées"
+  },
   "shareTrack": {
     "title": "Envoyer la piste",
     "description": "Envoyer une piste par message",

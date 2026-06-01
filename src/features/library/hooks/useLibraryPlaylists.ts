@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useAuthStore } from '@/features/auth/store';
 import { useStreamedUserQuery } from '@/hooks/useStreamedUserQuery';
 import { api } from '@/lib/tauri';
+import { LIBRARY_PLAYLISTS_KEY } from '@/lib/query';
 import type { LibraryPlaylist, LibraryPlaylistsBatchEvent } from '@/bindings';
 
 export function useLibraryPlaylists(enabled: boolean) {
@@ -11,7 +12,7 @@ export function useLibraryPlaylists(enabled: boolean) {
 
   const query = useStreamedUserQuery<LibraryPlaylist>({
     eventName: 'library-playlists-batch',
-    queryKey: ['library-playlists', username],
+    queryKey: [LIBRARY_PLAYLISTS_KEY, username],
     queryFn: api.getLibraryPlaylists,
     getItemsFromEvent: getPlaylistsFromEvent,
     enabled,

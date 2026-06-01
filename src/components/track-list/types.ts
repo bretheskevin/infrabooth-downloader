@@ -1,6 +1,7 @@
 import type { TrackInfo } from '@/bindings';
 import type { FilterChipsProps } from '@/components/FilterChips';
 import type { ShareTrackInfo } from '@/features/messages/store';
+import type { LikeState } from '@/hooks/useLikeTrack';
 
 export type FilterConfig<T extends string = string> = FilterChipsProps<T>;
 
@@ -54,6 +55,7 @@ export interface TrackListViewProps<F extends string = string> {
   filters?: FilterConfig<F>;
   permalinkUrl?: string;
   shareInfo?: ShareTrackInfo;
+  playlistLikeState?: LikeState;
   messages: TrackListMessages;
   resetKey?: string | number;
 }

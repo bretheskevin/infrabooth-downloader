@@ -73,7 +73,7 @@ pub mod follow;
 pub use follow::{check_follow_status, follow_user, unfollow_user};
 
 pub mod like;
-pub use like::{like_track, unlike_track};
+pub use like::{like_playlist, like_track, unlike_playlist, unlike_track};
 
 pub mod rekordbox;
 pub use rekordbox::{

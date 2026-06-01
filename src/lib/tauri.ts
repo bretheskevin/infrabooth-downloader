@@ -284,6 +284,18 @@ export const api = {
       .then(unwrap)
       .then(() => undefined),
 
+  likePlaylist: (playlistId: number): Promise<void> =>
+    commands
+      .likePlaylist(playlistId)
+      .then(unwrap)
+      .then(() => undefined),
+
+  unlikePlaylist: (playlistId: number): Promise<void> =>
+    commands
+      .unlikePlaylist(playlistId)
+      .then(unwrap)
+      .then(() => undefined),
+
   // Notifications
   getUnreadCount: (): Promise<UnreadCountResult> => commands.getUnreadCount().then(unwrap),
 
