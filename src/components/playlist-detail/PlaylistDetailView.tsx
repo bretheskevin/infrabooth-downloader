@@ -86,6 +86,7 @@ export function PlaylistDetailView({
         onRetry={refetch}
         title={playlist.title}
         resetKey={playlist.id}
+        playlistId={String(playlist.id)}
         header={({ actions, folderMetadata, onPlayAll, onShuffle }) => (
           <PlaylistDetailHeader
             playlist={playlist}

@@ -14,6 +14,7 @@ describe('settingsStore', () => {
       preservePlaylistOrder: true,
       crossfadeEnabled: false,
       crossfadeDuration: 5,
+      playlistDownloadPaths: {},
       _hasHydrated: false,
     });
   });
@@ -251,6 +252,41 @@ describe('settingsStore', () => {
       expect(useSettingsStore.getState().crossfadeDuration).toBe(1);
       useSettingsStore.getState().setCrossfadeDuration(20);
       expect(useSettingsStore.getState().crossfadeDuration).toBe(12);
+    });
+  });
+
+  describe('playlistDownloadPaths', () => {
+    it('should have empty object as default', () => {
+      const { playlistDownloadPaths } = useSettingsStore.getState();
+      expect(playlistDownloadPaths).toEqual({});
+    });
+
+    it('should set a playlist download path', () => {
+      useSettingsStore.getState().setPlaylistDownloadPath('playlist-1', '/custom/path');
+      expect(useSettingsStore.getState().playlistDownloadPaths).toEqual({
+        'playlist-1': '/custom/path',
+      });
+    });
+
+    it('should update a playlist download path', () => {
+      useSettingsStore.getState().setPlaylistDownloadPath('playlist-1', '/first/path');
+      useSettingsStore.getState().setPlaylistDownloadPath('playlist-1', '/second/path');
+      expect(useSettingsStore.getState().playlistDownloadPaths['playlist-1']).toBe('/second/path');
+    });
+
+    it('should isolate paths between playlist ids', () => {
+      useSettingsStore.getState().setPlaylistDownloadPath('playlist-1', '/path/one');
+      useSettingsStore.getState().setPlaylistDownloadPath('playlist-2', '/path/two');
+      const { playlistDownloadPaths } = useSettingsStore.getState();
+      expect(playlistDownloadPaths['playlist-1']).toBe('/path/one');
+      expect(playlistDownloadPaths['playlist-2']).toBe('/path/two');
+    });
+
+    it('should persist playlistDownloadPaths to localStorage', () => {
+      useSettingsStore.getState().setPlaylistDownloadPath('playlist-1', '/persisted/path');
+      const stored = localStorage.getItem('sc-downloader-settings');
+      const parsed = JSON.parse(stored!);
+      expect(parsed.state.playlistDownloadPaths).toEqual({ 'playlist-1': '/persisted/path' });
     });
   });
 });

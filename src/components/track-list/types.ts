@@ -58,4 +58,5 @@ export interface TrackListViewProps<F extends string = string> {
   playlistLikeState?: LikeState;
   messages: TrackListMessages;
   resetKey?: string | number;
+  playlistId?: string;
 }

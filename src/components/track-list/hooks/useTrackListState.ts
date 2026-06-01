@@ -22,6 +22,7 @@ interface UseTrackListStateConfig {
   folder?: boolean;
   searchThreshold?: number;
   resetKey?: string | number;
+  playlistId?: string;
 }
 
 export function useTrackListState(config: UseTrackListStateConfig) {
@@ -29,7 +30,7 @@ export function useTrackListState(config: UseTrackListStateConfig) {
   const stableTracks = config.tracks ?? EMPTY_ARRAY;
   const { onDownloadTracks } = config.download;
 
-  const folderState = useFolderPath(config.folder);
+  const folderState = useFolderPath(config.folder, config.playlistId);
   const { resetLocalPath } = folderState;
   const downloadPath = config.folder ? folderState.effectivePath : config.download.path;
   const handleOpenFolder = useOpenDownloadFolder(downloadPath ?? null);

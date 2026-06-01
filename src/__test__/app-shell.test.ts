@@ -91,7 +91,7 @@ describe('Story 1.3: App Shell Layout', () => {
 
     it('should display app title', () => {
       const content = readFileSync(join(PROJECT_ROOT, 'src/components/layout/Header.tsx'), 'utf-8');
-      expect(content).toContain('t("app.title")');
+      expect(content).toMatch(/t\(['"]app\.title['"]\)/);
     });
 
     it('should have border for visual separation', () => {

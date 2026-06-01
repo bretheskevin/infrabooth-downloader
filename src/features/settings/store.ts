@@ -22,6 +22,7 @@ interface SettingsState {
   hideReposts: boolean;
   hideReleasesReposts: boolean;
   mediaViewMode: MediaViewMode;
+  playlistDownloadPaths: Record<string, string>;
   _hasHydrated: boolean;
   setDownloadPath: (path: string) => void;
   setRekordboxPathOverride: (path: string) => void;
@@ -37,6 +38,7 @@ interface SettingsState {
   setHideReposts: (value: boolean) => void;
   setHideReleasesReposts: (value: boolean) => void;
   setMediaViewMode: (mode: MediaViewMode) => void;
+  setPlaylistDownloadPath: (playlistId: string, path: string) => void;
   _setHasHydrated: (state: boolean) => void;
 }
 
@@ -55,6 +57,7 @@ const PERSISTED_KEYS = [
   'hideReposts',
   'hideReleasesReposts',
   'mediaViewMode',
+  'playlistDownloadPaths',
 ] as const satisfies readonly (keyof SettingsState)[];
 
 export const useSettingsStore = create<SettingsState>()(
@@ -74,6 +77,7 @@ export const useSettingsStore = create<SettingsState>()(
       hideReposts: false,
       hideReleasesReposts: false,
       mediaViewMode: 'card',
+      playlistDownloadPaths: {},
       _hasHydrated: false,
       setDownloadPath: makeSetter('downloadPath', set),
       setRekordboxPathOverride: makeSetter('rekordboxPathOverride', set),
@@ -89,6 +93,10 @@ export const useSettingsStore = create<SettingsState>()(
       setHideReposts: makeSetter('hideReposts', set),
       setHideReleasesReposts: makeSetter('hideReleasesReposts', set),
       setMediaViewMode: makeSetter('mediaViewMode', set),
+      setPlaylistDownloadPath: (playlistId, path) =>
+        set((state) => ({
+          playlistDownloadPaths: { ...state.playlistDownloadPaths, [playlistId]: path },
+        })),
       _setHasHydrated: makeSetter('_hasHydrated', set),
     }),
     {

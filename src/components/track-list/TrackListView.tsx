@@ -37,6 +37,7 @@ export function TrackListView<F extends string = string>({
   playlistLikeState,
   messages,
   resetKey,
+  playlistId,
 }: TrackListViewProps<F>) {
   const { t } = useTranslation();
 
@@ -67,6 +68,7 @@ export function TrackListView<F extends string = string>({
     folder,
     searchThreshold: DEFAULT_SEARCH_THRESHOLD,
     resetKey,
+    playlistId,
   });
 
   const fallbackErrorKey = messages.error ?? 'common.error';

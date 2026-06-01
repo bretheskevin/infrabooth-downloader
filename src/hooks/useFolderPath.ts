@@ -7,21 +7,28 @@ import { getFolderName } from '@/lib/utils';
 
 const NOOP_SELECTOR = () => undefined;
 
-export function useFolderPath(enabled = true) {
+export function useFolderPath(enabled = true, playlistId?: string) {
   const { t } = useTranslation();
   const defaultPath = useSettingsStore(enabled ? (s) => s.downloadPath : NOOP_SELECTOR);
+  const savedPlaylistPath = useSettingsStore(enabled && playlistId ? (s) => s.playlistDownloadPaths[playlistId] : NOOP_SELECTOR);
+  const setPlaylistDownloadPath = useSettingsStore((s) => s.setPlaylistDownloadPath);
   const [localPath, setLocalPath] = useState<string | undefined>(undefined);
-  const effectivePath = localPath || defaultPath || undefined;
+
+  const sessionPath = playlistId ? savedPlaylistPath : localPath;
+  const effectivePath = sessionPath || defaultPath || undefined;
 
   const { selectFolder } = useFolderSelection({
     defaultPath: effectivePath,
     dialogTitle: t('common.changeFolder'),
-    onSelected: setLocalPath,
+    onSelected: (path) => {
+      if (playlistId) setPlaylistDownloadPath(playlistId, path);
+      else setLocalPath(path);
+    },
     onPermissionDenied: () => toast.error(t('common.folderPermissionDenied')),
   });
 
   const folderName = useMemo(() => (effectivePath ? getFolderName(effectivePath) : undefined), [effectivePath]);
-  const isCustomFolder = Boolean(localPath && localPath !== defaultPath);
+  const isCustomFolder = Boolean(sessionPath && sessionPath !== defaultPath);
   const resetLocalPath = useCallback(() => setLocalPath(undefined), []);
 
   return {
