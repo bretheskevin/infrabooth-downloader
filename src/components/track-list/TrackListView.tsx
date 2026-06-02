@@ -21,24 +21,18 @@ import type { TrackListViewProps, TrackListRenderContext } from './types';
 const DEFAULT_SEARCH_THRESHOLD = 5;
 
 export function TrackListView<F extends string = string>({
-  tracks,
-  isLoading,
-  isStreaming,
-  error,
-  onRetry,
-  title,
+  query,
+  source,
   header,
   download,
   folder,
   trackList,
   filters,
-  permalinkUrl,
-  shareInfo,
-  playlistLikeState,
   messages,
   resetKey,
-  playlistId,
 }: TrackListViewProps<F>) {
+  const { tracks, isLoading, isStreaming, error, onRetry } = query;
+  const { title, id, permalinkUrl, shareInfo, likeState } = source;
   const { t } = useTranslation();
 
   const [sortState, setSortState] = useState<{
@@ -68,7 +62,7 @@ export function TrackListView<F extends string = string>({
     folder,
     searchThreshold: DEFAULT_SEARCH_THRESHOLD,
     resetKey,
-    playlistId,
+    playlistId: id,
   });
 
   const fallbackErrorKey = messages.error ?? 'common.error';
@@ -105,7 +99,7 @@ export function TrackListView<F extends string = string>({
         playlistName={title}
         permalinkUrl={permalinkUrl}
         shareInfo={shareInfo}
-        likeState={playlistLikeState}
+        likeState={likeState}
       />
     ) : null;
 

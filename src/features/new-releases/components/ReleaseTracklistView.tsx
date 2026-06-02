@@ -54,11 +54,8 @@ export function ReleaseTracklistView({ artist, release, onBackToReleases, onBack
 
   return (
     <TrackListView
-      tracks={tracks}
-      isLoading={isLoading}
-      error={error}
-      onRetry={refetch}
-      title={info.title}
+      query={{ tracks, isLoading, error, onRetry: refetch }}
+      source={{ title: info.title, permalinkUrl: info.permalink_url, shareInfo }}
       resetKey={info.id}
       header={({ actions, folderMetadata }) => (
         <DetailHeader
@@ -79,8 +76,6 @@ export function ReleaseTracklistView({ artist, release, onBackToReleases, onBack
         />
       )}
       folder
-      permalinkUrl={info.permalink_url}
-      shareInfo={shareInfo}
       download={{ onDownloadTracks }}
       messages={{
         empty: 'newReleases.empty',

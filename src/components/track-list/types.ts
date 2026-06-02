@@ -41,22 +41,30 @@ export interface TrackListMessages {
   error?: string;
 }
 
-export interface TrackListViewProps<F extends string = string> {
+export interface TracksQuery {
   tracks: TrackInfo[] | undefined;
   isLoading: boolean;
   isStreaming?: boolean;
   error?: Error | null;
   onRetry?: () => void;
+}
+
+export interface TrackListSource {
   title: string;
+  id?: string;
+  permalinkUrl?: string;
+  shareInfo?: ShareTrackInfo;
+  likeState?: LikeState;
+}
+
+export interface TrackListViewProps<F extends string = string> {
+  query: TracksQuery;
+  source: TrackListSource;
   header: React.ReactNode | ((ctx: TrackListRenderContext) => React.ReactNode);
   download: DownloadConfig;
   folder?: boolean;
   trackList?: TrackListConfig;
   filters?: FilterConfig<F>;
-  permalinkUrl?: string;
-  shareInfo?: ShareTrackInfo;
-  playlistLikeState?: LikeState;
   messages: TrackListMessages;
   resetKey?: string | number;
-  playlistId?: string;
 }

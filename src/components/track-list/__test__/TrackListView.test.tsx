@@ -129,22 +129,24 @@ const createTrack = (id: number) =>
 
 describe('TrackListView', () => {
   const defaultProps = {
-    tracks: undefined as TrackInfo[] | undefined,
-    isLoading: false,
-    error: null as Error | null,
-    title: 'Test',
+    query: {
+      tracks: undefined as TrackInfo[] | undefined,
+      isLoading: false,
+      error: null as Error | null,
+    },
+    source: { title: 'Test' },
     header: <div data-testid="header">Header</div>,
     download: { path: '/dl', onDownloadTracks: vi.fn() },
     messages: { empty: 'test.empty' },
   };
 
   it('renders loading state when isLoading', () => {
-    const { container } = render(<TrackListView {...defaultProps} isLoading />);
+    const { container } = render(<TrackListView {...defaultProps} query={{ ...defaultProps.query, isLoading: true }} />);
     expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
   });
 
   it('renders empty state when tracks is empty array', () => {
-    render(<TrackListView {...defaultProps} tracks={[]} />);
+    render(<TrackListView {...defaultProps} query={{ ...defaultProps.query, tracks: [] }} />);
     expect(screen.getByText('No tracks')).toBeInTheDocument();
   });
 
@@ -153,8 +155,7 @@ describe('TrackListView', () => {
     render(
       <TrackListView
         {...defaultProps}
-        error={new Error('fail')}
-        onRetry={onRetry}
+        query={{ ...defaultProps.query, error: new Error('fail'), onRetry }}
         messages={{ empty: 'test.empty', error: 'common.error' }}
       />,
     );
@@ -169,7 +170,7 @@ describe('TrackListView', () => {
 
   it('calls header render function with context', () => {
     const headerFn = vi.fn(() => <div data-testid="fn-header">FN</div>);
-    render(<TrackListView {...defaultProps} tracks={[createTrack(1)]} header={headerFn} />);
+    render(<TrackListView {...defaultProps} query={{ ...defaultProps.query, tracks: [createTrack(1)] }} header={headerFn} />);
     expect(headerFn).toHaveBeenCalledWith(
       expect.objectContaining({
         actions: expect.anything(),
@@ -182,14 +183,14 @@ describe('TrackListView', () => {
   it('passes tracks in original order with default sort', () => {
     const t1 = { ...createTrack(1), title: 'Zebra' };
     const t2 = { ...createTrack(2), title: 'Alpha' };
-    render(<TrackListView {...defaultProps} tracks={[t1, t2]} />);
+    render(<TrackListView {...defaultProps} query={{ ...defaultProps.query, tracks: [t1, t2] }} />);
     expect(itemsTracksRef.current?.map((t) => t.title)).toEqual(['Zebra', 'Alpha']);
   });
 
   it('sorts tracks by title when sort field changes', () => {
     const t1 = { ...createTrack(1), title: 'Zebra' };
     const t2 = { ...createTrack(2), title: 'Alpha' };
-    render(<TrackListView {...defaultProps} tracks={[t1, t2]} />);
+    render(<TrackListView {...defaultProps} query={{ ...defaultProps.query, tracks: [t1, t2] }} />);
     act(() => toolbarSortRef.current?.onChange('title'));
     expect(itemsTracksRef.current?.map((t) => t.title)).toEqual(['Alpha', 'Zebra']);
   });
@@ -197,11 +198,12 @@ describe('TrackListView', () => {
   it('resets sort state when resetKey changes', () => {
     const t1 = { ...createTrack(1), title: 'Zebra' };
     const t2 = { ...createTrack(2), title: 'Alpha' };
-    const { rerender } = render(<TrackListView {...defaultProps} tracks={[t1, t2]} resetKey="a" />);
+    const tracksQuery = { ...defaultProps.query, tracks: [t1, t2] };
+    const { rerender } = render(<TrackListView {...defaultProps} query={tracksQuery} resetKey="a" />);
     act(() => toolbarSortRef.current?.onChange('title'));
     expect(toolbarSortRef.current?.active).toBe('title');
 
-    rerender(<TrackListView {...defaultProps} tracks={[t1, t2]} resetKey="b" />);
+    rerender(<TrackListView {...defaultProps} query={tracksQuery} resetKey="b" />);
     expect(toolbarSortRef.current?.active).toBe('default');
     expect(itemsTracksRef.current?.map((t) => t.title)).toEqual(['Zebra', 'Alpha']);
   });
@@ -211,7 +213,7 @@ describe('TrackListView', () => {
     render(
       <TrackListView
         {...defaultProps}
-        tracks={[createTrack(1)]}
+        query={{ ...defaultProps.query, tracks: [createTrack(1)] }}
         filters={{
           options: [
             { key: 'all', label: 'All' },
@@ -230,7 +232,7 @@ describe('TrackListView', () => {
     render(
       <TrackListView
         {...defaultProps}
-        isLoading
+        query={{ ...defaultProps.query, isLoading: true }}
         filters={{
           options: [{ key: 'all', label: 'All' }],
           active: 'all',
@@ -242,12 +244,12 @@ describe('TrackListView', () => {
   });
 
   it('renders streaming indicator when streaming and has tracks', () => {
-    render(<TrackListView {...defaultProps} tracks={[createTrack(1)]} isStreaming />);
+    render(<TrackListView {...defaultProps} query={{ ...defaultProps.query, tracks: [createTrack(1)], isStreaming: true }} />);
     expect(screen.getByText('common.loadingTracks')).toBeInTheDocument();
   });
 
   it('does not render streaming indicator when not streaming', () => {
-    render(<TrackListView {...defaultProps} tracks={[createTrack(1)]} isStreaming={false} />);
+    render(<TrackListView {...defaultProps} query={{ ...defaultProps.query, tracks: [createTrack(1)], isStreaming: false }} />);
     expect(screen.queryByText('common.loadingTracks')).not.toBeInTheDocument();
   });
 
@@ -259,7 +261,9 @@ describe('TrackListView', () => {
     });
 
     const headerFn = vi.fn((_ctx) => <div data-testid="fn-header">FN</div>);
-    render(<TrackListView {...defaultProps} tracks={[createTrack(1), createTrack(2)]} header={headerFn} />);
+    render(
+      <TrackListView {...defaultProps} query={{ ...defaultProps.query, tracks: [createTrack(1), createTrack(2)] }} header={headerFn} />,
+    );
 
     const ctx = headerFn.mock.calls[headerFn.mock.calls.length - 1]![0];
     expect(ctx.onPlayAll).toBeDefined();
@@ -275,7 +279,9 @@ describe('TrackListView', () => {
     });
 
     const headerFn = vi.fn((_ctx) => <div data-testid="fn-header">FN</div>);
-    render(<TrackListView {...defaultProps} tracks={[createTrack(1), createTrack(2)]} header={headerFn} />);
+    render(
+      <TrackListView {...defaultProps} query={{ ...defaultProps.query, tracks: [createTrack(1), createTrack(2)] }} header={headerFn} />,
+    );
 
     const ctx = headerFn.mock.calls[headerFn.mock.calls.length - 1]![0];
     act(() => ctx.onPlayAll!());

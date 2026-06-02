@@ -79,14 +79,9 @@ export function PlaylistDetailView({
   return (
     <>
       <TrackListView
-        tracks={tracks}
-        isLoading={isLoading}
-        isStreaming={isStreaming}
-        error={error}
-        onRetry={refetch}
-        title={playlist.title}
+        query={{ tracks, isLoading, isStreaming, error, onRetry: refetch }}
+        source={{ title: playlist.title, id: String(playlist.id), permalinkUrl: playlist.permalinkUrl, shareInfo, likeState }}
         resetKey={playlist.id}
-        playlistId={String(playlist.id)}
         header={({ actions, folderMetadata, onPlayAll, onShuffle }) => (
           <PlaylistDetailHeader
             playlist={playlist}
@@ -100,9 +95,6 @@ export function PlaylistDetailView({
           />
         )}
         folder
-        permalinkUrl={playlist.permalinkUrl}
-        shareInfo={shareInfo}
-        playlistLikeState={likeState}
         download={{ onDownloadTracks }}
         trackList={{
           virtualized: true,

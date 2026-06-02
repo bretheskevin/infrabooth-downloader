@@ -121,12 +121,8 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
         </div>
       ) : (
         <TrackListView
-          tracks={tracks}
-          isLoading={isTracksLoading}
-          isStreaming={isStreaming}
-          error={tracksError}
-          onRetry={refetchTracks}
-          title={username}
+          query={{ tracks, isLoading: isTracksLoading, isStreaming, error: tracksError, onRetry: refetchTracks }}
+          source={{ title: username }}
           resetKey={`${artistId}-${activeTab}`}
           header={null}
           folder

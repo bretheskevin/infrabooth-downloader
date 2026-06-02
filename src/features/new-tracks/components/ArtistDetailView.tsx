@@ -44,11 +44,8 @@ export function ArtistDetailView({ artist, onBack, onDownloadTracks }: ArtistDet
 
   return (
     <TrackListView
-      tracks={tracks}
-      isLoading={isLoading}
-      error={error}
-      onRetry={refetch}
-      title={artist.username}
+      query={{ tracks, isLoading, error, onRetry: refetch }}
+      source={{ title: artist.username }}
       resetKey={artist.id}
       header={({ actions, folderMetadata }) => (
         <DetailHeader

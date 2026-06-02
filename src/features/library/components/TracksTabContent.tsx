@@ -21,12 +21,8 @@ export function TracksTabContent({ onDownloadTracks }: TracksTabContentProps) {
 
   return (
     <TrackListView
-      tracks={isLoading ? undefined : tracks}
-      isStreaming={isStreaming}
-      isLoading={isLoading}
-      error={error}
-      onRetry={refetch}
-      title={t('library.tracks.title')}
+      query={{ tracks: isLoading ? undefined : tracks, isStreaming, isLoading, error, onRetry: refetch }}
+      source={{ title: t('library.tracks.title') }}
       resetKey="liked-tracks"
       header={({ actions }) => (
         <div className="flex items-center justify-between pb-2">
