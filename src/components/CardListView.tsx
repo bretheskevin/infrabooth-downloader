@@ -13,7 +13,7 @@ interface CardListViewProps<T> {
 export function CardListView<T>({ items, getKey, renderCard, renderRow, className }: CardListViewProps<T>) {
   const viewMode = useSettingsStore((s) => s.mediaViewMode);
   const isCard = viewMode === 'card';
-  const containerClass = isCard ? 'grid grid-cols-3 gap-3' : 'flex flex-col gap-1';
+  const containerClass = isCard ? 'grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3' : 'flex flex-col gap-1';
   const render = isCard ? renderCard : renderRow;
 
   return (
