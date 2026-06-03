@@ -466,6 +466,8 @@
     "openFileLocation": "Afficher dans le dossier",
     "like": "Ajouter aux titres likés",
     "unlike": "Retirer des titres likés",
+    "likeSuccess": "Ajouté à vos titres likés",
+    "unlikeSuccess": "Retiré de vos titres likés",
     "likeError": "Échec de l'ajout aux titres likés",
     "unlikeError": "Échec du retrait des titres likés",
     "shareByDm": "Partager"
@@ -473,6 +475,8 @@
   "playlistMenu": {
     "like": "Ajouter aux playlists likées",
     "unlike": "Retirer des playlists likées",
+    "likeSuccess": "Ajoutée à vos playlists likées",
+    "unlikeSuccess": "Retirée de vos playlists likées",
     "likeError": "Échec de l'ajout aux playlists likées",
     "unlikeError": "Échec du retrait des playlists likées"
   },

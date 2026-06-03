@@ -466,6 +466,8 @@
     "openFileLocation": "Show in folder",
     "like": "Like",
     "unlike": "Unlike",
+    "likeSuccess": "Added to your likes",
+    "unlikeSuccess": "Removed from your likes",
     "likeError": "Failed to like track",
     "unlikeError": "Failed to unlike track",
     "shareByDm": "Share"
@@ -473,6 +475,8 @@
   "playlistMenu": {
     "like": "Like",
     "unlike": "Unlike",
+    "likeSuccess": "Added to your likes",
+    "unlikeSuccess": "Removed from your likes",
     "likeError": "Failed to like playlist",
     "unlikeError": "Failed to unlike playlist"
   },

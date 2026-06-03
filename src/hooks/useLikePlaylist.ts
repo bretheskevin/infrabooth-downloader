@@ -83,6 +83,7 @@ export function useLikePlaylist(playlist?: LikePlaylistInput): LikeState | undef
       void logger.error(`[like] Failed to toggle like for playlist ${playlist?.id}: ${String(err)}`);
     },
     onSuccess: (_data, nextLiked) => {
+      toast.success(t(nextLiked ? 'playlistMenu.likeSuccess' : 'playlistMenu.unlikeSuccess'));
       void logger.info(`[like] ${nextLiked ? 'Liked' : 'Unliked'} playlist ${playlist?.id}`);
     },
   });

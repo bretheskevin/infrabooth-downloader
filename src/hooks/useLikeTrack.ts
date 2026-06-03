@@ -64,6 +64,7 @@ export function useLikeTrack(track?: TrackInfo): LikeState | undefined {
       void logger.error(`[like] Failed to toggle like for track ${track?.id}: ${String(err)}`);
     },
     onSuccess: (_data, nextLiked) => {
+      toast.success(t(nextLiked ? 'trackMenu.likeSuccess' : 'trackMenu.unlikeSuccess'));
       void logger.info(`[like] ${nextLiked ? 'Liked' : 'Unliked'} track ${track?.id}`);
     },
   });
