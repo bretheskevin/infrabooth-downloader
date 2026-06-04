@@ -6,6 +6,7 @@ import { TrackListView } from '@/components/track-list/TrackListView';
 import { usePlaylistArtwork } from '@/features/library/hooks/usePlaylistArtwork';
 import { useRemoveFromPlaylist } from '@/features/library/hooks/useRemoveFromPlaylist';
 import { useIsSignedIn } from '@/features/auth/store';
+import { useLibraryStore } from '@/features/library/store';
 import { useLikePlaylist, type LikePlaylistInput } from '@/hooks/useLikePlaylist';
 import { PlaylistDetailHeader } from './PlaylistDetailHeader';
 import { RemoveFromPlaylistDialog } from './RemoveFromPlaylistDialog';
@@ -80,7 +81,16 @@ export function PlaylistDetailView({
     <>
       <TrackListView
         query={{ tracks, isLoading, isStreaming, error, onRetry: refetch }}
-        source={{ title: playlist.title, id: String(playlist.id), permalinkUrl: playlist.permalinkUrl, shareInfo, likeState }}
+        source={{
+          title: playlist.title,
+          id: String(playlist.id),
+          permalinkUrl: playlist.permalinkUrl,
+          shareInfo,
+          likeState,
+          deleteAction: playlist.isOwned
+            ? { playlistId: playlist.id, onDeleteSuccess: () => useLibraryStore.getState().setLibraryView({ view: 'list' }) }
+            : undefined,
+        }}
         resetKey={playlist.id}
         header={({ actions, folderMetadata, onPlayAll, onShuffle }) => (
           <PlaylistDetailHeader

@@ -125,6 +125,13 @@ impl LibraryCache {
         enrich_playlists(playlists, &inner.artwork)
     }
 
+    pub fn remove_playlist(&self, playlist_id: u64) -> Result<(), String> {
+        let mut inner = self.inner.lock().map_err(|e| format!("LibraryCache lock poisoned: {e}"))?;
+        inner.playlists.retain(|p| p.id != playlist_id);
+        inner.artwork.remove(&playlist_id);
+        Ok(())
+    }
+
     pub fn clear(&self) {
         let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
         inner.playlists.clear();

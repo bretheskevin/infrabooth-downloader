@@ -55,6 +55,7 @@ export interface TrackListSource {
   permalinkUrl?: string;
   shareInfo?: ShareTrackInfo;
   likeState?: LikeState;
+  deleteAction?: { playlistId: number; onDeleteSuccess?: () => void };
 }
 
 export interface TrackListViewProps<F extends string = string> {

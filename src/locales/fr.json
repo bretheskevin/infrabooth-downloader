@@ -487,7 +487,14 @@
     "likeSuccess": "Ajoutée à vos playlists likées",
     "unlikeSuccess": "Retirée de vos playlists likées",
     "likeError": "Échec de l'ajout aux playlists likées",
-    "unlikeError": "Échec du retrait des playlists likées"
+    "unlikeError": "Échec du retrait des playlists likées",
+    "delete": "Supprimer la playlist",
+    "deleteTitle": "Supprimer la playlist",
+    "deleteDescription": "Voulez-vous vraiment supprimer <strong>{{playlist}}</strong> ? Cette action est irréversible.",
+    "deleteConfirm": "Supprimer",
+    "deleteCancel": "Annuler",
+    "deleted": "Playlist supprimée",
+    "deleteFailed": "Échec de la suppression"
   },
   "shareTrack": {
     "title": "Envoyer la piste",

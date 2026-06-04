@@ -487,7 +487,14 @@
     "likeSuccess": "Added to your likes",
     "unlikeSuccess": "Removed from your likes",
     "likeError": "Failed to like playlist",
-    "unlikeError": "Failed to unlike playlist"
+    "unlikeError": "Failed to unlike playlist",
+    "delete": "Delete playlist",
+    "deleteTitle": "Delete playlist",
+    "deleteDescription": "Are you sure you want to delete <strong>{{playlist}}</strong>? This action cannot be undone.",
+    "deleteConfirm": "Delete",
+    "deleteCancel": "Cancel",
+    "deleted": "Playlist deleted",
+    "deleteFailed": "Failed to delete playlist"
   },
   "shareTrack": {
     "title": "Send track",

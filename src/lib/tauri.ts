@@ -183,6 +183,12 @@ export const api = {
       .then(unwrap)
       .then(() => undefined),
 
+  removePlaylistFromLibraryCache: (playlistId: number): Promise<void> =>
+    commands
+      .removePlaylistFromLibraryCache(playlistId)
+      .then(unwrap)
+      .then(() => undefined),
+
   getLikedTracks: (): Promise<TrackInfo[]> => commands.getLikedTracks().then(unwrap),
 
   clearLikedTracksCache: (): Promise<void> =>
@@ -332,4 +338,10 @@ export const api = {
   // Playlists
   createPlaylist: (title: string, sharing: string, trackId: number): Promise<CreatedPlaylist> =>
     commands.createPlaylist(title, sharing, trackId).then(unwrap),
+
+  deletePlaylist: (playlistId: number): Promise<void> =>
+    commands
+      .deletePlaylist(playlistId)
+      .then(unwrap)
+      .then(() => undefined),
 };

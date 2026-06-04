@@ -52,6 +52,13 @@ pub async fn clear_library_cache(app: tauri::AppHandle) -> Result<(), String> {
 
 #[tauri::command]
 #[specta::specta]
+pub async fn remove_playlist_from_library_cache(playlist_id: u64, app: tauri::AppHandle) -> Result<(), String> {
+    log::info!("[remove_playlist_from_library_cache] Removing playlist {} from cache", playlist_id);
+    app.state::<LibraryCache>().remove_playlist(playlist_id)
+}
+
+#[tauri::command]
+#[specta::specta]
 pub async fn resolve_library_artwork(playlist_id: u64, secret_token: Option<String>, app: tauri::AppHandle) -> Result<Option<String>, String> {
     if let Some(cached) = app.state::<LibraryCache>().get_artwork(playlist_id) {
         return Ok(cached);

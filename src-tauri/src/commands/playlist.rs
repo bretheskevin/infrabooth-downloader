@@ -197,3 +197,33 @@ pub async fn create_playlist(title: String, sharing: String, track_id: u64, app:
 
     Ok(CreatedPlaylist { id: resp.id, title: resp_title, permalink_url })
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn delete_playlist(playlist_id: u64, app: tauri::AppHandle) -> Result<(), String> {
+    log::info!("[delete_playlist] Deleting playlist {}", playlist_id);
+
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
+    let (token, client_id) = super::require_auth_and_cid(&app).await?;
+
+    let client = &*crate::services::http::HTTP_CLIENT;
+    let url = format!("{}/playlists/{}?client_id={}", API_V2_BASE, playlist_id, client_id);
+
+    let mut request = client.delete(&url).with_oauth(Some(&token));
+    request = request.with_datadome(datadome.as_deref());
+
+    let response = request.send().await.map_err(|e| format!("Failed to delete playlist: {}", e))?;
+
+    state.update_datadome(extract_datadome_from_response(&response));
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        log::error!("[delete_playlist] DELETE failed: {} - {}", status, body);
+        return Err(format!("Failed to delete playlist: HTTP {} - {}", status, sanitize_error_body(body)));
+    }
+
+    log::info!("[delete_playlist] Successfully deleted playlist {}", playlist_id);
+    Ok(())
+}

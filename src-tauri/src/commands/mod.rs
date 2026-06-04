@@ -32,7 +32,9 @@ pub async fn require_auth_and_cid(app: &tauri::AppHandle) -> Result<(String, Str
 pub use auth::{check_auth, check_firefox_installed, open_in_firefox, refresh_auth, sign_out};
 pub use download::{cancel_download_queue, download_track_full, respond_to_rate_limit_choice, scan_existing_tracks, start_download_queue};
 pub use ffmpeg::test_ffmpeg;
-pub use playlist::{add_track_to_playlist, create_playlist, get_playlist_info, get_track_info, remove_track_from_playlist, validate_soundcloud_url};
+pub use playlist::{
+    add_track_to_playlist, create_playlist, delete_playlist, get_playlist_info, get_track_info, remove_track_from_playlist, validate_soundcloud_url,
+};
 pub use settings::{
     check_write_permission, enable_tls_verify, get_app_data_path, get_default_download_path, get_feature_flags, get_log_path, is_tls_verify_disabled,
     validate_download_path,
@@ -42,7 +44,7 @@ pub use updater::{check_for_updates, install_update};
 pub mod library;
 pub use library::{
     clear_library_cache, clear_liked_tracks_cache, get_library_playlists, get_liked_tracks, get_owned_playlists_for_track, get_playlist_tracks,
-    resolve_library_artwork,
+    remove_playlist_from_library_cache, resolve_library_artwork,
 };
 
 pub mod search;

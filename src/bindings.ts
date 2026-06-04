@@ -68,6 +68,14 @@ async createPlaylist(title: string, sharing: string, trackId: number) : Promise<
     else return { status: "error", error: e  as any };
 }
 },
+async deletePlaylist(playlistId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_playlist", { playlistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getPlaylistInfo(url: string) : Promise<Result<PlaylistInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_playlist_info", { url }) };
@@ -269,6 +277,14 @@ async resolveLibraryArtwork(playlistId: number, secretToken: string | null) : Pr
 async clearLibraryCache() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("clear_library_cache") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removePlaylistFromLibraryCache(playlistId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_playlist_from_library_cache", { playlistId }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };

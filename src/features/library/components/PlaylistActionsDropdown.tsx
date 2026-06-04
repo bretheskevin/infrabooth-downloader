@@ -1,7 +1,7 @@
-import { useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { Disc3, EllipsisVertical, ExternalLink, Heart, Link, Loader2, Send } from 'lucide-react';
-import type { TrackInfo, RekordboxExportStatus } from '@/bindings';
+import { useMemo, useState } from 'react';
+import { Trans, useTranslation } from 'react-i18next';
+import { Disc3, EllipsisVertical, ExternalLink, Heart, Link, Loader2, Send, Trash2 } from 'lucide-react';
+import type { ExportResult, TrackInfo, RekordboxExportStatus } from '@/bindings';
 import { cn } from '@/lib/utils';
 import { useLinkActions } from '@/hooks/useLinkActions';
 import type { LikeState } from '@/hooks/useLikeTrack';
@@ -19,21 +19,37 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { useDeletePlaylist } from '@/hooks/useDeletePlaylist';
 import { Progress } from '@/components/ui/progress';
-import { useRekordboxDetection } from '../hooks/useRekordboxDetection';
-import { useRekordboxExport, type TrackStatus } from '../hooks/useRekordboxExport';
-import { useRekordboxTree } from '../hooks/useRekordboxTree';
-import { findInfraboothFolderId, findPlaylistParentId, folderExistsInTree } from '../utils/buildTree';
-import { ExportPhaseSection } from './ExportPhaseSection';
-import { RekordboxTreePicker } from './RekordboxTreePicker';
+import { useRekordboxDetection } from '@/features/rekordbox-export/hooks/useRekordboxDetection';
+import { useRekordboxExport, type TrackStatus } from '@/features/rekordbox-export/hooks/useRekordboxExport';
+import { useRekordboxTree } from '@/features/rekordbox-export/hooks/useRekordboxTree';
+import { findInfraboothFolderId, findPlaylistParentId, folderExistsInTree } from '@/features/rekordbox-export/utils/buildTree';
+import { ExportPhaseSection } from '@/features/rekordbox-export/components/ExportPhaseSection';
+import { RekordboxTreePicker } from '@/features/rekordbox-export/components/RekordboxTreePicker';
 
-interface TrackListActionsDropdownProps {
+interface DeleteAction {
+  playlistId: number;
+  onDeleteSuccess?: () => void;
+}
+
+interface PlaylistActionsDropdownProps {
   tracks: TrackInfo[] | undefined;
   playlistName: string;
   permalinkUrl?: string;
   disabled?: boolean;
   shareInfo?: ShareTrackInfo;
   likeState?: LikeState;
+  deleteAction?: DeleteAction;
 }
 
 const MAX_VISIBLE_TRACKS = 3;
@@ -60,6 +76,49 @@ interface ExportingContentProps {
   percent: number;
   isRegistering: boolean;
   onCancel: () => void;
+}
+
+interface DeletePlaylistDialogProps {
+  open: boolean;
+  playlistName: string;
+  playlistId: number;
+  isDeleting: boolean;
+  onDelete: (id: number) => void;
+  onClose: () => void;
+}
+
+function DeletePlaylistDialog({ open, playlistName, playlistId, isDeleting, onDelete, onClose }: DeletePlaylistDialogProps) {
+  const { t } = useTranslation();
+  return (
+    <AlertDialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o && !isDeleting) onClose();
+      }}
+    >
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{t('playlistMenu.deleteTitle')}</AlertDialogTitle>
+          <AlertDialogDescription>
+            <Trans
+              i18nKey="playlistMenu.deleteDescription"
+              values={{ playlist: playlistName }}
+              components={{ strong: <strong className="font-semibold text-foreground" /> }}
+            />
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose} disabled={isDeleting}>
+            {t('playlistMenu.deleteCancel')}
+          </AlertDialogCancel>
+          <Button variant="destructive" onClick={() => void onDelete(playlistId)} disabled={isDeleting}>
+            {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {t('playlistMenu.deleteConfirm')}
+          </Button>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
 }
 
 function ExportingContent({ groups, totalTracks, completedCount, percent, isRegistering, onCancel }: ExportingContentProps) {
@@ -149,16 +208,84 @@ function ExportingContent({ groups, totalTracks, completedCount, percent, isRegi
   );
 }
 
-export function TrackListActionsDropdown({
+function CompletePhaseContent({
+  result,
+  groups,
+  onClose,
+}: {
+  result: ExportResult;
+  groups: Record<RekordboxExportStatus, TrackStatus[]>;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t('rekordboxExport.complete')}</DialogTitle>
+        <DialogDescription>
+          {t('rekordboxExport.summaryLine', {
+            exported: result.exportedCount,
+            skipped: result.skippedCount,
+            errors: result.errors.length,
+          })}
+        </DialogDescription>
+      </DialogHeader>
+      <div className="max-h-48 overflow-y-auto overflow-x-hidden">
+        {groups.error.length > 0 && (
+          <ExportPhaseSection
+            label={t('rekordboxExport.sectionErrors')}
+            icon="✗"
+            colorClass="text-destructive"
+            tracks={groups.error}
+            showError
+          />
+        )}
+        <ExportPhaseSection
+          label={t('rekordboxExport.sectionCompleted')}
+          icon="✓"
+          colorClass="text-[hsl(var(--success))]"
+          tracks={groups.completed}
+          maxVisible={MAX_VISIBLE_TRACKS}
+        />
+      </div>
+      <DialogFooter>
+        <Button onClick={onClose}>{t('rekordboxExport.close')}</Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+function ErrorPhaseContent({ errorCode, onClose }: { errorCode: string | null; onClose: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>{t('rekordboxExport.confirmTitle')}</DialogTitle>
+        <DialogDescription className="text-destructive">{t(REKORDBOX_ERROR_KEYS[errorCode ?? ''] ?? 'common.error')}</DialogDescription>
+      </DialogHeader>
+      <DialogFooter>
+        <Button onClick={onClose}>{t('rekordboxExport.close')}</Button>
+      </DialogFooter>
+    </>
+  );
+}
+
+export function PlaylistActionsDropdown({
   tracks,
   playlistName,
   permalinkUrl,
   disabled,
   shareInfo,
   likeState,
-}: TrackListActionsDropdownProps) {
+  deleteAction,
+}: PlaylistActionsDropdownProps) {
   const { t } = useTranslation();
   const { data: rekordboxStatus } = useRekordboxDetection();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const { deletePlaylist, isDeleting } = useDeletePlaylist(() => {
+    setDeleteConfirmOpen(false);
+    deleteAction?.onDeleteSuccess?.();
+  });
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
 
   const {
@@ -203,7 +330,7 @@ export function TrackListActionsDropdown({
   const isSignedIn = useIsSignedIn();
   const canShare = isSignedIn && !!shareInfo;
 
-  if (!showRekordbox && !showLinks && !canShare && !likeState) return null;
+  if (!showRekordbox && !showLinks && !canShare && !likeState && !deleteAction) return null;
 
   const isRegistering = groups.exporting.length > 0 || groups.completed.length > 0;
   const completedCount = groups.downloaded.length + groups.exporting.length + groups.completed.length + groups.error.length;
@@ -256,6 +383,15 @@ export function TrackListActionsDropdown({
               <Send className="h-3.5 w-3.5" />
               {t('trackMenu.shareByDm')}
             </DropdownMenuItem>
+          )}
+          {deleteAction && (
+            <>
+              {(!!likeState || showLinks || showRekordbox || canShare) && <DropdownMenuSeparator />}
+              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteConfirmOpen(true)}>
+                <Trash2 className="h-3.5 w-3.5" />
+                {t('playlistMenu.delete')}
+              </DropdownMenuItem>
+            </>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -321,57 +457,22 @@ export function TrackListActionsDropdown({
             />
           )}
 
-          {phase === 'complete' && result && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{t('rekordboxExport.complete')}</DialogTitle>
-                <DialogDescription>
-                  {t('rekordboxExport.summaryLine', {
-                    exported: result.exportedCount,
-                    skipped: result.skippedCount,
-                    errors: result.errors.length,
-                  })}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="max-h-48 overflow-y-auto overflow-x-hidden">
-                {groups.error.length > 0 && (
-                  <ExportPhaseSection
-                    label={t('rekordboxExport.sectionErrors')}
-                    icon="✗"
-                    colorClass="text-destructive"
-                    tracks={groups.error}
-                    showError
-                  />
-                )}
-                <ExportPhaseSection
-                  label={t('rekordboxExport.sectionCompleted')}
-                  icon="✓"
-                  colorClass="text-[hsl(var(--success))]"
-                  tracks={groups.completed}
-                  maxVisible={MAX_VISIBLE_TRACKS}
-                />
-              </div>
-              <DialogFooter>
-                <Button onClick={close}>{t('rekordboxExport.close')}</Button>
-              </DialogFooter>
-            </>
-          )}
+          {phase === 'complete' && result && <CompletePhaseContent result={result} groups={groups} onClose={close} />}
 
-          {phase === 'error' && (
-            <>
-              <DialogHeader>
-                <DialogTitle>{t('rekordboxExport.confirmTitle')}</DialogTitle>
-                <DialogDescription className="text-destructive">
-                  {t(REKORDBOX_ERROR_KEYS[errorCode ?? ''] ?? 'common.error')}
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button onClick={close}>{t('rekordboxExport.close')}</Button>
-              </DialogFooter>
-            </>
-          )}
+          {phase === 'error' && <ErrorPhaseContent errorCode={errorCode} onClose={close} />}
         </DialogContent>
       </Dialog>
+
+      {deleteAction && (
+        <DeletePlaylistDialog
+          open={deleteConfirmOpen}
+          playlistName={playlistName}
+          playlistId={deleteAction.playlistId}
+          isDeleting={isDeleting}
+          onDelete={deletePlaylist}
+          onClose={() => setDeleteConfirmOpen(false)}
+        />
+      )}
     </>
   );
 }

@@ -11,7 +11,7 @@ import { sortTracks, TRACK_SORT_OPTIONS, type SortField, type SortDirection } fr
 import { getErrorMessageKey } from '@/lib/getErrorMessageKey';
 import { FolderMetadata } from '@/components/FolderMetadata';
 import { PreserveOrderToggle } from '@/components/PreserveOrderToggle';
-import { TrackListActionsDropdown } from '@/features/rekordbox-export/components/TrackListActionsDropdown';
+import { PlaylistActionsDropdown } from '@/features/library/components/PlaylistActionsDropdown';
 import { usePlayerStore } from '@/features/player';
 import { useTrackListState } from './hooks/useTrackListState';
 import { TrackListToolbar } from './TrackListToolbar';
@@ -32,7 +32,7 @@ export function TrackListView<F extends string = string>({
   resetKey,
 }: TrackListViewProps<F>) {
   const { tracks, isLoading, isStreaming, error, onRetry } = query;
-  const { title, id, permalinkUrl, shareInfo, likeState } = source;
+  const { title, id, permalinkUrl, shareInfo, likeState, deleteAction } = source;
   const { t } = useTranslation();
 
   const [sortState, setSortState] = useState<{
@@ -92,14 +92,15 @@ export function TrackListView<F extends string = string>({
     </div>
   ) : null;
 
-  const rekordboxExportAction =
+  const actionsDropdown =
     hasData && !isLoading ? (
-      <TrackListActionsDropdown
+      <PlaylistActionsDropdown
         tracks={tracks}
         playlistName={title}
         permalinkUrl={permalinkUrl}
         shareInfo={shareInfo}
         likeState={likeState}
+        deleteAction={deleteAction}
       />
     ) : null;
 
@@ -112,7 +113,7 @@ export function TrackListView<F extends string = string>({
   const renderCtx: TrackListRenderContext = {
     actions: (
       <>
-        {rekordboxExportAction}
+        {actionsDropdown}
         {downloadAllAction}
       </>
     ),
