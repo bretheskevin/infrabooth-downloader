@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Check, ListMusic } from 'lucide-react';
+import { Search, Check, ListMusic, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
 import { ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent, ContextMenuPortal } from '@/components/ui/context-menu';
@@ -12,6 +12,7 @@ import { getArtworkUrl } from '@/lib/soundcloud';
 import { api } from '@/lib/tauri';
 import { useAddToPlaylist } from '@/hooks/useAddToPlaylist';
 import { useLibraryPlaylists } from '@/features/library/hooks/useLibraryPlaylists';
+import { CreatePlaylistDialog } from '@/components/CreatePlaylistDialog';
 import type { PlaylistForTrackPicker } from '@/bindings';
 
 interface PlaylistPickerSubmenuProps {
@@ -81,6 +82,8 @@ interface PlaylistContentProps {
 function PlaylistPickerContent({ trackId, onSuccess, onOpenChange }: PlaylistContentProps) {
   const { t } = useTranslation();
   const [search, setSearch] = useState('');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogKey, setDialogKey] = useState(0);
 
   const { playlists: libraryPlaylists, isLoading: isLoadingLibrary } = useLibraryPlaylists(true);
 
@@ -157,6 +160,21 @@ function PlaylistPickerContent({ trackId, onSuccess, onOpenChange }: PlaylistCon
           />
         </div>
       </div>
+      <div className="p-1 border-b">
+        <button
+          type="button"
+          onClick={() => {
+            setDialogKey((k) => k + 1);
+            setDialogOpen(true);
+          }}
+          className="flex items-center gap-3 px-2 py-1.5 w-full text-left rounded-sm text-sm outline-none hover:bg-accent hover:text-accent-foreground cursor-pointer"
+        >
+          <div className="w-8 h-8 shrink-0 rounded bg-muted flex items-center justify-center text-muted-foreground">
+            <Plus className="h-4 w-4" />
+          </div>
+          <span>{t('trackMenu.newPlaylist')}</span>
+        </button>
+      </div>
       <div className="max-h-[280px] overflow-y-auto p-1">
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => (
@@ -175,6 +193,17 @@ function PlaylistPickerContent({ trackId, onSuccess, onOpenChange }: PlaylistCon
           ))
         )}
       </div>
+      <CreatePlaylistDialog
+        key={dialogKey}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        trackId={trackId}
+        defaultName={search}
+        onSuccess={() => {
+          onOpenChange?.(false);
+          onSuccess?.();
+        }}
+      />
     </>
   );
 }

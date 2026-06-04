@@ -69,6 +69,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - SelectAllCheckbox, SelectionActionBar — batch operations
 - TrackActionsDropdown, TrackDownloadAction — context menus
 - DetailHeader, ArtistAvatar, ArtistAvatarImage, ArtistCarouselSection (sorts artists with new content first, reposts before originals by default)
+- CreatePlaylistDialog — dialog for creating new SoundCloud playlists (name input + public/private switch)
 - CardListView — generic primitive rendering card or list mode based on settings
 - ViewModeToggle — UI control for toggling between card/list layouts
 - FilterChips, SortDirectionSelect, PreserveOrderToggle
@@ -82,6 +83,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - useStreamedQuery (progressive batch loading — overrides isLoading once first batch arrives), useStreamedUserQuery, useMarkSeenQuery, useAppVersion, useDownloadState
 - useMergedTrackState, useTrackDownloadState, useHoverPreload
 - useMenuExclusivity, useTauriEventDialog, useSticky
+- useCreatePlaylist (create SoundCloud playlist with toast + cache invalidation)
 
 ## Feature Flags (`src/lib/featureFlags.ts`, `src/config/feature-flags.toml`)
 - Boolean flags for gating WIP UI areas

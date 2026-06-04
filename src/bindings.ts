@@ -60,6 +60,14 @@ async removeTrackFromPlaylist(playlistId: number, trackId: number) : Promise<Res
     else return { status: "error", error: e  as any };
 }
 },
+async createPlaylist(title: string, sharing: string, trackId: number) : Promise<Result<CreatedPlaylist, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("create_playlist", { title, sharing, trackId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getPlaylistInfo(url: string) : Promise<Result<PlaylistInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_playlist_info", { url }) };
@@ -736,6 +744,7 @@ export type BackupKind = "export" | "preRestore"
 export type ConversationMessage = { content: string; sender_id: number; sent_at: string; track_embed: MessageTrackEmbed | null }
 export type ConversationSummary = { id: string; other_user: MessageUser; last_message_content: string; last_message_sender_id: number; last_message_at: string; read: boolean }
 export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null }
+export type CreatedPlaylist = { id: number; title: string; permalinkUrl: string }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null; filePath?: string | null }
 export type DownloadRequest = ({ 
 /**

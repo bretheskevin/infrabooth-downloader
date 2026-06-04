@@ -470,7 +470,16 @@
     "unlikeSuccess": "Removed from your likes",
     "likeError": "Failed to like track",
     "unlikeError": "Failed to unlike track",
-    "shareByDm": "Share"
+    "shareByDm": "Share",
+    "newPlaylist": "New playlist",
+    "createPlaylist": "Create playlist",
+    "createPlaylistDescription": "Create a new SoundCloud playlist with the selected track",
+    "playlistName": "Playlist name",
+    "public": "Public",
+    "private": "Private",
+    "creating": "Creating...",
+    "createdPlaylist": "Created \"{{playlist}}\"",
+    "createFailed": "Failed to create playlist"
   },
   "playlistMenu": {
     "like": "Like",

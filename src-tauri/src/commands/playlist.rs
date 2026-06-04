@@ -1,3 +1,6 @@
+use serde::{Deserialize, Serialize};
+use specta::Type;
+
 use crate::models::url::ValidationResult;
 use crate::models::PlaylistTracksResponse;
 use crate::services::http::{extract_datadome_from_response, sanitize_error_body, RequestBuilderExt, API_V2_BASE};
@@ -130,4 +133,67 @@ pub async fn remove_track_from_playlist(playlist_id: u64, track_id: u64, app: ta
     log::info!("[remove_track_from_playlist] Successfully removed track {} from playlist {}", track_id, playlist_id);
 
     Ok(())
+}
+
+#[derive(Deserialize)]
+struct CreatePlaylistApiResponse {
+    id: u64,
+    title: Option<String>,
+    permalink_url: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct CreatedPlaylist {
+    pub id: u64,
+    pub title: String,
+    pub permalink_url: String,
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn create_playlist(title: String, sharing: String, track_id: u64, app: tauri::AppHandle) -> Result<CreatedPlaylist, String> {
+    let sharing = match sharing.as_str() {
+        "public" | "private" => sharing,
+        _ => return Err(format!("Invalid sharing value: '{}' (expected 'public' or 'private')", sharing)),
+    };
+
+    log::info!("[create_playlist] Creating playlist '{}' with track {}", title, track_id);
+
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
+    let (token, client_id) = super::require_auth_and_cid(&app).await?;
+
+    let client = &*crate::services::http::HTTP_CLIENT;
+    let url = format!("{}/playlists?client_id={}", API_V2_BASE, client_id);
+
+    let mut request = client.post(&url).with_oauth(Some(&token)).json(&serde_json::json!({
+        "playlist": {
+            "title": title,
+            "sharing": sharing,
+            "tracks": [track_id]
+        }
+    }));
+
+    request = request.with_datadome(datadome.as_deref());
+
+    let response = request.send().await.map_err(|e| format!("Failed to create playlist: {}", e))?;
+
+    state.update_datadome(extract_datadome_from_response(&response));
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        log::error!("[create_playlist] POST failed: {} - {}", status, body);
+        return Err(format!("Failed to create playlist: HTTP {} - {}", status, sanitize_error_body(body)));
+    }
+
+    let resp: CreatePlaylistApiResponse = response.json().await.map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    let resp_title = resp.title.unwrap_or(title);
+    let permalink_url = resp.permalink_url.unwrap_or_default();
+
+    log::info!("[create_playlist] Successfully created playlist '{}' (id: {})", resp_title, resp.id);
+
+    Ok(CreatedPlaylist { id: resp.id, title: resp_title, permalink_url })
 }

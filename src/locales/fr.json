@@ -470,7 +470,16 @@
     "unlikeSuccess": "Retiré de vos titres likés",
     "likeError": "Échec de l'ajout aux titres likés",
     "unlikeError": "Échec du retrait des titres likés",
-    "shareByDm": "Partager"
+    "shareByDm": "Partager",
+    "newPlaylist": "Nouvelle playlist",
+    "createPlaylist": "Créer la playlist",
+    "createPlaylistDescription": "Créer une nouvelle playlist SoundCloud avec le titre sélectionné",
+    "playlistName": "Nom de la playlist",
+    "public": "Publique",
+    "private": "Privée",
+    "creating": "Création...",
+    "createdPlaylist": "Playlist \"{{playlist}}\" créée",
+    "createFailed": "Échec de la création de la playlist"
   },
   "playlistMenu": {
     "like": "Ajouter aux playlists likées",

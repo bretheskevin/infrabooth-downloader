@@ -31,7 +31,7 @@ import {
   type MessagesPage,
   type BackupInfo,
 } from '@/bindings';
-import type { LibraryPlaylist } from '@/bindings';
+import type { LibraryPlaylist, CreatedPlaylist } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
 
 type StringError = string;
@@ -328,4 +328,8 @@ export const api = {
       .sendMessage(otherUserId, content)
       .then(unwrap)
       .then(() => undefined),
+
+  // Playlists
+  createPlaylist: (title: string, sharing: string, trackId: number): Promise<CreatedPlaylist> =>
+    commands.createPlaylist(title, sharing, trackId).then(unwrap),
 };
