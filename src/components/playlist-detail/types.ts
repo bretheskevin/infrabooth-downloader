@@ -11,6 +11,7 @@ export interface PlaylistData {
   userId: number | null;
   duration: number | null;
   isOwned: boolean;
+  isPublic: boolean;
 }
 
 export function fromLibraryPlaylist(p: LibraryPlaylist): PlaylistData {
@@ -25,6 +26,7 @@ export function fromLibraryPlaylist(p: LibraryPlaylist): PlaylistData {
     userId: p.user_id,
     duration: p.duration,
     isOwned: p.is_owned,
+    isPublic: p.is_public,
   };
 }
 
@@ -40,6 +42,7 @@ export function fromArtistPlaylist(p: ArtistPlaylist, artistName: string, authUs
     userId: p.user?.id ?? null,
     duration: p.duration ?? null,
     isOwned: p.user?.id != null && p.user.id === authUserId,
+    isPublic: true,
   };
 }
 
@@ -55,6 +58,7 @@ export function fromMessagePlaylistEmbed(p: MessagePlaylistEmbed): PlaylistData 
     userId: p.artist_id,
     duration: null,
     isOwned: false,
+    isPublic: true,
   };
 }
 
@@ -70,6 +74,7 @@ export function fromNotificationPlaylist(p: PlaylistSummary, authUserId: number 
     userId: p.user.id,
     duration: null,
     isOwned: p.user.id === authUserId,
+    isPublic: true,
   };
 }
 
@@ -96,5 +101,6 @@ export function fromSelection(s: Selection): PlaylistData {
     userId: null,
     duration: totalDuration,
     isOwned: false,
+    isPublic: true,
   };
 }

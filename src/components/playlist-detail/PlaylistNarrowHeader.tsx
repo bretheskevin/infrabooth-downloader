@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Music } from 'lucide-react';
+import { Lock, Music } from 'lucide-react';
 import { DetailHeader } from '@/components/DetailHeader';
 import { ArtistLink } from '@/components/ArtistLink';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
@@ -42,7 +42,16 @@ export function PlaylistNarrowHeader({
           )}
         </div>
       }
-      title={playlist.title}
+      title={
+        !playlist.isPublic ? (
+          <span className="flex items-center gap-1.5">
+            <span className="truncate">{playlist.title}</span>
+            <Lock aria-label={t('playlist.private')} className="h-4 w-4 text-muted-foreground shrink-0" />
+          </span>
+        ) : (
+          playlist.title
+        )
+      }
       subtitle={
         <>
           {playlist.userId != null ? (

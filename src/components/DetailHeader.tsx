@@ -7,7 +7,7 @@ interface DetailHeaderProps {
   backLabel?: string;
   navigation?: React.ReactNode;
   artwork: React.ReactNode;
-  title: string;
+  title: React.ReactNode;
   onTitleClick?: () => void;
   subtitle?: React.ReactNode;
   folderMetadata?: React.ReactNode;

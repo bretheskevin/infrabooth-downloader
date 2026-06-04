@@ -1,4 +1,4 @@
-import { Download, Loader2, Music } from 'lucide-react';
+import { Download, Loader2, Lock, Music } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useIsDownloadEnabled } from '@/features/settings';
@@ -58,7 +58,10 @@ export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDown
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{playlist.title}</p>
+        <div className="flex items-center gap-1">
+          <p className="text-sm font-medium truncate">{playlist.title}</p>
+          {!playlist.is_public && <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-label={t('playlist.private')} />}
+        </div>
         <ArtistLink
           userId={playlist.user_id}
           username={playlist.username}
