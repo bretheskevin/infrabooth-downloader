@@ -472,6 +472,9 @@
     "unlikeError": "Échec du retrait des titres likés",
     "shareByDm": "Partager"
   },
+  "playlist": {
+    "private": "Privée"
+  },
   "playlistMenu": {
     "like": "Ajouter aux playlists likées",
     "unlike": "Retirer des playlists likées",

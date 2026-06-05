@@ -472,6 +472,9 @@
     "unlikeError": "Failed to unlike track",
     "shareByDm": "Share"
   },
+  "playlist": {
+    "private": "Private"
+  },
   "playlistMenu": {
     "like": "Like",
     "unlike": "Unlike",
