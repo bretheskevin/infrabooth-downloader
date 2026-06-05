@@ -1,6 +1,5 @@
-import { useEffect } from 'react';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { useUpdateStore } from '@/features/update';
+import { useUpdateCheck } from '@/features/update';
 import { useLanguageSync } from '@/features/settings/hooks/useLanguageSync';
 import { useThemeSync } from '@/features/settings/hooks/useThemeSync';
 import { useAuthStateListener } from '@/features/auth/hooks/useAuthStateListener';
@@ -25,10 +24,7 @@ function AppInitializer() {
   useStartupAuth();
   useInitializeSettings();
   useLikedTracks(isSignedIn);
-
-  useEffect(() => {
-    useUpdateStore.getState().checkForUpdates();
-  }, []);
+  useUpdateCheck();
 
   return null;
 }
