@@ -6,6 +6,22 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.29.0] - 2026-06-05
+
+### Added
+
+- Recherche de playlists
+- Création, modification et suppression de playlists
+- Ajout et retrait de playlists de vos likes
+- Les playlists privées affichent désormais un cadenas
+- Le dossier de téléchargement par playlist est désormais conservé
+- Badge d'avertissement lorsque la vérification TLS est désactivée
+
+### Fixed
+
+- Certains morceaux étaient considérés à tort comme protégés et ignorés
+- Correction de l'affichage des grilles de playlists et de sorties
+- Un bouton de lecture aléatoire apparaissait en double sur grand écran
 ## [1.28.0] - 2026-05-05
 
 ### Added

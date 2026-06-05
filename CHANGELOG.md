@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.29.0] - 2026-06-05
+
+### Added
+
+- Search for playlists
+- Create, edit and delete playlists
+- Like and unlike playlists
+- Private playlists now show a lock icon
+- Per-playlist download location is now saved
+- Warning badge when TLS verification is disabled
+
+### Fixed
+
+- Some tracks were wrongly flagged as protected and skipped
+- Playlist and release grids displayed incorrectly
+- A duplicate shuffle button appeared on wide screens
 ## [1.28.0] - 2026-05-05
 
 ### Added
