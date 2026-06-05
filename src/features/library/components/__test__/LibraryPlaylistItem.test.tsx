@@ -12,6 +12,7 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: { count?: number }) => {
       if (key === 'download.trackCount') return `${opts?.count} tracks`;
+      if (key === 'playlist.private') return 'Private';
       return key;
     },
   }),
@@ -96,6 +97,17 @@ describe('LibraryPlaylistItem', () => {
     render(<LibraryPlaylistItem playlist={noUser} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
     expect(screen.queryByRole('button', { name: 'TestUser' })).not.toBeInTheDocument();
     expect(screen.getByText('TestUser')).toBeInTheDocument();
+  });
+
+  it('renders lock icon for private playlists', () => {
+    const privatePlaylist = { ...mockPlaylist, is_public: false };
+    render(<LibraryPlaylistItem playlist={privatePlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+    expect(screen.getByLabelText('Private')).toBeInTheDocument();
+  });
+
+  it('does not render lock icon for public playlists', () => {
+    render(<LibraryPlaylistItem playlist={mockPlaylist} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
+    expect(screen.queryByLabelText('Private')).not.toBeInTheDocument();
   });
 
   describe('widescreen card styling', () => {

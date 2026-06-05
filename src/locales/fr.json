@@ -481,6 +481,9 @@
     "createdPlaylist": "Playlist \"{{playlist}}\" créée",
     "createFailed": "Échec de la création de la playlist"
   },
+  "playlist": {
+    "private": "Privée"
+  },
   "playlistMenu": {
     "like": "Ajouter aux playlists likées",
     "unlike": "Retirer des playlists likées",

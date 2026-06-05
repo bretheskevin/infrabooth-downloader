@@ -131,4 +131,32 @@ describe('PlaylistDetailHeader', () => {
     expect(shuffleBtn!.className).not.toContain('shadow-glow-lg');
     expect(playAllBtn!.className).not.toContain('shadow-glow-lg');
   });
+
+  describe('private playlist indicator', () => {
+    const privatePlaylist: PlaylistData = { ...mockPlaylist, isPublic: false };
+
+    it('renders lock icon for private playlist in narrow mode', () => {
+      mockIsWidescreen = false;
+      render(<PlaylistDetailHeader {...defaultProps} playlist={privatePlaylist} />);
+      expect(screen.getByLabelText('playlist.private')).toBeTruthy();
+    });
+
+    it('renders lock icon for private playlist in widescreen mode', () => {
+      mockIsWidescreen = true;
+      render(<PlaylistDetailHeader {...defaultProps} playlist={privatePlaylist} />);
+      expect(screen.getByLabelText('playlist.private')).toBeTruthy();
+    });
+
+    it('does not render lock icon for public playlist in narrow mode', () => {
+      mockIsWidescreen = false;
+      render(<PlaylistDetailHeader {...defaultProps} playlist={{ ...mockPlaylist, isPublic: true }} />);
+      expect(screen.queryByLabelText('playlist.private')).toBeNull();
+    });
+
+    it('does not render lock icon for public playlist in widescreen mode', () => {
+      mockIsWidescreen = true;
+      render(<PlaylistDetailHeader {...defaultProps} playlist={{ ...mockPlaylist, isPublic: true }} />);
+      expect(screen.queryByLabelText('playlist.private')).toBeNull();
+    });
+  });
 });

@@ -481,6 +481,9 @@
     "createdPlaylist": "Created \"{{playlist}}\"",
     "createFailed": "Failed to create playlist"
   },
+  "playlist": {
+    "private": "Private"
+  },
   "playlistMenu": {
     "like": "Like",
     "unlike": "Unlike",
