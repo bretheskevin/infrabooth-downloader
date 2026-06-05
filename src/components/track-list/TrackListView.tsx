@@ -32,7 +32,7 @@ export function TrackListView<F extends string = string>({
   resetKey,
 }: TrackListViewProps<F>) {
   const { tracks, isLoading, isStreaming, error, onRetry } = query;
-  const { title, id, permalinkUrl, shareInfo, likeState, deleteAction } = source;
+  const { title, id, permalinkUrl, shareInfo, likeState, deleteAction, editAction } = source;
   const { t } = useTranslation();
 
   const [sortState, setSortState] = useState<{
@@ -101,6 +101,7 @@ export function TrackListView<F extends string = string>({
         shareInfo={shareInfo}
         likeState={likeState}
         deleteAction={deleteAction}
+        editAction={editAction}
       />
     ) : null;
 

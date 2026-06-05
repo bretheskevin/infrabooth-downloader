@@ -344,4 +344,10 @@ export const api = {
       .deletePlaylist(playlistId)
       .then(unwrap)
       .then(() => undefined),
+
+  updatePlaylist: (playlistId: number, title: string, sharing: string | null, trackIds: number[]): Promise<void> =>
+    commands
+      .updatePlaylist(playlistId, title, sharing, trackIds)
+      .then(unwrap)
+      .then(() => undefined),
 };

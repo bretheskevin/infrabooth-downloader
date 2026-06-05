@@ -34,10 +34,6 @@ export function PlaylistDetailView({
   const isSignedIn = useIsSignedIn();
   const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(playlist.id, playlist.secretToken, initialTracks);
 
-  const needsArtwork = !playlist.artworkUrl && !initialTracks;
-  const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secretToken, needsArtwork);
-  const artworkUrl = playlist.artworkUrl ?? resolvedArtwork ?? null;
-
   const [trackToRemove, setTrackToRemove] = useState<TrackInfo | null>(null);
   const { removeFromPlaylist, removingFromPlaylistId } = useRemoveFromPlaylist(() => {
     setTrackToRemove(null);
@@ -51,21 +47,36 @@ export function PlaylistDetailView({
     [scrollPreservation],
   );
 
+  const [edited, setEdited] = useState<{ title: string; isPublic: boolean } | null>(null);
+  const [prevPlaylistId, setPrevPlaylistId] = useState(playlist.id);
+  if (prevPlaylistId !== playlist.id) {
+    setPrevPlaylistId(playlist.id);
+    setEdited(null);
+  }
+  const displayed = edited ? { ...playlist, title: edited.title, isPublic: edited.isPublic } : playlist;
+
+  const needsArtwork = (!playlist.artworkUrl || edited !== null) && !initialTracks;
+  const { data: resolvedArtwork } = usePlaylistArtwork(playlist.id, playlist.secretToken, needsArtwork);
+  // After an edit the auto-generated mosaic may change, so prefer the freshly resolved artwork.
+  const artworkUrl = edited !== null ? (resolvedArtwork ?? playlist.artworkUrl ?? null) : (playlist.artworkUrl ?? resolvedArtwork ?? null);
+
+  const isOwned = playlist.isOwned;
+
   const shareInfo: ShareTrackInfo | undefined =
     playlist.permalinkUrl && playlist.username
       ? {
           trackId: playlist.id,
-          title: playlist.title,
+          title: displayed.title,
           artist: playlist.username,
           artworkUrl: playlist.artworkUrl,
           permalinkUrl: playlist.permalinkUrl,
         }
       : undefined;
 
-  const likeInput: LikePlaylistInput | undefined = !playlist.isOwned
+  const likeInput: LikePlaylistInput | undefined = !isOwned
     ? {
         id: playlist.id,
-        title: playlist.title,
+        title: displayed.title,
         artwork_url: playlist.artworkUrl,
         permalink_url: playlist.permalinkUrl,
         track_count: playlist.trackCount,
@@ -82,19 +93,28 @@ export function PlaylistDetailView({
       <TrackListView
         query={{ tracks, isLoading, isStreaming, error, onRetry: refetch }}
         source={{
-          title: playlist.title,
+          title: displayed.title,
           id: String(playlist.id),
           permalinkUrl: playlist.permalinkUrl,
           shareInfo,
           likeState,
-          deleteAction: playlist.isOwned
+          deleteAction: isOwned
             ? { playlistId: playlist.id, onDeleteSuccess: () => useLibraryStore.getState().setLibraryView({ view: 'list' }) }
+            : undefined,
+          editAction: isOwned
+            ? {
+                playlistId: playlist.id,
+                isPublic: displayed.isPublic,
+                isPublicKnown: playlist.isPublicKnown,
+                tracksReady: !isLoading && !isStreaming,
+                onEdited: (title, isPublic) => setEdited({ title, isPublic }),
+              }
             : undefined,
         }}
         resetKey={playlist.id}
         header={({ actions, folderMetadata, onPlayAll, onShuffle }) => (
           <PlaylistDetailHeader
-            playlist={playlist}
+            playlist={displayed}
             artworkUrl={artworkUrl}
             trackCount={tracks?.length ?? playlist.trackCount}
             breadcrumbItems={breadcrumbItems}
@@ -108,7 +128,7 @@ export function PlaylistDetailView({
         download={{ onDownloadTracks }}
         trackList={{
           virtualized: true,
-          onRemoveFromPlaylist: playlist.isOwned ? setTrackToRemove : undefined,
+          onRemoveFromPlaylist: isOwned ? setTrackToRemove : undefined,
           initialScrollOffset,
           onScrollOffsetChange: scrollPreservation ? saveScrollOffset : undefined,
         }}
@@ -118,15 +138,15 @@ export function PlaylistDetailView({
         }}
       />
 
-      {playlist.isOwned && (
+      {isOwned && (
         <RemoveFromPlaylistDialog
           open={trackToRemove !== null}
           trackTitle={trackToRemove?.title ?? ''}
-          playlistTitle={playlist.title}
+          playlistTitle={displayed.title}
           isRemoving={removingFromPlaylistId === playlist.id}
           onConfirm={() => {
             if (trackToRemove) {
-              void removeFromPlaylist(playlist.id, playlist.title, trackToRemove.id);
+              void removeFromPlaylist(playlist.id, displayed.title, trackToRemove.id);
             }
           }}
           onCancel={() => setTrackToRemove(null)}

@@ -70,6 +70,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - TrackActionsDropdown, TrackDownloadAction — context menus
 - DetailHeader, ArtistAvatar, ArtistAvatarImage, ArtistCarouselSection (sorts artists with new content first, reposts before originals by default)
 - CreatePlaylistDialog — dialog for creating new SoundCloud playlists (name input + public/private switch)
+- EditPlaylistDialog — dialog for editing owned playlists (title, public/private, remove/undo tracks)
 - CardListView — generic primitive rendering card or list mode based on settings
 - ViewModeToggle — UI control for toggling between card/list layouts
 - FilterChips, SortDirectionSelect, PreserveOrderToggle
@@ -84,6 +85,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - useMergedTrackState, useTrackDownloadState, useHoverPreload
 - useMenuExclusivity, useTauriEventDialog, useSticky
 - useCreatePlaylist (create SoundCloud playlist with toast + cache invalidation)
+- useEditPlaylist (edit SoundCloud playlist: title, sharing, track list + toast + cache invalidation)
 
 ## Feature Flags (`src/lib/featureFlags.ts`, `src/config/feature-flags.toml`)
 - Boolean flags for gating WIP UI areas

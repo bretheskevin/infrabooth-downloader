@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { Disc3, EllipsisVertical, ExternalLink, Heart, Link, Loader2, Send, Trash2 } from 'lucide-react';
+import { Disc3, EllipsisVertical, ExternalLink, Heart, Link, Loader2, Pencil, Send, Trash2 } from 'lucide-react';
 import type { ExportResult, TrackInfo, RekordboxExportStatus } from '@/bindings';
 import { cn } from '@/lib/utils';
 import { useLinkActions } from '@/hooks/useLinkActions';
@@ -36,6 +36,8 @@ import { useRekordboxTree } from '@/features/rekordbox-export/hooks/useRekordbox
 import { findInfraboothFolderId, findPlaylistParentId, folderExistsInTree } from '@/features/rekordbox-export/utils/buildTree';
 import { ExportPhaseSection } from '@/features/rekordbox-export/components/ExportPhaseSection';
 import { RekordboxTreePicker } from '@/features/rekordbox-export/components/RekordboxTreePicker';
+import { EditPlaylistDialog } from '@/components/playlist-detail/EditPlaylistDialog';
+import type { EditAction } from '@/components/track-list/types';
 
 interface DeleteAction {
   playlistId: number;
@@ -50,6 +52,7 @@ interface PlaylistActionsDropdownProps {
   shareInfo?: ShareTrackInfo;
   likeState?: LikeState;
   deleteAction?: DeleteAction;
+  editAction?: EditAction;
 }
 
 const MAX_VISIBLE_TRACKS = 3;
@@ -278,10 +281,12 @@ export function PlaylistActionsDropdown({
   shareInfo,
   likeState,
   deleteAction,
+  editAction,
 }: PlaylistActionsDropdownProps) {
   const { t } = useTranslation();
   const { data: rekordboxStatus } = useRekordboxDetection();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const { deletePlaylist, isDeleting } = useDeletePlaylist(() => {
     setDeleteConfirmOpen(false);
     deleteAction?.onDeleteSuccess?.();
@@ -330,7 +335,7 @@ export function PlaylistActionsDropdown({
   const isSignedIn = useIsSignedIn();
   const canShare = isSignedIn && !!shareInfo;
 
-  if (!showRekordbox && !showLinks && !canShare && !likeState && !deleteAction) return null;
+  if (!showRekordbox && !showLinks && !canShare && !likeState && !deleteAction && !editAction) return null;
 
   const isRegistering = groups.exporting.length > 0 || groups.completed.length > 0;
   const completedCount = groups.downloaded.length + groups.exporting.length + groups.completed.length + groups.error.length;
@@ -357,7 +362,7 @@ export function PlaylistActionsDropdown({
               {t(likeState.isLiked ? 'playlistMenu.unlike' : 'playlistMenu.like')}
             </DropdownMenuItem>
           )}
-          {likeState && (showLinks || showRekordbox || canShare) && <DropdownMenuSeparator />}
+          {likeState && (showLinks || canShare || showRekordbox || editAction || deleteAction) && <DropdownMenuSeparator />}
           {showLinks && (
             <>
               <DropdownMenuItem onClick={handleCopyLink}>
@@ -370,28 +375,31 @@ export function PlaylistActionsDropdown({
               </DropdownMenuItem>
             </>
           )}
-          {showLinks && showRekordbox && <DropdownMenuSeparator />}
-          {showRekordbox && (
-            <DropdownMenuItem onClick={openConfirm}>
-              <Disc3 className="h-3.5 w-3.5" />
-              {t('rekordboxExport.button')}
-            </DropdownMenuItem>
-          )}
-          {canShare && (showLinks || showRekordbox) && <DropdownMenuSeparator />}
           {canShare && shareInfo && (
             <DropdownMenuItem onClick={() => useMessagesStore.getState().openShareDialog(shareInfo)}>
               <Send className="h-3.5 w-3.5" />
               {t('trackMenu.shareByDm')}
             </DropdownMenuItem>
           )}
+          {showRekordbox && (showLinks || canShare) && <DropdownMenuSeparator />}
+          {showRekordbox && (
+            <DropdownMenuItem onClick={openConfirm}>
+              <Disc3 className="h-3.5 w-3.5" />
+              {t('rekordboxExport.button')}
+            </DropdownMenuItem>
+          )}
+          {(editAction || deleteAction) && (showLinks || canShare || showRekordbox) && <DropdownMenuSeparator />}
+          {editAction && (
+            <DropdownMenuItem onClick={() => setEditDialogOpen(true)}>
+              <Pencil className="h-3.5 w-3.5" />
+              {t('playlistMenu.edit')}
+            </DropdownMenuItem>
+          )}
           {deleteAction && (
-            <>
-              {(!!likeState || showLinks || showRekordbox || canShare) && <DropdownMenuSeparator />}
-              <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteConfirmOpen(true)}>
-                <Trash2 className="h-3.5 w-3.5" />
-                {t('playlistMenu.delete')}
-              </DropdownMenuItem>
-            </>
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteConfirmOpen(true)}>
+              <Trash2 className="h-3.5 w-3.5" />
+              {t('playlistMenu.delete')}
+            </DropdownMenuItem>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
@@ -471,6 +479,20 @@ export function PlaylistActionsDropdown({
           isDeleting={isDeleting}
           onDelete={deletePlaylist}
           onClose={() => setDeleteConfirmOpen(false)}
+        />
+      )}
+
+      {editAction && (
+        <EditPlaylistDialog
+          open={editDialogOpen}
+          onOpenChange={setEditDialogOpen}
+          playlistId={editAction.playlistId}
+          initialTitle={playlistName}
+          initialIsPublic={editAction.isPublic}
+          isPublicKnown={editAction.isPublicKnown}
+          tracksReady={editAction.tracksReady}
+          tracks={tracks ?? []}
+          onSaved={editAction.onEdited}
         />
       )}
     </>

@@ -49,6 +49,14 @@ export interface TracksQuery {
   onRetry?: () => void;
 }
 
+export interface EditAction {
+  playlistId: number;
+  isPublic: boolean;
+  isPublicKnown: boolean;
+  tracksReady: boolean;
+  onEdited?: (title: string, isPublic: boolean) => void;
+}
+
 export interface TrackListSource {
   title: string;
   id?: string;
@@ -56,6 +64,7 @@ export interface TrackListSource {
   shareInfo?: ShareTrackInfo;
   likeState?: LikeState;
   deleteAction?: { playlistId: number; onDeleteSuccess?: () => void };
+  editAction?: EditAction;
 }
 
 export interface TrackListViewProps<F extends string = string> {

@@ -76,6 +76,14 @@ async deletePlaylist(playlistId: number) : Promise<Result<null, string>> {
     else return { status: "error", error: e  as any };
 }
 },
+async updatePlaylist(playlistId: number, title: string, sharing: string | null, trackIds: number[]) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("update_playlist", { playlistId, title, sharing, trackIds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getPlaylistInfo(url: string) : Promise<Result<PlaylistInfo, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_playlist_info", { url }) };

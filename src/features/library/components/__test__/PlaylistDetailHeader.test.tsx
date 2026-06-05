@@ -42,6 +42,8 @@ const mockPlaylist: PlaylistData = {
   duration: 3600000,
   permalinkUrl: 'https://soundcloud.com/test/sets/test',
   isOwned: true,
+  isPublic: false,
+  isPublicKnown: true,
   secretToken: null,
 };
 

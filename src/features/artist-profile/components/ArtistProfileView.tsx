@@ -76,7 +76,7 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
   if (selectedPlaylist) {
     return (
       <PlaylistDetailView
-        playlist={fromArtistPlaylist(selectedPlaylist, username, authUserId)}
+        playlist={fromArtistPlaylist(selectedPlaylist, username, authUserId, artistId)}
         breadcrumbItems={[{ label: username, onClick: () => setSelectedPlaylist(null) }]}
         onDownloadTracks={onDownloadTracks}
       />

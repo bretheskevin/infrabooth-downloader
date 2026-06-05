@@ -112,7 +112,7 @@ function PageContent({
     return (
       <section className={cn('space-y-4 flex-1 min-h-0 flex flex-col', slideClass)}>
         <PlaylistDetailView
-          playlist={fromMessagePlaylistEmbed(messagePlaylist)}
+          playlist={fromMessagePlaylistEmbed(messagePlaylist, authUserId)}
           breadcrumbItems={[{ label: t('directMessages.title'), onClick: () => useMessagesStore.getState().closePlaylist() }]}
           onDownloadTracks={handleDownloadTracks}
         />

@@ -52,6 +52,12 @@ vi.mock('@/hooks/useDeletePlaylist', () => ({
   useDeletePlaylist: () => ({ deletePlaylist: mockDeletePlaylist, isDeleting: false }),
 }));
 
+const mockEditPlaylist = vi.fn().mockResolvedValue(true);
+
+vi.mock('@/hooks/useEditPlaylist', () => ({
+  useEditPlaylist: () => ({ editPlaylist: mockEditPlaylist, isEditing: false }),
+}));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: Record<string, unknown>) => {
@@ -380,6 +386,38 @@ describe('PlaylistActionsDropdown', () => {
     it('renders button when deleteAction provided even if rekordbox is not found', () => {
       mockDetectionData = { found: false, version: null, dbPath: null, isRunning: false };
       render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" deleteAction={deleteAction} />);
+      expect(screen.getByRole('button')).toBeInTheDocument();
+    });
+  });
+
+  describe('edit playlist action', () => {
+    const editAction = { playlistId: 456, isPublic: true, isPublicKnown: true, tracksReady: true };
+
+    it('shows edit menu item when editAction is provided', async () => {
+      const user = userEvent.setup();
+      render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" editAction={editAction} />);
+      await user.click(screen.getByRole('button'));
+      expect(screen.getByText('edit')).toBeInTheDocument();
+    });
+
+    it('does not show edit menu item without editAction', async () => {
+      const user = userEvent.setup();
+      render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
+      await user.click(screen.getByRole('button'));
+      expect(screen.queryByText('edit')).not.toBeInTheDocument();
+    });
+
+    it('opens edit dialog when edit menu item is clicked', async () => {
+      const user = userEvent.setup();
+      render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" editAction={editAction} />);
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('edit'));
+      expect(screen.getByText('editTitle')).toBeInTheDocument();
+    });
+
+    it('renders button when editAction provided even if rekordbox is not found', () => {
+      mockDetectionData = { found: false, version: null, dbPath: null, isRunning: false };
+      render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" editAction={editAction} />);
       expect(screen.getByRole('button')).toBeInTheDocument();
     });
   });

@@ -227,3 +227,47 @@ pub async fn delete_playlist(playlist_id: u64, app: tauri::AppHandle) -> Result<
     log::info!("[delete_playlist] Successfully deleted playlist {}", playlist_id);
     Ok(())
 }
+
+#[tauri::command]
+#[specta::specta]
+pub async fn update_playlist(playlist_id: u64, title: String, sharing: Option<String>, track_ids: Vec<u64>, app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(value) = &sharing {
+        if value != "public" && value != "private" {
+            return Err(format!("Invalid sharing value: '{}' (expected 'public' or 'private')", value));
+        }
+    }
+
+    log::info!("[update_playlist] Updating playlist {} (title='{}', sharing={:?}, tracks={})", playlist_id, title, sharing, track_ids.len());
+
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
+    let (token, client_id) = super::require_auth_and_cid(&app).await?;
+
+    let client = &*crate::services::http::HTTP_CLIENT;
+    let url = format!("{}/playlists/{}?client_id={}", API_V2_BASE, playlist_id, client_id);
+
+    let mut playlist = serde_json::Map::new();
+    playlist.insert("title".to_string(), serde_json::json!(title));
+    playlist.insert("tracks".to_string(), serde_json::json!(track_ids));
+    if let Some(value) = sharing {
+        playlist.insert("sharing".to_string(), serde_json::json!(value));
+    }
+
+    let mut request = client.put(&url).with_oauth(Some(&token)).json(&serde_json::json!({ "playlist": playlist }));
+
+    request = request.with_datadome(datadome.as_deref());
+
+    let response = request.send().await.map_err(|e| format!("Failed to update playlist: {}", e))?;
+
+    state.update_datadome(extract_datadome_from_response(&response));
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let body = response.text().await.unwrap_or_default();
+        log::error!("[update_playlist] PUT failed: {} - {}", status, body);
+        return Err(format!("Failed to update playlist: HTTP {} - {}", status, sanitize_error_body(body)));
+    }
+
+    log::info!("[update_playlist] Successfully updated playlist {}", playlist_id);
+    Ok(())
+}
