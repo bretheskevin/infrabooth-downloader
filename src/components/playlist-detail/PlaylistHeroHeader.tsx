@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, Lock, Music, Play, Shuffle, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Music, Play, Shuffle, ChevronRight } from 'lucide-react';
 import { ArtistLink } from '@/components/ArtistLink';
+import { PrivatePlaylistLock } from '@/components/PrivatePlaylistLock';
 import { ArtistAvatarImage } from '@/components/ArtistAvatarImage';
 import { Button } from '@/components/ui/button';
 import { useArtistProfile } from '@/features/artist-profile/hooks/useArtistProfile';
@@ -77,7 +78,7 @@ export function PlaylistHeroHeader({
             </span>
             <div className="flex items-center gap-2 min-w-0">
               <h1 className="text-[34px] font-bold leading-tight tracking-tight truncate">{playlist.title}</h1>
-              {!playlist.isPublic && <Lock aria-label={t('playlist.private')} className="h-5 w-5 text-muted-foreground shrink-0" />}
+              {!playlist.isPublic && <PrivatePlaylistLock className="h-5 w-5" />}
             </div>
             <div className="flex items-center gap-2">
               {playlist.userId != null ? (

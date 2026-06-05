@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import { Lock, Music } from 'lucide-react';
+import { Music } from 'lucide-react';
 import { DetailHeader } from '@/components/DetailHeader';
+import { PrivatePlaylistLock } from '@/components/PrivatePlaylistLock';
 import { ArtistLink } from '@/components/ArtistLink';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { formatTotalDuration } from '@/lib/format';
@@ -44,9 +45,9 @@ export function PlaylistNarrowHeader({
       }
       title={
         !playlist.isPublic ? (
-          <span className="flex items-center gap-1.5">
+          <span className="flex items-center gap-1.5 min-w-0">
             <span className="truncate">{playlist.title}</span>
-            <Lock aria-label={t('playlist.private')} className="h-4 w-4 text-muted-foreground shrink-0" />
+            <PrivatePlaylistLock className="h-4 w-4" />
           </span>
         ) : (
           playlist.title

@@ -42,7 +42,7 @@ export function fromArtistPlaylist(p: ArtistPlaylist, artistName: string, authUs
     userId: p.user?.id ?? null,
     duration: p.duration ?? null,
     isOwned: p.user?.id != null && p.user.id === authUserId,
-    isPublic: true,
+    isPublic: p.secret_token == null,
   };
 }
 

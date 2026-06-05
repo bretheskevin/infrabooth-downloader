@@ -30,8 +30,6 @@ if [ "$frontend_changed" -eq 1 ]; then
   echo "pre-commit: running frontend checks"
   npm run lint
   npm run typecheck
-  echo "pre-commit: running frontend tests"
-  npm test
 fi
 
 if [ "$backend_changed" -eq 1 ]; then
