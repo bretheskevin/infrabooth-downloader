@@ -9,7 +9,7 @@ export function useUnreadConversations() {
     queryKey: ['directMessages', 'unread'],
     queryFn: () => api.getUnreadConversationsFlag(),
     enabled: isSignedIn,
-    refetchInterval: 120_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     staleTime: 60_000,
   });

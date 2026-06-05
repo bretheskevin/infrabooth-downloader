@@ -11,7 +11,7 @@ export function useUnreadNotifications() {
     queryKey: ['notifications', 'unread'],
     queryFn: () => api.getUnreadCount(),
     enabled: isSignedIn,
-    refetchInterval: 120_000,
+    refetchInterval: 60_000,
     refetchOnWindowFocus: true,
     staleTime: 60_000,
   });
