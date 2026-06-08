@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import { RefreshButton } from '@/components/ui/refresh-button';
 import type { TrackInfo } from '@/bindings';
 import { TrackListView } from '@/components/track-list/TrackListView';
 import { libraryActions, useLibraryStore } from '../store';
@@ -12,7 +13,12 @@ interface TracksTabContentProps {
 export function TracksTabContent({ onDownloadTracks }: TracksTabContentProps) {
   const { t } = useTranslation();
 
-  const { tracks, isLoading, isStreaming, error, refetch } = useLikedTracks(true);
+  const { tracks, isLoading, isStreaming, error, refetch, clearCache } = useLikedTracks(true);
+
+  const handleRefresh = useCallback(async () => {
+    await clearCache();
+    await refetch();
+  }, [clearCache, refetch]);
 
   const initialScrollOffset = useLibraryStore.getState().tracksScrollTop;
   const saveScrollOffset = useCallback((offset: number) => {
@@ -30,7 +36,15 @@ export function TracksTabContent({ onDownloadTracks }: TracksTabContentProps) {
             <h2 className="text-lg font-semibold">{t('library.tracks.title')}</h2>
             {!isLoading && <p className="text-sm text-muted-foreground">{t('download.trackCount', { count: tracks.length })}</p>}
           </div>
-          <div className="flex items-center gap-2">{actions}</div>
+          <div className="flex items-center gap-2">
+            <RefreshButton
+              onRefresh={handleRefresh}
+              aria-label={t('library.refresh')}
+              className="h-8 w-8 text-muted-foreground"
+              iconClassName="h-3.5 w-3.5"
+            />
+            {actions}
+          </div>
         </div>
       )}
       download={{

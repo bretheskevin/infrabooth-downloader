@@ -18,11 +18,16 @@ export function useLikedTracks(enabled: boolean) {
     enabled,
   });
 
+  const clearCache = useCallback(async () => {
+    await api.clearLikedTracksCache();
+  }, []);
+
   return {
     tracks: query.data ?? [],
     isLoading: query.isLoading,
     isStreaming: query.isStreaming,
     error: query.error,
     refetch: query.refetch,
+    clearCache,
   };
 }
