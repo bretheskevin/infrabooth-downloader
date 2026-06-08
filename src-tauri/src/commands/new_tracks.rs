@@ -159,13 +159,6 @@ pub async fn get_artist_releases(app: tauri::AppHandle, artist_id: u64) -> Resul
     Ok(stream_releases)
 }
 
-#[tauri::command]
-#[specta::specta]
-pub async fn get_release_tracks(app: tauri::AppHandle, release_id: u64) -> Result<Vec<crate::services::playlist::TrackInfo>, String> {
-    let (token, _client_id) = require_auth_and_cid(&app).await?;
-    crate::services::playlist::fetch_playlist_by_id(release_id, None, Some(&token), |_| {}).await.map_err(|e| e.to_string())
-}
-
 async fn persist_seen_state(app: &tauri::AppHandle, artist_id: u64, update: impl FnOnce(&SeenArtistsState, &NewTracksCache, u64, i64)) -> Result<(), String> {
     let now = new_tracks::now_unix();
     let path = seen_state_path(app);

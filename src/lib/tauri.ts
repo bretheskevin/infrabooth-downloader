@@ -264,8 +264,6 @@ export const api = {
 
   getArtistFollowings: (artistId: number): Promise<ArtistProfile[]> => commands.getArtistFollowings(artistId).then(unwrap),
 
-  getReleaseTracks: (releaseId: number): Promise<TrackInfo[]> => commands.getReleaseTracks(releaseId).then(unwrap),
-
   markArtistReleasesSeen: (artistId: number): Promise<void> => commands.markArtistReleasesSeen(artistId).then(() => undefined),
 
   // Follow

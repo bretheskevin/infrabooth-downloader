@@ -58,7 +58,7 @@ pub mod selections;
 pub use selections::get_selections;
 
 pub mod new_tracks;
-pub use new_tracks::{get_artist_activity, get_artist_releases, get_followed_artists, get_release_tracks, mark_artist_releases_seen, mark_artist_seen};
+pub use new_tracks::{get_artist_activity, get_artist_releases, get_followed_artists, mark_artist_releases_seen, mark_artist_seen};
 
 pub mod notifications;
 pub use notifications::{get_notifications_page, get_unread_count, mark_notifications_seen};

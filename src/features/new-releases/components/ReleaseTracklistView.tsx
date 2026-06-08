@@ -1,15 +1,13 @@
 import { useTranslation } from 'react-i18next';
-import { useQuery } from '@tanstack/react-query';
-import { api } from '@/lib/tauri';
 import { DetailHeader } from '@/components/DetailHeader';
 import { Breadcrumb } from '@/components/ui/breadcrumb';
 import { TrackListView } from '@/components/track-list/TrackListView';
+import { usePlaylistTracks } from '@/components/playlist-detail/usePlaylistTracks';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import type { FollowedArtist, ReleaseActivityItem, TrackInfo } from '@/bindings';
 import type { ShareTrackInfo } from '@/features/messages/store';
 import { useIsSignedIn } from '@/features/auth/store';
 import { useLikePlaylist, type LikePlaylistInput } from '@/hooks/useLikePlaylist';
-import { DEFAULT_STALE_TIME } from '@/lib/query';
 import { RELEASE_TYPE_KEYS } from '../constants';
 
 interface ReleaseTracklistViewProps {
@@ -49,16 +47,7 @@ export function ReleaseTracklistView({ artist, release, onBackToReleases, onBack
   const artworkUrl = getArtworkUrl(info.artwork_url, 300);
   const typeLabel = t(RELEASE_TYPE_KEYS[info.release_type]);
 
-  const {
-    data: tracks,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery({
-    queryKey: ['release-tracks', info.id],
-    queryFn: () => api.getReleaseTracks(info.id),
-    staleTime: DEFAULT_STALE_TIME,
-  });
+  const { data: tracks, isLoading, isStreaming, error, refetch } = usePlaylistTracks(info.id);
 
   const artwork = artworkUrl ? (
     <img src={artworkUrl} alt={info.title} className="w-14 h-14 rounded-md object-cover shrink-0" />
@@ -70,7 +59,7 @@ export function ReleaseTracklistView({ artist, release, onBackToReleases, onBack
 
   return (
     <TrackListView
-      query={{ tracks, isLoading, error, onRetry: refetch }}
+      query={{ tracks, isLoading, isStreaming, error, onRetry: refetch }}
       source={{ title: info.title, permalinkUrl: info.permalink_url, shareInfo, likeState }}
       resetKey={info.id}
       header={({ actions, folderMetadata }) => (

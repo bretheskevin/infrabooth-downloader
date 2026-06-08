@@ -396,14 +396,6 @@ async getArtistReleases(artistId: number) : Promise<Result<ReleaseActivityItem[]
     else return { status: "error", error: e  as any };
 }
 },
-async getReleaseTracks(releaseId: number) : Promise<Result<TrackInfo[], string>> {
-    try {
-    return { status: "ok", data: await TAURI_INVOKE("get_release_tracks", { releaseId }) };
-} catch (e) {
-    if(e instanceof Error) throw e;
-    else return { status: "error", error: e  as any };
-}
-},
 async markArtistSeen(artistId: number) : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("mark_artist_seen", { artistId }) };
