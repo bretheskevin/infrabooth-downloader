@@ -7,6 +7,8 @@ import { TrackListView } from '@/components/track-list/TrackListView';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import type { FollowedArtist, ReleaseActivityItem, TrackInfo } from '@/bindings';
 import type { ShareTrackInfo } from '@/features/messages/store';
+import { useIsSignedIn } from '@/features/auth/store';
+import { useLikePlaylist, type LikePlaylistInput } from '@/hooks/useLikePlaylist';
 import { DEFAULT_STALE_TIME } from '@/lib/query';
 import { RELEASE_TYPE_KEYS } from '../constants';
 
@@ -20,7 +22,21 @@ interface ReleaseTracklistViewProps {
 
 export function ReleaseTracklistView({ artist, release, onBackToReleases, onBackToCarousel, onDownloadTracks }: ReleaseTracklistViewProps) {
   const { t } = useTranslation();
+  const isSignedIn = useIsSignedIn();
   const info = release.release;
+
+  const likeInput: LikePlaylistInput = {
+    id: info.id,
+    title: info.title,
+    artwork_url: info.artwork_url,
+    permalink_url: info.permalink_url,
+    track_count: info.track_count,
+    username: info.user.username,
+    user_id: info.user.id,
+    duration: null,
+  };
+  const likeState = useLikePlaylist(isSignedIn ? likeInput : undefined);
+
   const shareInfo: ShareTrackInfo | undefined = info.permalink_url
     ? {
         trackId: info.id,
@@ -55,7 +71,7 @@ export function ReleaseTracklistView({ artist, release, onBackToReleases, onBack
   return (
     <TrackListView
       query={{ tracks, isLoading, error, onRetry: refetch }}
-      source={{ title: info.title, permalinkUrl: info.permalink_url, shareInfo }}
+      source={{ title: info.title, permalinkUrl: info.permalink_url, shareInfo, likeState }}
       resetKey={info.id}
       header={({ actions, folderMetadata }) => (
         <DetailHeader
