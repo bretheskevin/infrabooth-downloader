@@ -11,7 +11,7 @@ const TabsVariantContext = React.createContext<'default' | 'underline'>('default
 const tabsListVariants = cva('inline-flex items-center justify-center text-muted-foreground', {
   variants: {
     variant: {
-      default: 'h-9 rounded-lg bg-muted p-1',
+      default: 'rounded-lg bg-muted p-1',
       underline: 'h-auto gap-1 border-b border-border bg-transparent p-0',
     },
   },

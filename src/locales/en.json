@@ -41,6 +41,15 @@
     "viewModeCard": "Card view",
     "viewModeList": "List view"
   },
+  "comments": {
+    "title": "Comments",
+    "tabQueue": "Queue",
+    "tabComments": "Comments",
+    "empty": "No comments yet",
+    "error": "Couldn't load comments",
+    "seekTo": "Seek to {{time}}",
+    "openComments": "Comments"
+  },
   "auth": {
     "signIn": "Sign In",
     "myProfile": "My Profile",

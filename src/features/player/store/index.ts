@@ -33,6 +33,8 @@ export const usePlayerUI = () =>
     useShallow((s) => ({
       isExpanded: s.isExpanded,
       isQueueOpen: s.isQueueOpen,
+      isCommentsOpen: s.isCommentsOpen,
+      railTab: s.railTab,
     })),
   );
 

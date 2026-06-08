@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
-import { ListMusic, ChevronDown, Heart } from 'lucide-react';
+import { ListMusic, ChevronDown, Heart, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -32,13 +32,14 @@ export function ExpandedBar() {
     }
   }, []);
 
-  const { state, currentTrack, positionMs, durationMs, isQueueOpen } = usePlayerStore(
+  const { state, currentTrack, positionMs, durationMs, isQueueOpen, isCommentsOpen } = usePlayerStore(
     useShallow((s) => ({
       state: s.state,
       currentTrack: s.currentTrack,
       positionMs: s.positionMs,
       durationMs: s.durationMs,
       isQueueOpen: s.isQueueOpen,
+      isCommentsOpen: s.isCommentsOpen,
     })),
   );
 
@@ -59,13 +60,12 @@ export function ExpandedBar() {
       </div>
 
       <div className="flex items-center gap-3 px-4 pb-3.5 pt-1">
-        {/* Artwork + info */}
         <div className="h-8 w-8 rounded-md bg-secondary flex-shrink-0 overflow-hidden">
           {currentTrack.artworkUrl && (
             <img src={getArtworkUrl(currentTrack.artworkUrl) ?? undefined} alt="" className="h-full w-full object-cover" />
           )}
         </div>
-        <div className="flex-1 min-w-0">
+        <div className="min-w-0 max-w-[200px]">
           <ScrollingText text={currentTrack.title} className="text-xs font-semibold" />
           {(() => {
             const artistContent = (
@@ -88,7 +88,6 @@ export function ExpandedBar() {
           })()}
         </div>
 
-        {/* Transport controls */}
         <div className="flex items-center gap-1">
           <PreviousButton className="h-7 w-7" iconClassName="h-3.5 w-3.5" />
           <PlayPauseButton className="h-8 w-8" iconClassName="h-3.5 w-3.5" />
@@ -96,10 +95,25 @@ export function ExpandedBar() {
           <ShuffleButton className="h-7 w-7" iconClassName="h-3.5 w-3.5" />
         </div>
 
-        {/* Volume */}
-        <VolumeControl className="ml-2 gap-1.5 [&_button]:h-7 [&_button]:w-7 [&_svg]:h-3.5 [&_svg]:w-3.5 [&_.slider]:w-[60px]" />
+        <VolumeControl />
 
-        {/* Queue button */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn('h-7 w-7', isCommentsOpen && 'text-primary bg-primary/10')}
+              onClick={() => actions().toggleComments()}
+              aria-label={t('comments.openComments')}
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{t('comments.title')}</p>
+          </TooltipContent>
+        </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
@@ -133,7 +147,6 @@ export function ExpandedBar() {
           }}
         />
 
-        {/* Collapse */}
         <Button
           variant="ghost"
           size="icon"

@@ -7,6 +7,8 @@ export interface UISliceActions {
   setVolume: (volume: number) => void;
   toggleExpanded: () => void;
   toggleQueue: () => void;
+  toggleComments: () => void;
+  setRailTab: (tab: 'queue' | 'comments') => void;
   collapse: () => void;
 }
 
@@ -15,6 +17,8 @@ export type UISlice = UISliceState & UISliceActions;
 export const createUISlice: StateCreator<PlayerState & UISliceActions, [], [], UISlice> = (set) => ({
   isExpanded: false,
   isQueueOpen: false,
+  isCommentsOpen: false,
+  railTab: 'queue' as const,
   volume: 1.0,
 
   setVolume: (volume) => {
@@ -24,6 +28,8 @@ export const createUISlice: StateCreator<PlayerState & UISliceActions, [], [], U
   },
 
   toggleExpanded: () => set((s) => ({ isExpanded: !s.isExpanded })),
-  toggleQueue: () => set((s) => ({ isQueueOpen: !s.isQueueOpen })),
+  toggleQueue: () => set((s) => ({ isQueueOpen: !s.isQueueOpen, isCommentsOpen: false })),
+  toggleComments: () => set((s) => ({ isCommentsOpen: !s.isCommentsOpen, isQueueOpen: false })),
+  setRailTab: (tab) => set({ railTab: tab }),
   collapse: () => set({ isExpanded: false }),
 });

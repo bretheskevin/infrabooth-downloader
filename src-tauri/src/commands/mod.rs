@@ -72,6 +72,9 @@ pub use artist::{
     resolve_soundcloud_link, resolve_user,
 };
 
+pub mod comments;
+pub use comments::get_track_comments;
+
 pub mod follow;
 pub use follow::{check_follow_status, follow_user, unfollow_user};
 

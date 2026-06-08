@@ -32,11 +32,8 @@ export function RailQueue() {
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
-      <div className="px-4 py-3 border-b border-border/50 flex items-center justify-between">
-        <div>
-          <h3 className="text-xs font-semibold">{t('player.nextUp')}</h3>
-          <p className="text-[10px] text-muted-foreground">{t('player.queueCount', { count: queue.length })}</p>
-        </div>
+      <div className="px-4 py-1.5">
+        <p className="text-[10px] text-muted-foreground">{t('player.queueCount', { count: queue.length })}</p>
       </div>
 
       {queue.length === 0 ? (

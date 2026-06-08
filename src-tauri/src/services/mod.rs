@@ -2,6 +2,7 @@
 pub mod auth_choice;
 pub mod cancellation;
 pub mod client_id;
+pub mod comments;
 pub mod config;
 pub mod cookie;
 pub mod downloader;

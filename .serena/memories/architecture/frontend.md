@@ -42,6 +42,13 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
   - Supports track, playlist, and user profile embeds in messages
   - ShareTrackDialog: share tracks to conversations via DM (search, pick conversation, send)
 
+### Comments
+- **comments** — read-only track comments with timestamp seek, nested reply threads
+  - Components: CommentsPanel (rail/sheet variant), CommentThreadRow, CommentRow (timestamp seek chip, avatar profile navigation)
+  - Hooks: useTrackComments (infinite query + buildCommentThreads + infinite scroll)
+  - API: getTrackComments (offset-paginated via Tauri command)
+  - Types: CommentThread (root + replies grouped by timestampMs)
+
 ### Activity Feed
 - **new-tracks** — followed artists new tracks carousel, activity badges
 - **new-releases** — new releases carousel (card + list layouts via ReleaseCard/ReleaseListRow), release tracklist, artist releases view, ReleaseArtwork + getReleaseMeta() shared helpers

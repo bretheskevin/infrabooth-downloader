@@ -398,6 +398,8 @@ export const createPlaybackSlice: StateCreator<PlayerState & PlaybackSliceAction
       positionMs: 0,
       durationMs: 0,
       isQueueOpen: false,
+      isCommentsOpen: false,
+      railTab: 'queue' as const,
       isShuffled: false,
       originalQueue: null,
       manualQueueCount: 0,

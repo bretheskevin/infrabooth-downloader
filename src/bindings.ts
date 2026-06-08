@@ -364,6 +364,14 @@ async getFollowedArtists(forceRefresh: boolean) : Promise<Result<FollowedArtist[
     else return { status: "error", error: e  as any };
 }
 },
+async getTrackComments(trackId: number, offset: number | null) : Promise<Result<CommentsPage, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_track_comments", { trackId, offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getArtistActivity(artistId: number) : Promise<Result<ActivityItem[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_artist_activity", { artistId }) };
@@ -765,6 +773,7 @@ export type ArtistProfile = { id: number; username: string; avatar_url: string |
 export type ArtistProfilesBatchEvent = { entityId: number; profiles: ArtistProfile[] }
 export type BackupInfo = { path: string; timestamp: string; sizeMb: number; kind: BackupKind }
 export type BackupKind = "export" | "preRestore"
+export type CommentsPage = { comments: TrackComment[]; nextOffset: number | null }
 export type ConversationMessage = { content: string; sender_id: number; sent_at: string; track_embed: MessageTrackEmbed | null }
 export type ConversationSummary = { id: string; other_user: MessageUser; last_message_content: string; last_message_sender_id: number; last_message_at: string; read: boolean }
 export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null }
@@ -847,6 +856,7 @@ export type SearchResponse = { collection: TrackInfo[]; total_results: number | 
 export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }
 export type SortOption = "recent" | "popular"
 export type StartQueueRequest = { tracks: TrackCore[]; albumName: string | null; outputDir: string | null; maxConcurrent: number | null; preserveOrder: boolean | null }
+export type TrackComment = { id: number; body: string; createdAt: string; timestampMs: number; user: ActorInfo }
 /**
  * Core track data shared across all track-related types.
  * 

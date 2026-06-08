@@ -30,6 +30,7 @@ import {
   type MessageEmbed,
   type MessagesPage,
   type BackupInfo,
+  type CommentsPage,
 } from '@/bindings';
 import type { LibraryPlaylist, CreatedPlaylist } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
@@ -312,6 +313,10 @@ export const api = {
       .markNotificationsSeen(latestCreatedAt)
       .then(unwrap)
       .then(() => undefined),
+
+  // Comments
+  getTrackComments: (trackId: number, offset: number | null): Promise<CommentsPage> =>
+    commands.getTrackComments(trackId, offset).then(unwrap),
 
   // Direct Messages
   getConversationsPage: (offset: number | null): Promise<ConversationsPage> => commands.getConversationsPage(offset).then(unwrap),

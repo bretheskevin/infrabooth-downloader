@@ -28,8 +28,14 @@ export function VolumeControl({ className }: VolumeControlProps) {
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Button variant="ghost" size="icon" onClick={toggleMute} aria-label={volume === 0 ? t('player.unmute') : t('player.mute')}>
-        {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-7 w-7"
+        onClick={toggleMute}
+        aria-label={volume === 0 ? t('player.unmute') : t('player.mute')}
+      >
+        {volume === 0 ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
       </Button>
       <Slider
         aria-label={t('player.volume')}

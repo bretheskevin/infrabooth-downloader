@@ -41,6 +41,15 @@
     "viewModeCard": "Grille",
     "viewModeList": "Liste"
   },
+  "comments": {
+    "title": "Commentaires",
+    "tabQueue": "File d'attente",
+    "tabComments": "Commentaires",
+    "empty": "Aucun commentaire",
+    "error": "Impossible de charger les commentaires",
+    "seekTo": "Aller à {{time}}",
+    "openComments": "Commentaires"
+  },
   "auth": {
     "signIn": "Se connecter",
     "myProfile": "Mon profil",

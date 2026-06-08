@@ -93,9 +93,9 @@ describe('RailQueue', () => {
     mockState.stationQueueCount = 0;
   });
 
-  it('renders the header with nextUp label', () => {
+  it('renders the queue count', () => {
     render(<RailQueue />);
-    expect(screen.getByText('Next up')).toBeInTheDocument();
+    expect(screen.getByText('0 tracks')).toBeInTheDocument();
   });
 
   it('shows empty message when queue is empty', () => {

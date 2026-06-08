@@ -20,6 +20,8 @@ export interface QueueSliceState {
 export interface UISliceState {
   isExpanded: boolean;
   isQueueOpen: boolean;
+  isCommentsOpen: boolean;
+  railTab: 'queue' | 'comments';
   volume: number;
 }
 
