@@ -27,6 +27,7 @@ pub const REKORDBOX_EXPORT_PROGRESS: &str = "rekordbox-export-progress";
 pub const LIKED_TRACKS_BATCH: &str = "liked-tracks-batch";
 pub const ARTIST_LIKED_TRACKS_BATCH: &str = "artist-liked-tracks-batch";
 pub const ARTIST_PLAYLISTS_BATCH: &str = "artist-playlists-batch";
+pub const ARTIST_ALBUMS_BATCH: &str = "artist-albums-batch";
 pub const LIBRARY_PLAYLISTS_BATCH: &str = "library-playlists-batch";
 pub const ARTIST_FOLLOWERS_BATCH: &str = "artist-followers-batch";
 pub const ARTIST_FOLLOWINGS_BATCH: &str = "artist-followings-batch";
@@ -62,10 +63,24 @@ pub struct ArtistPlaylistsBatchEvent {
     pub playlists: Vec<ArtistPlaylist>,
 }
 
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct ArtistAlbumsBatchEvent {
+    pub entity_id: u64,
+    pub albums: Vec<ArtistPlaylist>,
+}
+
 pub fn make_playlist_batch_emitter(app: &tauri::AppHandle, entity_id: u64) -> impl Fn(&[ArtistPlaylist]) {
     let app = app.clone();
     move |batch: &[ArtistPlaylist]| {
         let _ = app.emit(ARTIST_PLAYLISTS_BATCH, ArtistPlaylistsBatchEvent { entity_id, playlists: batch.to_vec() });
+    }
+}
+
+pub fn make_album_batch_emitter(app: &tauri::AppHandle, entity_id: u64) -> impl Fn(&[ArtistPlaylist]) {
+    let app = app.clone();
+    move |batch: &[ArtistPlaylist]| {
+        let _ = app.emit(ARTIST_ALBUMS_BATCH, ArtistAlbumsBatchEvent { entity_id, albums: batch.to_vec() });
     }
 }
 

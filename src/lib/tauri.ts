@@ -253,6 +253,8 @@ export const api = {
 
   getArtistPlaylists: (artistId: number): Promise<ArtistPlaylist[]> => commands.getArtistPlaylists(artistId).then(unwrap),
 
+  getArtistAlbums: (artistId: number): Promise<ArtistPlaylist[]> => commands.getArtistAlbums(artistId).then(unwrap),
+
   getArtistReleases: (artistId: number): Promise<ReleaseActivityItem[]> => commands.getArtistReleases(artistId).then(unwrap),
 
   getArtistFollowers: (artistId: number): Promise<ArtistProfile[]> => commands.getArtistFollowers(artistId).then(unwrap),

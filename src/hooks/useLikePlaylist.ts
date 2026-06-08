@@ -9,16 +9,10 @@ import { useAuthStore } from '@/features/auth/store';
 import type { LibraryPlaylist } from '@/bindings';
 import type { LikeState } from '@/hooks/useLikeTrack';
 
-export interface LikePlaylistInput {
-  id: number;
-  title: string;
-  artwork_url: string | null;
-  permalink_url: string;
-  track_count: number;
+export type LikePlaylistInput = Pick<LibraryPlaylist, 'id' | 'title' | 'artwork_url' | 'permalink_url' | 'track_count' | 'user_id'> & {
   username: string | null;
-  user_id: number | null;
   duration: number | null;
-}
+};
 
 export function useLikePlaylist(playlist?: LikePlaylistInput): LikeState | undefined {
   const { t } = useTranslation();

@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::models::error::ScApiError;
-use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
+use crate::services::http::{
+    build_sc_paginated_url, fetch_all_pages, validate_api_response, RequestBuilderExt, API_V2_BASE,
+    DEFAULT_PAGE_SIZE, HTTP_CLIENT,
+};
 use crate::services::playlist::TrackInfo;
 
 #[derive(Debug, Deserialize)]
@@ -102,7 +105,7 @@ struct StreamUser {
 }
 
 #[derive(Debug, Deserialize)]
-struct RawStreamPlaylist {
+pub(crate) struct RawStreamPlaylist {
     id: u64,
     title: String,
     user: crate::services::playlist::UserInfo,
@@ -113,16 +116,22 @@ struct RawStreamPlaylist {
     set_type: Option<String>,
     #[serde(default)]
     tracks: Vec<RawStreamPlaylistTrack>,
+    #[serde(default)]
+    created_at: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
-struct RawStreamPlaylistTrack {
+pub(crate) struct RawStreamPlaylistTrack {
     artwork_url: Option<String>,
 }
 
 impl RawStreamPlaylist {
     fn resolved_artwork_url(&self) -> Option<String> {
         self.artwork_url.clone().or_else(|| self.tracks.iter().find_map(|t| t.artwork_url.clone()))
+    }
+
+    fn created_at(&self) -> String {
+        self.created_at.clone().unwrap_or_default()
     }
 }
 
@@ -277,7 +286,7 @@ pub fn now_unix() -> i64 {
 
 pub use crate::services::timestamp::parse_iso_timestamp;
 
-fn is_within_30_days(created_at: &str) -> bool {
+pub(crate) fn is_within_30_days(created_at: &str) -> bool {
     parse_iso_timestamp(created_at).map(|ts| now_unix() - ts <= THIRTY_DAYS_SECS).unwrap_or(false)
 }
 
@@ -314,7 +323,7 @@ async fn fetch_stream_page(oauth_token: &str, url: &str) -> Result<StreamRespons
     response.json::<StreamResponse>().await.map_err(|_| ScApiError::InvalidResponse)
 }
 
-fn sort_by_created_at_desc<T>(items: &mut [T], get_created_at: impl Fn(&T) -> &str) {
+pub(crate) fn sort_by_created_at_desc<T>(items: &mut [T], get_created_at: impl Fn(&T) -> &str) {
     items.sort_by(|a, b| {
         let ts_a = parse_iso_timestamp(get_created_at(a)).unwrap_or(0);
         let ts_b = parse_iso_timestamp(get_created_at(b)).unwrap_or(0);
@@ -341,7 +350,7 @@ pub fn compute_has_new<T>(items: &[T], threshold: i64, get_created_at: impl Fn(&
     (any_new, false, any_original)
 }
 
-fn resolve_release_type(is_album: bool, set_type: &Option<String>) -> ReleaseType {
+pub(crate) fn resolve_release_type(is_album: bool, set_type: &Option<String>) -> ReleaseType {
     if !is_album {
         return ReleaseType::Playlist;
     }
@@ -353,7 +362,7 @@ fn resolve_release_type(is_album: bool, set_type: &Option<String>) -> ReleaseTyp
     }
 }
 
-fn dedup_by_id<T>(items: &mut Vec<T>, get_id: impl Fn(&T) -> u64) {
+pub(crate) fn dedup_by_id<T>(items: &mut Vec<T>, get_id: impl Fn(&T) -> u64) {
     let mut seen = HashSet::new();
     items.retain(|item| seen.insert(get_id(item)));
 }
@@ -361,6 +370,51 @@ fn dedup_by_id<T>(items: &mut Vec<T>, get_id: impl Fn(&T) -> u64) {
 pub struct StreamData {
     pub tracks: HashMap<u64, Vec<ActivityItem>>,
     pub releases: HashMap<u64, Vec<ReleaseActivityItem>>,
+}
+
+pub async fn fetch_artist_album_releases(
+    client_id: &str, token: Option<&str>, datadome: Option<&str>, artist_id: u64,
+) -> Result<Vec<ReleaseActivityItem>, String> {
+    let initial_url = build_sc_paginated_url(
+        &format!("{}/users/{}/albums", API_V2_BASE, artist_id),
+        client_id,
+    )?;
+
+    let raw_albums: Vec<RawStreamPlaylist> = fetch_all_pages(
+        initial_url.to_string(),
+        token,
+        datadome,
+        &format!("artist_album_releases:user_{}", artist_id),
+        DEFAULT_PAGE_SIZE,
+        |raw: RawStreamPlaylist| Some(raw),
+        |_batch: &[RawStreamPlaylist]| {},
+    )
+    .await?;
+
+    let mut releases: Vec<ReleaseActivityItem> = raw_albums
+        .into_iter()
+        .filter(|p| is_within_30_days(&p.created_at()))
+        .map(|p| {
+            let release_type = resolve_release_type(p.is_album, &p.set_type);
+            let artwork_url = p.resolved_artwork_url();
+            ReleaseActivityItem {
+                created_at: p.created_at(),
+                release: ReleaseInfo {
+                    id: p.id,
+                    title: p.title,
+                    user: p.user,
+                    artwork_url,
+                    track_count: p.track_count,
+                    permalink_url: p.permalink_url,
+                    release_type,
+                },
+                activity_type: ReleaseActivityType::New,
+            }
+        })
+        .collect();
+
+    sort_by_created_at_desc(&mut releases, |i| &i.created_at);
+    Ok(releases)
 }
 
 pub async fn fetch_stream(oauth_token: &str) -> Result<StreamData, ScApiError> {
@@ -699,6 +753,7 @@ mod tests {
             is_album: true,
             set_type: None,
             tracks: vec![RawStreamPlaylistTrack { artwork_url: None }, RawStreamPlaylistTrack { artwork_url: Some("https://track2.jpg".into()) }],
+            created_at: None,
         };
         assert_eq!(playlist.resolved_artwork_url(), Some("https://track2.jpg".into()));
 
@@ -761,5 +816,79 @@ mod tests {
         let dt = time::OffsetDateTime::from_unix_timestamp(sixty_days_ago).unwrap();
         let iso = dt.format(&time::format_description::well_known::Rfc3339).unwrap();
         assert!(!is_within_30_days(&iso));
+    }
+
+    #[test]
+    fn test_resolve_release_type_album() {
+        assert_eq!(resolve_release_type(true, &None), ReleaseType::Album);
+        assert_eq!(resolve_release_type(true, &Some("album".into())), ReleaseType::Album);
+    }
+
+    #[test]
+    fn test_resolve_release_type_ep() {
+        assert_eq!(resolve_release_type(true, &Some("ep".into())), ReleaseType::EP);
+    }
+
+    #[test]
+    fn test_resolve_release_type_single() {
+        assert_eq!(resolve_release_type(true, &Some("single".into())), ReleaseType::Single);
+    }
+
+    #[test]
+    fn test_resolve_release_type_compilation() {
+        assert_eq!(resolve_release_type(true, &Some("compilation".into())), ReleaseType::Compilation);
+    }
+
+    #[test]
+    fn test_resolve_release_type_playlist() {
+        assert_eq!(resolve_release_type(false, &None), ReleaseType::Playlist);
+        assert_eq!(resolve_release_type(false, &Some("ep".into())), ReleaseType::Playlist);
+    }
+
+    fn make_release_activity(id: u64, created_at: &str, activity_type: ReleaseActivityType) -> ReleaseActivityItem {
+        ReleaseActivityItem {
+            release: ReleaseInfo {
+                id,
+                title: format!("Release {}", id),
+                user: UserInfo {
+                    id: 1,
+                    username: "artist".into(),
+                    avatar_url: None,
+                },
+                artwork_url: None,
+                track_count: 5,
+                permalink_url: format!("https://soundcloud.com/artist/sets/release-{}", id),
+                release_type: ReleaseType::Album,
+            },
+            activity_type,
+            created_at: created_at.into(),
+        }
+    }
+
+    #[test]
+    fn test_dedup_releases_stream_wins() {
+        let mut items = vec![
+            make_release_activity(100, "2026-06-01T00:00:00Z", ReleaseActivityType::New),
+            make_release_activity(200, "2026-05-28T00:00:00Z", ReleaseActivityType::Repost),
+            make_release_activity(100, "2026-06-02T00:00:00Z", ReleaseActivityType::New),
+        ];
+        dedup_by_id(&mut items, |i| i.release.id);
+        assert_eq!(items.len(), 2);
+        assert_eq!(items[0].release.id, 100);
+        assert_eq!(items[0].created_at, "2026-06-01T00:00:00Z");
+        assert_eq!(items[1].release.id, 200);
+    }
+
+    #[test]
+    fn test_sort_releases_by_created_at_desc() {
+        let mut items = vec![
+            make_release_activity(1, "2026-05-01T00:00:00Z", ReleaseActivityType::New),
+            make_release_activity(2, "2026-06-01T00:00:00Z", ReleaseActivityType::New),
+            make_release_activity(3, "2026-05-15T00:00:00Z", ReleaseActivityType::New),
+        ];
+        sort_by_created_at_desc(&mut items, |i| &i.created_at);
+        assert_eq!(items[0].release.id, 2);
+        assert_eq!(items[1].release.id, 3);
+        assert_eq!(items[2].release.id, 1);
     }
 }

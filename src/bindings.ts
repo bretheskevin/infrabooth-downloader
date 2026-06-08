@@ -484,6 +484,14 @@ async getArtistPlaylists(artistId: number) : Promise<Result<ArtistPlaylist[], st
     else return { status: "error", error: e  as any };
 }
 },
+async getArtistAlbums(artistId: number) : Promise<Result<ArtistPlaylist[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("get_artist_albums", { artistId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getPlaylistTracks(playlistId: number, secretToken: string | null) : Promise<Result<TrackInfo[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_playlist_tracks", { playlistId, secretToken }) };
@@ -736,6 +744,7 @@ async clearLikedTracksCache() : Promise<Result<null, string>> {
 
 
 export const events = __makeEvents__<{
+artistAlbumsBatchEvent: ArtistAlbumsBatchEvent,
 artistPlaylistsBatchEvent: ArtistPlaylistsBatchEvent,
 artistProfilesBatchEvent: ArtistProfilesBatchEvent,
 downloadProgressEvent: DownloadProgressEvent,
@@ -746,6 +755,7 @@ queueProgressEvent: QueueProgressEvent,
 rekordboxExportProgressEvent: RekordboxExportProgressEvent,
 tracksBatchEvent: TracksBatchEvent
 }>({
+artistAlbumsBatchEvent: "artist-albums-batch-event",
 artistPlaylistsBatchEvent: "artist-playlists-batch-event",
 artistProfilesBatchEvent: "artist-profiles-batch-event",
 downloadProgressEvent: "download-progress-event",
@@ -766,6 +776,7 @@ tracksBatchEvent: "tracks-batch-event"
 export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
 export type ActivityType = "Track" | "Repost"
 export type ActorInfo = { id: number; username: string; avatar_url: string | null; permalink_url: string }
+export type ArtistAlbumsBatchEvent = { entityId: number; albums: ArtistPlaylist[] }
 export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string; secret_token: string | null; duration?: number | null; user?: ArtistPlaylistUser | null }
 export type ArtistPlaylistUser = { id: number; username: string }
 export type ArtistPlaylistsBatchEvent = { entityId: number; playlists: ArtistPlaylist[] }

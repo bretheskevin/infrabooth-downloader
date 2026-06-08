@@ -4,48 +4,59 @@ import { Loader2 } from 'lucide-react';
 import { TrackRowSkeletonList } from '@/components/TrackRowSkeleton';
 import { RefreshButton } from '@/components/ui/refresh-button';
 import { SearchBar } from '@/components/ui/search-bar';
-import { useArtistPlaylists } from '../hooks/useArtistPlaylists';
 import { ViewModeToggle } from '@/components/ViewModeToggle';
 import { CardListView } from '@/components/CardListView';
 import { PlaylistCard } from './PlaylistCard';
 import { PlaylistListRow } from './PlaylistListRow';
 import type { ArtistPlaylist } from '@/bindings';
 
+interface PlaylistGridLabels {
+  error: string;
+  empty: string;
+  search: string;
+  noResults: string;
+  loading: string;
+}
+
 interface PlaylistGridProps {
-  artistId: number;
+  data: ArtistPlaylist[] | undefined;
+  isLoading: boolean;
+  isStreaming?: boolean;
+  error: Error | null;
+  refetch: () => void;
+  labels: PlaylistGridLabels;
   onSelectPlaylist: (playlist: ArtistPlaylist) => void;
 }
 
-export function PlaylistGrid({ artistId, onSelectPlaylist }: PlaylistGridProps) {
+export function PlaylistGrid({ data, isLoading, isStreaming, error, refetch, labels, onSelectPlaylist }: PlaylistGridProps) {
   const { t } = useTranslation();
-  const { data: playlists, isLoading, isStreaming, error, refetch } = useArtistPlaylists(artistId);
   const [search, setSearch] = useState('');
 
   const filtered = useMemo(() => {
-    if (!playlists || !search.trim()) return playlists ?? [];
+    if (!data || !search.trim()) return data ?? [];
     const q = search.toLowerCase();
-    return playlists.filter((p) => p.title.toLowerCase().includes(q));
-  }, [playlists, search]);
+    return data.filter((p) => p.title.toLowerCase().includes(q));
+  }, [data, search]);
 
   if (isLoading) return <TrackRowSkeletonList />;
 
   if (error) {
     return (
       <div className="flex flex-col items-center gap-2 py-12">
-        <p className="text-sm text-muted-foreground">{t('artistProfile.playlistsError')}</p>
+        <p className="text-sm text-muted-foreground">{t(labels.error)}</p>
         <RefreshButton onRefresh={refetch} aria-label={t('common.refresh')} />
       </div>
     );
   }
 
-  if (!playlists || playlists.length === 0) {
-    return <p className="text-sm text-muted-foreground text-center py-12">{t('artistProfile.noPlaylists')}</p>;
+  if (!data || data.length === 0) {
+    return <p className="text-sm text-muted-foreground text-center py-12">{t(labels.empty)}</p>;
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center gap-2">
-        <SearchBar value={search} onChange={setSearch} placeholder={t('artistProfile.searchPlaylists')} className="flex-1" />
+        <SearchBar value={search} onChange={setSearch} placeholder={t(labels.search)} className="flex-1" />
         <ViewModeToggle />
       </div>
       {filtered.length > 0 ? (
@@ -56,12 +67,12 @@ export function PlaylistGrid({ artistId, onSelectPlaylist }: PlaylistGridProps) 
           renderRow={(p) => <PlaylistListRow playlist={p} onClick={() => onSelectPlaylist(p)} />}
         />
       ) : !isStreaming ? (
-        <p className="text-sm text-muted-foreground text-center py-12">{t('artistProfile.noPlaylistResults')}</p>
+        <p className="text-sm text-muted-foreground text-center py-12">{t(labels.noResults)}</p>
       ) : null}
       {isStreaming && (
         <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
           <Loader2 className="h-3 w-3 animate-spin" />
-          <span>{t('common.loadingPlaylists')}</span>
+          <span>{t(labels.loading)}</span>
         </div>
       )}
     </div>

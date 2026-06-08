@@ -10,6 +10,8 @@ import { useIsDownloadEnabled } from '@/features/settings';
 import { useArtistProfile } from '../hooks/useArtistProfile';
 import { useArtistTracks } from '../hooks/useArtistTracks';
 import { useArtistLikedTracks } from '../hooks/useArtistLikedTracks';
+import { useArtistPlaylists } from '../hooks/useArtistPlaylists';
+import { useArtistAlbums } from '../hooks/useArtistAlbums';
 import { ArtistProfileHeader } from './ArtistProfileHeader';
 import { ArtistFollowList } from './ArtistFollowList';
 import { FollowButton } from './FollowButton';
@@ -45,11 +47,14 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
   const isDownloadEnabled = useIsDownloadEnabled();
 
   const isPlaylistsTab = activeTab === 'playlists';
+  const isAlbumsTab = activeTab === 'albums';
   const isLikesTab = activeTab === 'likes';
-  const sortOption: SortOption = isPlaylistsTab || isLikesTab ? 'recent' : activeTab;
+  const sortOption: SortOption = isPlaylistsTab || isAlbumsTab || isLikesTab ? 'recent' : activeTab;
 
   const artistTracks = useArtistTracks(isLikesTab ? null : artistId, sortOption);
   const likedTracks = useArtistLikedTracks(isLikesTab ? artistId : null);
+  const playlistsQuery = useArtistPlaylists(isPlaylistsTab ? artistId : null);
+  const albumsQuery = useArtistAlbums(isAlbumsTab ? artistId : null);
 
   const {
     data: tracksData,
@@ -83,7 +88,7 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
     );
   }
 
-  const canDownload = isDownloadEnabled && !isPlaylistsTab && tracks.length > 0 && !isTracksLoading;
+  const canDownload = isDownloadEnabled && !isPlaylistsTab && !isAlbumsTab && tracks.length > 0 && !isTracksLoading;
   const showOrderToggle = canDownload && tracks.length > 1;
 
   return (
@@ -117,7 +122,39 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
 
       {isPlaylistsTab ? (
         <div className="px-3 flex-1 min-h-0 overflow-y-auto">
-          <PlaylistGrid artistId={artistId} onSelectPlaylist={setSelectedPlaylist} />
+          <PlaylistGrid
+            data={playlistsQuery.data}
+            isLoading={playlistsQuery.isLoading}
+            isStreaming={playlistsQuery.isStreaming}
+            error={playlistsQuery.error}
+            refetch={playlistsQuery.refetch}
+            labels={{
+              error: 'artistProfile.playlistsError',
+              empty: 'artistProfile.noPlaylists',
+              search: 'artistProfile.searchPlaylists',
+              noResults: 'artistProfile.noPlaylistResults',
+              loading: 'common.loadingPlaylists',
+            }}
+            onSelectPlaylist={setSelectedPlaylist}
+          />
+        </div>
+      ) : isAlbumsTab ? (
+        <div className="px-3 flex-1 min-h-0 overflow-y-auto">
+          <PlaylistGrid
+            data={albumsQuery.data}
+            isLoading={albumsQuery.isLoading}
+            isStreaming={albumsQuery.isStreaming}
+            error={albumsQuery.error}
+            refetch={albumsQuery.refetch}
+            labels={{
+              error: 'artistProfile.albumsError',
+              empty: 'artistProfile.noAlbums',
+              search: 'artistProfile.searchAlbums',
+              noResults: 'artistProfile.noAlbumResults',
+              loading: 'common.loadingAlbums',
+            }}
+            onSelectPlaylist={setSelectedPlaylist}
+          />
         </div>
       ) : (
         <TrackListView

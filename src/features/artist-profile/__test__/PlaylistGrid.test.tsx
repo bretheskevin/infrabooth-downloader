@@ -39,44 +39,50 @@ const mockPlaylists: ArtistPlaylist[] = [
   },
 ];
 
-const mockUseArtistPlaylists = vi.fn();
+const defaultLabels = {
+  error: 'artistProfile.playlistsError',
+  empty: 'artistProfile.noPlaylists',
+  search: 'artistProfile.searchPlaylists',
+  noResults: 'artistProfile.noPlaylistResults',
+  loading: 'common.loadingPlaylists',
+};
 
-vi.mock('../hooks/useArtistPlaylists', () => ({
-  useArtistPlaylists: (...args: unknown[]) => mockUseArtistPlaylists(...args),
-}));
+const defaultProps = {
+  data: undefined as ArtistPlaylist[] | undefined,
+  isLoading: false,
+  error: null as Error | null,
+  refetch: vi.fn(),
+  labels: defaultLabels,
+  onSelectPlaylist: vi.fn(),
+};
 
 describe('PlaylistGrid', () => {
   it('renders loading skeleton', () => {
-    mockUseArtistPlaylists.mockReturnValue({ data: undefined, isLoading: true, error: null });
-    const { container } = render(<PlaylistGrid artistId={123} onSelectPlaylist={() => {}} />);
+    const { container } = render(<PlaylistGrid {...defaultProps} isLoading={true} />);
     expect(container.querySelectorAll('[class*="animate-pulse"]').length).toBeGreaterThan(0);
   });
 
   it('renders empty state when no playlists', () => {
-    mockUseArtistPlaylists.mockReturnValue({ data: [], isLoading: false, error: null });
-    render(<PlaylistGrid artistId={123} onSelectPlaylist={() => {}} />);
+    render(<PlaylistGrid {...defaultProps} data={[]} />);
     expect(screen.getByText('artistProfile.noPlaylists')).toBeInTheDocument();
   });
 
   it('renders playlist cards', () => {
-    mockUseArtistPlaylists.mockReturnValue({ data: mockPlaylists, isLoading: false, error: null });
-    render(<PlaylistGrid artistId={123} onSelectPlaylist={() => {}} />);
+    render(<PlaylistGrid {...defaultProps} data={mockPlaylists} />);
     expect(screen.getByText('Playlist One')).toBeInTheDocument();
     expect(screen.getByText('Playlist Two')).toBeInTheDocument();
   });
 
   it('calls onSelectPlaylist when card is clicked', async () => {
-    mockUseArtistPlaylists.mockReturnValue({ data: mockPlaylists, isLoading: false, error: null });
     const onSelect = vi.fn();
-    render(<PlaylistGrid artistId={123} onSelectPlaylist={onSelect} />);
+    render(<PlaylistGrid {...defaultProps} data={mockPlaylists} onSelectPlaylist={onSelect} />);
     await userEvent.click(screen.getByText('Playlist One'));
     expect(onSelect).toHaveBeenCalledWith(mockPlaylists[0]);
   });
 
   it('renders error state with refresh button', () => {
     const refetch = vi.fn();
-    mockUseArtistPlaylists.mockReturnValue({ data: undefined, isLoading: false, error: new Error('fail'), refetch });
-    render(<PlaylistGrid artistId={123} onSelectPlaylist={() => {}} />);
+    render(<PlaylistGrid {...defaultProps} error={new Error('fail')} refetch={refetch} />);
     expect(screen.getByText('artistProfile.playlistsError')).toBeInTheDocument();
   });
 });

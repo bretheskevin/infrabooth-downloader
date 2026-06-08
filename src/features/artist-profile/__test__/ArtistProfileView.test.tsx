@@ -71,6 +71,26 @@ vi.mock('../hooks/useArtistLikedTracks', () => ({
   }),
 }));
 
+vi.mock('../hooks/useArtistPlaylists', () => ({
+  useArtistPlaylists: () => ({
+    data: undefined,
+    isLoading: false,
+    isStreaming: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
+vi.mock('../hooks/useArtistAlbums', () => ({
+  useArtistAlbums: () => ({
+    data: undefined,
+    isLoading: false,
+    isStreaming: false,
+    error: null,
+    refetch: vi.fn(),
+  }),
+}));
+
 vi.mock('@/features/settings', () => ({
   useIsDownloadEnabled: () => true,
 }));
