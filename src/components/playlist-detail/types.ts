@@ -50,8 +50,8 @@ export function fromArtistPlaylist(
     userId,
     duration: p.duration ?? null,
     isOwned: userId != null && userId === authUserId,
-    isPublic: false,
-    isPublicKnown: false,
+    isPublic: p.is_public ?? false,
+    isPublicKnown: true,
   };
 }
 

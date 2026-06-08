@@ -44,7 +44,7 @@ export function PlaylistNarrowHeader({
         </div>
       }
       title={
-        !playlist.isPublic ? (
+        playlist.isPublicKnown && !playlist.isPublic ? (
           <span className="flex items-center gap-1.5 min-w-0">
             <span className="truncate">{playlist.title}</span>
             <PrivatePlaylistLock className="h-4 w-4" />

@@ -78,7 +78,7 @@ export function PlaylistHeroHeader({
             </span>
             <div className="flex items-center gap-2 min-w-0">
               <h1 className="text-[34px] font-bold leading-tight tracking-tight truncate">{playlist.title}</h1>
-              {!playlist.isPublic && <PrivatePlaylistLock className="h-5 w-5" />}
+              {playlist.isPublicKnown && !playlist.isPublic && <PrivatePlaylistLock className="h-5 w-5" />}
             </div>
             <div className="flex items-center gap-2">
               {playlist.userId != null ? (
