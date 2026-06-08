@@ -229,6 +229,9 @@ export const api = {
   searchPlaylists: (query: string, limit: number, offset: number): Promise<PlaylistSearchResponse> =>
     commands.searchPlaylists(query, limit, offset).then(unwrap),
 
+  searchAlbums: (query: string, limit: number, offset: number): Promise<PlaylistSearchResponse> =>
+    commands.searchAlbums(query, limit, offset).then(unwrap),
+
   // Player
   resolvePlaybackUrl: (trackId: number, trackUrl: string): Promise<string> => commands.resolvePlaybackUrl(trackId, trackUrl).then(unwrap),
 

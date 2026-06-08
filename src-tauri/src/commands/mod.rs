@@ -49,7 +49,7 @@ pub use library::{
 };
 
 pub mod search;
-pub use search::{search_playlists, search_tracks, search_users};
+pub use search::{search_albums, search_playlists, search_tracks, search_users};
 
 pub mod player;
 pub use player::resolve_playback_url;

@@ -10,6 +10,7 @@ import { SearchFolderPicker } from './SearchFolderPicker';
 import { useSearchQuery } from '../hooks/useSearchQuery';
 import { useArtistSearchQuery } from '../hooks/useArtistSearchQuery';
 import { usePlaylistSearchQuery } from '../hooks/usePlaylistSearchQuery';
+import { useAlbumSearchQuery } from '../hooks/useAlbumSearchQuery';
 import { useSearchStore, type SearchType } from '../store';
 import { useSettingsStore, useIsDownloadEnabled } from '@/features/settings';
 import { useTrackDownloadState } from '@/hooks/useTrackDownloadState';
@@ -31,6 +32,7 @@ export function SearchTab() {
   const trackSearch = useSearchQuery();
   const artistSearch = useArtistSearchQuery();
   const playlistSearch = usePlaylistSearchQuery();
+  const albumSearch = useAlbumSearchQuery();
 
   const [scanKey, setScanKey] = useState(0);
   const prevInputRef = useRef(inputValue);
@@ -54,6 +56,7 @@ export function SearchTab() {
     tracks: t('search.placeholder'),
     artists: t('search.placeholderArtists'),
     playlists: t('search.placeholderPlaylists'),
+    albums: t('search.placeholderAlbums'),
   }[searchType];
 
   return (
@@ -70,6 +73,9 @@ export function SearchTab() {
             </TabsTrigger>
             <TabsTrigger value="playlists" className="text-xs px-2 py-1">
               {t('search.tabPlaylists')}
+            </TabsTrigger>
+            <TabsTrigger value="albums" className="text-xs px-2 py-1">
+              {t('search.tabAlbums')}
             </TabsTrigger>
           </TabsList>
           {searchType === 'tracks' && <SearchFolderPicker path={downloadPath} onPathChange={setDownloadPath} />}
@@ -115,6 +121,19 @@ export function SearchTab() {
               fetchNextPage={playlistSearch.fetchNextPage}
               error={playlistSearch.error}
               hasSearched={playlistSearch.hasSearched}
+            />
+          </TabsContent>
+          <TabsContent value="albums" className="mt-0">
+            <PlaylistSearchResultList
+              results={albumSearch.results}
+              isLoading={albumSearch.isLoading}
+              isFetchingNextPage={albumSearch.isFetchingNextPage}
+              hasNextPage={albumSearch.hasNextPage}
+              fetchNextPage={albumSearch.fetchNextPage}
+              error={albumSearch.error}
+              hasSearched={albumSearch.hasSearched}
+              emptyStateMessage={t('search.emptyStateAlbums')}
+              noResultsMessage={t('search.noAlbumResults')}
             />
           </TabsContent>
         </div>

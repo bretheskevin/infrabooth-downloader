@@ -11,6 +11,8 @@ interface PlaylistSearchResultListProps {
   fetchNextPage: () => void;
   error: Error | null;
   hasSearched: boolean;
+  emptyStateMessage?: string;
+  noResultsMessage?: string;
 }
 
 export function PlaylistSearchResultList({
@@ -21,6 +23,8 @@ export function PlaylistSearchResultList({
   fetchNextPage,
   error,
   hasSearched,
+  emptyStateMessage,
+  noResultsMessage,
 }: PlaylistSearchResultListProps) {
   const { t } = useTranslation();
 
@@ -30,8 +34,8 @@ export function PlaylistSearchResultList({
       isLoading={isLoading}
       error={error}
       resultsCount={results.length}
-      emptyStateMessage={t('search.emptyStatePlaylists')}
-      noResultsMessage={t('search.noPlaylistResults')}
+      emptyStateMessage={emptyStateMessage ?? t('search.emptyStatePlaylists')}
+      noResultsMessage={noResultsMessage ?? t('search.noPlaylistResults')}
       fallbackErrorMessage={t('search.errorSearch')}
       hasNextPage={hasNextPage}
       isFetchingNextPage={isFetchingNextPage}

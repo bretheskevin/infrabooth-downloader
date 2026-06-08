@@ -111,6 +111,11 @@ pub async fn search_playlists(client_id: &str, query: &str, limit: u32, offset: 
     Ok(PlaylistSearchResponse { collection, total_results })
 }
 
+pub async fn search_albums(client_id: &str, query: &str, limit: u32, offset: u32) -> Result<PlaylistSearchResponse, ScApiError> {
+    let (collection, total_results) = search_api::<RawArtistPlaylist, ArtistPlaylist>(client_id, query, limit, offset, "albums").await?;
+    Ok(PlaylistSearchResponse { collection, total_results })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -336,5 +341,49 @@ mod tests {
         };
         let json = serde_json::to_string(&response).unwrap();
         assert!(json.contains("\"title\":\"Test\""));
+    }
+
+    #[test]
+    fn test_album_search_api_response_deserializes() {
+        let json = r#"{
+            "collection": [
+                {
+                    "id": 456,
+                    "title": "Studio Album",
+                    "artwork_url": "https://i1.sndcdn.com/artworks-xyz.jpg",
+                    "track_count": 12,
+                    "created_at": "2026-03-15T00:00:00Z",
+                    "permalink_url": "https://soundcloud.com/artist/sets/studio-album",
+                    "tracks": []
+                }
+            ],
+            "total_results": 3
+        }"#;
+        let response: ApiSearchResponse<RawArtistPlaylist> = serde_json::from_str(json).unwrap();
+        assert_eq!(response.collection.len(), 1);
+        let album = ArtistPlaylist::from(response.collection.into_iter().next().unwrap());
+        assert_eq!(album.title, "Studio Album");
+        assert_eq!(response.total_results, Some(3));
+    }
+
+    #[test]
+    fn test_album_search_response_serializes() {
+        let response = PlaylistSearchResponse {
+            collection: vec![ArtistPlaylist {
+                id: 2,
+                title: "My Album".into(),
+                artwork_url: None,
+                track_count: 10,
+                created_at: "2026-03-15T00:00:00Z".into(),
+                permalink_url: "https://soundcloud.com/artist/sets/my-album".into(),
+                secret_token: None,
+                duration: None,
+                user: None,
+                is_public: false,
+            }],
+            total_results: Some(1),
+        };
+        let json = serde_json::to_string(&response).unwrap();
+        assert!(json.contains("\"title\":\"My Album\""));
     }
 }

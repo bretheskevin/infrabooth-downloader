@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type SearchType = 'tracks' | 'artists' | 'playlists';
+export type SearchType = 'tracks' | 'artists' | 'playlists' | 'albums';
 
 interface SearchState {
   inputValue: string;

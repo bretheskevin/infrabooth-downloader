@@ -309,6 +309,14 @@ async getOwnedPlaylistsForTrack(trackId: number) : Promise<Result<PlaylistForTra
 async scanExistingTracks(outputDir: string, trackIds: string[]) : Promise<Partial<{ [key in string]: string }>> {
     return await TAURI_INVOKE("scan_existing_tracks", { outputDir, trackIds });
 },
+async searchAlbums(query: string, limit: number, offset: number) : Promise<Result<PlaylistSearchResponse, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("search_albums", { query, limit, offset }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async searchPlaylists(query: string, limit: number, offset: number) : Promise<Result<PlaylistSearchResponse, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("search_playlists", { query, limit, offset }) };

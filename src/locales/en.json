@@ -389,7 +389,11 @@
     "emptyStatePlaylists": "Search for playlists on SoundCloud",
     "noPlaylistResults": "No playlists found",
     "playlistTrackCount_one": "{{count}} track",
-    "playlistTrackCount_other": "{{count}} tracks"
+    "playlistTrackCount_other": "{{count}} tracks",
+    "tabAlbums": "Albums",
+    "placeholderAlbums": "Search for albums...",
+    "emptyStateAlbums": "Search for albums on SoundCloud",
+    "noAlbumResults": "No albums found"
   },
   "changelog": {
     "whatsNew": "What's new in v{{version}}",

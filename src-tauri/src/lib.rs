@@ -17,8 +17,8 @@ use commands::{
     like_track, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, mark_conversation_read, mark_notifications_seen,
     open_in_firefox, quit_rekordbox, refresh_auth, remove_playlist_from_library_cache, remove_track_from_playlist, resolve_library_artwork,
     resolve_message_embed, resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup,
-    scan_existing_tracks, search_playlists, search_tracks, search_users, send_message, sign_out, start_download_queue, test_ffmpeg, unfollow_user,
-    unlike_playlist, unlike_track, update_playlist, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
+    scan_existing_tracks, search_albums, search_playlists, search_tracks, search_users, send_message, sign_out, start_download_queue, test_ffmpeg,
+    unfollow_user, unlike_playlist, unlike_track, update_playlist, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
 };
 use services::cancellation::CancellationState;
 use services::events;
@@ -168,6 +168,7 @@ pub fn run() {
             remove_playlist_from_library_cache,
             get_owned_playlists_for_track,
             scan_existing_tracks,
+            search_albums,
             search_playlists,
             search_tracks,
             search_users,
