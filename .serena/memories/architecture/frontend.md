@@ -32,7 +32,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 ### Library & Social
 - **library** — playlist list/detail, liked tracks tab, downloaded tracks, remove from playlist
 - **search** — track + artist search with infinite scroll
-- **artist-profile** — artist page (banner, tabs: tracks/playlists/likes, follow button), ArtistLink (clickable artist navigation, exported for reuse), followers/followings lists with navigation stack (ArtistFollowList, ArtistFollowRow, useArtistFollowList)
+- **artist-profile** — artist page (banner, tabs: tracks/playlists/albums/likes, follow button), ArtistLink (clickable artist navigation, exported for reuse), followers/followings lists with navigation stack (ArtistFollowList, ArtistFollowRow, useArtistFollowList)
 - **selections** — SoundCloud curated selections display
 
 ### Messaging

@@ -10,7 +10,7 @@ import { PlaylistCard } from './PlaylistCard';
 import { PlaylistListRow } from './PlaylistListRow';
 import type { ArtistPlaylist } from '@/bindings';
 
-interface PlaylistGridLabels {
+export interface PlaylistGridLabels {
   error: string;
   empty: string;
   search: string;

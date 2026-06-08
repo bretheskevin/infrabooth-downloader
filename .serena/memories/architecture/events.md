@@ -9,7 +9,7 @@
 - `PLAYLIST_TRACKS_BATCH` — streamed playlist track batches (TracksBatchEvent)
 - `ARTIST_TRACKS_BATCH` — streamed artist track batches
 - `ARTIST_PLAYLIST_TRACKS_BATCH` — streamed artist playlist track batches
-- `ARTIST_ALBUMS_BATCH` — streamed artist album batches (ArtistAlbumsBatchEvent)
+- `ARTIST_ALBUMS_BATCH` — streamed artist album batches (ArtistAlbumsBatchEvent: entityId + albums: ArtistPlaylist[])
 - `AUTH_STATE_CHANGED` — auth state changes
 - `AUTH_REAUTH_NEEDED` — re-authentication required
 - `OPEN_SETTINGS` — open settings dialog (from menu)

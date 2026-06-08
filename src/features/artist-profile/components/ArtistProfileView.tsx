@@ -17,11 +17,27 @@ import { ArtistFollowList } from './ArtistFollowList';
 import { FollowButton } from './FollowButton';
 import { ProfileBanner } from './ProfileBanner';
 import { ProfileTabs, type ProfileTab } from './ProfileTabs';
-import { PlaylistGrid } from './PlaylistGrid';
+import { PlaylistGrid, type PlaylistGridLabels } from './PlaylistGrid';
 import { PlaylistDetailView, fromArtistPlaylist } from '@/components/playlist-detail';
 import { useAuthStore } from '@/features/auth/store';
 import { useArtistProfileStore } from '../store';
 import type { TrackInfo, ArtistPlaylist, SortOption } from '@/bindings';
+
+const PLAYLIST_LABELS: PlaylistGridLabels = {
+  error: 'artistProfile.playlistsError',
+  empty: 'artistProfile.noPlaylists',
+  search: 'artistProfile.searchPlaylists',
+  noResults: 'artistProfile.noPlaylistResults',
+  loading: 'common.loadingPlaylists',
+};
+
+const ALBUM_LABELS: PlaylistGridLabels = {
+  error: 'artistProfile.albumsError',
+  empty: 'artistProfile.noAlbums',
+  search: 'artistProfile.searchAlbums',
+  noResults: 'artistProfile.noAlbumResults',
+  loading: 'common.loadingAlbums',
+};
 
 interface ArtistProfileViewProps {
   artistId: number;
@@ -51,7 +67,7 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
   const isLikesTab = activeTab === 'likes';
   const sortOption: SortOption = isPlaylistsTab || isAlbumsTab || isLikesTab ? 'recent' : activeTab;
 
-  const artistTracks = useArtistTracks(isLikesTab ? null : artistId, sortOption);
+  const artistTracks = useArtistTracks(isLikesTab || isPlaylistsTab || isAlbumsTab ? null : artistId, sortOption);
   const likedTracks = useArtistLikedTracks(isLikesTab ? artistId : null);
   const playlistsQuery = useArtistPlaylists(isPlaylistsTab ? artistId : null);
   const albumsQuery = useArtistAlbums(isAlbumsTab ? artistId : null);
@@ -128,13 +144,7 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
             isStreaming={playlistsQuery.isStreaming}
             error={playlistsQuery.error}
             refetch={playlistsQuery.refetch}
-            labels={{
-              error: 'artistProfile.playlistsError',
-              empty: 'artistProfile.noPlaylists',
-              search: 'artistProfile.searchPlaylists',
-              noResults: 'artistProfile.noPlaylistResults',
-              loading: 'common.loadingPlaylists',
-            }}
+            labels={PLAYLIST_LABELS}
             onSelectPlaylist={setSelectedPlaylist}
           />
         </div>
@@ -146,13 +156,7 @@ export function ArtistProfileView({ artistId, artistName, onDownloadTracks }: Ar
             isStreaming={albumsQuery.isStreaming}
             error={albumsQuery.error}
             refetch={albumsQuery.refetch}
-            labels={{
-              error: 'artistProfile.albumsError',
-              empty: 'artistProfile.noAlbums',
-              search: 'artistProfile.searchAlbums',
-              noResults: 'artistProfile.noAlbumResults',
-              loading: 'common.loadingAlbums',
-            }}
+            labels={ALBUM_LABELS}
             onSelectPlaylist={setSelectedPlaylist}
           />
         </div>

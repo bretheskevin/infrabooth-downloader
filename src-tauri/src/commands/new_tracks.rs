@@ -1,9 +1,9 @@
 use tauri::Manager;
 
 use crate::commands::{get_optional_auth_and_cid, require_auth_and_cid, require_user_id};
-use crate::services::storage::AuthState;
 use crate::services::new_tracks::{self, ActivityItem, FollowedArtist, NewTracksCache, ReleaseActivityItem, SeenArtistsState};
 use crate::services::paths::get_app_data_dir;
+use crate::services::storage::AuthState;
 
 pub fn seen_state_path(app: &tauri::AppHandle) -> std::path::PathBuf {
     get_app_data_dir(app).unwrap_or_else(|_| std::path::PathBuf::from(".")).join("seen_artists.json")
@@ -145,23 +145,12 @@ pub async fn get_artist_activity(app: tauri::AppHandle, artist_id: u64) -> Resul
 #[tauri::command]
 #[specta::specta]
 pub async fn get_artist_releases(app: tauri::AppHandle, artist_id: u64) -> Result<Vec<ReleaseActivityItem>, String> {
-    let mut stream_releases = get_cached_or_fetch_stream(
-        &app,
-        |cache| cache.get_releases(artist_id),
-        |data| data.releases.get(&artist_id).cloned().unwrap_or_default(),
-    )
-    .await?;
+    let mut stream_releases =
+        get_cached_or_fetch_stream(&app, |cache| cache.get_releases(artist_id), |data| data.releases.get(&artist_id).cloned().unwrap_or_default()).await?;
 
     let datadome = app.state::<AuthState>().get_datadome();
     let (token, client_id) = get_optional_auth_and_cid(&app).await?;
-    let album_releases = new_tracks::fetch_artist_album_releases(
-        &client_id,
-        token.as_deref(),
-        datadome.as_deref(),
-        artist_id,
-    )
-    .await
-    .unwrap_or_default();
+    let album_releases = new_tracks::fetch_artist_album_releases(&client_id, token.as_deref(), datadome.as_deref(), artist_id).await.unwrap_or_default();
 
     stream_releases.extend(album_releases);
     new_tracks::dedup_by_id(&mut stream_releases, |i| i.release.id);

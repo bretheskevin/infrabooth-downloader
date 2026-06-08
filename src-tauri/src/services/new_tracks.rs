@@ -5,10 +5,7 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::models::error::ScApiError;
-use crate::services::http::{
-    build_sc_paginated_url, fetch_all_pages, validate_api_response, RequestBuilderExt, API_V2_BASE,
-    DEFAULT_PAGE_SIZE, HTTP_CLIENT,
-};
+use crate::services::http::{build_sc_paginated_url, fetch_all_pages, validate_api_response, RequestBuilderExt, API_V2_BASE, DEFAULT_PAGE_SIZE, HTTP_CLIENT};
 use crate::services::playlist::TrackInfo;
 
 #[derive(Debug, Deserialize)]
@@ -132,6 +129,20 @@ impl RawStreamPlaylist {
 
     fn created_at(&self) -> String {
         self.created_at.clone().unwrap_or_default()
+    }
+
+    fn into_release_info(self) -> ReleaseInfo {
+        let release_type = resolve_release_type(self.is_album, &self.set_type);
+        let artwork_url = self.resolved_artwork_url();
+        ReleaseInfo {
+            id: self.id,
+            title: self.title,
+            user: self.user,
+            artwork_url,
+            track_count: self.track_count,
+            permalink_url: self.permalink_url,
+            release_type,
+        }
     }
 }
 
@@ -375,10 +386,7 @@ pub struct StreamData {
 pub async fn fetch_artist_album_releases(
     client_id: &str, token: Option<&str>, datadome: Option<&str>, artist_id: u64,
 ) -> Result<Vec<ReleaseActivityItem>, String> {
-    let initial_url = build_sc_paginated_url(
-        &format!("{}/users/{}/albums", API_V2_BASE, artist_id),
-        client_id,
-    )?;
+    let initial_url = build_sc_paginated_url(&format!("{}/users/{}/albums", API_V2_BASE, artist_id), client_id)?;
 
     let raw_albums: Vec<RawStreamPlaylist> = fetch_all_pages(
         initial_url.to_string(),
@@ -395,21 +403,8 @@ pub async fn fetch_artist_album_releases(
         .into_iter()
         .filter(|p| is_within_30_days(&p.created_at()))
         .map(|p| {
-            let release_type = resolve_release_type(p.is_album, &p.set_type);
-            let artwork_url = p.resolved_artwork_url();
-            ReleaseActivityItem {
-                created_at: p.created_at(),
-                release: ReleaseInfo {
-                    id: p.id,
-                    title: p.title,
-                    user: p.user,
-                    artwork_url,
-                    track_count: p.track_count,
-                    permalink_url: p.permalink_url,
-                    release_type,
-                },
-                activity_type: ReleaseActivityType::New,
-            }
+            let created_at = p.created_at();
+            ReleaseActivityItem { created_at, release: p.into_release_info(), activity_type: ReleaseActivityType::New }
         })
         .collect();
 
@@ -448,18 +443,8 @@ pub async fn fetch_stream(oauth_token: &str) -> Result<StreamData, ScApiError> {
                     "playlist-repost" => ReleaseActivityType::Repost,
                     _ => continue,
                 };
-                let release_type = resolve_release_type(raw_playlist.is_album, &raw_playlist.set_type);
                 let user_id = item.user.id;
-                let artwork_url = raw_playlist.resolved_artwork_url();
-                let release = ReleaseInfo {
-                    id: raw_playlist.id,
-                    title: raw_playlist.title,
-                    user: raw_playlist.user,
-                    artwork_url,
-                    track_count: raw_playlist.track_count,
-                    permalink_url: raw_playlist.permalink_url,
-                    release_type,
-                };
+                let release = raw_playlist.into_release_info();
                 let activity = ReleaseActivityItem { release, activity_type, created_at: item.created_at };
                 all_releases.entry(user_id).or_default().push(activity);
             }
@@ -850,11 +835,7 @@ mod tests {
             release: ReleaseInfo {
                 id,
                 title: format!("Release {}", id),
-                user: UserInfo {
-                    id: 1,
-                    username: "artist".into(),
-                    avatar_url: None,
-                },
+                user: UserInfo { id: 1, username: "artist".into(), avatar_url: None },
                 artwork_url: None,
                 track_count: 5,
                 permalink_url: format!("https://soundcloud.com/artist/sets/release-{}", id),
