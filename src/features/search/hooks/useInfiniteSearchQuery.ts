@@ -6,6 +6,16 @@ import { useSearchStore } from '../store';
 const DEBOUNCE_MS = 400;
 const SEARCH_LIMIT = 20;
 
+export interface SearchQueryState<T> {
+  results: T[];
+  isLoading: boolean;
+  isFetchingNextPage: boolean;
+  hasNextPage: boolean;
+  fetchNextPage: () => void;
+  error: Error | null;
+  hasSearched: boolean;
+}
+
 export function useInfiniteSearchQuery<T>({
   queryKey,
   queryFn,

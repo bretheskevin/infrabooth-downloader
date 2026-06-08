@@ -89,49 +89,18 @@ export function SearchTab() {
               downloadVariant="filled"
               downloadedIds={downloadedIds}
             >
-              <SearchResultList
-                results={trackSearch.results}
-                isLoading={trackSearch.isLoading}
-                isFetchingNextPage={trackSearch.isFetchingNextPage}
-                hasNextPage={trackSearch.hasNextPage}
-                fetchNextPage={trackSearch.fetchNextPage}
-                error={trackSearch.error}
-                hasSearched={trackSearch.hasSearched}
-                isUrlMode={trackSearch.isUrlMode}
-              />
+              <SearchResultList query={trackSearch} isUrlMode={trackSearch.isUrlMode} />
             </TrackListProvider>
           </TabsContent>
           <TabsContent value="artists" className="mt-0">
-            <ArtistSearchResultList
-              results={artistSearch.results}
-              isLoading={artistSearch.isLoading}
-              isFetchingNextPage={artistSearch.isFetchingNextPage}
-              hasNextPage={artistSearch.hasNextPage}
-              fetchNextPage={artistSearch.fetchNextPage}
-              error={artistSearch.error}
-              hasSearched={artistSearch.hasSearched}
-            />
+            <ArtistSearchResultList query={artistSearch} />
           </TabsContent>
           <TabsContent value="playlists" className="mt-0">
-            <PlaylistSearchResultList
-              results={playlistSearch.results}
-              isLoading={playlistSearch.isLoading}
-              isFetchingNextPage={playlistSearch.isFetchingNextPage}
-              hasNextPage={playlistSearch.hasNextPage}
-              fetchNextPage={playlistSearch.fetchNextPage}
-              error={playlistSearch.error}
-              hasSearched={playlistSearch.hasSearched}
-            />
+            <PlaylistSearchResultList query={playlistSearch} />
           </TabsContent>
           <TabsContent value="albums" className="mt-0">
             <PlaylistSearchResultList
-              results={albumSearch.results}
-              isLoading={albumSearch.isLoading}
-              isFetchingNextPage={albumSearch.isFetchingNextPage}
-              hasNextPage={albumSearch.hasNextPage}
-              fetchNextPage={albumSearch.fetchNextPage}
-              error={albumSearch.error}
-              hasSearched={albumSearch.hasSearched}
+              query={albumSearch}
               emptyStateMessage={t('search.emptyStateAlbums')}
               noResultsMessage={t('search.noAlbumResults')}
             />
