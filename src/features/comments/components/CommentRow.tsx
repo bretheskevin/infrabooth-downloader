@@ -5,6 +5,7 @@ import { useArtistProfileStore } from '@/features/artist-profile/store';
 import { usePlayerStore } from '@/features/player/store';
 import { formatRelativeTime } from '@/lib/date';
 import { formatDuration } from '@/lib/format';
+import { linkifyText } from '@/lib/linkify';
 
 interface CommentRowProps {
   comment: TrackComment;
@@ -53,7 +54,7 @@ export function CommentRow({ comment, isReply = false, showTimestamp = false, on
           </button>
           <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(comment.createdAt, t)}</span>
         </div>
-        <p className="text-sm text-foreground/90 break-words whitespace-pre-wrap mt-0.5">{comment.body}</p>
+        <p className="text-sm text-foreground/90 break-words whitespace-pre-wrap mt-0.5">{linkifyText(comment.body)}</p>
         {(onReply || showSeekChip) && (
           <div className="flex items-center gap-2 mt-1">
             {onReply && (
