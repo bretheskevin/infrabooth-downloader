@@ -7,6 +7,7 @@ import { useStartupAuth } from '@/features/auth/hooks/useStartupAuth';
 import { useInitializeSettings } from '@/features/settings/hooks/useInitializeSettings';
 import { useLikedTracks } from '@/features/library/hooks/useLikedTracks';
 import { useIsSignedIn } from '@/features/auth/store';
+import { useAutoRefreshFollowedArtists } from '@/hooks/useAutoRefreshFollowedArtists';
 
 interface AppProvidersProps {
   children: React.ReactNode;
@@ -24,6 +25,7 @@ function AppInitializer() {
   useStartupAuth();
   useInitializeSettings();
   useLikedTracks(isSignedIn);
+  useAutoRefreshFollowedArtists(isSignedIn);
   useUpdateCheck();
 
   return null;
