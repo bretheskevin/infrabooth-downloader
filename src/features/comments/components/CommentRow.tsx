@@ -1,4 +1,4 @@
-import { Play } from 'lucide-react';
+import { Play, Reply } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TrackComment } from '@/bindings';
 import { useArtistProfileStore } from '@/features/artist-profile/store';
@@ -10,9 +10,10 @@ interface CommentRowProps {
   comment: TrackComment;
   isReply?: boolean;
   showTimestamp?: boolean;
+  onReply?: () => void;
 }
 
-export function CommentRow({ comment, isReply = false, showTimestamp = false }: CommentRowProps) {
+export function CommentRow({ comment, isReply = false, showTimestamp = false, onReply }: CommentRowProps) {
   const { t } = useTranslation();
   const { user } = comment;
 
@@ -53,16 +54,30 @@ export function CommentRow({ comment, isReply = false, showTimestamp = false }: 
           <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(comment.createdAt, t)}</span>
         </div>
         <p className="text-sm text-foreground/90 break-words whitespace-pre-wrap mt-0.5">{comment.body}</p>
-        {showSeekChip && (
-          <button
-            type="button"
-            onClick={handleSeek}
-            aria-label={t('comments.seekTo', { time: formatDuration(comment.timestampMs) })}
-            className="mt-1 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary hover:bg-primary/20 transition-colors"
-          >
-            <Play className="h-3 w-3 fill-current" />
-            {formatDuration(comment.timestampMs)}
-          </button>
+        {(onReply || showSeekChip) && (
+          <div className="flex items-center gap-2 mt-1">
+            {onReply && (
+              <button
+                type="button"
+                onClick={onReply}
+                className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Reply className="h-3 w-3" />
+                {t('comments.reply')}
+              </button>
+            )}
+            {showSeekChip && (
+              <button
+                type="button"
+                onClick={handleSeek}
+                aria-label={t('comments.seekTo', { time: formatDuration(comment.timestampMs) })}
+                className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary hover:bg-primary/20 transition-colors"
+              >
+                <Play className="h-3 w-3 fill-current" />
+                {formatDuration(comment.timestampMs)}
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>

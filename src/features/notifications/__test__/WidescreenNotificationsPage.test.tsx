@@ -72,7 +72,7 @@ vi.mock('@/components/FilterChips', () => ({
 import { WidescreenNotificationsPage } from '../components/WidescreenNotificationsPage';
 
 function makeActor(username = 'user') {
-  return { id: 1, username, avatar_url: null, permalink_url: '' };
+  return { id: 1, username, avatar_url: null, permalink: username, permalink_url: '' };
 }
 
 function makeTrack(title = 'Track') {

@@ -17,6 +17,7 @@ pub struct ActorInfo {
     pub id: u64,
     pub username: String,
     pub avatar_url: Option<String>,
+    pub permalink: String,
     pub permalink_url: String,
 }
 
@@ -99,12 +100,20 @@ struct RawSoundCloudUser {
     username: String,
     avatar_url: Option<String>,
     #[serde(default)]
+    permalink: Option<String>,
+    #[serde(default)]
     permalink_url: Option<String>,
 }
 
 impl From<RawSoundCloudUser> for ActorInfo {
     fn from(u: RawSoundCloudUser) -> Self {
-        ActorInfo { id: u.id, username: u.username, avatar_url: u.avatar_url, permalink_url: u.permalink_url.unwrap_or_default() }
+        ActorInfo {
+            id: u.id,
+            username: u.username,
+            avatar_url: u.avatar_url,
+            permalink: u.permalink.unwrap_or_default(),
+            permalink_url: u.permalink_url.unwrap_or_default(),
+        }
     }
 }
 
@@ -366,6 +375,7 @@ mod tests {
             "id": 123,
             "username": "TestUser",
             "avatar_url": "https://i1.sndcdn.com/avatars-test-large.jpg",
+            "permalink": "testuser",
             "permalink_url": "https://soundcloud.com/testuser"
         })
     }

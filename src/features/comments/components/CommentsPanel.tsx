@@ -1,6 +1,10 @@
 import { Loader2, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useIsSignedIn } from '@/features/auth/store';
+import { usePlayerStore } from '@/features/player/store';
 import { useTrackComments } from '../hooks/useTrackComments';
+import { usePostComment } from '../hooks/usePostComment';
+import { CommentInput } from './CommentInput';
 import { CommentThreadRow } from './CommentThreadRow';
 
 interface CommentsPanelProps {
@@ -11,6 +15,13 @@ interface CommentsPanelProps {
 export function CommentsPanel({ trackId, variant }: CommentsPanelProps) {
   const { t } = useTranslation();
   const { threads, isLoading, error, isFetchingNextPage, sentinelRef } = useTrackComments(trackId);
+  const { submitComment, isPosting } = usePostComment(trackId);
+  const isSignedIn = useIsSignedIn();
+
+  const handleTopLevelSubmit = (body: string) => {
+    const positionMs = usePlayerStore.getState().positionMs ?? 0;
+    submitComment({ body, timestamp: positionMs, replyToPermalink: null });
+  };
 
   const stateClass = variant === 'rail' ? 'flex-1' : 'py-12';
 
@@ -35,6 +46,11 @@ export function CommentsPanel({ trackId, variant }: CommentsPanelProps) {
       <div className={`flex flex-col items-center justify-center gap-2 py-12 ${stateClass}`}>
         <MessageCircle className="h-8 w-8 text-muted-foreground" />
         <p className="text-sm text-muted-foreground">{t('comments.empty')}</p>
+        {isSignedIn && trackId && (
+          <div className="w-full max-w-sm mt-2">
+            <CommentInput onSubmit={handleTopLevelSubmit} placeholder={t('comments.addComment')} isSubmitting={isPosting} />
+          </div>
+        )}
       </div>
     );
   }
@@ -43,8 +59,13 @@ export function CommentsPanel({ trackId, variant }: CommentsPanelProps) {
 
   return (
     <div className={containerClass}>
+      {isSignedIn && trackId && (
+        <div className="py-3 mb-3 border-b border-border/30">
+          <CommentInput onSubmit={handleTopLevelSubmit} placeholder={t('comments.addComment')} isSubmitting={isPosting} />
+        </div>
+      )}
       {threads.map((thread) => (
-        <CommentThreadRow key={thread.root.id} thread={thread} />
+        <CommentThreadRow key={thread.root.id} thread={thread} submitComment={submitComment} isPosting={isPosting} />
       ))}
       <div ref={sentinelRef} className="h-8 flex items-center justify-center">
         {isFetchingNextPage && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}

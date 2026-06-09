@@ -49,7 +49,13 @@
     "empty": "Aucun commentaire",
     "error": "Impossible de charger les commentaires",
     "seekTo": "Aller à {{time}}",
-    "openComments": "Commentaires"
+    "openComments": "Commentaires",
+    "reply": "Répondre",
+    "replyTo": "Répondre à {{username}}",
+    "addComment": "Ajouter un commentaire...",
+    "send": "Envoyer",
+    "cancel": "Annuler",
+    "postError": "Impossible de poster le commentaire"
   },
   "auth": {
     "signIn": "Se connecter",

@@ -6,7 +6,13 @@ const makeComment = ({ id, timestampMs, createdAt, body = '' }: { id: number; ti
   body,
   createdAt,
   timestampMs,
-  user: { id: id * 100, username: `user-${id}`, avatar_url: null, permalink_url: `https://soundcloud.com/user-${id}` },
+  user: {
+    id: id * 100,
+    username: `user-${id}`,
+    avatar_url: null,
+    permalink: `user-${id}`,
+    permalink_url: `https://soundcloud.com/user-${id}`,
+  },
 });
 
 describe('buildCommentThreads', () => {

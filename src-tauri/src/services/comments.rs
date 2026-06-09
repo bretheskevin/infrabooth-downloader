@@ -2,7 +2,9 @@ use serde::{Deserialize, Serialize};
 use specta::Type;
 
 use crate::models::error::ScApiError;
-use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT};
+use crate::services::http::{
+    extract_datadome_from_response, sanitize_error_body, try_none, validate_api_response, RequestBuilderExt, ANTIBOT_BLOCKED, API_V2_BASE, HTTP_CLIENT,
+};
 use crate::services::notifications::ActorInfo;
 
 // ---------------------------------------------------------------------------
@@ -52,6 +54,8 @@ struct RawCommentUser {
     username: String,
     avatar_url: Option<String>,
     #[serde(default)]
+    permalink: Option<String>,
+    #[serde(default)]
     permalink_url: Option<String>,
 }
 
@@ -60,7 +64,13 @@ struct RawCommentUser {
 // ---------------------------------------------------------------------------
 
 fn convert_user(raw: RawCommentUser) -> ActorInfo {
-    ActorInfo { id: raw.id, username: raw.username, avatar_url: raw.avatar_url, permalink_url: raw.permalink_url.unwrap_or_default() }
+    ActorInfo {
+        id: raw.id,
+        username: raw.username,
+        avatar_url: raw.avatar_url,
+        permalink: raw.permalink.unwrap_or_default(),
+        permalink_url: raw.permalink_url.unwrap_or_default(),
+    }
 }
 
 fn convert_comment(raw: RawComment) -> TrackComment {
@@ -89,6 +99,48 @@ pub async fn fetch_track_comments(oauth_token: &str, client_id: &str, track_id: 
     Ok(CommentsPage { comments, next_offset })
 }
 
+fn build_comment_body(body: &str, reply_to_permalink: Option<&str>) -> String {
+    match reply_to_permalink {
+        Some(permalink) => format!("@{}: {}", permalink, body),
+        None => body.to_string(),
+    }
+}
+
+pub async fn post_comment(
+    oauth_token: &str, client_id: &str, datadome: Option<&str>, track_id: u64, body: &str, timestamp: i64, reply_to_permalink: Option<&str>,
+) -> (Option<String>, Result<TrackComment, ScApiError>) {
+    let full_body = build_comment_body(body, reply_to_permalink);
+
+    let url = format!("{}/tracks/{}/comments?client_id={}", API_V2_BASE, track_id, client_id);
+
+    let encoded_body = format!("body={}&timestamp={}", urlencoding::encode(&full_body), timestamp);
+
+    let response = try_none!(
+        HTTP_CLIENT
+            .post(&url)
+            .with_oauth(Some(oauth_token))
+            .with_datadome(datadome)
+            .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+            .body(encoded_body)
+            .send()
+            .await
+    );
+
+    let new_datadome = extract_datadome_from_response(&response);
+    let status = response.status();
+
+    if !status.is_success() {
+        let body = response.text().await.unwrap_or_default();
+        log::error!("[comments] Failed to post comment on track {}: HTTP {} - {}", track_id, status, body);
+        let sanitized = sanitize_error_body(body);
+        let err = if sanitized == ANTIBOT_BLOCKED { ScApiError::FetchFailed(sanitized) } else { validate_api_response(status).unwrap_err().into() };
+        return (new_datadome, Err(err));
+    }
+
+    let result = response.json::<RawComment>().await.map_err(|_| ScApiError::InvalidResponse).map(convert_comment);
+    (new_datadome, result)
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -107,6 +159,7 @@ mod tests {
                 "id": 42,
                 "username": "CommentUser",
                 "avatar_url": "https://i1.sndcdn.com/avatars-test-large.jpg",
+                "permalink": "commentuser",
                 "permalink_url": "https://soundcloud.com/commentuser"
             }
         })
@@ -133,6 +186,7 @@ mod tests {
                 id: 50,
                 username: "TestUser".to_string(),
                 avatar_url: Some("https://example.com/avatar.jpg".to_string()),
+                permalink: Some("testuser".to_string()),
                 permalink_url: Some("https://soundcloud.com/testuser".to_string()),
             },
         };
@@ -146,9 +200,19 @@ mod tests {
 
     #[test]
     fn test_convert_user_missing_permalink() {
-        let raw = RawCommentUser { id: 99, username: "NoPermalink".to_string(), avatar_url: None, permalink_url: None };
+        let raw = RawCommentUser { id: 99, username: "NoPermalink".to_string(), avatar_url: None, permalink: None, permalink_url: None };
         let actor = convert_user(raw);
         assert_eq!(actor.permalink_url, "");
+    }
+
+    #[test]
+    fn test_build_comment_body_prepends_reply_permalink() {
+        assert_eq!(build_comment_body("thanks!", Some("kandid_ib")), "@kandid_ib: thanks!");
+    }
+
+    #[test]
+    fn test_build_comment_body_no_reply() {
+        assert_eq!(build_comment_body("Great track!", None), "Great track!");
     }
 
     #[test]

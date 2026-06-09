@@ -34,6 +34,7 @@ const baseActor = {
   id: 1,
   username: 'TestUser',
   avatar_url: 'https://example.com/avatar.jpg',
+  permalink: 'testuser',
   permalink_url: 'https://soundcloud.com/testuser',
 };
 

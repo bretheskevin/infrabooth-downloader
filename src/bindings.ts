@@ -380,6 +380,14 @@ async getTrackComments(trackId: number, offset: number | null) : Promise<Result<
     else return { status: "error", error: e  as any };
 }
 },
+async postComment(trackId: number, body: string, timestamp: number, replyToPermalink: string | null) : Promise<Result<TrackComment, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("post_comment", { trackId, body, timestamp, replyToPermalink }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getArtistActivity(artistId: number) : Promise<Result<ActivityItem[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_artist_activity", { artistId }) };
@@ -775,7 +783,7 @@ tracksBatchEvent: "tracks-batch-event"
 
 export type ActivityItem = { track: TrackInfo; activity_type: ActivityType; created_at: string }
 export type ActivityType = "Track" | "Repost"
-export type ActorInfo = { id: number; username: string; avatar_url: string | null; permalink_url: string }
+export type ActorInfo = { id: number; username: string; avatar_url: string | null; permalink: string; permalink_url: string }
 export type ArtistAlbumsBatchEvent = { entityId: number; albums: ArtistPlaylist[] }
 export type ArtistPlaylist = { id: number; title: string; artwork_url: string | null; track_count: number; created_at: string; permalink_url: string; secret_token: string | null; duration?: number | null; user?: ArtistPlaylistUser | null; is_public?: boolean }
 export type ArtistPlaylistUser = { id: number; username: string }

@@ -31,6 +31,7 @@ import {
   type MessagesPage,
   type BackupInfo,
   type CommentsPage,
+  type TrackComment,
 } from '@/bindings';
 import type { LibraryPlaylist, CreatedPlaylist } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
@@ -320,6 +321,9 @@ export const api = {
   // Comments
   getTrackComments: (trackId: number, offset: number | null): Promise<CommentsPage> =>
     commands.getTrackComments(trackId, offset).then(unwrap),
+
+  postComment: (trackId: number, body: string, timestamp: number, replyToPermalink: string | null): Promise<TrackComment> =>
+    commands.postComment(trackId, body, timestamp, replyToPermalink).then(unwrap),
 
   // Direct Messages
   getConversationsPage: (offset: number | null): Promise<ConversationsPage> => commands.getConversationsPage(offset).then(unwrap),

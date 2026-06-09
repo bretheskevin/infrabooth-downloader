@@ -49,7 +49,13 @@
     "empty": "No comments yet",
     "error": "Couldn't load comments",
     "seekTo": "Seek to {{time}}",
-    "openComments": "Comments"
+    "openComments": "Comments",
+    "reply": "Reply",
+    "replyTo": "Reply to {{username}}",
+    "addComment": "Add a comment...",
+    "send": "Send",
+    "cancel": "Cancel",
+    "postError": "Failed to post comment"
   },
   "auth": {
     "signIn": "Sign In",
