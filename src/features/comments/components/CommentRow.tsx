@@ -31,6 +31,7 @@ export function CommentRow({
   const { t } = useTranslation();
   const { user } = comment;
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
   const canDelete = !!onDelete && !!currentUserId && (comment.user.id === currentUserId || trackArtistId === currentUserId);
 
   const avatarSize = isReply ? 24 : 32;
@@ -46,7 +47,12 @@ export function CommentRow({
   const showSeekChip = showTimestamp && comment.timestampMs > 0;
 
   return (
-    <div className={`flex gap-2.5 py-2 ${isReply ? 'pl-10' : ''}`}>
+    <div
+      className={`flex gap-2.5 py-2 ${isReply ? 'pl-10' : ''} ${isExiting ? 'comment-row-exit' : ''}`}
+      onAnimationEnd={(e) => {
+        if (isExiting && e.target === e.currentTarget) onDelete?.(comment.id);
+      }}
+    >
       <img
         src={user.avatar_url ?? undefined}
         alt=""
@@ -110,8 +116,8 @@ export function CommentRow({
                   description={t('comments.deleteConfirmBody')}
                   confirmLabel={t('comments.delete')}
                   onConfirm={() => {
-                    onDelete(comment.id);
                     setConfirmOpen(false);
+                    setIsExiting(true);
                   }}
                 />
               </>

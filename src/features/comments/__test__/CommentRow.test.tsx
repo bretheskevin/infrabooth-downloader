@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { CommentRow } from '../components/CommentRow';
 
@@ -51,13 +51,17 @@ describe('CommentRow delete button', () => {
   it('confirms and calls onDelete', async () => {
     const user = userEvent.setup();
     const onDelete = vi.fn();
-    render(<CommentRow comment={makeComment({ id: 42, userId: 100 })} onDelete={onDelete} currentUserId={100} />);
+    const { container } = render(<CommentRow comment={makeComment({ id: 42, userId: 100 })} onDelete={onDelete} currentUserId={100} />);
     await user.click(screen.getByRole('button', { name: 'comments.delete' }));
     expect(screen.getByText('comments.deleteConfirmTitle')).toBeInTheDocument();
     const dialogButtons = screen.getAllByRole('button', { name: 'comments.delete' });
     const confirmButton = dialogButtons[dialogButtons.length - 1];
     if (!confirmButton) throw new Error('Confirm button not found');
     await user.click(confirmButton);
+
+    const row = container.querySelector('.comment-row-exit');
+    if (!row) throw new Error('Exit animation not applied');
+    fireEvent.animationEnd(row);
     expect(onDelete).toHaveBeenCalledWith(42);
   });
 });

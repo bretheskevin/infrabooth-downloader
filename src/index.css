@@ -187,6 +187,31 @@
   }
 }
 
+@keyframes comment-row-out {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+    max-height: 500px;
+  }
+  55% {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-16px);
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
+.comment-row-exit {
+  animation: comment-row-out 0.28s ease-in forwards;
+  overflow: hidden;
+  pointer-events: none;
+}
+
 .library-slide-in-detail {
   animation: slide-in-from-right 0.25s ease-out;
 }
@@ -242,6 +267,8 @@
   }
 }
 
+/* .comment-row-exit is intentionally omitted: comment deletion is triggered by its
+   onAnimationEnd, so disabling the animation here would silently break delete. */
 @media (prefers-reduced-motion: reduce) {
   .library-slide-in-detail,
   .library-slide-in-list,
