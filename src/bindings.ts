@@ -388,6 +388,14 @@ async postComment(trackId: number, body: string, timestamp: number, replyToPerma
     else return { status: "error", error: e  as any };
 }
 },
+async deleteComment(trackId: number, commentId: number) : Promise<Result<null, string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("delete_comment", { trackId, commentId }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getArtistActivity(artistId: number) : Promise<Result<ActivityItem[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_artist_activity", { artistId }) };

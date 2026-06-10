@@ -18,7 +18,7 @@ export function CommentsSheet({ closing }: { closing?: boolean }) {
       <div className="px-4 py-3 border-b border-border/50">
         <h3 className="text-xs font-semibold">{t('comments.title')}</h3>
       </div>
-      <CommentsPanel trackId={currentTrack?.trackId} variant="sheet" />
+      <CommentsPanel trackId={currentTrack?.trackId} variant="sheet" trackArtistId={currentTrack?.artistId} />
     </div>
   );
 }

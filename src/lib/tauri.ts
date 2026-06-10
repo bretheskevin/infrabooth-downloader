@@ -325,6 +325,12 @@ export const api = {
   postComment: (trackId: number, body: string, timestamp: number, replyToPermalink: string | null): Promise<TrackComment> =>
     commands.postComment(trackId, body, timestamp, replyToPermalink).then(unwrap),
 
+  deleteComment: (trackId: number, commentId: number): Promise<void> =>
+    commands
+      .deleteComment(trackId, commentId)
+      .then(unwrap)
+      .then(() => undefined),
+
   // Direct Messages
   getConversationsPage: (offset: number | null): Promise<ConversationsPage> => commands.getConversationsPage(offset).then(unwrap),
 

@@ -1,22 +1,26 @@
 import { Loader2, MessageCircle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { useIsSignedIn } from '@/features/auth/store';
+import { useAuthStore, useIsSignedIn } from '@/features/auth/store';
 import { usePlayerStore } from '@/features/player/store';
 import { useTrackComments } from '../hooks/useTrackComments';
 import { usePostComment } from '../hooks/usePostComment';
+import { useDeleteComment } from '../hooks/useDeleteComment';
 import { CommentInput } from './CommentInput';
 import { CommentThreadRow } from './CommentThreadRow';
 
 interface CommentsPanelProps {
   trackId: number | undefined;
   variant: 'rail' | 'sheet';
+  trackArtistId: number | undefined;
 }
 
-export function CommentsPanel({ trackId, variant }: CommentsPanelProps) {
+export function CommentsPanel({ trackId, variant, trackArtistId }: CommentsPanelProps) {
   const { t } = useTranslation();
   const { threads, isLoading, error, isFetchingNextPage, sentinelRef } = useTrackComments(trackId);
   const { submitComment, isPosting } = usePostComment(trackId);
   const isSignedIn = useIsSignedIn();
+  const currentUserId = useAuthStore((s) => s.userId);
+  const { deleteComment } = useDeleteComment(trackId);
 
   const handleTopLevelSubmit = (body: string) => {
     const positionMs = usePlayerStore.getState().positionMs ?? 0;
@@ -65,7 +69,15 @@ export function CommentsPanel({ trackId, variant }: CommentsPanelProps) {
         </div>
       )}
       {threads.map((thread) => (
-        <CommentThreadRow key={thread.root.id} thread={thread} submitComment={submitComment} isPosting={isPosting} />
+        <CommentThreadRow
+          key={thread.root.id}
+          thread={thread}
+          submitComment={submitComment}
+          isPosting={isPosting}
+          deleteComment={deleteComment}
+          currentUserId={currentUserId ?? undefined}
+          trackArtistId={trackArtistId}
+        />
       ))}
       <div ref={sentinelRef} className="h-8 flex items-center justify-center">
         {isFetchingNextPage && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}

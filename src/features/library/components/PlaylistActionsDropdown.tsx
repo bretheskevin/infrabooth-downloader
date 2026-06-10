@@ -19,15 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useDeletePlaylist } from '@/hooks/useDeletePlaylist';
 import { Progress } from '@/components/ui/progress';
 import { useRekordboxDetection } from '@/features/rekordbox-export/hooks/useRekordboxDetection';
@@ -93,34 +85,24 @@ interface DeletePlaylistDialogProps {
 function DeletePlaylistDialog({ open, playlistName, playlistId, isDeleting, onDelete, onClose }: DeletePlaylistDialogProps) {
   const { t } = useTranslation();
   return (
-    <AlertDialog
+    <ConfirmDialog
       open={open}
       onOpenChange={(o) => {
-        if (!o && !isDeleting) onClose();
+        if (!o) onClose();
       }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t('playlistMenu.deleteTitle')}</AlertDialogTitle>
-          <AlertDialogDescription>
-            <Trans
-              i18nKey="playlistMenu.deleteDescription"
-              values={{ playlist: playlistName }}
-              components={{ strong: <strong className="font-semibold text-foreground" /> }}
-            />
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onClose} disabled={isDeleting}>
-            {t('playlistMenu.deleteCancel')}
-          </AlertDialogCancel>
-          <Button variant="destructive" onClick={() => void onDelete(playlistId)} disabled={isDeleting}>
-            {isDeleting && <Loader2 className="h-4 w-4 animate-spin" />}
-            {t('playlistMenu.deleteConfirm')}
-          </Button>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      title={t('playlistMenu.deleteTitle')}
+      description={
+        <Trans
+          i18nKey="playlistMenu.deleteDescription"
+          values={{ playlist: playlistName }}
+          components={{ strong: <strong className="font-semibold text-foreground" /> }}
+        />
+      }
+      confirmLabel={t('playlistMenu.deleteConfirm')}
+      cancelLabel={t('playlistMenu.deleteCancel')}
+      isLoading={isDeleting}
+      onConfirm={() => onDelete(playlistId)}
+    />
   );
 }
 

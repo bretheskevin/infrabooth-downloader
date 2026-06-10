@@ -73,7 +73,7 @@ pub use artist::{
 };
 
 pub mod comments;
-pub use comments::{get_track_comments, post_comment};
+pub use comments::{delete_comment, get_track_comments, post_comment};
 
 pub mod follow;
 pub use follow::{check_follow_status, follow_user, unfollow_user};

@@ -1,14 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
 interface DownloadConflictDialogProps {
   open: boolean;
@@ -18,24 +9,18 @@ interface DownloadConflictDialogProps {
 
 export function DownloadConflictDialog({ open, onConfirm, onCancel }: DownloadConflictDialogProps) {
   const { t } = useTranslation();
-
   return (
-    <AlertDialog
+    <ConfirmDialog
       open={open}
       onOpenChange={(isOpen) => {
         if (!isOpen) onCancel();
       }}
-    >
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>{t('library.detail.conflictTitle')}</AlertDialogTitle>
-          <AlertDialogDescription>{t('library.detail.conflictDescription')}</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel onClick={onCancel}>{t('library.detail.conflictCancel')}</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>{t('library.detail.conflictConfirm')}</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+      title={t('library.detail.conflictTitle')}
+      description={t('library.detail.conflictDescription')}
+      confirmLabel={t('library.detail.conflictConfirm')}
+      cancelLabel={t('library.detail.conflictCancel')}
+      variant="default"
+      onConfirm={onConfirm}
+    />
   );
 }

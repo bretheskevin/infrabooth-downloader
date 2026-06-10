@@ -4,6 +4,7 @@ use specta::Type;
 use crate::models::error::ScApiError;
 use crate::services::http::{
     extract_datadome_from_response, sanitize_error_body, try_none, validate_api_response, RequestBuilderExt, ANTIBOT_BLOCKED, API_V2_BASE, HTTP_CLIENT,
+    SC_APP_VERSION,
 };
 use crate::services::notifications::ActorInfo;
 
@@ -106,6 +107,15 @@ fn build_comment_body(body: &str, reply_to_permalink: Option<&str>) -> String {
     }
 }
 
+fn map_comment_error(status: rquest::StatusCode, body: String) -> ScApiError {
+    let sanitized = sanitize_error_body(body);
+    if sanitized == ANTIBOT_BLOCKED {
+        ScApiError::FetchFailed(sanitized)
+    } else {
+        validate_api_response(status).unwrap_err().into()
+    }
+}
+
 pub async fn post_comment(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, track_id: u64, body: &str, timestamp: i64, reply_to_permalink: Option<&str>,
 ) -> (Option<String>, Result<TrackComment, ScApiError>) {
@@ -132,13 +142,30 @@ pub async fn post_comment(
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
         log::error!("[comments] Failed to post comment on track {}: HTTP {} - {}", track_id, status, body);
-        let sanitized = sanitize_error_body(body);
-        let err = if sanitized == ANTIBOT_BLOCKED { ScApiError::FetchFailed(sanitized) } else { validate_api_response(status).unwrap_err().into() };
-        return (new_datadome, Err(err));
+        return (new_datadome, Err(map_comment_error(status, body)));
     }
 
     let result = response.json::<RawComment>().await.map_err(|_| ScApiError::InvalidResponse).map(convert_comment);
     (new_datadome, result)
+}
+
+pub async fn delete_comment(
+    oauth_token: &str, client_id: &str, datadome: Option<&str>, track_id: u64, comment_id: u64,
+) -> (Option<String>, Result<(), ScApiError>) {
+    let url = format!("{}/comments/{}?client_id={}&app_version={}&app_locale=en", API_V2_BASE, comment_id, client_id, SC_APP_VERSION);
+
+    let response = try_none!(HTTP_CLIENT.delete(&url).with_oauth(Some(oauth_token)).with_datadome(datadome).send().await);
+
+    let new_datadome = extract_datadome_from_response(&response);
+    let status = response.status();
+
+    if !status.is_success() {
+        let body = response.text().await.unwrap_or_default();
+        log::error!("[comments] Failed to delete comment {} on track {}: HTTP {} - {}", comment_id, track_id, status, body);
+        return (new_datadome, Err(map_comment_error(status, body)));
+    }
+
+    (new_datadome, Ok(()))
 }
 
 // ---------------------------------------------------------------------------
@@ -256,5 +283,15 @@ mod tests {
         let has_next = raw_page.next_href.is_some() && raw_page.collection.len() == limit as usize;
         let next_offset = if has_next { Some(0 + limit) } else { None };
         assert_eq!(next_offset, None);
+    }
+
+    #[test]
+    fn test_delete_comment_url_format() {
+        let comment_id = 67890u64;
+        let track_id = 12345u64;
+        let url = format!("{}/comments/{}?client_id={}&app_version={}&app_locale=en", API_V2_BASE, comment_id, "test_cid", SC_APP_VERSION);
+        assert!(url.contains("/comments/67890"), "URL must use top-level /comments/ path");
+        assert!(url.contains("client_id=test_cid"), "URL must contain client_id");
+        assert!(!url.contains(&format!("/tracks/{}", track_id)), "URL must NOT contain /tracks/ path");
     }
 }

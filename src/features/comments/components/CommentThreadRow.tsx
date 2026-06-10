@@ -10,9 +10,12 @@ interface CommentThreadRowProps {
   thread: CommentThread;
   submitComment: (params: PostCommentParams) => void;
   isPosting: boolean;
+  deleteComment: (commentId: number) => void;
+  currentUserId: number | undefined;
+  trackArtistId: number | undefined;
 }
 
-export function CommentThreadRow({ thread, submitComment, isPosting }: CommentThreadRowProps) {
+export function CommentThreadRow({ thread, submitComment, isPosting, deleteComment, currentUserId, trackArtistId }: CommentThreadRowProps) {
   const { t } = useTranslation();
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
 
@@ -23,7 +26,15 @@ export function CommentThreadRow({ thread, submitComment, isPosting }: CommentTh
 
   const renderCommentWithReply = (comment: TrackComment, isReply: boolean, showTimestamp: boolean) => (
     <div key={comment.id}>
-      <CommentRow comment={comment} isReply={isReply} showTimestamp={showTimestamp} onReply={() => setReplyingToId(comment.id)} />
+      <CommentRow
+        comment={comment}
+        isReply={isReply}
+        showTimestamp={showTimestamp}
+        onReply={() => setReplyingToId(comment.id)}
+        onDelete={deleteComment}
+        currentUserId={currentUserId}
+        trackArtistId={trackArtistId}
+      />
       {replyingToId === comment.id && (
         <div className="pl-10 pb-2">
           <CommentInput

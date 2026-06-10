@@ -7,10 +7,10 @@ use std::sync::Once;
 
 use commands::{
     add_track_to_playlist, cancel_download_queue, cancel_rekordbox_export, check_auth, check_firefox_installed, check_follow_status, check_for_updates,
-    check_write_permission, clear_library_cache, clear_liked_tracks_cache, create_playlist, delete_playlist, delete_rekordbox_playlist, detect_rekordbox,
-    download_track_full, enable_tls_verify, export_playlist_to_rekordbox, export_to_rekordbox, fetch_related_tracks, follow_user, get_all_artist_tracks,
-    get_app_data_path, get_artist_activity, get_artist_albums, get_artist_followers, get_artist_followings, get_artist_liked_tracks, get_artist_playlists,
-    get_artist_profile, get_artist_releases, get_conversation_messages, get_conversations_page, get_default_download_path,
+    check_write_permission, clear_library_cache, clear_liked_tracks_cache, create_playlist, delete_comment, delete_playlist, delete_rekordbox_playlist,
+    detect_rekordbox, download_track_full, enable_tls_verify, export_playlist_to_rekordbox, export_to_rekordbox, fetch_related_tracks, follow_user,
+    get_all_artist_tracks, get_app_data_path, get_artist_activity, get_artist_albums, get_artist_followers, get_artist_followings, get_artist_liked_tracks,
+    get_artist_playlists, get_artist_profile, get_artist_releases, get_conversation_messages, get_conversations_page, get_default_download_path,
     get_default_rekordbox_data_directory_parent, get_feature_flags, get_followed_artists, get_library_playlists, get_liked_tracks, get_log_path,
     get_notifications_page, get_owned_playlists_for_track, get_playlist_info, get_playlist_tracks, get_rekordbox_playlist_tree, get_selections,
     get_track_comments, get_track_info, get_unread_conversations_flag, get_unread_count, install_update, is_tls_verify_disabled, like_playlist, like_track,
@@ -177,6 +177,7 @@ pub fn run() {
             get_followed_artists,
             get_track_comments,
             post_comment,
+            delete_comment,
             get_artist_activity,
             get_artist_releases,
             mark_artist_seen,

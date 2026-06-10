@@ -1,6 +1,8 @@
-import { Play, Reply } from 'lucide-react';
+import { useState } from 'react';
+import { Play, Reply, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TrackComment } from '@/bindings';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useArtistProfileStore } from '@/features/artist-profile/store';
 import { usePlayerStore } from '@/features/player/store';
 import { formatRelativeTime } from '@/lib/date';
@@ -12,11 +14,24 @@ interface CommentRowProps {
   isReply?: boolean;
   showTimestamp?: boolean;
   onReply?: () => void;
+  onDelete?: (commentId: number) => void;
+  currentUserId?: number;
+  trackArtistId?: number;
 }
 
-export function CommentRow({ comment, isReply = false, showTimestamp = false, onReply }: CommentRowProps) {
+export function CommentRow({
+  comment,
+  isReply = false,
+  showTimestamp = false,
+  onReply,
+  onDelete,
+  currentUserId,
+  trackArtistId,
+}: CommentRowProps) {
   const { t } = useTranslation();
   const { user } = comment;
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const canDelete = !!onDelete && !!currentUserId && (comment.user.id === currentUserId || trackArtistId === currentUserId);
 
   const avatarSize = isReply ? 24 : 32;
 
@@ -55,7 +70,7 @@ export function CommentRow({ comment, isReply = false, showTimestamp = false, on
           <span className="text-xs text-muted-foreground shrink-0">{formatRelativeTime(comment.createdAt, t)}</span>
         </div>
         <p className="text-sm text-foreground/90 break-words whitespace-pre-wrap mt-0.5">{linkifyText(comment.body)}</p>
-        {(onReply || showSeekChip) && (
+        {(onReply || showSeekChip || canDelete) && (
           <div className="flex items-center gap-2 mt-1">
             {onReply && (
               <button
@@ -77,6 +92,29 @@ export function CommentRow({ comment, isReply = false, showTimestamp = false, on
                 <Play className="h-3 w-3 fill-current" />
                 {formatDuration(comment.timestampMs)}
               </button>
+            )}
+            {canDelete && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setConfirmOpen(true)}
+                  aria-label={t('comments.delete')}
+                  className="inline-flex items-center text-xs text-muted-foreground hover:text-destructive transition-colors"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+                <ConfirmDialog
+                  open={confirmOpen}
+                  onOpenChange={setConfirmOpen}
+                  title={t('comments.deleteConfirmTitle')}
+                  description={t('comments.deleteConfirmBody')}
+                  confirmLabel={t('comments.delete')}
+                  onConfirm={() => {
+                    onDelete(comment.id);
+                    setConfirmOpen(false);
+                  }}
+                />
+              </>
             )}
           </div>
         )}

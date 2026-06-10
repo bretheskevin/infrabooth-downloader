@@ -40,7 +40,9 @@
     "sortDesc": "Desc",
     "viewModeGroup": "Affichage",
     "viewModeCard": "Grille",
-    "viewModeList": "Liste"
+    "viewModeList": "Liste",
+    "cancel": "Annuler",
+    "confirm": "Confirmer"
   },
   "comments": {
     "title": "Commentaires",
@@ -55,7 +57,11 @@
     "addComment": "Ajouter un commentaire...",
     "send": "Envoyer",
     "cancel": "Annuler",
-    "postError": "Impossible de poster le commentaire"
+    "postError": "Impossible de poster le commentaire",
+    "delete": "Supprimer",
+    "deleteConfirmTitle": "Supprimer ce commentaire ?",
+    "deleteConfirmBody": "Cette action est irréversible.",
+    "deleteError": "Impossible de supprimer le commentaire"
   },
   "auth": {
     "signIn": "Se connecter",

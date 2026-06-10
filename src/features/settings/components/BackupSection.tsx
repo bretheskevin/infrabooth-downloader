@@ -6,16 +6,7 @@ import { ChevronRight, History, RotateCcw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { api, ApiError } from '@/lib/tauri';
@@ -162,28 +153,18 @@ export function BackupSection() {
         </Collapsible>
       )}
 
-      <AlertDialog
+      <ConfirmDialog
         open={confirmBackup !== null}
         onOpenChange={(open) => {
           if (!open) setConfirmBackup(null);
         }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('settings.backupRestoreTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>{t('settings.backupRestoreDescription', { time: confirmRelativeTime })}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('settings.backupRestoreCancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmRestore}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {t('settings.backupRestoreConfirm')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title={t('settings.backupRestoreTitle')}
+        description={t('settings.backupRestoreDescription', { time: confirmRelativeTime })}
+        confirmLabel={t('settings.backupRestoreConfirm')}
+        cancelLabel={t('settings.backupRestoreCancel')}
+        isLoading={restoreMutation.isPending}
+        onConfirm={handleConfirmRestore}
+      />
     </div>
   );
 }

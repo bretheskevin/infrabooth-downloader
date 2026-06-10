@@ -40,7 +40,9 @@
     "sortDesc": "Desc",
     "viewModeGroup": "View mode",
     "viewModeCard": "Card view",
-    "viewModeList": "List view"
+    "viewModeList": "List view",
+    "cancel": "Cancel",
+    "confirm": "Confirm"
   },
   "comments": {
     "title": "Comments",
@@ -55,7 +57,11 @@
     "addComment": "Add a comment...",
     "send": "Send",
     "cancel": "Cancel",
-    "postError": "Failed to post comment"
+    "postError": "Failed to post comment",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Delete comment?",
+    "deleteConfirmBody": "This action cannot be undone.",
+    "deleteError": "Failed to delete comment"
   },
   "auth": {
     "signIn": "Sign In",
