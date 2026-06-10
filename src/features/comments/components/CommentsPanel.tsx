@@ -23,7 +23,7 @@ export function CommentsPanel({ trackId, variant, trackArtistId }: CommentsPanel
   const { deleteComment } = useDeleteComment(trackId);
 
   const handleTopLevelSubmit = (body: string) => {
-    const positionMs = usePlayerStore.getState().positionMs ?? 0;
+    const positionMs = Math.round(usePlayerStore.getState().positionMs ?? 0);
     submitComment({ body, timestamp: positionMs, replyToPermalink: null });
   };
 
