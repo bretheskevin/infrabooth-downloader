@@ -126,7 +126,22 @@
     "preserveOrder": "Number tracks",
     "preserveOrderDescription": "Prefix filenames with track position (e.g. 01 - Artist - Title)",
     "alreadyDownloaded": "{{count}} already downloaded",
-    "skippedCount": "({{count}} skipped)"
+    "skippedCount": "({{count}} skipped)",
+    "dock": {
+      "title": "Downloads",
+      "preparing": "Preparing...",
+      "progressOf": "{{current}}/{{total}}",
+      "complete": "Complete",
+      "completeWithFailures": "{{completed}} done, {{failed}} failed",
+      "cancelled": "Cancelled",
+      "openDashboard": "View details",
+      "dismiss": "Dismiss"
+    },
+    "dashboard": {
+      "title": "Download Progress",
+      "description": "Track download status",
+      "noActiveDownloads": "No active downloads"
+    }
   },
   "errors": {
     "invalidUrl": "Not a SoundCloud URL",

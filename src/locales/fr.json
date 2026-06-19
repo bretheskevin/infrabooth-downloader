@@ -126,7 +126,22 @@
     "preserveOrder": "Numéroter les pistes",
     "preserveOrderDescription": "Préfixer les noms de fichiers avec la position (ex: 01 - Artiste - Titre)",
     "alreadyDownloaded": "{{count}} déjà téléchargé(s)",
-    "skippedCount": "({{count}} ignoré(s))"
+    "skippedCount": "({{count}} ignoré(s))",
+    "dock": {
+      "title": "Téléchargements",
+      "preparing": "Préparation...",
+      "progressOf": "{{current}}/{{total}}",
+      "complete": "Terminé",
+      "completeWithFailures": "{{completed}} terminés, {{failed}} échoués",
+      "cancelled": "Annulé",
+      "openDashboard": "Voir les détails",
+      "dismiss": "Fermer"
+    },
+    "dashboard": {
+      "title": "Progression des téléchargements",
+      "description": "Statut des téléchargements",
+      "noActiveDownloads": "Aucun téléchargement en cours"
+    }
   },
   "errors": {
     "invalidUrl": "Lien SoundCloud invalide",

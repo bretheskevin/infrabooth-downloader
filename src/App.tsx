@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { AppLayout, type AppPage } from '@/components/layout/AppLayout';
-import { DownloadTab } from '@/features/download';
+import { DownloadTab, DownloadOverlay } from '@/features/download';
 import { LibraryTab } from '@/features/library';
 import { SearchTab } from '@/features/search';
 import { PlayerContainer, PlayerHooksProvider } from '@/features/player';
@@ -275,6 +275,7 @@ function AppContent() {
       hideTabs={!!profileArtistId || isMessagesPageOpen || isNotificationsPageOpen}
     >
       <PageContent activePage={activePage} handleDownloadTracks={handleDownloadTracks} />
+      <DownloadOverlay />
       <PlayerContainer />
       <AppDialogs pendingDownload={pendingDownload} onConfirmReplace={handleConfirmReplace} onCancelReplace={handleCancelReplace} />
     </AppLayout>
