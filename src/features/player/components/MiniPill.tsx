@@ -5,6 +5,7 @@ import { Pause, Play, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { useIsDockVisible } from '@/features/download/store';
 import { usePlayerStore } from '../store';
 import { ScrollingText } from './ScrollingText';
 
@@ -20,6 +21,8 @@ export function MiniPill() {
       durationMs: s.durationMs,
     })),
   );
+
+  const isDockVisible = useIsDockVisible();
 
   const [canInteract, setCanInteract] = useState(false);
   useEffect(() => {
@@ -38,8 +41,10 @@ export function MiniPill() {
   return (
     <div
       className={cn(
-        'fixed bottom-4 right-4 z-50 flex items-center h-12 rounded-full bg-primary shadow-lg shadow-primary/25',
+        'fixed right-4 z-50 flex items-center h-12 rounded-full bg-primary shadow-lg shadow-primary/25',
+        'transition-[bottom] duration-300 ease-out',
         'animate-in fade-in zoom-in-95 duration-200',
+        isDockVisible ? 'bottom-16' : 'bottom-4',
       )}
     >
       {/* Left: artwork + info (click to expand) */}

@@ -88,6 +88,8 @@ Platform-specific naming: `ffmpeg-aarch64-apple-darwin`, `ffmpeg-x86_64-pc-windo
 
 **NEVER commit unless explicitly asked to.** Do not commit as part of implementation workflows, subagent tasks, or skill processes. All commits require explicit user approval. This applies to all agents and subagents — include this instruction in every subagent prompt.
 
+Approval is **per-commit and does not carry over**. A `/kb:clean-commit` invocation (or any "commit this" request) authorizes exactly that one commit. After it lands, return to making changes in the working tree only — do NOT commit the next change, follow-up fix, or related edit until the user explicitly asks again. When in doubt, stop and leave the work uncommitted.
+
 **NEVER use git worktrees.** Always work directly on the current branch. Since we never auto-commit, worktree isolation is unnecessary even if I ask for it.
 
 **When executing plans in batches, do NOT stop between batches to ask for feedback.** Execute all batches continuously until the plan is complete. Only stop if blocked.

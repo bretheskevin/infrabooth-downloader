@@ -1,6 +1,7 @@
-import { useState, useRef, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useQueueStore } from '@/features/queue';
+import { useDockUiStore, useIsDockVisible } from '../store';
 
 export type DockStatus = 'idle' | 'initializing' | 'processing' | 'complete' | 'cancelled';
 
@@ -19,6 +20,8 @@ export interface DownloadDockState {
   closeDashboard: () => void;
   dismissDock: () => void;
 }
+
+const dockActions = () => useDockUiStore.getState();
 
 export function useDownloadDockState(): DownloadDockState {
   const {
@@ -47,14 +50,8 @@ export function useDownloadDockState(): DownloadDockState {
     })),
   );
 
-  const [isDismissed, setIsDismissed] = useState(false);
-  const [isDashboardOpen, setIsDashboardOpen] = useState(false);
-
-  const prevProcessingRef = useRef(false);
-  if (isProcessing && !prevProcessingRef.current && isDismissed) {
-    setIsDismissed(false);
-  }
-  prevProcessingRef.current = isProcessing;
+  const isDashboardOpen = useDockUiStore((s) => s.isDashboardOpen);
+  const isVisible = useIsDockVisible();
 
   const status: DockStatus = isInitializing
     ? 'initializing'
@@ -66,17 +63,14 @@ export function useDownloadDockState(): DownloadDockState {
           : 'complete'
         : 'idle';
 
-  const isActive = status !== 'idle';
-  const isVisible = isActive && !isDismissed;
-
   const doneCount = tracks.reduce((count, track) => (track.status === 'complete' || track.status === 'skipped' ? count + 1 : count), 0);
   const percentage = totalTracks > 0 ? Math.floor((doneCount / totalTracks) * 100) : 0;
 
-  const openDashboard = useCallback(() => setIsDashboardOpen(true), []);
-  const closeDashboard = useCallback(() => setIsDashboardOpen(false), []);
+  const openDashboard = useCallback(() => dockActions().setDashboardOpen(true), []);
+  const closeDashboard = useCallback(() => dockActions().setDashboardOpen(false), []);
   const dismissDock = useCallback(() => {
-    setIsDismissed(true);
-    setIsDashboardOpen(false);
+    dockActions().setDismissed(true);
+    dockActions().setDashboardOpen(false);
   }, []);
 
   return {
