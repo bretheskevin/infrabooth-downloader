@@ -38,7 +38,7 @@ export function MiniPill() {
   return (
     <div
       className={cn(
-        'fixed bottom-4 right-4 z-40 flex items-center h-12 rounded-full bg-primary shadow-lg shadow-primary/25',
+        'fixed bottom-4 right-4 z-50 flex items-center h-12 rounded-full bg-primary shadow-lg shadow-primary/25',
         'animate-in fade-in zoom-in-95 duration-200',
       )}
     >
