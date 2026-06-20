@@ -139,7 +139,6 @@
     },
     "dashboard": {
       "title": "Download Progress",
-      "description": "Track download status",
       "noActiveDownloads": "No active downloads"
     }
   },

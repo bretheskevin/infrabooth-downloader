@@ -139,7 +139,6 @@
     },
     "dashboard": {
       "title": "Progression des téléchargements",
-      "description": "Statut des téléchargements",
       "noActiveDownloads": "Aucun téléchargement en cours"
     }
   },

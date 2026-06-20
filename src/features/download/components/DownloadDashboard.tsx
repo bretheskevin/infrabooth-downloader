@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { ProgressPanel } from '@/features/progress/components/ProgressPanel';
 import { CompletionPanel } from '@/features/completion/components/CompletionPanel';
 import { useQueueStore } from '@/features/queue';
@@ -40,11 +40,10 @@ export function DownloadDashboard({ isOpen, onClose }: DownloadDashboardProps) {
     <Sheet open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <SheetContent
         side={sheetSide}
-        className={isWidescreen ? 'flex flex-col overflow-hidden w-[420px] sm:max-w-[420px]' : 'flex flex-col overflow-hidden h-[85vh]'}
+        className={isWidescreen ? 'flex flex-col overflow-hidden w-[540px] sm:max-w-[540px]' : 'flex flex-col overflow-hidden h-[85vh]'}
       >
         <SheetHeader className="shrink-0">
           <SheetTitle>{t('download.dashboard.title')}</SheetTitle>
-          <SheetDescription>{t('download.dashboard.description')}</SheetDescription>
         </SheetHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto mt-4">
