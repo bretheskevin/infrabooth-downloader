@@ -77,6 +77,7 @@ export function CommentsPanel({ trackId, variant, trackArtistId }: CommentsPanel
           deleteComment={deleteComment}
           currentUserId={currentUserId ?? undefined}
           trackArtistId={trackArtistId}
+          canReply={isSignedIn}
         />
       ))}
       <div ref={sentinelRef} className="h-8 flex items-center justify-center">

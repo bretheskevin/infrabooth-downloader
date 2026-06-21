@@ -13,9 +13,18 @@ interface CommentThreadRowProps {
   deleteComment: (commentId: number) => void;
   currentUserId: number | undefined;
   trackArtistId: number | undefined;
+  canReply: boolean;
 }
 
-export function CommentThreadRow({ thread, submitComment, isPosting, deleteComment, currentUserId, trackArtistId }: CommentThreadRowProps) {
+export function CommentThreadRow({
+  thread,
+  submitComment,
+  isPosting,
+  deleteComment,
+  currentUserId,
+  trackArtistId,
+  canReply,
+}: CommentThreadRowProps) {
   const { t } = useTranslation();
   const [replyingToId, setReplyingToId] = useState<number | null>(null);
 
@@ -30,7 +39,7 @@ export function CommentThreadRow({ thread, submitComment, isPosting, deleteComme
         comment={comment}
         isReply={isReply}
         showTimestamp={showTimestamp}
-        onReply={() => setReplyingToId(comment.id)}
+        onReply={canReply ? () => setReplyingToId(comment.id) : undefined}
         onDelete={deleteComment}
         currentUserId={currentUserId}
         trackArtistId={trackArtistId}

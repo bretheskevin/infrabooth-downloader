@@ -82,13 +82,13 @@ fn convert_comment(raw: RawComment) -> TrackComment {
 // Fetch
 // ---------------------------------------------------------------------------
 
-pub async fn fetch_track_comments(oauth_token: &str, client_id: &str, track_id: u64, limit: u32, offset: u32) -> Result<CommentsPage, ScApiError> {
+pub async fn fetch_track_comments(oauth_token: Option<&str>, client_id: &str, track_id: u64, limit: u32, offset: u32) -> Result<CommentsPage, ScApiError> {
     let url = format!(
         "{}/tracks/{}/comments?sort=newest&threaded=1&client_id={}&limit={}&offset={}&linked_partitioning=1",
         API_V2_BASE, track_id, client_id, limit, offset
     );
 
-    let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
+    let response = HTTP_CLIENT.get(&url).with_oauth(oauth_token).send().await?;
     validate_api_response(response.status())?;
 
     let raw: RawCommentsPage = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
