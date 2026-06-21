@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { useDownloadDockState } from '../useDownloadDockState';
+import { useDockUiStore } from '../../store';
 
 const mockQueueState = {
   isProcessing: false,
@@ -15,14 +16,28 @@ const mockQueueState = {
   cancelledCount: 0,
 };
 
+type QueueListener = (state: typeof mockQueueState, prevState: typeof mockQueueState) => void;
+const { queueSubscribers } = vi.hoisted(() => ({ queueSubscribers: [] as QueueListener[] }));
+
 vi.mock('@/features/queue', async () => {
   const actual = await vi.importActual('@/features/queue');
   const storeFn = vi.fn((selector: (s: typeof mockQueueState) => unknown) => selector(mockQueueState));
   return {
     ...actual,
-    useQueueStore: Object.assign(storeFn, { getState: () => mockQueueState }),
+    useQueueStore: Object.assign(storeFn, {
+      getState: () => mockQueueState,
+      subscribe: vi.fn((listener: QueueListener) => {
+        queueSubscribers.push(listener);
+        return () => {};
+      }),
+    }),
   };
 });
+
+function notifyQueueChange(prev: Partial<typeof mockQueueState>) {
+  const prevState = { ...mockQueueState, ...prev };
+  for (const listener of queueSubscribers) listener({ ...mockQueueState }, prevState);
+}
 
 function resetMocks() {
   mockQueueState.isProcessing = false;
@@ -35,6 +50,7 @@ function resetMocks() {
   mockQueueState.completedCount = 0;
   mockQueueState.failedCount = 0;
   mockQueueState.cancelledCount = 0;
+  useDockUiStore.setState({ isDismissed: false, isDashboardOpen: false });
 }
 
 describe('useDownloadDockState', () => {
@@ -93,6 +109,9 @@ describe('useDownloadDockState', () => {
     mockQueueState.isComplete = false;
     mockQueueState.isProcessing = true;
     mockQueueState.totalTracks = 3;
+    act(() => {
+      notifyQueueChange({ isProcessing: false });
+    });
     rerender();
     expect(result.current.isVisible).toBe(true);
     expect(result.current.status).toBe('processing');
