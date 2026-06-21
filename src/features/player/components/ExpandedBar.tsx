@@ -90,7 +90,7 @@ export function ExpandedBar() {
           </div>
         </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
+        <div className="flex items-center gap-1 mr-4">
           <PreviousButton className="h-7 w-7" iconClassName="h-3.5 w-3.5" />
           <PlayPauseButton className="h-8 w-8" iconClassName="h-3.5 w-3.5" />
           <NextButton className="h-7 w-7" iconClassName="h-3.5 w-3.5" />
@@ -105,7 +105,7 @@ export function ExpandedBar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn('h-7 w-7', isCommentsOpen && 'text-primary bg-primary/10')}
+                className={cn('h-7 w-7 p-1', isCommentsOpen && 'text-primary bg-primary/10')}
                 onClick={() => actions().toggleComments()}
                 aria-label={t('comments.openComments')}
               >
@@ -122,7 +122,7 @@ export function ExpandedBar() {
               <Button
                 variant="ghost"
                 size="icon"
-                className={cn('h-7 w-7', isQueueOpen && 'text-primary bg-primary/10')}
+                className={cn('h-7 w-7 p-1', isQueueOpen && 'text-primary bg-primary/10')}
                 onClick={() => actions().toggleQueue()}
                 aria-label={t('player.queue')}
               >
