@@ -6,6 +6,23 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.30.0] - 2026-06-21
+
+### Added
+
+- Section commentaires sur les morceaux
+- Onglet de recherche d'albums
+- Onglet albums sur les profils d'artistes
+- Bouton d'actualisation des titres aimés
+
+### Changed
+
+- Actualisation automatique des artistes suivis toutes les heures
+
+### Fixed
+
+- Une playlist pouvait afficher un état public/privé incorrect
+- L'application devait être redémarrée pour détecter une nouvelle mise à jour
 ## [1.29.0] - 2026-06-05
 
 ### Added
