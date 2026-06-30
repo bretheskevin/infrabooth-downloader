@@ -1,6 +1,6 @@
 // src-tauri/src/services/library.rs
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Mutex;
 
 use crate::models::error::ScApiError;
@@ -81,6 +81,7 @@ struct LibraryCacheInner {
     playlists: Vec<LibraryPlaylist>,
     complete: bool,
     artwork: HashMap<u64, Option<String>>,
+    track_ids: HashMap<u64, HashSet<u64>>,
 }
 
 pub struct LibraryCache {
@@ -89,7 +90,7 @@ pub struct LibraryCache {
 
 impl Default for LibraryCache {
     fn default() -> Self {
-        Self { inner: Mutex::new(LibraryCacheInner { playlists: Vec::new(), complete: false, artwork: HashMap::new() }) }
+        Self { inner: Mutex::new(LibraryCacheInner { playlists: Vec::new(), complete: false, artwork: HashMap::new(), track_ids: HashMap::new() }) }
     }
 }
 
@@ -129,6 +130,7 @@ impl LibraryCache {
         let mut inner = self.inner.lock().map_err(|e| format!("LibraryCache lock poisoned: {e}"))?;
         inner.playlists.retain(|p| p.id != playlist_id);
         inner.artwork.remove(&playlist_id);
+        inner.track_ids.remove(&playlist_id);
         Ok(())
     }
 
@@ -137,6 +139,7 @@ impl LibraryCache {
         inner.playlists.clear();
         inner.complete = false;
         inner.artwork.clear();
+        inner.track_ids.clear();
     }
 
     pub fn get_artwork(&self, playlist_id: u64) -> Option<Option<String>> {
@@ -147,6 +150,16 @@ impl LibraryCache {
     pub fn set_artwork(&self, playlist_id: u64, url: Option<String>) {
         let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
         inner.artwork.insert(playlist_id, url);
+    }
+
+    pub fn get_track_ids(&self, playlist_id: u64) -> Option<HashSet<u64>> {
+        let inner = self.inner.lock().expect("LibraryCache lock poisoned");
+        inner.track_ids.get(&playlist_id).cloned()
+    }
+
+    pub fn set_track_ids(&self, playlist_id: u64, ids: HashSet<u64>) {
+        let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
+        inner.track_ids.insert(playlist_id, ids);
     }
 
     pub fn get_secret_token(&self, playlist_id: u64) -> Option<String> {
@@ -233,64 +246,67 @@ where
     Ok(all_playlists)
 }
 
+const MAX_CONCURRENT_PLAYLIST_FETCHES: usize = 4;
+
 pub async fn fetch_owned_playlists_for_track(
     oauth_token: &str, client_id: &str, track_id: u64, playlists: &[LibraryPlaylist], cache: &LibraryCache,
 ) -> Result<Vec<PlaylistForTrackPicker>, ScApiError> {
-    use futures::future::join_all;
+    use futures::stream::{self, StreamExt};
 
-    let owned: Vec<_> = playlists.iter().filter(|p| p.is_owned).collect();
+    let owned: Vec<&LibraryPlaylist> = playlists.iter().filter(|p| p.is_owned).collect();
 
-    let futures = owned.iter().map(|playlist| {
-        let oauth = oauth_token.to_string();
-        let cid = client_id.to_string();
-        let pid = playlist.id;
-        let secret = playlist.secret_token.clone();
-        let already_has_artwork = playlist.artwork_url.is_some();
-        let cached_artwork = cache.get_artwork(pid);
+    let to_fetch: Vec<(u64, Option<String>, bool, Option<Option<String>>)> = owned
+        .iter()
+        .filter(|p| cache.get_track_ids(p.id).is_none())
+        .map(|p| (p.id, p.secret_token.clone(), p.artwork_url.is_some(), cache.get_artwork(p.id)))
+        .collect();
 
-        async move {
-            let url = build_playlist_url(pid, &cid, secret.as_deref());
+    let fetched: Vec<(u64, HashSet<u64>, Option<String>, bool)> = stream::iter(to_fetch)
+        .map(|(pid, secret, already_has_artwork, cached_artwork)| {
+            let oauth = oauth_token.to_string();
+            let cid = client_id.to_string();
 
-            let response = HTTP_CLIENT.get(&url).with_oauth(Some(&oauth)).send().await;
+            async move {
+                let url = build_playlist_url(pid, &cid, secret.as_deref());
 
-            match response {
-                Ok(resp) if resp.status().is_success() => {
-                    if let Ok(playlist_data) = resp.json::<PlaylistTracksResponse>().await {
-                        let contains = playlist_data.tracks.iter().any(|t| t.id == track_id);
-                        let was_cached = cached_artwork.is_some();
-                        let resolved_artwork: Option<String> =
-                            if already_has_artwork { None } else { cached_artwork.flatten().or_else(|| playlist_data.first_track_artwork()) };
-                        let should_cache = !already_has_artwork && !was_cached;
-                        Ok((pid, contains, resolved_artwork, should_cache))
-                    } else {
-                        Err(pid)
-                    }
+                match HTTP_CLIENT.get(&url).with_oauth(Some(&oauth)).send().await {
+                    Ok(resp) if resp.status().is_success() => match resp.json::<PlaylistTracksResponse>().await {
+                        Ok(data) => {
+                            let track_set: HashSet<u64> = data.tracks.iter().map(|t| t.id).collect();
+                            let was_cached = cached_artwork.is_some();
+                            let resolved_artwork: Option<String> =
+                                if already_has_artwork { None } else { cached_artwork.flatten().or_else(|| data.first_track_artwork()) };
+                            let should_cache = !already_has_artwork && !was_cached;
+                            Some((pid, track_set, resolved_artwork, should_cache))
+                        }
+                        Err(_) => None,
+                    },
+                    _ => None,
                 }
-                _ => Err(pid),
             }
-        }
-    });
+        })
+        .buffer_unordered(MAX_CONCURRENT_PLAYLIST_FETCHES)
+        .filter_map(|result| async move { result })
+        .collect()
+        .await;
 
-    let results = join_all(futures).await;
+    for (pid, track_set, artwork, should_cache) in fetched {
+        if should_cache {
+            cache.set_artwork(pid, artwork);
+        }
+        cache.set_track_ids(pid, track_set);
+    }
 
     let picker_playlists: Vec<PlaylistForTrackPicker> = owned
         .iter()
-        .zip(results)
-        .map(|(playlist, result)| {
-            let (contains, fallback_artwork) = match &result {
-                Ok((_, contains, artwork, should_cache)) => {
-                    if *should_cache {
-                        cache.set_artwork(playlist.id, artwork.clone());
-                    }
-                    (*contains, artwork.clone())
-                }
-                Err(_) => (false, None),
-            };
+        .map(|playlist| {
+            let contains_track = cache.get_track_ids(playlist.id).is_some_and(|ids| ids.contains(&track_id));
+            let fallback_artwork = cache.get_artwork(playlist.id).flatten();
             PlaylistForTrackPicker {
                 id: playlist.id,
                 title: playlist.title.clone(),
                 artwork_url: playlist.artwork_url.clone().or(fallback_artwork),
-                contains_track: contains,
+                contains_track,
             }
         })
         .collect();

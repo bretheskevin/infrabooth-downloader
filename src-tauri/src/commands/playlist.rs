@@ -4,6 +4,7 @@ use specta::Type;
 use crate::models::url::ValidationResult;
 use crate::models::PlaylistTracksResponse;
 use crate::services::http::{extract_datadome_from_response, sanitize_error_body, RequestBuilderExt, API_V2_BASE};
+use crate::services::library::LibraryCache;
 use crate::services::playlist::build_playlist_url;
 use crate::services::playlist::{fetch_playlist_info, fetch_track_info, PlaylistInfo, TrackInfo};
 use crate::services::storage::AuthState;
@@ -76,7 +77,7 @@ where
 
     let mut put_request = client.put(&put_url).with_oauth(Some(&token)).json(&serde_json::json!({
         "playlist": {
-            "tracks": new_track_ids
+            "tracks": new_track_ids.clone()
         }
     }));
 
@@ -92,6 +93,8 @@ where
         log::error!("[{}] PUT failed: {} - {}", operation, status, body);
         return Err(format!("Failed to update playlist: HTTP {} - {}", status, sanitize_error_body(body)));
     }
+
+    app.state::<LibraryCache>().set_track_ids(playlist_id, new_track_ids.into_iter().collect());
 
     Ok(())
 }
