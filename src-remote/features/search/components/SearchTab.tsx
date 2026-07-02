@@ -1,35 +1,11 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Play, Pause, Plus, Download, Loader2, Check } from 'lucide-react';
-import type { RemoteTrack, RemoteCommand, RemoteState } from '@/lib/remote-protocol';
+import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { t } from '@remote/dict';
-
-interface TrackInfoJson {
-  id: number;
-  title: string;
-  user: { id: number; username: string; avatar_url: string | null };
-  artwork_url: string | null;
-  duration: number;
-  permalink_url: string;
-  waveform_url: string | null;
-  downloadable: boolean;
-  download_url: string | null;
-}
-
-function mapTrack(info: TrackInfoJson): RemoteTrack {
-  return {
-    trackId: info.id,
-    trackUrl: info.permalink_url,
-    title: info.title,
-    artist: info.user.username,
-    artistId: info.user.id,
-    artworkUrl: info.artwork_url,
-    durationMs: info.duration,
-    waveformUrl: info.waveform_url,
-  };
-}
+import { t } from '@remote/lib/i18n';
+import { useTrackSearch } from '../hooks/useTrackSearch';
 
 interface Props {
   host: string;
@@ -40,34 +16,8 @@ interface Props {
 }
 
 export default function SearchTab({ host, token, send, language, state }: Props) {
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<RemoteTrack[]>([]);
-  const [loading, setLoading] = useState(false);
+  const { query, setQuery, results, loading } = useTrackSearch(host, token);
   const [toast, setToast] = useState<string | null>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    if (debounceRef.current !== null) clearTimeout(debounceRef.current);
-    if (!query.trim()) {
-      setResults([]);
-      return;
-    }
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const resp = await fetch(`http://${host}/api/search?q=${encodeURIComponent(query)}&t=${token}`);
-        const data = (await resp.json()) as TrackInfoJson[];
-        setResults(data.map(mapTrack));
-      } catch {
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 400);
-    return () => {
-      if (debounceRef.current !== null) clearTimeout(debounceRef.current);
-    };
-  }, [query, host, token]);
 
   function showToast(msg: string) {
     setToast(msg);

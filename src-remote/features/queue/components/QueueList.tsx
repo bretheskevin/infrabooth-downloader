@@ -2,7 +2,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import type { DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { RemoteState, RemoteCommand } from '@/lib/remote-protocol';
-import { t } from '@remote/dict';
+import { t } from '@remote/lib/i18n';
 import QueueItem from './QueueItem';
 
 interface Props {

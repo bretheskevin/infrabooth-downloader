@@ -4,7 +4,7 @@ import { ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RemoteState, RemoteCommand } from '@/lib/remote-protocol';
-import { t } from '@remote/dict';
+import { t } from '@remote/lib/i18n';
 import QueueList from './QueueList';
 
 interface Props {

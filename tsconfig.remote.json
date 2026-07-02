@@ -26,5 +26,5 @@
     "noUncheckedIndexedAccess": true
   },
   "include": ["src-remote", "src/lib/remote-protocol.ts"],
-  "exclude": ["src-remote/__test__"]
+  "exclude": ["src-remote/**/__test__"]
 }

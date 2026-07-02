@@ -1,5 +1,5 @@
 import { renderHook, waitFor } from '@testing-library/react';
-import { useWaveform } from '@remote/useWaveform';
+import { useWaveform } from '@remote/features/now-playing/hooks/useWaveform';
 
 describe('useWaveform', () => {
   beforeEach(() => {

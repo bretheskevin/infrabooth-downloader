@@ -1,7 +1,7 @@
 import type { RemoteState, RemoteCommand } from '@/lib/remote-protocol';
 import { formatDuration } from '@/lib/format';
-import { t } from '@remote/dict';
-import { useWaveform } from '@remote/useWaveform';
+import { t } from '@remote/lib/i18n';
+import { useWaveform } from '../hooks/useWaveform';
 import Waveform from './Waveform';
 
 interface Props {

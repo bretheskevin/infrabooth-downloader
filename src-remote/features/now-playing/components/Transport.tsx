@@ -3,7 +3,7 @@ import { SkipBack, SkipForward, Play, Pause, Volume2, ListMusic } from 'lucide-r
 import type { RemoteState, RemoteCommand } from '@/lib/remote-protocol';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { t } from '@remote/dict';
+import { t } from '@remote/lib/i18n';
 
 interface Props {
   state: RemoteState;
