@@ -3,6 +3,31 @@
 @tailwind utilities;
 
 :root {
+  --background: 0 0% 98%;
+  --foreground: 240 10% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 10%;
+  --primary: 258 90% 66%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 92%;
+  --secondary-foreground: 240 6% 20%;
+  --muted: 240 5% 94%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 258 90% 96%;
+  --accent-foreground: 258 90% 50%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 258 90% 66%;
+  --radius: 0.5rem;
+}
+
+.dark {
   --background: 240 4% 16%;
   --foreground: 0 0% 93%;
   --card: 240 4% 20%;
@@ -24,7 +49,6 @@
   --border: 240 4% 28%;
   --input: 240 4% 28%;
   --ring: 258 84% 75%;
-  --radius: 0.5rem;
 }
 
 body {
@@ -51,15 +75,15 @@ body {
     to right,
     hsl(var(--primary)) 0%,
     hsl(var(--primary)) var(--vol-pct, 50%),
-    hsl(var(--secondary)) var(--vol-pct, 50%),
-    hsl(var(--secondary)) 100%
+    hsl(var(--primary) / 0.2) var(--vol-pct, 50%),
+    hsl(var(--primary) / 0.2) 100%
   );
 }
 
 .slider::-moz-range-track {
   height: 6px;
   border-radius: 9999px;
-  background: hsl(var(--secondary));
+  background: hsl(var(--primary) / 0.2);
 }
 
 .slider::-moz-range-progress {
@@ -71,19 +95,20 @@ body {
 .slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: hsl(var(--foreground));
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  margin-top: -7px;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--primary) / 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  margin-top: -5px;
 }
 
 .slider::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: hsl(var(--foreground));
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
-  border: none;
+  background: hsl(var(--background));
+  border: 1px solid hsl(var(--primary) / 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 }

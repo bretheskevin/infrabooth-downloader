@@ -3,9 +3,14 @@ import { listen } from '@tauri-apps/api/event';
 import { commands } from '@/bindings';
 import { logger } from '@/lib/logger';
 import { usePlayerStore } from '@/features/player/store';
-import { useSettingsStore } from '@/features/settings/store';
+import { useSettingsStore, type Theme } from '@/features/settings/store';
 import { useRemoteStore } from '../store';
 import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
+
+function resolveTheme(theme: Theme): 'light' | 'dark' {
+  if (theme !== 'system') return theme;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
 
 export function dispatchCommand(cmd: RemoteCommand): void {
   const s = usePlayerStore.getState();
@@ -77,7 +82,7 @@ export function dispatchCommand(cmd: RemoteCommand): void {
 
 export function buildRemoteState(): RemoteState {
   const { state, currentTrack, positionMs, durationMs, volume, queue, cursor } = usePlayerStore.getState();
-  const { language } = useSettingsStore.getState();
+  const { language, theme } = useSettingsStore.getState();
   const { downloadingTrackIds, downloadedTrackIds } = useRemoteStore.getState();
   return {
     state,
@@ -88,6 +93,7 @@ export function buildRemoteState(): RemoteState {
     queue,
     cursor,
     language,
+    theme: resolveTheme(theme),
     downloadingTrackIds,
     downloadedTrackIds,
   };
@@ -166,14 +172,21 @@ export function useRemoteBridge(): void {
     });
 
     const unsubscribeSettings = useSettingsStore.subscribe((next, prev) => {
-      if (next.language !== prev.language) pushState();
+      if (next.language !== prev.language || next.theme !== prev.theme) pushState();
     });
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleSystemThemeChange = () => {
+      if (useSettingsStore.getState().theme === 'system') pushState();
+    };
+    mediaQuery.addEventListener('change', handleSystemThemeChange);
 
     return () => {
       unlisten?.();
       unsubscribe();
       unsubscribeRemote();
       unsubscribeSettings();
+      mediaQuery.removeEventListener('change', handleSystemThemeChange);
       if (throttleTimer) clearTimeout(throttleTimer);
     };
   }, [serverInfo]);

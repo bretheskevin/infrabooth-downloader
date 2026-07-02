@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import { useRemoteSocket } from '@remote/hooks/useRemoteSocket';
+import { useRemoteTheme } from '@remote/hooks/useRemoteTheme';
 import { t } from '@remote/lib/i18n';
 import NowPlaying from '@remote/features/now-playing/components/NowPlaying';
 import Transport from '@remote/features/now-playing/components/Transport';
@@ -20,6 +21,7 @@ export default function RemoteApp({ host, token }: Props) {
   const [tab, setTab] = useState<Tab>('now-playing');
   const [queueOpen, setQueueOpen] = useState(false);
   const language = state?.language ?? 'en';
+  useRemoteTheme(state?.theme);
 
   if (!connected) {
     return (

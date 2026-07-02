@@ -75,6 +75,7 @@ vi.mock('@/features/settings/store', () => ({
   useSettingsStore: {
     getState: vi.fn(() => ({
       language: 'en',
+      theme: 'dark',
       downloadPath: '/downloads',
       remoteControlEnabled: false,
       setRemoteControlEnabled: vi.fn(),
@@ -193,6 +194,7 @@ describe('buildRemoteState', () => {
       queue: [],
       cursor: 0,
       language: 'en',
+      theme: 'dark',
       downloadingTrackIds: [],
       downloadedTrackIds: [],
     });

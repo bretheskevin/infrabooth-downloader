@@ -32,6 +32,7 @@ export interface RemoteState {
   queue: RemoteTrack[];
   cursor: number;
   language: string;
+  theme: 'light' | 'dark';
   downloadingTrackIds: number[];
   downloadedTrackIds: number[];
 }
