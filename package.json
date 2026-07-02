@@ -12,7 +12,7 @@
     "tauri": "tauri",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit && tsc -p tsconfig.remote.json",
+    "typecheck": "tsc --noEmit && tsc -p src-remote/tsconfig.json",
     "lint": "eslint src --ext .ts,.tsx",
     "lint:fix": "eslint src --ext .ts,.tsx --fix",
     "format": "prettier --write 'src/**/*.{ts,tsx,json,css}' '*.{js,json}'",

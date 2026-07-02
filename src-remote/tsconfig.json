@@ -15,8 +15,8 @@
 
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@remote/*": ["./src-remote/*"]
+      "@/*": ["../src/*"],
+      "@remote/*": ["./*"]
     },
 
     "strict": true,
@@ -25,6 +25,5 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src-remote", "src/lib/remote-protocol.ts"],
-  "exclude": ["src-remote/**/__test__"]
+  "include": ["**/*", "../src/lib/remote-protocol.ts"]
 }
