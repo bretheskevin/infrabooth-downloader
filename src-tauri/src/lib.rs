@@ -15,10 +15,11 @@ use commands::{
     get_notifications_page, get_owned_playlists_for_track, get_playlist_info, get_playlist_tracks, get_rekordbox_playlist_tree, get_selections,
     get_track_comments, get_track_info, get_unread_conversations_flag, get_unread_count, install_update, is_tls_verify_disabled, like_playlist, like_track,
     list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, mark_conversation_read, mark_notifications_seen,
-    open_in_firefox, post_comment, quit_rekordbox, refresh_auth, remove_playlist_from_library_cache, remove_track_from_playlist, resolve_library_artwork,
-    resolve_message_embed, resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup,
-    scan_existing_tracks, search_albums, search_playlists, search_tracks, search_users, send_message, sign_out, start_download_queue, test_ffmpeg,
-    unfollow_user, unlike_playlist, unlike_track, update_playlist, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
+    open_in_firefox, post_comment, push_remote_state, quit_rekordbox, refresh_auth, remove_playlist_from_library_cache, remove_track_from_playlist,
+    resolve_library_artwork, resolve_message_embed, resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice,
+    restore_rekordbox_backup, scan_existing_tracks, search_albums, search_playlists, search_tracks, search_users, send_message, sign_out, start_download_queue,
+    start_remote_server, stop_remote_server, test_ffmpeg, unfollow_user, unlike_playlist, unlike_track, update_playlist, validate_download_path,
+    validate_soundcloud_url, RekordboxExportCancellation,
 };
 use services::cancellation::CancellationState;
 use services::events;
@@ -224,6 +225,9 @@ pub fn run() {
             send_message,
             get_liked_tracks,
             clear_liked_tracks_cache,
+            start_remote_server,
+            stop_remote_server,
+            push_remote_state,
         ]);
 
     // Export TypeScript bindings in debug mode
@@ -250,6 +254,7 @@ pub fn run() {
         .manage(CancellationState::default())
         .manage(RekordboxExportCancellation::default())
         .manage(Arc::new(RateLimitChoiceState::default()))
+        .manage(services::remote::RemoteServerState::default())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);

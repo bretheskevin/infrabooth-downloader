@@ -10,7 +10,7 @@ models/         — Shared types (error.rs, track.rs, playlist.rs, url.rs, artis
 ```
 
 ## Commands (18 modules)
-auth, comments, download, ffmpeg, playlist, settings, updater, library, search, player, selections, new_tracks, related, artist, follow, rekordbox, messages, like
+auth, comments, download, ffmpeg, playlist, settings, updater, library, search, player, selections, new_tracks, related, artist, follow, rekordbox, messages, like, remote
 
 ## Services (33 modules)
 ### Core Download Pipeline
@@ -38,6 +38,7 @@ auth, comments, download, ffmpeg, playlist, settings, updater, library, search, 
 ### SoundCloud Features
 - `artist.rs` — profile fetch, all tracks, followings count, URL resolution
 - `follow.rs` — follow/unfollow with HMAC signature (matches SC JS implementation), followers/followings list fetching
+- `remote.rs` — axum HTTP/WS server for mobile remote control; `RemoteServerState` (Mutex<Option<RunningServer>>), `start_server`, `stop_server`, `broadcast_state`; commands: `start_remote_server`, `stop_remote_server`, `push_remote_state`; serves `remote-dist/` via rust-embed; WS token-auth forwards text messages as `remote-command` Tauri events; LAN IP via `local-ip-address`
 - `search.rs` — track + user search via API v2
 - `library.rs` — user playlists with caching (LibraryCache), owned playlist detection
 - `selections.rs` — SoundCloud curated selections/mixes (cached)

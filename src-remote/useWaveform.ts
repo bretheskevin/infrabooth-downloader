@@ -1,20 +1,16 @@
 import { useState, useEffect } from 'react';
-import { logger } from '@/lib/logger';
 import { fetchWaveformSamples } from '@/lib/waveform';
 
 export function useWaveform(waveformUrl: string | null) {
   const [samples, setSamples] = useState<number[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (!waveformUrl) {
       setSamples(null);
-      setIsLoading(false);
       return;
     }
 
     const controller = new AbortController();
-    setIsLoading(true);
 
     fetchWaveformSamples(waveformUrl, controller.signal)
       .then((fetched) => {
@@ -22,12 +18,8 @@ export function useWaveform(waveformUrl: string | null) {
       })
       .catch((err: unknown) => {
         if (err instanceof Error && err.name !== 'AbortError') {
-          void logger.warn(`Failed to fetch waveform: ${err.message}`);
           setSamples(null);
         }
-      })
-      .finally(() => {
-        setIsLoading(false);
       });
 
     return () => {
@@ -35,5 +27,5 @@ export function useWaveform(waveformUrl: string | null) {
     };
   }, [waveformUrl]);
 
-  return { samples, isLoading };
+  return { samples };
 }

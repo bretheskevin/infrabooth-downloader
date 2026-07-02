@@ -31,6 +31,7 @@ pub const ARTIST_ALBUMS_BATCH: &str = "artist-albums-batch";
 pub const LIBRARY_PLAYLISTS_BATCH: &str = "library-playlists-batch";
 pub const ARTIST_FOLLOWERS_BATCH: &str = "artist-followers-batch";
 pub const ARTIST_FOLLOWINGS_BATCH: &str = "artist-followings-batch";
+pub const REMOTE_COMMAND: &str = "remote-command";
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]

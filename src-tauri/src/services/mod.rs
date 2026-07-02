@@ -14,6 +14,7 @@ pub mod oauth;
 pub mod paths;
 pub mod pipeline;
 pub mod rate_limit_choice;
+pub mod remote;
 
 pub mod artist;
 pub mod artist_playlists;

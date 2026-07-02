@@ -218,6 +218,15 @@
     "categoryGeneral": "Général",
     "categoryPlaylists": "Playlists",
     "categoryRekordbox": "Rekordbox",
+    "categoryRemote": "Télécommande",
+    "remote": {
+      "enable": "Activer la télécommande",
+      "enableDescription": "Contrôlez la lecture depuis votre téléphone sur le même réseau",
+      "startError": "Impossible de démarrer le serveur distant",
+      "copyUrl": "Copier l'URL",
+      "urlCopied": "URL copiée dans le presse-papiers",
+      "scanInstructions": "Scannez ce QR code avec votre téléphone pour ouvrir la télécommande"
+    },
     "concurrentDownloads": "Téléchargements simultanés",
     "concurrentDownloadsDescription": "Nombre de pistes à télécharger simultanément (1-10)",
     "preserveOrder": "Numéroter les pistes",

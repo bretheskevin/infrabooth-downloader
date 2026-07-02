@@ -11,6 +11,7 @@ vi.mock('react-i18next', () => ({
         'settings.categoryGeneral': 'General',
         'settings.categoryPlaylists': 'Playlists',
         'settings.categoryRekordbox': 'Rekordbox',
+        'settings.categoryRemote': 'Remote Control',
         'settings.categoryAbout': 'About',
       };
       return translations[key] || key;
@@ -77,11 +78,12 @@ describe('SettingsDialog', () => {
     expect(tablist).toHaveAttribute('aria-orientation', 'vertical');
 
     const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(4);
+    expect(tabs).toHaveLength(5);
     expect(tabs[0]).toHaveTextContent('General');
     expect(tabs[1]).toHaveTextContent('Playlists');
     expect(tabs[2]).toHaveTextContent('Rekordbox');
-    expect(tabs[3]).toHaveTextContent('About');
+    expect(tabs[3]).toHaveTextContent('Remote Control');
+    expect(tabs[4]).toHaveTextContent('About');
   });
 
   it('shows General settings by default with correct aria-selected', () => {
@@ -147,6 +149,10 @@ describe('SettingsDialog', () => {
     // ArrowDown again moves to Rekordbox
     fireEvent.keyDown(tablist, { key: 'ArrowDown' });
     expect(screen.getByRole('tab', { name: /Rekordbox/ })).toHaveAttribute('aria-selected', 'true');
+
+    // ArrowDown again moves to Remote Control
+    fireEvent.keyDown(tablist, { key: 'ArrowDown' });
+    expect(screen.getByRole('tab', { name: /Remote Control/ })).toHaveAttribute('aria-selected', 'true');
 
     // ArrowDown again moves to About
     fireEvent.keyDown(tablist, { key: 'ArrowDown' });

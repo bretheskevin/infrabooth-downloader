@@ -15,7 +15,7 @@
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5973",
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run build:remote && npm run dev",
     "beforeBuildCommand": "npm run build"
   },
   "app": {

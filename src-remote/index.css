@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 4% 16%;
+  --foreground: 0 0% 93%;
+  --card: 240 4% 20%;
+  --card-foreground: 0 0% 93%;
+  --popover: 240 4% 20%;
+  --popover-foreground: 0 0% 93%;
+  --primary: 258 84% 75%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 26%;
+  --secondary-foreground: 0 0% 93%;
+  --muted: 240 5% 26%;
+  --muted-foreground: 240 6% 70%;
+  --accent: 240 5% 26%;
+  --accent-foreground: 0 0% 93%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --border: 240 4% 28%;
+  --input: 240 4% 28%;
+  --ring: 258 84% 75%;
+  --radius: 0.5rem;
+}
+
+body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  overscroll-behavior: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+  outline: none;
+}
+
+.slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    hsl(var(--primary)) 0%,
+    hsl(var(--primary)) var(--vol-pct, 50%),
+    hsl(var(--secondary)) var(--vol-pct, 50%),
+    hsl(var(--secondary)) 100%
+  );
+}
+
+.slider::-moz-range-track {
+  height: 6px;
+  border-radius: 9999px;
+  background: hsl(var(--secondary));
+}
+
+.slider::-moz-range-progress {
+  height: 6px;
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(var(--foreground));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  margin-top: -7px;
+}
+
+.slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: hsl(var(--foreground));
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  border: none;
+}

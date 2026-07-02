@@ -5,6 +5,7 @@ import { DownloadTab, DownloadOverlay } from '@/features/download';
 import { LibraryTab } from '@/features/library';
 import { SearchTab } from '@/features/search';
 import { PlayerContainer, PlayerHooksProvider } from '@/features/player';
+import { useRemoteBridge } from '@/features/remote';
 import { AppDialogs } from '@/components/AppDialogs';
 import { AppProviders } from '@/providers/AppProviders';
 import { useLibraryDownload } from '@/features/queue';
@@ -282,10 +283,16 @@ function AppContent() {
   );
 }
 
+function RemoteBridgeProvider() {
+  useRemoteBridge();
+  return null;
+}
+
 export function App() {
   return (
     <AppProviders>
       <PlayerHooksProvider />
+      <RemoteBridgeProvider />
       <AppContent />
     </AppProviders>
   );

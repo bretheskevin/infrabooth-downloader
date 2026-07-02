@@ -753,6 +753,30 @@ async clearLikedTracksCache() : Promise<Result<null, string>> {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async startRemoteServer() : Promise<Result<RemoteServerInfo, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("start_remote_server") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async stopRemoteServer() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("stop_remote_server") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async pushRemoteState(stateJson: string) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("push_remote_state", { stateJson }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -878,6 +902,7 @@ export type ReleaseActivityItem = { release: ReleaseInfo; activity_type: Release
 export type ReleaseActivityType = "New" | "Repost"
 export type ReleaseInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; permalink_url: string; release_type: ReleaseType }
 export type ReleaseType = "Album" | "EP" | "Single" | "Compilation" | "Playlist"
+export type RemoteServerInfo = { url: string; port: number; token: string }
 export type ResolvedLink = { kind: string; user_id: number | null; username: string | null }
 export type SearchResponse = { collection: TrackInfo[]; total_results: number | null }
 export type Selection = { id: string; title: string; shortTitle: string; artworkUrl: string | null; trackCount: number; tracks: TrackInfo[] }

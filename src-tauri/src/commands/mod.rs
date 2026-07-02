@@ -95,4 +95,7 @@ pub use messages::{
     get_conversation_messages, get_conversations_page, get_unread_conversations_flag, mark_conversation_read, resolve_message_embed, send_message,
 };
 
+pub mod remote;
+pub use remote::{push_remote_state, start_remote_server, stop_remote_server};
+
 pub use crate::services::paths::persist_json;

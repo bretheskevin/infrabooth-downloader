@@ -6,7 +6,6 @@
     "module": "ESNext",
     "skipLibCheck": true,
 
-    /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
@@ -14,20 +13,18 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    /* Path Aliases */
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@remote/*": ["./src-remote/*"]
     },
 
-    /* Linting - Strict Mode */
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": true
   },
-  "include": ["src"],
-  "exclude": ["src/bindings.ts", "src-remote"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": ["src-remote", "src/lib/remote-protocol.ts"],
+  "exclude": ["src-remote/__test__"]
 }

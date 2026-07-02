@@ -55,6 +55,13 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - **new-albums** — new albums feature
 
 ### Settings & System
+- **remote** — phone remote control bridge
+  - Store: `useRemoteStore` (serverInfo, starting, enable/disable via raw invoke)
+  - Hook: `useRemoteBridge` — auto-start, Tauri `remote-command` event listener, player store subscription with 500ms position-throttle, state push via `invoke('push_remote_state', ...)`
+  - Component: `RemoteControlSettings` (QR code via `react-qr-code`, URL copy, toggle with Loader2 spinner)
+  - Protocol types: `src/lib/remote-protocol.ts` (RemoteCommand, RemoteTrack, RemoteState)
+  - Settings: `remoteControlEnabled: boolean` persisted in settings store
+  - `RemoteBridgeProvider` renderless component mounted in `App` alongside `PlayerHooksProvider`
 - **rekordbox-export** — export playlists to Rekordbox (TrackListActionsDropdown, ExportPhaseSection, useRekordboxExport with cancellation + download progress, useRekordboxDetection)
 - **settings** — settings dialog with sidebar nav (General, Playlists, Rekordbox, About)
   - Sections: DownloadLocation, Language, Theme, ConcurrentDownloads, StreamMode, Crossfade, PlaylistOrder, RekordboxSettings (status + manual path), BackupSection (restore with confirmation)

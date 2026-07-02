@@ -52,6 +52,10 @@ rusqlite = { version = "0.31", features = ["bundled-sqlcipher"] }
 sysinfo = "0.38"
 quick-xml = { version = "0.39", features = ["serialize"] }
 rand = "0.10"
+axum = { version = "0.8", features = ["ws"] }
+local-ip-address = "0.6"
+rust-embed = { version = "8", features = ["debug-embed"] }
+mime_guess = "2"
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

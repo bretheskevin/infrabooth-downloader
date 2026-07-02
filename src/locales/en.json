@@ -218,6 +218,15 @@
     "categoryGeneral": "General",
     "categoryPlaylists": "Playlists",
     "categoryRekordbox": "Rekordbox",
+    "categoryRemote": "Remote Control",
+    "remote": {
+      "enable": "Enable Remote Control",
+      "enableDescription": "Control playback from your phone on the same network",
+      "startError": "Failed to start remote server",
+      "copyUrl": "Copy URL",
+      "urlCopied": "URL copied to clipboard",
+      "scanInstructions": "Scan this QR code with your phone to open the remote control"
+    },
     "concurrentDownloads": "Concurrent downloads",
     "concurrentDownloadsDescription": "Number of tracks to download simultaneously (1-10)",
     "preserveOrder": "Number tracks",

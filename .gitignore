@@ -7,6 +7,9 @@ node_modules/
 # Build output
 dist/
 
+# Remote control mobile app build output (embedded via rust-embed at compile time)
+src-tauri/remote-dist/
+
 # Environment files with secrets
 .env
 .env.local
