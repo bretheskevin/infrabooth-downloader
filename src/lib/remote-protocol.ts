@@ -19,7 +19,7 @@ export type RemoteCommand =
   | { type: 'skipTo'; index: number }
   | { type: 'removeFromQueue'; index: number }
   | { type: 'reorderQueue'; fromIndex: number; toIndex: number }
-  | { type: 'playTrack'; track: RemoteTrack }
+  | { type: 'playTracks'; tracks: RemoteTrack[]; startIndex: number }
   | { type: 'queueTrack'; track: RemoteTrack }
   | { type: 'downloadTrack'; track: RemoteTrack };
 

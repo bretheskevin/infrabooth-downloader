@@ -14,7 +14,7 @@ use specta::Type;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::{broadcast, oneshot, watch, Mutex};
 
-use crate::services::{client_id, events, search};
+use crate::services::{client_id, events, library, playlist, search};
 
 #[derive(Embed)]
 #[folder = "remote-dist/"]
@@ -57,6 +57,28 @@ struct TokenQuery {
 #[derive(Deserialize)]
 struct SearchQuery {
     q: String,
+    #[serde(alias = "t")]
+    token: String,
+}
+
+#[derive(Deserialize)]
+struct LibraryQuery {
+    #[serde(alias = "t")]
+    token: String,
+}
+
+#[derive(Deserialize)]
+struct PlaylistTracksQuery {
+    id: u64,
+    secret: Option<String>,
+    #[serde(alias = "t")]
+    token: String,
+}
+
+#[derive(Deserialize)]
+struct LibraryArtworkQuery {
+    id: u64,
+    secret: Option<String>,
     #[serde(alias = "t")]
     token: String,
 }
@@ -157,6 +179,74 @@ async fn search_handler(AxumState(state): AxumState<AppState>, Query(params): Qu
     }
 }
 
+async fn library_handler(AxumState(state): AxumState<AppState>, Query(params): Query<LibraryQuery>) -> impl IntoResponse {
+    if !token_matches(&params.token, &state.token) {
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+    }
+
+    let (oauth_token, cid) = match crate::commands::require_auth_and_cid(&state.app_handle).await {
+        Ok(pair) => pair,
+        Err(e) => {
+            log::error!("[remote] library auth: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
+        }
+    };
+
+    let cache = state.app_handle.state::<library::LibraryCache>();
+    if let Some(playlists) = cache.get_if_complete_enriched() {
+        return Json(playlists).into_response();
+    }
+
+    match library::fetch_all_library_pages(&oauth_token, &cid, |_| {}).await {
+        Ok(playlists) => {
+            let enriched = cache.set_and_enrich(playlists);
+            Json(enriched).into_response()
+        }
+        Err(e) => {
+            log::error!("[remote] library fetch: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+        }
+    }
+}
+
+async fn playlist_tracks_handler(AxumState(state): AxumState<AppState>, Query(params): Query<PlaylistTracksQuery>) -> impl IntoResponse {
+    if !token_matches(&params.token, &state.token) {
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+    }
+
+    let (oauth_token, _cid) = match crate::commands::get_optional_auth_and_cid(&state.app_handle).await {
+        Ok(pair) => pair,
+        Err(e) => {
+            log::error!("[remote] playlist-tracks auth: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
+        }
+    };
+
+    let resolved_secret = params.secret.or_else(|| state.app_handle.state::<library::LibraryCache>().get_secret_token(params.id));
+
+    match playlist::fetch_playlist_by_id(params.id, resolved_secret.as_deref(), oauth_token.as_deref(), |_| {}).await {
+        Ok(tracks) => Json(tracks).into_response(),
+        Err(e) => {
+            log::error!("[remote] playlist-tracks: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+        }
+    }
+}
+
+async fn library_artwork_handler(AxumState(state): AxumState<AppState>, Query(params): Query<LibraryArtworkQuery>) -> impl IntoResponse {
+    if !token_matches(&params.token, &state.token) {
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+    }
+
+    match crate::commands::resolve_library_artwork(params.id, params.secret, state.app_handle.clone()).await {
+        Ok(artwork) => Json(artwork).into_response(),
+        Err(e) => {
+            log::error!("[remote] library-artwork: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+        }
+    }
+}
+
 pub async fn start_server(app_handle: AppHandle) -> Result<RemoteServerInfo, String> {
     let token = generate_token();
     let (state_tx, _) = broadcast::channel(64);
@@ -169,6 +259,9 @@ pub async fn start_server(app_handle: AppHandle) -> Result<RemoteServerInfo, Str
         .route("/", get(root_handler))
         .route("/ws", get(ws_handler))
         .route("/api/search", get(search_handler))
+        .route("/api/library", get(library_handler))
+        .route("/api/playlist-tracks", get(playlist_tracks_handler))
+        .route("/api/library-artwork", get(library_artwork_handler))
         .route("/{*path}", get(static_handler))
         .with_state(app_state);
 

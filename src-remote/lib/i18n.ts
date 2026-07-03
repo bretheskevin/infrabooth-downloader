@@ -18,6 +18,15 @@ const dict: Record<string, Record<LangKey, string>> = {
   tracks: { en: 'tracks', fr: 'titres' },
   nothingPlaying: { en: 'Nothing playing', fr: 'Rien en lecture' },
   invalidLink: { en: 'Invalid link — missing token.', fr: 'Lien invalide — jeton manquant.' },
+  library: { en: 'Library', fr: 'Bibliothèque' },
+  filterPlaylists: { en: 'Filter playlists...', fr: 'Filtrer les playlists...' },
+  filterAll: { en: 'All', fr: 'Tout' },
+  filterMine: { en: 'My Playlists', fr: 'Mes Playlists' },
+  filterLiked: { en: 'Liked', fr: 'Aimées' },
+  playAll: { en: 'Play all', fr: 'Tout lire' },
+  back: { en: 'Back', fr: 'Retour' },
+  libraryError: { en: 'Failed to load library', fr: 'Impossible de charger la bibliothèque' },
+  retry: { en: 'Retry', fr: 'Réessayer' },
 };
 
 export function t(key: string, language: string): string {

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useRemoteSocket } from '@remote/hooks/useRemoteSocket';
 import { useRemoteTheme } from '@remote/hooks/useRemoteTheme';
@@ -8,8 +9,9 @@ import Transport from '@remote/features/now-playing/components/Transport';
 import MiniBar from '@remote/features/now-playing/components/MiniBar';
 import QueuePanel from '@remote/features/queue/components/QueuePanel';
 import SearchTab from '@remote/features/search/components/SearchTab';
+import LibraryTab from '@remote/features/library/components/LibraryTab';
 
-type Tab = 'now-playing' | 'search';
+type Tab = 'now-playing' | 'search' | 'library';
 
 interface Props {
   host: string;
@@ -19,6 +21,7 @@ interface Props {
 export default function RemoteApp({ host, token }: Props) {
   const { state, connected, send } = useRemoteSocket(host, token);
   const [tab, setTab] = useState<Tab>('now-playing');
+  const [libraryOpened, setLibraryOpened] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const language = state?.language ?? 'en';
   useRemoteTheme(state?.theme);
@@ -34,6 +37,7 @@ export default function RemoteApp({ host, token }: Props) {
 
   function selectTab(next: Tab) {
     setTab(next);
+    if (next === 'library') setLibraryOpened(true);
     if (next !== 'now-playing') setQueueOpen(false);
   }
 
@@ -58,14 +62,19 @@ export default function RemoteApp({ host, token }: Props) {
         <div className={tab === 'search' ? '' : 'hidden'}>
           <SearchTab host={host} token={token} send={send} language={language} state={state} />
         </div>
+        {libraryOpened && (
+          <div className={tab === 'library' ? '' : 'hidden'}>
+            <LibraryTab host={host} token={token} send={send} language={language} state={state} />
+          </div>
+        )}
       </div>
       {tab !== 'now-playing' && <MiniBar state={state} send={send} />}
       <nav className="flex border-t border-border bg-card">
-        {(['now-playing', 'search'] as Tab[]).map((tabName) => (
+        {(['now-playing', 'search', 'library'] as Tab[]).map((tabName) => (
           <button
             key={tabName}
             onClick={() => selectTab(tabName)}
-            className={`flex-1 py-3 text-sm font-medium ${tab === tabName ? 'text-primary' : 'text-muted-foreground'}`}
+            className={cn('flex-1 py-3 text-sm font-medium', tab === tabName ? 'text-primary' : 'text-muted-foreground')}
           >
             {t(tabName === 'now-playing' ? 'nowPlaying' : tabName, language)}
           </button>

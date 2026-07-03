@@ -42,8 +42,8 @@ export function dispatchCommand(cmd: RemoteCommand): void {
     case 'reorderQueue':
       s.reorderQueue(cmd.fromIndex, cmd.toIndex);
       break;
-    case 'playTrack':
-      void s.play([cmd.track], 0);
+    case 'playTracks':
+      void s.play(cmd.tracks, cmd.startIndex);
       break;
     case 'queueTrack':
       s.addToQueue(cmd.track);

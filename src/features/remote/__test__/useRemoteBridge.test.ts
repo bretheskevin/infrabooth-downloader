@@ -154,8 +154,8 @@ describe('dispatchCommand', () => {
     expect(mockSkipTo).toHaveBeenCalledWith(3);
   });
 
-  it('dispatches playTrack command', () => {
-    dispatchCommand({ type: 'playTrack', track: mockTrack });
+  it('dispatches playTracks command', () => {
+    dispatchCommand({ type: 'playTracks', tracks: [mockTrack], startIndex: 0 });
     expect(mockPlay).toHaveBeenCalledWith([mockTrack], 0);
   });
 

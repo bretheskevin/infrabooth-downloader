@@ -1,0 +1,26 @@
+import type { RemoteTrack } from '@/lib/remote-protocol';
+
+export interface TrackInfoJson {
+  id: number;
+  title: string;
+  user: { id: number; username: string; avatar_url: string | null };
+  artwork_url: string | null;
+  duration: number;
+  permalink_url: string;
+  waveform_url: string | null;
+  downloadable: boolean;
+  download_url: string | null;
+}
+
+export function mapTrack(info: TrackInfoJson): RemoteTrack {
+  return {
+    trackId: info.id,
+    trackUrl: info.permalink_url,
+    title: info.title,
+    artist: info.user.username,
+    artistId: info.user.id,
+    artworkUrl: info.artwork_url,
+    durationMs: info.duration,
+    waveformUrl: info.waveform_url,
+  };
+}
