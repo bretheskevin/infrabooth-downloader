@@ -4,14 +4,12 @@ import { Loader2 } from 'lucide-react';
 import { useRemoteSocket } from '@remote/hooks/useRemoteSocket';
 import { useRemoteTheme } from '@remote/hooks/useRemoteTheme';
 import { t } from '@remote/lib/i18n';
-import NowPlaying from '@remote/features/now-playing/components/NowPlaying';
-import Transport from '@remote/features/now-playing/components/Transport';
 import MiniBar from '@remote/features/now-playing/components/MiniBar';
-import QueuePanel from '@remote/features/queue/components/QueuePanel';
+import NowPlayingPanel from '@remote/features/now-playing/components/NowPlayingPanel';
 import SearchTab from '@remote/features/search/components/SearchTab';
 import LibraryTab from '@remote/features/library/components/LibraryTab';
 
-type Tab = 'now-playing' | 'search' | 'library';
+type Tab = 'search' | 'library';
 
 interface Props {
   host: string;
@@ -20,9 +18,9 @@ interface Props {
 
 export default function RemoteApp({ host, token }: Props) {
   const { state, connected, send } = useRemoteSocket(host, token);
-  const [tab, setTab] = useState<Tab>('now-playing');
+  const [tab, setTab] = useState<Tab>('search');
   const [libraryOpened, setLibraryOpened] = useState(false);
-  const [queueOpen, setQueueOpen] = useState(false);
+  const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
   const language = state?.language ?? 'en';
   useRemoteTheme(state?.theme);
 
@@ -38,27 +36,11 @@ export default function RemoteApp({ host, token }: Props) {
   function selectTab(next: Tab) {
     setTab(next);
     if (next === 'library') setLibraryOpened(true);
-    if (next !== 'now-playing') setQueueOpen(false);
   }
 
   return (
-    <div className="h-dvh flex flex-col">
+    <div className="h-dvh flex flex-col relative">
       <div className="flex-1 overflow-y-auto relative">
-        {tab === 'now-playing' && (
-          <div className="flex flex-col h-full">
-            <NowPlaying state={state} language={language} onCommand={send} />
-            {state?.currentTrack && (
-              <Transport
-                state={state}
-                send={send}
-                language={language}
-                queueOpen={queueOpen}
-                onToggleQueue={() => setQueueOpen((open) => !open)}
-              />
-            )}
-            {queueOpen && <QueuePanel state={state} send={send} language={language} onClose={() => setQueueOpen(false)} />}
-          </div>
-        )}
         <div className={tab === 'search' ? '' : 'hidden'}>
           <SearchTab host={host} token={token} send={send} language={language} state={state} />
         </div>
@@ -68,18 +50,19 @@ export default function RemoteApp({ host, token }: Props) {
           </div>
         )}
       </div>
-      {tab !== 'now-playing' && <MiniBar state={state} send={send} />}
+      {!nowPlayingOpen && <MiniBar state={state} send={send} onExpand={() => setNowPlayingOpen(true)} />}
       <nav className="flex border-t border-border bg-card">
-        {(['now-playing', 'search', 'library'] as Tab[]).map((tabName) => (
+        {(['search', 'library'] as Tab[]).map((tabName) => (
           <button
             key={tabName}
             onClick={() => selectTab(tabName)}
             className={cn('flex-1 py-3 text-sm font-medium', tab === tabName ? 'text-primary' : 'text-muted-foreground')}
           >
-            {t(tabName === 'now-playing' ? 'nowPlaying' : tabName, language)}
+            {t(tabName, language)}
           </button>
         ))}
       </nav>
+      {nowPlayingOpen && <NowPlayingPanel state={state} send={send} language={language} onClose={() => setNowPlayingOpen(false)} />}
     </div>
   );
 }

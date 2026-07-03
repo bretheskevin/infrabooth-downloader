@@ -84,18 +84,33 @@ struct LibraryArtworkQuery {
 }
 
 fn serve_asset(path: &str) -> Response {
-    match RemoteAssets::get(path) {
-        Some(file) => {
-            let mime = mime_guess::from_path(path).first_or_octet_stream();
-            (StatusCode::OK, [(axum::http::header::CONTENT_TYPE, mime.as_ref().to_owned())], file.data.into_owned()).into_response()
-        }
-        None => match RemoteAssets::get("index.html") {
-            Some(index) => {
-                let mime = mime_guess::from_path("index.html").first_or_octet_stream();
-                (StatusCode::OK, [(axum::http::header::CONTENT_TYPE, mime.as_ref().to_owned())], index.data.into_owned()).into_response()
-            }
-            None => StatusCode::NOT_FOUND.into_response(),
-        },
+    let path = if path.is_empty() { "index.html" } else { path };
+
+    if path == "index.html" {
+        return serve_index();
+    }
+
+    if let Some(file) = RemoteAssets::get(path) {
+        let mime = mime_guess::from_path(path).first_or_octet_stream();
+        return (StatusCode::OK, [(axum::http::header::CONTENT_TYPE, mime.as_ref().to_owned())], file.data.into_owned()).into_response();
+    }
+
+    if path.contains('.') {
+        return StatusCode::NOT_FOUND.into_response();
+    }
+
+    serve_index()
+}
+
+fn serve_index() -> Response {
+    match RemoteAssets::get("index.html") {
+        Some(index) => (
+            StatusCode::OK,
+            [(axum::http::header::CONTENT_TYPE, "text/html".to_owned()), (axum::http::header::CACHE_CONTROL, "no-cache".to_owned())],
+            index.data.into_owned(),
+        )
+            .into_response(),
+        None => StatusCode::NOT_FOUND.into_response(),
     }
 }
 
