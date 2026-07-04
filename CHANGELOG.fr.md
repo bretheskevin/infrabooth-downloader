@@ -6,6 +6,16 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.31.0] - 2026-07-04
+
+### Added
+
+- Contrôle de l'application depuis votre téléphone, à activer dans les paramètres
+
+### Fixed
+
+- Impossible de télécharger les morceaux privés partagés par lien
+- La progression du téléchargement était masquée par la barre du lecteur
 ## [1.30.0] - 2026-06-21
 
 ### Added
