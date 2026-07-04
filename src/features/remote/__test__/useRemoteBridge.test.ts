@@ -174,6 +174,7 @@ describe('dispatchCommand', () => {
       artworkUrl: mockTrack.artworkUrl,
       durationMs: mockTrack.durationMs,
       downloadUrl: null,
+      secretToken: null,
       album: null,
       trackNumber: null,
       totalTracks: null,

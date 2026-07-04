@@ -81,6 +81,7 @@ describe('useSyncToQueue', () => {
         durationMs: 180000,
         status: 'pending',
         downloadUrl: null,
+        secretToken: null,
       },
       {
         id: '2',
@@ -90,6 +91,7 @@ describe('useSyncToQueue', () => {
         durationMs: 240000,
         status: 'pending',
         downloadUrl: null,
+        secretToken: null,
       },
     ]);
   });
@@ -107,6 +109,7 @@ describe('useSyncToQueue', () => {
         durationMs: 185000,
         status: 'pending',
         downloadUrl: null,
+        secretToken: null,
       },
     ]);
   });

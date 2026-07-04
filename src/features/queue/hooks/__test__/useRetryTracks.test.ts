@@ -132,6 +132,7 @@ describe('useRetryTracks', () => {
             artworkUrl: null,
             durationMs: undefined,
             downloadUrl: null,
+            secretToken: null,
           },
           {
             trackUrl: 'https://api.soundcloud.com/tracks/2',
@@ -141,6 +142,7 @@ describe('useRetryTracks', () => {
             artworkUrl: 'http://art.jpg',
             durationMs: undefined,
             downloadUrl: null,
+            secretToken: null,
           },
         ],
         albumName: null,
@@ -227,6 +229,7 @@ describe('useRetryTracks', () => {
             artworkUrl: null,
             durationMs: undefined,
             downloadUrl: null,
+            secretToken: null,
           },
         ],
         albumName: null,
