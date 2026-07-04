@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
+import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
+import { EXPANDED_BAR_HEIGHT } from '@/features/player/components/ExpandedBar';
 import type { DownloadDockState, DockStatus } from '../hooks/useDownloadDockState';
 
 interface DockStatusContentProps {
@@ -66,11 +68,16 @@ interface DownloadDockProps {
 
 export function DownloadDock({ dockState }: DownloadDockProps) {
   const isWidescreen = useIsWidescreen();
+  const playerExpanded = useIsExpandedBarVisible();
   const { t } = useTranslation();
 
   if (!dockState.isVisible) return null;
 
   const showDismiss = dockState.status === 'complete' || dockState.status === 'cancelled';
+
+  // In narrow mode the expanded player bar shares the bottom edge, so lift the
+  // dock above it to avoid overlap. Widescreen floats the dock in the corner.
+  const narrowBottom = playerExpanded ? EXPANDED_BAR_HEIGHT : 0;
 
   return (
     <Card
@@ -78,8 +85,9 @@ export function DownloadDock({ dockState }: DownloadDockProps) {
         'fixed z-40 shadow-lg border',
         'transition-all duration-300 ease-out',
         'animate-in slide-in-from-bottom-4 fade-in',
-        isWidescreen ? 'bottom-4 right-4 w-96 p-3' : 'bottom-0 left-0 right-0 rounded-none border-x-0 border-b-0 p-3',
+        isWidescreen ? 'bottom-4 right-4 w-96 p-3' : 'left-0 right-0 rounded-none border-x-0 border-b-0 p-3',
       )}
+      style={isWidescreen ? undefined : { bottom: narrowBottom }}
     >
       <div className="flex items-center gap-2">
         <div className="flex-1 min-w-0">

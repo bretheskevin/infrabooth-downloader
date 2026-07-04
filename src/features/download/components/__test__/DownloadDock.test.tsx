@@ -17,6 +17,14 @@ vi.mock('@/hooks/useIsWidescreen', () => ({
   useIsWidescreen: () => true,
 }));
 
+vi.mock('@/features/player/hooks/useIsExpandedBarVisible', () => ({
+  useIsExpandedBarVisible: () => false,
+}));
+
+vi.mock('@/features/player/components/ExpandedBar', () => ({
+  EXPANDED_BAR_HEIGHT: 90,
+}));
+
 const mockOpenDashboard = vi.fn();
 const mockDismissDock = vi.fn();
 
