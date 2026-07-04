@@ -17,6 +17,7 @@ export function useCurrentTrackInfo(): TrackInfo | undefined {
       waveform_url: currentTrack.waveformUrl,
       downloadable: false,
       download_url: null,
+      secret_token: null,
     } satisfies TrackInfo;
   }, [currentTrack]);
 }

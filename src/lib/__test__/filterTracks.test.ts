@@ -13,6 +13,7 @@ const makeTracks = (): TrackInfo[] => [
     waveform_url: null,
     downloadable: false,
     download_url: null,
+    secret_token: null,
   },
   {
     id: 2,
@@ -24,6 +25,7 @@ const makeTracks = (): TrackInfo[] => [
     waveform_url: null,
     downloadable: false,
     download_url: null,
+    secret_token: null,
   },
   {
     id: 3,
@@ -35,6 +37,7 @@ const makeTracks = (): TrackInfo[] => [
     waveform_url: null,
     downloadable: false,
     download_url: null,
+    secret_token: null,
   },
   {
     id: 4,
@@ -46,6 +49,7 @@ const makeTracks = (): TrackInfo[] => [
     waveform_url: null,
     downloadable: false,
     download_url: null,
+    secret_token: null,
   },
 ];
 

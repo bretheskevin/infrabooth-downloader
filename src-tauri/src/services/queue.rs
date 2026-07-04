@@ -384,6 +384,7 @@ impl DownloadQueue {
             duration_ms: item.core.duration_ms,
             oauth_token: oauth_token.clone(),
             download_url: item.core.download_url.clone(),
+            secret_token: item.core.secret_token.clone(),
         }
     }
 
@@ -471,6 +472,7 @@ mod tests {
                 artwork_url: Some("https://example.com/art.jpg".to_string()),
                 duration_ms: 180000,
                 download_url: None,
+                secret_token: None,
             },
             track_number: Some(1),
         };
@@ -494,6 +496,7 @@ mod tests {
                 artwork_url: None,
                 duration_ms: 120000,
                 download_url: None,
+                secret_token: None,
             },
             track_number: None,
         };
@@ -515,6 +518,7 @@ mod tests {
                     artwork_url: None,
                     duration_ms: 180000,
                     download_url: None,
+                    secret_token: None,
                 },
                 track_number: Some(1),
             },
@@ -527,6 +531,7 @@ mod tests {
                     artwork_url: None,
                     duration_ms: 240000,
                     download_url: None,
+                    secret_token: None,
                 },
                 track_number: Some(2),
             },

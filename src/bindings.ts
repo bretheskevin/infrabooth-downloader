@@ -858,7 +858,11 @@ durationMs: number;
 /**
  * URL to download original file (if artist enabled free download)
  */
-downloadUrl: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
+downloadUrl: string | null; 
+/**
+ * Secret token for private tracks (from the `/s-xxx` share link)
+ */
+secretToken: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
 export type ErrorResponse = { code: string; message: string }
 export type ExportResult = { exportedCount: number; skippedCount: number; playlistName: string; errors: string[] }
 export type ExportTrackRequest = { sourcePath: string }
@@ -944,7 +948,11 @@ durationMs: number;
 /**
  * URL to download original file (if artist enabled free download)
  */
-downloadUrl: string | null }
+downloadUrl: string | null; 
+/**
+ * Secret token for private tracks (from the `/s-xxx` share link)
+ */
+secretToken: string | null }
 /**
  * Track information from SoundCloud API.
  */
@@ -964,7 +972,11 @@ downloadable: boolean;
 /**
  * URL to download the original file (requires OAuth token).
  */
-download_url: string | null }
+download_url: string | null; 
+/**
+ * Secret token for private tracks (present when resolved via a `/s-xxx` share link).
+ */
+secret_token: string | null }
 export type TracksBatchEvent = { entityId: number; tracks: TrackInfo[] }
 export type UnreadCountResult = { unread: boolean; latest_created_at: string | null }
 /**

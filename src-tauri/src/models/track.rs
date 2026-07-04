@@ -23,4 +23,6 @@ pub struct TrackCore {
     pub duration_ms: u64,
     /// URL to download original file (if artist enabled free download)
     pub download_url: Option<String>,
+    /// Secret token for private tracks (from the `/s-xxx` share link)
+    pub secret_token: Option<String>,
 }

@@ -20,6 +20,7 @@ function makeSelection(overrides: Partial<Selection> = {}): Selection {
         waveform_url: null,
         downloadable: false,
         download_url: null,
+        secret_token: null,
       },
       {
         id: 2,
@@ -31,6 +32,7 @@ function makeSelection(overrides: Partial<Selection> = {}): Selection {
         waveform_url: null,
         downloadable: false,
         download_url: null,
+        secret_token: null,
       },
     ] as Selection['tracks'],
     ...overrides,

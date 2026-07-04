@@ -74,6 +74,7 @@ async fn download_track(
         duration_ms: track.duration_ms,
         oauth_token,
         download_url: track.download_url.clone(),
+        secret_token: track.secret_token.clone(),
     };
 
     match download_and_convert(app, config, cancellation).await {

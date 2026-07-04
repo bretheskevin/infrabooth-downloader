@@ -500,7 +500,8 @@ fn prepare_download_context<'a>(
 async fn execute_transcoding_download<R: tauri::Runtime>(
     app: &AppHandle<R>, config: &PipelineConfig, output_file: &Path, ctx: &FfmpegContext<'_>,
 ) -> Result<PathBuf, DownloadError> {
-    let stream_info = stream::resolve_stream_url(&config.track_url, config.oauth_token.as_deref()).await?;
+    let track_id_num = config.track_id.parse::<u64>().ok();
+    let stream_info = stream::resolve_stream_url(&config.track_url, track_id_num, config.secret_token.as_deref(), config.oauth_token.as_deref()).await?;
 
     log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
     log::info!("[downloader] Encoding strategy for track {}: codec={:?}", config.track_id, stream_info.codec);

@@ -50,6 +50,7 @@ function embedToTrackCore(embed: MessageTrackEmbed): TrackCore {
     artworkUrl: embed.artwork_url,
     durationMs: embed.duration_ms,
     downloadUrl: null,
+    secretToken: null,
   };
 }
 

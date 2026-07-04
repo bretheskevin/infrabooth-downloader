@@ -85,6 +85,22 @@ pub fn validate_url(input: &str) -> ValidationResult {
     }
 }
 
+/// Extract a private-share secret token (`s-…`) from a SoundCloud URL.
+///
+/// Handles both the path form (`/user/track/s-xxx`, `/user/sets/pl/s-xxx`) and
+/// the query form (`?secret_token=s-xxx`). Returns `None` when no token is present.
+pub fn extract_secret_token(input: &str) -> Option<String> {
+    let parsed = Url::parse(input).or_else(|_| Url::parse(&format!("https://{}", input))).ok()?;
+
+    if let Some((_, value)) = parsed.query_pairs().find(|(k, _)| k == "secret_token") {
+        if value.starts_with("s-") && value.len() > 2 {
+            return Some(value.into_owned());
+        }
+    }
+
+    parsed.path_segments()?.rev().find(|seg| seg.starts_with("s-") && seg.len() > 2).map(str::to_string)
+}
+
 fn invalid_format_error() -> ValidationResult {
     ValidationResult {
         valid: false,
@@ -272,5 +288,35 @@ mod tests {
         assert!(!result.valid);
         let error = result.error.unwrap();
         assert_eq!(error.code, "INVALID_FORMAT");
+    }
+
+    #[test]
+    fn test_extract_secret_token_from_track_path() {
+        assert_eq!(extract_secret_token("https://soundcloud.com/artist/track/s-Kuj8yG4OtgG"), Some("s-Kuj8yG4OtgG".to_string()));
+    }
+
+    #[test]
+    fn test_extract_secret_token_from_playlist_path() {
+        assert_eq!(extract_secret_token("https://soundcloud.com/user/sets/pl/s-abc123"), Some("s-abc123".to_string()));
+    }
+
+    #[test]
+    fn test_extract_secret_token_ignores_query_params_in_path() {
+        assert_eq!(extract_secret_token("https://soundcloud.com/artist/track/s-abc123?ref=clipboard&si=xyz"), Some("s-abc123".to_string()));
+    }
+
+    #[test]
+    fn test_extract_secret_token_from_query() {
+        assert_eq!(extract_secret_token("https://soundcloud.com/artist/track?secret_token=s-abc123"), Some("s-abc123".to_string()));
+    }
+
+    #[test]
+    fn test_extract_secret_token_none_for_public_url() {
+        assert_eq!(extract_secret_token("https://soundcloud.com/artist/track"), None);
+    }
+
+    #[test]
+    fn test_extract_secret_token_without_protocol() {
+        assert_eq!(extract_secret_token("soundcloud.com/artist/track/s-abc123"), Some("s-abc123".to_string()));
     }
 }

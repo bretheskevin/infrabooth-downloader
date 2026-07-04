@@ -66,6 +66,7 @@ const mockPlaylist: PlaylistInfo = {
       waveform_url: null,
       downloadable: false,
       download_url: null,
+      secret_token: null,
     },
     {
       id: 2,
@@ -77,6 +78,7 @@ const mockPlaylist: PlaylistInfo = {
       waveform_url: null,
       downloadable: false,
       download_url: null,
+      secret_token: null,
     },
   ],
 };
@@ -98,6 +100,7 @@ const mockSingleTrackPlaylist: PlaylistInfo = {
       waveform_url: null,
       downloadable: false,
       download_url: null,
+      secret_token: null,
     },
   ],
 };
@@ -119,6 +122,7 @@ const mockPlaylistNoArtwork: PlaylistInfo = {
       waveform_url: null,
       downloadable: false,
       download_url: null,
+      secret_token: null,
     },
   ],
 };
@@ -140,6 +144,7 @@ const mockPlaylistWithTrackArtwork: PlaylistInfo = {
       waveform_url: null,
       downloadable: false,
       download_url: null,
+      secret_token: null,
     },
   ],
 };

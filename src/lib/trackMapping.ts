@@ -10,5 +10,6 @@ export function toTrackCore(track: TrackInfo): TrackCore {
     artworkUrl: track.artwork_url ?? null,
     durationMs: track.duration,
     downloadUrl: track.download_url ?? null,
+    secretToken: track.secret_token ?? null,
   };
 }

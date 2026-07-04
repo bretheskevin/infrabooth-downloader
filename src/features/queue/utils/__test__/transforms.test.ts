@@ -13,6 +13,7 @@ const mockTrack: TrackInfo = {
   waveform_url: null,
   downloadable: false,
   download_url: null,
+  secret_token: null,
 };
 
 const mockTrackNoArtwork: TrackInfo = {
@@ -25,6 +26,7 @@ const mockTrackNoArtwork: TrackInfo = {
   waveform_url: null,
   downloadable: false,
   download_url: null,
+  secret_token: null,
 };
 
 describe('trackInfoToQueueTrack', () => {
@@ -39,6 +41,7 @@ describe('trackInfoToQueueTrack', () => {
       durationMs: 180000,
       status: 'pending',
       downloadUrl: null,
+      secretToken: null,
     });
   });
 
@@ -118,12 +121,19 @@ describe('queueTrackToDownloadRequest', () => {
       artworkUrl: 'https://example.com/art.jpg',
       durationMs: 180000,
       downloadUrl: null,
+      secretToken: null,
     });
   });
 
   it('should generate correct SoundCloud API URL', () => {
     const result = queueTrackToDownloadRequest(mockQueueTrack);
     expect(result.trackUrl).toBe('https://api.soundcloud.com/tracks/123456');
+  });
+
+  it('should propagate a non-null secret token', () => {
+    const privateTrack: Track = { ...mockQueueTrack, secretToken: 's-Kuj8yG4OtgG' };
+    const result = queueTrackToDownloadRequest(privateTrack);
+    expect(result.secretToken).toBe('s-Kuj8yG4OtgG');
   });
 
   it('should handle null artwork', () => {

@@ -214,6 +214,7 @@ mod tests {
                 waveform_url: None,
                 downloadable: false,
                 download_url: None,
+                secret_token: None,
             }],
             total_results: Some(1),
         };

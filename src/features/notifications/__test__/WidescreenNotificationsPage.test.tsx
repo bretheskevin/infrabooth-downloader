@@ -86,6 +86,7 @@ function makeTrack(title = 'Track') {
     waveform_url: null,
     downloadable: false,
     download_url: null,
+    secret_token: null,
   };
 }
 

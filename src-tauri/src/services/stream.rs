@@ -29,6 +29,13 @@ const MAX_CACHE_ENTRIES: usize = 500;
 
 static TRANSCODINGS_CACHE: Lazy<Mutex<HashMap<u64, Vec<Transcoding>>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
+/// Secret tokens for private tracks, keyed by track ID. Populated when track
+/// info is resolved from a `/s-xxx` share link, consulted during stream and
+/// playback resolution so private tracks stay accessible after the transcoding
+/// cache is consumed or evicted. Unlike transcodings, entries are kept (not
+/// taken) so the token remains available across repeated resolutions.
+static SECRET_TOKEN_CACHE: Lazy<Mutex<HashMap<u64, String>>> = Lazy::new(|| Mutex::new(HashMap::new()));
+
 /// Cache transcodings for a track so that playback resolution can skip the
 /// track-data fetch. Called by playlist/search services after deserializing
 /// the API response.
@@ -47,6 +54,25 @@ pub fn cache_transcodings(track_id: u64, transcodings: Vec<Transcoding>) {
 fn take_cached_transcodings(track_id: u64) -> Option<Vec<Transcoding>> {
     let mut cache = TRANSCODINGS_CACHE.lock().expect("transcodings cache poisoned");
     cache.remove(&track_id)
+}
+
+/// Cache a private track's secret token for later stream/playback resolution.
+/// Called by playlist/search/track services after resolving track info.
+pub fn cache_secret_token(track_id: u64, secret_token: &str) {
+    if secret_token.is_empty() {
+        return;
+    }
+    let mut cache = SECRET_TOKEN_CACHE.lock().expect("secret token cache poisoned");
+    if cache.len() >= MAX_CACHE_ENTRIES {
+        cache.clear();
+    }
+    cache.insert(track_id, secret_token.to_string());
+}
+
+/// Read a cached secret token for a track (kept in cache for reuse).
+fn get_cached_secret_token(track_id: u64) -> Option<String> {
+    let cache = SECRET_TOKEN_CACHE.lock().expect("secret token cache poisoned");
+    cache.get(&track_id).cloned()
 }
 
 /// Format info from a SoundCloud transcoding entry.
@@ -259,9 +285,12 @@ async fn fetch_track_data_v2(track_url: &str, client_id: &str, oauth_token: Opti
 }
 
 /// Fetch track data directly by numeric ID (skips the resolve redirect).
-async fn fetch_track_data_by_id(track_id: u64, client_id: &str, oauth_token: Option<&str>) -> Result<ApiV2TrackData, DownloadError> {
+async fn fetch_track_data_by_id(
+    track_id: u64, client_id: &str, oauth_token: Option<&str>, secret_token: Option<&str>,
+) -> Result<ApiV2TrackData, DownloadError> {
     let client = &*crate::services::http::HTTP_CLIENT;
-    let url = format!("{}/tracks/{}?client_id={}", API_V2_BASE, track_id, client_id);
+    let mut url = format!("{}/tracks/{}?client_id={}", API_V2_BASE, track_id, client_id);
+    crate::services::http::append_secret_token(&mut url, secret_token);
 
     let response = client.get(&url).with_oauth(oauth_token).send().await.map_err(|e| DownloadError::StreamResolutionFailed(format!("Network error: {}", e)))?;
 
@@ -272,10 +301,10 @@ async fn fetch_track_data_by_id(track_id: u64, client_id: &str, oauth_token: Opt
 
 /// Fetch track data with fallback: try by ID first, then by permalink URL.
 async fn fetch_track_data_with_fallback(
-    track_id: Option<u64>, permalink_url: &str, cid: &str, oauth_token: Option<&str>,
+    track_id: Option<u64>, permalink_url: &str, cid: &str, oauth_token: Option<&str>, secret_token: Option<&str>,
 ) -> Result<ApiV2TrackData, DownloadError> {
     if let Some(id) = track_id {
-        match fetch_track_data_by_id(id, cid, oauth_token).await {
+        match fetch_track_data_by_id(id, cid, oauth_token, secret_token).await {
             Ok(data) => return Ok(data),
             Err(e) => log::debug!("[stream] ID fetch failed, trying permalink: {}", e),
         }
@@ -285,7 +314,9 @@ async fn fetch_track_data_with_fallback(
 }
 
 /// Resolve a transcoding URL to an actual CDN stream URL.
-async fn resolve_transcoding_url(transcoding: &Transcoding, client_id: &str, oauth_token: Option<&str>) -> Result<String, DownloadError> {
+async fn resolve_transcoding_url(
+    transcoding: &Transcoding, client_id: &str, oauth_token: Option<&str>, secret_token: Option<&str>,
+) -> Result<String, DownloadError> {
     let client = &*crate::services::http::HTTP_CLIENT;
 
     if !crate::services::http::is_trusted_domain(&transcoding.url) {
@@ -293,7 +324,8 @@ async fn resolve_transcoding_url(transcoding: &Transcoding, client_id: &str, oau
     }
 
     let separator = if transcoding.url.contains('?') { '&' } else { '?' };
-    let url = format!("{}{}client_id={}", transcoding.url, separator, client_id);
+    let mut url = format!("{}{}client_id={}", transcoding.url, separator, client_id);
+    crate::services::http::append_secret_token(&mut url, secret_token);
 
     let response = client.get(&url).with_oauth(oauth_token).send().await.map_err(|e| DownloadError::StreamResolutionFailed(format!("Network error: {}", e)))?;
 
@@ -318,6 +350,8 @@ struct ResolveOptions<'a> {
     track_id: Option<u64>,
     track_url: &'a str,
     oauth_token: Option<&'a str>,
+    /// Secret token for private tracks (from the `/s-xxx` share link).
+    secret_token: Option<&'a str>,
     /// `false` for downloads (progressive preferred), `true` for streaming (HLS preferred).
     prefer_hls: bool,
 }
@@ -341,6 +375,12 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
     // `mut` so we can `.take()` on first attempt, leaving None for retry.
     let mut cached = opts.track_id.and_then(take_cached_transcodings);
 
+    // Prefer an explicit secret token, otherwise fall back to a cached one for
+    // this track (populated when its info was resolved from a share link). Keeps
+    // private tracks resolvable once the transcoding cache is gone.
+    let secret_token = opts.secret_token.map(str::to_string).or_else(|| opts.track_id.and_then(get_cached_secret_token));
+    let secret_token = secret_token.as_deref();
+
     'outer: for is_first_attempt in [true, false] {
         let cid = client_id::get_client_id().await?;
 
@@ -351,7 +391,7 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 
         let transcodings = if transcodings.is_empty() {
             let track_id_for_fetch = if is_first_attempt { opts.track_id } else { None };
-            let data = match fetch_track_data_with_fallback(track_id_for_fetch, opts.track_url, &cid, opts.oauth_token).await {
+            let data = match fetch_track_data_with_fallback(track_id_for_fetch, opts.track_url, &cid, opts.oauth_token, secret_token).await {
                 Ok(data) => data,
                 Err(e) if is_first_attempt && opts.oauth_token.is_none() && is_auth_retry_error(&e) => {
                     log::warn!("[stream] Got auth error, refreshing client_id and retrying");
@@ -414,7 +454,7 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
                 transcoding.preset
             );
 
-            match resolve_transcoding_url(transcoding, &cid, opts.oauth_token).await {
+            match resolve_transcoding_url(transcoding, &cid, opts.oauth_token, secret_token).await {
                 Ok(cdn_url) => {
                     log::info!("[stream] Resolved CDN URL ({}...)", &cdn_url[..cdn_url.len().min(80)]);
                     let codec: StreamCodec = extract_codec(&transcoding.format.mime_type).into();
@@ -451,10 +491,16 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 /// Selects the best progressive transcoding, resolves it to a CDN URL,
 /// and returns full stream info including codec for encoding decisions.
 /// On 401/403, invalidates client_id and retries once.
-pub async fn resolve_stream_url(track_url: &str, oauth_token: Option<&str>) -> Result<StreamInfo, DownloadError> {
-    log::info!("[stream] resolve_stream_url called, oauth_token={}", if oauth_token.is_some() { "present" } else { "none" });
+pub async fn resolve_stream_url(
+    track_url: &str, track_id: Option<u64>, secret_token: Option<&str>, oauth_token: Option<&str>,
+) -> Result<StreamInfo, DownloadError> {
+    log::info!(
+        "[stream] resolve_stream_url called, oauth_token={}, secret_token={}",
+        if oauth_token.is_some() { "present" } else { "none" },
+        if secret_token.is_some() { "present" } else { "none" }
+    );
 
-    let resolved = resolve_inner(ResolveOptions { track_id: None, track_url, oauth_token, prefer_hls: false }).await?;
+    let resolved = resolve_inner(ResolveOptions { track_id, track_url, oauth_token, secret_token, prefer_hls: false }).await?;
 
     Ok(StreamInfo { url: resolved.cdn_url, codec: resolved.codec })
 }
@@ -466,7 +512,7 @@ pub async fn resolve_stream_url(track_url: &str, oauth_token: Option<&str>) -> R
 pub async fn resolve_playback_url(track_id: u64, track_url: &str, oauth_token: Option<&str>) -> Result<String, DownloadError> {
     log::info!("[stream] resolve_playback_url called for track_id={}, oauth={}", track_id, if oauth_token.is_some() { "present" } else { "none" });
 
-    let resolved = resolve_inner(ResolveOptions { track_id: Some(track_id), track_url, oauth_token, prefer_hls: true }).await?;
+    let resolved = resolve_inner(ResolveOptions { track_id: Some(track_id), track_url, oauth_token, secret_token: None, prefer_hls: true }).await?;
 
     Ok(resolved.cdn_url)
 }

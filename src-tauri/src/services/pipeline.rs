@@ -30,6 +30,8 @@ pub struct PipelineConfig {
     pub oauth_token: Option<String>,
     /// URL to download original file (if artist enabled free download)
     pub download_url: Option<String>,
+    /// Secret token for private tracks (from the `/s-xxx` share link)
+    pub secret_token: Option<String>,
 }
 
 /// Download a track and convert it to MP3.
@@ -96,6 +98,7 @@ mod tests {
             duration_ms: 180000,
             oauth_token: None,
             download_url: None,
+            secret_token: None,
         };
 
         assert_eq!(config.track_url, "https://soundcloud.com/test/track");
@@ -128,6 +131,7 @@ mod tests {
             duration_ms: 240000,
             oauth_token: None,
             download_url: None,
+            secret_token: None,
         };
 
         assert!(config.playlist_context.is_some());
@@ -158,6 +162,7 @@ mod tests {
             duration_ms: 180000,
             oauth_token: None,
             download_url: None,
+            secret_token: None,
         };
 
         assert!(config.metadata.album.is_none());

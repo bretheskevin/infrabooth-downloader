@@ -35,6 +35,7 @@ const mockPlaylist = {
       waveform_url: null,
       downloadable: false,
       download_url: null,
+      secret_token: null,
     },
   ],
 };
@@ -49,6 +50,7 @@ const mockTrack = {
   waveform_url: null,
   downloadable: false,
   download_url: null,
+  secret_token: null,
 };
 
 const validTrackValidation: ValidationResult = { valid: true, urlType: 'track', error: null };

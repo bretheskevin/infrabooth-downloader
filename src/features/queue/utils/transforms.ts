@@ -15,6 +15,7 @@ export function trackInfoToQueueTrack(track: TrackInfo): Track {
     durationMs: track.duration,
     status: 'pending',
     downloadUrl: track.download_url,
+    secretToken: track.secret_token,
   };
 }
 
@@ -37,5 +38,6 @@ export function queueTrackToDownloadRequest(track: Track): TrackCore {
     artworkUrl: track.artworkUrl ?? null,
     durationMs: track.durationMs,
     downloadUrl: track.downloadUrl ?? null,
+    secretToken: track.secretToken ?? null,
   };
 }

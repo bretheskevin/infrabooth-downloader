@@ -65,6 +65,7 @@ pub async fn download_track_full(request: DownloadRequest, app: tauri::AppHandle
         duration_ms: request.core.duration_ms,
         oauth_token: app.state::<AuthState>().get_token(),
         download_url: request.core.download_url,
+        secret_token: request.core.secret_token,
     };
 
     let result_path = download_and_convert(&app, config, None).await.map_err(|e| {

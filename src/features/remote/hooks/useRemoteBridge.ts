@@ -61,6 +61,7 @@ export function dispatchCommand(cmd: RemoteCommand): void {
           artworkUrl: cmd.track.artworkUrl,
           durationMs: cmd.track.durationMs,
           downloadUrl: null,
+          secretToken: null,
           album: null,
           trackNumber: null,
           totalTracks: null,

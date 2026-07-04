@@ -111,6 +111,16 @@ pub fn validate_api_response(status: rquest::StatusCode) -> Result<(), ApiRespon
     }
 }
 
+/// Append `&secret_token=…` to a URL that already has query parameters.
+///
+/// No-op when `secret_token` is `None`. Callers must ensure the URL already
+/// contains at least one query parameter (e.g. `client_id`).
+pub fn append_secret_token(url: &mut String, secret_token: Option<&str>) {
+    if let Some(token) = secret_token {
+        url.push_str(&format!("&secret_token={}", token));
+    }
+}
+
 pub fn is_trusted_domain(raw_url: &str) -> bool {
     let Ok(parsed) = url::Url::parse(raw_url) else {
         return false;

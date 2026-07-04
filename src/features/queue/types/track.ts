@@ -14,5 +14,6 @@ export interface Track {
   downloadedBytes?: number;
   totalBytes?: number;
   downloadUrl?: string | null;
+  secretToken?: string | null;
   filePath?: string;
 }

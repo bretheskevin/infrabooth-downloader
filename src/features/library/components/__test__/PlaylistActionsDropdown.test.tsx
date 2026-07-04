@@ -82,6 +82,7 @@ const mockTrack: TrackInfo = {
   waveform_url: null,
   downloadable: false,
   download_url: null,
+  secret_token: null,
 };
 
 function makeTrackStatus(id: string, title: string, status: TrackStatus['status'], error?: string): TrackStatus {

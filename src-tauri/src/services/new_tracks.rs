@@ -500,6 +500,7 @@ mod tests {
                 waveform_url: None,
                 downloadable: false,
                 download_url: None,
+                secret_token: None,
             },
             activity_type,
             created_at: "2026-03-20T12:00:00Z".to_string(),

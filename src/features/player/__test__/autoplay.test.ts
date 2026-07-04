@@ -78,6 +78,7 @@ const makeRelatedTracks = (count: number, startId = 100) =>
     waveform_url: null,
     downloadable: false,
     download_url: null,
+    secret_token: null,
   }));
 
 function extractCallbacks(): Partial<AudioEngineCallbacks> {

@@ -29,6 +29,8 @@ struct LikedTrackRaw {
     #[serde(default)]
     downloadable: bool,
     download_url: Option<String>,
+    #[serde(default)]
+    secret_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -92,6 +94,7 @@ fn map_track(item: LikedTrackItem) -> TrackInfo {
         waveform_url: item.track.waveform_url,
         downloadable: item.track.downloadable,
         download_url: item.track.download_url,
+        secret_token: item.track.secret_token,
     }
 }
 
@@ -181,6 +184,7 @@ mod tests {
                 waveform_url: None,
                 downloadable: true,
                 download_url: Some("https://download.url".to_string()),
+                secret_token: None,
             },
         };
         let track = map_track(item);
@@ -205,6 +209,7 @@ mod tests {
             waveform_url: None,
             downloadable: false,
             download_url: None,
+            secret_token: None,
         }];
         cache.set(tracks.clone());
 

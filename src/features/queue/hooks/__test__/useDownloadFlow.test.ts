@@ -76,6 +76,7 @@ const mockPlaylist: PlaylistInfo = {
       waveform_url: null,
       downloadable: false,
       download_url: null,
+      secret_token: null,
     },
   ],
 };
@@ -90,6 +91,7 @@ const mockTrack: TrackInfo = {
   waveform_url: null,
   downloadable: false,
   download_url: null,
+  secret_token: null,
 };
 
 describe('useDownloadFlow', () => {

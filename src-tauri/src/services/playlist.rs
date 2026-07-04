@@ -61,6 +61,8 @@ pub(crate) struct RawTrackInfo {
     pub downloadable: bool,
     pub download_url: Option<String>,
     pub waveform_url: Option<String>,
+    #[serde(default)]
+    pub secret_token: Option<String>,
 }
 
 /// Track information from SoundCloud API.
@@ -79,6 +81,8 @@ pub struct TrackInfo {
     pub downloadable: bool,
     /// URL to download the original file (requires OAuth token).
     pub download_url: Option<String>,
+    /// Secret token for private tracks (present when resolved via a `/s-xxx` share link).
+    pub secret_token: Option<String>,
 }
 
 impl From<RawTrackInfo> for TrackInfo {
@@ -88,6 +92,11 @@ impl From<RawTrackInfo> for TrackInfo {
             if !media.transcodings.is_empty() {
                 stream::cache_transcodings(raw.id, media.transcodings.clone());
             }
+        }
+
+        // Cache the secret token so private tracks stay resolvable for download/playback
+        if let Some(token) = &raw.secret_token {
+            stream::cache_secret_token(raw.id, token);
         }
 
         // Use publisher_metadata.artist if available, otherwise fall back to user.username
@@ -106,6 +115,7 @@ impl From<RawTrackInfo> for TrackInfo {
             waveform_url: raw.waveform_url,
             downloadable: raw.downloadable,
             download_url: build_download_url(raw.downloadable, raw.download_url, raw.id),
+            secret_token: raw.secret_token,
         }
     }
 }
@@ -185,9 +195,7 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
 
 pub fn build_playlist_url(id: u64, client_id: &str, secret_token: Option<&str>) -> String {
     let mut url = format!("{}/playlists/{}?representation=full&client_id={}", API_V2_BASE, id, client_id);
-    if let Some(token) = secret_token {
-        url.push_str(&format!("&secret_token={}", token));
-    }
+    crate::services::http::append_secret_token(&mut url, secret_token);
     url
 }
 
@@ -570,7 +578,18 @@ pub async fn fetch_track_info(url: &str, oauth_token: Option<&str>) -> Result<Tr
     let cid = get_cid().await?;
     log::info!("[soundcloud] Fetching track info for URL: {}", url);
     let raw: RawTrackInfo = resolve_url(&url, &cid, oauth_token).await?;
-    Ok(TrackInfo::from(raw))
+    let mut track = TrackInfo::from(raw);
+
+    // Fallback: if the API omitted the secret token, recover it from the share
+    // link so private tracks stay downloadable/playable.
+    if track.secret_token.is_none() {
+        if let Some(token) = crate::services::url_validator::extract_secret_token(&url) {
+            stream::cache_secret_token(track.id, &token);
+            track.secret_token = Some(token);
+        }
+    }
+
+    Ok(track)
 }
 
 /// Fetches all tracks from a playlist by its numeric ID.
@@ -761,6 +780,7 @@ mod tests {
             waveform_url: None,
             downloadable: false,
             download_url: None,
+            secret_token: None,
         };
         let json = serde_json::to_string(&track).unwrap();
         assert!(json.contains("\"id\":123456"));
@@ -874,6 +894,7 @@ mod tests {
                 waveform_url: None,
                 downloadable: false,
                 download_url: None,
+                secret_token: None,
             }],
         };
         let json = serde_json::to_string(&playlist).unwrap();

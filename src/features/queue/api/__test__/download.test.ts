@@ -26,6 +26,7 @@ const createDownloadRequest = (
   outputDir: null,
   durationMs: 180000,
   downloadUrl: null,
+  secretToken: null,
   ...partial,
 });
 
@@ -34,6 +35,7 @@ const createQueueItem = (partial: Partial<TrackCore> & Pick<TrackCore, 'trackUrl
   artworkUrl: null,
   durationMs: 180000,
   downloadUrl: null,
+  secretToken: null,
   ...partial,
 });
 
