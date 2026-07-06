@@ -22,7 +22,7 @@ export default function PlaylistDetail({ host, token, playlist, language, state,
 
   return (
     <div className="flex flex-col">
-      <div className="sticky top-0 bg-background border-b border-border">
+      <div className="sticky top-0 z-10 bg-background border-b border-border">
         <div className="flex items-center gap-2 px-3 py-2">
           <Button variant="ghost" size="sm" onClick={onBack} className="gap-1 px-2 text-muted-foreground">
             <ChevronLeft className="size-4" />
