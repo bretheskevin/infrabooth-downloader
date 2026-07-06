@@ -26,9 +26,11 @@ export default function TrackRow({ track, state, onPlay, onQueue, onDownload }: 
         ) : (
           <div className="w-full h-full bg-secondary" />
         )}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white">
-          {isPlaying ? <Pause className="size-4" fill="currentColor" /> : <Play className="size-4" fill="currentColor" />}
-        </div>
+        {isCurrent && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/40 text-white">
+            {isPlaying ? <Pause className="size-4" fill="currentColor" /> : <Play className="size-4" fill="currentColor" />}
+          </div>
+        )}
       </div>
       <div className="flex-1 min-w-0">
         <p className={cn('truncate text-sm font-medium', isCurrent ? 'text-primary' : 'text-foreground')}>{track.title}</p>
