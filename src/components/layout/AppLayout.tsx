@@ -94,7 +94,7 @@ export function AppLayout({ children, activePage, onPageChange, isSignedIn, hide
       <main
         className="flex-1 flex flex-col min-h-0 overflow-y-auto px-6 py-6 w-full container mx-auto transition-[padding-bottom] duration-300 ease-in-out"
         style={{
-          paddingBottom: expandedBarVisible ? EXPANDED_BAR_HEIGHT + 16 : undefined,
+          paddingBottom: expandedBarVisible ? EXPANDED_BAR_HEIGHT : undefined,
         }}
       >
         {!hideTabs && <PageNav activePage={activePage} onPageChange={onPageChange} isSignedIn={isSignedIn} />}
