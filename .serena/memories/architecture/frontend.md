@@ -85,6 +85,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - DetailHeader, ArtistAvatar, ArtistAvatarImage, ArtistCarouselSection (sorts artists with new content first, reposts before originals by default)
 - CreatePlaylistDialog — dialog for creating new SoundCloud playlists (name input + public/private switch)
 - EditPlaylistDialog — dialog for editing owned playlists (title, public/private, remove/undo tracks)
+- PlaylistItemCore — pure presentational fragment: artwork thumbnail (with fallback) + title (+ optional titleAddon) + subtitle (ReactNode) + children slot. Props: artworkUrl, title, subtitle, titleAddon?, artworkClassName?, children?. No hooks/stores/i18n — used by both LibraryPlaylistItem (desktop) and PlaylistList (remote).
 - CardListView — generic primitive rendering card or list mode based on settings
 - ViewModeToggle — UI control for toggling between card/list layouts
 - FilterChips, SortDirectionSelect, PreserveOrderToggle

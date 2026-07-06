@@ -1,4 +1,5 @@
 import { t } from '@remote/lib/i18n';
+import { PlaylistItemCore } from '@/components/PlaylistItemCore';
 import type { LibraryPlaylist } from '../utils/filterPlaylists';
 import { useResolvedArtwork } from '../hooks/useResolvedArtwork';
 
@@ -24,17 +25,16 @@ function PlaylistItem({ host, token, playlist, language, onSelect }: ItemProps) 
 
   return (
     <li onClick={() => onSelect(playlist)} className="flex items-center gap-3 px-4 py-3 cursor-pointer">
-      {artworkUrl ? (
-        <img src={artworkUrl} alt="" className="w-10 h-10 rounded object-cover flex-shrink-0" />
-      ) : (
-        <div className="w-10 h-10 rounded flex-shrink-0 bg-secondary" />
-      )}
-      <div className="flex-1 min-w-0">
-        <p className="truncate text-sm font-medium text-foreground">{playlist.title}</p>
-        <p className="truncate text-xs text-muted-foreground">
-          {playlist.username} &middot; {playlist.trackCount} {t('tracks', language)}
-        </p>
-      </div>
+      <PlaylistItemCore
+        artworkUrl={artworkUrl}
+        artworkClassName="w-10 h-10 rounded"
+        title={playlist.title}
+        subtitle={
+          <p className="truncate text-xs text-muted-foreground">
+            {playlist.username} &middot; {playlist.trackCount} {t('tracks', language)}
+          </p>
+        }
+      />
     </li>
   );
 }

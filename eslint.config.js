@@ -83,6 +83,8 @@ export default [
         afterAll: 'readonly',
         global: 'readonly',
         IntersectionObserverCallback: 'readonly',
+        ResizeObserverCallback: 'readonly',
+        ResizeObserverEntry: 'readonly',
       },
     },
   },

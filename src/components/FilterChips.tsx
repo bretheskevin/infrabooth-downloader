@@ -1,4 +1,4 @@
-import { useTranslation } from 'react-i18next';
+import { useT } from '@/lib/translation';
 import { Button } from '@/components/ui/button';
 
 export interface FilterChipsProps<T extends string> {
@@ -8,7 +8,7 @@ export interface FilterChipsProps<T extends string> {
 }
 
 export function FilterChips<T extends string>({ options, active, onChange }: FilterChipsProps<T>) {
-  const { t } = useTranslation();
+  const t = useT();
 
   return (
     <div className="flex gap-2">

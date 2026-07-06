@@ -1,5 +1,5 @@
-import { useRef, useEffect, useState } from 'react';
-import { drawWaveform } from '@/lib/waveform';
+import { useRef, useState } from 'react';
+import { useWaveformCanvas } from '@/lib/useWaveformCanvas';
 
 interface WaveformProps {
   samples: number[];
@@ -9,50 +9,14 @@ interface WaveformProps {
 
 export default function Waveform({ samples, progress, onSeek }: WaveformProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [size, setSize] = useState({ w: 0, h: 0 });
   const [scrubProgress, setScrubProgress] = useState<number | null>(null);
 
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const observer = new ResizeObserver((entries) => {
-      const entry = entries[0];
-      if (entry) {
-        setSize({ w: entry.contentRect.width, h: entry.contentRect.height });
-      }
-    });
-
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas || samples.length === 0 || size.w === 0) return;
-
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    const rect = canvas.getBoundingClientRect();
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.scale(dpr, dpr);
-
-    const styles = getComputedStyle(canvas);
-    const primary = styles.getPropertyValue('--primary').trim() || '258 84% 75%';
-    const muted = styles.getPropertyValue('--muted-foreground').trim() || '240 6% 70%';
-
-    drawWaveform(ctx, samples, {
-      progress: scrubProgress ?? progress,
-      width: rect.width,
-      height: rect.height,
-      playedColor: `hsl(${primary})`,
-      barColor: `hsl(${muted} / 0.4)`,
-    });
-  }, [samples, progress, size, scrubProgress]);
+  useWaveformCanvas(canvasRef, {
+    samples,
+    progress: scrubProgress ?? progress,
+    primaryFallback: '258 84% 75%',
+    mutedFallback: '240 6% 70%',
+  });
 
   function getProgressFromPointer(e: React.PointerEvent<HTMLCanvasElement>): number {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -82,7 +46,7 @@ export default function Waveform({ samples, progress, onSeek }: WaveformProps) {
   }
 
   return (
-    <div ref={containerRef} className="relative w-full" style={{ height: 48 }}>
+    <div className="relative w-full" style={{ height: 48 }}>
       <canvas
         ref={canvasRef}
         className="h-full w-full"

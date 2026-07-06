@@ -1,4 +1,4 @@
-import { Download, Loader2, Music } from 'lucide-react';
+import { Download, Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { useIsDownloadEnabled } from '@/features/settings';
@@ -6,6 +6,7 @@ import { ArtistLink } from '@/components/ArtistLink';
 import { PrivatePlaylistLock } from '@/components/PrivatePlaylistLock';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import { cn } from '@/lib/utils';
+import { PlaylistItemCore } from '@/components/PlaylistItemCore';
 import { usePlaylistArtwork } from '../hooks/usePlaylistArtwork';
 import type { LibraryPlaylist } from '@/bindings';
 
@@ -39,54 +40,38 @@ export function LibraryPlaylistItem({ playlist, onOpenDetail, onDownload, isDown
         onClick={onOpenDetail}
         aria-label={playlist.title}
       />
-      <div className="flex-shrink-0">
-        {artworkUrl ? (
-          <img
-            src={artworkUrl}
-            alt={playlist.title}
-            className={cn('object-cover', isWidescreen ? 'w-[52px] h-[52px] rounded-lg' : 'w-12 h-12 rounded-md')}
+      <PlaylistItemCore
+        artworkUrl={artworkUrl}
+        artworkClassName={isWidescreen ? 'w-[52px] h-[52px] rounded-lg' : 'w-12 h-12 rounded-md'}
+        title={playlist.title}
+        titleAddon={!playlist.is_public ? <PrivatePlaylistLock className="h-3.5 w-3.5" /> : undefined}
+        subtitle={
+          <ArtistLink
+            userId={playlist.user_id}
+            username={playlist.username}
+            className="relative z-10 block text-xs text-muted-foreground truncate max-w-full"
           />
-        ) : (
-          <div
-            className={cn(
-              'bg-secondary flex items-center justify-center',
-              isWidescreen ? 'w-[52px] h-[52px] rounded-lg' : 'w-12 h-12 rounded-md',
-            )}
-            data-testid="library-item-artwork-placeholder"
+        }
+      >
+        <span className={cn('text-xs text-muted-foreground flex-shrink-0', isWidescreen && 'tabular-nums')}>
+          {t('download.trackCount', { count: playlist.track_count })}
+        </span>
+        {isDownloadEnabled && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative z-10 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label={t('library.detail.download')}
+            disabled={isDownloading}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload();
+            }}
           >
-            <Music className="h-4 w-4 text-muted-foreground" />
-          </div>
+            {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          </Button>
         )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-1">
-          <p className="text-sm font-medium truncate min-w-0">{playlist.title}</p>
-          {!playlist.is_public && <PrivatePlaylistLock className="h-3.5 w-3.5" />}
-        </div>
-        <ArtistLink
-          userId={playlist.user_id}
-          username={playlist.username}
-          className="relative z-10 block text-xs text-muted-foreground truncate max-w-full"
-        />
-      </div>
-      <span className={cn('text-xs text-muted-foreground flex-shrink-0', isWidescreen && 'tabular-nums')}>
-        {t('download.trackCount', { count: playlist.track_count })}
-      </span>
-      {isDownloadEnabled && (
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative z-10 h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
-          aria-label={t('library.detail.download')}
-          disabled={isDownloading}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDownload();
-          }}
-        >
-          {isDownloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-        </Button>
-      )}
+      </PlaylistItemCore>
     </div>
   );
 }

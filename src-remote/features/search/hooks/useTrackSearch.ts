@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import type { RemoteTrack } from '@/lib/remote-protocol';
+import { useDebounce } from '@/lib/useDebounce';
 import { searchTracks } from '../api/searchTracks';
 
 const DEBOUNCE_MS = 400;
@@ -15,28 +16,30 @@ export function useTrackSearch(host: string, token: string): UseTrackSearchResul
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<RemoteTrack[]>([]);
   const [loading, setLoading] = useState(false);
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const debouncedQuery = useDebounce(query, DEBOUNCE_MS);
 
   useEffect(() => {
-    if (debounceRef.current !== null) clearTimeout(debounceRef.current);
-    if (!query.trim()) {
+    if (!debouncedQuery.trim()) {
       setResults([]);
+      setLoading(false);
       return;
     }
-    debounceRef.current = setTimeout(async () => {
-      setLoading(true);
-      try {
-        setResults(await searchTracks(host, token, query));
-      } catch {
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, DEBOUNCE_MS);
+    let cancelled = false;
+    setLoading(true);
+    searchTracks(host, token, debouncedQuery)
+      .then((tracks) => {
+        if (!cancelled) setResults(tracks);
+      })
+      .catch(() => {
+        if (!cancelled) setResults([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
     return () => {
-      if (debounceRef.current !== null) clearTimeout(debounceRef.current);
+      cancelled = true;
     };
-  }, [query, host, token]);
+  }, [debouncedQuery, host, token]);
 
   return { query, setQuery, results, loading };
 }

@@ -1,19 +1,21 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { FilterChips } from '../FilterChips';
+import { TranslationProvider } from '@/lib/translation';
 
-vi.mock('react-i18next', () => ({
-  useTranslation: () => ({
-    t: (key: string) => {
-      const map: Record<string, string> = {
-        'filter.all': 'All',
-        'filter.new': 'New',
-        'filter.reposted': 'Reposted',
-      };
-      return map[key] ?? key;
-    },
-  }),
-}));
+const tFn = (key: string) => {
+  const map: Record<string, string> = {
+    'filter.all': 'All',
+    'filter.new': 'New',
+    'filter.reposted': 'Reposted',
+  };
+  return map[key] ?? key;
+};
+
+function Wrapper({ children }: { children: ReactNode }) {
+  return <TranslationProvider t={tFn}>{children}</TranslationProvider>;
+}
 
 const OPTIONS = [
   { key: 'all' as const, label: 'filter.all' },
@@ -23,14 +25,14 @@ const OPTIONS = [
 
 describe('FilterChips', () => {
   it('renders all options', () => {
-    render(<FilterChips options={OPTIONS} active="all" onChange={vi.fn()} />);
+    render(<FilterChips options={OPTIONS} active="all" onChange={vi.fn()} />, { wrapper: Wrapper });
     expect(screen.getByText('All')).toBeInTheDocument();
     expect(screen.getByText('New')).toBeInTheDocument();
     expect(screen.getByText('Reposted')).toBeInTheDocument();
   });
 
   it('highlights the active chip with default variant', () => {
-    render(<FilterChips options={OPTIONS} active="new" onChange={vi.fn()} />);
+    render(<FilterChips options={OPTIONS} active="new" onChange={vi.fn()} />, { wrapper: Wrapper });
     const newBtn = screen.getByText('New').closest('button')!;
     const allBtn = screen.getByText('All').closest('button')!;
     expect(newBtn.className).not.toEqual(allBtn.className);
@@ -38,7 +40,7 @@ describe('FilterChips', () => {
 
   it('calls onChange when a chip is clicked', () => {
     const onChange = vi.fn();
-    render(<FilterChips options={OPTIONS} active="all" onChange={onChange} />);
+    render(<FilterChips options={OPTIONS} active="all" onChange={onChange} />, { wrapper: Wrapper });
     fireEvent.click(screen.getByText('Reposted'));
     expect(onChange).toHaveBeenCalledWith('reposted');
   });

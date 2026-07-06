@@ -1,7 +1,13 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, act } from '@testing-library/react';
-import { TrackListView } from '../TrackListView';
+import type { ReactNode } from 'react';
 import type { TrackInfo } from '@/bindings';
+import { TranslationProvider } from '@/lib/translation';
+import { TrackListView } from '../TrackListView';
+
+function Wrapper({ children }: { children: ReactNode }) {
+  return <TranslationProvider t={(key) => key}>{children}</TranslationProvider>;
+}
 
 const mockPlayTrack = vi.fn();
 const mockSyncQueue = vi.fn();
@@ -223,6 +229,7 @@ describe('TrackListView', () => {
           onChange,
         }}
       />,
+      { wrapper: Wrapper },
     );
     expect(screen.getByText('All')).toBeInTheDocument();
     expect(screen.getByText('New')).toBeInTheDocument();

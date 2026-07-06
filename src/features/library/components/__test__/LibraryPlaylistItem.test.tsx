@@ -58,7 +58,7 @@ describe('LibraryPlaylistItem', () => {
     const noArt = { ...mockPlaylist, artwork_url: null };
     render(<LibraryPlaylistItem playlist={noArt} onOpenDetail={vi.fn()} onDownload={vi.fn()} />);
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
-    expect(screen.getByTestId('library-item-artwork-placeholder')).toBeInTheDocument();
+    expect(screen.getByTestId('playlist-item-artwork-placeholder')).toBeInTheDocument();
   });
 
   it('calls onOpenDetail when row is clicked', () => {

@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react';
-import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { SearchBar } from '@/components/ui/search-bar';
+import { FilterChips } from '@/components/FilterChips';
 import { t } from '@remote/lib/i18n';
 import { useLibrary } from '../hooks/useLibrary';
 import { filterPlaylists, type LibraryFilter, type LibraryPlaylist } from '../utils/filterPlaylists';
@@ -25,6 +25,8 @@ const FILTER_LABELS: Record<LibraryFilter, string> = {
   mine: 'filterMine',
   liked: 'filterLiked',
 };
+
+const FILTER_OPTIONS = FILTERS.map((f) => ({ key: f, label: FILTER_LABELS[f] }));
 
 export default function LibraryTab({ host, token, send, language, state }: Props) {
   const { playlists, loading, error, refetch } = useLibrary(host, token);
@@ -51,21 +53,8 @@ export default function LibraryTab({ host, token, send, language, state }: Props
   return (
     <div className="flex flex-col">
       <div className="sticky top-0 p-3 bg-background space-y-2">
-        <Input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('filterPlaylists', language)} />
-        <div className="flex gap-2">
-          {FILTERS.map((f) => (
-            <button
-              key={f}
-              onClick={() => setActiveFilter(f)}
-              className={cn(
-                'px-3 py-1 rounded-full text-xs font-medium transition-colors',
-                activeFilter === f ? 'bg-secondary text-primary' : 'text-muted-foreground',
-              )}
-            >
-              {t(FILTER_LABELS[f], language)}
-            </button>
-          ))}
-        </div>
+        <SearchBar value={search} onChange={setSearch} placeholder={t('filterPlaylists', language)} />
+        <FilterChips options={FILTER_OPTIONS} active={activeFilter} onChange={setActiveFilter} />
       </div>
       {loading && (
         <div className="flex justify-center p-4">
