@@ -27,6 +27,9 @@ const dict: Record<string, Record<LangKey, string>> = {
   back: { en: 'Back', fr: 'Retour' },
   libraryError: { en: 'Failed to load library', fr: 'Impossible de charger la bibliothèque' },
   retry: { en: 'Retry', fr: 'Réessayer' },
+  mixedForYou: { en: 'Mixed for you', fr: 'Mixés pour vous' },
+  freshPicks: { en: 'Fresh Picks', fr: 'À ne pas manquer' },
+  selectionsError: { en: 'Failed to load mixes', fr: 'Impossible de charger les mixes' },
 };
 
 export function t(key: string, language: string): string {

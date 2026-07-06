@@ -14,7 +14,7 @@ use specta::Type;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::{broadcast, oneshot, watch, Mutex};
 
-use crate::services::{client_id, events, library, playlist, search};
+use crate::services::{client_id, events, library, playlist, search, selections};
 
 #[derive(Embed)]
 #[folder = "remote-dist/"]
@@ -262,6 +262,36 @@ async fn library_artwork_handler(AxumState(state): AxumState<AppState>, Query(pa
     }
 }
 
+async fn selections_handler(AxumState(state): AxumState<AppState>, Query(params): Query<TokenQuery>) -> impl IntoResponse {
+    if !token_matches(&params.token, &state.token) {
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+    }
+
+    let cache = state.app_handle.state::<selections::SelectionCache>();
+    if let Some(cached) = cache.get() {
+        return Json(cached).into_response();
+    }
+
+    let (oauth_token, cid) = match crate::commands::require_auth_and_cid(&state.app_handle).await {
+        Ok(pair) => pair,
+        Err(e) => {
+            log::error!("[remote] selections auth: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
+        }
+    };
+
+    match selections::fetch_selections(&oauth_token, &cid).await {
+        Ok(sels) => {
+            cache.set(sels.clone());
+            Json(sels).into_response()
+        }
+        Err(e) => {
+            log::error!("[remote] selections fetch: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+        }
+    }
+}
+
 pub async fn start_server(app_handle: AppHandle) -> Result<RemoteServerInfo, String> {
     let token = generate_token();
     let (state_tx, _) = broadcast::channel(64);
@@ -277,6 +307,7 @@ pub async fn start_server(app_handle: AppHandle) -> Result<RemoteServerInfo, Str
         .route("/api/library", get(library_handler))
         .route("/api/playlist-tracks", get(playlist_tracks_handler))
         .route("/api/library-artwork", get(library_artwork_handler))
+        .route("/api/selections", get(selections_handler))
         .route("/{*path}", get(static_handler))
         .with_state(app_state);
 
