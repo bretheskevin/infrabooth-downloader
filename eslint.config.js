@@ -86,4 +86,74 @@ export default [
       },
     },
   },
+  // src-remote: runtime-agnostic mobile bundle — enforce import boundaries
+  {
+    files: ['src-remote/**/*.{ts,tsx}'],
+    languageOptions: {
+      parser: typescriptParser,
+      parserOptions: {
+        ecmaVersion: 'latest',
+        sourceType: 'module',
+        ecmaFeatures: { jsx: true },
+      },
+      globals: {
+        ...globals.browser,
+        ...globals.es2021,
+        React: 'readonly',
+      },
+    },
+    rules: {
+      // Disabled: src-remote/tsconfig.json enables noUnusedLocals + noUnusedParameters,
+      // and @typescript-eslint plugin is not loaded in this block, so the base rule
+      // would produce false positives on TypeScript constructs (type imports, interfaces).
+      'no-unused-vars': 'off',
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@tauri-apps/*', '@tauri-apps/**'],
+              message:
+                'src-remote is a Tauri-free mobile bundle; do not import Tauri runtime APIs. Use runtime-agnostic code from @/lib or @/components/ui instead.',
+            },
+            {
+              group: ['zustand', 'zustand/**'],
+              message:
+                'src-remote is a Tauri-free mobile bundle; do not use Zustand. Receive state via the WebSocket protocol (RemoteState) and use local React state instead.',
+            },
+            {
+              group: ['@tanstack/*', '@tanstack/**'],
+              message:
+                'src-remote is a Tauri-free mobile bundle; do not use @tanstack/react-query or react-virtual. Use fetch() and local React state instead.',
+            },
+            {
+              group: ['@/features/*', '@/features/**'],
+              message:
+                'src-remote may not import desktop feature modules from @/features — they carry Tauri and Zustand dependencies. Import runtime-agnostic code from @/lib or @/components/ui instead.',
+            },
+            {
+              group: ['@/hooks/*', '@/hooks/**'],
+              message:
+                'src-remote may not import desktop hooks from @/hooks — they are tied to Tauri or Zustand stores. Implement mobile-specific hooks inside src-remote/ instead.',
+            },
+            {
+              group: ['@/lib/logger', '@/lib/tauri'],
+              message:
+                'src-remote is a Tauri-free mobile bundle; @/lib/logger and @/lib/tauri are Tauri-coupled. Use src-remote-local utilities instead.',
+            },
+            {
+              group: ['@/bindings', '@/bindings/**'],
+              message:
+                'src-remote is a Tauri-free mobile bundle; @/bindings is auto-generated from Tauri IPC commands and must not be imported here.',
+            },
+            {
+              group: ['@/**/store', '@/**/store.ts'],
+              message:
+                'src-remote must not import desktop Zustand stores. Receive application state via the WebSocket protocol (RemoteState) instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

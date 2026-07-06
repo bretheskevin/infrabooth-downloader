@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useWaveform } from '../hooks/useWaveform';
+import { useWaveform } from '@/lib/useWaveform';
 
 describe('useWaveform', () => {
   beforeEach(() => {

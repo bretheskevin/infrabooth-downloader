@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, useState, useMemo } from 'react';
 import { cn, clamp } from '@/lib/utils';
+import { drawWaveform } from '@/lib/waveform';
 
 interface WaveformProps {
   samples: number[];
@@ -42,46 +43,19 @@ export function Waveform({ samples, progress, onSeek, className }: WaveformProps
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
 
-    const width = rect.width;
-    const height = rect.height;
-    const centerY = height / 2;
-
-    let maxSample = 1;
-    for (const s of samples) {
-      if (s > maxSample) maxSample = s;
-    }
-
-    const barWidth = 2;
-    const gap = 1;
-    const step = barWidth + gap;
-    const barCount = Math.floor(width / step);
-    const playedIndex = Math.floor(progress * barCount);
-
-    ctx.clearRect(0, 0, width, height);
-
     const styles = getComputedStyle(canvas);
-    const playedColor = styles.getPropertyValue('--primary').trim() || '221 83% 53%';
-    const unplayedColor = styles.getPropertyValue('--muted-foreground').trim() || '215 16% 47%';
-    const hoverIndex = hoverProgress !== null ? Math.floor(hoverProgress * barCount) : -1;
+    const playedColorValue = styles.getPropertyValue('--primary').trim() || '221 83% 53%';
+    const unplayedColorValue = styles.getPropertyValue('--muted-foreground').trim() || '215 16% 47%';
 
-    for (let i = 0; i < barCount; i++) {
-      const sampleIndex = Math.floor((i / barCount) * samples.length);
-      const sample = samples[sampleIndex] ?? 0;
-      const normalized = sample / maxSample;
-
-      const barHeight = Math.max(2, normalized * (height - 4));
-      const halfBar = barHeight / 2;
-      const x = i * step;
-
-      if (i <= playedIndex) {
-        ctx.fillStyle = `hsl(${playedColor})`;
-      } else if (hoverIndex >= 0 && i <= hoverIndex) {
-        ctx.fillStyle = `hsl(${unplayedColor} / 0.6)`;
-      } else {
-        ctx.fillStyle = `hsl(${unplayedColor} / 0.4)`;
-      }
-      ctx.fillRect(x, centerY - halfBar, barWidth, barHeight);
-    }
+    drawWaveform(ctx, samples, {
+      progress,
+      width: rect.width,
+      height: rect.height,
+      playedColor: `hsl(${playedColorValue})`,
+      barColor: `hsl(${unplayedColorValue} / 0.4)`,
+      hoverProgress,
+      hoverBarColor: `hsl(${unplayedColorValue} / 0.6)`,
+    });
   }, [samples, progress, size, hoverProgress]);
 
   const getProgress = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {

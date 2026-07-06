@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Waveform, WaveformSkeleton } from './Waveform';
-import { useWaveform } from '../hooks/useWaveform';
+import { useWaveform } from '@/lib/useWaveform';
 import { usePlayerStore } from '../store';
 import { cn } from '@/lib/utils';
 

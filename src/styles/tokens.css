@@ -1,0 +1,74 @@
+:root {
+  --background: 0 0% 98%;
+  --foreground: 240 10% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 10%;
+  --primary: 258 90% 66%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 5% 92%;
+  --secondary-foreground: 240 6% 20%;
+  --muted: 240 5% 94%;
+  --muted-foreground: 240 4% 46%;
+  --accent: 258 90% 96%;
+  --accent-foreground: 258 90% 50%;
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 0%;
+  --info: 217 91% 60%;
+  --info-foreground: 0 0% 100%;
+  --border: 240 6% 90%;
+  --input: 240 6% 90%;
+  --ring: 258 90% 66%;
+  --chart-1: 258 90% 66%;
+  --chart-2: 173 58% 39%;
+  --chart-3: 197 37% 24%;
+  --chart-4: 43 74% 66%;
+  --chart-5: 27 87% 67%;
+  --radius: 0.625rem;
+
+  --surface-elevated: 0 0% 100%;
+  --surface-hover: 240 5% 96%;
+  --glow-primary: 258 90% 66% / 0.25;
+}
+
+.dark {
+  --background: 240 4% 16%;
+  --foreground: 0 0% 93%;
+  --card: 240 4% 20%;
+  --card-foreground: 0 0% 93%;
+  --popover: 240 4% 20%;
+  --popover-foreground: 0 0% 93%;
+  --primary: 258 85% 75%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4% 26%;
+  --secondary-foreground: 0 0% 93%;
+  --muted: 240 4% 24%;
+  --muted-foreground: 240 5% 70%;
+  --accent: 240 4% 26%;
+  --accent-foreground: 0 0% 93%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 142 71% 45%;
+  --success-foreground: 0 0% 100%;
+  --warning: 38 92% 50%;
+  --warning-foreground: 0 0% 0%;
+  --info: 217 91% 60%;
+  --info-foreground: 0 0% 100%;
+  --border: 240 4% 28%;
+  --input: 240 4% 26%;
+  --ring: 258 90% 66%;
+  --chart-1: 258 90% 66%;
+  --chart-2: 160 60% 45%;
+  --chart-3: 30 80% 55%;
+  --chart-4: 280 65% 60%;
+  --chart-5: 340 75% 55%;
+
+  --surface-elevated: 240 4% 22%;
+  --surface-hover: 240 4% 28%;
+  --glow-primary: 258 90% 66% / 0.25;
+}

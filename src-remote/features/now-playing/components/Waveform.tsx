@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState } from 'react';
+import { drawWaveform } from '@/lib/waveform';
 
 interface WaveformProps {
   samples: number[];
@@ -40,43 +41,17 @@ export default function Waveform({ samples, progress, onSeek }: WaveformProps) {
     canvas.height = rect.height * dpr;
     ctx.scale(dpr, dpr);
 
-    const width = rect.width;
-    const height = rect.height;
-    const centerY = height / 2;
-
-    let maxSample = 1;
-    for (const s of samples) {
-      if (s > maxSample) maxSample = s;
-    }
-
-    const barWidth = 2;
-    const gap = 1;
-    const step = barWidth + gap;
-    const barCount = Math.floor(width / step);
-    const displayProgress = scrubProgress ?? progress;
-    const playedIndex = Math.floor(displayProgress * barCount);
-
-    ctx.clearRect(0, 0, width, height);
-
     const styles = getComputedStyle(canvas);
     const primary = styles.getPropertyValue('--primary').trim() || '258 84% 75%';
     const muted = styles.getPropertyValue('--muted-foreground').trim() || '240 6% 70%';
 
-    const playedColor = `hsl(${primary})`;
-    const unplayedColor = `hsl(${muted} / 0.4)`;
-
-    for (let i = 0; i < barCount; i++) {
-      const sampleIndex = Math.floor((i / barCount) * samples.length);
-      const sample = samples[sampleIndex] ?? 0;
-      const normalized = sample / maxSample;
-
-      const barHeight = Math.max(2, normalized * (height - 4));
-      const halfBar = barHeight / 2;
-      const x = i * step;
-
-      ctx.fillStyle = i <= playedIndex ? playedColor : unplayedColor;
-      ctx.fillRect(x, centerY - halfBar, barWidth, barHeight);
-    }
+    drawWaveform(ctx, samples, {
+      progress: scrubProgress ?? progress,
+      width: rect.width,
+      height: rect.height,
+      playedColor: `hsl(${primary})`,
+      barColor: `hsl(${muted} / 0.4)`,
+    });
   }, [samples, progress, size, scrubProgress]);
 
   function getProgressFromPointer(e: React.PointerEvent<HTMLCanvasElement>): number {
