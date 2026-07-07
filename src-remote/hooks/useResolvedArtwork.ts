@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { resolveArtwork } from '../api/library';
-import type { LibraryPlaylist } from '../utils/filterPlaylists';
+import { resolveArtwork } from '@remote/features/library/api/library';
+import type { LibraryPlaylist } from '@remote/lib/playlistMapping';
 
 export function useResolvedArtwork(host: string, token: string, playlist: LibraryPlaylist): string | null {
   const [resolved, setResolved] = useState<string | null>(null);

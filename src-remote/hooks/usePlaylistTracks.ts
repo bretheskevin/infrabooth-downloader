@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { RemoteTrack } from '@/lib/remote-protocol';
-import { fetchPlaylistTracks } from '../api/library';
+import { fetchPlaylistTracks } from '@remote/features/library/api/library';
 
 interface UsePlaylistTracksResult {
   tracks: RemoteTrack[];

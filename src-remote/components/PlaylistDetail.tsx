@@ -3,8 +3,8 @@ import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
 import { Button } from '@/components/ui/button';
 import { t } from '@remote/lib/i18n';
 import TrackList from '@remote/components/TrackList';
-import { usePlaylistTracks } from '../hooks/usePlaylistTracks';
-import type { LibraryPlaylist } from '../utils/filterPlaylists';
+import { usePlaylistTracks } from '@remote/hooks/usePlaylistTracks';
+import type { LibraryPlaylist } from '@remote/lib/playlistMapping';
 import { sendPlayToggle } from '@remote/lib/playToggle';
 
 interface Props {

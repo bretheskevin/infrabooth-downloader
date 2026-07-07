@@ -1,36 +1,6 @@
 import type { RemoteTrack } from '@/lib/remote-protocol';
 import { mapTrack, type TrackInfoJson } from '@remote/lib/trackMapping';
-import type { LibraryPlaylist } from '../utils/filterPlaylists';
-
-interface LibraryPlaylistJson {
-  id: number;
-  title: string;
-  username: string;
-  user_id: number | null;
-  artwork_url: string | null;
-  track_count: number;
-  duration: number;
-  permalink_url: string;
-  is_owned: boolean;
-  is_public: boolean;
-  secret_token: string | null;
-}
-
-function mapPlaylist(p: LibraryPlaylistJson): LibraryPlaylist {
-  return {
-    id: p.id,
-    title: p.title,
-    username: p.username,
-    userId: p.user_id,
-    artworkUrl: p.artwork_url,
-    trackCount: p.track_count,
-    duration: p.duration,
-    permalinkUrl: p.permalink_url,
-    isOwned: p.is_owned,
-    isPublic: p.is_public,
-    secretToken: p.secret_token,
-  };
-}
+import { mapPlaylist, type LibraryPlaylist, type LibraryPlaylistJson } from '@remote/lib/playlistMapping';
 
 export async function fetchLibrary(host: string, token: string): Promise<LibraryPlaylist[]> {
   const resp = await fetch(`http://${host}/api/library?t=${token}`);

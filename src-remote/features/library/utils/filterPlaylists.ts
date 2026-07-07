@@ -1,20 +1,7 @@
 import { filterPlaylists as filterPlaylistsBy, type LibraryFilter } from '@/lib/filterPlaylists';
+import type { LibraryPlaylist } from '@remote/lib/playlistMapping';
 
-export type { LibraryFilter };
-
-export interface LibraryPlaylist {
-  id: number;
-  title: string;
-  username: string;
-  userId: number | null;
-  artworkUrl: string | null;
-  trackCount: number;
-  duration: number;
-  permalinkUrl: string;
-  isOwned: boolean;
-  isPublic: boolean;
-  secretToken: string | null;
-}
+export type { LibraryFilter, LibraryPlaylist };
 
 export function filterPlaylists(playlists: LibraryPlaylist[], searchQuery: string, filter: LibraryFilter): LibraryPlaylist[] {
   return filterPlaylistsBy(playlists, searchQuery, filter, (p) => p.isOwned);

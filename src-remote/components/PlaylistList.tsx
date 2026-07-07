@@ -1,8 +1,8 @@
 import { t } from '@remote/lib/i18n';
 import { PlaylistItemCore } from '@/components/PlaylistItemCore';
 import { getArtworkUrl } from '@/lib/soundcloud';
-import type { LibraryPlaylist } from '../utils/filterPlaylists';
-import { useResolvedArtwork } from '../hooks/useResolvedArtwork';
+import type { LibraryPlaylist } from '@remote/lib/playlistMapping';
+import { useResolvedArtwork } from '@remote/hooks/useResolvedArtwork';
 
 interface Props {
   host: string;

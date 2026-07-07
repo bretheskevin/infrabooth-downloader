@@ -754,6 +754,11 @@
     "retry": "Réessayer",
     "mixedForYou": "Mixés pour vous",
     "freshPicks": "À ne pas manquer",
-    "selectionsError": "Impossible de charger les mixes"
+    "selectionsError": "Impossible de charger les mixes",
+    "tabTracks": "Titres",
+    "tabPlaylists": "Playlists",
+    "tabAlbums": "Albums",
+    "searchPlaylistsPrompt": "Rechercher des playlists sur SoundCloud",
+    "searchAlbumsPrompt": "Rechercher des albums sur SoundCloud"
   }
 }

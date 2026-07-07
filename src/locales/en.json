@@ -754,6 +754,11 @@
     "retry": "Retry",
     "mixedForYou": "Mixed for you",
     "freshPicks": "Fresh Picks",
-    "selectionsError": "Failed to load mixes"
+    "selectionsError": "Failed to load mixes",
+    "tabTracks": "Tracks",
+    "tabPlaylists": "Playlists",
+    "tabAlbums": "Albums",
+    "searchPlaylistsPrompt": "Search for playlists on SoundCloud",
+    "searchAlbumsPrompt": "Search for albums on SoundCloud"
   }
 }

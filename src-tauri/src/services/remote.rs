@@ -194,6 +194,68 @@ async fn search_handler(AxumState(state): AxumState<AppState>, Query(params): Qu
     }
 }
 
+fn artist_playlist_to_library(p: crate::models::artist::ArtistPlaylist) -> library::LibraryPlaylist {
+    library::LibraryPlaylist {
+        id: p.id,
+        title: p.title,
+        username: p.user.as_ref().map(|u| u.username.clone()).unwrap_or_default(),
+        user_id: p.user.as_ref().map(|u| u.id),
+        artwork_url: p.artwork_url,
+        track_count: p.track_count,
+        duration: p.duration.unwrap_or(0),
+        permalink_url: p.permalink_url,
+        is_owned: false,
+        is_public: p.is_public,
+        secret_token: p.secret_token,
+    }
+}
+
+async fn search_playlists_handler(AxumState(state): AxumState<AppState>, Query(params): Query<SearchQuery>) -> impl IntoResponse {
+    if !token_matches(&params.token, &state.token) {
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+    }
+    let cid = match client_id::get_client_id().await {
+        Ok(id) => id,
+        Err(e) => {
+            log::error!("[remote] search-playlists client_id: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
+        }
+    };
+    match search::search_playlists(&cid, &params.q, 20, 0).await {
+        Ok(response) => {
+            let playlists: Vec<library::LibraryPlaylist> = response.collection.into_iter().map(artist_playlist_to_library).collect();
+            Json(playlists).into_response()
+        }
+        Err(e) => {
+            log::error!("[remote] search-playlists: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+async fn search_albums_handler(AxumState(state): AxumState<AppState>, Query(params): Query<SearchQuery>) -> impl IntoResponse {
+    if !token_matches(&params.token, &state.token) {
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+    }
+    let cid = match client_id::get_client_id().await {
+        Ok(id) => id,
+        Err(e) => {
+            log::error!("[remote] search-albums client_id: {}", e);
+            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
+        }
+    };
+    match search::search_albums(&cid, &params.q, 20, 0).await {
+        Ok(response) => {
+            let playlists: Vec<library::LibraryPlaylist> = response.collection.into_iter().map(artist_playlist_to_library).collect();
+            Json(playlists).into_response()
+        }
+        Err(e) => {
+            log::error!("[remote] search-albums: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
 async fn library_handler(AxumState(state): AxumState<AppState>, Query(params): Query<LibraryQuery>) -> impl IntoResponse {
     if !token_matches(&params.token, &state.token) {
         return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
@@ -304,6 +366,8 @@ pub async fn start_server(app_handle: AppHandle) -> Result<RemoteServerInfo, Str
         .route("/", get(root_handler))
         .route("/ws", get(ws_handler))
         .route("/api/search", get(search_handler))
+        .route("/api/search-playlists", get(search_playlists_handler))
+        .route("/api/search-albums", get(search_albums_handler))
         .route("/api/library", get(library_handler))
         .route("/api/playlist-tracks", get(playlist_tracks_handler))
         .route("/api/library-artwork", get(library_artwork_handler))

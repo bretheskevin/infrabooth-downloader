@@ -7,8 +7,8 @@ import { FilterChips } from '@/components/FilterChips';
 import { t } from '@remote/lib/i18n';
 import { useLibrary } from '../hooks/useLibrary';
 import { filterPlaylists, type LibraryFilter, type LibraryPlaylist } from '../utils/filterPlaylists';
-import PlaylistList from './PlaylistList';
-import PlaylistDetail from './PlaylistDetail';
+import PlaylistList from '@remote/components/PlaylistList';
+import PlaylistDetail from '@remote/components/PlaylistDetail';
 
 interface Props {
   host: string;
