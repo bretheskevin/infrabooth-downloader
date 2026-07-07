@@ -1,9 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import type { RemoteSelection } from '../../api/selections';
-import { filterPersonalMixes, filterCuratedPicks, CURATED_TITLES } from '../filterSelections';
+import { filterPersonalMixes, filterCuratedPicks, CURATED_TITLES } from '../selections';
 
-function sel(id: string, title: string): RemoteSelection {
-  return { id, title } as unknown as RemoteSelection;
+function sel(id: string, title: string) {
+  return { id, title };
 }
 
 describe('filterPersonalMixes', () => {

@@ -5,6 +5,7 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { RemoteTrack } from '@/lib/remote-protocol';
 import { cn } from '@/lib/utils';
+import { getArtworkUrl } from '@/lib/soundcloud';
 
 const SWIPE_THRESHOLD = 80;
 const MOVE_TOLERANCE = 6;
@@ -24,7 +25,7 @@ export default function QueueItem({ track, index, isCurrent, showPlayMarker, onS
   const startXRef = useRef<number | null>(null);
   const movedRef = useRef(false);
 
-  const artworkUrl = track.artworkUrl?.replace('-large', '-t50x50') ?? null;
+  const artworkUrl = getArtworkUrl(track.artworkUrl, 50);
 
   function handlePointerDown(e: ReactPointerEvent<HTMLDivElement>) {
     e.currentTarget.setPointerCapture(e.pointerId);

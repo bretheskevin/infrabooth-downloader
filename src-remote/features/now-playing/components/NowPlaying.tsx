@@ -1,8 +1,9 @@
 import type { RemoteState, RemoteCommand } from '@/lib/remote-protocol';
 import { formatDuration } from '@/lib/format';
+import { getArtworkUrl } from '@/lib/soundcloud';
 import { t } from '@remote/lib/i18n';
 import { useWaveform } from '@/lib/useWaveform';
-import Waveform from './Waveform';
+import { Waveform } from '@/components/Waveform';
 
 interface Props {
   state: RemoteState | null;
@@ -19,7 +20,7 @@ export default function NowPlaying({ state, language, onCommand }: Props) {
   }
 
   const { currentTrack: track, positionMs, durationMs } = state;
-  const artworkUrl = track.artworkUrl?.replace('-large', '-t500x500') ?? null;
+  const artworkUrl = getArtworkUrl(track.artworkUrl, 500);
   const progress = durationMs > 0 ? positionMs / durationMs : 0;
 
   function handleSeek(p: number) {
@@ -45,7 +46,7 @@ export default function NowPlaying({ state, language, onCommand }: Props) {
       </div>
       <div className="w-full flex flex-col gap-1">
         {samples !== null ? (
-          <Waveform samples={samples} progress={progress} onSeek={handleSeek} />
+          <Waveform samples={samples} progress={progress} onSeek={handleSeek} interaction="scrub" className="h-12" />
         ) : (
           <div className="w-full h-3 rounded-full overflow-hidden cursor-pointer bg-border" onClick={handleFallbackTap}>
             <div className="h-full rounded-full bg-primary" style={{ width: `${progress * 100}%` }} />

@@ -1,12 +1,11 @@
 @import '@/styles/tokens.css';
+@import '@/styles/base.css';
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 body {
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   overscroll-behavior: none;
   -webkit-tap-highlight-color: transparent;

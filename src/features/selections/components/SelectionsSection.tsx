@@ -6,11 +6,10 @@ import type { Selection } from '@/bindings';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
 import { cn } from '@/lib/utils';
+import { filterPersonalMixes, filterCuratedPicks } from '@/lib/selections';
 
 import { SelectionCard } from './SelectionCard';
 import { useSelections } from '../hooks/useSelections';
-
-const CURATED_TITLES = ['Daily Drops', 'Weekly Wave'] as const;
 
 function selectionGridClassName(isWidescreen: boolean) {
   return isWidescreen ? 'grid gap-3 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]' : 'grid grid-cols-2 sm:grid-cols-3 gap-3';
@@ -95,12 +94,8 @@ export function SelectionsSection({ onSelectMix, onDownloadMix }: SelectionsSect
   const { t } = useTranslation();
   const isWidescreen = useIsWidescreen();
   const { data: allSelections, isLoading, isError, refetch } = useSelections();
-  const personalMixes = useMemo(() => allSelections?.filter((s) => s.title.includes('Your Mix')), [allSelections]);
-  const curatedPicks = useMemo(
-    () =>
-      allSelections?.filter((s) => (CURATED_TITLES as readonly string[]).includes(s.title)).sort((a, b) => a.title.localeCompare(b.title)),
-    [allSelections],
-  );
+  const personalMixes = useMemo(() => (allSelections ? filterPersonalMixes(allSelections) : undefined), [allSelections]);
+  const curatedPicks = useMemo(() => (allSelections ? filterCuratedPicks(allSelections) : undefined), [allSelections]);
 
   if (isError) {
     return (

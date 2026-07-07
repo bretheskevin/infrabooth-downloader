@@ -2,7 +2,7 @@ import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { t } from '@remote/lib/i18n';
 import { useSelections } from '../hooks/useSelections';
-import { filterPersonalMixes, filterCuratedPicks } from '../utils/filterSelections';
+import { filterPersonalMixes, filterCuratedPicks } from '@/lib/selections';
 import type { RemoteSelection } from '../api/selections';
 import SelectionShelf from './SelectionShelf';
 

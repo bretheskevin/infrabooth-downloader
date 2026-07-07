@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { resolvePlayToggle } from '@/lib/playToggle';
 
 interface UsePlayPauseToggleParams {
   isCurrentlyPlaying: boolean;
@@ -11,12 +12,9 @@ interface UsePlayPauseToggleParams {
 
 export function usePlayPauseToggle({ isCurrentlyPlaying, isPlayerPlaying, onPlay, onPause, onResume, index }: UsePlayPauseToggleParams) {
   return useCallback(() => {
-    if (isCurrentlyPlaying && isPlayerPlaying) {
-      onPause?.();
-    } else if (isCurrentlyPlaying && !isPlayerPlaying) {
-      onResume?.();
-    } else {
-      onPlay?.(index);
-    }
+    const action = resolvePlayToggle(isCurrentlyPlaying, isPlayerPlaying);
+    if (action === 'pause') onPause?.();
+    else if (action === 'resume') onResume?.();
+    else onPlay?.(index);
   }, [isCurrentlyPlaying, isPlayerPlaying, onPause, onResume, onPlay, index]);
 }

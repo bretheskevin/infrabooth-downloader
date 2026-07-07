@@ -1,6 +1,6 @@
 import type { LibraryPlaylist } from '@/bindings';
 
-export type LibraryFilter = 'all' | 'mine' | 'liked';
+export type { LibraryFilter } from '@/lib/filterPlaylists';
 
 export type LibraryActiveTab = 'playlists' | 'tracks';
 

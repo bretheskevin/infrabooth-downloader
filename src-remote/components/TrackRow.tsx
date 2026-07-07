@@ -2,6 +2,8 @@ import { Play, Pause, Plus, Download, Loader2, Check } from 'lucide-react';
 import type { RemoteTrack, RemoteState } from '@/lib/remote-protocol';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { getArtworkUrl } from '@/lib/soundcloud';
+import { TrackRowCore } from '@/components/TrackRowCore';
 
 interface Props {
   track: RemoteTrack;
@@ -12,7 +14,7 @@ interface Props {
 }
 
 export default function TrackRow({ track, state, onPlay, onQueue, onDownload }: Props) {
-  const artworkUrl = track.artworkUrl?.replace('-large', '-t50x50') ?? null;
+  const artworkUrl = getArtworkUrl(track.artworkUrl, 50);
   const isCurrent = state?.currentTrack?.trackId === track.trackId;
   const isPlaying = isCurrent && state?.state === 'playing';
   const isDownloading = state?.downloadingTrackIds.includes(track.trackId) ?? false;
@@ -32,10 +34,7 @@ export default function TrackRow({ track, state, onPlay, onQueue, onDownload }: 
           </div>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <p className={cn('truncate text-sm font-medium', isCurrent ? 'text-primary' : 'text-foreground')}>{track.title}</p>
-        <p className="truncate text-xs text-muted-foreground">{track.artist}</p>
-      </div>
+      <TrackRowCore title={track.title} artist={track.artist} isCurrent={isCurrent} />
       <div className="flex gap-1 flex-shrink-0">
         <Button
           variant="ghost"

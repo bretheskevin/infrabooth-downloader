@@ -1,4 +1,5 @@
 import type { RemoteCommand, RemoteState, RemoteTrack } from '@/lib/remote-protocol';
+import { resolvePlayToggle } from '@/lib/playToggle';
 
 export function sendPlayToggle(
   send: (cmd: RemoteCommand) => void,
@@ -8,9 +9,11 @@ export function sendPlayToggle(
   startIndex: number,
 ): void {
   const isCurrent = state?.currentTrack?.trackId === track.trackId;
-  if (isCurrent) {
-    send(state?.state === 'playing' ? { type: 'pause' } : { type: 'resume' });
-  } else {
+  const action = resolvePlayToggle(isCurrent, state?.state === 'playing');
+
+  if (action === 'play') {
     send({ type: 'playTracks', tracks, startIndex });
+    return;
   }
+  send(action === 'pause' ? { type: 'pause' } : { type: 'resume' });
 }

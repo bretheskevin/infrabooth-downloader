@@ -1,8 +1,9 @@
 import type { CSSProperties } from 'react';
-import { SkipBack, SkipForward, Play, Pause, Volume2, VolumeX, ListMusic } from 'lucide-react';
+import { Volume2, VolumeX, ListMusic } from 'lucide-react';
 import type { RemoteState, RemoteCommand } from '@/lib/remote-protocol';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { TransportSkipBack, TransportSkipForward, TransportPlayPause } from '@/components/transport-buttons';
 import { t } from '@remote/lib/i18n';
 
 interface Props {
@@ -19,19 +20,13 @@ export default function Transport({ state, send, language, queueOpen, onToggleQu
   return (
     <div className="p-4 flex flex-col gap-4">
       <div className="flex items-center justify-center gap-8">
-        <Button variant="ghost" size="icon" onClick={() => send({ type: 'previous' })} className="h-11 w-11 [&_svg]:size-5">
-          <SkipBack />
-        </Button>
-        <Button
-          size="icon"
+        <TransportSkipBack onClick={() => send({ type: 'previous' })} className="h-11 w-11 [&_svg]:size-5" />
+        <TransportPlayPause
+          isPlaying={isPlaying}
           onClick={() => send(isPlaying ? { type: 'pause' } : { type: 'resume' })}
           className="h-16 w-16 rounded-full [&_svg]:size-7"
-        >
-          {isPlaying ? <Pause fill="currentColor" /> : <Play fill="currentColor" />}
-        </Button>
-        <Button variant="ghost" size="icon" onClick={() => send({ type: 'next' })} className="h-11 w-11 [&_svg]:size-5">
-          <SkipForward />
-        </Button>
+        />
+        <TransportSkipForward onClick={() => send({ type: 'next' })} className="h-11 w-11 [&_svg]:size-5" />
       </div>
       <div className="flex items-center gap-2">
         {state.volume === 0 ? (

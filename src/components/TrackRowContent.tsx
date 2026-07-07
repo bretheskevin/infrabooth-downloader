@@ -1,7 +1,7 @@
 import { Heart, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlayOverlay } from '@/features/player';
-import { cn } from '@/lib/utils';
+import { TrackRowCore } from '@/components/TrackRowCore';
 import { formatDuration, formatBytes } from '@/lib/format';
 import type { TrackInfo } from '@/bindings';
 
@@ -60,11 +60,12 @@ export function TrackRowContent({
           )}
         </div>
       </PlayOverlay>
-      <div className="flex-1 min-w-0">
-        <p className={cn('text-sm font-medium truncate', isCurrentlyPlaying && 'text-primary')}>{track.title}</p>
-        <div className="flex items-center gap-1 min-w-0">
-          {isLiked && <Heart className="h-3 w-3 shrink-0 fill-primary text-primary" aria-hidden="true" />}
-          {onArtistClick ? (
+      <TrackRowCore
+        title={track.title}
+        isCurrent={isCurrentlyPlaying}
+        artistPrefix={isLiked && <Heart className="h-3 w-3 shrink-0 fill-primary text-primary" aria-hidden="true" />}
+        artist={
+          onArtistClick ? (
             <Button
               variant="ghost"
               className="text-xs text-muted-foreground truncate hover:text-foreground hover:bg-transparent h-auto p-0 block max-w-full text-left"
@@ -77,10 +78,11 @@ export function TrackRowContent({
               {track.user.username}
             </Button>
           ) : (
-            <p className="text-xs text-muted-foreground truncate">{track.user.username}</p>
-          )}
-        </div>
-        {subtitleSlot}
+            track.user.username
+          )
+        }
+        subtitleSlot={subtitleSlot}
+      >
         {showProgress && (
           <div className="mt-1 flex items-center gap-2">
             <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
@@ -96,7 +98,7 @@ export function TrackRowContent({
             )}
           </div>
         )}
-      </div>
+      </TrackRowCore>
       <span className="text-xs text-muted-foreground tabular-nums shrink-0">{formatDuration(track.duration)}</span>
     </div>
   );

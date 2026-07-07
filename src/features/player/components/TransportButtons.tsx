@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { usePlayerStore } from '../store';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, SkipBack, SkipForward, Shuffle } from 'lucide-react';
+import { Shuffle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { TransportSkipBack, TransportSkipForward, TransportPlayPause } from '@/components/transport-buttons';
 
 const actions = () => usePlayerStore.getState();
 
@@ -14,18 +15,19 @@ interface TransportButtonProps {
 export function PreviousButton({ className, iconClassName }: TransportButtonProps) {
   const { t } = useTranslation();
   return (
-    <Button variant="ghost" size="icon" className={className} onClick={() => actions().previous()} aria-label={t('player.previous')}>
-      <SkipBack className={cn('h-5 w-5', iconClassName)} />
-    </Button>
+    <TransportSkipBack
+      onClick={() => actions().previous()}
+      label={t('player.previous')}
+      className={className}
+      iconClassName={iconClassName}
+    />
   );
 }
 
 export function NextButton({ className, iconClassName }: TransportButtonProps) {
   const { t } = useTranslation();
   return (
-    <Button variant="ghost" size="icon" className={className} onClick={() => actions().next()} aria-label={t('player.next')}>
-      <SkipForward className={cn('h-5 w-5', iconClassName)} />
-    </Button>
+    <TransportSkipForward onClick={() => actions().next()} label={t('player.next')} className={className} iconClassName={iconClassName} />
   );
 }
 
@@ -34,15 +36,13 @@ export function PlayPauseButton({ className, iconClassName }: TransportButtonPro
   const state = usePlayerStore((s) => s.state);
   const isPlaying = state === 'playing';
   return (
-    <Button
-      variant="default"
-      size="icon"
-      className={cn('h-10 w-10 rounded-full', className)}
+    <TransportPlayPause
+      isPlaying={isPlaying}
       onClick={isPlaying ? () => actions().pause() : () => actions().resume()}
-      aria-label={isPlaying ? t('player.pause') : t('player.play')}
-    >
-      {isPlaying ? <Pause className={cn('h-5 w-5', iconClassName)} /> : <Play className={cn('h-5 w-5 ml-0.5', iconClassName)} />}
-    </Button>
+      label={isPlaying ? t('player.pause') : t('player.play')}
+      className={className}
+      iconClassName={iconClassName}
+    />
   );
 }
 

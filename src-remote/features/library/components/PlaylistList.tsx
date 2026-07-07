@@ -1,5 +1,6 @@
 import { t } from '@remote/lib/i18n';
 import { PlaylistItemCore } from '@/components/PlaylistItemCore';
+import { getArtworkUrl } from '@/lib/soundcloud';
 import type { LibraryPlaylist } from '../utils/filterPlaylists';
 import { useResolvedArtwork } from '../hooks/useResolvedArtwork';
 
@@ -21,7 +22,7 @@ interface ItemProps {
 
 function PlaylistItem({ host, token, playlist, language, onSelect }: ItemProps) {
   const artwork = useResolvedArtwork(host, token, playlist);
-  const artworkUrl = artwork?.replace('-large', '-t50x50') ?? null;
+  const artworkUrl = getArtworkUrl(artwork, 50);
 
   return (
     <li onClick={() => onSelect(playlist)} className="flex items-center gap-3 px-4 py-3 cursor-pointer">

@@ -1,4 +1,5 @@
 import { t } from '@remote/lib/i18n';
+import { getArtworkUrl } from '@/lib/soundcloud';
 import type { RemoteSelection } from '../api/selections';
 
 interface Props {
@@ -6,11 +7,6 @@ interface Props {
   selections: RemoteSelection[];
   language: string;
   onSelect: (selection: RemoteSelection) => void;
-}
-
-function artworkSrc(url: string | null): string | null {
-  if (!url) return null;
-  return url.replace('-large', '-t200x200');
 }
 
 export default function SelectionShelf({ title, selections, language, onSelect }: Props) {
@@ -21,7 +17,7 @@ export default function SelectionShelf({ title, selections, language, onSelect }
       <h3 className="px-3 text-sm font-semibold text-foreground">{title}</h3>
       <div className="flex gap-3 overflow-x-auto px-3 pb-2">
         {selections.map((sel) => {
-          const src = artworkSrc(sel.artworkUrl);
+          const src = getArtworkUrl(sel.artworkUrl, 200);
           return (
             <button
               key={sel.id}

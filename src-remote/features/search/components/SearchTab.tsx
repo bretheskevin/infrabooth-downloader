@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
-import { Input } from '@/components/ui/input';
+import { SearchBar } from '@/components/ui/search-bar';
 import { t } from '@remote/lib/i18n';
 import { useTrackSearch } from '../hooks/useTrackSearch';
 import TrackList from '@remote/components/TrackList';
@@ -29,7 +29,7 @@ export default function SearchTab({ host, token, send, language, state }: Props)
   return (
     <div className="flex flex-col">
       <div className="sticky top-0 z-10 p-3 bg-background">
-        <Input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder={t('searchPlaceholder', language)} />
+        <SearchBar value={query} onChange={setQuery} placeholder={t('searchPlaceholder', language)} />
       </div>
       <div className={query.trim() ? 'hidden' : undefined}>
         <SelectionsSection host={host} token={token} language={language} onSelect={setSelectedMix} />
