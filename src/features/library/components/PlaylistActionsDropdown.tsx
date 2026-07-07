@@ -240,7 +240,17 @@ function CompletePhaseContent({
   );
 }
 
-function ErrorPhaseContent({ errorCode, onClose }: { errorCode: string | null; onClose: () => void }) {
+function ErrorPhaseContent({
+  errorCode,
+  onClose,
+  onQuitRekordbox,
+  isQuitting,
+}: {
+  errorCode: string | null;
+  onClose: () => void;
+  onQuitRekordbox: () => void;
+  isQuitting: boolean;
+}) {
   const { t } = useTranslation();
   return (
     <>
@@ -249,7 +259,13 @@ function ErrorPhaseContent({ errorCode, onClose }: { errorCode: string | null; o
         <DialogDescription className="text-destructive">{t(REKORDBOX_ERROR_KEYS[errorCode ?? ''] ?? 'common.error')}</DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        <Button onClick={onClose}>{t('rekordboxExport.close')}</Button>
+        {errorCode === 'REKORDBOX_RUNNING' && (
+          <Button variant="outline" size="sm" disabled={isQuitting} onClick={onQuitRekordbox}>
+            {isQuitting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+            {t('settings.backupCloseRekordbox')}
+          </Button>
+        )}
+        <Button onClick={onClose} disabled={isQuitting}>{t('rekordboxExport.close')}</Button>
       </DialogFooter>
     </>
   );
@@ -287,6 +303,8 @@ export function PlaylistActionsDropdown({
     startExport,
     cancel,
     close,
+    quitAndRetry,
+    isQuitting,
   } = useRekordboxExport(tracks, playlistName);
 
   const { data: treeData, isLoading: treeLoading, isError: treeError, retry: retryTree } = useRekordboxTree(phase === 'confirm');
@@ -390,6 +408,7 @@ export function PlaylistActionsDropdown({
         open={isOpen}
         onOpenChange={(open) => {
           if (!open) {
+            if (isQuitting) return;
             if (phase === 'exporting') cancel();
             else close();
           }
@@ -449,7 +468,7 @@ export function PlaylistActionsDropdown({
 
           {phase === 'complete' && result && <CompletePhaseContent result={result} groups={groups} onClose={close} />}
 
-          {phase === 'error' && <ErrorPhaseContent errorCode={errorCode} onClose={close} />}
+          {phase === 'error' && <ErrorPhaseContent errorCode={errorCode} onClose={close} onQuitRekordbox={quitAndRetry} isQuitting={isQuitting} />}
         </DialogContent>
       </Dialog>
 
