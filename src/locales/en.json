@@ -232,6 +232,7 @@
     "preserveOrder": "Number tracks",
     "preserveOrderDescription": "Prefix playlist filenames with track position (e.g. 01 - Artist - Title)",
     "categoryAbout": "About",
+    "categoryHistory": "History",
     "viewChangelog": "View changelog",
     "appDataFolder": "App data folder",
     "logFolder": "Log folder",
@@ -724,5 +725,27 @@
     "downloading": "Downloading...",
     "preparing": "Preparing...",
     "noActiveDownload": "No active download"
+  },
+  "downloadHistory": {
+    "title": "Download History",
+    "description": "Browse your past downloads",
+    "empty": "No downloads yet",
+    "okCount_one": "{{count}} ok",
+    "okCount_other": "{{count}} ok",
+    "failedCount_one": "{{count}} failed",
+    "failedCount_other": "{{count}} failed",
+    "cancelled": "cancelled",
+    "trackCount_one": "{{count}} track",
+    "trackCount_other": "{{count}} tracks",
+    "openFolder": "Open folder",
+    "removeEntry": "Remove from history",
+    "clearAll": "Clear all history",
+    "clearConfirmTitle": "Clear download history?",
+    "clearConfirmBody": "This will permanently remove all download history entries. This action cannot be undone.",
+    "folderMissing": "Download folder no longer exists",
+    "drmHelpTitle": "DRM-protected track",
+    "drmHelpBody": "This track is protected by Digital Rights Management (DRM). DRM-protected tracks cannot be downloaded because the audio stream is encrypted by SoundCloud at the request of the rights holder.",
+    "kindTrack": "Track",
+    "kindPlaylist": "Playlist"
   }
 }

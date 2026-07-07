@@ -8,6 +8,7 @@ export interface QueueStateSlice {
   isProcessing: boolean;
   isInitializing: boolean;
   outputDir: string | null;
+  batchTitle: string | null;
   enqueueTracks: (tracks: Track[]) => void;
   updateTrackStatus: (
     id: string,
@@ -18,6 +19,7 @@ export interface QueueStateSlice {
   clearQueue: () => void;
   setInitializing: (isInitializing: boolean) => void;
   setOutputDir: (path: string | null) => void;
+  setBatchTitle: (title: string | null) => void;
 }
 
 export interface QueueProgressSlice {
@@ -53,5 +55,6 @@ export const INITIAL_QUEUE_STATE = {
   failedCount: 0,
   cancelledCount: 0,
   outputDir: null as string | null,
+  batchTitle: null as string | null,
   isRetrying: false,
 };

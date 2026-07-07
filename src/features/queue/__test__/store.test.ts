@@ -322,4 +322,37 @@ describe('queueStore', () => {
       expect(state.failedCount).toBe(0);
     });
   });
+
+  describe('setBatchTitle', () => {
+    it('should have batchTitle as null initially', () => {
+      const { batchTitle } = useQueueStore.getState();
+      expect(batchTitle).toBeNull();
+    });
+
+    it('should set batchTitle to a string', () => {
+      const { setBatchTitle } = useQueueStore.getState();
+      setBatchTitle('My Playlist');
+
+      const { batchTitle } = useQueueStore.getState();
+      expect(batchTitle).toBe('My Playlist');
+    });
+
+    it('should clear batchTitle when set to null', () => {
+      const { setBatchTitle } = useQueueStore.getState();
+      setBatchTitle('My Playlist');
+      setBatchTitle(null);
+
+      const { batchTitle } = useQueueStore.getState();
+      expect(batchTitle).toBeNull();
+    });
+
+    it('should reset batchTitle when enqueueTracks is called', () => {
+      const { setBatchTitle, enqueueTracks } = useQueueStore.getState();
+      setBatchTitle('My Playlist');
+      enqueueTracks(mockTracks);
+
+      const { batchTitle } = useQueueStore.getState();
+      expect(batchTitle).toBeNull();
+    });
+  });
 });

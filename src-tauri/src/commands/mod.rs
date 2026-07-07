@@ -78,6 +78,9 @@ pub use comments::{delete_comment, get_track_comments, post_comment};
 pub mod follow;
 pub use follow::{check_follow_status, follow_user, unfollow_user};
 
+pub mod history;
+pub use history::{append_download_history_entry, clear_download_history, list_download_history, remove_download_history_entry};
+
 pub mod like;
 pub use like::{like_playlist, like_track, unlike_playlist, unlike_track};
 

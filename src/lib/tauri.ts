@@ -32,6 +32,7 @@ import {
   type BackupInfo,
   type CommentsPage,
   type TrackComment,
+  type DownloadHistoryEntry,
 } from '@/bindings';
 import type { LibraryPlaylist, CreatedPlaylist } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
@@ -366,6 +367,27 @@ export const api = {
   updatePlaylist: (playlistId: number, title: string, sharing: string | null, trackIds: number[]): Promise<void> =>
     commands
       .updatePlaylist(playlistId, title, sharing, trackIds)
+      .then(unwrap)
+      .then(() => undefined),
+
+  // History
+  listDownloadHistory: (): Promise<DownloadHistoryEntry[]> => commands.listDownloadHistory().then(unwrap),
+
+  appendDownloadHistoryEntry: (entry: DownloadHistoryEntry): Promise<void> =>
+    commands
+      .appendDownloadHistoryEntry(entry)
+      .then(unwrap)
+      .then(() => undefined),
+
+  removeDownloadHistoryEntry: (id: string): Promise<void> =>
+    commands
+      .removeDownloadHistoryEntry(id)
+      .then(unwrap)
+      .then(() => undefined),
+
+  clearDownloadHistory: (): Promise<void> =>
+    commands
+      .clearDownloadHistory()
       .then(unwrap)
       .then(() => undefined),
 };

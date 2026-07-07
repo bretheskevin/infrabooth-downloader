@@ -33,6 +33,11 @@ const mockQueueState = {
   tracks: [],
 };
 
+vi.mock('@/features/download-history', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/download-history')>();
+  return { ...actual, useRecordDownloadHistory: () => {} };
+});
+
 vi.mock('@/features/queue', async () => {
   const actual = await vi.importActual('@/features/queue');
   const storeFn = vi.fn((selector: (s: typeof mockQueueState) => unknown) => selector(mockQueueState));

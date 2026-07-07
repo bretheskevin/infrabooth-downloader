@@ -10,6 +10,7 @@ export const createQueueStateSlice: StateCreator<QueueState, [], [], QueueStateS
   isProcessing: false,
   isInitializing: false,
   outputDir: null,
+  batchTitle: null,
 
   enqueueTracks: (tracks) => {
     void logger.info(`[queueStore] Enqueueing ${tracks.length} tracks`);
@@ -56,5 +57,10 @@ export const createQueueStateSlice: StateCreator<QueueState, [], [], QueueStateS
   setOutputDir: (path) => {
     void logger.debug(`[queueStore] Output dir: ${path || 'default'}`);
     set({ outputDir: path });
+  },
+
+  setBatchTitle: (title) => {
+    void logger.debug(`[queueStore] Batch title: ${title ?? 'null'}`);
+    set({ batchTitle: title });
   },
 });

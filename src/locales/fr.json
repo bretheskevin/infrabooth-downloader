@@ -232,6 +232,7 @@
     "preserveOrder": "Numéroter les pistes",
     "preserveOrderDescription": "Préfixer les noms de fichiers de playlist avec la position (ex: 01 - Artiste - Titre)",
     "categoryAbout": "À propos",
+    "categoryHistory": "Historique",
     "viewChangelog": "Voir les nouveautés",
     "appDataFolder": "Données de l'application",
     "logFolder": "Dossier des logs",
@@ -724,5 +725,27 @@
     "downloading": "Téléchargement...",
     "preparing": "Préparation...",
     "noActiveDownload": "Aucun téléchargement"
+  },
+  "downloadHistory": {
+    "title": "Historique des téléchargements",
+    "description": "Retrouvez vos téléchargements passés",
+    "empty": "Aucun téléchargement pour le moment",
+    "okCount_one": "{{count}} ok",
+    "okCount_other": "{{count}} ok",
+    "failedCount_one": "{{count}} échoué",
+    "failedCount_other": "{{count}} échoués",
+    "cancelled": "annulé",
+    "trackCount_one": "{{count}} piste",
+    "trackCount_other": "{{count}} pistes",
+    "openFolder": "Ouvrir le dossier",
+    "removeEntry": "Retirer de l'historique",
+    "clearAll": "Vider l'historique",
+    "clearConfirmTitle": "Vider l'historique ?",
+    "clearConfirmBody": "Tous les éléments de l'historique seront définitivement supprimés. Cette action est irréversible.",
+    "folderMissing": "Le dossier de téléchargement n'existe plus",
+    "drmHelpTitle": "Piste protégée par DRM",
+    "drmHelpBody": "Cette piste est protégée par gestion des droits numériques (DRM). Les pistes protégées ne peuvent pas être téléchargées car le flux audio est chiffré par SoundCloud à la demande de l'ayant droit.",
+    "kindTrack": "Piste",
+    "kindPlaylist": "Playlist"
   }
 }

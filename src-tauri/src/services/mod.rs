@@ -20,6 +20,7 @@ pub mod artist;
 pub mod artist_playlists;
 pub mod filename;
 pub mod follow;
+pub mod history_store;
 pub mod library;
 pub mod like;
 pub mod liked_tracks;

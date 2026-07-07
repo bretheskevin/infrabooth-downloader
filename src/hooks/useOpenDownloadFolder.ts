@@ -3,7 +3,7 @@ import { openDownloadFolder } from '@/lib/shellCommands';
 import { getDefaultDownloadPath } from '@/features/settings/api/settings';
 import { logger } from '@/lib/logger';
 
-export function useOpenDownloadFolder(outputDir: string | null) {
+export function useOpenDownloadFolder(outputDir: string | null, onError?: () => void) {
   return useCallback(async () => {
     let pathToOpen = outputDir;
 
@@ -21,7 +21,8 @@ export function useOpenDownloadFolder(outputDir: string | null) {
         await openDownloadFolder(pathToOpen);
       } catch (error) {
         void logger.error(`[useOpenDownloadFolder] Failed to open folder: ${error}`);
+        onError?.();
       }
     }
-  }, [outputDir]);
+  }, [outputDir, onError]);
 }

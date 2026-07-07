@@ -7,6 +7,7 @@ import { PlaylistsSettings } from './PlaylistsSettings';
 import { RekordboxSettings } from './RekordboxSettings';
 import { AboutSettings } from './AboutSettings';
 import { RemoteControlSettings } from '@/features/remote/components/RemoteControlSettings';
+import { DownloadHistorySection } from '@/features/download-history';
 import type { SettingsCategory, SettingsDialogProps } from './types';
 import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
 
@@ -15,6 +16,7 @@ const CONTENT_COMPONENTS: Record<SettingsCategory, React.ComponentType> = {
   playlists: PlaylistsSettings,
   rekordbox: RekordboxSettings,
   remote: RemoteControlSettings,
+  history: DownloadHistorySection,
   about: AboutSettings,
 };
 

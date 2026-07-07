@@ -10,6 +10,7 @@ interface DispatchDownloadQueueParams {
   preserveOrder: boolean;
   enqueueTracks: (tracks: Track[]) => void;
   setOutputDir: (dir: string | null) => void;
+  setBatchTitle: (title: string | null) => void;
   setInitializing: (v: boolean) => void;
 }
 
@@ -21,10 +22,12 @@ export async function dispatchDownloadQueue({
   preserveOrder,
   enqueueTracks,
   setOutputDir,
+  setBatchTitle,
   setInitializing,
 }: DispatchDownloadQueueParams): Promise<void> {
   enqueueTracks(queueTracks);
   setOutputDir(outputDir);
+  setBatchTitle(albumName);
   setInitializing(true);
 
   try {

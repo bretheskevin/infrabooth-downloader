@@ -20,6 +20,7 @@ use commands::{
     restore_rekordbox_backup, scan_existing_tracks, search_albums, search_playlists, search_tracks, search_users, send_message, sign_out, start_download_queue,
     start_remote_server, stop_remote_server, test_ffmpeg, unfollow_user, unlike_playlist, unlike_track, update_playlist, validate_download_path,
     validate_soundcloud_url, RekordboxExportCancellation,
+    append_download_history_entry, clear_download_history, list_download_history, remove_download_history_entry,
 };
 use services::cancellation::CancellationState;
 use services::events;
@@ -228,6 +229,10 @@ pub fn run() {
             start_remote_server,
             stop_remote_server,
             push_remote_state,
+            list_download_history,
+            append_download_history_entry,
+            remove_download_history_entry,
+            clear_download_history,
         ]);
 
     // Export TypeScript bindings in debug mode

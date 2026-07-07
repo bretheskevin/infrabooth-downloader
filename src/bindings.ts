@@ -777,6 +777,38 @@ async pushRemoteState(stateJson: string) : Promise<Result<null, ErrorResponse>> 
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async listDownloadHistory() : Promise<Result<DownloadHistoryEntry[], ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_download_history") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async appendDownloadHistoryEntry(entry: DownloadHistoryEntry) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("append_download_history_entry", { entry }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async removeDownloadHistoryEntry(id: string) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("remove_download_history_entry", { id }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async clearDownloadHistory() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("clear_download_history") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
 }
 }
 
@@ -829,6 +861,9 @@ export type ConversationMessage = { content: string; sender_id: number; sent_at:
 export type ConversationSummary = { id: string; other_user: MessageUser; last_message_content: string; last_message_sender_id: number; last_message_at: string; read: boolean }
 export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null }
 export type CreatedPlaylist = { id: number; title: string; permalinkUrl: string }
+export type DownloadHistoryEntry = { id: string; title: string; kind: DownloadHistoryKind; artworkUrl: string | null; destDir: string | null; okCount: number; failedCount: number; cancelled: boolean; completedAt: number; tracks: DownloadHistoryTrack[] }
+export type DownloadHistoryKind = "Track" | "Playlist"
+export type DownloadHistoryTrack = { id: string; title: string; artist: string; status: string; reason: string | null }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null; filePath?: string | null }
 export type DownloadRequest = ({ 
 /**

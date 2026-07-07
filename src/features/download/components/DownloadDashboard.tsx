@@ -5,6 +5,7 @@ import { ProgressPanel } from '@/features/progress/components/ProgressPanel';
 import { CompletionPanel } from '@/features/completion/components/CompletionPanel';
 import { useQueueStore } from '@/features/queue';
 import { useIsWidescreen } from '@/hooks/useIsWidescreen';
+import { useRecordDownloadHistory } from '@/features/download-history';
 
 interface DownloadDashboardProps {
   isOpen: boolean;
@@ -14,6 +15,7 @@ interface DownloadDashboardProps {
 export function DownloadDashboard({ isOpen, onClose }: DownloadDashboardProps) {
   const { t } = useTranslation();
   const isWidescreen = useIsWidescreen();
+  useRecordDownloadHistory();
 
   const { isComplete, isProcessing, completedCount, failedCount, cancelledCount, isCancelled, totalTracks, tracks } = useQueueStore(
     useShallow((s) => ({

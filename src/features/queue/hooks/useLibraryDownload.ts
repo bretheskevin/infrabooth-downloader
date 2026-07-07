@@ -34,7 +34,7 @@ export function useLibraryDownload({ onNavigateToDownload }: UseLibraryDownloadO
 
       const effectiveOutputDir = outputDir || downloadPath || null;
       const queueTracks = tracks.map(trackInfoToQueueTrack);
-      const { enqueueTracks, setOutputDir, setInitializing } = useQueueStore.getState();
+      const { enqueueTracks, setOutputDir, setBatchTitle, setInitializing } = useQueueStore.getState();
 
       onNavigateToDownload();
 
@@ -47,6 +47,7 @@ export function useLibraryDownload({ onNavigateToDownload }: UseLibraryDownloadO
           preserveOrder: preservePlaylistOrder,
           enqueueTracks,
           setOutputDir,
+          setBatchTitle,
           setInitializing,
         });
       } catch (error) {

@@ -13,6 +13,7 @@ export function useDownloadInitiator() {
   const enqueueTracks = useQueueStore((s) => s.enqueueTracks);
   const setInitializing = useQueueStore((s) => s.setInitializing);
   const setOutputDir = useQueueStore((s) => s.setOutputDir);
+  const setBatchTitle = useQueueStore((s) => s.setBatchTitle);
   const defaultDownloadPath = useSettingsStore((s) => s.downloadPath);
   const maxConcurrentDownloads = useSettingsStore((s) => s.maxConcurrentDownloads);
   const preservePlaylistOrder = useSettingsStore((s) => s.preservePlaylistOrder);
@@ -39,6 +40,7 @@ export function useDownloadInitiator() {
           preserveOrder: preservePlaylistOrder,
           enqueueTracks,
           setOutputDir,
+          setBatchTitle,
           setInitializing,
         });
       } catch (error) {
@@ -46,7 +48,7 @@ export function useDownloadInitiator() {
         throw error;
       }
     },
-    [enqueueTracks, setInitializing, setOutputDir, defaultDownloadPath, maxConcurrentDownloads, preservePlaylistOrder],
+    [enqueueTracks, setInitializing, setOutputDir, setBatchTitle, defaultDownloadPath, maxConcurrentDownloads, preservePlaylistOrder],
   );
 
   return { initiateDownload };
