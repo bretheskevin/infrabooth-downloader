@@ -172,17 +172,20 @@ async fn handle_ws(mut socket: WebSocket, state: AppState) {
     }
 }
 
-async fn search_handler(AxumState(state): AxumState<AppState>, Query(params): Query<SearchQuery>) -> impl IntoResponse {
-    if !token_matches(&params.token, &state.token) {
-        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+async fn authorized_client_id(token: &str, expected: &str, tag: &str) -> Result<String, Response> {
+    if !token_matches(token, expected) {
+        return Err((StatusCode::UNAUTHORIZED, "Unauthorized").into_response());
     }
+    client_id::get_client_id().await.map_err(|e| {
+        log::error!("[remote] {tag} client_id: {e}");
+        (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+    })
+}
 
-    let cid = match client_id::get_client_id().await {
+async fn search_handler(AxumState(state): AxumState<AppState>, Query(params): Query<SearchQuery>) -> impl IntoResponse {
+    let cid = match authorized_client_id(&params.token, &state.token, "search").await {
         Ok(id) => id,
-        Err(e) => {
-            log::error!("[remote] search client_id: {}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
-        }
+        Err(r) => return r,
     };
 
     match search::search_tracks(&cid, &params.q, 20, 0).await {
@@ -211,15 +214,9 @@ fn artist_playlist_to_library(p: crate::models::artist::ArtistPlaylist) -> libra
 }
 
 async fn search_playlists_handler(AxumState(state): AxumState<AppState>, Query(params): Query<SearchQuery>) -> impl IntoResponse {
-    if !token_matches(&params.token, &state.token) {
-        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
-    }
-    let cid = match client_id::get_client_id().await {
+    let cid = match authorized_client_id(&params.token, &state.token, "search-playlists").await {
         Ok(id) => id,
-        Err(e) => {
-            log::error!("[remote] search-playlists client_id: {}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
-        }
+        Err(r) => return r,
     };
     match search::search_playlists(&cid, &params.q, 20, 0).await {
         Ok(response) => {
@@ -234,15 +231,9 @@ async fn search_playlists_handler(AxumState(state): AxumState<AppState>, Query(p
 }
 
 async fn search_albums_handler(AxumState(state): AxumState<AppState>, Query(params): Query<SearchQuery>) -> impl IntoResponse {
-    if !token_matches(&params.token, &state.token) {
-        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
-    }
-    let cid = match client_id::get_client_id().await {
+    let cid = match authorized_client_id(&params.token, &state.token, "search-albums").await {
         Ok(id) => id,
-        Err(e) => {
-            log::error!("[remote] search-albums client_id: {}", e);
-            return (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response();
-        }
+        Err(r) => return r,
     };
     match search::search_albums(&cid, &params.q, 20, 0).await {
         Ok(response) => {
