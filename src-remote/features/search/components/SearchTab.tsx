@@ -69,7 +69,7 @@ export default function SearchTab({ host, token, send, language, state }: Props)
     <div className="flex flex-col">
       <div className="sticky top-0 z-10 p-3 bg-background space-y-2">
         <SearchBar value={query} onChange={setQuery} placeholder={t('searchPlaceholder', language)} />
-        <FilterChips options={TYPE_OPTIONS} active={activeType} onChange={setActiveType} />
+        {query.trim() && <FilterChips options={TYPE_OPTIONS} active={activeType} onChange={setActiveType} />}
       </div>
 
       {activeType === 'tracks' && (
