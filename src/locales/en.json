@@ -683,6 +683,7 @@
     "button": "Export to Rekordbox",
     "moreActions": "More actions",
     "confirmTitle": "Export to Rekordbox",
+    "errorTitle": "Export failed",
     "confirmMessage": "Export {{count}} tracks as \"{{playlist}}\" to Rekordbox?",
     "confirmNote": "Tracks will be downloaded to the app data directory and registered in Rekordbox.",
     "downloadingTracks": "Downloading tracks...",

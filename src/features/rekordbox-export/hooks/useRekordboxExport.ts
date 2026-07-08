@@ -38,8 +38,10 @@ const INITIAL_STATE: ExportState = {
 export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName: string) {
   const [state, setState] = useState<ExportState>(INITIAL_STATE);
   const [selectedFolderId, setSelectedFolderId] = useState<string | null | undefined>(undefined);
+  const [isQuitting, setIsQuitting] = useState(false);
   const unlistenRef = useRef<UnlistenFn[]>([]);
   const cancelledRef = useRef(false);
+  const lastFolderIdRef = useRef<string | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -104,6 +106,7 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
       const trackCores = tracks.map(toTrackCore);
       const maxConcurrent = useSettingsStore.getState().maxConcurrentDownloads;
       const effectiveFolder = folderId !== undefined ? folderId : (selectedFolderId ?? null);
+      lastFolderIdRef.current = effectiveFolder;
 
       try {
         const result = await api.exportPlaylistToRekordbox(trackCores, playlistName, effectiveFolder, maxConcurrent);
@@ -125,6 +128,15 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
     [tracks, playlistName, selectedFolderId, queryClient],
   );
 
+  const quitAndRetry = useCallback(() => {
+    setIsQuitting(true);
+    void api
+      .quitRekordbox()
+      .then(() => new Promise<void>((resolve) => setTimeout(resolve, 1500)))
+      .then(() => startExport(lastFolderIdRef.current))
+      .finally(() => setIsQuitting(false));
+  }, [startExport]);
+
   return {
     ...state,
     selectedFolderId,
@@ -133,5 +145,7 @@ export function useRekordboxExport(tracks: TrackInfo[] | undefined, playlistName
     startExport,
     cancel,
     close,
+    quitAndRetry,
+    isQuitting,
   };
 }

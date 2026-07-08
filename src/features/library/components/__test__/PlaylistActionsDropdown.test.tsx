@@ -12,6 +12,7 @@ const mockStartExport = vi.fn();
 const mockCancel = vi.fn();
 const mockClose = vi.fn();
 const mockSetSelectedFolderId = vi.fn();
+const mockQuitAndRetry = vi.fn();
 
 type ExportPhase = 'idle' | 'confirm' | 'exporting' | 'complete' | 'error';
 
@@ -28,6 +29,8 @@ let hookReturn = {
   startExport: mockStartExport,
   cancel: mockCancel,
   close: mockClose,
+  quitAndRetry: mockQuitAndRetry,
+  isQuitting: false,
 };
 
 let mockDetectionData: RekordboxStatus | undefined = { found: true, version: '6', dbPath: '/fake', isRunning: false };
@@ -106,6 +109,8 @@ describe('PlaylistActionsDropdown', () => {
       startExport: mockStartExport,
       cancel: mockCancel,
       close: mockClose,
+      quitAndRetry: mockQuitAndRetry,
+      isQuitting: false,
     };
     mockTreeReturn = { data: undefined, isLoading: false, isError: false };
   });
@@ -267,6 +272,38 @@ describe('PlaylistActionsDropdown', () => {
     hookReturn.error = 'Rekordbox is running — close it before making changes';
     render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
     expect(screen.getByText('rekordboxRunning')).toBeInTheDocument();
+  });
+
+  it('shows Close Rekordbox button when errorCode is REKORDBOX_RUNNING', async () => {
+    const user = userEvent.setup();
+    hookReturn.phase = 'error';
+    hookReturn.errorCode = 'REKORDBOX_RUNNING';
+    hookReturn.error = 'Rekordbox is running';
+    render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
+    const quitBtn = screen.getByRole('button', { name: 'backupCloseRekordbox' });
+    expect(quitBtn).toBeInTheDocument();
+    await user.click(quitBtn);
+    expect(mockQuitAndRetry).toHaveBeenCalledOnce();
+  });
+
+  it('does not show Close Rekordbox button for other error codes', () => {
+    hookReturn.phase = 'error';
+    hookReturn.errorCode = 'UNKNOWN';
+    hookReturn.error = 'Something went wrong';
+    render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
+    expect(screen.queryByRole('button', { name: 'backupCloseRekordbox' })).not.toBeInTheDocument();
+  });
+
+  it('disables Close button while quitting Rekordbox', () => {
+    hookReturn.phase = 'error';
+    hookReturn.errorCode = 'REKORDBOX_RUNNING';
+    hookReturn.error = 'Rekordbox is running';
+    hookReturn.isQuitting = true;
+    render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
+    const closeBtn = screen.getByRole('button', { name: 'close' });
+    expect(closeBtn).toBeDisabled();
+    const quitBtn = screen.getByRole('button', { name: 'backupCloseRekordbox' });
+    expect(quitBtn).toBeDisabled();
   });
 
   it('shows translated fallback for unknown error codes', () => {
