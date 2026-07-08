@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
-import { Disc3, EllipsisVertical, ExternalLink, Heart, Link, Loader2, Pencil, Send, Trash2 } from 'lucide-react';
+import { AlertTriangle, Disc3, EllipsisVertical, ExternalLink, Heart, Link, Loader2, Pencil, Send, Trash2 } from 'lucide-react';
 import type { ExportResult, TrackInfo, RekordboxExportStatus } from '@/bindings';
 import { cn } from '@/lib/utils';
 import { useLinkActions } from '@/hooks/useLinkActions';
@@ -252,20 +252,28 @@ function ErrorPhaseContent({
   isQuitting: boolean;
 }) {
   const { t } = useTranslation();
+  const isRunning = errorCode === 'REKORDBOX_RUNNING';
   return (
     <>
       <DialogHeader>
-        <DialogTitle>{t('rekordboxExport.confirmTitle')}</DialogTitle>
-        <DialogDescription className="text-destructive">{t(REKORDBOX_ERROR_KEYS[errorCode ?? ''] ?? 'common.error')}</DialogDescription>
+        <DialogTitle>{t('rekordboxExport.errorTitle')}</DialogTitle>
+        <DialogDescription asChild>
+          <span className="flex items-start gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            {t(REKORDBOX_ERROR_KEYS[errorCode ?? ''] ?? 'common.error')}
+          </span>
+        </DialogDescription>
       </DialogHeader>
       <DialogFooter>
-        {errorCode === 'REKORDBOX_RUNNING' && (
-          <Button variant="outline" size="sm" disabled={isQuitting} onClick={onQuitRekordbox}>
-            {isQuitting && <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />}
+        <Button variant="outline" onClick={onClose} disabled={isQuitting}>
+          {t('rekordboxExport.close')}
+        </Button>
+        {isRunning && (
+          <Button disabled={isQuitting} onClick={onQuitRekordbox}>
+            {isQuitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {t('settings.backupCloseRekordbox')}
           </Button>
         )}
-        <Button onClick={onClose} disabled={isQuitting}>{t('rekordboxExport.close')}</Button>
       </DialogFooter>
     </>
   );
@@ -468,7 +476,9 @@ export function PlaylistActionsDropdown({
 
           {phase === 'complete' && result && <CompletePhaseContent result={result} groups={groups} onClose={close} />}
 
-          {phase === 'error' && <ErrorPhaseContent errorCode={errorCode} onClose={close} onQuitRekordbox={quitAndRetry} isQuitting={isQuitting} />}
+          {phase === 'error' && (
+            <ErrorPhaseContent errorCode={errorCode} onClose={close} onQuitRekordbox={quitAndRetry} isQuitting={isQuitting} />
+          )}
         </DialogContent>
       </Dialog>
 
