@@ -14,7 +14,6 @@ use crate::services::http::SOUNDCLOUD_URL;
 static CLIENT_ID_CACHE: Lazy<Mutex<Option<String>>> = Lazy::new(|| Mutex::new(None));
 static SCRIPT_URL_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"<script[^>]+src="([^"]+)""#).unwrap());
 static CLIENT_ID_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"client_id\s*:\s*"([0-9a-zA-Z]{32})""#).unwrap());
-const USER_AGENT: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/84.0.4147.105 Safari/537.36";
 
 /// Extract `<script src="...">` URLs from HTML.
 fn extract_script_urls(html: &str) -> Vec<String> {
@@ -33,7 +32,6 @@ async fn scrape_client_id() -> Result<String, DownloadError> {
 
     let html = client
         .get(SOUNDCLOUD_URL)
-        .header("User-Agent", USER_AGENT)
         .send()
         .await
         .map_err(|e| DownloadError::StreamResolutionFailed(format!("Failed to fetch SoundCloud homepage: {}", e)))?
@@ -46,7 +44,7 @@ async fn scrape_client_id() -> Result<String, DownloadError> {
     script_urls.reverse();
 
     for url in &script_urls {
-        let script = match client.get(url).header("User-Agent", USER_AGENT).send().await {
+        let script = match client.get(url).send().await {
             Ok(resp) => match resp.text().await {
                 Ok(text) => text,
                 Err(_) => continue,

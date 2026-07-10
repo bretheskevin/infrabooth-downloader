@@ -31,13 +31,7 @@ pub async fn post_comment(
 #[tauri::command]
 #[specta::specta]
 pub async fn delete_comment(app: tauri::AppHandle, track_id: u64, comment_id: u64) -> Result<(), String> {
-    let state = app.state::<AuthState>();
-    let datadome = state.get_datadome();
     let (token, client_id) = require_auth_and_cid(&app).await?;
 
-    let (new_datadome, result) = comments::delete_comment(&token, &client_id, datadome.as_deref(), track_id, comment_id).await;
-    state.update_datadome(new_datadome);
-    result.map_err(|e| e.to_string())?;
-
-    Ok(())
+    comments::delete_comment(&token, &client_id, track_id, comment_id).await.map_err(|e| e.to_string())
 }

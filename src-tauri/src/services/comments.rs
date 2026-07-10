@@ -149,23 +149,20 @@ pub async fn post_comment(
     (new_datadome, result)
 }
 
-pub async fn delete_comment(
-    oauth_token: &str, client_id: &str, datadome: Option<&str>, track_id: u64, comment_id: u64,
-) -> (Option<String>, Result<(), ScApiError>) {
+pub async fn delete_comment(oauth_token: &str, client_id: &str, track_id: u64, comment_id: u64) -> Result<(), ScApiError> {
     let url = format!("{}/comments/{}?client_id={}&app_version={}&app_locale=en", API_V2_BASE, comment_id, client_id, SC_APP_VERSION);
 
-    let response = try_none!(HTTP_CLIENT.delete(&url).with_oauth(Some(oauth_token)).with_datadome(datadome).send().await);
+    let response = HTTP_CLIENT.delete(&url).with_oauth(Some(oauth_token)).send().await?;
 
-    let new_datadome = extract_datadome_from_response(&response);
     let status = response.status();
 
     if !status.is_success() {
         let body = response.text().await.unwrap_or_default();
         log::error!("[comments] Failed to delete comment {} on track {}: HTTP {} - {}", comment_id, track_id, status, body);
-        return (new_datadome, Err(map_comment_error(status, body)));
+        return Err(map_comment_error(status, body));
     }
 
-    (new_datadome, Ok(()))
+    Ok(())
 }
 
 // ---------------------------------------------------------------------------

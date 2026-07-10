@@ -9,7 +9,7 @@ pub const API_V2_BASE: &str = "https://api-v2.soundcloud.com";
 /// SoundCloud web-app version sent as `app_version` query parameter.
 /// Extracted from the SoundCloud web app bundle (look for `app_version` in network requests).
 /// May need periodic updating if SoundCloud rejects older versions.
-pub const SC_APP_VERSION: &str = "1776774633";
+pub const SC_APP_VERSION: &str = "1783608776";
 pub const CHROME_USER_AGENT: &str = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36";
 
 pub const DEFAULT_PAGE_SIZE: usize = 20;
@@ -71,6 +71,24 @@ pub static HTTP_CLIENT: Lazy<rquest::Client> = Lazy::new(|| {
 
 pub trait RequestBuilderExt {
     fn with_oauth(self, token: Option<&str>) -> Self;
+
+    /// Attach DataDome bot-protection credentials: the `datadome` cookie and the
+    /// `x-datadome-clientid` header (SoundCloud runs DataDome with `sessionByHeader: true`).
+    ///
+    /// Only call this on DataDome-*protected* endpoints. SoundCloud declares the protected
+    /// set in `window.ddoptions.ajaxListenerPath` on its homepage — the authoritative list
+    /// (all `strict: true`):
+    ///
+    /// - `/tracks`, `/tracks/*/comments`
+    /// - `/users/*/conversations/*`
+    /// - `/me`, `/me/followings/*`, `/me/track_reposts/*`, `/me/track_reposts/*/caption`, `/me/playlist_reposts/*`
+    /// - `/users/*/tracks/*`, `/users/*/track_likes/*`, `/users/*/playlist_likes/*`, `/users/*/system_playlist_likes/*`, `/users/*/emails`
+    /// - `/playlists`, `/playlists/*`
+    /// - `/uploads/*/track-transcoding`, `/uploads/track-upload-policy`
+    /// - `/graphql`
+    ///
+    /// Requests to any other path are not inspected by DataDome, so attaching these
+    /// credentials there is inert — do not.
     fn with_datadome(self, datadome: Option<&str>) -> Self;
 }
 

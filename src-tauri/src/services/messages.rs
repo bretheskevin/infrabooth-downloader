@@ -411,27 +411,34 @@ pub async fn fetch_conversation_messages(
     Ok(convert_messages(raw, other_user_id, user_id))
 }
 
-pub async fn mark_conversation_read(oauth_token: &str, client_id: &str, user_id: u64, other_user_id: u64) -> Result<(), ScApiError> {
+pub async fn mark_conversation_read(
+    oauth_token: &str, client_id: &str, datadome: Option<&str>, user_id: u64, other_user_id: u64,
+) -> (Option<String>, Result<(), ScApiError>) {
     let url = format!("{}/users/{}/conversations/{}?client_id={}", API_V2_BASE, user_id, other_user_id, client_id,);
 
     log::debug!("[messages] Marking conversation with user {} as read", other_user_id);
 
-    let response = HTTP_CLIENT
-        .put(&url)
-        .with_oauth(Some(oauth_token))
-        .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
-        .body("read=true")
-        .send()
-        .await?;
+    let response = try_none!(
+        HTTP_CLIENT
+            .put(&url)
+            .with_oauth(Some(oauth_token))
+            .with_datadome(datadome)
+            .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+            .body("read=true")
+            .send()
+            .await
+    );
+
+    let new_datadome = extract_datadome_from_response(&response);
     let status = response.status();
 
     if !status.is_success() {
         log::error!("[messages] mark_conversation_read returned HTTP {}", status);
-        return Err(ScApiError::FetchFailed(format!("mark_conversation_read returned HTTP {}", status)));
+        return (new_datadome, Err(ScApiError::FetchFailed(format!("mark_conversation_read returned HTTP {}", status))));
     }
 
     log::debug!("[messages] Conversation with user {} marked as read (HTTP {})", other_user_id, status);
-    Ok(())
+    (new_datadome, Ok(()))
 }
 
 pub async fn send_message(
@@ -459,8 +466,12 @@ pub async fn send_message(
         let body = response.text().await.unwrap_or_default();
         log::error!("[messages] Failed to send message: HTTP {} - {}", status, body);
         let sanitized = sanitize_error_body(body);
-        let err = if sanitized == ANTIBOT_BLOCKED { ScApiError::FetchFailed(sanitized) } else { validate_api_response(status).unwrap_err().into() };
-        return (new_datadome, Err(err));
+        if sanitized == ANTIBOT_BLOCKED {
+            // Don't persist the datadome cookie DataDome issues on a block — it's an
+            // unverified "pending captcha" cookie that would only degrade the next attempt.
+            return (None, Err(ScApiError::FetchFailed(sanitized)));
+        }
+        return (new_datadome, Err(validate_api_response(status).unwrap_err().into()));
     }
 
     (new_datadome, Ok(()))
