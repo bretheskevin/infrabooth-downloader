@@ -6,6 +6,19 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.32.0] - 2026-07-16
+
+### Added
+
+- Basculement entre plusieurs comptes SoundCloud
+- Recherche de playlists, albums et mixs depuis le mobile
+- Fermeture de Rekordbox depuis la fenêtre d'export
+
+### Fixed
+
+- Les likes et ajouts aux playlists échouaient à cause de l'antibot SoundCloud
+- L'écran d'erreur de l'export Rekordbox était peu lisible
+- Un espace vide apparaissait sous le lecteur agrandi
 ## [1.31.0] - 2026-07-04
 
 ### Added

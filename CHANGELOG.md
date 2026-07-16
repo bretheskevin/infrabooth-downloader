@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.32.0] - 2026-07-16
+
+### Added
+
+- Switch between multiple SoundCloud accounts
+- Search playlists, albums and mixes from your phone
+- Close Rekordbox from the export dialog
+
+### Fixed
+
+- Likes and playlist edits failed because of SoundCloud's anti-bot
+- Rekordbox export error screen was hard to read
+- Player bar left a blank gap when expanded
 ## [1.31.0] - 2026-07-04
 
 ### Added

@@ -1,7 +1,7 @@
 {
   "name": "infrabooth-downloader",
   "private": true,
-  "version": "1.31.0",
+  "version": "1.32.0",
   "type": "module",
   "scripts": {
     "dev": "concurrently -n web,remote -c blue,magenta \"vite\" \"npm:dev:remote\"",
