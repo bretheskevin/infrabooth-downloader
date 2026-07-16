@@ -9,6 +9,7 @@ import { useInitializeSettings } from '@/features/settings/hooks/useInitializeSe
 import { useLikedTracks } from '@/features/library/hooks/useLikedTracks';
 import { useIsSignedIn } from '@/features/auth/store';
 import { useAutoRefreshFollowedArtists } from '@/hooks/useAutoRefreshFollowedArtists';
+import { useWebviewSendToast } from '@/hooks/useWebviewSendToast';
 import { TranslationProvider } from '@/lib/translation';
 
 interface AppProvidersProps {
@@ -29,6 +30,7 @@ function AppInitializer() {
   useLikedTracks(isSignedIn);
   useAutoRefreshFollowedArtists(isSignedIn);
   useUpdateCheck();
+  useWebviewSendToast();
 
   return null;
 }

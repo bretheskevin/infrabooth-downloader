@@ -7,6 +7,7 @@ use crate::services::http::{
     SC_APP_VERSION,
 };
 use crate::services::notifications::ActorInfo;
+use crate::services::webview_send::WebviewRequest;
 
 // ---------------------------------------------------------------------------
 // Frontend-facing types
@@ -107,6 +108,53 @@ fn build_comment_body(body: &str, reply_to_permalink: Option<&str>) -> String {
     }
 }
 
+const COMMENT_FORM_CONTENT_TYPE: &str = "application/x-www-form-urlencoded; charset=UTF-8";
+
+fn comment_post_url(track_id: u64, client_id: &str) -> String {
+    format!("{}/tracks/{}/comments?client_id={}", API_V2_BASE, track_id, client_id)
+}
+
+fn comment_delete_url(comment_id: u64, client_id: &str) -> String {
+    format!("{}/comments/{}?client_id={}&app_version={}&app_locale=en", API_V2_BASE, comment_id, client_id, SC_APP_VERSION)
+}
+
+fn encode_comment_form(body: &str, timestamp: i64, reply_to_permalink: Option<&str>) -> String {
+    let full_body = build_comment_body(body, reply_to_permalink);
+    format!("body={}&timestamp={}", urlencoding::encode(&full_body), timestamp)
+}
+
+pub fn post_comment_webview_request(client_id: &str, track_id: u64, body: &str, timestamp: i64, reply_to_permalink: Option<&str>) -> WebviewRequest {
+    WebviewRequest {
+        method: "POST",
+        url: comment_post_url(track_id, client_id),
+        content_type: Some(COMMENT_FORM_CONTENT_TYPE),
+        body: Some(encode_comment_form(body, timestamp, reply_to_permalink)),
+    }
+}
+
+pub fn delete_comment_webview_request(client_id: &str, comment_id: u64) -> WebviewRequest {
+    WebviewRequest::bare("DELETE", comment_delete_url(comment_id, client_id))
+}
+
+/// Parse the created comment shipped back from a WebView-replayed post.
+pub fn parse_posted_comment(json: &str) -> Result<TrackComment, String> {
+    serde_json::from_str::<RawComment>(json).map(convert_comment).map_err(|e| format!("Failed to parse posted comment: {}", e))
+}
+
+/// Fallback when a WebView-replayed post succeeds but ships no response body
+/// (rare: the page's `res.text()` rejected, or the body exceeded the size cap).
+/// The comment *was* posted, so we must report success; the frontend discards
+/// this value and refetches, so a minimal placeholder is enough.
+pub fn synthesize_posted_comment(body: &str, timestamp: i64, user_id: u64) -> TrackComment {
+    TrackComment {
+        id: 0,
+        body: body.to_string(),
+        created_at: String::new(),
+        timestamp_ms: timestamp,
+        user: ActorInfo { id: user_id, username: String::new(), avatar_url: None, permalink: String::new(), permalink_url: String::new() },
+    }
+}
+
 fn map_comment_error(status: rquest::StatusCode, body: String) -> ScApiError {
     let sanitized = sanitize_error_body(body);
     if sanitized == ANTIBOT_BLOCKED {
@@ -119,18 +167,15 @@ fn map_comment_error(status: rquest::StatusCode, body: String) -> ScApiError {
 pub async fn post_comment(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, track_id: u64, body: &str, timestamp: i64, reply_to_permalink: Option<&str>,
 ) -> (Option<String>, Result<TrackComment, ScApiError>) {
-    let full_body = build_comment_body(body, reply_to_permalink);
-
-    let url = format!("{}/tracks/{}/comments?client_id={}", API_V2_BASE, track_id, client_id);
-
-    let encoded_body = format!("body={}&timestamp={}", urlencoding::encode(&full_body), timestamp);
+    let url = comment_post_url(track_id, client_id);
+    let encoded_body = encode_comment_form(body, timestamp, reply_to_permalink);
 
     let response = try_none!(
         HTTP_CLIENT
             .post(&url)
             .with_oauth(Some(oauth_token))
             .with_datadome(datadome)
-            .header("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8")
+            .header("Content-Type", COMMENT_FORM_CONTENT_TYPE)
             .body(encoded_body)
             .send()
             .await
@@ -150,7 +195,7 @@ pub async fn post_comment(
 }
 
 pub async fn delete_comment(oauth_token: &str, client_id: &str, track_id: u64, comment_id: u64) -> Result<(), ScApiError> {
-    let url = format!("{}/comments/{}?client_id={}&app_version={}&app_locale=en", API_V2_BASE, comment_id, client_id, SC_APP_VERSION);
+    let url = comment_delete_url(comment_id, client_id);
 
     let response = HTTP_CLIENT.delete(&url).with_oauth(Some(oauth_token)).send().await?;
 

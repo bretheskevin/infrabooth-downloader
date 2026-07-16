@@ -18,6 +18,7 @@
     "retry": "Retry",
     "noResults": "No results found",
     "filterPlaceholder": "Filter tracks...",
+    "syncingWithSoundcloud": "Syncing with SoundCloud...",
     "loadingTracks": "Loading tracks...",
     "loadingPlaylists": "Loading playlists...",
     "loadingAlbums": "Loading albums...",
@@ -80,7 +81,14 @@
     "downloadFirefox": "Download Firefox",
     "retrySignIn": "Retry",
     "firefoxHint": "Sign in to SoundCloud in Firefox, then retry here",
-    "firefoxOpenError": "Failed to open Firefox"
+    "firefoxOpenError": "Failed to open Firefox",
+    "switchAccount": "Switch Account",
+    "goPlus": "Go+",
+    "profilePicker": {
+      "title": "Choose Account",
+      "description": "Multiple SoundCloud accounts were found in your browsers. Choose which one to use.",
+      "empty": "No signed-in SoundCloud accounts found in your browsers."
+    }
   },
   "download": {
     "button": "Download",

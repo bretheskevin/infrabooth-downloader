@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useAuthStore } from '../store';
+import type { ProfileSummary } from '@/bindings';
 
 const signedInData = {
   isSignedIn: true,
@@ -11,6 +12,7 @@ const signedInData = {
 
 describe('authStore', () => {
   beforeEach(() => {
+    localStorage.clear();
     useAuthStore.setState({
       isSignedIn: false,
       userId: null,
@@ -18,6 +20,9 @@ describe('authStore', () => {
       plan: null,
       avatarUrl: null,
       cookieWarning: null,
+      selectedProfileKey: null,
+      profiles: [],
+      isPickerOpen: false,
     });
   });
 
@@ -101,6 +106,37 @@ describe('authStore', () => {
 
       const { avatarUrl } = useAuthStore.getState();
       expect(avatarUrl).toBeNull();
+    });
+  });
+
+  describe('profile selection persistence', () => {
+    it('should persist selectedProfileKey', () => {
+      useAuthStore.getState().setSelectedProfileKey('Chrome:Profile 1');
+      expect(useAuthStore.getState().selectedProfileKey).toBe('Chrome:Profile 1');
+    });
+
+    it('should clear selectedProfileKey', () => {
+      useAuthStore.getState().setSelectedProfileKey('Chrome:Profile 1');
+      useAuthStore.getState().setSelectedProfileKey(null);
+      expect(useAuthStore.getState().selectedProfileKey).toBeNull();
+    });
+
+    it('should open and close picker', () => {
+      useAuthStore.getState().openPicker();
+      expect(useAuthStore.getState().isPickerOpen).toBe(true);
+
+      const mockProfile: ProfileSummary = {
+        key: 'Chrome:Profile 1',
+        browser: 'Chrome',
+        profile: 'Profile 1',
+        username: 'testuser',
+        avatarUrl: null,
+        plan: null,
+      };
+      useAuthStore.getState().setProfiles([mockProfile]);
+      useAuthStore.getState().closePicker();
+      expect(useAuthStore.getState().isPickerOpen).toBe(false);
+      expect(useAuthStore.getState().profiles).toEqual([]);
     });
   });
 });

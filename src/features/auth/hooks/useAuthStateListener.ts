@@ -3,6 +3,7 @@ import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { logger } from '@/lib/logger';
 import { getErrorString } from '@/lib/utils';
 import { type AuthData, useAuthStore } from '@/features/auth/store';
+import { listProfiles } from '@/features/auth/api';
 
 /**
  * Hook to listen for auth state changes from the backend.
@@ -12,13 +13,8 @@ import { type AuthData, useAuthStore } from '@/features/auth/store';
  * Also listens for 'auth-reauth-needed' events, which are emitted when token
  * refresh fails and the user needs to sign in again.
  *
- * @example
- * ```tsx
- * function App() {
- *   useAuthStateListener();
- *   return <AppContent />;
- * }
- * ```
+ * Also listens for 'auth-profile-selection-needed' events, which are emitted when
+ * 2+ browser profiles are logged in and no valid remembered key was passed.
  */
 export function useAuthStateListener(): void {
   const setAuth = useAuthStore((state) => state.setAuth);
@@ -27,11 +23,11 @@ export function useAuthStateListener(): void {
   useEffect(() => {
     let unlistenAuthState: UnlistenFn | undefined;
     let unlistenReauthNeeded: UnlistenFn | undefined;
+    let unlistenProfileSelection: UnlistenFn | undefined;
     let mounted = true;
 
     const setupListeners = async () => {
       try {
-        // Listen for auth state changes
         unlistenAuthState = await listen<AuthData>('auth-state-changed', (event) => {
           void logger.debug(`[useAuthStateListener] Received auth-state-changed: ${JSON.stringify(event.payload)}`);
           if (mounted && event.payload) {
@@ -39,11 +35,22 @@ export function useAuthStateListener(): void {
           }
         });
 
-        // Listen for re-authentication needed events (token refresh failed)
         unlistenReauthNeeded = await listen('auth-reauth-needed', () => {
           if (mounted) {
             clearAuth();
-            // Future: Could show a toast or notification here
+          }
+        });
+
+        unlistenProfileSelection = await listen('auth-profile-selection-needed', async () => {
+          if (!mounted) return;
+          const { setProfiles, openPicker, closePicker } = useAuthStore.getState();
+          openPicker();
+          try {
+            const profiles = await listProfiles();
+            setProfiles(profiles);
+          } catch (error) {
+            closePicker();
+            void logger.error(`Failed to list profiles: ${getErrorString(error)}`);
           }
         });
       } catch (error) {
@@ -60,6 +67,9 @@ export function useAuthStateListener(): void {
       }
       if (unlistenReauthNeeded) {
         unlistenReauthNeeded();
+      }
+      if (unlistenProfileSelection) {
+        unlistenProfileSelection();
       }
     };
   }, [setAuth, clearAuth]);

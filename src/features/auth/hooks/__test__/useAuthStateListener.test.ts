@@ -3,17 +3,40 @@ import { renderHook, act } from '@testing-library/react';
 import { useAuthStateListener } from '../useAuthStateListener';
 import { useAuthStore } from '@/features/auth/store';
 
+// Mock the auth api for listProfiles
+vi.mock('@/features/auth/api', () => ({
+  checkAuth: vi.fn(),
+  listProfiles: vi
+    .fn()
+    .mockResolvedValue([
+      { key: 'Chrome:Profile 1', browser: 'Chrome', profile: 'Profile 1', username: 'dj_cool', avatarUrl: null, plan: null },
+    ]),
+}));
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    trace: vi.fn().mockResolvedValue(undefined),
+    debug: vi.fn().mockResolvedValue(undefined),
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Mock Tauri event API
 const mockUnlistenAuthState = vi.fn();
 const mockUnlistenReauthNeeded = vi.fn();
+const mockUnlistenProfileSelection = vi.fn();
 let eventListeners: Map<string, (event: { payload?: unknown }) => void> = new Map();
 
 vi.mock('@tauri-apps/api/event', () => ({
   listen: vi.fn((eventName: string, callback: (event: { payload?: unknown }) => void) => {
     eventListeners.set(eventName, callback);
-    // Return different unlisten functions based on event name
     if (eventName === 'auth-state-changed') {
       return Promise.resolve(mockUnlistenAuthState);
+    }
+    if (eventName === 'auth-profile-selection-needed') {
+      return Promise.resolve(mockUnlistenProfileSelection);
     }
     return Promise.resolve(mockUnlistenReauthNeeded);
   }),
@@ -23,7 +46,7 @@ describe('useAuthStateListener', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     eventListeners.clear();
-    useAuthStore.setState({ isSignedIn: false, username: null, plan: null });
+    useAuthStore.setState({ isSignedIn: false, username: null, plan: null, isPickerOpen: false, profiles: [] });
   });
 
   afterEach(() => {
@@ -43,7 +66,6 @@ describe('useAuthStateListener', () => {
 
     renderHook(() => useAuthStateListener());
 
-    // Wait for both listeners to be set up
     await vi.waitFor(() => {
       expect(eventListeners.has('auth-reauth-needed')).toBe(true);
     });
@@ -51,10 +73,21 @@ describe('useAuthStateListener', () => {
     expect(listen).toHaveBeenCalledWith('auth-reauth-needed', expect.any(Function));
   });
 
+  it('should setup listener for auth-profile-selection-needed event', async () => {
+    const { listen } = await import('@tauri-apps/api/event');
+
+    renderHook(() => useAuthStateListener());
+
+    await vi.waitFor(() => {
+      expect(eventListeners.has('auth-profile-selection-needed')).toBe(true);
+    });
+
+    expect(listen).toHaveBeenCalledWith('auth-profile-selection-needed', expect.any(Function));
+  });
+
   it('should update auth store when auth-state-changed event is received', async () => {
     renderHook(() => useAuthStateListener());
 
-    // Simulate receiving an auth-state-changed event
     const callback = eventListeners.get('auth-state-changed');
     expect(callback).toBeDefined();
 
@@ -74,7 +107,6 @@ describe('useAuthStateListener', () => {
   });
 
   it('should handle sign out event', async () => {
-    // Start signed in
     useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     renderHook(() => useAuthStateListener());
@@ -98,12 +130,10 @@ describe('useAuthStateListener', () => {
   });
 
   it('should clear auth when auth-reauth-needed event is received', async () => {
-    // Start signed in
     useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
 
     renderHook(() => useAuthStateListener());
 
-    // Wait for listener to be set up
     await vi.waitFor(() => {
       expect(eventListeners.has('auth-reauth-needed')).toBe(true);
     });
@@ -119,19 +149,36 @@ describe('useAuthStateListener', () => {
     expect(useAuthStore.getState().username).toBeNull();
   });
 
-  it('should cleanup both listeners on unmount', async () => {
+  it('should open picker when auth-profile-selection-needed event is received', async () => {
+    renderHook(() => useAuthStateListener());
+
+    await vi.waitFor(() => {
+      expect(eventListeners.has('auth-profile-selection-needed')).toBe(true);
+    });
+
+    const callback = eventListeners.get('auth-profile-selection-needed');
+    expect(callback).toBeDefined();
+
+    await act(async () => {
+      await callback!({});
+    });
+
+    expect(useAuthStore.getState().isPickerOpen).toBe(true);
+  });
+
+  it('should cleanup all three listeners on unmount', async () => {
     const { unmount } = renderHook(() => useAuthStateListener());
 
-    // Wait for listeners to be set up
     await vi.waitFor(() => {
       expect(eventListeners.has('auth-state-changed')).toBe(true);
       expect(eventListeners.has('auth-reauth-needed')).toBe(true);
+      expect(eventListeners.has('auth-profile-selection-needed')).toBe(true);
     });
 
     unmount();
 
-    // Both unlisten functions should be called
     expect(mockUnlistenAuthState).toHaveBeenCalled();
     expect(mockUnlistenReauthNeeded).toHaveBeenCalled();
+    expect(mockUnlistenProfileSelection).toHaveBeenCalled();
   });
 });

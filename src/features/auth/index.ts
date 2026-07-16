@@ -4,3 +4,4 @@ export * from './hooks/useStartupAuth';
 export { AuthContainer } from './components/AuthContainer';
 export { SignInButton } from './components/SignInButton';
 export { UserMenu } from './components/UserMenu';
+export { ProfileSelectDialog } from './components/ProfileSelectDialog';

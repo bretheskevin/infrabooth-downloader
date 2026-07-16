@@ -9,6 +9,7 @@ use crate::services::playlist::build_playlist_url;
 use crate::services::playlist::{fetch_playlist_info, fetch_track_info, PlaylistInfo, TrackInfo};
 use crate::services::storage::AuthState;
 use crate::services::url_validator::validate_url;
+use crate::services::webview_send;
 use tauri::Manager;
 
 #[tauri::command]
@@ -224,7 +225,12 @@ pub async fn delete_playlist(playlist_id: u64, app: tauri::AppHandle) -> Result<
         let status = response.status();
         let body = response.text().await.unwrap_or_default();
         log::error!("[delete_playlist] DELETE failed: {} - {}", status, body);
-        return Err(format!("Failed to delete playlist: HTTP {} - {}", status, sanitize_error_body(body)));
+        let sanitized = sanitize_error_body(body);
+        if !webview_send::is_antibot(&sanitized) {
+            return Err(format!("Failed to delete playlist: HTTP {} - {}", status, sanitized));
+        }
+        let request = webview_send::WebviewRequest::bare("DELETE", url);
+        webview_send::send_via_webview(&app, &token, "delete-playlist", request).await?;
     }
 
     log::info!("[delete_playlist] Successfully deleted playlist {}", playlist_id);

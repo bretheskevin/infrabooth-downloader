@@ -1,8 +1,9 @@
-use crate::services::cookie::scan_browser_cookies;
+use crate::services::cookie::enumerate_profile_tokens;
 use crate::services::http::SOUNDCLOUD_URL;
 use crate::services::library::LibraryCache;
 use crate::services::oauth::verify_token;
 use crate::services::storage::{AuthState, CachedAuth};
+use futures::future::join_all;
 use log::{info, warn};
 use serde::Serialize;
 use specta::Type;
@@ -21,34 +22,69 @@ pub struct AuthStatePayload {
 
 use crate::services::events;
 
+#[derive(Debug, Clone, Serialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct ProfileSummary {
+    pub key: String,
+    pub browser: String,
+    pub profile: String,
+    pub username: String,
+    pub avatar_url: Option<String>,
+    pub plan: Option<String>,
+}
+
 fn signed_out_payload(cookie_warning: Option<String>) -> AuthStatePayload {
     AuthStatePayload { is_signed_in: false, user_id: None, username: None, plan: None, avatar_url: None, cookie_warning }
 }
 
 #[tauri::command]
 #[specta::specta]
-pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
+pub async fn check_auth(app: AppHandle, profile_key: Option<String>) -> Result<bool, String> {
     let state = app.state::<AuthState>();
 
     // Hold the refresh guard across the full scan-verify-cache cycle.
     // Other callers wait here until the first one finishes.
     let _guard = state.lock_refresh().await;
 
-    let scan = tokio::task::spawn_blocking(|| scan_browser_cookies()).await.map_err(|e| e.to_string())?;
+    let scan = tokio::task::spawn_blocking(enumerate_profile_tokens).await.map_err(|e| e.to_string())?;
 
-    // Always store datadome — it's needed for all API calls, even without auth
-    state.set_datadome(scan.datadome);
+    // Always store standalone datadome — needed for all API calls
+    if let Some(ref dd) = scan.standalone_datadome {
+        state.update_datadome(Some(dd.clone()));
+    }
 
-    let Some(cookie) = scan.cookie else {
+    if scan.profiles.is_empty() {
         state.clear();
         let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(scan.warning));
         return Ok(false);
+    }
+
+    // Decide which profile to connect
+    let chosen_idx = if let Some(ref key) = profile_key { scan.profiles.iter().position(|p| p.key == *key) } else { None };
+
+    let chosen = match chosen_idx {
+        Some(idx) => &scan.profiles[idx],
+        None if scan.profiles.len() == 1 => &scan.profiles[0],
+        None => {
+            // 2+ profiles and no valid key -- ask the user
+            let _ = app.emit(events::AUTH_PROFILE_SELECTION_NEEDED, ());
+            return Ok(false);
+        }
     };
 
-    match verify_token(&cookie.value).await {
+    // Store datadome from the chosen profile (prefer it over standalone)
+    let datadome = chosen.datadome.clone().or(scan.standalone_datadome);
+    state.set_datadome(datadome);
+
+    let chosen_key = chosen.key.clone();
+    let chosen_browser = chosen.browser.clone();
+    let chosen_profile = chosen.profile.clone();
+    let chosen_oauth = chosen.oauth_token.clone();
+    let profiles_len = scan.profiles.len();
+
+    match verify_token(&chosen_oauth).await {
         Ok(profile) => {
-            state.set_datadome(cookie.datadome);
-            state.set(CachedAuth { oauth_token: cookie.value, user_id: profile.id });
+            state.set(CachedAuth { oauth_token: chosen_oauth, user_id: profile.id, profile_key: Some(chosen_key.clone()) });
             let _ = app.emit(
                 events::AUTH_STATE_CHANGED,
                 AuthStatePayload {
@@ -60,16 +96,50 @@ pub async fn check_auth(app: AppHandle) -> Result<bool, String> {
                     cookie_warning: None,
                 },
             );
-            info!("Authenticated via {} browser cookie", cookie.browser);
+            info!("Authenticated via {} browser cookie (profile: {})", chosen_browser, chosen_profile);
             Ok(true)
         }
         Err(e) => {
-            warn!("Cookie verification failed: {}", e);
-            state.clear();
-            let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(None));
+            warn!("Cookie verification failed for {}: {}", chosen_key, e);
+            if profiles_len > 1 {
+                let _ = app.emit(events::AUTH_PROFILE_SELECTION_NEEDED, ());
+            } else {
+                state.clear();
+                let _ = app.emit(events::AUTH_STATE_CHANGED, signed_out_payload(None));
+            }
             Ok(false)
         }
     }
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn list_profiles(_app: AppHandle) -> Result<Vec<ProfileSummary>, String> {
+    let scan = tokio::task::spawn_blocking(enumerate_profile_tokens).await.map_err(|e| e.to_string())?;
+
+    let futures: Vec<_> = scan
+        .profiles
+        .into_iter()
+        .map(|token| async move {
+            match verify_token(&token.oauth_token).await {
+                Ok(profile) => Some(ProfileSummary {
+                    key: token.key,
+                    browser: token.browser,
+                    profile: token.profile,
+                    username: profile.username,
+                    avatar_url: profile.avatar_url,
+                    plan: profile.plan,
+                }),
+                Err(e) => {
+                    warn!("Token verification failed for {}: {}", token.key, e);
+                    None
+                }
+            }
+        })
+        .collect();
+
+    let results = join_all(futures).await;
+    Ok(results.into_iter().flatten().collect())
 }
 
 /// Re-verifies auth on demand (e.g., after download 401/403).
@@ -88,7 +158,8 @@ pub async fn refresh_auth(app: AppHandle) -> Result<bool, String> {
         info!("Cached token verification failed, falling back to cookie scan");
     }
 
-    let result = check_auth(app.clone()).await?;
+    let profile_key = app.state::<AuthState>().get_profile_key();
+    let result = check_auth(app.clone(), profile_key).await?;
     if !result {
         let _ = app.emit(events::AUTH_REAUTH_NEEDED, ());
     }
@@ -228,5 +299,37 @@ mod tests {
         assert!(json.contains("\"plan\":null"));
         assert!(json.contains("\"avatarUrl\":null"));
         assert!(json.contains("\"cookieWarning\":null"));
+    }
+
+    #[test]
+    fn test_profile_summary_serializes_camel_case() {
+        let summary = ProfileSummary {
+            key: "Chrome:Profile 1".to_string(),
+            browser: "Chrome".to_string(),
+            profile: "Profile 1".to_string(),
+            username: "dj_cool".to_string(),
+            avatar_url: Some("https://i1.sndcdn.com/avatars-xxx.jpg".to_string()),
+            plan: Some("Pro Unlimited".to_string()),
+        };
+        let json = serde_json::to_string(&summary).unwrap();
+        assert!(json.contains("\"avatarUrl\""));
+        assert!(json.contains("\"dj_cool\""));
+        assert!(json.contains("\"Pro Unlimited\""));
+        assert!(json.contains("\"Chrome:Profile 1\""));
+    }
+
+    #[test]
+    fn test_profile_summary_serializes_without_optional_fields() {
+        let summary = ProfileSummary {
+            key: "Firefox:default-release".to_string(),
+            browser: "Firefox".to_string(),
+            profile: "default-release".to_string(),
+            username: "user123".to_string(),
+            avatar_url: None,
+            plan: None,
+        };
+        let json = serde_json::to_string(&summary).unwrap();
+        assert!(json.contains("\"avatarUrl\":null"));
+        assert!(json.contains("\"plan\":null"));
     }
 }

@@ -2,6 +2,7 @@ use tauri::Manager;
 
 use crate::services::follow;
 use crate::services::storage::AuthState;
+use crate::services::webview_send;
 
 use super::{require_auth_and_cid, require_user_id};
 
@@ -15,7 +16,7 @@ pub async fn follow_user(app: tauri::AppHandle, user_id: u64) -> Result<(), Stri
 
     let (new_datadome, result) = follow::follow_user(&token, &client_id, datadome.as_deref(), current_user_id, user_id).await;
     state.update_datadome(new_datadome);
-    result.map_err(|e| e.to_string())?;
+    webview_send::retry_if_antibot(&app, &token, "follow-user", result, || follow::follow_webview_request(current_user_id, user_id, &client_id, true)).await?;
     Ok(())
 }
 
@@ -29,7 +30,8 @@ pub async fn unfollow_user(app: tauri::AppHandle, user_id: u64) -> Result<(), St
 
     let (new_datadome, result) = follow::unfollow_user(&token, &client_id, datadome.as_deref(), current_user_id, user_id).await;
     state.update_datadome(new_datadome);
-    result.map_err(|e| e.to_string())?;
+    webview_send::retry_if_antibot(&app, &token, "unfollow-user", result, || follow::follow_webview_request(current_user_id, user_id, &client_id, false))
+        .await?;
     Ok(())
 }
 

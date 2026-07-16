@@ -3,6 +3,7 @@ use tauri::Manager;
 use crate::commands::{get_optional_auth_and_cid, require_auth_and_cid};
 use crate::services::comments::{self, CommentsPage, TrackComment};
 use crate::services::storage::AuthState;
+use crate::services::webview_send;
 
 const COMMENTS_LIMIT: u32 = 20;
 
@@ -25,7 +26,18 @@ pub async fn post_comment(
     let (new_datadome, result) =
         comments::post_comment(&token, &client_id, datadome.as_deref(), track_id, &body, timestamp, reply_to_permalink.as_deref()).await;
     state.update_datadome(new_datadome);
-    result.map_err(|e| e.to_string())
+
+    match result {
+        Err(e) if webview_send::is_antibot(&e) => {
+            let req = comments::post_comment_webview_request(&client_id, track_id, &body, timestamp, reply_to_permalink.as_deref());
+            let response_body = webview_send::send_via_webview(&app, &token, "post-comment", req).await?;
+            match response_body {
+                Some(json) if !json.is_empty() => comments::parse_posted_comment(&json),
+                _ => Ok(comments::synthesize_posted_comment(&body, timestamp, state.get_user_id().unwrap_or(0))),
+            }
+        }
+        other => other.map_err(|e| e.to_string()),
+    }
 }
 
 #[tauri::command]
@@ -33,5 +45,6 @@ pub async fn post_comment(
 pub async fn delete_comment(app: tauri::AppHandle, track_id: u64, comment_id: u64) -> Result<(), String> {
     let (token, client_id) = require_auth_and_cid(&app).await?;
 
-    comments::delete_comment(&token, &client_id, track_id, comment_id).await.map_err(|e| e.to_string())
+    let result = comments::delete_comment(&token, &client_id, track_id, comment_id).await;
+    webview_send::retry_if_antibot(&app, &token, "delete-comment", result, || Ok(comments::delete_comment_webview_request(&client_id, comment_id))).await
 }

@@ -1,6 +1,7 @@
 import {
   commands,
   type Result,
+  type ProfileSummary,
   type DownloadRequest,
   type StartQueueRequest,
   type PlaylistInfo,
@@ -66,7 +67,7 @@ function getStoredRekordboxPathOverride(): string | null {
 
 export const api = {
   // Auth
-  checkAuth: (): Promise<boolean> => commands.checkAuth().then(unwrap),
+  checkAuth: (profileKey: string | null = null): Promise<boolean> => commands.checkAuth(profileKey).then(unwrap),
 
   refreshAuth: (): Promise<boolean> => commands.refreshAuth().then(unwrap),
 
@@ -83,6 +84,8 @@ export const api = {
       .openInFirefox()
       .then(unwrap)
       .then(() => undefined),
+
+  listProfiles: (): Promise<ProfileSummary[]> => commands.listProfiles().then(unwrap),
 
   // Media info
   getPlaylistInfo: (url: string): Promise<PlaylistInfo> => commands.getPlaylistInfo(url).then(unwrap),

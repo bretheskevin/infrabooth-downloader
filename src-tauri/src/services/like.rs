@@ -2,6 +2,17 @@ use rquest::Url;
 
 use crate::models::error::{LikePlaylistError, LikeTrackError};
 use crate::services::http::{check_api_success, try_none, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
+use crate::services::webview_send::WebviewRequest;
+
+pub fn track_like_webview_request(current_user_id: u64, track_id: u64, client_id: &str, like: bool) -> Result<WebviewRequest, String> {
+    let url = track_like_url(current_user_id, track_id, client_id).map_err(|e| e.to_string())?;
+    Ok(WebviewRequest::bare(if like { "PUT" } else { "DELETE" }, url.to_string()))
+}
+
+pub fn playlist_like_webview_request(current_user_id: u64, playlist_id: u64, client_id: &str, like: bool) -> Result<WebviewRequest, String> {
+    let url = playlist_like_url(current_user_id, playlist_id, client_id).map_err(|e| e.to_string())?;
+    Ok(WebviewRequest::bare(if like { "PUT" } else { "DELETE" }, url.to_string()))
+}
 
 fn track_like_url(current_user_id: u64, track_id: u64, client_id: &str) -> Result<Url, LikeTrackError> {
     Url::parse_with_params(

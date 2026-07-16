@@ -7,11 +7,12 @@ use tokio::sync::Mutex as AsyncMutex;
 pub struct CachedAuth {
     pub oauth_token: String,
     pub user_id: u64,
+    pub profile_key: Option<String>,
 }
 
 impl std::fmt::Debug for CachedAuth {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("CachedAuth").field("oauth_token", &"[redacted]").field("user_id", &self.user_id).finish()
+        f.debug_struct("CachedAuth").field("oauth_token", &"[redacted]").field("user_id", &self.user_id).field("profile_key", &self.profile_key).finish()
     }
 }
 
@@ -69,6 +70,10 @@ impl AuthState {
     pub fn get_user_id(&self) -> Option<u64> {
         self.cached.lock().expect("AuthState lock poisoned").as_ref().map(|a| a.user_id)
     }
+
+    pub fn get_profile_key(&self) -> Option<String> {
+        self.cached.lock().expect("AuthState lock poisoned").as_ref().and_then(|a| a.profile_key.clone())
+    }
 }
 
 #[cfg(test)]
@@ -84,14 +89,14 @@ mod tests {
     #[test]
     fn test_auth_state_set_and_get_token() {
         let state = AuthState::default();
-        state.set(CachedAuth { oauth_token: "test_token".to_string(), user_id: 0 });
+        state.set(CachedAuth { oauth_token: "test_token".to_string(), user_id: 0, profile_key: None });
         assert_eq!(state.get_token(), Some("test_token".to_string()));
     }
 
     #[test]
     fn test_auth_state_clear() {
         let state = AuthState::default();
-        state.set(CachedAuth { oauth_token: "token".to_string(), user_id: 0 });
+        state.set(CachedAuth { oauth_token: "token".to_string(), user_id: 0, profile_key: None });
         assert!(state.get_token().is_some());
         state.clear();
         assert!(state.get_token().is_none());
@@ -99,16 +104,26 @@ mod tests {
 
     #[test]
     fn test_cached_auth_clone() {
-        let auth = CachedAuth { oauth_token: "token".to_string(), user_id: 0 };
+        let auth = CachedAuth { oauth_token: "token".to_string(), user_id: 0, profile_key: Some("Chrome:Default".to_string()) };
         let cloned = auth.clone();
         assert_eq!(cloned.oauth_token, "token");
+        assert_eq!(cloned.profile_key, Some("Chrome:Default".to_string()));
     }
 
     #[test]
     fn test_cached_auth_debug_redacts_token() {
-        let auth = CachedAuth { oauth_token: "secret_token".to_string(), user_id: 0 };
+        let auth = CachedAuth { oauth_token: "secret_token".to_string(), user_id: 0, profile_key: Some("Firefox:default".to_string()) };
         let debug = format!("{:?}", auth);
         assert!(!debug.contains("secret_token"));
         assert!(debug.contains("[redacted]"));
+        assert!(debug.contains("Firefox:default"));
+    }
+
+    #[test]
+    fn test_auth_state_get_profile_key() {
+        let state = AuthState::default();
+        assert!(state.get_profile_key().is_none());
+        state.set(CachedAuth { oauth_token: "token".to_string(), user_id: 42, profile_key: Some("Chrome:Profile 1".to_string()) });
+        assert_eq!(state.get_profile_key(), Some("Chrome:Profile 1".to_string()));
     }
 }

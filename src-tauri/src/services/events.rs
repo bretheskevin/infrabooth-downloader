@@ -21,6 +21,7 @@ pub const ARTIST_TRACKS_BATCH: &str = "artist-tracks-batch";
 
 pub const AUTH_STATE_CHANGED: &str = "auth-state-changed";
 pub const AUTH_REAUTH_NEEDED: &str = "auth-reauth-needed";
+pub const AUTH_PROFILE_SELECTION_NEEDED: &str = "auth-profile-selection-needed";
 pub const OPEN_SETTINGS: &str = "open-settings";
 pub const UPDATE_DOWNLOAD_PROGRESS: &str = "update-download-progress";
 pub const REKORDBOX_EXPORT_PROGRESS: &str = "rekordbox-export-progress";
@@ -32,6 +33,18 @@ pub const LIBRARY_PLAYLISTS_BATCH: &str = "library-playlists-batch";
 pub const ARTIST_FOLLOWERS_BATCH: &str = "artist-followers-batch";
 pub const ARTIST_FOLLOWINGS_BATCH: &str = "artist-followings-batch";
 pub const REMOTE_COMMAND: &str = "remote-command";
+pub const WEBVIEW_SEND_STATUS: &str = "webview-send-status";
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct WebviewSendStatusEvent {
+    pub operation: String,
+    pub active: bool,
+}
+
+pub fn emit_webview_send_status(app: &tauri::AppHandle, operation: &str, active: bool) {
+    let _ = app.emit(WEBVIEW_SEND_STATUS, WebviewSendStatusEvent { operation: operation.to_string(), active });
+}
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]

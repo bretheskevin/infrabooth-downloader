@@ -2,6 +2,7 @@ use rquest::Url;
 
 use crate::models::error::FollowError;
 use crate::services::http::{check_api_success, try_none, RequestBuilderExt, API_V2_BASE, CHROME_USER_AGENT, HTTP_CLIENT, SC_APP_VERSION};
+use crate::services::webview_send::WebviewRequest;
 
 /// Extracted from SoundCloud's JS bundle — may need periodic updating (like SC_APP_VERSION).
 const FOLLOWS_SIGNATURE_SECRET: &str = "5Dpr3ubBw8LFtbvQcd4Hx6hU";
@@ -42,6 +43,11 @@ fn signed_follow_url(current_user_id: u64, target_user_id: u64, client_id: &str)
     let mut url = base_follow_url(target_user_id, client_id)?;
     url.query_pairs_mut().append_pair("signature", &signature);
     Ok(url)
+}
+
+pub fn follow_webview_request(current_user_id: u64, target_user_id: u64, client_id: &str, follow: bool) -> Result<WebviewRequest, String> {
+    let url = signed_follow_url(current_user_id, target_user_id, client_id).map_err(|e| e.to_string())?;
+    Ok(WebviewRequest::bare(if follow { "POST" } else { "DELETE" }, url.to_string()))
 }
 
 pub async fn follow_user(

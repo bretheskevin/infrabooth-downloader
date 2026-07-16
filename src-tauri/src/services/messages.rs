@@ -9,6 +9,7 @@ use crate::models::error::ScApiError;
 use crate::services::http::{
     extract_datadome_from_response, sanitize_error_body, try_none, validate_api_response, RequestBuilderExt, ANTIBOT_BLOCKED, API_V2_BASE, HTTP_CLIENT,
 };
+use crate::services::webview_send::WebviewRequest;
 
 // ---------------------------------------------------------------------------
 // Frontend-facing types
@@ -441,12 +442,27 @@ pub async fn mark_conversation_read(
     (new_datadome, Ok(()))
 }
 
+fn conversation_url(client_id: &str, user_id: u64, other_user_id: u64) -> String {
+    format!("{}/users/{}/conversations/{}?client_id={}", API_V2_BASE, user_id, other_user_id, client_id)
+}
+
+fn message_payload(content: &str) -> String {
+    serde_json::json!({ "contents": content }).to_string()
+}
+
+pub fn send_message_webview_request(client_id: &str, user_id: u64, other_user_id: u64, content: &str) -> WebviewRequest {
+    WebviewRequest {
+        method: "POST",
+        url: conversation_url(client_id, user_id, other_user_id),
+        content_type: Some("application/json"),
+        body: Some(message_payload(content)),
+    }
+}
+
 pub async fn send_message(
     oauth_token: &str, client_id: &str, datadome: Option<&str>, user_id: u64, other_user_id: u64, content: &str,
 ) -> (Option<String>, Result<(), ScApiError>) {
-    let url = format!("{}/users/{}/conversations/{}?client_id={}", API_V2_BASE, user_id, other_user_id, client_id,);
-
-    let body = serde_json::json!({ "contents": content });
+    let url = conversation_url(client_id, user_id, other_user_id);
 
     let response = try_none!(
         HTTP_CLIENT
@@ -454,7 +470,7 @@ pub async fn send_message(
             .with_oauth(Some(oauth_token))
             .with_datadome(datadome)
             .header("Content-Type", "application/json")
-            .body(body.to_string())
+            .body(message_payload(content))
             .send()
             .await
     );

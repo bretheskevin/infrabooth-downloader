@@ -5,9 +5,9 @@
 
 
 export const commands = {
-async checkAuth() : Promise<Result<boolean, string>> {
+async checkAuth(profileKey: string | null) : Promise<Result<boolean, string>> {
     try {
-    return { status: "ok", data: await TAURI_INVOKE("check_auth") };
+    return { status: "ok", data: await TAURI_INVOKE("check_auth", { profileKey }) };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -36,6 +36,14 @@ async refreshAuth() : Promise<Result<boolean, string>> {
 async signOut() : Promise<Result<null, string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("sign_out") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async listProfiles() : Promise<Result<ProfileSummary[], string>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("list_profiles") };
 } catch (e) {
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
@@ -793,7 +801,8 @@ queueCancelledEvent: QueueCancelledEvent,
 queueCompleteEvent: QueueCompleteEvent,
 queueProgressEvent: QueueProgressEvent,
 rekordboxExportProgressEvent: RekordboxExportProgressEvent,
-tracksBatchEvent: TracksBatchEvent
+tracksBatchEvent: TracksBatchEvent,
+webviewSendStatusEvent: WebviewSendStatusEvent
 }>({
 artistAlbumsBatchEvent: "artist-albums-batch-event",
 artistPlaylistsBatchEvent: "artist-playlists-batch-event",
@@ -804,7 +813,8 @@ queueCancelledEvent: "queue-cancelled-event",
 queueCompleteEvent: "queue-complete-event",
 queueProgressEvent: "queue-progress-event",
 rekordboxExportProgressEvent: "rekordbox-export-progress-event",
-tracksBatchEvent: "tracks-batch-event"
+tracksBatchEvent: "tracks-batch-event",
+webviewSendStatusEvent: "webview-send-status-event"
 })
 
 /** user-defined constants **/
@@ -884,6 +894,7 @@ export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: s
 export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
 export type PlaylistSearchResponse = { collection: ArtistPlaylist[]; total_results: number | null }
 export type PlaylistSummary = { id: number; title: string; artwork_url: string | null; permalink_url: string; track_count: number; user: UserInfo }
+export type ProfileSummary = { key: string; browser: string; profile: string; username: string; avatarUrl: string | null; plan: string | null }
 /**
  * Event payload for queue cancellation.
  */
@@ -994,6 +1005,7 @@ export type VisualItem = { visual_url: string }
  * API shape: `{ visuals: { visuals: [{ visual_url: "..." }] } }`
  */
 export type VisualsWrapper = { visuals: VisualItem[] }
+export type WebviewSendStatusEvent = { operation: string; active: boolean }
 
 /** tauri-specta globals **/
 

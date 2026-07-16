@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { Loader2, Search, SendHorizonal } from 'lucide-react';
 import { toast } from 'sonner';
@@ -15,6 +15,7 @@ import { getArtworkUrl } from '@/lib/soundcloud';
 import { useVirtualizedList } from '@/hooks/useVirtualizedList';
 import { useConversationsPage } from '../hooks/useConversationsPage';
 import { useMessagesStore, type ShareTrackInfo } from '../store';
+import { insertOptimisticMessage, invalidateConversation, normalizeContent, rollbackOptimisticMessage } from '../utils/optimisticMessages';
 import type { ConversationSummary } from '@/bindings';
 
 function TrackPreview({ track }: { track: ShareTrackInfo }) {
@@ -93,25 +94,30 @@ function ShareTrackDialogBody({ track, onClose }: { track: ShareTrackInfo; onClo
     itemHeight: 56,
   });
 
-  const sendMutation = useMutation({
-    mutationFn: ({ otherUserId, content }: { otherUserId: number; content: string }) => api.sendMessage(otherUserId, content),
-    onSuccess: (_data, { otherUserId }) => {
-      toast.success(t('shareTrack.success'));
-      void queryClient.invalidateQueries({ queryKey: ['directMessages', 'conversations'] });
-      void queryClient.invalidateQueries({ queryKey: ['directMessages', 'messages', otherUserId] });
-      onClose();
-    },
-    onError: (err) => {
-      toast.error(getApiErrorMessage(err, t, 'shareTrack.error'));
-      void logger.error(`Failed to share track: ${err}`);
-    },
-  });
-
   const handleSend = () => {
     if (!selectedUserId) return;
+    const otherUserId = selectedUserId;
     const trimmed = messageText.trim();
-    const content = trimmed ? `${trimmed}\n${track.permalinkUrl}` : track.permalinkUrl;
-    sendMutation.mutate({ otherUserId: selectedUserId, content });
+    const content = normalizeContent(trimmed ? `${trimmed}\n${track.permalinkUrl}` : track.permalinkUrl);
+
+    // Optimistic: insert the message into the conversation, confirm, and close instantly.
+    // The send (which may fall back to the WebView) runs in the background; the message
+    // is reconciled from the response on success, or rolled back with feedback on failure.
+    void insertOptimisticMessage(queryClient, otherUserId, content, currentUserId).then((snapshot) => {
+      api
+        .sendMessage(otherUserId, content)
+        .then(() => {
+          invalidateConversation(queryClient, otherUserId);
+          toast.success(t('shareTrack.success'));
+        })
+        .catch((err) => {
+          rollbackOptimisticMessage(queryClient, otherUserId, snapshot);
+          toast.error(getApiErrorMessage(err, t, 'shareTrack.error'));
+          void logger.error(`Failed to share track: ${err}`);
+        });
+    });
+
+    onClose();
   };
 
   return (
@@ -194,8 +200,8 @@ function ShareTrackDialogBody({ track, onClose }: { track: ShareTrackInfo; onClo
             autoComplete="off"
             autoFocus
           />
-          <Button type="submit" size="icon" disabled={sendMutation.isPending} aria-label={t('shareTrack.send')}>
-            {sendMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SendHorizonal className="h-4 w-4" />}
+          <Button type="submit" size="icon" aria-label={t('shareTrack.send')}>
+            <SendHorizonal className="h-4 w-4" />
           </Button>
         </form>
       )}

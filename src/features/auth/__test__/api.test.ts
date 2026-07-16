@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { checkAuth, refreshAuth, signOut } from '../api';
+import { checkAuth, refreshAuth, signOut, listProfiles } from '../api';
 
 // Mock the Tauri API layer
 vi.mock('@/lib/tauri', () => ({
@@ -7,6 +7,7 @@ vi.mock('@/lib/tauri', () => ({
     checkAuth: vi.fn(),
     refreshAuth: vi.fn(),
     signOut: vi.fn(),
+    listProfiles: vi.fn(),
   },
 }));
 
@@ -18,12 +19,21 @@ describe('auth api', () => {
   });
 
   describe('checkAuth', () => {
-    it('should call api.checkAuth and return true when authenticated', async () => {
+    it('should call api.checkAuth with null profile key by default', async () => {
       vi.mocked(api.checkAuth).mockResolvedValue(true);
 
       const result = await checkAuth();
 
-      expect(api.checkAuth).toHaveBeenCalledTimes(1);
+      expect(api.checkAuth).toHaveBeenCalledWith(null);
+      expect(result).toBe(true);
+    });
+
+    it('should call api.checkAuth with provided profile key', async () => {
+      vi.mocked(api.checkAuth).mockResolvedValue(true);
+
+      const result = await checkAuth('Chrome:Profile 1');
+
+      expect(api.checkAuth).toHaveBeenCalledWith('Chrome:Profile 1');
       expect(result).toBe(true);
     });
 
@@ -82,6 +92,26 @@ describe('auth api', () => {
       vi.mocked(api.signOut).mockRejectedValue(new Error('Sign-out failed'));
 
       await expect(signOut()).rejects.toThrow('Sign-out failed');
+    });
+  });
+
+  describe('listProfiles', () => {
+    it('should call api.listProfiles and return profiles', async () => {
+      const mockProfiles = [
+        { key: 'Chrome:Profile 1', browser: 'Chrome', profile: 'Profile 1', username: 'dj_cool', avatarUrl: null, plan: null },
+      ];
+      vi.mocked(api.listProfiles).mockResolvedValue(mockProfiles);
+
+      const result = await listProfiles();
+
+      expect(api.listProfiles).toHaveBeenCalledTimes(1);
+      expect(result).toEqual(mockProfiles);
+    });
+
+    it('should throw when listProfiles fails', async () => {
+      vi.mocked(api.listProfiles).mockRejectedValue(new Error('Failed to list profiles'));
+
+      await expect(listProfiles()).rejects.toThrow('Failed to list profiles');
     });
   });
 });

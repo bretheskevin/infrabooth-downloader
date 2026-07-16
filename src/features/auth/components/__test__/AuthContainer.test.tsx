@@ -15,6 +15,9 @@ vi.mock('react-i18next', () => ({
         'auth.checking': 'Checking...',
         'auth.qualityBadge': 'Go+ 256kbps',
         'auth.signOut': 'Sign Out',
+        'auth.switchAccount': 'Switch Account',
+        'auth.profilePicker.title': 'Choose Account',
+        'auth.profilePicker.description': 'Multiple accounts found.',
       };
       const template = translations[key] || key;
       if (options) {
@@ -29,12 +32,12 @@ vi.mock('react-i18next', () => ({
 vi.mock('@/features/auth/api', () => ({
   checkAuth: vi.fn(),
   signOut: vi.fn(),
+  listProfiles: vi.fn().mockResolvedValue([]),
 }));
 
 describe('AuthContainer', () => {
   beforeEach(() => {
-    // Reset store to default state
-    useAuthStore.setState({ isSignedIn: false, username: null, plan: null });
+    useAuthStore.setState({ isSignedIn: false, username: null, plan: null, isPickerOpen: false, profiles: [] });
   });
 
   it('should render SignInButton when not signed in', () => {
@@ -56,7 +59,6 @@ describe('AuthContainer', () => {
       </TooltipProvider>,
     );
 
-    // UserMenu shows username and quality badge in a dropdown trigger button
     expect(screen.getByText('testuser')).toBeInTheDocument();
     expect(screen.getByText('Go+ 256kbps')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Check browser login/i })).not.toBeInTheDocument();
@@ -69,22 +71,18 @@ describe('AuthContainer', () => {
       </TooltipProvider>,
     );
 
-    // Initially shows check browser login button
     expect(screen.getByRole('button', { name: /Check browser login/i })).toBeInTheDocument();
 
-    // Change auth state (wrapped in act)
     act(() => {
       useAuthStore.setState({ isSignedIn: true, username: 'testuser', plan: 'Pro Unlimited' });
     });
 
-    // Rerender to pick up state change
     rerender(
       <TooltipProvider>
         <AuthContainer />
       </TooltipProvider>,
     );
 
-    // Now shows user menu with username
     expect(screen.getByText('testuser')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Check browser login/i })).not.toBeInTheDocument();
   });
@@ -98,5 +96,15 @@ describe('AuthContainer', () => {
 
     const wrapper = container.firstChild;
     expect(wrapper).toHaveClass('transition-opacity', 'duration-200');
+  });
+
+  it('should render ProfileSelectDialog (closed by default, no crash)', () => {
+    render(
+      <TooltipProvider>
+        <AuthContainer />
+      </TooltipProvider>,
+    );
+    // Dialog is rendered but hidden — verify no crash
+    expect(screen.queryByText('Choose Account')).not.toBeInTheDocument();
   });
 });

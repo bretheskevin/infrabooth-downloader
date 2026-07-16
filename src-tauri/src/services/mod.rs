@@ -38,3 +38,4 @@ pub mod stream;
 pub mod timestamp;
 pub mod updater;
 pub mod url_validator;
+pub mod webview_send;
