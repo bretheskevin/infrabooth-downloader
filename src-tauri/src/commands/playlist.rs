@@ -52,12 +52,74 @@ pub async fn get_track_info(url: String, app: tauri::AppHandle) -> Result<TrackI
     }
 }
 
+#[derive(Clone, Copy)]
+enum HttpMethod {
+    Post,
+    Put,
+    Delete,
+}
+
+impl HttpMethod {
+    fn as_str(self) -> &'static str {
+        match self {
+            HttpMethod::Post => "POST",
+            HttpMethod::Put => "PUT",
+            HttpMethod::Delete => "DELETE",
+        }
+    }
+}
+
+/// Send a playlist write request (POST / PUT / DELETE) with DataDome support.
+/// On a DataDome block, the request is replayed through the in-app WebView.
+async fn send_playlist_write(
+    app: &tauri::AppHandle, token: &str, method: HttpMethod, url: String, body: Option<serde_json::Value>, operation: &str,
+) -> Result<Option<String>, String> {
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
+    let body_str = body.as_ref().map(|v| v.to_string());
+
+    let client = &*crate::services::http::HTTP_CLIENT;
+    let mut request = match method {
+        HttpMethod::Post => client.post(&url),
+        HttpMethod::Put => client.put(&url),
+        HttpMethod::Delete => client.delete(&url),
+    }
+    .with_oauth(Some(token))
+    .with_datadome(datadome.as_deref());
+
+    if let Some(ref bs) = body_str {
+        request = request.header("Content-Type", "application/json").body(bs.clone());
+    }
+
+    let response = request.send().await.map_err(|e| format!("Failed to {}: {}", operation, e))?;
+
+    state.update_datadome(extract_datadome_from_response(&response));
+
+    let status = response.status();
+    if status.is_success() {
+        return Ok(Some(response.text().await.unwrap_or_default()));
+    }
+
+    let resp_body = response.text().await.unwrap_or_default();
+    log::error!("[{}] {} failed: {} - {}", operation, method.as_str(), status, resp_body);
+    let sanitized = sanitize_error_body(resp_body);
+
+    if !webview_send::is_antibot(&sanitized) {
+        return Err(format!("Failed to {}: HTTP {} - {}", operation, status, sanitized));
+    }
+
+    let req = match body_str {
+        Some(bs) => webview_send::WebviewRequest { method: method.as_str(), url, content_type: Some("application/json"), body: Some(bs) },
+        None => webview_send::WebviewRequest::bare(method.as_str(), url),
+    };
+
+    webview_send::send_via_webview(app, token, operation, req).await
+}
+
 async fn modify_playlist_tracks<F>(playlist_id: u64, app: &tauri::AppHandle, operation: &str, modifier: F) -> Result<(), String>
 where
     F: FnOnce(Vec<u64>) -> Result<Vec<u64>, String>,
 {
-    let state = app.state::<AuthState>();
-    let datadome = state.get_datadome();
     let (token, client_id) = super::require_auth_and_cid(app).await?;
 
     let client = &*crate::services::http::HTTP_CLIENT;
@@ -76,24 +138,7 @@ where
 
     let put_url = format!("{}/playlists/{}?client_id={}", API_V2_BASE, playlist_id, client_id);
 
-    let mut put_request = client.put(&put_url).with_oauth(Some(&token)).json(&serde_json::json!({
-        "playlist": {
-            "tracks": new_track_ids.clone()
-        }
-    }));
-
-    put_request = put_request.with_datadome(datadome.as_deref());
-
-    let put_response = put_request.send().await.map_err(|e| format!("Failed to update playlist: {}", e))?;
-
-    state.update_datadome(extract_datadome_from_response(&put_response));
-
-    if !put_response.status().is_success() {
-        let status = put_response.status();
-        let body = put_response.text().await.unwrap_or_default();
-        log::error!("[{}] PUT failed: {} - {}", operation, status, body);
-        return Err(format!("Failed to update playlist: HTTP {} - {}", status, sanitize_error_body(body)));
-    }
+    send_playlist_write(app, &token, HttpMethod::Put, put_url, Some(serde_json::json!({"playlist": {"tracks": new_track_ids.clone()}})), operation).await?;
 
     app.state::<LibraryCache>().set_track_ids(playlist_id, new_track_ids.into_iter().collect());
 
@@ -105,7 +150,7 @@ where
 pub async fn add_track_to_playlist(playlist_id: u64, track_id: u64, app: tauri::AppHandle) -> Result<(), String> {
     log::info!("[add_track_to_playlist] Adding track {} to playlist {}", track_id, playlist_id);
 
-    modify_playlist_tracks(playlist_id, &app, "add_track_to_playlist", |mut ids| {
+    modify_playlist_tracks(playlist_id, &app, "add-track-to-playlist", |mut ids| {
         if ids.contains(&track_id) {
             return Err("Track already in this playlist".to_string());
         }
@@ -124,7 +169,7 @@ pub async fn add_track_to_playlist(playlist_id: u64, track_id: u64, app: tauri::
 pub async fn remove_track_from_playlist(playlist_id: u64, track_id: u64, app: tauri::AppHandle) -> Result<(), String> {
     log::info!("[remove_track_from_playlist] Removing track {} from playlist {}", track_id, playlist_id);
 
-    modify_playlist_tracks(playlist_id, &app, "remove_track_from_playlist", |ids| {
+    modify_playlist_tracks(playlist_id, &app, "remove-track-from-playlist", |ids| {
         let original_len = ids.len();
         let filtered: Vec<u64> = ids.into_iter().filter(|&id| id != track_id).collect();
         if filtered.len() == original_len {
@@ -164,35 +209,21 @@ pub async fn create_playlist(title: String, sharing: String, track_id: u64, app:
 
     log::info!("[create_playlist] Creating playlist '{}' with track {}", title, track_id);
 
-    let state = app.state::<AuthState>();
-    let datadome = state.get_datadome();
     let (token, client_id) = super::require_auth_and_cid(&app).await?;
-
-    let client = &*crate::services::http::HTTP_CLIENT;
     let url = format!("{}/playlists?client_id={}", API_V2_BASE, client_id);
 
-    let mut request = client.post(&url).with_oauth(Some(&token)).json(&serde_json::json!({
-        "playlist": {
-            "title": title,
-            "sharing": sharing,
-            "tracks": [track_id]
-        }
-    }));
+    let raw = send_playlist_write(
+        &app,
+        &token,
+        HttpMethod::Post,
+        url,
+        Some(serde_json::json!({"playlist": {"title": title, "sharing": sharing, "tracks": [track_id]}})),
+        "create-playlist",
+    )
+    .await?;
+    let body = raw.filter(|b| !b.is_empty()).ok_or_else(|| "Playlist created but the response was unreadable; refresh to see it".to_string())?;
 
-    request = request.with_datadome(datadome.as_deref());
-
-    let response = request.send().await.map_err(|e| format!("Failed to create playlist: {}", e))?;
-
-    state.update_datadome(extract_datadome_from_response(&response));
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        log::error!("[create_playlist] POST failed: {} - {}", status, body);
-        return Err(format!("Failed to create playlist: HTTP {} - {}", status, sanitize_error_body(body)));
-    }
-
-    let resp: CreatePlaylistApiResponse = response.json().await.map_err(|e| format!("Failed to parse response: {}", e))?;
+    let resp: CreatePlaylistApiResponse = serde_json::from_str(&body).map_err(|e| format!("Failed to parse response: {}", e))?;
 
     let resp_title = resp.title.unwrap_or(title);
     let permalink_url = resp.permalink_url.unwrap_or_default();
@@ -207,31 +238,10 @@ pub async fn create_playlist(title: String, sharing: String, track_id: u64, app:
 pub async fn delete_playlist(playlist_id: u64, app: tauri::AppHandle) -> Result<(), String> {
     log::info!("[delete_playlist] Deleting playlist {}", playlist_id);
 
-    let state = app.state::<AuthState>();
-    let datadome = state.get_datadome();
     let (token, client_id) = super::require_auth_and_cid(&app).await?;
-
-    let client = &*crate::services::http::HTTP_CLIENT;
     let url = format!("{}/playlists/{}?client_id={}", API_V2_BASE, playlist_id, client_id);
 
-    let mut request = client.delete(&url).with_oauth(Some(&token));
-    request = request.with_datadome(datadome.as_deref());
-
-    let response = request.send().await.map_err(|e| format!("Failed to delete playlist: {}", e))?;
-
-    state.update_datadome(extract_datadome_from_response(&response));
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        log::error!("[delete_playlist] DELETE failed: {} - {}", status, body);
-        let sanitized = sanitize_error_body(body);
-        if !webview_send::is_antibot(&sanitized) {
-            return Err(format!("Failed to delete playlist: HTTP {} - {}", status, sanitized));
-        }
-        let request = webview_send::WebviewRequest::bare("DELETE", url);
-        webview_send::send_via_webview(&app, &token, "delete-playlist", request).await?;
-    }
+    send_playlist_write(&app, &token, HttpMethod::Delete, url, None, "delete-playlist").await?;
 
     log::info!("[delete_playlist] Successfully deleted playlist {}", playlist_id);
     Ok(())
@@ -248,11 +258,7 @@ pub async fn update_playlist(playlist_id: u64, title: String, sharing: Option<St
 
     log::info!("[update_playlist] Updating playlist {} (title='{}', sharing={:?}, tracks={})", playlist_id, title, sharing, track_ids.len());
 
-    let state = app.state::<AuthState>();
-    let datadome = state.get_datadome();
     let (token, client_id) = super::require_auth_and_cid(&app).await?;
-
-    let client = &*crate::services::http::HTTP_CLIENT;
     let url = format!("{}/playlists/{}?client_id={}", API_V2_BASE, playlist_id, client_id);
 
     let mut playlist = serde_json::Map::new();
@@ -262,20 +268,7 @@ pub async fn update_playlist(playlist_id: u64, title: String, sharing: Option<St
         playlist.insert("sharing".to_string(), serde_json::json!(value));
     }
 
-    let mut request = client.put(&url).with_oauth(Some(&token)).json(&serde_json::json!({ "playlist": playlist }));
-
-    request = request.with_datadome(datadome.as_deref());
-
-    let response = request.send().await.map_err(|e| format!("Failed to update playlist: {}", e))?;
-
-    state.update_datadome(extract_datadome_from_response(&response));
-
-    if !response.status().is_success() {
-        let status = response.status();
-        let body = response.text().await.unwrap_or_default();
-        log::error!("[update_playlist] PUT failed: {} - {}", status, body);
-        return Err(format!("Failed to update playlist: HTTP {} - {}", status, sanitize_error_body(body)));
-    }
+    send_playlist_write(&app, &token, HttpMethod::Put, url, Some(serde_json::json!({ "playlist": playlist })), "update-playlist").await?;
 
     log::info!("[update_playlist] Successfully updated playlist {}", playlist_id);
     Ok(())
