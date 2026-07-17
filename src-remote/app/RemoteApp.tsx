@@ -20,6 +20,8 @@ interface Props {
 export default function RemoteApp({ host, token }: Props) {
   const { state, connected, send } = useRemoteSocket(host, token);
   const [tab, setTab] = useState<Tab>('search');
+  const effectiveTab: Tab = tab === 'library' && !state?.isSignedIn ? 'search' : tab;
+  const visibleTabs: Tab[] = state?.isSignedIn ? ['search', 'library'] : ['search'];
   const [libraryOpened, setLibraryOpened] = useState(false);
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
   const language = state?.language ?? 'en';
@@ -44,22 +46,22 @@ export default function RemoteApp({ host, token }: Props) {
     <TranslationProvider t={t}>
       <div className="h-dvh flex flex-col relative">
         <div className="flex-1 overflow-y-auto relative">
-          <div className={tab === 'search' ? '' : 'hidden'}>
+          <div className={effectiveTab === 'search' ? '' : 'hidden'}>
             <SearchTab host={host} token={token} send={send} language={language} state={state} />
           </div>
           {libraryOpened && (
-            <div className={tab === 'library' ? '' : 'hidden'}>
+            <div className={effectiveTab === 'library' ? '' : 'hidden'}>
               <LibraryTab host={host} token={token} send={send} language={language} state={state} />
             </div>
           )}
         </div>
         {!nowPlayingOpen && <MiniBar state={state} send={send} onExpand={() => setNowPlayingOpen(true)} />}
         <nav className="flex border-t border-border bg-card">
-          {(['search', 'library'] as Tab[]).map((tabName) => (
+          {visibleTabs.map((tabName) => (
             <button
               key={tabName}
               onClick={() => selectTab(tabName)}
-              className={cn('flex-1 py-3 text-sm font-medium', tab === tabName ? 'text-primary' : 'text-muted-foreground')}
+              className={cn('flex-1 py-3 text-sm font-medium', effectiveTab === tabName ? 'text-primary' : 'text-muted-foreground')}
             >
               {dictT(tabName, language)}
             </button>

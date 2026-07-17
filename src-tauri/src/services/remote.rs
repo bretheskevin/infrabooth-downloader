@@ -62,21 +62,7 @@ struct SearchQuery {
 }
 
 #[derive(Deserialize)]
-struct LibraryQuery {
-    #[serde(alias = "t")]
-    token: String,
-}
-
-#[derive(Deserialize)]
-struct PlaylistTracksQuery {
-    id: u64,
-    secret: Option<String>,
-    #[serde(alias = "t")]
-    token: String,
-}
-
-#[derive(Deserialize)]
-struct LibraryArtworkQuery {
+struct ResourceQuery {
     id: u64,
     secret: Option<String>,
     #[serde(alias = "t")]
@@ -247,7 +233,7 @@ async fn search_albums_handler(AxumState(state): AxumState<AppState>, Query(para
     }
 }
 
-async fn library_handler(AxumState(state): AxumState<AppState>, Query(params): Query<LibraryQuery>) -> impl IntoResponse {
+async fn library_handler(AxumState(state): AxumState<AppState>, Query(params): Query<TokenQuery>) -> impl IntoResponse {
     if !token_matches(&params.token, &state.token) {
         return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
     }
@@ -277,7 +263,21 @@ async fn library_handler(AxumState(state): AxumState<AppState>, Query(params): Q
     }
 }
 
-async fn playlist_tracks_handler(AxumState(state): AxumState<AppState>, Query(params): Query<PlaylistTracksQuery>) -> impl IntoResponse {
+async fn liked_tracks_handler(AxumState(state): AxumState<AppState>, Query(params): Query<TokenQuery>) -> impl IntoResponse {
+    if !token_matches(&params.token, &state.token) {
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+    }
+
+    match crate::commands::get_liked_tracks(state.app_handle.clone()).await {
+        Ok(tracks) => Json(tracks).into_response(),
+        Err(e) => {
+            log::error!("[remote] liked-tracks: {}", e);
+            (StatusCode::INTERNAL_SERVER_ERROR, "internal error").into_response()
+        }
+    }
+}
+
+async fn playlist_tracks_handler(AxumState(state): AxumState<AppState>, Query(params): Query<ResourceQuery>) -> impl IntoResponse {
     if !token_matches(&params.token, &state.token) {
         return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
     }
@@ -301,7 +301,7 @@ async fn playlist_tracks_handler(AxumState(state): AxumState<AppState>, Query(pa
     }
 }
 
-async fn library_artwork_handler(AxumState(state): AxumState<AppState>, Query(params): Query<LibraryArtworkQuery>) -> impl IntoResponse {
+async fn library_artwork_handler(AxumState(state): AxumState<AppState>, Query(params): Query<ResourceQuery>) -> impl IntoResponse {
     if !token_matches(&params.token, &state.token) {
         return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
     }
@@ -360,6 +360,7 @@ pub async fn start_server(app_handle: AppHandle) -> Result<RemoteServerInfo, Str
         .route("/api/search-playlists", get(search_playlists_handler))
         .route("/api/search-albums", get(search_albums_handler))
         .route("/api/library", get(library_handler))
+        .route("/api/liked-tracks", get(liked_tracks_handler))
         .route("/api/playlist-tracks", get(playlist_tracks_handler))
         .route("/api/library-artwork", get(library_artwork_handler))
         .route("/api/selections", get(selections_handler))

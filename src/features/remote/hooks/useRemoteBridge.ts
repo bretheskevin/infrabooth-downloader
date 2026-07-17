@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 import { usePlayerStore } from '@/features/player/store';
 import { useSettingsStore, type Theme } from '@/features/settings/store';
 import { useRemoteStore } from '../store';
+import { useAuthStore } from '@/features/auth/store';
 import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
 
 function resolveTheme(theme: Theme): 'light' | 'dark' {
@@ -85,6 +86,7 @@ export function buildRemoteState(): RemoteState {
   const { state, currentTrack, positionMs, durationMs, volume, queue, cursor } = usePlayerStore.getState();
   const { language, theme } = useSettingsStore.getState();
   const { downloadingTrackIds, downloadedTrackIds } = useRemoteStore.getState();
+  const { isSignedIn } = useAuthStore.getState();
   return {
     state,
     currentTrack,
@@ -97,6 +99,7 @@ export function buildRemoteState(): RemoteState {
     theme: resolveTheme(theme),
     downloadingTrackIds,
     downloadedTrackIds,
+    isSignedIn,
   };
 }
 
@@ -176,6 +179,10 @@ export function useRemoteBridge(): void {
       if (next.language !== prev.language || next.theme !== prev.theme) pushState();
     });
 
+    const unsubscribeAuth = useAuthStore.subscribe((next, prev) => {
+      if (next.isSignedIn !== prev.isSignedIn) pushState();
+    });
+
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = () => {
       if (useSettingsStore.getState().theme === 'system') pushState();
@@ -187,6 +194,7 @@ export function useRemoteBridge(): void {
       unsubscribe();
       unsubscribeRemote();
       unsubscribeSettings();
+      unsubscribeAuth();
       mediaQuery.removeEventListener('change', handleSystemThemeChange);
       if (throttleTimer) clearTimeout(throttleTimer);
     };

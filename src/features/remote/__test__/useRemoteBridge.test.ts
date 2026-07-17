@@ -198,6 +198,7 @@ describe('buildRemoteState', () => {
       theme: 'dark',
       downloadingTrackIds: [],
       downloadedTrackIds: [],
+      isSignedIn: false,
     });
   });
 });

@@ -25,6 +25,7 @@ const makeState = (overrides: Partial<RemoteState> = {}): RemoteState => ({
   theme: 'dark',
   downloadingTrackIds: [],
   downloadedTrackIds: [],
+  isSignedIn: false,
   ...overrides,
 });
 

@@ -35,4 +35,5 @@ export interface RemoteState {
   theme: 'light' | 'dark';
   downloadingTrackIds: number[];
   downloadedTrackIds: number[];
+  isSignedIn: boolean;
 }

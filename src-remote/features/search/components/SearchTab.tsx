@@ -74,9 +74,11 @@ export default function SearchTab({ host, token, send, language, state }: Props)
 
       {activeType === 'tracks' && (
         <>
-          <div className={query.trim() ? 'hidden' : undefined}>
-            <SelectionsSection host={host} token={token} language={language} onSelect={setSelectedMix} />
-          </div>
+          {state?.isSignedIn && (
+            <div className={query.trim() ? 'hidden' : undefined}>
+              <SelectionsSection host={host} token={token} language={language} onSelect={setSelectedMix} />
+            </div>
+          )}
           {tracksLoading && (
             <div className="flex justify-center p-4">
               <Loader2 className="w-6 h-6 animate-spin text-primary" />

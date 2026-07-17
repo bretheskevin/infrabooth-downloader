@@ -768,6 +768,8 @@
     "tabPlaylists": "Playlists",
     "tabAlbums": "Albums",
     "searchPlaylistsPrompt": "Rechercher des playlists sur SoundCloud",
-    "searchAlbumsPrompt": "Rechercher des albums sur SoundCloud"
+    "searchAlbumsPrompt": "Rechercher des albums sur SoundCloud",
+    "libraryTabsPlaylists": "Playlists",
+    "libraryTabsTracks": "Titres"
   }
 }
