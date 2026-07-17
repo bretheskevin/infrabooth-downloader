@@ -9,10 +9,10 @@ import { formatDuration } from '@/lib/format';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import { EqualizerBars } from './EqualizerBars';
 import { PlayOverlay } from './PlayOverlay';
-import type { PlaybackItem } from '../types';
+import type { QueueItem } from '../types';
 
 interface QueuePanelItemProps {
-  item: PlaybackItem;
+  item: QueueItem;
   index: number;
   isCurrent: boolean;
   onPlay: (index: number) => void;
@@ -40,7 +40,7 @@ export const QueuePanelItem = memo(function QueuePanelItem({
 }: QueuePanelItemProps) {
   const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: item.trackId,
+    id: item.uid,
     disabled: isDragOverlay,
   });
 

@@ -64,6 +64,7 @@ vi.mock('../components/QueuePanelItem', () => ({
 
 const mockState = {
   queue: [] as Array<{
+    uid: string;
     trackId: number;
     title: string;
     artist: string;
@@ -106,6 +107,7 @@ describe('RailQueue', () => {
   it('shows queue count', () => {
     mockState.queue = [
       {
+        uid: 'u1',
         trackId: 1,
         title: 'Track 1',
         artist: 'Artist 1',
@@ -113,6 +115,7 @@ describe('RailQueue', () => {
         durationMs: 180000,
       },
       {
+        uid: 'u2',
         trackId: 2,
         title: 'Track 2',
         artist: 'Artist 2',
@@ -137,6 +140,7 @@ describe('RailQueue', () => {
   it('renders DndContext when queue has items', () => {
     mockState.queue = [
       {
+        uid: 'u1',
         trackId: 1,
         title: 'Track 1',
         artist: 'Artist 1',
@@ -163,6 +167,7 @@ describe('RailQueue', () => {
   it('renders queue items via QueuePanelItem', () => {
     mockState.queue = [
       {
+        uid: 'u1',
         trackId: 1,
         title: 'Song A',
         artist: 'Artist 1',
@@ -170,6 +175,7 @@ describe('RailQueue', () => {
         durationMs: 180000,
       },
       {
+        uid: 'u2',
         trackId: 2,
         title: 'Song B',
         artist: 'Artist 2',
@@ -198,6 +204,7 @@ describe('RailQueue', () => {
   it('marks the current track', () => {
     mockState.queue = [
       {
+        uid: 'u1',
         trackId: 1,
         title: 'Song A',
         artist: 'Artist 1',
@@ -205,6 +212,7 @@ describe('RailQueue', () => {
         durationMs: 180000,
       },
       {
+        uid: 'u2',
         trackId: 2,
         title: 'Song B',
         artist: 'Artist 2',

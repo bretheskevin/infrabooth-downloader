@@ -53,7 +53,7 @@ export function RailQueue() {
                 if (!item) return null;
                 const index = virtualItem.index;
                 return (
-                  <VirtualRow key={item.trackId} size={virtualItem.size} start={virtualItem.start}>
+                  <VirtualRow key={item.uid} size={virtualItem.size} start={virtualItem.start}>
                     <QueuePanelItem
                       item={item}
                       index={index}

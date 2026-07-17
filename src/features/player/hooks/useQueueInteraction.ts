@@ -23,10 +23,10 @@ export function useQueueInteraction() {
     })),
   );
 
-  const [activeId, setActiveId] = useState<number | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const stationStartIdx = stationQueueCount > 0 ? queue.length - stationQueueCount : -1;
 
-  const itemIds = useMemo(() => queue.map((i) => i.trackId), [queue]);
+  const itemIds = useMemo(() => queue.map((i) => i.uid), [queue]);
 
   const hasSectionHeader = useCallback(
     (index: number): boolean => {
@@ -75,7 +75,7 @@ export function useQueueInteraction() {
   );
 
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveId(event.active.id as number);
+    setActiveId(event.active.id as string);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -83,8 +83,8 @@ export function useQueueInteraction() {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    const fromIndex = queue.findIndex((item) => item.trackId === active.id);
-    const toIndex = queue.findIndex((item) => item.trackId === over.id);
+    const fromIndex = queue.findIndex((item) => item.uid === active.id);
+    const toIndex = queue.findIndex((item) => item.uid === over.id);
     if (fromIndex !== -1 && toIndex !== -1) {
       actions().reorderQueue(fromIndex, toIndex);
     }
@@ -99,8 +99,8 @@ export function useQueueInteraction() {
   const handleResume = useCallback(() => actions().resume(), []);
   const handleRemove = useCallback((i: number) => actions().removeFromQueue(i), []);
 
-  const activeItem = activeId !== null ? queue.find((item) => item.trackId === activeId) : null;
-  const activeIndex = activeId !== null ? queue.findIndex((item) => item.trackId === activeId) : -1;
+  const activeItem = activeId !== null ? queue.find((item) => item.uid === activeId) : null;
+  const activeIndex = activeId !== null ? queue.findIndex((item) => item.uid === activeId) : -1;
 
   return {
     queue,

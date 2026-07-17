@@ -1,4 +1,4 @@
-import type { PlaybackItem, PlaybackState } from '../types';
+import type { PlaybackItem, PlaybackState, QueueItem } from '../types';
 
 export interface PlaybackSliceState {
   state: PlaybackState;
@@ -11,8 +11,8 @@ export interface PlaybackSliceState {
 }
 
 export interface QueueSliceState {
-  queue: PlaybackItem[];
-  originalQueue: PlaybackItem[] | null;
+  queue: QueueItem[];
+  originalQueue: QueueItem[] | null;
   isShuffled: boolean;
   manualQueueCount: number;
 }

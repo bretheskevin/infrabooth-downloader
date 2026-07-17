@@ -46,7 +46,7 @@ import { usePlayerStore } from '../store';
 import { audioEngine } from '../audio-engine';
 import { api } from '@/lib/tauri';
 import { toast } from 'sonner';
-import type { PlaybackItem } from '../types';
+import type { PlaybackItem, QueueItem } from '../types';
 import type { AudioEngineCallbacks } from '../audio-engine';
 
 const mockTrack: PlaybackItem = {
@@ -60,11 +60,12 @@ const mockTrack: PlaybackItem = {
   waveformUrl: null,
 };
 
-const makeQueue = (count: number, startId = 1): PlaybackItem[] =>
+const makeQueue = (count: number, startId = 1): QueueItem[] =>
   Array.from({ length: count }, (_, i) => ({
     ...mockTrack,
     trackId: startId + i,
     title: `Track ${startId + i}`,
+    uid: `u${startId + i}`,
   }));
 
 const makeRelatedTracks = (count: number, startId = 100) =>

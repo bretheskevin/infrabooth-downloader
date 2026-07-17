@@ -7,6 +7,7 @@ import { audioEngine } from '../audio-engine';
 import { fetchStationTracks, fetchStationTracksWithRetry } from '../utils/autoplay';
 import { resolveWithCache, getCachedUrl, preloadQueueSegments, purgeStaleCache, invalidateCachedUrl } from '../url-cache';
 import type { PlaybackItem, PlaybackState } from '../types';
+import { withUids } from './queueItem';
 import type { AutoplaySliceState, PlaybackSliceState, PlayerState } from './types';
 import type { AutoplaySliceActions } from './autoplaySlice';
 
@@ -38,13 +39,13 @@ function shuffleArray<T>(array: T[]): T[] {
   return result;
 }
 
-function shuffleQueueWithCurrent(queue: PlaybackItem[], currentIndex: number): PlaybackItem[] {
+function shuffleQueueWithCurrent<T>(queue: T[], currentIndex: number): T[] {
   const current = queue[currentIndex]!;
   const rest = queue.filter((_, i) => i !== currentIndex);
   return [current, ...shuffleArray(rest)];
 }
 
-function splitStationTracks(queue: PlaybackItem[], stationQueueCount: number) {
+function splitStationTracks<T>(queue: T[], stationQueueCount: number) {
   const userTracks = stationQueueCount > 0 ? queue.slice(0, -stationQueueCount) : queue;
   const stationTracks = stationQueueCount > 0 ? queue.slice(-stationQueueCount) : [];
   return { userTracks, stationTracks };
@@ -292,13 +293,14 @@ export const createPlaybackSlice: StateCreator<PlayerState & PlaybackSliceAction
     const { isShuffled, queue: prevQueue, cursor: prevCursor, manualQueueCount: prevManualCount } = get();
     const manualTracks = prevManualCount > 0 ? prevQueue.slice(prevCursor + 1, prevCursor + 1 + prevManualCount) : [];
 
-    let finalQueue = queue;
+    const uidQueue = withUids(queue);
+    let finalQueue = uidQueue;
     let finalIndex = index;
 
-    if (isShuffled && queue.length > 1) {
-      finalQueue = shuffleQueueWithCurrent(queue, index);
+    if (isShuffled && uidQueue.length > 1) {
+      finalQueue = shuffleQueueWithCurrent(uidQueue, index);
       finalIndex = 0;
-      const orig = manualTracks.length > 0 ? [...queue, ...manualTracks] : queue;
+      const orig = manualTracks.length > 0 ? [...uidQueue, ...manualTracks] : uidQueue;
       set({ originalQueue: orig });
     } else {
       set({ originalQueue: null });

@@ -10,6 +10,7 @@ import {
   incrementLoadGeneration,
   type PlaybackSliceActions,
 } from './playbackSlice';
+import { withUid, withUids } from './queueItem';
 
 export interface QueueSliceActions {
   addToQueue: (item: PlaybackItem) => void;
@@ -32,12 +33,13 @@ export const createQueueSlice: StateCreator<PlayerState & QueueSliceActions & Pl
       get().play([item], 0);
       return;
     }
+    const uidItem = withUid(item);
     const insertAt = cursor + 1 + manualQueueCount;
     const newQueue = [...queue];
-    newQueue.splice(insertAt, 0, item);
+    newQueue.splice(insertAt, 0, uidItem);
 
     if (isShuffled && originalQueue) {
-      set({ queue: newQueue, originalQueue: [...originalQueue, item], manualQueueCount: manualQueueCount + 1 });
+      set({ queue: newQueue, originalQueue: [...originalQueue, uidItem], manualQueueCount: manualQueueCount + 1 });
     } else {
       set({ queue: newQueue, manualQueueCount: manualQueueCount + 1 });
     }
@@ -49,7 +51,7 @@ export const createQueueSlice: StateCreator<PlayerState & QueueSliceActions & Pl
 
     const { stationTracks } = splitStationTracks(currentQueue, stationQueueCount);
     const stationIds = new Set(stationTracks.map((t) => t.trackId));
-    const userQueue = newQueue.filter((t) => !stationIds.has(t.trackId));
+    const userQueue = withUids(newQueue.filter((t) => !stationIds.has(t.trackId)));
 
     const newCursor = userQueue.findIndex((t) => t.trackId === currentTrack.trackId);
     if (newCursor === -1) return;
@@ -114,7 +116,7 @@ export const createQueueSlice: StateCreator<PlayerState & QueueSliceActions & Pl
     if (isShuffled && originalQueue) {
       const removedTrack = queue[index];
       if (removedTrack) {
-        newOriginalQueue = originalQueue.filter((t) => t.trackId !== removedTrack.trackId);
+        newOriginalQueue = originalQueue.filter((t) => t.uid !== removedTrack.uid);
       }
     }
 

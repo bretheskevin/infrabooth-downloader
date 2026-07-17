@@ -10,3 +10,7 @@ export interface PlaybackItem {
   durationMs: number;
   waveformUrl: string | null;
 }
+
+export interface QueueItem extends PlaybackItem {
+  uid: string;
+}

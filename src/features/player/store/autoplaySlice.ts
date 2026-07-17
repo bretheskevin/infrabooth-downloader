@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import type { PlaybackItem } from '../types';
+import { withUids } from './queueItem';
 import type { AutoplaySliceState, PlayerState } from './types';
 
 export interface AutoplaySliceActions {
@@ -18,7 +19,7 @@ export const createAutoplaySlice: AutoplaySlice = (set, get) => ({
     const unique = items.filter((t) => !existingIds.has(t.trackId));
     if (unique.length === 0) return;
     set({
-      queue: [...queue, ...unique],
+      queue: [...queue, ...withUids(unique)],
       stationQueueCount: stationQueueCount + unique.length,
     });
   },

@@ -42,7 +42,7 @@ import { resetCrossfadeGeneration } from '../store/playbackSlice';
 import { audioEngine } from '../audio-engine';
 import { resolveWithCache, preloadQueueSegments, invalidateCachedUrl } from '../url-cache';
 import { useSettingsStore } from '@/features/settings/store';
-import type { PlaybackItem } from '../types';
+import type { PlaybackItem, QueueItem } from '../types';
 import type { AudioEngineCallbacks } from '../audio-engine';
 
 const mockTrack: PlaybackItem = {
@@ -56,12 +56,15 @@ const mockTrack: PlaybackItem = {
   waveformUrl: null,
 };
 
-const makeQueue = (count = 3): PlaybackItem[] =>
+const makeQueue = (count = 3): QueueItem[] =>
   Array.from({ length: count }, (_, i) => ({
     ...mockTrack,
     trackId: i + 1,
     title: `Track ${i + 1}`,
+    uid: `u${i + 1}`,
   }));
+
+const stripUid = <T extends { uid?: string }>(items: T[]) => items.map(({ uid: _uid, ...rest }) => rest);
 
 const mockStationTracks: PlaybackItem[] = [
   { ...mockTrack, trackId: 101, title: 'Station 1' },
@@ -116,9 +119,9 @@ describe('playerStore', () => {
     const promise = usePlayerStore.getState().play(queue, 0);
     // Check optimistic state before resolve completes
     const state = usePlayerStore.getState();
-    expect(state.queue).toEqual(queue);
+    expect(stripUid(state.queue)).toEqual(queue);
     expect(state.cursor).toBe(0);
-    expect(state.currentTrack).toEqual(mockTrack);
+    expect(state.currentTrack).toEqual(expect.objectContaining(mockTrack));
     await promise;
   });
 
@@ -204,7 +207,7 @@ describe('playerStore', () => {
   });
 
   it('removeFromQueue should stop when queue becomes empty', () => {
-    const queue = [mockTrack];
+    const queue = makeQueue(1);
     usePlayerStore.setState({ queue, cursor: 0, state: 'playing' });
     usePlayerStore.getState().removeFromQueue(0);
 
@@ -259,7 +262,7 @@ describe('playerStore', () => {
 
     const state = usePlayerStore.getState();
     expect(state.isShuffled).toBe(true);
-    expect(state.originalQueue).toEqual(queue);
+    expect(stripUid(state.originalQueue!)).toEqual(stripUid(queue));
     expect(state.cursor).toBe(0);
     expect(state.queue[0]!.trackId).toBe(queue[2]!.trackId);
     expect(state.queue.length).toBe(5);
@@ -275,7 +278,7 @@ describe('playerStore', () => {
     const state = usePlayerStore.getState();
     expect(state.isShuffled).toBe(false);
     expect(state.originalQueue).toBeNull();
-    expect(state.queue).toEqual(queue);
+    expect(stripUid(state.queue)).toEqual(stripUid(queue));
     expect(state.cursor).toBe(2);
   });
 
@@ -287,7 +290,7 @@ describe('playerStore', () => {
 
     const state = usePlayerStore.getState();
     expect(state.isShuffled).toBe(false);
-    expect(state.queue).toEqual(queue);
+    expect(stripUid(state.queue)).toEqual(stripUid(queue));
   });
 
   it('play() should auto-shuffle when isShuffled is true', async () => {
@@ -300,7 +303,7 @@ describe('playerStore', () => {
 
     const state = usePlayerStore.getState();
     expect(state.isShuffled).toBe(true);
-    expect(state.originalQueue).toEqual(queue2);
+    expect(stripUid(state.originalQueue!)).toEqual(stripUid(queue2));
     expect(state.cursor).toBe(0);
     expect(state.queue[0]!.trackId).toBe(queue2[2]!.trackId);
   });
@@ -323,7 +326,7 @@ describe('playerStore', () => {
 
     const state = usePlayerStore.getState();
     expect(state.isShuffled).toBe(true);
-    expect(state.originalQueue).toEqual(queue);
+    expect(stripUid(state.originalQueue!)).toEqual(stripUid(queue));
     expect(state.queue[0]!.trackId).toBe(queue[3]!.trackId);
     expect(state.cursor).toBe(0);
 
@@ -681,7 +684,7 @@ describe('playerStore', () => {
 
     const state = usePlayerStore.getState();
     expect(state.isShuffled).toBe(true);
-    expect(state.originalQueue).toEqual(extendedQueue);
+    expect(stripUid(state.originalQueue!)).toEqual(stripUid(extendedQueue));
     expect(state.cursor).toBe(0);
     expect(state.queue[0]?.trackId).toBe(2);
     expect(state.queue.length).toBe(5);
