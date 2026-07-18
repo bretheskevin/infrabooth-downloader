@@ -49,8 +49,8 @@ export default function NowPlayingPanel({ state, send, language, onClose }: Prop
             onToggleQueue={() => setQueueOpen((open) => !open)}
           />
         )}
-        {queueOpen && <QueuePanel state={state} send={send} language={language} onClose={() => setQueueOpen(false)} />}
       </div>
+      {queueOpen && <QueuePanel state={state} send={send} language={language} onClose={() => setQueueOpen(false)} />}
     </div>
   );
 }
