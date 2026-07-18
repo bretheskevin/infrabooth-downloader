@@ -6,11 +6,15 @@ import type { MessageEmbed } from '@/bindings';
 
 const SC_URL_PATTERN = /(?:https?:\/\/(?:on\.)?soundcloud\.com|on\.soundcloud\.com)\/\S+/;
 
-function extractScUrl(content: string): { raw: string; normalized: string } | null {
+export function extractScUrl(content: string): { raw: string; normalized: string } | null {
   const match = content.match(SC_URL_PATTERN);
   if (!match) return null;
   const raw = match[0];
   return { raw, normalized: normalizeShortUrl(raw) };
+}
+
+export function embedQueryKey(normalizedUrl: string): readonly [string, string, string] {
+  return ['directMessages', 'embed', normalizedUrl] as const;
 }
 
 export function useResolveEmbed(content: string) {
@@ -20,7 +24,7 @@ export function useResolveEmbed(content: string) {
   const rawUrl = result?.raw ?? null;
 
   const query = useQuery({
-    queryKey: ['directMessages', 'embed', url],
+    queryKey: url ? embedQueryKey(url) : ['directMessages', 'embed', null],
     queryFn: () => api.resolveMessageEmbed(url!),
     enabled: isSignedIn && !!url,
     staleTime: Infinity,

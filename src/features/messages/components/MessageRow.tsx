@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { usePlayerStore } from '@/features/player';
-import type { PlaybackItem } from '@/features/player';
+import { toPlaybackItem } from '../utils/conversationQueue';
 import { useMessagesStore } from '../store';
 import { MessageTrackCard } from './MessageTrackCard';
 import { MessagePlaylistCard } from './MessagePlaylistCard';
@@ -26,19 +26,7 @@ interface MessageRowProps {
   otherUser: MessageUser | null;
   showHeader: boolean;
   trackDownload: TrackDownloadControls;
-}
-
-function toPlaybackItem(embed: MessageTrackEmbed): PlaybackItem {
-  return {
-    trackId: embed.id,
-    trackUrl: embed.permalink_url,
-    title: embed.title,
-    artist: embed.artist,
-    artistId: embed.artist_id,
-    artworkUrl: embed.artwork_url,
-    durationMs: embed.duration_ms,
-    waveformUrl: embed.waveform_url,
-  };
+  onPlayTrack: () => void;
 }
 
 function embedToTrackCore(embed: MessageTrackEmbed): TrackCore {
@@ -54,12 +42,12 @@ function embedToTrackCore(embed: MessageTrackEmbed): TrackCore {
   };
 }
 
-function renderTrackEmbed(embed: MessageTrackEmbed, trackDownload: TrackDownloadControls) {
+function renderTrackEmbed(embed: MessageTrackEmbed, trackDownload: TrackDownloadControls, onPlayTrack: () => void) {
   const handleDownload = () => void trackDownload.downloadTrackCore(embedToTrackCore(embed));
   return (
     <MessageTrackCard
       embed={embed}
-      onPlay={() => void usePlayerStore.getState().play([toPlaybackItem(embed)], 0)}
+      onPlay={onPlayTrack}
       onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(embed))}
       downloadState={trackDownload.getTrackState(embed.id)}
       onDownload={handleDownload}
@@ -68,10 +56,10 @@ function renderTrackEmbed(embed: MessageTrackEmbed, trackDownload: TrackDownload
   );
 }
 
-function renderEmbed(embed: MessageEmbed, trackDownload: TrackDownloadControls) {
+function renderEmbed(embed: MessageEmbed, trackDownload: TrackDownloadControls, onPlayTrack: () => void) {
   switch (embed.kind) {
     case 'Track':
-      return renderTrackEmbed(embed, trackDownload);
+      return renderTrackEmbed(embed, trackDownload, onPlayTrack);
     case 'Playlist':
       return <MessagePlaylistCard embed={embed} onOpen={() => useMessagesStore.getState().openPlaylist(embed)} />;
     case 'User':
@@ -79,7 +67,7 @@ function renderEmbed(embed: MessageEmbed, trackDownload: TrackDownloadControls) 
   }
 }
 
-export function MessageRow({ message, currentUserId, otherUser, showHeader, trackDownload }: MessageRowProps) {
+export function MessageRow({ message, currentUserId, otherUser, showHeader, trackDownload, onPlayTrack }: MessageRowProps) {
   const { t, i18n } = useTranslation();
   const isOwnMessage = message.sender_id === currentUserId;
 
@@ -91,7 +79,7 @@ export function MessageRow({ message, currentUserId, otherUser, showHeader, trac
   const displayContent = rawScUrl ? message.content.replace(rawScUrl, '').trim() : message.content;
   const timestamp = formatChatTimestamp(message.sent_at, i18n.language);
 
-  const embedElement = embed ? renderEmbed(embed, trackDownload) : null;
+  const embedElement = embed ? renderEmbed(embed, trackDownload, onPlayTrack) : null;
 
   if (isOwnMessage) {
     return (

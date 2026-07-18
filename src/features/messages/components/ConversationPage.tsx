@@ -18,6 +18,7 @@ import { useTrackDownload } from '@/hooks/useTrackDownload';
 import { useFolderPath } from '@/hooks/useFolderPath';
 import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { useIsDownloadEnabled } from '@/features/settings';
+import { useConversationQueue } from '../hooks/useConversationQueue';
 
 export function ConversationPage({ onBack }: { onBack?: () => void }) {
   const { t } = useTranslation();
@@ -29,6 +30,8 @@ export function ConversationPage({ onBack }: { onBack?: () => void }) {
   const miniPillVisible = useIsMiniPillVisible();
   const { sendMessage, isPending } = useSendMessage(conversation?.otherUserId ?? 0);
   const [inputValue, setInputValue] = useState('');
+
+  const playFromIndex = useConversationQueue(items);
 
   const isDownloadEnabled = useIsDownloadEnabled();
   const { effectivePath, folderName, isCustomFolder, selectFolder } = useFolderPath(isDownloadEnabled);
@@ -151,6 +154,7 @@ export function ConversationPage({ onBack }: { onBack?: () => void }) {
                   otherUser={displayUser}
                   showHeader={showHeader}
                   trackDownload={trackDownload}
+                  onPlayTrack={() => playFromIndex(idx)}
                 />
               </div>
             );
