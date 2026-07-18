@@ -21,6 +21,7 @@ interface Props {
 
 export default function QueueItem({ track, index, isCurrent, showPlayMarker, onSkip, onRemove }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: index });
+  const verticalTransform = transform ? { ...transform, x: 0 } : null;
   const [swipeX, setSwipeX] = useState(0);
   const startXRef = useRef<number | null>(null);
   const movedRef = useRef(false);
@@ -63,7 +64,7 @@ export default function QueueItem({ track, index, isCurrent, showPlayMarker, onS
   return (
     <li
       ref={setNodeRef}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
+      style={{ transform: CSS.Transform.toString(verticalTransform), transition }}
       className={cn('relative overflow-hidden', isDragging && 'z-10 opacity-90')}
     >
       <div className="absolute inset-0 flex items-center justify-end px-5 bg-destructive text-destructive-foreground">
