@@ -8,15 +8,7 @@ export function usePlayContext(tracks: TrackInfo[]) {
     (index: number) => {
       const track = tracks[index];
       if (!track) return;
-
-      const { queue, skipTo, play } = usePlayerStore.getState();
-      const queueIndex = queue.findIndex((q) => q.trackId === track.id);
-
-      if (queueIndex !== -1) {
-        void skipTo(queueIndex);
-      } else {
-        void play(buildPlaybackQueue(tracks), index);
-      }
+      void usePlayerStore.getState().play(buildPlaybackQueue(tracks), index);
     },
     [tracks],
   );

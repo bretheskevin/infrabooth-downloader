@@ -1,6 +1,25 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { buildPlaybackQueue } from '../utils/buildPlaybackQueue';
 import type { TrackInfo } from '@/bindings';
+
+const mockPlay = vi.fn();
+const mockSkipTo = vi.fn();
+const mockQueue: { trackId: number }[] = [];
+
+vi.mock('../store', () => ({
+  usePlayerStore: {
+    getState: () => ({
+      queue: mockQueue,
+      play: mockPlay,
+      skipTo: mockSkipTo,
+      syncQueue: vi.fn(),
+      playShuffled: vi.fn(),
+    }),
+  },
+}));
+
+import { usePlayContext } from '../hooks/usePlayContext';
 
 const mockTracks: TrackInfo[] = [
   {
@@ -43,5 +62,36 @@ describe('buildPlaybackQueue', () => {
       durationMs: 180000,
       waveformUrl: null,
     });
+  });
+});
+
+describe('usePlayContext', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockQueue.length = 0;
+  });
+
+  it('always rebuilds queue from tracklist even when track already exists in queue', () => {
+    mockQueue.push({ trackId: 1 });
+
+    const { result } = renderHook(() => usePlayContext(mockTracks));
+
+    act(() => {
+      result.current.playTrack(0);
+    });
+
+    expect(mockPlay).toHaveBeenCalledWith(buildPlaybackQueue(mockTracks), 0);
+    expect(mockSkipTo).not.toHaveBeenCalled();
+  });
+
+  it('calls play with correct queue and index when track is not in queue', () => {
+    const { result } = renderHook(() => usePlayContext(mockTracks));
+
+    act(() => {
+      result.current.playTrack(1);
+    });
+
+    expect(mockPlay).toHaveBeenCalledWith(buildPlaybackQueue(mockTracks), 1);
+    expect(mockSkipTo).not.toHaveBeenCalled();
   });
 });
