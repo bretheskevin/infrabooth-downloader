@@ -22,6 +22,7 @@ export default function TrackList({ tracks, state, send, language, onPlay }: Pro
             key={track.trackId}
             track={track}
             state={state}
+            language={language}
             onPlay={() => onPlay(track, index)}
             onQueue={() => {
               send({ type: 'queueTrack', track });
