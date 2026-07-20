@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import { t } from '@remote/lib/i18n';
 import { TrackRowCore } from '@/components/TrackRowCore';
+import { TrackRowMenu } from '@remote/components/TrackRowMenu';
 
 const SWIPE_THRESHOLD = 80;
 const MOVE_TOLERANCE = 6;
@@ -100,33 +101,23 @@ export default function TrackRow({ track, state, language, onPlay, onQueue, onDo
           )}
         </div>
         <TrackRowCore title={track.title} artist={track.artist} isCurrent={isCurrent} />
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t('addToQueue', language)}
-          className="sr-only"
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onQueue();
-          }}
-        >
-          <ListPlus />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={t('download', language)}
-          disabled={isDownloading || isDownloaded}
-          onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => {
-            e.stopPropagation();
-            onDownload();
-          }}
-          className={cn('h-11 w-11 flex-shrink-0', isDownloaded ? 'text-success' : 'text-muted-foreground')}
-        >
-          {isDownloading ? <Loader2 className="animate-spin text-primary" /> : isDownloaded ? <Check /> : <Download />}
-        </Button>
+        <div className="flex flex-shrink-0 items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label={t('download', language)}
+            disabled={isDownloading || isDownloaded}
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              onDownload();
+            }}
+            className={cn('h-11 w-9', isDownloaded ? 'text-success' : 'text-muted-foreground')}
+          >
+            {isDownloading ? <Loader2 className="animate-spin text-primary" /> : isDownloaded ? <Check /> : <Download />}
+          </Button>
+          <TrackRowMenu language={language} onQueue={onQueue} />
+        </div>
       </div>
     </li>
   );
