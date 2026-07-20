@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Slider } from '@/components/ui/slider';
 import { PreviousButton, PlayPauseButton, NextButton, ShuffleButton } from './TransportButtons';
-import { ScrollingText } from './ScrollingText';
+import { ScrollingText } from '@/components/ScrollingText';
 import { SeekBar } from './SeekBar';
 import { TrackActionsDropdown } from '@/components/TrackActionsDropdown';
 import { ArtistLink } from '@/components/ArtistLink';

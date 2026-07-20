@@ -9,7 +9,7 @@ import { formatDuration } from '@/lib/format';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import { usePlayerStore } from '../store';
 import { useCurrentTrackInfo } from '../hooks/useCurrentTrackInfo';
-import { ScrollingText } from './ScrollingText';
+import { ScrollingText } from '@/components/ScrollingText';
 import { SeekBar } from './SeekBar';
 import { PreviousButton, PlayPauseButton, NextButton, ShuffleButton } from './TransportButtons';
 import { VolumeControl } from './VolumeControl';

@@ -28,7 +28,7 @@ vi.mock('@/components/TrackActionsDropdown', () => ({
   TrackActionsDropdown: () => <div data-testid="track-actions" />,
 }));
 
-vi.mock('../components/ScrollingText', () => ({
+vi.mock('@/components/ScrollingText', () => ({
   ScrollingText: ({ text }: { text: string }) => <span data-testid="scrolling-text">{text}</span>,
 }));
 

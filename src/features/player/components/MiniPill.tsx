@@ -7,7 +7,7 @@ import { getArtworkUrl } from '@/lib/soundcloud';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useIsDockVisible } from '@/features/download/store';
 import { usePlayerStore } from '../store';
-import { ScrollingText } from './ScrollingText';
+import { ScrollingText } from '@/components/ScrollingText';
 
 const actions = () => usePlayerStore.getState();
 

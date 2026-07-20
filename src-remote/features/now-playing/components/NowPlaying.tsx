@@ -4,6 +4,7 @@ import { getArtworkUrl } from '@/lib/soundcloud';
 import { t } from '@remote/lib/i18n';
 import { useWaveform } from '@/lib/useWaveform';
 import { Waveform } from '@/components/Waveform';
+import { ScrollingText } from '@/components/ScrollingText';
 
 interface Props {
   state: RemoteState | null;
@@ -40,8 +41,8 @@ export default function NowPlaying({ state, language, onCommand }: Props) {
       ) : (
         <div className="w-64 h-64 rounded-lg bg-card" />
       )}
-      <div className="w-full text-center">
-        <p className="font-semibold truncate text-lg">{track.title}</p>
+      <div className="w-full">
+        <ScrollingText text={track.title} className="text-lg font-semibold" />
         <p className="truncate text-sm text-muted-foreground">{track.artist}</p>
       </div>
       <div className="w-full flex flex-col gap-1">

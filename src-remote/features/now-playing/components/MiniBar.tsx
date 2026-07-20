@@ -2,6 +2,7 @@ import { Play, Pause } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { RemoteState, RemoteCommand } from '@/lib/remote-protocol';
 import { getArtworkUrl } from '@/lib/soundcloud';
+import { ScrollingText } from '@/components/ScrollingText';
 
 interface Props {
   state: RemoteState | null;
@@ -25,7 +26,7 @@ export default function MiniBar({ state, send, onExpand }: Props) {
           <div className="w-10 h-10 rounded flex-shrink-0 bg-secondary" />
         )}
         <div className="flex-1 min-w-0">
-          <p className="truncate text-sm font-medium text-foreground">{track.title}</p>
+          <ScrollingText text={track.title} className="text-sm font-medium text-foreground" />
           <p className="truncate text-xs text-muted-foreground">{track.artist}</p>
         </div>
       </button>
