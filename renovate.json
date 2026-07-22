@@ -1,0 +1,11 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":automergeMinor", ":automergeDigest", ":semanticCommits"],
+  "baseBranches": ["main"],
+  "timezone": "Europe/Paris",
+  "schedule": ["before 9am on monday"],
+  "labels": ["dependencies"],
+  "vulnerabilityAlerts": {
+    "labels": ["security"]
+  }
+}
