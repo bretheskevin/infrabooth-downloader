@@ -5,6 +5,26 @@
   "timezone": "Europe/Paris",
   "schedule": ["before 9am on monday"],
   "labels": ["dependencies"],
+  "packageRules": [
+    {
+      "description": "Group all non-major npm updates into a single PR",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "npm dependencies"
+    },
+    {
+      "description": "Group all non-major Rust (Cargo) updates into a single PR",
+      "matchManagers": ["cargo"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "rust dependencies"
+    },
+    {
+      "description": "Group all non-major GitHub Actions updates into a single PR",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "github actions"
+    }
+  ],
   "vulnerabilityAlerts": {
     "labels": ["security"]
   }
