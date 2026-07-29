@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock the audio engine
 vi.mock('../audio-engine', () => ({
@@ -13,6 +13,7 @@ vi.mock('../audio-engine', () => ({
     destroy: vi.fn(),
     getState: vi.fn().mockReturnValue('idle'),
     getPosition: vi.fn().mockReturnValue({ positionMs: 0, durationMs: 0 }),
+    isFullyBuffered: vi.fn().mockReturnValue(false),
     preloadNext: vi.fn(),
     startCrossfade: vi.fn(),
     cancelCrossfade: vi.fn(),
@@ -38,9 +39,9 @@ vi.mock('@/lib/tauri', () => ({
 }));
 
 import { usePlayerStore } from '../store';
-import { resetCrossfadeGeneration } from '../store/playbackSlice';
+import { resetCrossfadeGeneration, incrementLoadGeneration } from '../store/playbackSlice';
 import { audioEngine } from '../audio-engine';
-import { resolveWithCache, preloadQueueSegments, invalidateCachedUrl } from '../url-cache';
+import { resolveWithCache, preloadQueueSegments, invalidateCachedUrl, getCachedUrl } from '../url-cache';
 import { useSettingsStore } from '@/features/settings/store';
 import type { PlaybackItem, QueueItem } from '../types';
 import type { AudioEngineCallbacks } from '../audio-engine';
@@ -133,6 +134,82 @@ describe('playerStore', () => {
   it('resume() should call audio engine play', () => {
     usePlayerStore.getState().resume();
     expect(audioEngine.play).toHaveBeenCalled();
+  });
+
+  describe('resume() with expired URL', () => {
+    const seedTrack = async () => {
+      await usePlayerStore.getState().play([mockTrack], 0);
+      vi.mocked(audioEngine.load).mockClear();
+      vi.mocked(audioEngine.play).mockClear();
+      vi.mocked(resolveWithCache).mockClear();
+    };
+
+    afterEach(() => {
+      vi.mocked(getCachedUrl).mockReturnValue(null);
+      vi.mocked(audioEngine.isFullyBuffered).mockReturnValue(false);
+      vi.mocked(audioEngine.getPosition).mockReturnValue({ positionMs: 0, durationMs: 0 });
+      vi.mocked(resolveWithCache).mockResolvedValue('https://example.com/stream.m3u8');
+    });
+
+    it('plays directly when the cached URL is still valid', async () => {
+      await seedTrack();
+      vi.mocked(getCachedUrl).mockReturnValue('https://example.com/cached.m3u8');
+
+      usePlayerStore.getState().resume();
+
+      expect(audioEngine.play).toHaveBeenCalled();
+      expect(resolveWithCache).not.toHaveBeenCalled();
+      expect(audioEngine.load).not.toHaveBeenCalled();
+    });
+
+    it('plays directly when the URL expired but the track is fully buffered', async () => {
+      await seedTrack();
+      vi.mocked(audioEngine.isFullyBuffered).mockReturnValue(true);
+
+      usePlayerStore.getState().resume();
+
+      expect(audioEngine.play).toHaveBeenCalled();
+      expect(resolveWithCache).not.toHaveBeenCalled();
+      expect(audioEngine.load).not.toHaveBeenCalled();
+    });
+
+    it('refreshes the URL and reloads at the current position when expired', async () => {
+      await seedTrack();
+      vi.mocked(audioEngine.getPosition).mockReturnValue({ positionMs: 42000, durationMs: 180000 });
+      vi.mocked(resolveWithCache).mockResolvedValueOnce('https://example.com/fresh.m3u8');
+
+      usePlayerStore.getState().resume();
+
+      await vi.waitFor(() => expect(audioEngine.load).toHaveBeenCalledWith('https://example.com/fresh.m3u8', 42000));
+      expect(resolveWithCache).toHaveBeenCalledWith(1, mockTrack.trackUrl);
+      expect(audioEngine.play).toHaveBeenCalled();
+    });
+
+    it('stays on the current track without reloading when the refresh fails', async () => {
+      await seedTrack();
+      vi.mocked(resolveWithCache).mockRejectedValueOnce(new Error('Network error'));
+
+      usePlayerStore.getState().resume();
+
+      await vi.waitFor(() => expect(resolveWithCache).toHaveBeenCalled());
+      expect(audioEngine.load).not.toHaveBeenCalled();
+      expect(audioEngine.play).not.toHaveBeenCalled();
+      expect(usePlayerStore.getState().currentTrack?.trackId).toBe(1);
+    });
+
+    it('ignores a stale refresh when the load generation changed mid-flight', async () => {
+      await seedTrack();
+      let resolveUrl!: (url: string) => void;
+      vi.mocked(resolveWithCache).mockReturnValueOnce(new Promise<string>((res) => (resolveUrl = res)));
+
+      usePlayerStore.getState().resume();
+      incrementLoadGeneration();
+      resolveUrl('https://example.com/fresh.m3u8');
+      await vi.waitFor(() => expect(resolveWithCache).toHaveBeenCalled());
+
+      expect(audioEngine.load).not.toHaveBeenCalled();
+      expect(audioEngine.play).not.toHaveBeenCalled();
+    });
   });
 
   it('seek() should call audio engine and update state', () => {

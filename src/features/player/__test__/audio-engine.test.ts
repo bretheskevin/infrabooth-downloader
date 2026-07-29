@@ -92,6 +92,36 @@ describe('audioEngine', () => {
     });
   });
 
+  describe('isFullyBuffered', () => {
+    const mockBuffered = (endS: number): TimeRanges => ({ length: 1, start: () => 0, end: () => endS }) as unknown as TimeRanges;
+
+    it('returns false when no track is loaded', () => {
+      expect(audioEngine.isFullyBuffered()).toBe(false);
+    });
+
+    it('returns true when the buffered range spans the current position to the duration', () => {
+      audioEngine.load('https://example.com/stream');
+      const bufferedSpy = vi.spyOn(window.HTMLMediaElement.prototype, 'buffered', 'get').mockReturnValue(mockBuffered(180));
+      const durationSpy = vi.spyOn(window.HTMLMediaElement.prototype, 'duration', 'get').mockReturnValue(180);
+
+      expect(audioEngine.isFullyBuffered()).toBe(true);
+
+      bufferedSpy.mockRestore();
+      durationSpy.mockRestore();
+    });
+
+    it('returns false when the buffered range ends before the duration', () => {
+      audioEngine.load('https://example.com/stream');
+      const bufferedSpy = vi.spyOn(window.HTMLMediaElement.prototype, 'buffered', 'get').mockReturnValue(mockBuffered(90));
+      const durationSpy = vi.spyOn(window.HTMLMediaElement.prototype, 'duration', 'get').mockReturnValue(180);
+
+      expect(audioEngine.isFullyBuffered()).toBe(false);
+
+      bufferedSpy.mockRestore();
+      durationSpy.mockRestore();
+    });
+  });
+
   describe('HLS error handling', () => {
     let hlsInstance: {
       on: ReturnType<typeof vi.fn>;

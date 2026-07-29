@@ -51,6 +51,8 @@ let crossfadePendingBegin: (() => void) | null = null;
 let playWhenReady = false;
 let urlRefreshAttempted = false;
 
+const BUFFERED_END_TOLERANCE_S = 0.5;
+
 function safePlay(el: HTMLAudioElement, context = 'Play') {
   el.play().catch((e: Error) => {
     if (e.name === 'AbortError') {
@@ -342,6 +344,18 @@ export const audioEngine = {
       positionMs: activeSlot.audio.currentTime * 1000,
       durationMs: (activeSlot.audio.duration || 0) * 1000,
     };
+  },
+
+  isFullyBuffered(): boolean {
+    const el = activeSlot.audio;
+    if (!el || !Number.isFinite(el.duration) || el.duration <= 0) return false;
+    const { buffered, currentTime, duration } = el;
+    for (let i = 0; i < buffered.length; i++) {
+      if (currentTime >= buffered.start(i) && currentTime <= buffered.end(i) && buffered.end(i) >= duration - BUFFERED_END_TOLERANCE_S) {
+        return true;
+      }
+    }
+    return false;
   },
 
   destroy() {

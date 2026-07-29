@@ -116,6 +116,12 @@ function prefetchStationOnInit(get: GetFn) {
   prefetchStationSilent(get, seedTrack.trackId);
 }
 
+function reportTrackLoadError(logContext: string, e: unknown): void {
+  const msg = e instanceof Error ? e.message : String(e);
+  void logger.error(`${logContext}: ${msg}`);
+  toast.error(`${i18n.t('player.errorLoadTrack')}: ${msg}`);
+}
+
 async function loadAndPlay(track: PlaybackItem, generation: number, get: () => PlayerState & PlaybackSliceActions) {
   try {
     void logger.debug(`[player] Resolving URL for track ${track.trackId} (gen=${generation})`);
@@ -132,9 +138,7 @@ async function loadAndPlay(track: PlaybackItem, generation: number, get: () => P
     audioEngine.play();
   } catch (e) {
     if (generation !== loadGeneration) return;
-    const msg = e instanceof Error ? e.message : String(e);
-    void logger.error(`[player] Failed to resolve track ${track.trackId}: ${msg}`);
-    toast.error(`${i18n.t('player.errorLoadTrack')}: ${msg}`);
+    reportTrackLoadError(`[player] Failed to resolve track ${track.trackId}`, e);
 
     consecutiveFailures++;
     if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
@@ -340,7 +344,26 @@ export const createPlaybackSlice: StateCreator<PlayerState & PlaybackSliceAction
   },
 
   resume: () => {
-    audioEngine.play();
+    const { currentTrack } = get();
+    if (!currentTrack || getCachedUrl(currentTrack.trackId) || audioEngine.isFullyBuffered()) {
+      audioEngine.play();
+      return;
+    }
+
+    const { positionMs } = audioEngine.getPosition();
+    set({ state: 'loading' });
+    void logger.debug(`[player] Expired URL on resume for track ${currentTrack.trackId}, refreshing at ${positionMs}ms`);
+    const generation = ++loadGeneration;
+    void resolveWithCache(currentTrack.trackId, currentTrack.trackUrl)
+      .then((url) => {
+        if (generation !== loadGeneration) return;
+        audioEngine.load(url, positionMs);
+        audioEngine.play();
+      })
+      .catch((e: unknown) => {
+        if (generation !== loadGeneration) return;
+        reportTrackLoadError(`[player] URL refresh on resume failed for track ${currentTrack.trackId}`, e);
+      });
   },
 
   seek: (positionMs) => {
