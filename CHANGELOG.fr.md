@@ -6,6 +6,24 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.33.0] - 2026-07-29
+
+### Added
+
+- La lecture d'un titre partagé enchaîne les suivants de la conversation
+- Télécommande mobile : accès à vos titres aimés
+- Télécommande mobile : ajout à la file par glissement ou via le menu
+
+### Changed
+
+- Télécommande mobile : défilement des titres longs en lecture
+
+### Fixed
+
+- La reprise d'un titre après une longue pause pouvait échouer
+- Cliquer sur un titre d'une liste ne lançait pas toujours cette liste
+- Le réordonnancement d'une file avec doublons déplaçait le mauvais titre
+- Télécommande mobile : corrections du réordonnancement et de l'affichage de la file
 ## [1.32.0] - 2026-07-16
 
 ### Added

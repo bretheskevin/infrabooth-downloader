@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.33.0] - 2026-07-29
+
+### Added
+
+- Playing a shared track queues the rest of the conversation
+- Phone remote: browse your liked tracks
+- Phone remote: swipe a track or open its menu to queue it
+
+### Changed
+
+- Phone remote: long track titles now scroll while playing
+
+### Fixed
+
+- Resuming a track after a long pause could fail to play
+- Clicking a track in a list didn't always play that list
+- Reordering a queue with duplicate tracks moved the wrong one
+- Phone remote: queue reorder drift and panel overlay glitches
 ## [1.32.0] - 2026-07-16
 
 ### Added
