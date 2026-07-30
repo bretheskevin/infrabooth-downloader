@@ -35,9 +35,11 @@ export function PlayPauseButton({ className, iconClassName }: TransportButtonPro
   const { t } = useTranslation();
   const state = usePlayerStore((s) => s.state);
   const isPlaying = state === 'playing';
+  const isLoading = state === 'loading';
   return (
     <TransportPlayPause
       isPlaying={isPlaying}
+      isLoading={isLoading}
       onClick={isPlaying ? () => actions().pause() : () => actions().resume()}
       label={isPlaying ? t('player.pause') : t('player.play')}
       className={className}
