@@ -62,7 +62,7 @@ auth, comments, download, ffmpeg, playlist, settings, updater, library, search, 
 ### Support
 - `metadata.rs` — ID3 tag embedding, artwork download, existing track ID scanning
 - `filename.rs` — path sanitization (UNSAFE_CHARS replacement)
-- `paths.rs` — default download/app data directories
+- `paths.rs` — default download/app data dirs + path-confinement helpers (`home_dir`, `confine_within`, `confine_to_home`, `confine_existing_to_home`) that gate untrusted caller-supplied paths to the user's home directory
 - `sidecar.rs` — FFmpeg binary version detection
 - `events.rs` — Tauri event name constants, TracksBatchEvent, batch emitter
 - `ffmpeg.rs`, `updater.rs` — FFmpeg check, app update
@@ -77,3 +77,4 @@ Each implements HasErrorCode trait → ErrorResponse with code + message for fro
 - Queue supports concurrent downloads with configurable max_concurrent
 - Rate limiting: pause + wait_for_user_choice (continue/skip/cancel)
 - TrackCore struct with #[serde(flatten)] for shared track fields
+- Untrusted caller paths (download `output_dir`, rekordbox `manual_db_path` + export source, settings validation) are confined to the user's home via `paths::confine_within`/`confine_to_home` — rejects relative paths, resolves symlinks, forbids `..` traversal (incl. in a not-yet-created tail); needed because the remote LAN bridge can supply these paths

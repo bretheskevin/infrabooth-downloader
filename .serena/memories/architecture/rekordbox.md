@@ -63,3 +63,4 @@ Export downloaded tracks and playlists into Rekordbox 6/7 database. Creates "Inf
 - Always creates backup before DB modifications
 - Checks if Rekordbox is running (warns user to close it)
 - USN updates ensure Rekordbox picks up changes on next launch
+- Untrusted `manual_db_path` override and per-track export `source_path` are confined to the user's home dir via `paths::confine_within` (see `resolve_rekordbox_config`/`confine_manual_db_path` in `commands/rekordbox.rs`); violations return `RekordboxError::InvalidPath` (`REKORDBOX_INVALID_PATH`). Needed because these paths can arrive from the remote LAN bridge
