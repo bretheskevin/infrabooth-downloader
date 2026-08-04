@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.34.0] - 2026-08-04
+
+### Added
+
+- Selections now refresh automatically each day
+
+### Changed
+
+- Loading spinner on play/pause while a track loads
+
+### Fixed
+
+- Conversations with deleted users could fail to load
 ## [1.33.0] - 2026-07-29
 
 ### Added

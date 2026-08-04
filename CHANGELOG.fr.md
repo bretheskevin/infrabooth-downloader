@@ -6,6 +6,19 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.34.0] - 2026-08-04
+
+### Added
+
+- Actualisation automatique des sélections chaque jour
+
+### Changed
+
+- Indicateur de chargement sur le bouton lecture/pause
+
+### Fixed
+
+- Les conversations avec des utilisateurs supprimés ne se chargeaient pas
 ## [1.33.0] - 2026-07-29
 
 ### Added
