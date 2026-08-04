@@ -7,6 +7,7 @@ export const ERROR_CODE_TO_I18N_KEY: Record<ErrorCode, string> = {
   NETWORK_ERROR: 'errors.networkError',
   DOWNLOAD_FAILED: 'errors.downloadFailed',
   CONVERSION_FAILED: 'errors.conversionFailed',
+  INVALID_OUTPUT_DIR: 'errors.invalidOutputDir',
   INVALID_URL: 'errors.invalidUrl',
   AUTH_REQUIRED: 'errors.notSignedIn',
   STREAM_RESOLUTION_FAILED: 'errors.downloadFailed',

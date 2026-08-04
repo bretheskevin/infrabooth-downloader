@@ -1,22 +1,14 @@
 use std::fs;
 use std::path::Path;
-use tauri::Manager;
 use uuid::Uuid;
 
 use crate::services::config::skip_tls_verify;
-use crate::services::paths::{get_app_data_dir, get_downloads_dir, is_within_allowed_dirs};
+use crate::services::paths::{confine_existing_to_home, confine_within, get_app_data_dir, get_downloads_dir, home_dir};
 
 #[tauri::command]
 #[specta::specta]
 pub async fn check_write_permission(path: String, app: tauri::AppHandle) -> Result<bool, String> {
-    let dir_path = std::fs::canonicalize(Path::new(&path)).map_err(|_| "Directory does not exist".to_string())?;
-
-    let home_dir = app.path().home_dir().map_err(|e| format!("Failed to get home directory: {}", e))?;
-
-    if !is_within_allowed_dirs(&dir_path, &[home_dir]) {
-        return Err("Path is outside the home directory".to_string());
-    }
-
+    let dir_path = confine_existing_to_home(&app, Path::new(&path))?;
     try_write_permission(&dir_path)
 }
 
@@ -158,20 +150,13 @@ pub fn get_feature_flags(app: tauri::AppHandle) -> Result<String, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn validate_download_path(path: String) -> Result<bool, String> {
-    let dir_path = Path::new(&path);
+pub fn validate_download_path(path: String, app: tauri::AppHandle) -> Result<bool, String> {
+    let home = home_dir(&app)?;
+    Ok(is_valid_dir_within(Path::new(&path), &home))
+}
 
-    // Check existence
-    if !dir_path.exists() {
-        return Ok(false);
-    }
-
-    // Check it's a directory (not a file)
-    if !dir_path.is_dir() {
-        return Ok(false);
-    }
-
-    Ok(true)
+fn is_valid_dir_within(path: &Path, allowed_root: &Path) -> bool {
+    confine_within(path, &[allowed_root.to_path_buf()]).map(|resolved| resolved.is_dir()).unwrap_or(false)
 }
 
 #[tauri::command]
@@ -193,31 +178,36 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
-    fn validate_download_path_returns_true_for_existing_dir() {
-        let temp_dir = tempdir().unwrap();
-        let path = temp_dir.path().to_string_lossy().to_string();
+    fn is_valid_dir_within_returns_true_for_existing_dir() {
+        let root = tempdir().unwrap();
+        let sub = root.path().join("Downloads");
+        fs::create_dir(&sub).unwrap();
 
-        let result = validate_download_path(path);
-        assert!(result.is_ok());
-        assert!(result.unwrap());
+        assert!(is_valid_dir_within(&sub, root.path()));
     }
 
     #[test]
-    fn validate_download_path_returns_false_for_nonexistent_path() {
-        let result = validate_download_path("/nonexistent/path/12345".to_string());
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
+    fn is_valid_dir_within_returns_false_for_nonexistent_dir() {
+        let root = tempdir().unwrap();
+
+        assert!(!is_valid_dir_within(&root.path().join("missing"), root.path()));
     }
 
     #[test]
-    fn validate_download_path_returns_false_for_file_path() {
-        let temp_dir = tempdir().unwrap();
-        let file_path = temp_dir.path().join("testfile.txt");
+    fn is_valid_dir_within_returns_false_for_file() {
+        let root = tempdir().unwrap();
+        let file_path = root.path().join("testfile.txt");
         fs::write(&file_path, "test").unwrap();
 
-        let result = validate_download_path(file_path.to_string_lossy().to_string());
-        assert!(result.is_ok());
-        assert!(!result.unwrap());
+        assert!(!is_valid_dir_within(&file_path, root.path()));
+    }
+
+    #[test]
+    fn is_valid_dir_within_returns_false_for_dir_outside_root() {
+        let root = tempdir().unwrap();
+        let outside = tempdir().unwrap();
+
+        assert!(!is_valid_dir_within(outside.path(), root.path()));
     }
 
     #[test]

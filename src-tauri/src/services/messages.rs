@@ -104,8 +104,10 @@ pub struct MessagesPage {
 #[derive(Debug, Deserialize)]
 struct RawSender {
     id: u64,
+    #[serde(default)]
     username: String,
     avatar_url: Option<String>,
+    #[serde(default)]
     permalink_url: String,
 }
 
@@ -386,14 +388,20 @@ pub async fn fetch_conversations_page(
     let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
     validate_api_response(response.status())?;
 
-    let raw: RawPaginatedResponse<RawConversation> = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
+    let body = response.text().await?;
+
+    let raw: RawPaginatedResponse<RawConversation> = serde_json::from_str(&body).map_err(|e| {
+        let preview = body.get(..200).unwrap_or(&body);
+        log::error!("[messages] Failed to parse conversations: {} — body preview: {}", e, preview);
+        ScApiError::InvalidResponse
+    })?;
 
     Ok(convert_conversations(raw, user_id))
 }
 
 pub async fn fetch_conversation_messages(
-    oauth_token: &str, client_id: &str, user_id: u64, other_user_id: u64, offset: Option<u32>, limit: u32,
-) -> Result<MessagesPage, ScApiError> {
+    oauth_token: &str, client_id: &str, datadome: Option<&str>, user_id: u64, other_user_id: u64, offset: Option<u32>, limit: u32,
+) -> (Option<String>, Result<MessagesPage, ScApiError>) {
     let url = format!(
         "{}/users/{}/conversations/{}/messages?limit={}&offset={}&linked_partitioning=1&client_id={}",
         API_V2_BASE,
@@ -404,12 +412,28 @@ pub async fn fetch_conversation_messages(
         client_id,
     );
 
-    let response = HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).send().await?;
-    validate_api_response(response.status())?;
+    let response = try_none!(HTTP_CLIENT.get(&url).with_oauth(Some(oauth_token)).with_datadome(datadome).send().await);
 
-    let raw: RawPaginatedResponse<RawMessage> = response.json().await.map_err(|_| ScApiError::InvalidResponse)?;
+    let new_datadome = extract_datadome_from_response(&response);
+    let status = response.status();
 
-    Ok(convert_messages(raw, other_user_id, user_id))
+    if let Err(e) = validate_api_response(status) {
+        return (new_datadome, Err(e.into()));
+    }
+
+    let body = match response.text().await {
+        Ok(b) => b,
+        Err(e) => return (new_datadome, Err(ScApiError::NetworkError(e))),
+    };
+
+    match serde_json::from_str::<RawPaginatedResponse<RawMessage>>(&body) {
+        Ok(raw) => (new_datadome, Ok(convert_messages(raw, other_user_id, user_id))),
+        Err(e) => {
+            let preview = body.get(..200).unwrap_or(&body);
+            log::error!("[messages] Failed to parse conversation messages: {} — body preview: {}", e, preview);
+            (new_datadome, Err(ScApiError::InvalidResponse))
+        }
+    }
 }
 
 pub async fn mark_conversation_read(
@@ -539,6 +563,30 @@ mod tests {
         assert_eq!(page.items[0].last_message_content, "Hello");
         assert!(page.items[0].read);
         assert!(page.next_offset.is_none());
+    }
+
+    #[test]
+    fn test_deserialize_conversation_with_missing_user() {
+        let json = serde_json::json!({
+            "id": "1708137263:526801914",
+            "last_message": {
+                "content": "gone",
+                "sender": make_raw_sender(526801914, "Me"),
+                "sent_at": "2026-06-05T13:13:32.000Z",
+            },
+            "read": true,
+            "users": [
+                { "id": 1708137263, "kind": "missing_user" },
+                make_raw_sender(526801914, "Me"),
+            ],
+        });
+
+        let raw: RawConversation = serde_json::from_value(json).unwrap();
+        let page = convert_conversations(RawPaginatedResponse { collection: vec![raw], next_href: None }, 526801914);
+        assert_eq!(page.items.len(), 1);
+        assert_eq!(page.items[0].other_user.id, 1708137263);
+        assert_eq!(page.items[0].other_user.username, "");
+        assert_eq!(page.items[0].other_user.permalink_url, "");
     }
 
     #[test]

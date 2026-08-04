@@ -165,6 +165,7 @@
     "networkError": "No internet connection",
     "downloadFailed": "Download failed",
     "conversionFailed": "Conversion failed",
+    "invalidOutputDir": "Invalid download folder",
     "trackNotFound": "Track not found",
     "trackNotFoundHint": "This track may have been removed or made private",
     "fetchFailed": "Failed to load content",
@@ -191,6 +192,7 @@
     "rekordboxFileError": "A file operation failed. Check available disk space.",
     "rekordboxXmlError": "Failed to synchronize Rekordbox XML.",
     "rekordboxInvalidPlaylist": "Invalid playlist operation.",
+    "rekordboxInvalidPath": "Invalid Rekordbox database location.",
     "rekordboxDownloadPath": "Could not prepare the download directory.",
     "rekordboxAppData": "Could not access the application data directory."
   },
@@ -622,6 +624,7 @@
     "title": "Messages",
     "empty": "No conversations",
     "error": "Couldn't load messages",
+    "deletedUser": "Deleted user",
     "retry": "Retry",
     "you": "You",
     "trackCount_one": "{{count}} track",

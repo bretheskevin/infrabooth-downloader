@@ -165,6 +165,7 @@
     "networkError": "Pas de connexion internet",
     "downloadFailed": "Échec du téléchargement",
     "conversionFailed": "Échec de la conversion",
+    "invalidOutputDir": "Dossier de téléchargement invalide",
     "trackNotFound": "Piste non trouvée",
     "trackNotFoundHint": "Cette piste a peut-être été supprimée ou rendue privée",
     "fetchFailed": "Impossible de charger le contenu",
@@ -191,6 +192,7 @@
     "rekordboxFileError": "Opération sur fichier échouée. Vérifiez l'espace disque disponible.",
     "rekordboxXmlError": "Impossible de synchroniser le XML Rekordbox.",
     "rekordboxInvalidPlaylist": "Opération de playlist invalide.",
+    "rekordboxInvalidPath": "Emplacement de base Rekordbox invalide.",
     "rekordboxDownloadPath": "Impossible de préparer le dossier de téléchargement.",
     "rekordboxAppData": "Impossible d'accéder au dossier de données de l'application."
   },
@@ -622,6 +624,7 @@
     "title": "Messages",
     "empty": "Aucune conversation",
     "error": "Impossible de charger les messages",
+    "deletedUser": "Utilisateur supprimé",
     "retry": "Réessayer",
     "you": "Vous",
     "trackCount_one": "{{count}} piste",

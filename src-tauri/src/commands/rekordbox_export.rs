@@ -246,7 +246,7 @@ pub async fn export_playlist_to_rekordbox(
 
                 let export_req = ExportTrackRequest { source_path: source_path.to_string_lossy().to_string() };
 
-                match export_single_track(&mut session.db, &export_req, &named_pl.id, &rekordbox_tracks_dir) {
+                match export_single_track(&mut session.db, &export_req, &named_pl.id, &rekordbox_tracks_dir, &ctx.home_dir) {
                     Ok((exported, content_id)) => {
                         if exported {
                             exported_count += 1;

@@ -32,10 +32,13 @@ pub async fn get_conversations_page(app: tauri::AppHandle, offset: Option<u32>) 
 pub async fn get_conversation_messages(app: tauri::AppHandle, other_user_id: u64, offset: Option<u32>) -> Result<MessagesPage, String> {
     let (token, client_id) = require_auth_and_cid(&app).await?;
     let user_id = require_user_id(&app)?;
+    let state = app.state::<AuthState>();
+    let datadome = state.get_datadome();
 
-    let page = messages::fetch_conversation_messages(&token, &client_id, user_id, other_user_id, offset, 10).await.map_err(|e| e.to_string())?;
+    let (new_datadome, result) = messages::fetch_conversation_messages(&token, &client_id, datadome.as_deref(), user_id, other_user_id, offset, 10).await;
+    state.update_datadome(new_datadome);
 
-    Ok(page)
+    result.map_err(|e| e.to_string())
 }
 
 #[tauri::command]

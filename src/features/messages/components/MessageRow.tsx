@@ -72,7 +72,7 @@ export function MessageRow({ message, currentUserId, otherUser, showHeader, trac
   const isOwnMessage = message.sender_id === currentUserId;
 
   const myAvatarUrl = useAuthStore((s) => s.avatarUrl);
-  const senderName = isOwnMessage ? t('directMessages.you') : (otherUser?.username ?? '');
+  const senderName = isOwnMessage ? t('directMessages.you') : otherUser ? otherUser.username || t('directMessages.deletedUser') : '';
   const senderAvatar = isOwnMessage ? myAvatarUrl : otherUser?.avatar_url;
 
   const { embed, rawScUrl } = useResolveEmbed(message.content);

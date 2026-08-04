@@ -1,7 +1,7 @@
 use serde::Deserialize;
 use specta::Type;
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use tauri::{Emitter, State};
 
@@ -12,7 +12,7 @@ use crate::services::cancellation::CancellationState;
 use crate::services::downloader::DownloadProgressEvent;
 use crate::services::events;
 use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
-use crate::services::paths::get_downloads_dir;
+use crate::services::paths::{confine_to_home, get_downloads_dir};
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem, QueueProcessContext};
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
@@ -39,10 +39,7 @@ pub struct DownloadRequest {
 #[tauri::command]
 #[specta::specta]
 pub async fn download_track_full(request: DownloadRequest, app: tauri::AppHandle) -> Result<String, ErrorResponse> {
-    let output_path = match request.output_dir {
-        Some(dir) => PathBuf::from(dir),
-        None => get_download_path(&app)?,
-    };
+    let output_path = resolve_output_dir(&app, request.output_dir)?;
 
     let metadata = TrackMetadata {
         title: request.core.title.clone(),
@@ -111,10 +108,7 @@ pub async fn start_download_queue(
     cancel_state.reset();
     rate_limit_choice_state.reset();
 
-    let output_dir = match request.output_dir {
-        Some(dir) => PathBuf::from(dir),
-        None => get_download_path(&app)?,
-    };
+    let output_dir = resolve_output_dir(&app, request.output_dir)?;
 
     let preserve_order = request.preserve_order.unwrap_or(true);
 
@@ -166,13 +160,20 @@ fn get_download_path(app: &tauri::AppHandle) -> Result<PathBuf, ErrorResponse> {
     get_downloads_dir(app).map_err(|message| ErrorResponse { code: "DOWNLOAD_FAILED".to_string(), message })
 }
 
+fn resolve_output_dir(app: &tauri::AppHandle, output_dir: Option<String>) -> Result<PathBuf, ErrorResponse> {
+    match output_dir {
+        Some(dir) => confine_to_home(app, Path::new(&dir)).map_err(|message| ErrorResponse { code: "INVALID_OUTPUT_DIR".to_string(), message }),
+        None => get_download_path(app),
+    }
+}
+
 #[tauri::command]
 #[specta::specta]
-pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>) -> HashMap<String, String> {
-    let dir = PathBuf::from(&output_dir);
-    if !dir.exists() {
-        return HashMap::new();
-    }
+pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>, app: tauri::AppHandle) -> HashMap<String, String> {
+    let dir = match confine_to_home(&app, Path::new(&output_dir)) {
+        Ok(dir) if dir.exists() => dir,
+        _ => return HashMap::new(),
+    };
     scan_existing_track_ids(&dir, &track_ids, false).into_iter().map(|(id, path)| (id, path.to_string_lossy().to_string())).collect()
 }
 

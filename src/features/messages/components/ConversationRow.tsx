@@ -41,6 +41,7 @@ export function ConversationRow({ conversation, currentUserId, onClose }: Conver
 
   const isOwnMessage = last_message_sender_id === currentUserId;
   const preview = isOwnMessage ? `${t('directMessages.you')} : ${last_message_content}` : last_message_content;
+  const displayName = other_user.username || t('directMessages.deletedUser');
 
   const handleClick = () => {
     if (!read) {
@@ -66,14 +67,12 @@ export function ConversationRow({ conversation, currentUserId, onClose }: Conver
       className={cn('w-full flex items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-accent/50', !read && 'bg-accent/30')}
     >
       <Avatar className="h-10 w-10 flex-shrink-0">
-        <AvatarImage src={other_user.avatar_url ?? undefined} alt={other_user.username} />
-        <AvatarFallback className="text-xs">{other_user.username.charAt(0).toUpperCase()}</AvatarFallback>
+        <AvatarImage src={other_user.avatar_url ?? undefined} alt={displayName} />
+        <AvatarFallback className="text-xs">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline justify-between gap-2">
-          <span className={cn('text-sm truncate', !read ? 'font-semibold' : 'font-medium text-muted-foreground')}>
-            {other_user.username}
-          </span>
+          <span className={cn('text-sm truncate', !read ? 'font-semibold' : 'font-medium text-muted-foreground')}>{displayName}</span>
           <span className="text-xs text-muted-foreground flex-shrink-0">{formatChatTimestamp(last_message_at, i18n.language)}</span>
         </div>
         <p className={cn('text-xs truncate mt-0.5', !read ? 'text-foreground/80 font-medium' : 'text-muted-foreground')}>{preview}</p>

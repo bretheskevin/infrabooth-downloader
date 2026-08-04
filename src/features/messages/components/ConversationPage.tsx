@@ -58,6 +58,8 @@ export function ConversationPage({ onBack }: { onBack?: () => void }) {
         }
       : null;
 
+  const displayName = displayUser ? displayUser.username || t('directMessages.deletedUser') : '';
+
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(displayUser?.permalink_url ?? '');
 
   const handleClose = onBack ?? (() => useMessagesStore.getState().clear());
@@ -71,10 +73,10 @@ export function ConversationPage({ onBack }: { onBack?: () => void }) {
         {displayUser && (
           <>
             <Avatar className="h-9 w-9">
-              <AvatarImage src={displayUser.avatar_url ?? undefined} alt={displayUser.username} />
-              <AvatarFallback className="text-sm">{displayUser.username.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={displayUser.avatar_url ?? undefined} alt={displayName} />
+              <AvatarFallback className="text-sm">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
-            <ArtistLink userId={displayUser.id} username={displayUser.username} className="text-lg font-semibold" />
+            <ArtistLink userId={displayUser.id} username={displayName} className="text-lg font-semibold" />
             {displayUser.permalink_url && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

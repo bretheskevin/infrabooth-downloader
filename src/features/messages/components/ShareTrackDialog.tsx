@@ -47,6 +47,7 @@ function ConversationPickerRow({
   const { other_user, last_message_content, last_message_sender_id } = conversation;
   const isOwnMessage = last_message_sender_id === currentUserId;
   const preview = isOwnMessage ? `${t('directMessages.you')} : ${last_message_content}` : last_message_content;
+  const displayName = other_user.username || t('directMessages.deletedUser');
 
   return (
     <button
@@ -57,11 +58,11 @@ function ConversationPickerRow({
       )}
     >
       <Avatar className="h-8 w-8 flex-shrink-0">
-        <AvatarImage src={other_user.avatar_url ?? undefined} alt={other_user.username} />
-        <AvatarFallback className="text-xs">{other_user.username.charAt(0).toUpperCase()}</AvatarFallback>
+        <AvatarImage src={other_user.avatar_url ?? undefined} alt={displayName} />
+        <AvatarFallback className="text-xs">{displayName.charAt(0).toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium truncate">{other_user.username}</p>
+        <p className="text-sm font-medium truncate">{displayName}</p>
         <p className="text-xs text-muted-foreground truncate">{preview}</p>
       </div>
     </button>
