@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { Disc3, EllipsisVertical, ExternalLink, Heart, Link, Pencil, Send, Trash2 } from 'lucide-react';
 import type { TrackInfo } from '@/bindings';
@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useDeletePlaylist } from '@/hooks/useDeletePlaylist';
 import { useRekordboxDetection } from '@/features/rekordbox-export/hooks/useRekordboxDetection';
 import { useRekordboxExport } from '@/features/rekordbox-export/hooks/useRekordboxExport';
+import { useExcludedTrackIds } from '@/features/rekordbox-export/store';
 import { RekordboxExportDialog } from '@/features/rekordbox-export/components/RekordboxExportDialog';
 import { EditPlaylistDialog } from '@/components/playlist-detail/EditPlaylistDialog';
 import type { EditAction } from '@/components/track-list/types';
@@ -31,6 +32,7 @@ interface DeleteAction {
 interface PlaylistActionsDropdownProps {
   tracks: TrackInfo[] | undefined;
   playlistName: string;
+  playlistId?: string;
   permalinkUrl?: string;
   disabled?: boolean;
   shareInfo?: ShareTrackInfo;
@@ -75,6 +77,7 @@ function DeletePlaylistDialog({ open, playlistName, playlistId, isDeleting, onDe
 export function PlaylistActionsDropdown({
   tracks,
   playlistName,
+  playlistId,
   permalinkUrl,
   disabled,
   shareInfo,
@@ -92,8 +95,14 @@ export function PlaylistActionsDropdown({
     deleteAction?.onDeleteSuccess?.();
   });
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl ?? '');
-  const rekordbox = useRekordboxExport(tracks, playlistName);
+  const excludedIds = useExcludedTrackIds(playlistId);
+  const exportableTracks = useMemo(
+    () => (excludedIds.size > 0 && tracks ? tracks.filter((t) => !excludedIds.has(t.id)) : tracks),
+    [tracks, excludedIds],
+  );
+  const rekordbox = useRekordboxExport(exportableTracks, playlistName);
 
+  const exportableCount = exportableTracks?.length ?? 0;
   const trackCount = tracks?.length ?? 0;
   const showRekordbox = !rekordboxStatus || rekordboxStatus.found;
   const showLinks = !!permalinkUrl;
@@ -143,7 +152,7 @@ export function PlaylistActionsDropdown({
           )}
           {showRekordbox && (showLinks || canShare) && <DropdownMenuSeparator />}
           {showRekordbox && (
-            <DropdownMenuItem onClick={rekordbox.openConfirm}>
+            <DropdownMenuItem onClick={rekordbox.openConfirm} disabled={exportableCount === 0}>
               <Disc3 className="h-3.5 w-3.5" />
               {t('rekordboxExport.button')}
             </DropdownMenuItem>
@@ -164,7 +173,7 @@ export function PlaylistActionsDropdown({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      {showRekordbox && <RekordboxExportDialog controller={rekordbox} playlistName={playlistName} trackCount={trackCount} />}
+      {showRekordbox && <RekordboxExportDialog controller={rekordbox} playlistName={playlistName} trackCount={exportableCount} />}
 
       {deleteAction && (
         <DeletePlaylistDialog

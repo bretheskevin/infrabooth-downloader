@@ -97,6 +97,7 @@ export function TrackListView<F extends string = string>({
       <PlaylistActionsDropdown
         tracks={tracks}
         playlistName={title}
+        playlistId={id}
         permalinkUrl={permalinkUrl}
         shareInfo={shareInfo}
         likeState={likeState}
@@ -199,6 +200,7 @@ export function TrackListView<F extends string = string>({
             onToggleAll={state.toggleAll}
             sort={hasMultipleTracks ? sortConfig : undefined}
             onPlayShuffled={canShuffle ? state.playShuffled : undefined}
+            canExclude={state.canExclude}
           />
 
           <TrackListProvider
@@ -206,9 +208,11 @@ export function TrackListView<F extends string = string>({
             downloadTrack={state.downloadTrack}
             isDownloadEnabled={state.isDownloadEnabled}
             downloadedIds={state.downloadedIds}
+            playlistId={state.canExclude ? id : undefined}
             selection={{
               selectedIds: state.selectedIds,
               toggleTrack: state.toggleTrack,
+              nonSelectableIds: state.nonSelectableIds,
             }}
             animate={state.shouldAnimate}
           >
@@ -230,7 +234,11 @@ export function TrackListView<F extends string = string>({
             </div>
           )}
 
-          <SelectionActionBar selectedCount={state.selectedCount} onDownload={state.handleDownloadSelected} />
+          <SelectionActionBar
+            selectedCount={state.selectedCount}
+            onDownload={state.handleDownloadSelected}
+            onExcludeFromExport={state.canExclude ? state.handleExcludeSelected : undefined}
+          />
         </>
       )}
     </div>

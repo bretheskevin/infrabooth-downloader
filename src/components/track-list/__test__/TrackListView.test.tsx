@@ -101,6 +101,10 @@ vi.mock('@/hooks/useOpenDownloadFolder', () => ({
   useOpenDownloadFolder: () => vi.fn(),
 }));
 
+vi.mock('@/features/rekordbox-export/hooks/useRekordboxDetection', () => ({
+  useRekordboxDetection: () => ({ data: { found: true } }),
+}));
+
 vi.mock('@/components/PreserveOrderToggle', () => ({
   PreserveOrderToggle: () => <div data-testid="preserve-order-toggle" />,
 }));

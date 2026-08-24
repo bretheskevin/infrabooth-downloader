@@ -538,7 +538,9 @@
     "private": "Private",
     "creating": "Creating...",
     "createdPlaylist": "Created \"{{playlist}}\"",
-    "createFailed": "Failed to create playlist"
+    "createFailed": "Failed to create playlist",
+    "excludeFromExport": "Exclude from export",
+    "includeInExport": "Include in export"
   },
   "playlist": {
     "private": "Private"
@@ -721,7 +723,9 @@
     "treeError": "Could not load Rekordbox playlists",
     "treeRetry": "Retry",
     "existingPlaylistUpdate": "(will be updated)",
-    "existingPlaylistUpdateTooltip": "New tracks will be added to the existing Rekordbox playlist.\nTracks no longer in the SoundCloud playlist won't be removed."
+    "existingPlaylistUpdateTooltip": "New tracks will be added to the existing Rekordbox playlist.\nTracks no longer in the SoundCloud playlist won't be removed.",
+    "excludeSelected": "Exclude from export",
+    "excludedBadge": "Excluded"
   },
   "sidebar": {
     "workspace": "Music",

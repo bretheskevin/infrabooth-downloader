@@ -10,6 +10,20 @@ Export downloaded tracks and playlists into Rekordbox 6/7 database. Creates "Inf
 - Downloads tracks to `rekordbox_downloads/` in app data dir, reuses existing files
 - Registers tracks in named playlist + "All Tracks" playlist under InfraBooth folder
 
+## Exclusion – Leaf-Hook Architecture (Issue #44)
+- `src/components/track-list-context.ts` — defines `TrackListContextValue` (with `playlistId?: string`), `TrackListContext`, `useTrackListContext`, `useTrackListContextOptional`. Separate file to avoid circular deps.
+- `src/features/rekordbox-export/hooks/useTrackExclusion.ts` — leaf hook: reads `playlistId` from optional context, derives `isExcluded` and `toggle` (undefined when no playlist). Used by `TrackRow` (badge/opacity) and `TrackMenuItems` (menu item).
+- No `isExcluded`/`onToggleExcluded` props on `TrackRowProps`, `TrackRowActionsDropdownProps`, `TrackRowActionsContextContentProps`, `TrackMenuItemsProps`.
+- `TrackListProvider` carries `playlistId` only (no `excludedIds`/`onToggleExcluded`).
+- Bulk "Exclude from export" still in `useTrackListState` via `handleExcludeSelected`/`canExclude` → `SelectionActionBar`.
+- Row selectability (`nonSelectableIds` in `useTrackListState`): no Rekordbox → downloaded rows non-selectable; Rekordbox → only downloaded∩excluded non-selectable (downloaded stays selectable so it can be excluded). Bulk download skips already-downloaded (`downloadableSelected`); `useDownloadSelected` no-ops on an empty list (avoids a stuck "Preparing…" bar). Exclude UI (bulk button, per-row toggle, badge) gated on Rekordbox via `canExclude`.
+
+## Exclusion Store (`features/rekordbox-export/store.ts`)
+- `useRekordboxExclusionStore` — zustand persist store; `excludedByPlaylist: Record<string, number[]>` persisted under `'sc-downloader-rekordbox-exclusions'`
+- `toggleExcluded(playlistId, trackId)` — adds or removes a track id
+- `excludeTracks(playlistId, trackIds[])` — bulk-adds without duplicating existing ids
+- `useExcludedTrackIds(playlistId?)` — hook returning a memoized `Set<number>` (ref-stable when array unchanged, empty Set when undefined)
+
 ## Frontend Export (`features/rekordbox-export/`)
 - `ExportToRekordboxButton` — trigger button with confirmation dialog
 - `ExportPhaseSection` — phase-based progress UI (pending → downloading → registering → completed)

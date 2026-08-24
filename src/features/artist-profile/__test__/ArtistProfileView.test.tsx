@@ -146,6 +146,10 @@ vi.mock('@/features/player/components/ExpandedBar', () => ({
   EXPANDED_BAR_HEIGHT: 64,
 }));
 
+vi.mock('@/features/rekordbox-export/hooks/useRekordboxDetection', () => ({
+  useRekordboxDetection: () => ({ data: { found: true } }),
+}));
+
 describe('useArtistProfileStore', () => {
   beforeEach(() => {
     useArtistProfileStore.setState({

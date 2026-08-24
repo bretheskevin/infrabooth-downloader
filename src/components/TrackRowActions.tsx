@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { Heart, Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Send, Trash2 } from 'lucide-react';
+import { Ban, Heart, Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Send, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
@@ -18,6 +18,7 @@ import { useDownloadStateStore } from '@/hooks/useDownloadState';
 import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { useLinkActions } from '@/hooks/useLinkActions';
 import { useIsSignedIn } from '@/features/auth/store';
+import { useTrackExclusion } from '@/features/rekordbox-export/hooks/useTrackExclusion';
 
 export interface TrackMenuItemsProps {
   permalinkUrl: string;
@@ -61,6 +62,7 @@ export function TrackMenuItems({
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl);
   const filePath = useDownloadStateStore((s) => s.states.get(String(trackId))?.filePath);
   const onOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
+  const { isExcluded, toggle: onToggleExcluded } = useTrackExclusion(trackId);
 
   const handleShareByDm = () => {
     if (!shareInfo) return;
@@ -86,6 +88,15 @@ export function TrackMenuItems({
             <FolderOpen className="mr-2 h-4 w-4" />
             {t('trackMenu.openFileLocation')}
           </ContextMenuItem>
+        )}
+        {onToggleExcluded && (
+          <>
+            <ContextMenuSeparator />
+            <ContextMenuItem onClick={onToggleExcluded}>
+              <Ban className="mr-2 h-4 w-4" />
+              {t(isExcluded ? 'trackMenu.includeInExport' : 'trackMenu.excludeFromExport')}
+            </ContextMenuItem>
+          </>
         )}
         {isSignedIn && (
           <>
@@ -136,6 +147,15 @@ export function TrackMenuItems({
           <FolderOpen className="h-4 w-4" />
           {t('trackMenu.openFileLocation')}
         </DropdownMenuItem>
+      )}
+      {onToggleExcluded && (
+        <>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onToggleExcluded}>
+            <Ban className="h-4 w-4" />
+            {t(isExcluded ? 'trackMenu.includeInExport' : 'trackMenu.excludeFromExport')}
+          </DropdownMenuItem>
+        </>
       )}
       {isSignedIn && (
         <>

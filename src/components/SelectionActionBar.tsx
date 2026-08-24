@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Download } from 'lucide-react';
+import { Ban, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePlayerStore } from '@/features/player';
 import { useIsExpandedBarVisible } from '@/features/player/hooks/useIsExpandedBarVisible';
@@ -9,15 +9,17 @@ import { useIsDownloadEnabled } from '@/features/settings';
 interface SelectionActionBarProps {
   selectedCount: number;
   onDownload: () => void;
+  onExcludeFromExport?: () => void;
 }
 
-export function SelectionActionBar({ selectedCount, onDownload }: SelectionActionBarProps) {
+export function SelectionActionBar({ selectedCount, onDownload, onExcludeFromExport }: SelectionActionBarProps) {
   const { t } = useTranslation();
   const expandedBarVisible = useIsExpandedBarVisible();
   const isQueueOpen = usePlayerStore((s) => s.isQueueOpen);
   const isDownloadEnabled = useIsDownloadEnabled();
 
-  if (!isDownloadEnabled) return null;
+  const hasAnyAction = isDownloadEnabled || !!onExcludeFromExport;
+  if (!hasAnyAction) return null;
   if (selectedCount === 0 || (expandedBarVisible && isQueueOpen)) return null;
 
   const bottom = expandedBarVisible ? EXPANDED_BAR_HEIGHT + 8 : 24;
@@ -29,10 +31,18 @@ export function SelectionActionBar({ selectedCount, onDownload }: SelectionActio
     >
       <div className="flex items-center gap-3 px-4 py-2.5 rounded-full bg-background/80 backdrop-blur-xl border shadow-lg whitespace-nowrap">
         <span className="text-sm font-medium">{t('common.selected', { count: selectedCount })}</span>
-        <Button size="sm" onClick={onDownload} className="gap-1.5">
-          <Download className="h-3.5 w-3.5" />
-          {t('common.download')}
-        </Button>
+        {onExcludeFromExport && (
+          <Button variant="secondary" size="sm" className="gap-1.5" onClick={onExcludeFromExport}>
+            <Ban className="h-3.5 w-3.5" />
+            {t('rekordboxExport.excludeSelected')}
+          </Button>
+        )}
+        {isDownloadEnabled && (
+          <Button size="sm" onClick={onDownload} className="gap-1.5">
+            <Download className="h-3.5 w-3.5" />
+            {t('common.download')}
+          </Button>
+        )}
       </div>
     </div>
   );

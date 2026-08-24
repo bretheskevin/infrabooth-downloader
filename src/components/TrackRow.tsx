@@ -1,4 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { Ban } from 'lucide-react';
 import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { useLikeTrack } from '@/hooks/useLikeTrack';
@@ -7,6 +9,7 @@ import { usePlayerStore, buildPlaybackQueue } from '@/features/player';
 import { TrackRowContent } from '@/components/TrackRowContent';
 import { TrackRowActionsContextContent, TrackRowActionsDropdown } from '@/components/TrackRowActions';
 import { useArtistProfileStore } from '@/features/artist-profile';
+import { useTrackExclusion } from '@/features/rekordbox-export/hooks/useTrackExclusion';
 import type { TrackInfo } from '@/bindings';
 import type { DownloadState } from '@/types/download';
 
@@ -45,9 +48,12 @@ export function TrackRow({
   onMouseDown,
   onRemoveFromPlaylist,
 }: TrackRowProps) {
+  const { t } = useTranslation();
   const [isRowHovered, setIsRowHovered] = useState(false);
   const [contextMenuKey, setContextMenuKey] = useState(0);
   const [dropdownMenuOpen, setDropdownMenuOpen] = useState(false);
+
+  const { isExcluded } = useTrackExclusion(track.id);
 
   const dismissSelf = useCallback(() => {
     setDropdownMenuOpen(false);
@@ -121,7 +127,7 @@ export function TrackRow({
           className={cn(
             'group flex items-center gap-3 px-3 py-2 rounded-md',
             isCurrentlyPlaying && 'bg-primary/5',
-            downloadState?.status === 'completed' && 'opacity-60',
+            (downloadState?.status === 'completed' || isExcluded) && 'opacity-60',
             className,
           )}
           style={animationDelay && animationDelay > 0 ? { animationDelay: `${animationDelay}ms` } : undefined}
@@ -142,6 +148,12 @@ export function TrackRow({
             subtitleSlot={subtitleSlot}
             isLiked={likeState?.isLiked}
           />
+          {isExcluded && (
+            <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+              <Ban className="h-3 w-3" />
+              {t('rekordboxExport.excludedBadge')}
+            </span>
+          )}
           <TrackRowActionsDropdown
             permalinkUrl={track.permalink_url}
             trackId={track.id}

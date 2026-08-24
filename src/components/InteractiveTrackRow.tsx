@@ -1,4 +1,4 @@
-import { createContext, memo, useCallback, useContext, useMemo, type ReactNode } from 'react';
+import { memo, useCallback, useMemo, type ReactNode } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { Checkbox } from '@/components/ui/checkbox';
 import { TrackRow } from '@/components/TrackRow';
@@ -13,35 +13,17 @@ import { preloadOnHover, preloadImmediate } from '@/features/player/url-cache';
 import { getArtworkUrl } from '@/lib/soundcloud';
 import { cn } from '@/lib/utils';
 import type { TrackInfo } from '@/bindings';
+import { TrackListContext, useTrackListContext } from './track-list-context';
+import type { TrackListContextValue } from './track-list-context';
+
+export { TrackListContext, useTrackListContext, useTrackListContextOptional } from './track-list-context';
+export type { TrackListContextValue } from './track-list-context';
 
 const MAX_STAGGER_ITEMS = 15;
 const STAGGER_DELAY_MS = 25;
 
 const pausePlayer = () => usePlayerStore.getState().pause();
 const resumePlayer = () => usePlayerStore.getState().resume();
-
-// --- Context ---
-
-interface TrackListContextValue {
-  playTrack: (index: number) => void;
-  downloadTrack: (track: TrackInfo) => void;
-  isDownloadEnabled: boolean;
-  downloadVariant?: 'ghost' | 'filled';
-  downloadedIds: Set<number>;
-  selection?: {
-    selectedIds: Set<number>;
-    toggleTrack: (id: number) => void;
-  };
-  animate?: boolean;
-}
-
-const TrackListContext = createContext<TrackListContextValue | null>(null);
-
-function useTrackListContext() {
-  const ctx = useContext(TrackListContext);
-  if (!ctx) throw new Error('InteractiveTrackRow must be wrapped in TrackListProvider');
-  return ctx;
-}
 
 interface TrackListProviderProps extends TrackListContextValue {
   children: ReactNode;
@@ -56,15 +38,14 @@ export function TrackListProvider({
   downloadedIds,
   selection,
   animate,
+  playlistId,
 }: TrackListProviderProps) {
   const ctx = useMemo(
-    () => ({ playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate }),
-    [playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate],
+    () => ({ playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate, playlistId }),
+    [playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate, playlistId],
   );
   return <TrackListContext.Provider value={ctx}>{children}</TrackListContext.Provider>;
 }
-
-// --- Component ---
 
 interface InteractiveTrackRowProps {
   track: TrackInfo;
@@ -129,10 +110,11 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
   // Selection (derived from context)
   const selection = ctx.selection;
   const isSelected = selection ? selection.selectedIds.has(track.id) : false;
-  const isDisabled = downloadState.status === 'completed';
+  const isDisabled = selection?.nonSelectableIds?.has(track.id) ?? false;
   const handleToggle = useCallback(() => {
+    if (isDisabled) return;
     selection?.toggleTrack(track.id);
-  }, [selection, track.id]);
+  }, [isDisabled, selection, track.id]);
 
   // Computed className
   const computedClassName = selection
@@ -167,7 +149,7 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
           >
             <Checkbox
               checked={isSelected}
-              onCheckedChange={handleToggle}
+              onCheckedChange={!isDisabled ? handleToggle : undefined}
               disabled={isDisabled}
               className="shrink-0"
               onClick={(e: React.MouseEvent) => e.stopPropagation()}

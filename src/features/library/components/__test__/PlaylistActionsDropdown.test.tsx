@@ -39,14 +39,22 @@ vi.mock('@/features/rekordbox-export/hooks/useRekordboxDetection', () => ({
   useRekordboxDetection: () => ({ data: mockDetectionData }),
 }));
 
+let useRekordboxExportMock = vi.fn((_tracks: TrackInfo[] | undefined, _name: string) => hookReturn);
+
 vi.mock('@/features/rekordbox-export/hooks/useRekordboxExport', () => ({
-  useRekordboxExport: () => hookReturn,
+  useRekordboxExport: (tracks: TrackInfo[] | undefined, name: string) => useRekordboxExportMock(tracks, name),
 }));
 
 let mockTreeReturn = { data: undefined as unknown, isLoading: false, isError: false };
 
 vi.mock('@/features/rekordbox-export/hooks/useRekordboxTree', () => ({
   useRekordboxTree: () => mockTreeReturn,
+}));
+
+let mockExcludedIds = new Set<number>();
+
+vi.mock('@/features/rekordbox-export/store', () => ({
+  useExcludedTrackIds: () => mockExcludedIds,
 }));
 
 const mockDeletePlaylist = vi.fn().mockResolvedValue(true);
@@ -95,6 +103,7 @@ function makeTrackStatus(id: string, title: string, status: TrackStatus['status'
 describe('PlaylistActionsDropdown', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockExcludedIds = new Set<number>();
     mockDetectionData = { found: true, version: '6', dbPath: '/fake', isRunning: false };
     hookReturn = {
       phase: 'idle',
@@ -457,6 +466,25 @@ describe('PlaylistActionsDropdown', () => {
       mockDetectionData = { found: false, version: null, dbPath: null, isRunning: false };
       render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" editAction={editAction} />);
       expect(screen.getByRole('button')).toBeInTheDocument();
+    });
+  });
+
+  describe('exclusion filtering', () => {
+    it('passes only non-excluded tracks to useRekordboxExport', () => {
+      const track1 = { ...mockTrack, id: 1 };
+      const track2 = { ...mockTrack, id: 2 };
+      mockExcludedIds = new Set([2]);
+      render(<PlaylistActionsDropdown tracks={[track1, track2]} playlistName="My Playlist" playlistId="pl-1" />);
+      expect(useRekordboxExportMock).toHaveBeenCalledWith([track1], 'My Playlist');
+    });
+
+    it('disables the export menu item when all tracks are excluded', async () => {
+      const user = userEvent.setup();
+      mockExcludedIds = new Set([mockTrack.id]);
+      render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" playlistId="pl-1" />);
+      await user.click(screen.getByRole('button', { name: 'moreActions' }));
+      const exportItem = screen.getByRole('menuitem');
+      expect(exportItem).toHaveAttribute('data-disabled');
     });
   });
 });

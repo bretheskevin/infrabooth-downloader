@@ -9,6 +9,10 @@ export function useDownloadSelected(
   outputDir?: string,
 ) {
   return useCallback(async () => {
+    if (selectedTracks.length === 0) {
+      clearSelection();
+      return;
+    }
     await onDownloadTracks(selectedTracks, title, outputDir);
     clearSelection();
   }, [selectedTracks, title, outputDir, onDownloadTracks, clearSelection]);

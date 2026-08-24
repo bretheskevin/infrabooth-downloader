@@ -15,6 +15,7 @@ interface TrackListToolbarProps {
   onToggleAll: () => void;
   sort?: SortConfig<SortField>;
   onPlayShuffled?: () => void;
+  canExclude?: boolean;
 }
 
 export function TrackListToolbar({
@@ -24,10 +25,11 @@ export function TrackListToolbar({
   onToggleAll,
   sort,
   onPlayShuffled,
+  canExclude,
 }: TrackListToolbarProps) {
   const { t } = useTranslation();
   const isWidescreen = useIsWidescreen();
-  const showSelectAll = isDownloadEnabled && hasSelectableTracks;
+  const showSelectAll = (isDownloadEnabled || !!canExclude) && hasSelectableTracks;
 
   return (
     <div className="flex items-center justify-between px-3">
