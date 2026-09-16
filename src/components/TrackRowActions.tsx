@@ -13,7 +13,9 @@ import {
 import { cn } from '@/lib/utils';
 import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
 import type { LikeState } from '@/hooks/useLikeTrack';
-import { useMessagesStore, type ShareTrackInfo } from '@/features/messages/store';
+import { useMessagesStore } from '@/features/messages/store';
+import { usePlayerStore, buildPlaybackQueue } from '@/features/player';
+import type { TrackInfo } from '@/bindings';
 import { useDownloadStateStore } from '@/hooks/useDownloadState';
 import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
 import { useLinkActions } from '@/hooks/useLinkActions';
@@ -21,14 +23,11 @@ import { useIsSignedIn } from '@/features/auth/store';
 import { useTrackExclusion } from '@/features/rekordbox-export/hooks/useTrackExclusion';
 
 export interface TrackMenuItemsProps {
-  permalinkUrl: string;
-  trackId: number;
+  track: TrackInfo;
   variant: 'context' | 'dropdown';
   onCloseMenu?: () => void;
   onRemoveFromPlaylist?: () => void;
-  onAddToQueue?: () => void;
   likeState?: LikeState;
-  shareInfo?: ShareTrackInfo;
 }
 
 export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLink: () => void; onOpenInBrowser: () => void }) {
@@ -47,30 +46,31 @@ export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLi
   );
 }
 
-export function TrackMenuItems({
-  permalinkUrl,
-  trackId,
-  variant,
-  onCloseMenu,
-  onRemoveFromPlaylist,
-  onAddToQueue,
-  likeState,
-  shareInfo,
-}: TrackMenuItemsProps) {
+export function TrackMenuItems({ track, variant, onCloseMenu, onRemoveFromPlaylist, likeState }: TrackMenuItemsProps) {
   const { t } = useTranslation();
   const isSignedIn = useIsSignedIn();
-  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(permalinkUrl);
-  const filePath = useDownloadStateStore((s) => s.states.get(String(trackId))?.filePath);
+  const { handleCopyLink, handleOpenInBrowser } = useLinkActions(track.permalink_url);
+  const filePath = useDownloadStateStore((s) => s.states.get(String(track.id))?.filePath);
   const onOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
-  const { isExcluded, toggle: onToggleExcluded } = useTrackExclusion(trackId);
+  const { isExcluded, toggle: onToggleExcluded } = useTrackExclusion(track.id);
+
+  const shareInfo = {
+    trackId: track.id,
+    title: track.title,
+    artist: track.user.username,
+    artworkUrl: track.artwork_url,
+    permalinkUrl: track.permalink_url,
+  };
 
   const handleShareByDm = () => {
-    if (!shareInfo) return;
     useMessagesStore.getState().openShareDialog(shareInfo);
     onCloseMenu?.();
   };
 
-  const canShare = isSignedIn && !!shareInfo;
+  const handleAddToQueue = () => {
+    const [item] = buildPlaybackQueue([track]);
+    if (item) usePlayerStore.getState().addToQueue(item);
+  };
 
   if (variant === 'context') {
     return (
@@ -107,19 +107,15 @@ export function TrackMenuItems({
                 {t(likeState.isLiked ? 'trackMenu.unlike' : 'trackMenu.like')}
               </ContextMenuItem>
             )}
-            {onAddToQueue && (
-              <ContextMenuItem onClick={onAddToQueue}>
-                <ListPlus className="mr-2 h-4 w-4" />
-                {t('trackMenu.addToQueue')}
-              </ContextMenuItem>
-            )}
-            <PlaylistPickerSubmenu trackId={trackId} variant="context" onSuccess={onCloseMenu} />
-            {canShare && (
-              <ContextMenuItem onClick={handleShareByDm}>
-                <Send className="mr-2 h-4 w-4" />
-                {t('trackMenu.shareByDm')}
-              </ContextMenuItem>
-            )}
+            <ContextMenuItem onClick={handleAddToQueue}>
+              <ListPlus className="mr-2 h-4 w-4" />
+              {t('trackMenu.addToQueue')}
+            </ContextMenuItem>
+            <PlaylistPickerSubmenu trackId={track.id} variant="context" onSuccess={onCloseMenu} />
+            <ContextMenuItem onClick={handleShareByDm}>
+              <Send className="mr-2 h-4 w-4" />
+              {t('trackMenu.shareByDm')}
+            </ContextMenuItem>
             {onRemoveFromPlaylist && (
               <ContextMenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -166,19 +162,15 @@ export function TrackMenuItems({
               {t(likeState.isLiked ? 'trackMenu.unlike' : 'trackMenu.like')}
             </DropdownMenuItem>
           )}
-          {onAddToQueue && (
-            <DropdownMenuItem onClick={onAddToQueue}>
-              <ListPlus className="h-4 w-4" />
-              {t('trackMenu.addToQueue')}
-            </DropdownMenuItem>
-          )}
-          <PlaylistPickerSubmenu trackId={trackId} variant="dropdown" onSuccess={onCloseMenu} />
-          {canShare && (
-            <DropdownMenuItem onClick={handleShareByDm}>
-              <Send className="h-4 w-4" />
-              {t('trackMenu.shareByDm')}
-            </DropdownMenuItem>
-          )}
+          <DropdownMenuItem onClick={handleAddToQueue}>
+            <ListPlus className="h-4 w-4" />
+            {t('trackMenu.addToQueue')}
+          </DropdownMenuItem>
+          <PlaylistPickerSubmenu trackId={track.id} variant="dropdown" onSuccess={onCloseMenu} />
+          <DropdownMenuItem onClick={handleShareByDm}>
+            <Send className="h-4 w-4" />
+            {t('trackMenu.shareByDm')}
+          </DropdownMenuItem>
           {onRemoveFromPlaylist && (
             <DropdownMenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
               <Trash2 className="h-4 w-4" />
@@ -192,62 +184,42 @@ export function TrackMenuItems({
 }
 
 interface TrackRowActionsContextContentProps {
-  permalinkUrl: string;
-  trackId: number;
+  track: TrackInfo;
   onCloseMenu: () => void;
   onRemoveFromPlaylist?: () => void;
-  onAddToQueue?: () => void;
   likeState?: LikeState;
-  shareInfo?: ShareTrackInfo;
 }
 
-export function TrackRowActionsContextContent({
-  permalinkUrl,
-  trackId,
-  onCloseMenu,
-  onRemoveFromPlaylist,
-  onAddToQueue,
-  likeState,
-  shareInfo,
-}: TrackRowActionsContextContentProps) {
+export function TrackRowActionsContextContent({ track, onCloseMenu, onRemoveFromPlaylist, likeState }: TrackRowActionsContextContentProps) {
   return (
     <ContextMenuContent>
       <TrackMenuItems
-        permalinkUrl={permalinkUrl}
-        trackId={trackId}
+        track={track}
         variant="context"
         onCloseMenu={onCloseMenu}
         onRemoveFromPlaylist={onRemoveFromPlaylist}
-        onAddToQueue={onAddToQueue}
         likeState={likeState}
-        shareInfo={shareInfo}
       />
     </ContextMenuContent>
   );
 }
 
 interface TrackRowActionsDropdownProps {
-  permalinkUrl: string;
-  trackId: number;
+  track: TrackInfo;
   dropdownMenuOpen: boolean;
   onDropdownMenuOpenChange: (open: boolean) => void;
   actionSlot?: React.ReactNode;
   onRemoveFromPlaylist?: () => void;
-  onAddToQueue?: () => void;
   likeState?: LikeState;
-  shareInfo?: ShareTrackInfo;
 }
 
 export function TrackRowActionsDropdown({
-  permalinkUrl,
-  trackId,
+  track,
   dropdownMenuOpen,
   onDropdownMenuOpenChange,
   actionSlot,
   onRemoveFromPlaylist,
-  onAddToQueue,
   likeState,
-  shareInfo,
 }: TrackRowActionsDropdownProps) {
   const closeMenu = useCallback(() => onDropdownMenuOpenChange(false), [onDropdownMenuOpenChange]);
 
@@ -266,14 +238,11 @@ export function TrackRowActionsDropdown({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <TrackMenuItems
-            permalinkUrl={permalinkUrl}
-            trackId={trackId}
+            track={track}
             variant="dropdown"
             onCloseMenu={closeMenu}
             onRemoveFromPlaylist={onRemoveFromPlaylist}
-            onAddToQueue={onAddToQueue}
             likeState={likeState}
-            shareInfo={shareInfo}
           />
         </DropdownMenuContent>
       </DropdownMenu>

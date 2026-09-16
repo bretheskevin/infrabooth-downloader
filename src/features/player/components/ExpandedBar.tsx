@@ -134,21 +134,9 @@ export function ExpandedBar() {
             </TooltipContent>
           </Tooltip>
 
-          <TrackActionsDropdown
-            trackId={currentTrack.trackId}
-            permalinkUrl={currentTrack.trackUrl}
-            triggerClassName="h-7 w-7"
-            contentSide="top"
-            contentAlign="end"
-            likeState={likeState}
-            shareInfo={{
-              trackId: currentTrack.trackId,
-              title: currentTrack.title,
-              artist: currentTrack.artist,
-              artworkUrl: currentTrack.artworkUrl,
-              permalinkUrl: currentTrack.trackUrl,
-            }}
-          />
+          {trackInfo && (
+            <TrackActionsDropdown track={trackInfo} triggerClassName="h-7 w-7" contentSide="top" contentAlign="end" likeState={likeState} />
+          )}
 
           <Button
             variant="ghost"

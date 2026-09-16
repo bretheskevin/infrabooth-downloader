@@ -34,14 +34,6 @@ export function RailNowPlaying() {
 
   if (!currentTrack || state === 'stopped') return null;
 
-  const shareInfo = {
-    trackId: currentTrack.trackId,
-    title: currentTrack.title,
-    artist: currentTrack.artist,
-    artworkUrl: currentTrack.artworkUrl,
-    permalinkUrl: currentTrack.trackUrl,
-  };
-
   return (
     <div className="px-4 pb-3 border-b border-border space-y-3">
       <div className="flex items-center">
@@ -70,14 +62,7 @@ export function RailNowPlaying() {
       </div>
 
       <div className="flex items-center justify-between !mt-0.5">
-        <TrackActionsDropdown
-          trackId={currentTrack.trackId}
-          permalinkUrl={currentTrack.trackUrl}
-          triggerClassName="h-8 w-8"
-          contentSide="top"
-          contentAlign="start"
-          shareInfo={shareInfo}
-        />
+        {trackInfo && <TrackActionsDropdown track={trackInfo} triggerClassName="h-8 w-8" contentSide="top" contentAlign="start" />}
         <ShuffleButton className="h-8 w-8" iconClassName="h-3.5 w-3.5" />
         <PreviousButton className="h-8 w-8" iconClassName="h-3.5 w-3.5" />
         <PlayPauseButton className="h-11 w-11 shadow-[0_0_16px_rgba(var(--primary-rgb),0.3)]" />

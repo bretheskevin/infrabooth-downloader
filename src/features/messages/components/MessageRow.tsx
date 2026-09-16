@@ -1,12 +1,10 @@
 import { useTranslation } from 'react-i18next';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { usePlayerStore } from '@/features/player';
-import { toPlaybackItem } from '../utils/conversationQueue';
 import { useMessagesStore } from '../store';
 import { MessageTrackCard } from './MessageTrackCard';
 import { MessagePlaylistCard } from './MessagePlaylistCard';
 import { MessageUserCard } from './MessageUserCard';
-import type { ConversationMessage, MessageEmbed, MessageTrackEmbed, MessageUser, TrackCore } from '@/bindings';
+import type { ConversationMessage, MessageEmbed, MessageTrackEmbed, MessageUser, TrackCore, TrackInfo } from '@/bindings';
 import { formatChatTimestamp } from '@/lib/date';
 import { useResolveEmbed } from '../hooks/useResolveEmbed';
 import { linkifyText } from '@/lib/linkify';
@@ -44,11 +42,23 @@ function embedToTrackCore(embed: MessageTrackEmbed): TrackCore {
 
 function renderTrackEmbed(embed: MessageTrackEmbed, trackDownload: TrackDownloadControls, onPlayTrack: () => void) {
   const handleDownload = () => void trackDownload.downloadTrackCore(embedToTrackCore(embed));
+  const track: TrackInfo = {
+    id: embed.id,
+    title: embed.title,
+    user: { id: embed.artist_id, username: embed.artist, avatar_url: null },
+    artwork_url: embed.artwork_url,
+    duration: embed.duration_ms,
+    permalink_url: embed.permalink_url,
+    waveform_url: embed.waveform_url,
+    downloadable: false,
+    download_url: null,
+    secret_token: null,
+  };
   return (
     <MessageTrackCard
       embed={embed}
+      track={track}
       onPlay={onPlayTrack}
-      onAddToQueue={() => usePlayerStore.getState().addToQueue(toPlaybackItem(embed))}
       downloadState={trackDownload.getTrackState(embed.id)}
       onDownload={handleDownload}
       onRetry={handleDownload}

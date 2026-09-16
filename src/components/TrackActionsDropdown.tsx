@@ -6,29 +6,23 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '@/compon
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { TrackMenuItems } from '@/components/TrackRowActions';
 import type { LikeState } from '@/hooks/useLikeTrack';
-import type { ShareTrackInfo } from '@/features/messages/store';
+import type { TrackInfo } from '@/bindings';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 
 interface TrackActionsDropdownProps {
-  trackId: number;
-  permalinkUrl: string;
+  track: TrackInfo;
   triggerClassName?: string;
   contentSide?: 'top' | 'bottom';
   contentAlign?: 'start' | 'end';
-  onAddToQueue?: () => void;
   likeState?: LikeState;
-  shareInfo?: ShareTrackInfo;
 }
 
 export function TrackActionsDropdown({
-  trackId,
-  permalinkUrl,
+  track,
   triggerClassName,
   contentSide = 'top',
   contentAlign = 'end',
-  onAddToQueue,
   likeState,
-  shareInfo,
 }: TrackActionsDropdownProps) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -59,15 +53,7 @@ export function TrackActionsDropdown({
         </TooltipContent>
       </Tooltip>
       <DropdownMenuContent side={contentSide} align={contentAlign}>
-        <TrackMenuItems
-          permalinkUrl={permalinkUrl}
-          trackId={trackId}
-          variant="dropdown"
-          onCloseMenu={closeMenu}
-          onAddToQueue={onAddToQueue}
-          likeState={likeState}
-          shareInfo={shareInfo}
-        />
+        <TrackMenuItems track={track} variant="dropdown" onCloseMenu={closeMenu} likeState={likeState} />
       </DropdownMenuContent>
     </DropdownMenu>
   );

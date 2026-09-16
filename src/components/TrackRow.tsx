@@ -5,7 +5,6 @@ import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 import { useLikeTrack } from '@/hooks/useLikeTrack';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
-import { usePlayerStore, buildPlaybackQueue } from '@/features/player';
 import { TrackRowContent } from '@/components/TrackRowContent';
 import { TrackRowActionsContextContent, TrackRowActionsDropdown } from '@/components/TrackRowActions';
 import { useArtistProfileStore } from '@/features/artist-profile';
@@ -77,10 +76,6 @@ export function TrackRow({
     [claimMenu],
   );
   const likeState = useLikeTrack(track);
-  const handleAddToQueue = useCallback(() => {
-    const [item] = buildPlaybackQueue([track]);
-    if (item) usePlayerStore.getState().addToQueue(item);
-  }, [track]);
 
   const handleArtistClick = useCallback(() => {
     useArtistProfileStore.getState().openProfile(track.user.id, track.user.username);
@@ -95,14 +90,6 @@ export function TrackRow({
     setIsRowHovered(false);
     onHoverEnd?.();
   }, [onHoverEnd]);
-
-  const shareInfo = {
-    trackId: track.id,
-    title: track.title,
-    artist: track.user.username,
-    artworkUrl: track.artwork_url,
-    permalinkUrl: track.permalink_url,
-  };
 
   const handleContentMouseDown = useCallback(
     (e: React.MouseEvent) => {
@@ -155,26 +142,20 @@ export function TrackRow({
             </span>
           )}
           <TrackRowActionsDropdown
-            permalinkUrl={track.permalink_url}
-            trackId={track.id}
+            track={track}
             dropdownMenuOpen={dropdownMenuOpen}
             onDropdownMenuOpenChange={handleDropdownMenuOpenChange}
             actionSlot={actionSlot}
             onRemoveFromPlaylist={onRemoveFromPlaylist}
-            onAddToQueue={handleAddToQueue}
             likeState={likeState}
-            shareInfo={shareInfo}
           />
         </div>
       </ContextMenuTrigger>
       <TrackRowActionsContextContent
-        permalinkUrl={track.permalink_url}
-        trackId={track.id}
+        track={track}
         onCloseMenu={() => setContextMenuKey((k) => k + 1)}
         onRemoveFromPlaylist={onRemoveFromPlaylist}
-        onAddToQueue={handleAddToQueue}
         likeState={likeState}
-        shareInfo={shareInfo}
       />
     </ContextMenu>
   );

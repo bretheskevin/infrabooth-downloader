@@ -1,21 +1,21 @@
 import { formatDuration } from '@/lib/format';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TrackActionsDropdown } from '@/components/TrackActionsDropdown';
-import type { MessageTrackEmbed } from '@/bindings';
+import type { MessageTrackEmbed, TrackInfo } from '@/bindings';
 import { ArtistLink } from '@/components/ArtistLink';
 import type { DownloadState } from '@/types/download';
 import { TrackDownloadAction } from '@/components/TrackDownloadAction';
 
 interface MessageTrackCardProps {
   embed: MessageTrackEmbed;
+  track: TrackInfo;
   onPlay: () => void;
-  onAddToQueue: () => void;
   downloadState: DownloadState;
   onDownload: () => void;
   onRetry: () => void;
 }
 
-export function MessageTrackCard({ embed, onPlay, onAddToQueue, downloadState, onDownload, onRetry }: MessageTrackCardProps) {
+export function MessageTrackCard({ embed, track, onPlay, downloadState, onDownload, onRetry }: MessageTrackCardProps) {
   return (
     <div
       role="button"
@@ -40,14 +40,7 @@ export function MessageTrackCard({ embed, onPlay, onAddToQueue, downloadState, o
       <span className="text-xs text-muted-foreground flex-shrink-0">{formatDuration(embed.duration_ms)}</span>
       <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         <TrackDownloadAction state={downloadState} onDownload={onDownload} onRetry={onRetry} />
-        <TrackActionsDropdown
-          trackId={Number(embed.id)}
-          permalinkUrl={embed.permalink_url}
-          triggerClassName="h-7 w-7"
-          contentSide="bottom"
-          contentAlign="end"
-          onAddToQueue={onAddToQueue}
-        />
+        <TrackActionsDropdown track={track} triggerClassName="h-7 w-7" contentSide="bottom" contentAlign="end" />
       </div>
     </div>
   );
