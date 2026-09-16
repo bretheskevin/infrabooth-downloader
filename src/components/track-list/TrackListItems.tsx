@@ -13,7 +13,6 @@ interface TrackListItemsProps {
   virtualized: boolean;
   itemHeight: number;
   subtitleSlot?: (track: TrackInfo, index: number) => React.ReactNode;
-  onRemoveFromPlaylist?: (track: TrackInfo) => void;
   initialScrollOffset?: number;
   onScrollOffsetChange?: (offset: number) => void;
 }
@@ -23,7 +22,6 @@ export function TrackListItems({
   virtualized,
   itemHeight,
   subtitleSlot,
-  onRemoveFromPlaylist,
   initialScrollOffset,
   onScrollOffsetChange,
 }: TrackListItemsProps) {
@@ -35,7 +33,6 @@ export function TrackListItems({
         tracks={tracks}
         itemHeight={itemHeight}
         subtitleSlot={subtitleSlot}
-        onRemoveFromPlaylist={onRemoveFromPlaylist}
         initialScrollOffset={initialScrollOffset}
         onScrollOffsetChange={onScrollOffsetChange}
       />
@@ -45,13 +42,7 @@ export function TrackListItems({
   return (
     <div className={cn('flex flex-col gap-0.5 overflow-y-auto min-h-0', miniPillVisible && MINI_PILL_BOTTOM_PADDING)}>
       {tracks.map((track, index) => (
-        <InteractiveTrackRow
-          key={track.id}
-          track={track}
-          index={index}
-          subtitleSlot={subtitleSlot?.(track, index)}
-          onRemoveFromPlaylist={onRemoveFromPlaylist ? () => onRemoveFromPlaylist(track) : undefined}
-        />
+        <InteractiveTrackRow key={track.id} track={track} index={index} subtitleSlot={subtitleSlot?.(track, index)} />
       ))}
     </div>
   );
@@ -61,7 +52,6 @@ function VirtualizedTrackList({
   tracks,
   itemHeight,
   subtitleSlot,
-  onRemoveFromPlaylist,
   initialScrollOffset,
   onScrollOffsetChange,
 }: Omit<TrackListItemsProps, 'virtualized'>) {
@@ -90,12 +80,7 @@ function VirtualizedTrackList({
         if (!track) return null;
         return (
           <VirtualRow key={track.id} size={virtualItem.size} start={virtualItem.start}>
-            <InteractiveTrackRow
-              track={track}
-              index={virtualItem.index}
-              subtitleSlot={subtitleSlot?.(track, virtualItem.index)}
-              onRemoveFromPlaylist={onRemoveFromPlaylist ? () => onRemoveFromPlaylist(track) : undefined}
-            />
+            <InteractiveTrackRow track={track} index={virtualItem.index} subtitleSlot={subtitleSlot?.(track, virtualItem.index)} />
           </VirtualRow>
         );
       })}

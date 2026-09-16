@@ -14,6 +14,7 @@ export interface TrackListContextValue {
   };
   animate?: boolean;
   playlistId?: string;
+  removeFromPlaylist?: (track: TrackInfo) => void;
 }
 
 export const TrackListContext = createContext<TrackListContextValue | null>(null);

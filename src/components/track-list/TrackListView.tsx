@@ -215,13 +215,13 @@ export function TrackListView<F extends string = string>({
               nonSelectableIds: state.nonSelectableIds,
             }}
             animate={state.shouldAnimate}
+            removeFromPlaylist={trackList?.onRemoveFromPlaylist}
           >
             <TrackListItems
               tracks={state.displayTracks}
               virtualized={trackList?.virtualized ?? true}
               itemHeight={trackList?.itemHeight ?? 56}
               subtitleSlot={trackList?.subtitleSlot}
-              onRemoveFromPlaylist={trackList?.onRemoveFromPlaylist}
               initialScrollOffset={trackList?.initialScrollOffset}
               onScrollOffsetChange={trackList?.onScrollOffsetChange}
             />

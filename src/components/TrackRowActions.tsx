@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTrackListContextOptional } from '@/components/track-list-context';
 import { Ban, Heart, Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Send, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -22,11 +23,19 @@ import { useLinkActions } from '@/hooks/useLinkActions';
 import { useIsSignedIn } from '@/features/auth/store';
 import { useTrackExclusion } from '@/features/rekordbox-export/hooks/useTrackExclusion';
 
+function useTrackRemoval(track: TrackInfo): (() => void) | undefined {
+  const ctx = useTrackListContextOptional();
+  const removeFromPlaylist = ctx?.removeFromPlaylist;
+  const handleRemove = useCallback(() => {
+    removeFromPlaylist?.(track);
+  }, [removeFromPlaylist, track]);
+  return removeFromPlaylist ? handleRemove : undefined;
+}
+
 export interface TrackMenuItemsProps {
   track: TrackInfo;
   variant: 'context' | 'dropdown';
   onCloseMenu?: () => void;
-  onRemoveFromPlaylist?: () => void;
   likeState?: LikeState;
 }
 
@@ -46,13 +55,14 @@ export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLi
   );
 }
 
-export function TrackMenuItems({ track, variant, onCloseMenu, onRemoveFromPlaylist, likeState }: TrackMenuItemsProps) {
+export function TrackMenuItems({ track, variant, onCloseMenu, likeState }: TrackMenuItemsProps) {
   const { t } = useTranslation();
   const isSignedIn = useIsSignedIn();
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(track.permalink_url);
   const filePath = useDownloadStateStore((s) => s.states.get(String(track.id))?.filePath);
   const onOpenFileLocation = useOpenDownloadFolder(filePath ?? null);
   const { isExcluded, toggle: onToggleExcluded } = useTrackExclusion(track.id);
+  const onRemoveFromPlaylist = useTrackRemoval(track);
 
   const shareInfo = {
     trackId: track.id,
@@ -186,20 +196,13 @@ export function TrackMenuItems({ track, variant, onCloseMenu, onRemoveFromPlayli
 interface TrackRowActionsContextContentProps {
   track: TrackInfo;
   onCloseMenu: () => void;
-  onRemoveFromPlaylist?: () => void;
   likeState?: LikeState;
 }
 
-export function TrackRowActionsContextContent({ track, onCloseMenu, onRemoveFromPlaylist, likeState }: TrackRowActionsContextContentProps) {
+export function TrackRowActionsContextContent({ track, onCloseMenu, likeState }: TrackRowActionsContextContentProps) {
   return (
     <ContextMenuContent>
-      <TrackMenuItems
-        track={track}
-        variant="context"
-        onCloseMenu={onCloseMenu}
-        onRemoveFromPlaylist={onRemoveFromPlaylist}
-        likeState={likeState}
-      />
+      <TrackMenuItems track={track} variant="context" onCloseMenu={onCloseMenu} likeState={likeState} />
     </ContextMenuContent>
   );
 }
@@ -209,7 +212,6 @@ interface TrackRowActionsDropdownProps {
   dropdownMenuOpen: boolean;
   onDropdownMenuOpenChange: (open: boolean) => void;
   actionSlot?: React.ReactNode;
-  onRemoveFromPlaylist?: () => void;
   likeState?: LikeState;
 }
 
@@ -218,7 +220,6 @@ export function TrackRowActionsDropdown({
   dropdownMenuOpen,
   onDropdownMenuOpenChange,
   actionSlot,
-  onRemoveFromPlaylist,
   likeState,
 }: TrackRowActionsDropdownProps) {
   const closeMenu = useCallback(() => onDropdownMenuOpenChange(false), [onDropdownMenuOpenChange]);
@@ -237,13 +238,7 @@ export function TrackRowActionsDropdown({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <TrackMenuItems
-            track={track}
-            variant="dropdown"
-            onCloseMenu={closeMenu}
-            onRemoveFromPlaylist={onRemoveFromPlaylist}
-            likeState={likeState}
-          />
+          <TrackMenuItems track={track} variant="dropdown" onCloseMenu={closeMenu} likeState={likeState} />
         </DropdownMenuContent>
       </DropdownMenu>
     </div>

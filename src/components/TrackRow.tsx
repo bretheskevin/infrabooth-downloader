@@ -27,7 +27,6 @@ interface TrackRowProps {
   onHoverStart?: () => void;
   onHoverEnd?: () => void;
   onMouseDown?: () => void;
-  onRemoveFromPlaylist?: () => void;
 }
 
 export function TrackRow({
@@ -45,7 +44,6 @@ export function TrackRow({
   onHoverStart,
   onHoverEnd,
   onMouseDown,
-  onRemoveFromPlaylist,
 }: TrackRowProps) {
   const { t } = useTranslation();
   const [isRowHovered, setIsRowHovered] = useState(false);
@@ -146,17 +144,11 @@ export function TrackRow({
             dropdownMenuOpen={dropdownMenuOpen}
             onDropdownMenuOpenChange={handleDropdownMenuOpenChange}
             actionSlot={actionSlot}
-            onRemoveFromPlaylist={onRemoveFromPlaylist}
             likeState={likeState}
           />
         </div>
       </ContextMenuTrigger>
-      <TrackRowActionsContextContent
-        track={track}
-        onCloseMenu={() => setContextMenuKey((k) => k + 1)}
-        onRemoveFromPlaylist={onRemoveFromPlaylist}
-        likeState={likeState}
-      />
+      <TrackRowActionsContextContent track={track} onCloseMenu={() => setContextMenuKey((k) => k + 1)} likeState={likeState} />
     </ContextMenu>
   );
 }

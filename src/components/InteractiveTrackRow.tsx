@@ -39,10 +39,21 @@ export function TrackListProvider({
   selection,
   animate,
   playlistId,
+  removeFromPlaylist,
 }: TrackListProviderProps) {
   const ctx = useMemo(
-    () => ({ playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate, playlistId }),
-    [playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate, playlistId],
+    () => ({
+      playTrack,
+      downloadTrack,
+      isDownloadEnabled,
+      downloadVariant,
+      downloadedIds,
+      selection,
+      animate,
+      playlistId,
+      removeFromPlaylist,
+    }),
+    [playTrack, downloadTrack, isDownloadEnabled, downloadVariant, downloadedIds, selection, animate, playlistId, removeFromPlaylist],
   );
   return <TrackListContext.Provider value={ctx}>{children}</TrackListContext.Provider>;
 }
@@ -51,17 +62,10 @@ interface InteractiveTrackRowProps {
   track: TrackInfo;
   index: number;
   subtitleSlot?: React.ReactNode;
-  onRemoveFromPlaylist?: () => void;
   className?: string;
 }
 
-export const InteractiveTrackRow = memo(function InteractiveTrackRow({
-  track,
-  index,
-  subtitleSlot,
-  onRemoveFromPlaylist,
-  className,
-}: InteractiveTrackRowProps) {
+export const InteractiveTrackRow = memo(function InteractiveTrackRow({ track, index, subtitleSlot, className }: InteractiveTrackRowProps) {
   const ctx = useTrackListContext();
 
   // Player state
@@ -140,7 +144,6 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({
       onHoverEnd={onHoverEnd}
       onMouseDown={handleMouseDown}
       subtitleSlot={subtitleSlot}
-      onRemoveFromPlaylist={onRemoveFromPlaylist}
       leftSlot={
         selection ? (
           <div
