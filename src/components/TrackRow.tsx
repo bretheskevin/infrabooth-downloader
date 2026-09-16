@@ -12,38 +12,44 @@ import { useTrackExclusion } from '@/features/rekordbox-export/hooks/useTrackExc
 import type { TrackInfo } from '@/bindings';
 import type { DownloadState } from '@/types/download';
 
-interface TrackRowProps {
-  track: TrackInfo;
-  isCurrentlyPlaying?: boolean;
-  isPlayerPlaying?: boolean;
-  onPlayPause: () => void;
-  artworkUrl: string | null;
-  animationDelay?: number;
-  className?: string;
-  leftSlot?: React.ReactNode;
-  actionSlot?: React.ReactNode;
-  downloadState?: DownloadState;
-  subtitleSlot?: React.ReactNode;
+export interface TrackRowPlayback {
+  isCurrent?: boolean;
+  isPlaying?: boolean;
+  onToggle: () => void;
+}
+
+export interface TrackRowSlots {
+  left?: React.ReactNode;
+  action?: React.ReactNode;
+  subtitle?: React.ReactNode;
+}
+
+export interface TrackRowInteractions {
   onHoverStart?: () => void;
   onHoverEnd?: () => void;
   onMouseDown?: () => void;
 }
 
+interface TrackRowProps {
+  track: TrackInfo;
+  artworkUrl: string | null;
+  downloadState?: DownloadState;
+  animationDelay?: number;
+  className?: string;
+  playback: TrackRowPlayback;
+  slots?: TrackRowSlots;
+  interactions?: TrackRowInteractions;
+}
+
 export function TrackRow({
   track,
-  isCurrentlyPlaying = false,
-  isPlayerPlaying = false,
-  onPlayPause,
   artworkUrl,
   animationDelay,
   className,
-  leftSlot,
-  actionSlot,
   downloadState,
-  subtitleSlot,
-  onHoverStart,
-  onHoverEnd,
-  onMouseDown,
+  playback: { isCurrent = false, isPlaying = false, onToggle },
+  slots: { left, action, subtitle } = {},
+  interactions: { onHoverStart, onHoverEnd, onMouseDown } = {},
 }: TrackRowProps) {
   const { t } = useTranslation();
   const [isRowHovered, setIsRowHovered] = useState(false);
@@ -111,7 +117,7 @@ export function TrackRow({
         <div
           className={cn(
             'group flex items-center gap-3 px-3 py-2 rounded-md',
-            isCurrentlyPlaying && 'bg-primary/5',
+            isCurrent && 'bg-primary/5',
             (downloadState?.status === 'completed' || isExcluded) && 'opacity-60',
             className,
           )}
@@ -119,18 +125,18 @@ export function TrackRow({
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {leftSlot}
+          {left}
           <TrackRowContent
             track={track}
             artworkUrl={artworkUrl}
-            isCurrentlyPlaying={isCurrentlyPlaying}
-            isPlayerPlaying={isPlayerPlaying}
+            isCurrentlyPlaying={isCurrent}
+            isPlayerPlaying={isPlaying}
             isRowHovered={isRowHovered}
-            onPlayPause={onPlayPause}
+            onPlayPause={onToggle}
             onMouseDown={handleContentMouseDown}
             onArtistClick={track.user.id > 0 ? handleArtistClick : undefined}
             downloadProgress={downloadProgress}
-            subtitleSlot={subtitleSlot}
+            subtitleSlot={subtitle}
             isLiked={likeState?.isLiked}
           />
           {isExcluded && (
@@ -143,7 +149,7 @@ export function TrackRow({
             track={track}
             dropdownMenuOpen={dropdownMenuOpen}
             onDropdownMenuOpenChange={handleDropdownMenuOpenChange}
-            actionSlot={actionSlot}
+            actionSlot={action}
             likeState={likeState}
           />
         </div>

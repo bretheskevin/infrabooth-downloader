@@ -133,19 +133,13 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({ track, in
   return (
     <TrackRow
       track={track}
-      isCurrentlyPlaying={isCurrentlyPlaying}
-      isPlayerPlaying={isPlayerPlaying}
-      onPlayPause={handlePlayPause}
       artworkUrl={artworkUrl}
       animationDelay={animationDelay}
       className={computedClassName}
       downloadState={downloadState}
-      onHoverStart={onHoverStart}
-      onHoverEnd={onHoverEnd}
-      onMouseDown={handleMouseDown}
-      subtitleSlot={subtitleSlot}
-      leftSlot={
-        selection ? (
+      playback={{ isCurrent: isCurrentlyPlaying, isPlaying: isPlayerPlaying, onToggle: handlePlayPause }}
+      slots={{
+        left: selection ? (
           <div
             className={cn('flex items-center gap-3 shrink-0 self-stretch -my-2 py-2 -ml-3 pl-3', !isDisabled && 'cursor-pointer')}
             onClick={!isDisabled ? handleToggle : undefined}
@@ -161,18 +155,18 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({ track, in
               {isCurrentlyPlaying ? <EqualizerBars className="h-3 w-3 ml-auto" /> : index + 1}
             </span>
           </div>
-        ) : undefined
-      }
-      actionSlot={
-        ctx.isDownloadEnabled ? (
+        ) : undefined,
+        action: ctx.isDownloadEnabled ? (
           <TrackDownloadAction
             state={downloadState}
             onDownload={handleDownload}
             onRetry={handleDownload}
             variant={ctx.downloadVariant ?? 'ghost'}
           />
-        ) : undefined
-      }
+        ) : undefined,
+        subtitle: subtitleSlot,
+      }}
+      interactions={{ onHoverStart, onHoverEnd, onMouseDown: handleMouseDown }}
     />
   );
 });
