@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Ban } from 'lucide-react';
-import { ContextMenu, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { Menu, MenuTrigger } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 import { useLikeTrack } from '@/hooks/useLikeTrack';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
@@ -106,8 +106,8 @@ export function TrackRow({
   }, [downloadState]);
 
   return (
-    <ContextMenu key={contextMenuKey} onOpenChange={handleContextMenuOpenChange}>
-      <ContextMenuTrigger asChild>
+    <Menu variant="context" key={contextMenuKey} onOpenChange={handleContextMenuOpenChange}>
+      <MenuTrigger asChild>
         <div
           className={cn(
             'group flex items-center gap-3 px-3 py-2 rounded-md',
@@ -147,8 +147,8 @@ export function TrackRow({
             likeState={likeState}
           />
         </div>
-      </ContextMenuTrigger>
+      </MenuTrigger>
       <TrackRowActionsContextContent track={track} onCloseMenu={() => setContextMenuKey((k) => k + 1)} likeState={likeState} />
-    </ContextMenu>
+    </Menu>
   );
 }

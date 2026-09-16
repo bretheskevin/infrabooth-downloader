@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Search, Check, ListMusic, Plus } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { logger } from '@/lib/logger';
-import { ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent, ContextMenuPortal } from '@/components/ui/context-menu';
-import { DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from '@/components/ui/dropdown-menu';
+import { MenuSub, MenuSubTrigger, MenuSubContent, MenuPortal } from '@/components/ui/menu';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -17,7 +16,6 @@ import type { PlaylistForTrackPicker } from '@/bindings';
 
 interface PlaylistPickerSubmenuProps {
   trackId: number;
-  variant?: 'context' | 'dropdown';
   onSuccess?: () => void;
 }
 
@@ -208,37 +206,21 @@ function PlaylistPickerContent({ trackId, onSuccess, onOpenChange }: PlaylistCon
   );
 }
 
-export function PlaylistPickerSubmenu({ trackId, variant = 'context', onSuccess }: PlaylistPickerSubmenuProps) {
+export function PlaylistPickerSubmenu({ trackId, onSuccess }: PlaylistPickerSubmenuProps) {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
-  if (variant === 'dropdown') {
-    return (
-      <DropdownMenuSub open={isOpen} onOpenChange={setIsOpen}>
-        <DropdownMenuSubTrigger>
-          <ListMusic className="h-4 w-4" />
-          {t('trackMenu.addToPlaylist')}
-        </DropdownMenuSubTrigger>
-        <DropdownMenuPortal>
-          <DropdownMenuSubContent className="w-[220px] p-0" collisionPadding={24}>
-            <PlaylistPickerContent trackId={trackId} onSuccess={onSuccess} onOpenChange={setIsOpen} />
-          </DropdownMenuSubContent>
-        </DropdownMenuPortal>
-      </DropdownMenuSub>
-    );
-  }
-
   return (
-    <ContextMenuSub open={isOpen} onOpenChange={setIsOpen}>
-      <ContextMenuSubTrigger>
-        <ListMusic className="mr-2 h-4 w-4" />
+    <MenuSub open={isOpen} onOpenChange={setIsOpen}>
+      <MenuSubTrigger>
+        <ListMusic className="h-4 w-4" />
         {t('trackMenu.addToPlaylist')}
-      </ContextMenuSubTrigger>
-      <ContextMenuPortal>
-        <ContextMenuSubContent className="w-[220px] p-0" collisionPadding={24}>
+      </MenuSubTrigger>
+      <MenuPortal>
+        <MenuSubContent className="w-[220px] p-0" collisionPadding={24}>
           <PlaylistPickerContent trackId={trackId} onSuccess={onSuccess} onOpenChange={setIsOpen} />
-        </ContextMenuSubContent>
-      </ContextMenuPortal>
-    </ContextMenuSub>
+        </MenuSubContent>
+      </MenuPortal>
+    </MenuSub>
   );
 }

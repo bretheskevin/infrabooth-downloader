@@ -100,7 +100,7 @@ function renderMenuWithRemover(props?: Partial<React.ComponentProps<typeof Track
     <TrackListContext.Provider value={ctx}>
       <DropdownMenu defaultOpen>
         <DropdownMenuContent>
-          <TrackMenuItems track={mockTrack} variant="dropdown" {...props} />
+          <TrackMenuItems track={mockTrack} {...props} />
         </DropdownMenuContent>
       </DropdownMenu>
     </TrackListContext.Provider>,
@@ -111,7 +111,7 @@ function renderMenu(props?: Partial<React.ComponentProps<typeof TrackMenuItems>>
   return render(
     <DropdownMenu defaultOpen>
       <DropdownMenuContent>
-        <TrackMenuItems track={mockTrack} variant="dropdown" {...props} />
+        <TrackMenuItems track={mockTrack} {...props} />
       </DropdownMenuContent>
     </DropdownMenu>,
   );
@@ -194,7 +194,7 @@ describe('TrackMenuItems — remove from playlist via context', () => {
     render(
       <DropdownMenu defaultOpen>
         <DropdownMenuContent>
-          <TrackMenuItems track={mockTrack} variant="dropdown" />
+          <TrackMenuItems track={mockTrack} />
         </DropdownMenuContent>
       </DropdownMenu>,
     );
@@ -208,25 +208,15 @@ describe('TrackMenuItems — remove from playlist via context', () => {
     expect(mockRemoveFromPlaylist).toHaveBeenCalledWith(mockTrack);
   });
 
-  it('shows remove-from-playlist in context menu variant when signed in and context provides a remover', () => {
+  it('shows remove-from-playlist when signed in and context provides a remover (context variant)', () => {
     vi.mocked(useIsSignedIn).mockReturnValue(true);
-    const ctx = { ...minimalContextValue, removeFromPlaylist: mockRemoveFromPlaylist } as unknown as TrackListContextValue;
-    render(
-      <TrackListContext.Provider value={ctx}>
-        <TrackMenuItems track={mockTrack} variant="context" />
-      </TrackListContext.Provider>,
-    );
+    renderMenuWithRemover();
     expect(screen.getByText('trackMenu.removeFromPlaylist')).toBeInTheDocument();
   });
 
-  it('calls removeFromPlaylist with the track when remove item is clicked in context menu', () => {
+  it('calls removeFromPlaylist with the track when remove item is clicked', () => {
     vi.mocked(useIsSignedIn).mockReturnValue(true);
-    const ctx = { ...minimalContextValue, removeFromPlaylist: mockRemoveFromPlaylist } as unknown as TrackListContextValue;
-    render(
-      <TrackListContext.Provider value={ctx}>
-        <TrackMenuItems track={mockTrack} variant="context" />
-      </TrackListContext.Provider>,
-    );
+    renderMenuWithRemover();
     fireEvent.click(screen.getByText('trackMenu.removeFromPlaylist'));
     expect(mockRemoveFromPlaylist).toHaveBeenCalledWith(mockTrack);
   });

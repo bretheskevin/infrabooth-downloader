@@ -90,6 +90,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 - ViewModeToggle — UI control for toggling between card/list layouts
 - FilterChips, SortDirectionSelect, PreserveOrderToggle
 - FolderMetadata, OpenFolderButton, PlaylistPickerSubmenu, AppDialogs
+- `src/components/ui/menu.tsx` — polymorphic menu primitive: `<Menu variant="context|dropdown">` provides `MenuVariantContext`; sub-components (`MenuTrigger`, `MenuContent`, `MenuItem`, `MenuSeparator`, `MenuSub`, `MenuSubTrigger`, `MenuSubContent`, `MenuPortal`) read the context and render the appropriate shadcn family. `MenuItem` adds `gap-2 [&>svg]:size-4 [&>svg]:shrink-0` in context variant to match dropdown icon normalization.
 
 ## Shared Hooks (`src/hooks/`)
 - useTrackSelection, useTrackDownloader, useTrackDownload, useDownloadSelected

@@ -3,14 +3,7 @@ import { useTrackListContextOptional } from '@/components/track-list-context';
 import { Ban, Heart, Link, ExternalLink, FolderOpen, ListPlus, MoreVertical, Send, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
-import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '@/components/ui/context-menu';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Menu, MenuTrigger, MenuContent, MenuItem, MenuSeparator } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
 import { PlaylistPickerSubmenu } from '@/components/PlaylistPickerSubmenu';
 import type { LikeState } from '@/hooks/useLikeTrack';
@@ -34,7 +27,6 @@ function useTrackRemoval(track: TrackInfo): (() => void) | undefined {
 
 export interface TrackMenuItemsProps {
   track: TrackInfo;
-  variant: 'context' | 'dropdown';
   onCloseMenu?: () => void;
   likeState?: LikeState;
 }
@@ -43,19 +35,19 @@ export function LinkContextMenuItems({ onCopyLink, onOpenInBrowser }: { onCopyLi
   const { t } = useTranslation();
   return (
     <>
-      <ContextMenuItem onClick={onCopyLink}>
-        <Link className="mr-2 h-4 w-4" />
+      <MenuItem onClick={onCopyLink}>
+        <Link className="h-4 w-4" />
         {t('trackMenu.copyLink')}
-      </ContextMenuItem>
-      <ContextMenuItem onClick={onOpenInBrowser}>
-        <ExternalLink className="mr-2 h-4 w-4" />
+      </MenuItem>
+      <MenuItem onClick={onOpenInBrowser}>
+        <ExternalLink className="h-4 w-4" />
         {t('trackMenu.openInBrowser')}
-      </ContextMenuItem>
+      </MenuItem>
     </>
   );
 }
 
-export function TrackMenuItems({ track, variant, onCloseMenu, likeState }: TrackMenuItemsProps) {
+export function TrackMenuItems({ track, onCloseMenu, likeState }: TrackMenuItemsProps) {
   const { t } = useTranslation();
   const isSignedIn = useIsSignedIn();
   const { handleCopyLink, handleOpenInBrowser } = useLinkActions(track.permalink_url);
@@ -82,110 +74,54 @@ export function TrackMenuItems({ track, variant, onCloseMenu, likeState }: Track
     if (item) usePlayerStore.getState().addToQueue(item);
   };
 
-  if (variant === 'context') {
-    return (
-      <>
-        <ContextMenuItem onClick={handleCopyLink}>
-          <Link className="mr-2 h-4 w-4" />
-          {t('trackMenu.copyLink')}
-        </ContextMenuItem>
-        <ContextMenuItem onClick={handleOpenInBrowser}>
-          <ExternalLink className="mr-2 h-4 w-4" />
-          {t('trackMenu.openInBrowser')}
-        </ContextMenuItem>
-        {filePath && (
-          <ContextMenuItem onClick={onOpenFileLocation}>
-            <FolderOpen className="mr-2 h-4 w-4" />
-            {t('trackMenu.openFileLocation')}
-          </ContextMenuItem>
-        )}
-        {onToggleExcluded && (
-          <>
-            <ContextMenuSeparator />
-            <ContextMenuItem onClick={onToggleExcluded}>
-              <Ban className="mr-2 h-4 w-4" />
-              {t(isExcluded ? 'trackMenu.includeInExport' : 'trackMenu.excludeFromExport')}
-            </ContextMenuItem>
-          </>
-        )}
-        {isSignedIn && (
-          <>
-            <ContextMenuSeparator />
-            {likeState && (
-              <ContextMenuItem onClick={likeState.onToggle} disabled={likeState.isLoading}>
-                <Heart className={cn('mr-2 h-4 w-4', likeState.isLiked && 'fill-primary text-primary')} />
-                {t(likeState.isLiked ? 'trackMenu.unlike' : 'trackMenu.like')}
-              </ContextMenuItem>
-            )}
-            <ContextMenuItem onClick={handleAddToQueue}>
-              <ListPlus className="mr-2 h-4 w-4" />
-              {t('trackMenu.addToQueue')}
-            </ContextMenuItem>
-            <PlaylistPickerSubmenu trackId={track.id} variant="context" onSuccess={onCloseMenu} />
-            <ContextMenuItem onClick={handleShareByDm}>
-              <Send className="mr-2 h-4 w-4" />
-              {t('trackMenu.shareByDm')}
-            </ContextMenuItem>
-            {onRemoveFromPlaylist && (
-              <ContextMenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
-                <Trash2 className="mr-2 h-4 w-4" />
-                {t('trackMenu.removeFromPlaylist')}
-              </ContextMenuItem>
-            )}
-          </>
-        )}
-      </>
-    );
-  }
-
   return (
     <>
-      <DropdownMenuItem onClick={handleCopyLink}>
+      <MenuItem onClick={handleCopyLink}>
         <Link className="h-4 w-4" />
         {t('trackMenu.copyLink')}
-      </DropdownMenuItem>
-      <DropdownMenuItem onClick={handleOpenInBrowser}>
+      </MenuItem>
+      <MenuItem onClick={handleOpenInBrowser}>
         <ExternalLink className="h-4 w-4" />
         {t('trackMenu.openInBrowser')}
-      </DropdownMenuItem>
+      </MenuItem>
       {filePath && (
-        <DropdownMenuItem onClick={onOpenFileLocation}>
+        <MenuItem onClick={onOpenFileLocation}>
           <FolderOpen className="h-4 w-4" />
           {t('trackMenu.openFileLocation')}
-        </DropdownMenuItem>
+        </MenuItem>
       )}
       {onToggleExcluded && (
         <>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onToggleExcluded}>
+          <MenuSeparator />
+          <MenuItem onClick={onToggleExcluded}>
             <Ban className="h-4 w-4" />
             {t(isExcluded ? 'trackMenu.includeInExport' : 'trackMenu.excludeFromExport')}
-          </DropdownMenuItem>
+          </MenuItem>
         </>
       )}
       {isSignedIn && (
         <>
-          <DropdownMenuSeparator />
+          <MenuSeparator />
           {likeState && (
-            <DropdownMenuItem onClick={likeState.onToggle} disabled={likeState.isLoading}>
+            <MenuItem onClick={likeState.onToggle} disabled={likeState.isLoading}>
               <Heart className={cn('h-4 w-4', likeState.isLiked && 'fill-primary text-primary')} />
               {t(likeState.isLiked ? 'trackMenu.unlike' : 'trackMenu.like')}
-            </DropdownMenuItem>
+            </MenuItem>
           )}
-          <DropdownMenuItem onClick={handleAddToQueue}>
+          <MenuItem onClick={handleAddToQueue}>
             <ListPlus className="h-4 w-4" />
             {t('trackMenu.addToQueue')}
-          </DropdownMenuItem>
-          <PlaylistPickerSubmenu trackId={track.id} variant="dropdown" onSuccess={onCloseMenu} />
-          <DropdownMenuItem onClick={handleShareByDm}>
+          </MenuItem>
+          <PlaylistPickerSubmenu trackId={track.id} onSuccess={onCloseMenu} />
+          <MenuItem onClick={handleShareByDm}>
             <Send className="h-4 w-4" />
             {t('trackMenu.shareByDm')}
-          </DropdownMenuItem>
+          </MenuItem>
           {onRemoveFromPlaylist && (
-            <DropdownMenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
+            <MenuItem onClick={onRemoveFromPlaylist} className="text-destructive focus:text-destructive">
               <Trash2 className="h-4 w-4" />
               {t('trackMenu.removeFromPlaylist')}
-            </DropdownMenuItem>
+            </MenuItem>
           )}
         </>
       )}
@@ -201,9 +137,9 @@ interface TrackRowActionsContextContentProps {
 
 export function TrackRowActionsContextContent({ track, onCloseMenu, likeState }: TrackRowActionsContextContentProps) {
   return (
-    <ContextMenuContent>
-      <TrackMenuItems track={track} variant="context" onCloseMenu={onCloseMenu} likeState={likeState} />
-    </ContextMenuContent>
+    <MenuContent>
+      <TrackMenuItems track={track} onCloseMenu={onCloseMenu} likeState={likeState} />
+    </MenuContent>
   );
 }
 
@@ -227,8 +163,8 @@ export function TrackRowActionsDropdown({
   return (
     <div className="flex-shrink-0 flex items-center justify-end gap-1 min-w-[32px]">
       {actionSlot}
-      <DropdownMenu open={dropdownMenuOpen} onOpenChange={onDropdownMenuOpenChange}>
-        <DropdownMenuTrigger asChild>
+      <Menu variant="dropdown" open={dropdownMenuOpen} onOpenChange={onDropdownMenuOpenChange}>
+        <MenuTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
@@ -236,11 +172,11 @@ export function TrackRowActionsDropdown({
           >
             <MoreVertical className="h-4 w-4" />
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <TrackMenuItems track={track} variant="dropdown" onCloseMenu={closeMenu} likeState={likeState} />
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </MenuTrigger>
+        <MenuContent align="end">
+          <TrackMenuItems track={track} onCloseMenu={closeMenu} likeState={likeState} />
+        </MenuContent>
+      </Menu>
     </div>
   );
 }

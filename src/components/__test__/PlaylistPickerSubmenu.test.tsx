@@ -42,7 +42,7 @@ function SubmenuWrapper({ trackId }: { trackId: number }) {
         <Button>Open Menu</Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent>
-        <PlaylistPickerSubmenu trackId={trackId} variant="dropdown" />
+        <PlaylistPickerSubmenu trackId={trackId} />
       </DropdownMenuContent>
     </DropdownMenu>
   );

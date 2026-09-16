@@ -53,7 +53,7 @@ export function TrackActionsDropdown({
         </TooltipContent>
       </Tooltip>
       <DropdownMenuContent side={contentSide} align={contentAlign}>
-        <TrackMenuItems track={track} variant="dropdown" onCloseMenu={closeMenu} likeState={likeState} />
+        <TrackMenuItems track={track} onCloseMenu={closeMenu} likeState={likeState} />
       </DropdownMenuContent>
     </DropdownMenu>
   );
