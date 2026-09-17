@@ -159,6 +159,10 @@ impl LibraryCache {
 
     pub fn set_track_ids(&self, playlist_id: u64, ids: HashSet<u64>) {
         let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
+        let count = ids.len() as u32;
+        if let Some(playlist) = inner.playlists.iter_mut().find(|p| p.id == playlist_id) {
+            playlist.track_count = count;
+        }
         inner.track_ids.insert(playlist_id, ids);
     }
 
@@ -508,6 +512,28 @@ mod tests {
 
         cache.clear();
         assert!(cache.get_if_complete().is_none());
+    }
+
+    #[test]
+    fn test_set_track_ids_syncs_track_count() {
+        let cache = LibraryCache::default();
+        let mut playlist = make_playlist(7, None);
+        playlist.track_count = 5;
+        cache.set(vec![playlist]);
+
+        cache.set_track_ids(7, HashSet::from([10, 20, 30]));
+
+        assert_eq!(cache.get_if_complete().unwrap()[0].track_count, 3);
+        assert_eq!(cache.get_track_ids(7).unwrap().len(), 3);
+    }
+
+    #[test]
+    fn test_set_track_ids_noop_count_when_playlist_absent() {
+        let cache = LibraryCache::default();
+        cache.set_track_ids(99, HashSet::from([1, 2]));
+
+        assert!(cache.get_if_complete().unwrap_or_default().is_empty());
+        assert_eq!(cache.get_track_ids(99).unwrap().len(), 2);
     }
 
     #[test]
