@@ -5,6 +5,8 @@ import { listen } from '@tauri-apps/api/event';
 import type { DownloadProgressEvent, QueueProgressEvent, QueueCancelledEvent, QueueCompleteEvent } from '@/bindings';
 import type { TrackStatus } from '@/features/queue/types/track';
 import type { AppError } from '@/features/queue/types/errors';
+import type { DownloadState } from '@/types/download';
+import { queueTrackToDownloadState } from '@/features/queue/utils/transforms';
 import type { QueueState } from './types';
 import { createQueueStateSlice } from './queueStateSlice';
 import { createQueueProgressSlice } from './queueProgressSlice';
@@ -101,3 +103,6 @@ export const useQueueCompletion = () =>
 
 export const useQueueCompletedCount = () =>
   useQueueStore((s) => s.tracks.reduce((n, t) => (t.status === 'complete' || t.status === 'skipped' ? n + 1 : n), 0));
+
+export const useQueueTrackDownloadState = (trackId: string): DownloadState =>
+  useQueueStore(useShallow((s) => queueTrackToDownloadState(s.tracks.find((t) => t.id === trackId))));

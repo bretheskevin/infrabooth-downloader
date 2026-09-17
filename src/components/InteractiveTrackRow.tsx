@@ -6,6 +6,7 @@ import { TrackDownloadAction } from '@/components/TrackDownloadAction';
 import { EqualizerBars } from '@/features/player/components/EqualizerBars';
 import { usePlayerStore } from '@/features/player/store';
 import { useDownloadStateStore } from '@/hooks/useDownloadState';
+import { useQueueTrackDownloadState } from '@/features/queue/store';
 import { toDownloadState } from '@/hooks/useTrackDownload';
 import { usePlayPauseToggle } from '@/hooks/usePlayPauseToggle';
 import { useHoverPreload } from '@/hooks/useHoverPreload';
@@ -75,15 +76,15 @@ export const InteractiveTrackRow = memo(function InteractiveTrackRow({ track, in
   const isCurrentlyPlaying = currentTrackId === track.id;
   const isPlayerPlaying = playerState === 'playing';
 
-  // Download state (merged: in-session store + filesystem scan)
   const rawStoreState = useDownloadStateStore((s) => s.states.get(String(track.id)));
+  const queueState = useQueueTrackDownloadState(String(track.id));
   const downloadState = useMemo(() => {
-    const storeState = toDownloadState(rawStoreState);
-    if (storeState.status === 'idle' && ctx.downloadedIds.has(track.id)) {
-      return { status: 'completed' as const };
-    }
-    return storeState;
-  }, [rawStoreState, ctx.downloadedIds, track.id]);
+    const inline = toDownloadState(rawStoreState);
+    if (inline.status !== 'idle') return inline;
+    if (queueState.status !== 'idle') return queueState;
+    if (ctx.downloadedIds.has(track.id)) return { status: 'completed' as const };
+    return inline;
+  }, [rawStoreState, queueState, ctx.downloadedIds, track.id]);
 
   // Play/pause/resume
   const handlePlayPause = usePlayPauseToggle({

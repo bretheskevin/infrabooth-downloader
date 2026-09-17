@@ -1,11 +1,9 @@
 import type { TrackInfo } from '@/features/url-input';
 import type { Track } from '@/features/queue/types/track';
 import type { TrackCore } from '@/bindings';
+import type { DownloadState } from '@/types/download';
 import { buildTrackApiUrl } from '@/lib/soundcloud';
 
-/**
- * Convert a single TrackInfo to a queue Track
- */
 export function trackInfoToQueueTrack(track: TrackInfo): Track {
   return {
     id: String(track.id),
@@ -19,16 +17,27 @@ export function trackInfoToQueueTrack(track: TrackInfo): Track {
   };
 }
 
-/**
- * Convert playlist tracks to queue tracks
- */
 export function playlistTracksToQueueTracks(tracks: TrackInfo[]): Track[] {
   return tracks.map(trackInfoToQueueTrack);
 }
 
-/**
- * Convert a queue Track to a download request item
- */
+export function queueTrackToDownloadState(track: Track | undefined): DownloadState {
+  if (!track) return { status: 'idle' };
+  switch (track.status) {
+    case 'complete':
+    case 'skipped':
+      return { status: 'completed' };
+    case 'failed':
+    case 'rate_limited':
+      return { status: 'error', error: track.error?.message ?? 'Unknown error' };
+    case 'downloading':
+    case 'converting':
+      return { status: 'downloading', progress: track.percent ?? 0 };
+    default:
+      return { status: 'idle' };
+  }
+}
+
 export function queueTrackToDownloadRequest(track: Track): TrackCore {
   return {
     trackUrl: buildTrackApiUrl(track.id),
