@@ -3,6 +3,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useSettingsStore } from '@/features/settings/store';
 import { useTranslation } from 'react-i18next';
 import { useFolderSelection } from '@/hooks';
+import { logger } from '@/lib/logger';
 
 export function FolderPicker() {
   const { t } = useTranslation();
@@ -12,7 +13,10 @@ export function FolderPicker() {
   const { selectFolder, error } = useFolderSelection({
     defaultPath: downloadPath || undefined,
     dialogTitle: t('settings.selectFolder'),
-    onSelected: setDownloadPath,
+    onSelected: (path) => {
+      void logger.info(`[FolderPicker] Default download path changed to: "${path}"`);
+      setDownloadPath(path);
+    },
   });
 
   return (

@@ -3,28 +3,46 @@ use std::path::Path;
 use uuid::Uuid;
 
 use crate::services::config::skip_tls_verify;
-use crate::services::paths::{confine_existing_to_home, confine_within, get_app_data_dir, get_downloads_dir, home_dir};
+use crate::services::paths::{confine_writable, confine_writable_existing, get_app_data_dir, get_downloads_dir};
 
 #[tauri::command]
 #[specta::specta]
-pub async fn check_write_permission(path: String, app: tauri::AppHandle) -> Result<bool, String> {
-    let dir_path = confine_existing_to_home(&app, Path::new(&path))?;
-    try_write_permission(&dir_path)
+pub async fn check_write_permission(path: String) -> Result<bool, String> {
+    log::info!("[check_write_permission] Received path: {:?}", path);
+    let dir_path = confine_writable_existing(Path::new(&path)).map_err(|e| {
+        log::warn!("[check_write_permission] Confinement failed for {:?}: {}", path, e);
+        e
+    })?;
+    log::info!("[check_write_permission] Confined path resolved to: {:?}", dir_path);
+    let result = try_write_permission(&dir_path);
+    match &result {
+        Ok(true) => log::info!("[check_write_permission] Path is writable: {:?}", dir_path),
+        Ok(false) => log::warn!("[check_write_permission] Path is NOT writable: {:?}", dir_path),
+        Err(e) => log::warn!("[check_write_permission] Write permission check errored: {}", e),
+    }
+    result
 }
 
 fn try_write_permission(dir_path: &Path) -> Result<bool, String> {
     if !dir_path.is_dir() {
+        log::warn!("[try_write_permission] Path is not a directory: {:?}", dir_path);
         return Err("Path is not a directory".to_string());
     }
 
     let test_file = dir_path.join(format!(".sc-downloader-test-{}", Uuid::new_v4()));
+    log::debug!("[try_write_permission] Attempting to write test file: {:?}", test_file);
 
     match fs::write(&test_file, "test") {
         Ok(_) => {
-            let _ = fs::remove_file(&test_file);
+            if let Err(e) = fs::remove_file(&test_file) {
+                log::warn!("[try_write_permission] Failed to remove test file {:?}: {}", test_file, e);
+            }
             Ok(true)
         }
-        Err(_) => Ok(false),
+        Err(e) => {
+            log::warn!("[try_write_permission] Write failed for {:?}: kind={:?}, os_error={:?}, details={}", test_file, e.kind(), e.raw_os_error(), e);
+            Ok(false)
+        }
     }
 }
 
@@ -150,13 +168,8 @@ pub fn get_feature_flags(app: tauri::AppHandle) -> Result<String, String> {
 
 #[tauri::command]
 #[specta::specta]
-pub fn validate_download_path(path: String, app: tauri::AppHandle) -> Result<bool, String> {
-    let home = home_dir(&app)?;
-    Ok(is_valid_dir_within(Path::new(&path), &home))
-}
-
-fn is_valid_dir_within(path: &Path, allowed_root: &Path) -> bool {
-    confine_within(path, &[allowed_root.to_path_buf()]).map(|resolved| resolved.is_dir()).unwrap_or(false)
+pub fn validate_download_path(path: String) -> Result<bool, String> {
+    Ok(confine_writable(Path::new(&path)).map(|resolved| resolved.is_dir()).unwrap_or(false))
 }
 
 #[tauri::command]
@@ -178,36 +191,29 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
-    fn is_valid_dir_within_returns_true_for_existing_dir() {
-        let root = tempdir().unwrap();
-        let sub = root.path().join("Downloads");
+    fn validate_download_path_returns_true_for_existing_dir() {
+        let dir = tempdir().unwrap();
+        let sub = dir.path().join("Downloads");
         fs::create_dir(&sub).unwrap();
 
-        assert!(is_valid_dir_within(&sub, root.path()));
+        assert!(validate_download_path(sub.to_string_lossy().to_string()).unwrap());
     }
 
     #[test]
-    fn is_valid_dir_within_returns_false_for_nonexistent_dir() {
-        let root = tempdir().unwrap();
+    fn validate_download_path_returns_false_for_nonexistent_dir() {
+        let dir = tempdir().unwrap();
+        let missing = dir.path().join("missing");
 
-        assert!(!is_valid_dir_within(&root.path().join("missing"), root.path()));
+        assert!(!validate_download_path(missing.to_string_lossy().to_string()).unwrap());
     }
 
     #[test]
-    fn is_valid_dir_within_returns_false_for_file() {
-        let root = tempdir().unwrap();
-        let file_path = root.path().join("testfile.txt");
+    fn validate_download_path_returns_false_for_file() {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("testfile.txt");
         fs::write(&file_path, "test").unwrap();
 
-        assert!(!is_valid_dir_within(&file_path, root.path()));
-    }
-
-    #[test]
-    fn is_valid_dir_within_returns_false_for_dir_outside_root() {
-        let root = tempdir().unwrap();
-        let outside = tempdir().unwrap();
-
-        assert!(!is_valid_dir_within(outside.path(), root.path()));
+        assert!(!validate_download_path(file_path.to_string_lossy().to_string()).unwrap());
     }
 
     #[test]

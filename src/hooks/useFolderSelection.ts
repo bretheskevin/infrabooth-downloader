@@ -37,30 +37,42 @@ export function useFolderSelection({
   }, [onPermissionDenied]);
 
   const selectFolder = useCallback(async (): Promise<string | null> => {
+    void logger.info(
+      `[useFolderSelection] Opening folder dialog — defaultPath: "${defaultPath ?? 'none'}", title: "${dialogTitle ?? 'none'}"`,
+    );
+    let selected: string | string[] | null = null;
     try {
-      const selected = await open({
+      selected = await open({
         directory: true,
         defaultPath: defaultPath || undefined,
         title: dialogTitle,
       });
 
       if (!selected || typeof selected !== 'string') {
+        void logger.info(`[useFolderSelection] Dialog cancelled or no selection (raw value: ${JSON.stringify(selected)})`);
         return null;
       }
 
+      void logger.info(`[useFolderSelection] Path selected: "${selected}"`);
+      void logger.info(`[useFolderSelection] Checking write permission for: "${selected}"`);
       const hasPermission = await checkWritePermission(selected);
+      void logger.info(`[useFolderSelection] checkWritePermission returned: ${hasPermission}`);
 
       if (hasPermission) {
         setError(null);
         onSelectedRef.current?.(selected);
         return selected;
       } else {
+        void logger.warn(`[useFolderSelection] Path rejected as not writable: "${selected}"`);
         setError('permission_denied');
         onPermissionDeniedRef.current?.();
         return null;
       }
     } catch (err) {
-      logger.error(`[useFolderSelection] Folder selection error: ${err}`);
+      const errStr = err instanceof Error ? err.message : String(err);
+      void logger.error(
+        `[useFolderSelection] Folder selection error (selected: "${typeof selected === 'string' ? selected : 'none'}"): ${errStr}`,
+      );
       setError('permission_denied');
       return null;
     }

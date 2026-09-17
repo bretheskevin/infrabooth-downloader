@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useSettingsStore } from '@/features/settings/store';
 import { useFolderSelection } from './useFolderSelection';
 import { getFolderName } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 const NOOP_SELECTOR = () => undefined;
 
@@ -21,10 +22,18 @@ export function useFolderPath(enabled = true, playlistId?: string) {
     defaultPath: effectivePath,
     dialogTitle: t('common.changeFolder'),
     onSelected: (path) => {
-      if (playlistId) setPlaylistDownloadPath(playlistId, path);
-      else setLocalPath(path);
+      if (playlistId) {
+        void logger.info(`[useFolderPath] Folder selected for playlist "${playlistId}": "${path}"`);
+        setPlaylistDownloadPath(playlistId, path);
+      } else {
+        void logger.info(`[useFolderPath] Folder selected for session local path: "${path}"`);
+        setLocalPath(path);
+      }
     },
-    onPermissionDenied: () => toast.error(t('common.folderPermissionDenied')),
+    onPermissionDenied: () => {
+      void logger.warn('[useFolderPath] Permission denied for selected folder');
+      toast.error(t('common.folderPermissionDenied'));
+    },
   });
 
   const folderName = useMemo(() => (effectivePath ? getFolderName(effectivePath) : undefined), [effectivePath]);

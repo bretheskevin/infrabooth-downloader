@@ -9,9 +9,9 @@ import { logger } from '@/lib/logger';
  * @throws Error if path doesn't exist or is not a directory
  */
 export async function checkWritePermission(path: string): Promise<boolean> {
-  logger.debug(`[settings] Checking write permission for: ${path}`);
+  void logger.info(`[settings] Checking write permission for: ${path}`);
   const result = await api.checkWritePermission(path);
-  logger.debug(`[settings] Write permission: ${result}`);
+  void logger.info(`[settings] Write permission result: ${result}`);
   return result;
 }
 

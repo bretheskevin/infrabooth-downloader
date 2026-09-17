@@ -2,9 +2,6 @@ use std::path::{Component, Path, PathBuf};
 
 use tauri::Manager;
 
-/// Gets the system downloads directory.
-///
-/// Returns the OS-specific downloads folder path.
 pub fn get_downloads_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     app.path().download_dir().map_err(|e| format!("Failed to get downloads directory: {}", e))
 }
@@ -13,53 +10,66 @@ pub fn get_app_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     app.path().app_data_dir().map_err(|e| format!("Failed to get app data directory: {}", e))
 }
 
-pub fn is_within_allowed_dirs(canonical_target: &std::path::Path, allowed_dirs: &[PathBuf]) -> bool {
-    allowed_dirs.iter().filter_map(|d| std::fs::canonicalize(d).ok()).any(|d| canonical_target.starts_with(&d))
+#[cfg(target_os = "windows")]
+fn protected_dirs() -> Vec<PathBuf> {
+    let sysroot = std::env::var("SystemRoot").or_else(|_| std::env::var("windir")).unwrap_or_else(|_| "C:\\Windows".to_string());
+    vec![PathBuf::from(sysroot)]
 }
 
-pub fn home_dir(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    app.path().home_dir().map_err(|e| format!("Failed to get home directory: {}", e))
+#[cfg(target_os = "macos")]
+fn protected_dirs() -> Vec<PathBuf> {
+    vec![PathBuf::from("/System"), PathBuf::from("/usr"), PathBuf::from("/bin"), PathBuf::from("/sbin")]
 }
 
-/// Confines a user-supplied output directory to the user's home directory.
-///
-/// Untrusted callers (remote WebView, remote server) can pass an arbitrary
-/// `output_dir` to the download commands; this gates it against the same home
-/// boundary the folder picker enforces, returning the resolved path to use.
-pub fn confine_to_home(app: &tauri::AppHandle, target: &Path) -> Result<PathBuf, String> {
-    confine_within(target, &[home_dir(app)?])
+#[cfg(target_os = "linux")]
+fn protected_dirs() -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("/etc"),
+        PathBuf::from("/boot"),
+        PathBuf::from("/proc"),
+        PathBuf::from("/sys"),
+        PathBuf::from("/dev"),
+        PathBuf::from("/usr"),
+        PathBuf::from("/bin"),
+        PathBuf::from("/sbin"),
+    ]
 }
 
-/// Confines an already-existing directory to the user's home directory.
-///
-/// Unlike [`confine_to_home`], `target` must exist: it is fully canonicalized
-/// (resolving symlinks) before the home-boundary check, and the resolved path
-/// is returned. Used by the write-permission check for the folder picker.
-pub fn confine_existing_to_home(app: &tauri::AppHandle, target: &Path) -> Result<PathBuf, String> {
-    let canonical = std::fs::canonicalize(target).map_err(|_| "Directory does not exist".to_string())?;
-    if is_within_allowed_dirs(&canonical, &[home_dir(app)?]) {
-        Ok(canonical)
-    } else {
-        Err("Path is outside the home directory".to_string())
-    }
+fn is_within_protected_dirs(resolved: &Path) -> bool {
+    protected_dirs().iter().filter_map(|d| std::fs::canonicalize(d).ok()).any(|d| resolved.starts_with(&d))
 }
 
-/// Resolves `target` and verifies it stays within one of `allowed_dirs`.
-///
-/// Rejects relative paths, resolves symlinks in the existing portion of the
-/// path, and forbids `..` traversal in the not-yet-created tail so a download
-/// target that does not exist yet cannot escape the boundary.
-pub fn confine_within(target: &Path, allowed_dirs: &[PathBuf]) -> Result<PathBuf, String> {
+/// Validates and resolves an absolute path that may not yet fully exist (e.g. a
+/// download destination). Rejects relative paths, `..` traversal, and any path
+/// inside an OS-core system directory. Symlinks in the existing portion of the
+/// path are resolved.
+pub fn confine_writable(target: &Path) -> Result<PathBuf, String> {
     if !target.is_absolute() {
         return Err("Path must be absolute".to_string());
     }
-
     let resolved = resolve_existing_prefix(target)?;
-    if is_within_allowed_dirs(&resolved, allowed_dirs) {
-        Ok(resolved)
-    } else {
-        Err("Path is outside the allowed location".to_string())
+    if is_within_protected_dirs(&resolved) {
+        log::warn!("[confine_writable] Path {:?} is inside a protected system directory — rejected", resolved);
+        return Err("Path is inside a protected system directory".to_string());
     }
+    log::info!("[confine_writable] Path {:?} resolved to {:?} — accepted", target, resolved);
+    Ok(resolved)
+}
+
+/// Validates and canonicalizes a path that must already exist (e.g. a folder
+/// selected by the picker). Rejects paths that do not exist and paths inside
+/// OS-core system directories.
+pub fn confine_writable_existing(target: &Path) -> Result<PathBuf, String> {
+    let canonical = std::fs::canonicalize(target).map_err(|e| {
+        log::warn!("[confine_writable_existing] Canonicalize failed for {:?}: kind={:?}, details={}", target, e.kind(), e);
+        "Directory does not exist".to_string()
+    })?;
+    if is_within_protected_dirs(&canonical) {
+        log::warn!("[confine_writable_existing] Path {:?} is inside a protected system directory — rejected", canonical);
+        return Err("Path is inside a protected system directory".to_string());
+    }
+    log::info!("[confine_writable_existing] Canonical path: {:?} — accepted", canonical);
+    Ok(canonical)
 }
 
 fn resolve_existing_prefix(target: &Path) -> Result<PathBuf, String> {
@@ -98,52 +108,62 @@ mod tests {
     use tempfile::tempdir;
 
     #[test]
-    fn confine_within_allows_existing_subdir() {
-        let home = tempdir().unwrap();
-        let sub = home.path().join("Downloads");
-        std::fs::create_dir(&sub).unwrap();
-
-        assert!(confine_within(&sub, &[home.path().to_path_buf()]).is_ok());
+    fn confine_writable_allows_existing_dir() {
+        let dir = tempdir().unwrap();
+        assert!(confine_writable(dir.path()).is_ok());
     }
 
     #[test]
-    fn confine_within_allows_not_yet_created_subdir() {
-        let home = tempdir().unwrap();
-        let sub = home.path().join("Music").join("New Album");
-
-        assert!(confine_within(&sub, &[home.path().to_path_buf()]).is_ok());
+    fn confine_writable_allows_nonexistent_subdir() {
+        let dir = tempdir().unwrap();
+        let sub = dir.path().join("Music").join("New Album");
+        assert!(confine_writable(&sub).is_ok());
     }
 
     #[test]
-    fn confine_within_rejects_path_outside_home() {
-        let home = tempdir().unwrap();
-        let outside = tempdir().unwrap();
+    fn confine_writable_rejects_relative_path() {
+        assert!(confine_writable(Path::new("relative/dir")).is_err());
+    }
 
-        assert!(confine_within(&outside.path().join("stolen"), &[home.path().to_path_buf()]).is_err());
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[test]
+    fn confine_writable_rejects_traversal_via_existing_prefix_into_protected_dir() {
+        // /usr/local exists; canonicalize resolves the .. components to /usr, which is protected.
+        let path = Path::new("/usr/local/../../../usr");
+        assert!(confine_writable(path).is_err());
     }
 
     #[test]
-    fn confine_within_rejects_relative_path() {
-        let home = tempdir().unwrap();
+    fn confine_writable_rejects_traversal_in_pending_tail() {
+        let dir = tempdir().unwrap();
+        let escape = dir.path().join("Missing").join("..").join("..").join("evil");
+        assert!(confine_writable(&escape).is_err());
+    }
 
-        assert!(confine_within(Path::new("relative/dir"), &[home.path().to_path_buf()]).is_err());
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[test]
+    fn confine_writable_rejects_protected_dir() {
+        assert!(confine_writable(Path::new("/usr")).is_err());
     }
 
     #[test]
-    fn confine_within_rejects_traversal_via_existing_prefix() {
-        let home = tempdir().unwrap();
-        let sub = home.path().join("Downloads");
-        std::fs::create_dir(&sub).unwrap();
-
-        let escape = sub.join("..").join("..").join("evil");
-        assert!(confine_within(&escape, &[home.path().to_path_buf()]).is_err());
+    fn confine_writable_existing_rejects_nonexistent_path() {
+        let dir = tempdir().unwrap();
+        let missing = dir.path().join("does_not_exist");
+        assert!(confine_writable_existing(&missing).is_err());
     }
 
     #[test]
-    fn confine_within_rejects_traversal_in_pending_tail() {
-        let home = tempdir().unwrap();
+    fn confine_writable_existing_accepts_existing_dir() {
+        let dir = tempdir().unwrap();
+        let result = confine_writable_existing(dir.path());
+        assert!(result.is_ok());
+        assert_eq!(result.unwrap(), std::fs::canonicalize(dir.path()).unwrap());
+    }
 
-        let escape = home.path().join("Missing").join("..").join("..").join("evil");
-        assert!(confine_within(&escape, &[home.path().to_path_buf()]).is_err());
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    #[test]
+    fn confine_writable_existing_rejects_protected_dir() {
+        assert!(confine_writable_existing(Path::new("/usr")).is_err());
     }
 }

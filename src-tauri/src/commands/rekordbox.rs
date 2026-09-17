@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use crate::models::error::{ErrorResponse, HasErrorCode, RekordboxError};
-use crate::services::paths::{confine_within, get_app_data_dir, home_dir};
+use crate::services::paths::{confine_writable, get_app_data_dir};
 use crate::services::rekordbox::models::{
     BackupInfo, BackupKind, DjmdPlaylist, ExportResult, ExportTrackRequest, RekordboxConfig, RekordboxPlaylistInfo, RekordboxStatus, RekordboxTreeNode,
     ALL_TRACKS_PLAYLIST_NAME,
@@ -28,26 +28,19 @@ pub(super) fn create_backup_and_rotate(db_dir: &Path, app_data_dir: &Path, kind:
     Ok(backup_path)
 }
 
-pub(super) fn resolve_rekordbox_config(manual_db_path: Option<String>, allowed_root: &Path) -> Result<RekordboxConfig, ErrorResponse> {
-    let manual_db_path = confine_manual_db_path(manual_db_path, allowed_root)?;
+pub(super) fn resolve_rekordbox_config(manual_db_path: Option<String>) -> Result<RekordboxConfig, ErrorResponse> {
+    let manual_db_path = confine_manual_db_path(manual_db_path)?;
     config::detect_rekordbox(manual_db_path).map_err(ErrorResponse::from)
 }
 
-pub(super) fn resolve_rekordbox_config_for(manual_db_path: Option<String>, app: &tauri::AppHandle) -> Result<RekordboxConfig, ErrorResponse> {
-    let home = home_dir(app).map_err(app_data_dir_error)?;
-    resolve_rekordbox_config(manual_db_path, &home)
-}
-
-/// Confines an untrusted `manual_db_path` override to `allowed_root`.
+/// Validates an untrusted `manual_db_path` override against the deny-list.
 ///
 /// The override reaches these commands from the frontend (and, via the remote
 /// bridge, from the LAN); without this gate an attacker could point backup,
-/// restore or export at any `master.db` on disk.
-fn confine_manual_db_path(manual_db_path: Option<String>, allowed_root: &Path) -> Result<Option<PathBuf>, ErrorResponse> {
+/// restore or export at OS-core system directories.
+fn confine_manual_db_path(manual_db_path: Option<String>) -> Result<Option<PathBuf>, ErrorResponse> {
     match manual_db_path {
-        Some(path) => confine_within(Path::new(&path), &[allowed_root.to_path_buf()])
-            .map(Some)
-            .map_err(|message| ErrorResponse::from(RekordboxError::InvalidPath(message))),
+        Some(path) => confine_writable(Path::new(&path)).map(Some).map_err(|message| ErrorResponse::from(RekordboxError::InvalidPath(message))),
         None => Ok(None),
     }
 }
@@ -73,15 +66,13 @@ fn restore_state_after_failure(err: RekordboxError, backup_path: &Path, db_dir: 
 pub(super) struct RekordboxWriteContext {
     pub rb_config: RekordboxConfig,
     pub app_data_dir: PathBuf,
-    pub home_dir: PathBuf,
     backup_path: PathBuf,
 }
 
 impl RekordboxWriteContext {
     pub fn prepare(manual_db_path: Option<String>, app: &tauri::AppHandle) -> Result<Self, ErrorResponse> {
         log::info!("[rekordbox] RekordboxWriteContext::prepare starting...");
-        let home = home_dir(app).map_err(app_data_dir_error)?;
-        let rb_config = resolve_rekordbox_config(manual_db_path, &home)?;
+        let rb_config = resolve_rekordbox_config(manual_db_path)?;
         log::info!("[rekordbox] Rekordbox config resolved: db_path={:?}", rb_config.db_path);
 
         if config::is_rekordbox_running() {
@@ -97,7 +88,7 @@ impl RekordboxWriteContext {
         let backup_path = create_backup_and_rotate(&rb_config.db_dir, &app_data_dir, BackupKind::Export)?;
         log::info!("[rekordbox] Backup created: {:?}", backup_path);
 
-        Ok(Self { rb_config, app_data_dir, home_dir: home, backup_path })
+        Ok(Self { rb_config, app_data_dir, backup_path })
     }
 
     pub fn open_session(&self) -> Result<RekordboxSession, RekordboxError> {
@@ -169,10 +160,11 @@ impl RekordboxSession {
     }
 }
 
+/// Rejects source paths inside OS-core system directories via the deny-list.
 pub(super) fn export_single_track(
-    db: &mut database::RekordboxDatabase, track: &ExportTrackRequest, playlist_id: &str, rekordbox_tracks_dir: &Path, allowed_root: &Path,
+    db: &mut database::RekordboxDatabase, track: &ExportTrackRequest, playlist_id: &str, rekordbox_tracks_dir: &Path,
 ) -> Result<(bool, String), String> {
-    let source = confine_within(Path::new(&track.source_path), &[allowed_root.to_path_buf()]).map_err(|e| format!("{}: {}", track.source_path, e))?;
+    let source = confine_writable(Path::new(&track.source_path)).map_err(|e| format!("{}: {}", track.source_path, e))?;
     log::debug!("[rekordbox] export_single_track: source={:?}", source);
 
     log::debug!("[rekordbox] Reading track metadata...");
@@ -217,10 +209,9 @@ pub(super) fn export_single_track(
 
 #[tauri::command]
 #[specta::specta]
-pub fn detect_rekordbox(manual_db_path: Option<String>, app: tauri::AppHandle) -> Result<RekordboxStatus, ErrorResponse> {
+pub fn detect_rekordbox(manual_db_path: Option<String>) -> Result<RekordboxStatus, ErrorResponse> {
     let is_running = config::is_rekordbox_running();
-    let home = home_dir(&app).map_err(app_data_dir_error)?;
-    let manual_db_path = match confine_manual_db_path(manual_db_path, &home) {
+    let manual_db_path = match confine_manual_db_path(manual_db_path) {
         Ok(path) => path,
         Err(_) => return Ok(RekordboxStatus { found: false, version: None, db_path: None, is_running }),
     };
@@ -259,7 +250,7 @@ pub fn export_to_rekordbox(
         let mut errors: Vec<String> = Vec::new();
 
         for track in &tracks {
-            match export_single_track(&mut session.db, track, &pl.id, &rekordbox_tracks_dir, &ctx.home_dir) {
+            match export_single_track(&mut session.db, track, &pl.id, &rekordbox_tracks_dir) {
                 Ok((true, _)) => exported_count += 1,
                 Ok((false, _)) => skipped_count += 1,
                 Err(e) => errors.push(e),
@@ -273,8 +264,8 @@ pub fn export_to_rekordbox(
 
 #[tauri::command]
 #[specta::specta]
-pub fn list_rekordbox_playlists(manual_db_path: Option<String>, app: tauri::AppHandle) -> Result<Vec<RekordboxPlaylistInfo>, ErrorResponse> {
-    let rb_config = resolve_rekordbox_config_for(manual_db_path, &app)?;
+pub fn list_rekordbox_playlists(manual_db_path: Option<String>) -> Result<Vec<RekordboxPlaylistInfo>, ErrorResponse> {
+    let rb_config = resolve_rekordbox_config(manual_db_path)?;
     let db = database::RekordboxDatabase::open(&rb_config).map_err(ErrorResponse::from)?;
 
     let folder = match playlist::find_infrabooth_folder(&db) {
@@ -298,8 +289,8 @@ pub fn list_rekordbox_playlists(manual_db_path: Option<String>, app: tauri::AppH
 
 #[tauri::command]
 #[specta::specta]
-pub fn get_rekordbox_playlist_tree(manual_db_path: Option<String>, app: tauri::AppHandle) -> Result<Vec<RekordboxTreeNode>, ErrorResponse> {
-    let rb_config = resolve_rekordbox_config_for(manual_db_path, &app)?;
+pub fn get_rekordbox_playlist_tree(manual_db_path: Option<String>) -> Result<Vec<RekordboxTreeNode>, ErrorResponse> {
+    let rb_config = resolve_rekordbox_config(manual_db_path)?;
     let db = database::RekordboxDatabase::open(&rb_config).map_err(ErrorResponse::from)?;
     playlist::get_playlist_tree(&db).map_err(ErrorResponse::from)
 }
@@ -350,7 +341,7 @@ pub fn restore_rekordbox_backup(backup_path: String, manual_db_path: Option<Stri
         return Err(ErrorResponse::from(RekordboxError::RekordboxRunning));
     }
 
-    let rb_config = resolve_rekordbox_config_for(manual_db_path, &app)?;
+    let rb_config = resolve_rekordbox_config(manual_db_path)?;
 
     let path = std::fs::canonicalize(&backup_path).map_err(|e| ErrorResponse::from(RekordboxError::RestoreFailed(format!("Invalid backup path: {}", e))))?;
 

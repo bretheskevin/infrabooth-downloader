@@ -106,6 +106,7 @@ Approval is **per-commit and does not carry over**. A `/kb:clean-commit` invocat
 - Tests colocated in `__test__/` directories
 - Rust errors use custom types in `src-tauri/src/models/error.rs`
 - **Never use `console.log/warn/error` in frontend code.** Use `logger` from `@/lib/logger` (backed by `@tauri-apps/plugin-log`) which routes logs to the Tauri logging system. Logger methods are async — use `void logger.info(...)` for fire-and-forget calls.
+- **Log generously — this is a desktop app.** We cannot reproduce most user issues locally; the user's log file is often the only diagnostic we get. Whenever you add or touch a code path that can fail on the user's machine (filesystem access, permissions, OS/platform differences, external processes like FFmpeg, network/API calls, IPC command entry/exit), add verbose logs that capture the inputs, the resolved values, each branch taken, and the **full** error detail (in Rust: `io::Error` `.kind()` + `.raw_os_error()` + Display; in the frontend: the stringified error). Prefer too many logs over too few. Frontend logs go through `logger` (see above); Rust logs use the `log` crate macros (`log::info!/warn!/error!/debug!`) with a `[module_or_fn] message` prefix — both route to the Tauri log file the user can share.
 - **Never write comments unless necessary.** Code should be self-documenting. Only add comments when the logic is genuinely non-obvious and cannot be clarified through better naming or structure.
 
 ## React Hooks Rules

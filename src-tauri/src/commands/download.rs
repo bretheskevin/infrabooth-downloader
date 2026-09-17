@@ -12,7 +12,7 @@ use crate::services::cancellation::CancellationState;
 use crate::services::downloader::DownloadProgressEvent;
 use crate::services::events;
 use crate::services::metadata::{scan_existing_track_ids, TrackMetadata};
-use crate::services::paths::{confine_to_home, get_downloads_dir};
+use crate::services::paths::{confine_writable, get_downloads_dir};
 use crate::services::pipeline::{download_and_convert, PipelineConfig};
 use crate::services::queue::{DownloadQueue, QueueItem, QueueProcessContext};
 use crate::services::rate_limit_choice::{RateLimitChoice, RateLimitChoiceState};
@@ -162,15 +162,15 @@ fn get_download_path(app: &tauri::AppHandle) -> Result<PathBuf, ErrorResponse> {
 
 fn resolve_output_dir(app: &tauri::AppHandle, output_dir: Option<String>) -> Result<PathBuf, ErrorResponse> {
     match output_dir {
-        Some(dir) => confine_to_home(app, Path::new(&dir)).map_err(|message| ErrorResponse { code: "INVALID_OUTPUT_DIR".to_string(), message }),
+        Some(dir) => confine_writable(Path::new(&dir)).map_err(|message| ErrorResponse { code: "INVALID_OUTPUT_DIR".to_string(), message }),
         None => get_download_path(app),
     }
 }
 
 #[tauri::command]
 #[specta::specta]
-pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>, app: tauri::AppHandle) -> HashMap<String, String> {
-    let dir = match confine_to_home(&app, Path::new(&output_dir)) {
+pub fn scan_existing_tracks(output_dir: String, track_ids: Vec<String>) -> HashMap<String, String> {
+    let dir = match confine_writable(Path::new(&output_dir)) {
         Ok(dir) if dir.exists() => dir,
         _ => return HashMap::new(),
     };
