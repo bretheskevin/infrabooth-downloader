@@ -98,3 +98,6 @@ export const useQueueCompletion = () =>
       cancelledCount: s.cancelledCount,
     })),
   );
+
+export const useQueueCompletedCount = () =>
+  useQueueStore((s) => s.tracks.reduce((n, t) => (t.status === 'complete' || t.status === 'skipped' ? n + 1 : n), 0));

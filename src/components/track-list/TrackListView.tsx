@@ -236,6 +236,7 @@ export function TrackListView<F extends string = string>({
 
           <SelectionActionBar
             selectedCount={state.selectedCount}
+            downloadableCount={state.downloadableCount}
             onDownload={state.handleDownloadSelected}
             onExcludeFromExport={state.canExclude ? state.handleExcludeSelected : undefined}
           />

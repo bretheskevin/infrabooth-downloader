@@ -6,6 +6,7 @@ import { useTrackDownloadState } from '@/hooks/useTrackDownloadState';
 import { useTrackSelection } from '@/hooks/useTrackSelection';
 import { useRekordboxExclusionStore, useExcludedTrackIds } from '@/features/rekordbox-export/store';
 import { useRekordboxDetection } from '@/features/rekordbox-export/hooks/useRekordboxDetection';
+import { useQueueCompletedCount } from '@/features/queue/store';
 import { usePlayContext } from '@/features/player/hooks/usePlayContext';
 import { useDownloadSelected } from '@/hooks/useDownloadSelected';
 import { usePlayerStore } from '@/features/player/store';
@@ -45,10 +46,13 @@ export function useTrackListState(config: UseTrackListStateConfig) {
     resetLocalPath();
   }, [config.resetKey, setSearchQuery, resetLocalPath]);
 
+  const queueCompletedCount = useQueueCompletedCount();
+
   const { downloadTrack, downloadedIds, downloadedCount } = useTrackDownloadState({
     tracks: stableTracks.length > 0 ? stableTracks : undefined,
     downloadPath: downloadPath ?? '',
     enabled: !config.isLoading,
+    extraRefreshKey: queueCompletedCount,
   });
 
   const { data: rekordboxStatus } = useRekordboxDetection();
@@ -68,6 +72,7 @@ export function useTrackListState(config: UseTrackListStateConfig) {
     useTrackSelection(filteredTracks, nonSelectableIds);
 
   const downloadableSelected = useMemo(() => selectedTracks.filter((t) => !downloadedIds.has(t.id)), [selectedTracks, downloadedIds]);
+  const downloadableCount = downloadableSelected.length;
 
   const handleExcludeSelected = useCallback(() => {
     if (!config.playlistId || selectedTracks.length === 0) return;
@@ -138,6 +143,7 @@ export function useTrackListState(config: UseTrackListStateConfig) {
     downloadedCount,
     handleDownloadAll,
     handleDownloadSelected,
+    downloadableCount,
     playTrack,
     playShuffled,
     shouldAnimate,

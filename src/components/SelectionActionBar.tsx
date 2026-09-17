@@ -8,17 +8,19 @@ import { useIsDownloadEnabled } from '@/features/settings';
 
 interface SelectionActionBarProps {
   selectedCount: number;
+  downloadableCount: number;
   onDownload: () => void;
   onExcludeFromExport?: () => void;
 }
 
-export function SelectionActionBar({ selectedCount, onDownload, onExcludeFromExport }: SelectionActionBarProps) {
+export function SelectionActionBar({ selectedCount, downloadableCount, onDownload, onExcludeFromExport }: SelectionActionBarProps) {
   const { t } = useTranslation();
   const expandedBarVisible = useIsExpandedBarVisible();
   const isQueueOpen = usePlayerStore((s) => s.isQueueOpen);
   const isDownloadEnabled = useIsDownloadEnabled();
 
-  const hasAnyAction = isDownloadEnabled || !!onExcludeFromExport;
+  const canDownloadSelection = isDownloadEnabled && downloadableCount > 0;
+  const hasAnyAction = canDownloadSelection || !!onExcludeFromExport;
   if (!hasAnyAction) return null;
   if (selectedCount === 0 || (expandedBarVisible && isQueueOpen)) return null;
 
@@ -37,7 +39,7 @@ export function SelectionActionBar({ selectedCount, onDownload, onExcludeFromExp
             {t('rekordboxExport.excludeSelected')}
           </Button>
         )}
-        {isDownloadEnabled && (
+        {canDownloadSelection && (
           <Button size="sm" onClick={onDownload} className="gap-1.5">
             <Download className="h-3.5 w-3.5" />
             {t('common.download')}

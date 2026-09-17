@@ -16,7 +16,9 @@ const mockClearSelection = vi.fn();
 let mockSelectedTracks: TrackInfo[] = [];
 let mockDownloadedIds = new Set<number>();
 let capturedDownloadableTracks: TrackInfo[] = [];
+let capturedExtraRefreshKey: number | undefined;
 let mockRekordboxStatus: { found: boolean } | undefined = { found: true };
+let mockQueueTracks: { status: string }[] = [];
 
 vi.mock('@/features/settings/hooks/useIsDownloadEnabled', () => ({
   useIsDownloadEnabled: () => true,
@@ -31,11 +33,18 @@ vi.mock('@/hooks/useSearchFilter', () => ({
 }));
 
 vi.mock('@/hooks/useTrackDownloadState', () => ({
-  useTrackDownloadState: () => ({
-    downloadTrack: mockDownloadTrack,
-    downloadedIds: mockDownloadedIds,
-    downloadedCount: 0,
-  }),
+  useTrackDownloadState: (params: { extraRefreshKey?: number }) => {
+    capturedExtraRefreshKey = params.extraRefreshKey;
+    return {
+      downloadTrack: mockDownloadTrack,
+      downloadedIds: mockDownloadedIds,
+      downloadedCount: 0,
+    };
+  },
+}));
+
+vi.mock('@/features/queue/store', () => ({
+  useQueueCompletedCount: () => mockQueueTracks.reduce((n, t) => (t.status === 'complete' || t.status === 'skipped' ? n + 1 : n), 0),
 }));
 
 vi.mock('@/features/rekordbox-export/hooks/useRekordboxDetection', () => ({
@@ -122,7 +131,9 @@ describe('useTrackListState', () => {
     mockSelectedTracks = [];
     mockDownloadedIds = new Set<number>();
     capturedDownloadableTracks = [];
+    capturedExtraRefreshKey = undefined;
     mockRekordboxStatus = { found: true };
+    mockQueueTracks = [];
   });
 
   it('returns displayTracks from search filter', () => {
@@ -198,6 +209,37 @@ describe('useTrackListState', () => {
     mockDownloadedIds = new Set([track2.id]);
     renderHook(() => useTrackListState({ ...baseConfig, playlistId: 'pl-1' }));
     expect(capturedDownloadableTracks).toEqual([track1, track3]);
+  });
+
+  it('feeds queue completed/skipped count as the download-state refresh key', () => {
+    mockQueueTracks = [{ status: 'complete' }, { status: 'skipped' }, { status: 'downloading' }, { status: 'pending' }];
+    renderHook(() => useTrackListState(baseConfig));
+    expect(capturedExtraRefreshKey).toBe(2);
+  });
+
+  it('refresh key is 0 when no queue tracks have finished', () => {
+    mockQueueTracks = [{ status: 'downloading' }, { status: 'pending' }];
+    renderHook(() => useTrackListState(baseConfig));
+    expect(capturedExtraRefreshKey).toBe(0);
+  });
+
+  it('downloadableCount reflects selected tracks not yet downloaded', () => {
+    const track1 = createTrack(1);
+    const track2 = createTrack(2);
+    const track3 = createTrack(3);
+    mockSelectedTracks = [track1, track2, track3];
+    mockDownloadedIds = new Set([track2.id, track3.id]);
+    const { result } = renderHook(() => useTrackListState({ ...baseConfig, playlistId: 'pl-1' }));
+    expect(result.current.downloadableCount).toBe(1);
+  });
+
+  it('downloadableCount is 0 when every selected track is already downloaded', () => {
+    const track1 = createTrack(1);
+    const track2 = createTrack(2);
+    mockSelectedTracks = [track1, track2];
+    mockDownloadedIds = new Set([track1.id, track2.id]);
+    const { result } = renderHook(() => useTrackListState({ ...baseConfig, playlistId: 'pl-1' }));
+    expect(result.current.downloadableCount).toBe(0);
   });
 
   it('handleExcludeSelected excludes selected ids and clears selection', () => {

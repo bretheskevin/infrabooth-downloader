@@ -16,45 +16,36 @@ interface PendingDownload {
   outputDir?: string;
 }
 
-interface UseLibraryDownloadOptions {
-  onNavigateToDownload: () => void;
-}
-
-export function useLibraryDownload({ onNavigateToDownload }: UseLibraryDownloadOptions) {
+export function useLibraryDownload() {
   const { t } = useTranslation();
   const [pendingDownload, setPendingDownload] = useState<PendingDownload | null>(null);
 
-  const executeDownload = useCallback(
-    async (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => {
-      const { isComplete, failedCount, clearQueue } = useQueueStore.getState();
-      const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } = useSettingsStore.getState();
+  const executeDownload = useCallback(async (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => {
+    const { isComplete, failedCount, clearQueue } = useQueueStore.getState();
+    const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } = useSettingsStore.getState();
 
-      if (isComplete && failedCount > 0) return;
-      if (isComplete) clearQueue();
+    if (isComplete && failedCount > 0) return;
+    if (isComplete) clearQueue();
 
-      const effectiveOutputDir = outputDir || downloadPath || null;
-      const queueTracks = tracks.map(trackInfoToQueueTrack);
-      const { enqueueTracks, setOutputDir, setInitializing } = useQueueStore.getState();
+    const effectiveOutputDir = outputDir || downloadPath || null;
+    const queueTracks = tracks.map(trackInfoToQueueTrack);
+    const { enqueueTracks, setOutputDir, setInitializing } = useQueueStore.getState();
 
-      onNavigateToDownload();
-
-      try {
-        await dispatchDownloadQueue({
-          queueTracks,
-          albumName: playlistTitle,
-          outputDir: effectiveOutputDir,
-          maxConcurrent: maxConcurrentDownloads,
-          preserveOrder: preservePlaylistOrder,
-          enqueueTracks,
-          setOutputDir,
-          setInitializing,
-        });
-      } catch (error) {
-        logger.error(`[useLibraryDownload] Download failed: ${error}`);
-      }
-    },
-    [onNavigateToDownload],
-  );
+    try {
+      await dispatchDownloadQueue({
+        queueTracks,
+        albumName: playlistTitle,
+        outputDir: effectiveOutputDir,
+        maxConcurrent: maxConcurrentDownloads,
+        preserveOrder: preservePlaylistOrder,
+        enqueueTracks,
+        setOutputDir,
+        setInitializing,
+      });
+    } catch (error) {
+      logger.error(`[useLibraryDownload] Download failed: ${error}`);
+    }
+  }, []);
 
   const handleDownloadTracks = useCallback(
     (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => {

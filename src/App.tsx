@@ -260,9 +260,7 @@ function AppContent() {
     setActivePage(page);
   }, []);
 
-  const { handleDownloadTracks, pendingDownload, handleConfirmReplace, handleCancelReplace } = useLibraryDownload({
-    onNavigateToDownload: () => handlePageChange('download'),
-  });
+  const { handleDownloadTracks, pendingDownload, handleConfirmReplace, handleCancelReplace } = useLibraryDownload();
 
   const profileArtistId = useArtistProfileStore((s) => s.profileArtistId);
   const isMessagesPageOpen = useMessagesStore((s) => s.isPageOpen);
