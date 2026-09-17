@@ -93,7 +93,7 @@ export function TrackListView<F extends string = string>({
   ) : null;
 
   const actionsDropdown =
-    hasData && !isLoading ? (
+    !isLoading && !!tracks ? (
       <PlaylistActionsDropdown
         tracks={tracks}
         playlistName={title}

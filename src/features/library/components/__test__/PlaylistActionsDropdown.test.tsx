@@ -129,9 +129,9 @@ describe('PlaylistActionsDropdown', () => {
     expect(screen.getByRole('button')).toBeInTheDocument();
   });
 
-  it('disables button when no tracks', () => {
+  it('enables button when tracks is empty', () => {
     render(<PlaylistActionsDropdown tracks={[]} playlistName="My Playlist" />);
-    expect(screen.getByRole('button')).toBeDisabled();
+    expect(screen.getByRole('button')).not.toBeDisabled();
   });
 
   it('disables button when disabled prop is true', () => {
@@ -434,6 +434,21 @@ describe('PlaylistActionsDropdown', () => {
       mockDetectionData = { found: false, version: null, dbPath: null, isRunning: false };
       render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" deleteAction={deleteAction} />);
       expect(screen.getByRole('button')).toBeInTheDocument();
+    });
+
+    it('shows delete item for empty playlist', async () => {
+      const user = userEvent.setup();
+      render(<PlaylistActionsDropdown tracks={[]} playlistName="My Playlist" deleteAction={deleteAction} />);
+      await user.click(screen.getByRole('button'));
+      expect(screen.getByText('delete')).toBeInTheDocument();
+    });
+
+    it('opens confirmation dialog when delete clicked on empty playlist', async () => {
+      const user = userEvent.setup();
+      render(<PlaylistActionsDropdown tracks={[]} playlistName="My Playlist" deleteAction={deleteAction} />);
+      await user.click(screen.getByRole('button'));
+      await user.click(screen.getByText('delete'));
+      expect(screen.getByText('deleteTitle')).toBeInTheDocument();
     });
   });
 

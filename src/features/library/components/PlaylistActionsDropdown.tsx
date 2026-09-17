@@ -103,7 +103,6 @@ export function PlaylistActionsDropdown({
   const rekordbox = useRekordboxExport(exportableTracks, playlistName);
 
   const exportableCount = exportableTracks?.length ?? 0;
-  const trackCount = tracks?.length ?? 0;
   const showRekordbox = !rekordboxStatus || rekordboxStatus.found;
   const showLinks = !!permalinkUrl;
   const canShare = isSignedIn && !!shareInfo;
@@ -118,7 +117,7 @@ export function PlaylistActionsDropdown({
             variant="ghost"
             size="icon"
             aria-label={t('trackMenu.moreActions')}
-            disabled={disabled || trackCount === 0}
+            disabled={disabled}
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
           >
             <EllipsisVertical className="h-4 w-4" />
