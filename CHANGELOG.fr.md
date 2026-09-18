@@ -6,6 +6,22 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.35.0] - 2026-09-18
+
+### Added
+
+- Exclusion de morceaux de l'export Rekordbox
+
+### Changed
+
+- Téléchargements et exports enregistrables dans n'importe quel dossier
+
+### Fixed
+
+- La progression ne s'affichait pas pendant les téléchargements groupés
+- Le nombre de morceaux d'une playlist ne se mettait pas à jour après une suppression
+- Le menu d'actions n'apparaissait pas sur les playlists vides
+- Le bouton de téléchargement s'affichait alors que tous les morceaux sélectionnés étaient déjà téléchargés
 ## [1.34.0] - 2026-08-04
 
 ### Added

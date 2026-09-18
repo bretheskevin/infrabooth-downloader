@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.35.0] - 2026-09-18
+
+### Added
+
+- Exclude individual tracks from Rekordbox export
+
+### Changed
+
+- Save downloads and exports outside the home folder
+
+### Fixed
+
+- Tracks did not show progress during batch downloads
+- Playlist track count did not update after removing a track
+- Actions menu was unavailable for empty playlists
+- Download button appeared when all selected tracks were already downloaded
 ## [1.34.0] - 2026-08-04
 
 ### Added
