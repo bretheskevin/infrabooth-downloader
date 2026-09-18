@@ -22,6 +22,7 @@ import { useRekordboxExport } from '@/features/rekordbox-export/hooks/useRekordb
 import { useExcludedTrackIds } from '@/features/rekordbox-export/store';
 import { RekordboxExportDialog } from '@/features/rekordbox-export/components/RekordboxExportDialog';
 import { EditPlaylistDialog } from '@/components/playlist-detail/EditPlaylistDialog';
+import { featureFlags } from '@/lib/featureFlags';
 import type { EditAction } from '@/components/track-list/types';
 
 interface DeleteAction {
@@ -103,7 +104,7 @@ export function PlaylistActionsDropdown({
   const rekordbox = useRekordboxExport(exportableTracks, playlistName);
 
   const exportableCount = exportableTracks?.length ?? 0;
-  const showRekordbox = !rekordboxStatus || rekordboxStatus.found;
+  const showRekordbox = featureFlags.rekordbox && (!rekordboxStatus || rekordboxStatus.found);
   const showLinks = !!permalinkUrl;
   const canShare = isSignedIn && !!shareInfo;
 

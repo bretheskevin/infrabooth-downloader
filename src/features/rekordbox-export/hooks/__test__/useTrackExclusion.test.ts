@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 
+vi.mock('@/lib/featureFlags', () => ({ featureFlags: { rekordbox: true } }));
+
 vi.mock('@/components/track-list-context', () => ({
   useTrackListContextOptional: vi.fn(() => null),
 }));

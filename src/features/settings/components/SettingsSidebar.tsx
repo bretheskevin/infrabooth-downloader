@@ -4,6 +4,7 @@ import { Settings2, Download, Disc3, Info, Heart, Smartphone } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import type { SettingsCategory, SettingsSidebarProps } from './types';
 import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
+import { featureFlags } from '@/lib/featureFlags';
 
 const CATEGORIES: { id: SettingsCategory; icon: React.ElementType; labelKey: string }[] = [
   { id: 'general', icon: Settings2, labelKey: 'settings.categoryGeneral' },
@@ -17,7 +18,10 @@ export function SettingsSidebar({ selectedCategory, onSelectCategory }: Settings
   const { t } = useTranslation();
   const isDownloadEnabled = useIsDownloadEnabled();
 
-  const visibleCategories = useMemo(() => CATEGORIES.filter((c) => c.id !== 'playlists' || isDownloadEnabled), [isDownloadEnabled]);
+  const visibleCategories = useMemo(
+    () => CATEGORIES.filter((c) => (c.id !== 'playlists' || isDownloadEnabled) && (c.id !== 'rekordbox' || featureFlags.rekordbox)),
+    [isDownloadEnabled],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLDivElement>) => {

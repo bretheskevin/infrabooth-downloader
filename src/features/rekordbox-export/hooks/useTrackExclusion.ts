@@ -1,10 +1,11 @@
 import { useCallback } from 'react';
 import { useTrackListContextOptional } from '@/components/track-list-context';
+import { featureFlags } from '@/lib/featureFlags';
 import { useExcludedTrackIds, useRekordboxExclusionStore } from '../store';
 
 export function useTrackExclusion(trackId: number) {
   const ctx = useTrackListContextOptional();
-  const playlistId = ctx?.playlistId;
+  const playlistId = featureFlags.rekordbox ? ctx?.playlistId : undefined;
   const excludedSet = useExcludedTrackIds(playlistId);
   const isExcluded = playlistId ? excludedSet.has(trackId) : false;
 

@@ -7,3 +7,6 @@
 # This file lives in the app data directory so power users can enable
 # work-in-progress features. It is created automatically on first launch.
 
+# Rekordbox export/exclusion UI. Defaults on; seeded off on Windows. Set to true on Windows to enable.
+rekordbox = true
+

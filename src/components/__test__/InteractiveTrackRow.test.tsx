@@ -5,6 +5,8 @@ import { TrackListProvider, InteractiveTrackRow } from '../InteractiveTrackRow';
 import { useRekordboxExclusionStore } from '@/features/rekordbox-export/store';
 import type { TrackInfo } from '@/bindings';
 
+vi.mock('@/lib/featureFlags', () => ({ featureFlags: { rekordbox: true } }));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
   initReactI18next: { type: '3rdParty', init: () => {} },

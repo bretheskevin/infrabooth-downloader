@@ -35,6 +35,8 @@ let hookReturn = {
 
 let mockDetectionData: RekordboxStatus | undefined = { found: true, version: '6', dbPath: '/fake', isRunning: false };
 
+vi.mock('@/lib/featureFlags', () => ({ featureFlags: { rekordbox: true } }));
+
 vi.mock('@/features/rekordbox-export/hooks/useRekordboxDetection', () => ({
   useRekordboxDetection: () => ({ data: mockDetectionData }),
 }));

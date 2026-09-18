@@ -12,6 +12,7 @@ import { useDownloadSelected } from '@/hooks/useDownloadSelected';
 import { usePlayerStore } from '@/features/player/store';
 import { useFolderPath } from '@/hooks/useFolderPath';
 import { useOpenDownloadFolder } from '@/hooks/useOpenDownloadFolder';
+import { featureFlags } from '@/lib/featureFlags';
 import type { DownloadConfig } from '../types';
 
 const EMPTY_ARRAY: TrackInfo[] = [];
@@ -57,7 +58,7 @@ export function useTrackListState(config: UseTrackListStateConfig) {
 
   const { data: rekordboxStatus } = useRekordboxDetection();
   const rekordboxAvailable = !rekordboxStatus || rekordboxStatus.found;
-  const canExclude = config.playlistId != null && rekordboxAvailable;
+  const canExclude = featureFlags.rekordbox && config.playlistId != null && rekordboxAvailable;
 
   const excludedIds = useExcludedTrackIds(canExclude ? config.playlistId : undefined);
 

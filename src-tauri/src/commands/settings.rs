@@ -95,6 +95,15 @@ fn extract_flag_block(source: &str, key: &str) -> Option<String> {
     None
 }
 
+fn adjusted_default_flags() -> String {
+    DEFAULT_FEATURE_FLAGS
+        .lines()
+        .map(|line| if cfg!(target_os = "windows") && line_key(line) == Some("rekordbox") { "rekordbox = false".to_string() } else { line.to_string() })
+        .collect::<Vec<_>>()
+        .join("\n")
+        + "\n"
+}
+
 fn remove_flag_block(source: &str, key: &str) -> String {
     let lines: Vec<&str> = source.lines().collect();
     let mut to_remove = std::collections::HashSet::new();
@@ -125,15 +134,18 @@ pub fn get_feature_flags(app: tauri::AppHandle) -> Result<String, String> {
     let flags_path = app_data.join("feature-flags.toml");
 
     if !flags_path.exists() {
+        let defaults = adjusted_default_flags();
+        log::info!("[get_feature_flags] seeding defaults (rekordbox default = {})", !cfg!(target_os = "windows"));
         fs::create_dir_all(&app_data).map_err(|e| format!("Failed to create app data dir: {}", e))?;
-        fs::write(&flags_path, DEFAULT_FEATURE_FLAGS).map_err(|e| format!("Failed to write default feature flags: {}", e))?;
-        return Ok(DEFAULT_FEATURE_FLAGS.to_string());
+        fs::write(&flags_path, &defaults).map_err(|e| format!("Failed to write default feature flags: {}", e))?;
+        return Ok(defaults);
     }
 
     let mut content = fs::read_to_string(&flags_path).map_err(|e| format!("Failed to read feature flags: {}", e))?;
 
     let existing_keys = parse_flag_keys(&content);
     let default_keys = parse_flag_keys(DEFAULT_FEATURE_FLAGS);
+    let adjusted_defaults = adjusted_default_flags();
 
     let mut dirty = false;
 
@@ -148,7 +160,7 @@ pub fn get_feature_flags(app: tauri::AppHandle) -> Result<String, String> {
     // Append missing keys (present in defaults but not in user file)
     for key in &default_keys {
         if !existing_keys.iter().any(|k| k == key) {
-            if let Some(block) = extract_flag_block(DEFAULT_FEATURE_FLAGS, key) {
+            if let Some(block) = extract_flag_block(&adjusted_defaults, key) {
                 if !content.ends_with('\n') {
                     content.push('\n');
                 }

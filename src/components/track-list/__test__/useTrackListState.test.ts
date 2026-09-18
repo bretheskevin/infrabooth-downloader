@@ -20,6 +20,8 @@ let capturedExtraRefreshKey: number | undefined;
 let mockRekordboxStatus: { found: boolean } | undefined = { found: true };
 let mockQueueTracks: { status: string }[] = [];
 
+vi.mock('@/lib/featureFlags', () => ({ featureFlags: { rekordbox: true } }));
+
 vi.mock('@/features/settings/hooks/useIsDownloadEnabled', () => ({
   useIsDownloadEnabled: () => true,
 }));

@@ -2,6 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SettingsDialog } from '../SettingsDialog';
 
+vi.mock('@/lib/featureFlags', () => ({ featureFlags: { rekordbox: true } }));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
