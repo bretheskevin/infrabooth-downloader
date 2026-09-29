@@ -21,7 +21,8 @@ vi.mock('react-i18next', () => ({
         'settings.downloadLocation': 'Download Location',
         'settings.browse': 'Browse',
         'settings.currentPath': `Current: ${params?.path || ''}`,
-        'settings.permissionDenied': 'Cannot write to this folder. Please select a different location.',
+        'settings.permissionDenied':
+          'This folder requires administrator privileges. Choose a user-writable location like Downloads or Music.',
         'settings.selectFolder': 'Select download folder',
         'settings.notSet': 'Not set',
       };
@@ -129,7 +130,9 @@ describe('FolderPicker', () => {
     fireEvent.click(browseButton);
 
     await waitFor(() => {
-      expect(screen.getByRole('alert')).toHaveTextContent('Cannot write to this folder. Please select a different location.');
+      expect(screen.getByRole('alert')).toHaveTextContent(
+        'This folder requires administrator privileges. Choose a user-writable location like Downloads or Music.',
+      );
     });
 
     expect(mockSetDownloadPath).not.toHaveBeenCalled();

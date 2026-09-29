@@ -224,7 +224,7 @@
     "browse": "Browse",
     "changeFolder": "Change",
     "currentPath": "Current: {{path}}",
-    "permissionDenied": "Cannot write to this folder. Please select a different location.",
+    "permissionDenied": "This folder requires administrator privileges. Choose a user-writable location like Downloads or Music.",
     "selectFolder": "Select download folder",
     "notSet": "Not set",
     "pathInvalid": "Your saved download folder is no longer available.",

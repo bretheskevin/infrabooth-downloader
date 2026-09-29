@@ -79,3 +79,51 @@ jobs:
 
       - name: Run tests
         run: npm test
+
+  nsis-drift-check:
+    name: NSIS Template Drift Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract pinned Tauri version
+        id: tauri-version
+        run: |
+          TAURI_BUILD_VER=$(grep 'tauri-build' src-tauri/Cargo.toml | grep -oP '\d+\.\d+\.\d+')
+          echo "tauri_build_version=${TAURI_BUILD_VER}" >> $GITHUB_OUTPUT
+          echo "Detected tauri-build version: ${TAURI_BUILD_VER}"
+
+      - name: Fetch upstream NSIS template
+        run: |
+          TAURI_BUILD_VER=${{ steps.tauri-version.outputs.tauri_build_version }}
+
+          HTTP_CODE=$(curl -sL -w "%{http_code}" \
+            "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-build-v${TAURI_BUILD_VER}/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi" \
+            -o /tmp/upstream-latest.nsi)
+
+          if [ "$HTTP_CODE" != "200" ]; then
+            TAURI_VER=$(grep '^tauri = \|tauri = {' src-tauri/Cargo.toml | grep -oP '\d+\.\d+\.\d+' | head -1)
+            echo "tauri-build tag failed (HTTP $HTTP_CODE), trying tauri-v${TAURI_VER}..."
+            curl -sfL \
+              "https://raw.githubusercontent.com/tauri-apps/tauri/tauri-v${TAURI_VER}/crates/tauri-bundler/src/bundle/windows/nsis/installer.nsi" \
+              -o /tmp/upstream-latest.nsi
+          fi
+
+          echo "Fetched upstream template ($(wc -l < /tmp/upstream-latest.nsi) lines)"
+
+      - name: Compare with vendored upstream copy
+        run: |
+          tail -n +8 src-tauri/installer/installer.upstream.nsi > /tmp/vendor-body.nsi
+
+          if ! diff -q /tmp/vendor-body.nsi /tmp/upstream-latest.nsi > /dev/null 2>&1; then
+            echo "::error::NSIS template drift detected!"
+            echo ""
+            echo "The upstream Tauri NSIS template has changed since we vendored it."
+            echo "Review the diff below, port relevant changes into installer.nsi,"
+            echo "and update installer.upstream.nsi to match the new upstream."
+            echo ""
+            diff -u /tmp/vendor-body.nsi /tmp/upstream-latest.nsi || true
+            exit 1
+          fi
+
+          echo "No drift detected -- vendored upstream matches current Tauri version."

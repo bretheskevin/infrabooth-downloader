@@ -44,6 +44,11 @@
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": "",
+      "nsis": {
+        "template": "installer/installer.nsi",
+        "installMode": "currentUser",
+        "languages": ["English", "French"]
+      },
       "wix": {
         "language": "en-US"
       }

@@ -7,6 +7,13 @@
   "labels": ["dependencies"],
   "packageRules": [
     {
+      "description": "Group Tauri core packages (template drift check runs on these PRs)",
+      "matchPackagePatterns": ["^@tauri-apps/cli$", "^@tauri-apps/api$", "^tauri$", "^tauri-build$"],
+      "matchManagers": ["npm", "cargo"],
+      "groupName": "tauri core",
+      "automerge": false
+    },
+    {
       "description": "Group all non-major npm updates into a single PR",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch", "pin", "digest"],

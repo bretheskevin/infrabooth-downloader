@@ -224,7 +224,7 @@
     "browse": "Parcourir",
     "changeFolder": "Modifier",
     "currentPath": "Actuel : {{path}}",
-    "permissionDenied": "Impossible d'écrire dans ce dossier. Veuillez en choisir un autre.",
+    "permissionDenied": "Ce dossier nécessite des droits administrateur. Choisissez un emplacement accessible, comme Téléchargements ou Musique.",
     "selectFolder": "Choisir le dossier de téléchargement",
     "notSet": "Non défini",
     "pathInvalid": "Votre dossier de téléchargement n'est plus disponible.",
