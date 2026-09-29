@@ -88,6 +88,19 @@
       "title": "Choose Account",
       "description": "Multiple SoundCloud accounts were found in your browsers. Choose which one to use.",
       "empty": "No signed-in SoundCloud accounts found in your browsers."
+    },
+    "connectHelp": {
+      "title": "No session found",
+      "description": "No SoundCloud session was found in your browser. Log in to SoundCloud, then check again.",
+      "step1": "Open SoundCloud in your browser",
+      "step2": "Log in to your account",
+      "step3": "Return here and click “Check again”",
+      "openSoundcloud": "Open SoundCloud",
+      "checkAgain": "Check again",
+      "appbound": {
+        "title": "Browser blocks cookie access",
+        "description": "Chromium browsers block cookie access on Windows. Sign in to SoundCloud in Firefox instead."
+      }
     }
   },
   "download": {

@@ -33,7 +33,9 @@
 ## Frontend Components
 - SignInButton — triggers auth check
 - UserMenu — displays user info, sign out
-- AuthContainer — wrapper handling auth state display
+- AuthContainer — wrapper handling auth state display; renders ProfileSelectDialog + ConnectionHelpDialog
+- ConnectionHelpDialog — guidance dialog opened when a manual check finds no session; branches on cookieWarning into SoundCloud-login steps (Open SoundCloud) or appbound/Firefox mode (Open/Download Firefox, polls checkFirefoxInstalled). Has an in-dialog "Check again"
+- useAuthCheck — `handleCheck(): Promise<boolean>`; centralizes the trigger so every caller (SignInButton, Sidebar) opens ConnectionHelpDialog on a false result and closes it on success
 - useAuthStateListener — listens to AUTH_STATE_CHANGED / AUTH_REAUTH_NEEDED events
 
 ## Auth in Commands

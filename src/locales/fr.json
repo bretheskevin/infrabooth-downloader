@@ -88,6 +88,19 @@
       "title": "Choisir un compte",
       "description": "Plusieurs comptes SoundCloud ont été trouvés dans vos navigateurs. Choisissez lequel utiliser.",
       "empty": "Aucun compte SoundCloud connecté trouvé dans vos navigateurs."
+    },
+    "connectHelp": {
+      "title": "Aucune session trouvée",
+      "description": "Aucune session SoundCloud trouvée dans votre navigateur. Connectez-vous à SoundCloud, puis vérifiez à nouveau.",
+      "step1": "Ouvrez SoundCloud dans votre navigateur",
+      "step2": "Connectez-vous à votre compte",
+      "step3": "Revenez ici et cliquez sur « Vérifier à nouveau »",
+      "openSoundcloud": "Ouvrir SoundCloud",
+      "checkAgain": "Vérifier à nouveau",
+      "appbound": {
+        "title": "Le navigateur bloque l'accès aux cookies",
+        "description": "Les navigateurs Chromium bloquent l'accès aux cookies sous Windows. Connectez-vous à SoundCloud dans Firefox à la place."
+      }
     }
   },
   "download": {

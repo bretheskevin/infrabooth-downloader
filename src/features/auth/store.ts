@@ -29,6 +29,10 @@ interface AuthState extends Omit<AuthData, 'cookieWarning'> {
   setProfiles: (profiles: ProfileSummary[]) => void;
   openPicker: () => void;
   closePicker: () => void;
+  // Connect help dialog (transient)
+  isConnectHelpOpen: boolean;
+  openConnectHelp: () => void;
+  closeConnectHelp: () => void;
 }
 
 const PERSISTED_KEYS = ['selectedProfileKey'] as const satisfies readonly (keyof AuthState)[];
@@ -54,6 +58,7 @@ export const useAuthStore = create<AuthState>()(
       profiles: [],
       isPickerOpen: false,
       isLoadingProfiles: false,
+      isConnectHelpOpen: false,
       setAuth: ({ isSignedIn, userId, username, plan, avatarUrl, cookieWarning = null }) =>
         set({ isSignedIn, userId, username, plan, avatarUrl, cookieWarning }),
       clearAuth: () => set({ isSignedIn: false, userId: null, username: null, plan: null, avatarUrl: null, cookieWarning: null }),
@@ -61,6 +66,8 @@ export const useAuthStore = create<AuthState>()(
       setProfiles: (profiles) => set({ profiles, isLoadingProfiles: false }),
       openPicker: () => set({ isPickerOpen: true, isLoadingProfiles: true, profiles: [] }),
       closePicker: () => set({ isPickerOpen: false, profiles: [], isLoadingProfiles: false }),
+      openConnectHelp: () => set({ isConnectHelpOpen: true }),
+      closeConnectHelp: () => set({ isConnectHelpOpen: false }),
     }),
     {
       name: 'sc-downloader-auth',

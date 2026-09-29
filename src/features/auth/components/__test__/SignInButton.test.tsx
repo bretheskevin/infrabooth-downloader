@@ -5,7 +5,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { SignInButton } from '../SignInButton';
 import * as auth from '@/features/auth/api';
 
-// Mock react-i18next
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {
@@ -19,9 +18,16 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// Mock auth module
 vi.mock('@/features/auth/api', () => ({
   checkAuth: vi.fn(),
+}));
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
 describe('SignInButton', () => {
@@ -55,7 +61,6 @@ describe('SignInButton', () => {
   });
 
   it('should show loading spinner and "Checking..." text when clicked', async () => {
-    // Make checkAuth hang so we can observe loading state
     let resolveCheck: (value: boolean) => void;
     vi.mocked(auth.checkAuth).mockImplementation(
       () =>
@@ -79,7 +84,6 @@ describe('SignInButton', () => {
     expect(screen.getByText('Checking...')).toBeInTheDocument();
     expect(button).toBeDisabled();
 
-    // Cleanup: resolve the promise
     await act(async () => {
       resolveCheck!(true);
     });
@@ -126,7 +130,6 @@ describe('SignInButton', () => {
 
     expect(button).toBeDisabled();
 
-    // Cleanup
     await act(async () => {
       resolveCheck!(false);
     });
@@ -193,15 +196,12 @@ describe('SignInButton', () => {
       fireEvent.click(button);
     });
 
-    // Try clicking again while checking
     await act(async () => {
       fireEvent.click(button);
     });
 
-    // Should only be called once since button is disabled
     expect(auth.checkAuth).toHaveBeenCalledTimes(1);
 
-    // Cleanup
     await act(async () => {
       resolveCheck!(true);
     });

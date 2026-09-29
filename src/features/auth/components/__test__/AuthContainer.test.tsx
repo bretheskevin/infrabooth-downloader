@@ -4,7 +4,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { AuthContainer } from '../AuthContainer';
 import { useAuthStore } from '@/features/auth/store';
 
-// Mock react-i18next
 vi.mock('react-i18next', () => ({
   initReactI18next: { type: '3rdParty', init: () => {} },
   useTranslation: () => ({
@@ -18,6 +17,7 @@ vi.mock('react-i18next', () => ({
         'auth.switchAccount': 'Switch Account',
         'auth.profilePicker.title': 'Choose Account',
         'auth.profilePicker.description': 'Multiple accounts found.',
+        'auth.connectHelp.title': 'No session found',
       };
       const template = translations[key] || key;
       if (options) {
@@ -28,16 +28,40 @@ vi.mock('react-i18next', () => ({
   }),
 }));
 
-// Mock auth module
 vi.mock('@/features/auth/api', () => ({
   checkAuth: vi.fn(),
+  checkFirefoxInstalled: vi.fn().mockResolvedValue(false),
+  openInFirefox: vi.fn(),
   signOut: vi.fn(),
   listProfiles: vi.fn().mockResolvedValue([]),
 }));
 
+vi.mock('@tauri-apps/plugin-shell', () => ({
+  open: vi.fn().mockResolvedValue(undefined),
+}));
+
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn().mockResolvedValue(undefined),
+    warn: vi.fn().mockResolvedValue(undefined),
+    error: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn() },
+}));
+
 describe('AuthContainer', () => {
   beforeEach(() => {
-    useAuthStore.setState({ isSignedIn: false, username: null, plan: null, isPickerOpen: false, profiles: [] });
+    useAuthStore.setState({
+      isSignedIn: false,
+      username: null,
+      plan: null,
+      isPickerOpen: false,
+      profiles: [],
+      isConnectHelpOpen: false,
+    });
   });
 
   it('should render SignInButton when not signed in', () => {
@@ -104,7 +128,25 @@ describe('AuthContainer', () => {
         <AuthContainer />
       </TooltipProvider>,
     );
-    // Dialog is rendered but hidden — verify no crash
     expect(screen.queryByText('Choose Account')).not.toBeInTheDocument();
+  });
+
+  it('should render ConnectionHelpDialog (closed by default, no crash)', () => {
+    render(
+      <TooltipProvider>
+        <AuthContainer />
+      </TooltipProvider>,
+    );
+    expect(screen.queryByText('No session found')).not.toBeInTheDocument();
+  });
+
+  it('should show ConnectionHelpDialog when isConnectHelpOpen is true', () => {
+    useAuthStore.setState({ isConnectHelpOpen: true, cookieWarning: null });
+    render(
+      <TooltipProvider>
+        <AuthContainer />
+      </TooltipProvider>,
+    );
+    expect(screen.getByText('No session found')).toBeInTheDocument();
   });
 });
