@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { NotificationRow } from '../components/NotificationRow';
 import type { NotificationItem } from '@/bindings';
 import { createQueryWrapper } from '@/test/queryWrapper';
+import { createMockTrackInfo } from '@/test/factories';
 
 vi.mock('@/features/artist-profile', () => ({
   useArtistProfileStore: {
@@ -38,19 +39,13 @@ const baseActor = {
   permalink_url: 'https://soundcloud.com/testuser',
 };
 
-const baseTrack = {
+const baseTrack = createMockTrackInfo({
   id: 100,
   title: 'My Track',
   user: { id: 2, username: 'Artist', avatar_url: null },
   artwork_url: 'https://example.com/art.jpg',
-  duration: 180000,
   permalink_url: 'https://soundcloud.com/artist/my-track',
-  waveform_url: null,
-  downloadable: false,
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-};
+});
 
 const basePlaylist = {
   id: 200,

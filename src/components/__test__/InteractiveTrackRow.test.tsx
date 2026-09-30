@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { TrackListProvider, InteractiveTrackRow } from '../InteractiveTrackRow';
 import { useRekordboxExclusionStore } from '@/features/rekordbox-export/store';
-import type { TrackInfo } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 
 vi.mock('@/lib/featureFlags', () => ({ featureFlags: { rekordbox: true } }));
 
@@ -41,17 +41,12 @@ vi.mock('@/hooks/useLikeTrack', () => ({
   useLikeTrack: () => undefined,
 }));
 
-const mockTrack: TrackInfo = {
+const mockTrack = createMockTrackInfo({
   id: 123,
   title: 'Test Track',
   user: { id: 0, username: 'TestArtist', avatar_url: null },
-  artwork_url: null,
-  duration: 180000,
   permalink_url: 'https://soundcloud.com/test/track',
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-} as TrackInfo;
+});
 
 const defaultProviderProps = {
   playTrack: vi.fn(),

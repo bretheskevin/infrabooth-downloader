@@ -5,6 +5,7 @@ import { DropdownMenu, DropdownMenuContent } from '@/components/ui/dropdown-menu
 import { TrackListContext } from '@/components/track-list-context';
 import type { TrackListContextValue } from '@/components/track-list-context';
 import type { TrackInfo } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 import { useIsSignedIn } from '@/features/auth/store';
 
 vi.mock('react-i18next', () => ({
@@ -72,19 +73,12 @@ vi.mock('@/components/PlaylistPickerSubmenu', () => ({
   PlaylistPickerSubmenu: () => null,
 }));
 
-const mockTrack: TrackInfo = {
+const mockTrack = createMockTrackInfo({
   id: 123,
   title: 'Test Track',
   user: { id: 1, username: 'TestArtist', avatar_url: null },
-  artwork_url: null,
-  duration: 180000,
   permalink_url: 'https://soundcloud.com/test/track',
-  waveform_url: null,
-  downloadable: false,
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-};
+});
 
 const mockRemoveFromPlaylist = vi.fn();
 

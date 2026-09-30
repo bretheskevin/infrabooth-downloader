@@ -3,6 +3,7 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement } from 'react';
 import type { TrackInfo, LibraryPlaylist } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 
 const mockUpdatePlaylist = vi.fn();
 const mockClearLibraryCache = vi.fn();
@@ -52,19 +53,12 @@ function wrapper({ children }: { children: React.ReactNode }) {
 const fakeUser: TrackInfo['user'] = { id: 1, username: 'user', avatar_url: null };
 
 function makeTrack(id: number): TrackInfo {
-  return {
+  return createMockTrackInfo({
     id,
     title: `Track ${id}`,
     user: fakeUser,
-    artwork_url: null,
-    duration: 180000,
     permalink_url: `https://soundcloud.com/track/${id}`,
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  };
+  });
 }
 
 describe('useEditPlaylist', () => {

@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createElement, type ReactNode } from 'react';
-import type { TrackInfo, ExportResult } from '@/bindings';
+import type { ExportResult } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 import { useRekordboxExport } from '../hooks/useRekordboxExport';
 
 const { mockExportPlaylistToRekordbox } = vi.hoisted(() => ({
@@ -44,23 +45,11 @@ function createWrapper() {
   return ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client: queryClient }, children);
 }
 
-const mockTrack: TrackInfo = {
-  id: 1,
+const mockTrack = createMockTrackInfo({
   title: 'Test Track',
-  user: {
-    id: 42,
-    username: 'TestArtist',
-    avatar_url: null,
-  },
-  artwork_url: null,
-  duration: 180000,
+  user: { id: 42, username: 'TestArtist', avatar_url: null },
   permalink_url: 'https://soundcloud.com/testartist/test-track',
-  waveform_url: null,
-  downloadable: false,
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-};
+});
 
 const mockResult: ExportResult = {
   exportedCount: 1,

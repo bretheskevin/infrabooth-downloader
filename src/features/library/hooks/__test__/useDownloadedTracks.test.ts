@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useDownloadedTracks } from '../useDownloadedTracks';
 import type { TrackInfo } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 
 const mockScanExistingTracks = vi.fn();
 vi.mock('@/bindings', () => ({
@@ -16,15 +17,12 @@ vi.mock('@/hooks/useDownloadState', () => ({
 }));
 
 function makeTrack(id: number): TrackInfo {
-  return {
+  return createMockTrackInfo({
     id,
     title: `Track ${id}`,
-    duration: 180000,
     user: { id: 0, username: 'Artist', avatar_url: null },
-    artwork_url: null,
     permalink_url: `https://soundcloud.com/artist/track-${id}`,
-    preview_only: false,
-  } as TrackInfo;
+  });
 }
 
 describe('useDownloadedTracks', () => {

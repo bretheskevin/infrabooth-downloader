@@ -92,6 +92,23 @@ pub(crate) fn compute_preview_only(media: Option<&stream::MediaInfo>) -> bool {
     media.map(|m| !m.transcodings.is_empty() && m.transcodings.iter().all(|t| t.snipped)).unwrap_or(false)
 }
 
+#[cfg(test)]
+pub(crate) fn test_track_info() -> TrackInfo {
+    TrackInfo {
+        id: 0,
+        title: String::new(),
+        user: UserInfo { id: 0, username: String::new(), avatar_url: None },
+        artwork_url: None,
+        duration: 0,
+        permalink_url: String::new(),
+        waveform_url: None,
+        downloadable: false,
+        download_url: None,
+        secret_token: None,
+        preview_only: false,
+    }
+}
+
 impl From<RawTrackInfo> for TrackInfo {
     fn from(raw: RawTrackInfo) -> Self {
         // Cache transcodings for instant playback resolution
@@ -788,11 +805,7 @@ mod tests {
             artwork_url: Some("https://example.com/art.jpg".to_string()),
             duration: 180000,
             permalink_url: "https://soundcloud.com/test_artist/test-track".to_string(),
-            waveform_url: None,
-            downloadable: false,
-            download_url: None,
-            secret_token: None,
-            preview_only: false,
+            ..test_track_info()
         };
         let json = serde_json::to_string(&track).unwrap();
         assert!(json.contains("\"id\":123456"));
@@ -900,14 +913,9 @@ mod tests {
                 id: 1,
                 title: "Track 1".to_string(),
                 user: UserInfo { id: 1, username: "artist".to_string(), avatar_url: None },
-                artwork_url: None,
                 duration: 180000,
                 permalink_url: "https://soundcloud.com/artist/track-1".to_string(),
-                waveform_url: None,
-                downloadable: false,
-                download_url: None,
-                secret_token: None,
-                preview_only: false,
+                ..test_track_info()
             }],
         };
         let json = serde_json::to_string(&playlist).unwrap();

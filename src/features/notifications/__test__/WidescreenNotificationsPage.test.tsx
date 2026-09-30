@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { NotificationItem } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
@@ -76,19 +77,7 @@ function makeActor(username = 'user') {
 }
 
 function makeTrack(title = 'Track') {
-  return {
-    id: 1,
-    title,
-    user: { id: 1, username: 'artist', avatar_url: null, permalink_url: '' },
-    artwork_url: null,
-    duration: 180000,
-    permalink_url: '',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  };
+  return createMockTrackInfo({ title, permalink_url: '' });
 }
 
 describe('WidescreenNotificationsPage', () => {

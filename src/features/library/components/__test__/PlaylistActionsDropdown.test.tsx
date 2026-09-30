@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { TrackInfo, ExportResult, RekordboxStatus, RekordboxTreeNode } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 import { useSettingsStore } from '@/features/settings/store';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import type { TrackStatus } from '@/features/rekordbox-export/hooks/useRekordboxExport';
@@ -85,19 +86,11 @@ vi.mock('react-i18next', () => ({
   Trans: ({ i18nKey }: { i18nKey: string }) => i18nKey,
 }));
 
-const mockTrack: TrackInfo = {
-  id: 1,
+const mockTrack = createMockTrackInfo({
   title: 'Test Track',
   user: { id: 42, username: 'TestArtist', avatar_url: null },
-  artwork_url: null,
-  duration: 180000,
   permalink_url: 'https://soundcloud.com/testartist/test-track',
-  waveform_url: null,
-  downloadable: false,
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-};
+});
 
 function makeTrackStatus(id: string, title: string, status: TrackStatus['status'], error?: string): TrackStatus {
   return { trackId: id, trackTitle: title, status, error };

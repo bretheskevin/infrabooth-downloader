@@ -3,6 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { TrackInfo } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 import { EditPlaylistDialog } from '@/components/playlist-detail/EditPlaylistDialog';
 
 const mockEditPlaylist = vi.fn();
@@ -20,45 +21,27 @@ vi.mock('@/hooks/useEditPlaylist', () => ({
 vi.mock('@/lib/logger', () => ({ logger: { error: vi.fn() } }));
 
 const mockTracks: TrackInfo[] = [
-  {
+  createMockTrackInfo({
     id: 1,
     title: 'Track One',
     user: { id: 10, username: 'Artist A', avatar_url: null },
-    artwork_url: null,
     duration: 120000,
     permalink_url: 'https://soundcloud.com/a/track-one',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
-  {
+  }),
+  createMockTrackInfo({
     id: 2,
     title: 'Track Two',
     user: { id: 20, username: 'Artist B', avatar_url: null },
-    artwork_url: null,
     duration: 180000,
     permalink_url: 'https://soundcloud.com/b/track-two',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
-  {
+  }),
+  createMockTrackInfo({
     id: 3,
     title: 'Track Three',
     user: { id: 30, username: 'Artist C', avatar_url: null },
-    artwork_url: null,
     duration: 240000,
     permalink_url: 'https://soundcloud.com/c/track-three',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
+  }),
 ];
 
 function renderDialog(props: Partial<React.ComponentProps<typeof EditPlaylistDialog>> = {}) {

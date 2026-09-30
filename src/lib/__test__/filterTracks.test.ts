@@ -1,60 +1,37 @@
 import { describe, it, expect } from 'vitest';
 import { filterTracks } from '../filterTracks';
 import type { TrackInfo } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 
 const makeTracks = (): TrackInfo[] => [
-  {
+  createMockTrackInfo({
     id: 1,
     title: 'Acid Rain',
     user: { id: 0, username: 'DJ Kandid', avatar_url: null },
-    artwork_url: null,
     duration: 240000,
     permalink_url: '',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
-  {
+  }),
+  createMockTrackInfo({
     id: 2,
     title: 'Tekno Drive',
     user: { id: 0, username: 'Anetha', avatar_url: null },
-    artwork_url: null,
     duration: 300000,
     permalink_url: '',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
-  {
+  }),
+  createMockTrackInfo({
     id: 3,
     title: 'Hard Pulse',
     user: { id: 0, username: 'SPFDJ', avatar_url: null },
-    artwork_url: null,
     duration: 180000,
     permalink_url: '',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
-  {
+  }),
+  createMockTrackInfo({
     id: 4,
     title: 'Night Acid',
     user: { id: 0, username: 'Anetha', avatar_url: null },
-    artwork_url: null,
     duration: 420000,
     permalink_url: '',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
+  }),
 ];
 
 describe('filterTracks', () => {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TrackPreview } from '../TrackPreview';
-import type { TrackInfo } from '@/features/url-input/types/playlist';
+import { createMockTrackInfo } from '@/test/factories';
 
 // Mock react-i18next
 vi.mock('react-i18next', () => ({
@@ -26,19 +26,14 @@ vi.mock('../DownloadBar', () => ({
 }));
 
 describe('TrackPreview', () => {
-  const mockTrack: TrackInfo = {
+  const mockTrack = createMockTrackInfo({
     id: 123456,
     title: 'Test Track Title',
     user: { id: 0, username: 'Test Artist', avatar_url: null },
     artwork_url: 'https://example.com/artwork.jpg',
     duration: 185000, // 3:05
     permalink_url: 'https://soundcloud.com/test-artist/test-track',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  };
+  });
 
   const mockOnDownload = vi.fn();
 

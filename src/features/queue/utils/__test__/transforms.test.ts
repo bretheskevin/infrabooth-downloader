@@ -1,35 +1,23 @@
 import { describe, it, expect } from 'vitest';
 import { trackInfoToQueueTrack, playlistTracksToQueueTracks, queueTrackToDownloadRequest } from '../transforms';
-import type { TrackInfo } from '@/features/url-input';
 import type { Track } from '@/features/queue/types/track';
+import { createMockTrackInfo } from '@/test/factories';
 
-const mockTrack: TrackInfo = {
+const mockTrack = createMockTrackInfo({
   id: 123456,
   title: 'Test Track',
   user: { id: 0, username: 'TestArtist', avatar_url: null },
   artwork_url: 'https://example.com/art.jpg',
-  duration: 180000,
   permalink_url: '',
-  waveform_url: null,
-  downloadable: false,
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-};
+});
 
-const mockTrackNoArtwork: TrackInfo = {
+const mockTrackNoArtwork = createMockTrackInfo({
   id: 789,
   title: 'No Art Track',
   user: { id: 0, username: 'Artist2', avatar_url: null },
-  artwork_url: null,
   duration: 120000,
   permalink_url: '',
-  waveform_url: null,
-  downloadable: false,
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-};
+});
 
 describe('trackInfoToQueueTrack', () => {
   it('should convert TrackInfo to queue Track', () => {

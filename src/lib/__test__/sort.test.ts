@@ -1,47 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import { sortTracks } from '@/lib/sort';
 import type { TrackInfo } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 
 const makeTracks = (): TrackInfo[] => [
-  {
+  createMockTrackInfo({
     id: 1,
     title: 'Zebra',
     user: { id: 0, username: 'Charlie', avatar_url: null },
-    artwork_url: null,
     duration: 240000,
     permalink_url: '',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
-  {
-    id: 2,
-    title: 'Alpha',
-    user: { id: 0, username: 'Bob', avatar_url: null },
-    artwork_url: null,
-    duration: 300000,
-    permalink_url: '',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
-  {
-    id: 3,
-    title: 'Mango',
-    user: { id: 0, username: 'Alice', avatar_url: null },
-    artwork_url: null,
-    duration: 180000,
-    permalink_url: '',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
+  }),
+  createMockTrackInfo({ id: 2, title: 'Alpha', user: { id: 0, username: 'Bob', avatar_url: null }, duration: 300000, permalink_url: '' }),
+  createMockTrackInfo({ id: 3, title: 'Mango', user: { id: 0, username: 'Alice', avatar_url: null }, duration: 180000, permalink_url: '' }),
 ];
 
 describe('sortTracks', () => {
@@ -89,32 +60,8 @@ describe('sortTracks', () => {
 
   it('is case-insensitive for title sort', () => {
     const mixed: TrackInfo[] = [
-      {
-        id: 1,
-        title: 'banana',
-        user: { id: 0, username: 'X', avatar_url: null },
-        artwork_url: null,
-        duration: 100,
-        permalink_url: '',
-        waveform_url: null,
-        downloadable: false,
-        download_url: null,
-        secret_token: null,
-        preview_only: false,
-      },
-      {
-        id: 2,
-        title: 'Apple',
-        user: { id: 0, username: 'X', avatar_url: null },
-        artwork_url: null,
-        duration: 100,
-        permalink_url: '',
-        waveform_url: null,
-        downloadable: false,
-        download_url: null,
-        secret_token: null,
-        preview_only: false,
-      },
+      createMockTrackInfo({ id: 1, title: 'banana', user: { id: 0, username: 'X', avatar_url: null }, duration: 100, permalink_url: '' }),
+      createMockTrackInfo({ id: 2, title: 'Apple', user: { id: 0, username: 'X', avatar_url: null }, duration: 100, permalink_url: '' }),
     ];
     const result = sortTracks(mixed, 'title', 'asc');
     expect(result.map((t) => t.title)).toEqual(['Apple', 'banana']);

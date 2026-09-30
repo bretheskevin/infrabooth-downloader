@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useSyncToQueue } from '../useSyncToQueue';
 import type { PlaylistInfo, TrackInfo } from '@/features/url-input';
+import { createMockTrackInfo } from '@/test/factories';
 
 // Mock queueStore
 const mockEnqueueTracks = vi.fn();
@@ -17,48 +18,31 @@ const mockPlaylist: PlaylistInfo = {
   artwork_url: 'https://example.com/art.jpg',
   track_count: 2,
   tracks: [
-    {
+    createMockTrackInfo({
       id: 1,
       title: 'Track 1',
       user: { id: 0, username: 'Artist1', avatar_url: null },
-      artwork_url: null,
-      duration: 180000,
       permalink_url: '',
-      waveform_url: null,
-      downloadable: false,
-      download_url: null,
-      secret_token: null,
-      preview_only: false,
-    },
-    {
+    }),
+    createMockTrackInfo({
       id: 2,
       title: 'Track 2',
       user: { id: 0, username: 'Artist2', avatar_url: null },
       artwork_url: 'https://example.com/art2.jpg',
       duration: 240000,
       permalink_url: '',
-      waveform_url: null,
-      downloadable: false,
-      download_url: null,
-      secret_token: null,
-      preview_only: false,
-    },
+    }),
   ],
 };
 
-const mockTrack: TrackInfo = {
+const mockTrack = createMockTrackInfo({
   id: 456,
   title: 'Test Track',
   user: { id: 0, username: 'TestArtist', avatar_url: null },
   artwork_url: 'https://example.com/track-art.jpg',
   duration: 185000,
   permalink_url: '',
-  waveform_url: null,
-  downloadable: false,
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-};
+});
 
 describe('useSyncToQueue', () => {
   beforeEach(() => {

@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createMockTrackInfo } from '@/test/factories';
 
 vi.mock('../audio-engine', () => ({
   audioEngine: {
@@ -69,19 +70,15 @@ const makeQueue = (count: number, startId = 1): QueueItem[] =>
   }));
 
 const makeRelatedTracks = (count: number, startId = 100) =>
-  Array.from({ length: count }, (_, i) => ({
-    id: startId + i,
-    title: `Related Track ${startId + i}`,
-    user: { id: 0, username: 'Related Artist', avatar_url: null },
-    artwork_url: null,
-    duration: 200000,
-    permalink_url: `https://soundcloud.com/related/track-${startId + i}`,
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  }));
+  Array.from({ length: count }, (_, i) =>
+    createMockTrackInfo({
+      id: startId + i,
+      title: `Related Track ${startId + i}`,
+      user: { id: 0, username: 'Related Artist', avatar_url: null },
+      duration: 200000,
+      permalink_url: `https://soundcloud.com/related/track-${startId + i}`,
+    }),
+  );
 
 function extractCallbacks(): Partial<AudioEngineCallbacks> {
   usePlayerStore.getState()._initAudioEngine();

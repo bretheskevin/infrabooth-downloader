@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { buildPlaybackQueue } from '../utils/buildPlaybackQueue';
 import type { TrackInfo } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 
 const mockPlay = vi.fn();
 const mockSkipTo = vi.fn();
@@ -22,32 +23,19 @@ vi.mock('../store', () => ({
 import { usePlayContext } from '../hooks/usePlayContext';
 
 const mockTracks: TrackInfo[] = [
-  {
+  createMockTrackInfo({
     id: 1,
     title: 'Track 1',
     user: { id: 0, username: 'Artist', avatar_url: null },
-    artwork_url: null,
-    duration: 180000,
     permalink_url: 'https://soundcloud.com/artist/track-1',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
-  {
+  }),
+  createMockTrackInfo({
     id: 2,
     title: 'Track 2',
     user: { id: 0, username: 'Artist', avatar_url: null },
-    artwork_url: null,
     duration: 240000,
     permalink_url: 'https://soundcloud.com/artist/track-2',
-    waveform_url: null,
-    downloadable: false,
-    download_url: null,
-    secret_token: null,
-    preview_only: false,
-  },
+  }),
 ];
 
 describe('buildPlaybackQueue', () => {

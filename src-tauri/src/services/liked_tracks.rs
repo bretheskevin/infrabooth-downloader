@@ -4,7 +4,8 @@ use serde::Deserialize;
 
 use crate::models::error::ScApiError;
 use crate::services::http::{validate_api_response, RequestBuilderExt, API_V2_BASE, HTTP_CLIENT, SC_APP_VERSION};
-use crate::services::playlist::TrackInfo;
+use crate::services::playlist::{compute_preview_only, TrackInfo};
+use crate::services::stream::MediaInfo;
 
 #[derive(Debug, Deserialize)]
 struct LikedTracksResponse {
@@ -31,6 +32,7 @@ struct LikedTrackRaw {
     download_url: Option<String>,
     #[serde(default)]
     secret_token: Option<String>,
+    media: Option<MediaInfo>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -84,6 +86,8 @@ impl LikedTracksCache {
 }
 
 fn map_track(item: LikedTrackItem) -> TrackInfo {
+    let preview_only = compute_preview_only(item.track.media.as_ref());
+    log::debug!("[map_track] liked track {} preview_only={}", item.track.id, preview_only);
     TrackInfo {
         id: item.track.id,
         title: item.track.title,
@@ -95,7 +99,7 @@ fn map_track(item: LikedTrackItem) -> TrackInfo {
         downloadable: item.track.downloadable,
         download_url: item.track.download_url,
         secret_token: item.track.secret_token,
-        preview_only: false,
+        preview_only,
     }
 }
 
@@ -186,6 +190,7 @@ mod tests {
                 downloadable: true,
                 download_url: Some("https://download.url".to_string()),
                 secret_token: None,
+                media: None,
             },
         };
         let track = map_track(item);
@@ -193,6 +198,38 @@ mod tests {
         assert_eq!(track.title, "My Track");
         assert_eq!(track.user.username, "artist");
         assert!(track.downloadable);
+        assert!(!track.preview_only);
+    }
+
+    #[test]
+    fn test_map_track_preview_only_from_snipped_media() {
+        let json = r#"{
+            "track": {
+                "id": 200,
+                "title": "Go+ Track",
+                "user": { "id": 1, "username": "artist", "avatar_url": null },
+                "artwork_url": null,
+                "duration": 180000,
+                "permalink_url": "https://soundcloud.com/artist/go-plus-track",
+                "waveform_url": null,
+                "downloadable": false,
+                "download_url": null,
+                "media": {
+                    "transcodings": [
+                        {
+                            "url": "https://example.com/t",
+                            "preset": "mp3_0_0",
+                            "format": {"protocol": "hls", "mime_type": "audio/mpeg"},
+                            "quality": "sq",
+                            "snipped": true
+                        }
+                    ]
+                }
+            }
+        }"#;
+        let item: LikedTrackItem = serde_json::from_str(json).unwrap();
+        let track = map_track(item);
+        assert!(track.preview_only);
     }
 
     #[test]
@@ -204,14 +241,9 @@ mod tests {
             id: 1,
             title: "Test".to_string(),
             user: crate::services::playlist::UserInfo { id: 1, username: "user".to_string(), avatar_url: None },
-            artwork_url: None,
             duration: 1000,
             permalink_url: "https://soundcloud.com/user/test".to_string(),
-            waveform_url: None,
-            downloadable: false,
-            download_url: None,
-            secret_token: None,
-            preview_only: false,
+            ..crate::services::playlist::test_track_info()
         }];
         cache.set(tracks.clone());
 

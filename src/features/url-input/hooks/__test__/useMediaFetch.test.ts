@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useMediaFetch } from '../useMediaFetch';
 import { createQueryWrapper } from '@/test/queryWrapper';
+import { createMockTrackInfo } from '@/test/factories';
 import type { ValidationResult } from '@/features/url-input/types/url';
 
 vi.mock('@/features/url-input/api/playlist', () => ({
@@ -25,35 +26,23 @@ const mockPlaylist = {
   artwork_url: 'https://example.com/art.jpg',
   track_count: 5,
   tracks: [
-    {
+    createMockTrackInfo({
       id: 1,
       title: 'Track 1',
       user: { id: 0, username: 'Artist1', avatar_url: null },
-      artwork_url: null,
-      duration: 180000,
       permalink_url: 'https://soundcloud.com/artist1/track-1',
-      waveform_url: null,
-      downloadable: false,
-      download_url: null,
-      secret_token: null,
-      preview_only: false,
-    },
+    }),
   ],
 };
 
-const mockTrack = {
+const mockTrack = createMockTrackInfo({
   id: 456,
   title: 'Test Track',
   user: { id: 0, username: 'TestArtist', avatar_url: null },
   artwork_url: 'https://example.com/track-art.jpg',
   duration: 240000,
   permalink_url: 'https://soundcloud.com/testartist/test-track',
-  waveform_url: null,
-  downloadable: false,
-  download_url: null,
-  secret_token: null,
-  preview_only: false,
-};
+});
 
 const validTrackValidation: ValidationResult = { valid: true, urlType: 'track', error: null };
 const validPlaylistValidation: ValidationResult = { valid: true, urlType: 'playlist', error: null };

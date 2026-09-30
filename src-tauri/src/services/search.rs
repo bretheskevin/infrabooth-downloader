@@ -208,14 +208,9 @@ mod tests {
                 id: 1,
                 title: "Test".to_string(),
                 user: UserInfo { id: 1, username: "user".to_string(), avatar_url: None },
-                artwork_url: None,
                 duration: 100000,
                 permalink_url: "https://soundcloud.com/user/test".to_string(),
-                waveform_url: None,
-                downloadable: false,
-                download_url: None,
-                secret_token: None,
-                preview_only: false,
+                ..crate::services::playlist::test_track_info()
             }],
             total_results: Some(1),
         };

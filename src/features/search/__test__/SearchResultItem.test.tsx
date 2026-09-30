@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { TrackListProvider, InteractiveTrackRow } from '@/components/InteractiveTrackRow';
-import type { TrackInfo } from '@/bindings';
+import { createMockTrackInfo } from '@/test/factories';
 
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({ t: (key: string) => key }),
@@ -38,15 +38,12 @@ vi.mock('@/hooks/useLikeTrack', () => ({
   useLikeTrack: () => undefined,
 }));
 
-const mockTrack: TrackInfo = {
+const mockTrack = createMockTrackInfo({
   id: 123,
   title: 'Test Track',
   user: { id: 0, username: 'TestArtist', avatar_url: null },
-  artwork_url: null,
-  duration: 180000,
   permalink_url: 'https://soundcloud.com/test/track',
-  preview_only: false,
-} as TrackInfo;
+});
 
 const defaultProviderProps = {
   playTrack: vi.fn(),
