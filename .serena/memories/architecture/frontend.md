@@ -78,7 +78,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
   - Components: PlayerContainer, ExpandedBar, MiniPill, Waveform, SeekBar, TransportControls, VolumeControl, QueuePanel, ScrollingText
 
 ## Shared Components (`src/components/`)
-- TrackRow, TrackRowContent, TrackRowActions, TrackRowSkeleton — track display
+- TrackRow, TrackRowContent, TrackRowActions, TrackRowSkeleton — track display (Go+ badge when `preview_only`: 30s-preview tooltip + DRM note, i18n `track.goPlusBadge*`)
 - InteractiveTrackRow — selectable track with actions
 - SelectAllCheckbox, SelectionActionBar — batch operations
 - TrackActionsDropdown, TrackDownloadAction — context menus

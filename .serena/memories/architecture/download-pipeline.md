@@ -26,6 +26,12 @@
 - Auth retry on 401/403
 - Geo-block detection
 
+## Go+ preview_only
+- `TrackInfo.preview_only: bool` (playlist.rs) — true when the session only gets a 30s preview (Go+/premium track without an entitled account)
+- Computed by `compute_preview_only`: non-empty transcodings AND every transcoding `snipped`
+- Set in `TrackInfo::from(RawTrackInfo)`; propagated by all track-listing services (playlist, liked_tracks, new_tracks, search)
+- Frontend surfaces it as the Go+ badge on TrackRow (i18n `track.goPlusBadge*`)
+
 ## Rate Limiting
 - Detected from FFmpeg 429 errors or API responses
 - RateLimitInfo: remaining_requests, reset_time, max_nr_of_requests, time_window
