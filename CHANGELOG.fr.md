@@ -6,6 +6,21 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.36.0] - 2026-09-30
+
+### Added
+
+- Badge Go+ sur les morceaux limités à un aperçu de 30 secondes
+- Aide à la connexion lorsqu'aucune session de navigateur n'est détectée
+
+### Changed
+
+- Message plus clair lorsque le dossier de téléchargement nécessite des droits administrateur
+
+### Fixed
+
+- L'application pouvait rester bloquée indéfiniment au chargement d'un morceau
+- Il était impossible d'installer l'application dans un dossier protégé sous Windows
 ## [1.35.0] - 2026-09-18
 
 ### Added

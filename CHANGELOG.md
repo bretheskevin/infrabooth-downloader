@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.36.0] - 2026-09-30
+
+### Added
+
+- Go+ badge on 30-second preview-only tracks
+- Login help when no browser session is found
+
+### Changed
+
+- Clearer message when download folder needs admin rights
+
+### Fixed
+
+- A track could stay stuck loading forever
+- Windows install failed for admin-protected folders
 ## [1.35.0] - 2026-09-18
 
 ### Added
