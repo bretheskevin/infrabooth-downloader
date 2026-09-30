@@ -77,6 +77,7 @@ const mockPlaylist: PlaylistInfo = {
       downloadable: false,
       download_url: null,
       secret_token: null,
+      preview_only: false,
     },
   ],
 };
@@ -92,6 +93,7 @@ const mockTrack: TrackInfo = {
   downloadable: false,
   download_url: null,
   secret_token: null,
+  preview_only: false,
 };
 
 describe('useDownloadFlow', () => {

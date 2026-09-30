@@ -50,6 +50,7 @@ const mockTrack: TrackInfo = {
   permalink_url: 'https://soundcloud.com/test/track',
   download_url: null,
   secret_token: null,
+  preview_only: false,
 } as TrackInfo;
 
 const defaultProviderProps = {

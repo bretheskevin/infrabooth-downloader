@@ -18,6 +18,7 @@ export function useCurrentTrackInfo(): TrackInfo | undefined {
       downloadable: false,
       download_url: null,
       secret_token: null,
+      preview_only: false,
     } satisfies TrackInfo;
   }, [currentTrack]);
 }

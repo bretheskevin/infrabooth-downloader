@@ -1,8 +1,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Ban } from 'lucide-react';
+import { Ban, Crown } from 'lucide-react';
 import { Menu, MenuTrigger } from '@/components/ui/menu';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { useLikeTrack } from '@/hooks/useLikeTrack';
 import { useMenuExclusivity } from '@/hooks/useMenuExclusivity';
 import { TrackRowContent } from '@/components/TrackRowContent';
@@ -144,6 +145,21 @@ export function TrackRow({
               <Ban className="h-3 w-3" />
               {t('rekordboxExport.excludedBadge')}
             </span>
+          )}
+          {track.preview_only && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                  <Crown className="h-3 w-3" />
+                  {t('track.goPlusBadge')}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" align="start" className="max-w-xs space-y-1.5 leading-snug">
+                <p>{t('track.goPlusBadgeTooltip.preview')}</p>
+                <p>{t('track.goPlusBadgeTooltip.drm')}</p>
+                <p className="opacity-80">{t('track.goPlusBadgeTooltip.drmInfo')}</p>
+              </TooltipContent>
+            </Tooltip>
           )}
           <TrackRowActionsDropdown
             track={track}

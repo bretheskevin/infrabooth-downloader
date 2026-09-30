@@ -14,6 +14,7 @@ const mockTrack: TrackInfo = {
   downloadable: false,
   download_url: null,
   secret_token: null,
+  preview_only: false,
 };
 
 const mockTrackNoArtwork: TrackInfo = {
@@ -27,6 +28,7 @@ const mockTrackNoArtwork: TrackInfo = {
   downloadable: false,
   download_url: null,
   secret_token: null,
+  preview_only: false,
 };
 
 describe('trackInfoToQueueTrack', () => {

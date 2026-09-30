@@ -45,6 +45,7 @@ const mockTrack: TrackInfo = {
   artwork_url: null,
   duration: 180000,
   permalink_url: 'https://soundcloud.com/test/track',
+  preview_only: false,
 } as TrackInfo;
 
 const defaultProviderProps = {

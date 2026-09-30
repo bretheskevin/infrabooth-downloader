@@ -95,6 +95,7 @@ fn map_track(item: LikedTrackItem) -> TrackInfo {
         downloadable: item.track.downloadable,
         download_url: item.track.download_url,
         secret_token: item.track.secret_token,
+        preview_only: false,
     }
 }
 
@@ -210,6 +211,7 @@ mod tests {
             downloadable: false,
             download_url: None,
             secret_token: None,
+            preview_only: false,
         }];
         cache.set(tracks.clone());
 

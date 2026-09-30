@@ -512,6 +512,14 @@
     "signInTitle": "Sign in to discover mixes",
     "signInDescription": "Connect your SoundCloud account to explore personalized mixes"
   },
+  "track": {
+    "goPlusBadge": "Go+",
+    "goPlusBadgeTooltip": {
+      "preview": "Go+ track — only a 30-second preview is available without a Go+ subscription.",
+      "drm": "Some tracks are also DRM-protected and can’t be downloaded at all.",
+      "drmInfo": "DRM (Digital Rights Management) is copy protection applied by SoundCloud or the rights holder."
+    }
+  },
   "trackMenu": {
     "moreActions": "More actions",
     "copyLink": "Copy link",

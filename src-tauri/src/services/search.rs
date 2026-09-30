@@ -215,6 +215,7 @@ mod tests {
                 downloadable: false,
                 download_url: None,
                 secret_token: None,
+                preview_only: false,
             }],
             total_results: Some(1),
         };

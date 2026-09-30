@@ -987,7 +987,11 @@ download_url: string | null;
 /**
  * Secret token for private tracks (present when resolved via a `/s-xxx` share link).
  */
-secret_token: string | null }
+secret_token: string | null; 
+/**
+ * True when only a 30s preview is available to the current session (SoundCloud Go+ / premium track without an entitled account).
+ */
+preview_only: boolean }
 export type TracksBatchEvent = { entityId: number; tracks: TrackInfo[] }
 export type UnreadCountResult = { unread: boolean; latest_created_at: string | null }
 /**

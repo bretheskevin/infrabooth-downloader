@@ -96,6 +96,7 @@ const mockTrack: TrackInfo = {
   downloadable: false,
   download_url: null,
   secret_token: null,
+  preview_only: false,
 };
 
 function makeTrackStatus(id: string, title: string, status: TrackStatus['status'], error?: string): TrackStatus {

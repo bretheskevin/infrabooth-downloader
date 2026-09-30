@@ -31,6 +31,7 @@ const mockTracks: TrackInfo[] = [
     downloadable: false,
     download_url: null,
     secret_token: null,
+    preview_only: false,
   },
   {
     id: 2,
@@ -43,6 +44,7 @@ const mockTracks: TrackInfo[] = [
     downloadable: false,
     download_url: null,
     secret_token: null,
+    preview_only: false,
   },
   {
     id: 3,
@@ -55,6 +57,7 @@ const mockTracks: TrackInfo[] = [
     downloadable: false,
     download_url: null,
     secret_token: null,
+    preview_only: false,
   },
 ];
 

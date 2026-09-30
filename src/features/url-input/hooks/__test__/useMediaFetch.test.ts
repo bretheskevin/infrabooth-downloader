@@ -36,6 +36,7 @@ const mockPlaylist = {
       downloadable: false,
       download_url: null,
       secret_token: null,
+      preview_only: false,
     },
   ],
 };
@@ -51,6 +52,7 @@ const mockTrack = {
   downloadable: false,
   download_url: null,
   secret_token: null,
+  preview_only: false,
 };
 
 const validTrackValidation: ValidationResult = { valid: true, urlType: 'track', error: null };

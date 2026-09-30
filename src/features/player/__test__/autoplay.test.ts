@@ -80,6 +80,7 @@ const makeRelatedTracks = (count: number, startId = 100) =>
     downloadable: false,
     download_url: null,
     secret_token: null,
+    preview_only: false,
   }));
 
 function extractCallbacks(): Partial<AudioEngineCallbacks> {

@@ -15,6 +15,7 @@ const makeTracks = (): TrackInfo[] => [
     downloadable: false,
     download_url: null,
     secret_token: null,
+    preview_only: false,
   },
   {
     id: 2,
@@ -27,6 +28,7 @@ const makeTracks = (): TrackInfo[] => [
     downloadable: false,
     download_url: null,
     secret_token: null,
+    preview_only: false,
   },
   {
     id: 3,
@@ -39,6 +41,7 @@ const makeTracks = (): TrackInfo[] => [
     downloadable: false,
     download_url: null,
     secret_token: null,
+    preview_only: false,
   },
 ];
 

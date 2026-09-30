@@ -37,6 +37,7 @@ describe('TrackPreview', () => {
     downloadable: false,
     download_url: null,
     secret_token: null,
+    preview_only: false,
   };
 
   const mockOnDownload = vi.fn();

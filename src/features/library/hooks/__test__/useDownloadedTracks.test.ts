@@ -23,6 +23,7 @@ function makeTrack(id: number): TrackInfo {
     user: { id: 0, username: 'Artist', avatar_url: null },
     artwork_url: null,
     permalink_url: `https://soundcloud.com/artist/track-${id}`,
+    preview_only: false,
   } as TrackInfo;
 }
 

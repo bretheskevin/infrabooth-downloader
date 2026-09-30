@@ -67,6 +67,7 @@ const mockPlaylist: PlaylistInfo = {
       downloadable: false,
       download_url: null,
       secret_token: null,
+      preview_only: false,
     },
     {
       id: 2,
@@ -79,6 +80,7 @@ const mockPlaylist: PlaylistInfo = {
       downloadable: false,
       download_url: null,
       secret_token: null,
+      preview_only: false,
     },
   ],
 };
@@ -101,6 +103,7 @@ const mockSingleTrackPlaylist: PlaylistInfo = {
       downloadable: false,
       download_url: null,
       secret_token: null,
+      preview_only: false,
     },
   ],
 };
@@ -123,6 +126,7 @@ const mockPlaylistNoArtwork: PlaylistInfo = {
       downloadable: false,
       download_url: null,
       secret_token: null,
+      preview_only: false,
     },
   ],
 };
@@ -145,6 +149,7 @@ const mockPlaylistWithTrackArtwork: PlaylistInfo = {
       downloadable: false,
       download_url: null,
       secret_token: null,
+      preview_only: false,
     },
   ],
 };

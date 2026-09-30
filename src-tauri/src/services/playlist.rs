@@ -83,6 +83,13 @@ pub struct TrackInfo {
     pub download_url: Option<String>,
     /// Secret token for private tracks (present when resolved via a `/s-xxx` share link).
     pub secret_token: Option<String>,
+    /// True when only a 30s preview is available to the current session (SoundCloud Go+ / premium track without an entitled account).
+    pub preview_only: bool,
+}
+
+/// True when all transcodings are snipped (30s preview only for this session).
+pub(crate) fn compute_preview_only(media: Option<&stream::MediaInfo>) -> bool {
+    media.map(|m| !m.transcodings.is_empty() && m.transcodings.iter().all(|t| t.snipped)).unwrap_or(false)
 }
 
 impl From<RawTrackInfo> for TrackInfo {
@@ -105,6 +112,9 @@ impl From<RawTrackInfo> for TrackInfo {
         // Use track artwork if available, otherwise fall back to user avatar
         let artwork = raw.artwork_url.or(raw.user.avatar_url);
 
+        let preview_only = compute_preview_only(raw.media.as_ref());
+        log::debug!("[TrackInfo::from] track {} preview_only={}", raw.id, preview_only);
+
         TrackInfo {
             id: raw.id,
             title: raw.title,
@@ -116,6 +126,7 @@ impl From<RawTrackInfo> for TrackInfo {
             downloadable: raw.downloadable,
             download_url: build_download_url(raw.downloadable, raw.download_url, raw.id),
             secret_token: raw.secret_token,
+            preview_only,
         }
     }
 }
@@ -781,6 +792,7 @@ mod tests {
             downloadable: false,
             download_url: None,
             secret_token: None,
+            preview_only: false,
         };
         let json = serde_json::to_string(&track).unwrap();
         assert!(json.contains("\"id\":123456"));
@@ -895,6 +907,7 @@ mod tests {
                 downloadable: false,
                 download_url: None,
                 secret_token: None,
+                preview_only: false,
             }],
         };
         let json = serde_json::to_string(&playlist).unwrap();
@@ -1111,5 +1124,130 @@ mod tests {
         let track = TrackInfo::from(raw);
         assert!(!track.downloadable);
         assert!(track.download_url.is_none());
+    }
+
+    #[test]
+    fn test_compute_preview_only_all_snipped() {
+        use crate::services::stream::{MediaInfo, Transcoding, TranscodingFormat};
+        let media = MediaInfo {
+            transcodings: vec![
+                Transcoding {
+                    url: "https://example.com/t1".to_string(),
+                    preset: "mp3_0_0".to_string(),
+                    format: TranscodingFormat { protocol: "hls".to_string(), mime_type: "audio/mpeg".to_string() },
+                    quality: "sq".to_string(),
+                    snipped: true,
+                },
+                Transcoding {
+                    url: "https://example.com/t2".to_string(),
+                    preset: "opus_0_0".to_string(),
+                    format: TranscodingFormat { protocol: "hls".to_string(), mime_type: "audio/ogg; codecs=\"opus\"".to_string() },
+                    quality: "sq".to_string(),
+                    snipped: true,
+                },
+            ],
+        };
+        assert!(compute_preview_only(Some(&media)));
+    }
+
+    #[test]
+    fn test_compute_preview_only_mixed_snipped() {
+        use crate::services::stream::{MediaInfo, Transcoding, TranscodingFormat};
+        let media = MediaInfo {
+            transcodings: vec![
+                Transcoding {
+                    url: "https://example.com/t1".to_string(),
+                    preset: "mp3_0_0".to_string(),
+                    format: TranscodingFormat { protocol: "hls".to_string(), mime_type: "audio/mpeg".to_string() },
+                    quality: "sq".to_string(),
+                    snipped: true,
+                },
+                Transcoding {
+                    url: "https://example.com/t2".to_string(),
+                    preset: "opus_0_0".to_string(),
+                    format: TranscodingFormat { protocol: "hls".to_string(), mime_type: "audio/ogg; codecs=\"opus\"".to_string() },
+                    quality: "sq".to_string(),
+                    snipped: false,
+                },
+            ],
+        };
+        assert!(!compute_preview_only(Some(&media)));
+    }
+
+    #[test]
+    fn test_compute_preview_only_none_snipped() {
+        use crate::services::stream::{MediaInfo, Transcoding, TranscodingFormat};
+        let media = MediaInfo {
+            transcodings: vec![Transcoding {
+                url: "https://example.com/t1".to_string(),
+                preset: "mp3_0_0".to_string(),
+                format: TranscodingFormat { protocol: "hls".to_string(), mime_type: "audio/mpeg".to_string() },
+                quality: "sq".to_string(),
+                snipped: false,
+            }],
+        };
+        assert!(!compute_preview_only(Some(&media)));
+    }
+
+    #[test]
+    fn test_compute_preview_only_empty_transcodings() {
+        use crate::services::stream::MediaInfo;
+        let media = MediaInfo { transcodings: vec![] };
+        assert!(!compute_preview_only(Some(&media)));
+    }
+
+    #[test]
+    fn test_compute_preview_only_no_media() {
+        assert!(!compute_preview_only(None));
+    }
+
+    #[test]
+    fn test_from_raw_track_info_derives_preview_only() {
+        let json = r#"{
+            "id": 999,
+            "title": "Go+ Track",
+            "user": {"id": 1, "username": "artist"},
+            "artwork_url": null,
+            "duration": 180000,
+            "media": {
+                "transcodings": [
+                    {
+                        "url": "https://example.com/t",
+                        "preset": "mp3_0_0",
+                        "format": {"protocol": "hls", "mime_type": "audio/mpeg"},
+                        "quality": "sq",
+                        "snipped": true
+                    }
+                ]
+            }
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert!(track.preview_only);
+    }
+
+    #[test]
+    fn test_from_raw_track_info_preview_only_false_when_not_snipped() {
+        let json = r#"{
+            "id": 1000,
+            "title": "Free Track",
+            "user": {"id": 1, "username": "artist"},
+            "artwork_url": null,
+            "duration": 180000,
+            "media": {
+                "transcodings": [
+                    {
+                        "url": "https://example.com/t",
+                        "preset": "mp3_0_0",
+                        "format": {"protocol": "hls", "mime_type": "audio/mpeg"},
+                        "quality": "sq",
+                        "snipped": false
+                    }
+                ]
+            }
+        }"#;
+        let raw: RawTrackInfo = serde_json::from_str(json).unwrap();
+        let track = TrackInfo::from(raw);
+        assert!(!track.preview_only);
     }
 }
