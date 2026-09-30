@@ -352,7 +352,7 @@ export const createPlaybackSlice: StateCreator<PlayerState & PlaybackSliceAction
 
     const { positionMs } = audioEngine.getPosition();
     set({ state: 'loading' });
-    void logger.debug(`[player] Expired URL on resume for track ${currentTrack.trackId}, refreshing at ${positionMs}ms`);
+    void logger.info(`[player] Expired URL on resume for track ${currentTrack.trackId}, refreshing at ${positionMs}ms`);
     const generation = ++loadGeneration;
     void resolveWithCache(currentTrack.trackId, currentTrack.trackUrl)
       .then((url) => {
@@ -500,7 +500,7 @@ export const createPlaybackSlice: StateCreator<PlayerState & PlaybackSliceAction
           return;
         }
 
-        void logger.debug(`[player] Refreshing URL for track ${currentTrack.trackId} at ${positionMs}ms (attempt ${urlRefreshCount})`);
+        void logger.info(`[player] Refreshing URL for track ${currentTrack.trackId} at ${positionMs}ms (attempt ${urlRefreshCount})`);
         invalidateCachedUrl(currentTrack.trackId);
 
         const generation = ++loadGeneration;

@@ -50,8 +50,13 @@ let rampTargetVolume = 1;
 let crossfadePendingBegin: (() => void) | null = null;
 let playWhenReady = false;
 let urlRefreshAttempted = false;
+let watchdogTimer: ReturnType<typeof setTimeout> | null = null;
+let watchdogStage = 0;
+let nonFatalHlsErrorCount = 0;
 
 const BUFFERED_END_TOLERANCE_S = 0.5;
+const LOADING_WATCHDOG_MS = 5000;
+const HLS_NON_FATAL_THRESHOLD = 3;
 
 function safePlay(el: HTMLAudioElement, context = 'Play') {
   el.play().catch((e: Error) => {
@@ -63,8 +68,48 @@ function safePlay(el: HTMLAudioElement, context = 'Play') {
   });
 }
 
+function clearLoadingWatchdog() {
+  if (watchdogTimer !== null) {
+    clearTimeout(watchdogTimer);
+    watchdogTimer = null;
+  }
+}
+
+function armLoadingWatchdog() {
+  clearLoadingWatchdog();
+  watchdogTimer = setTimeout(onLoadingWatchdogFire, LOADING_WATCHDOG_MS);
+}
+
+function resetLoadingWatchdog() {
+  clearLoadingWatchdog();
+  watchdogStage = 0;
+}
+
+function onLoadingWatchdogFire() {
+  watchdogTimer = null;
+  if (currentState !== 'loading') return;
+  if (watchdogStage === 0) {
+    watchdogStage = 1;
+    const positionMs = (activeSlot.audio?.currentTime ?? 0) * 1000;
+    void logger.warn(`[audio-engine] Loading stalled for ${LOADING_WATCHDOG_MS}ms at ${positionMs}ms, requesting URL refresh`);
+    callbacks.onUrlExpired(positionMs);
+    armLoadingWatchdog();
+    return;
+  }
+  void logger.error('[audio-engine] Loading still stalled after URL refresh, giving up');
+  watchdogStage = 0;
+  stopSlotProgress(activeSlot);
+  setState('idle');
+  callbacks.onError('Loading stalled after URL refresh');
+}
+
 function setState(state: AudioEngineState) {
   currentState = state;
+  if (state === 'loading') {
+    armLoadingWatchdog();
+  } else {
+    clearLoadingWatchdog();
+  }
   callbacks.onStateChange(state);
 }
 
@@ -95,7 +140,7 @@ function getSlotAudio(slot: Slot): HTMLAudioElement {
     el.addEventListener('canplay', () => {
       if (!slot.isOutgoing && playWhenReady && slot === activeSlot) {
         playWhenReady = false;
-        void logger.debug(`[audio-engine] Deferred play executing (readyState=${el.readyState})`);
+        void logger.info(`[audio-engine] Deferred play executing (readyState=${el.readyState})`);
         safePlay(el);
       }
     });
@@ -153,8 +198,16 @@ function loadSlot(slot: Slot, url: string, startPositionMs = 0) {
         callbacks.onFullyBuffered();
       }
     });
+    hlsInstance.on(Hls.Events.FRAG_LOADED, () => {
+      nonFatalHlsErrorCount = 0;
+    });
     hlsInstance.on(Hls.Events.ERROR, (_event, data) => {
-      if (!data.fatal) return;
+      if (!data.fatal) {
+        nonFatalHlsErrorCount++;
+        void logger.debug(`[audio-engine] Non-fatal HLS error (${data.type}/${data.details}), consecutive=${nonFatalHlsErrorCount}`);
+        if (nonFatalHlsErrorCount < HLS_NON_FATAL_THRESHOLD) return;
+        nonFatalHlsErrorCount = 0;
+      }
       if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
         hlsInstance.recoverMediaError();
         return;
@@ -165,7 +218,7 @@ function loadSlot(slot: Slot, url: string, startPositionMs = 0) {
         urlRefreshAttempted = true;
         const positionMs = (slot.audio?.currentTime ?? 0) * 1000;
         stopSlotProgress(slot);
-        void logger.debug(`[audio-engine] Fatal HLS network error (${data.details}); requesting URL refresh at ${positionMs}ms`);
+        void logger.info(`[audio-engine] Fatal HLS network error (${data.details}); requesting URL refresh at ${positionMs}ms`);
         callbacks.onUrlExpired(positionMs);
         return;
       }
@@ -280,11 +333,13 @@ export const audioEngine = {
   load(url: string, startPositionMs = 0) {
     playWhenReady = false;
     urlRefreshAttempted = false;
+    nonFatalHlsErrorCount = 0;
+    resetLoadingWatchdog();
     clearStandby();
     stopSlotProgress(activeSlot);
     destroySlotHls(activeSlot);
     setState('loading');
-    void logger.debug(`[audio-engine] Loading into active slot (startPosition=${startPositionMs}ms): ${url.slice(0, 80)}...`);
+    void logger.info(`[audio-engine] Loading into active slot (startPosition=${startPositionMs}ms): ${url.slice(0, 80)}...`);
     loadSlot(activeSlot, url, startPositionMs);
   },
 
@@ -296,7 +351,7 @@ export const audioEngine = {
       safePlay(el);
     } else {
       playWhenReady = true;
-      void logger.debug(`[audio-engine] Media not ready (readyState=${el.readyState}), deferring play until canplay`);
+      void logger.info(`[audio-engine] Media not ready (readyState=${el.readyState}), deferring play until canplay`);
     }
   },
 
@@ -326,6 +381,7 @@ export const audioEngine = {
   stop() {
     playWhenReady = false;
     audioEngine.cancelCrossfade();
+    resetLoadingWatchdog();
 
     stopSlotProgress(activeSlot);
     destroySlotHls(activeSlot);
@@ -361,6 +417,8 @@ export const audioEngine = {
   destroy() {
     playWhenReady = false;
     urlRefreshAttempted = false;
+    nonFatalHlsErrorCount = 0;
+    resetLoadingWatchdog();
     cancelRamp();
     crossfading = false;
     crossfadePendingBegin = null;

@@ -6,6 +6,9 @@
 - State machine: idle → loading → playing → paused → ended
 - Crossfade: volume ramps via requestAnimationFrame, configurable duration
 - HLS config: optimized buffer settings, retry policies
+- Loading watchdog: any `setState('loading')` arms a 5s timer (`LOADING_WATCHDOG_MS`); fire 1 calls `callbacks.onUrlExpired` (bounded by playbackSlice `MAX_URL_REFRESH_PER_TRACK`), fire 2 gives up via `callbacks.onError('Loading stalled after URL refresh')`; cleared on any non-loading state, reset in load/stop/destroy
+- Non-fatal HLS errors escalate to the fatal path after `HLS_NON_FATAL_THRESHOLD = 3` consecutive errors; counter resets on FRAG_LOADED, load, destroy
+- Recovery-path logs (load, deferred play, URL refresh, fatal network error) are at info level because release builds filter to Info
 
 ### API (audioEngine object)
 load, play, pause, stop, seek, setVolume, getPosition, getState, isFullyBuffered
