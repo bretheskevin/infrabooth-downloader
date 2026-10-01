@@ -37,11 +37,12 @@ ManifestDPIAwareness PerMonitorV2
 !include "StrFunc.nsh"
 ${StrCase}
 ${StrLoc}
-; === BEGIN custom: UAC plugin for on-demand elevation ===
-; UAC.nsh is required for write-probe + elevation relaunch on the directory page.
+; === BEGIN custom: on-demand elevation (stock NSIS only) ===
+; Elevation uses ExecShell "runas" (built-in) and UserInfo::GetAccountType
+; (UserInfo plugin, bundled with Tauri's NSIS). The UAC plugin is NOT available
+; in Tauri's NSIS distribution, so do not `!include "UAC.nsh"` here.
 ; The installer stays RequestExecutionLevel user for the default (writable) path.
-!include "UAC.nsh"
-; === END custom: UAC plugin for on-demand elevation ===
+; === END custom: on-demand elevation (stock NSIS only) ===
 
 
 {{#if installer_hooks}}
@@ -479,13 +480,11 @@ FunctionEnd
 {{/each}}
 
 ; === BEGIN custom: elevation i18n strings ===
-; These LangStrings are used by DirectoryPageLeave when the write-probe fails
-; and the user needs to choose a different location or when elevation fails.
+; Used by DirectoryPageLeave when the write-probe fails even as administrator
+; and the user needs to choose a different location.
 ; NSIS Unicode mode (Unicode true at top) supports accented characters in strings.
 LangString elevationFailedMsg ${LANG_ENGLISH}   "This folder cannot be written to, even with administrator privileges.$\nPlease choose a different location."
 LangString elevationFailedMsg ${LANG_FRENCH}   "Impossible d'écrire dans ce dossier, même avec les droits administrateur.$\nVeuillez choisir un autre emplacement."
-LangString elevationErrorMsg ${LANG_ENGLISH}   "Failed to restart with administrator privileges"
-LangString elevationErrorMsg ${LANG_FRENCH}   "Impossible de redémarrer avec les droits administrateur"
 ; === END custom: elevation i18n strings ===
 
 Function .onInit
@@ -505,7 +504,7 @@ Function .onInit
   ${EndIf}
 
   ; === BEGIN custom: inner-instance elevation detection ===
-  ; When relaunched elevated by UAC::RunElevated, detect this by reading the
+  ; When relaunched elevated via ExecShell "runas", detect this by reading the
   ; pending install dir from a temporary registry key written by the outer instance.
   ; On detection: restore $INSTDIR, set the flag to skip the directory page, clean up.
   !define ELEVATION_PENDING_KEY "Software\${PRODUCTNAME}\Installer"
@@ -513,7 +512,7 @@ Function .onInit
 
   ReadRegStr $0 HKCU "${ELEVATION_PENDING_KEY}" "${ELEVATION_PENDING_VALUE}"
   ${If} $0 != ""
-    ; Outer instance wrote this key before calling UAC::RunElevated.
+    ; Outer instance wrote this key before the elevated relaunch.
     ; We are the elevated inner instance -- restore the chosen dir and skip dir page.
     StrCpy $INSTDIR $0
     StrCpy $ElevatedRelaunchFlag 1
@@ -940,16 +939,16 @@ Function DirectoryPagePre
 FunctionEnd
 ; === END custom: DirectoryPagePre (replaces SkipIfPassive for directory page) ===
 
-; === BEGIN custom: on-demand elevation (write-probe + UAC relaunch) ===
+; === BEGIN custom: on-demand elevation (write-probe + runas relaunch) ===
 ; Called when the user clicks Next on the directory page.
 ; Probes write access to $INSTDIR mirroring src-tauri/src/commands/settings.rs::try_write_permission:
 ;   - attempt to create the dir
 ;   - write a temp file, delete it
-;   - on success: continue install (no UAC)
+;   - on success: continue install (no elevation)
 ;   - on failure and not already admin: save $INSTDIR to a temp registry key,
-;     call UAC::RunElevated to relaunch elevated, then quit the outer instance
+;     relaunch elevated via ExecShell "runas", then quit the outer instance
 ;   - on failure and already admin: NTFS deny ACE or other hard error -- show message, stay on dir page
-;   - UAC cancel (error 1223): delete temp registry key, stay on dir page
+;   - UAC cancel or launch failure: delete temp registry key, stay on dir page
 Function DirectoryPageLeave
   ; Attempt to create the install directory if it does not yet exist
   ClearErrors
@@ -968,45 +967,36 @@ Function DirectoryPageLeave
   _elevation_needed:
     ; Check if we are already running as admin.
     ; If admin cannot write, it is a genuine NTFS deny ACE -- tell the user.
-    ${If} ${UAC_IsAdmin}
+    UserInfo::GetAccountType
+    Pop $0
+    ${If} $0 == "Admin"
       MessageBox MB_OK|MB_ICONEXCLAMATION         "$(elevationFailedMsg)"         /SD IDOK
       Abort ; Stay on directory page so user can choose a writable location
     ${EndIf}
 
-    ; Not admin and cannot write: relaunch elevated.
+    ; Not admin and cannot write: relaunch elevated via the ShellExecute "runas"
+    ; verb (built into NSIS, triggers the UAC consent dialog).
     ; Write chosen $INSTDIR to a temporary registry key; the elevated inner
     ; instance reads it in .onInit (see inner-instance detection block above),
     ; restores $INSTDIR, then skips the directory page.
     WriteRegStr HKCU "${ELEVATION_PENDING_KEY}" "${ELEVATION_PENDING_VALUE}" "$INSTDIR"
 
-    ; UAC::RunElevated relaunches the same installer elevated and waits for it to exit.
-    ; Return stack: $0 = ShellExecuteEx result, $1 = 1 if inner completed normally.
-    UAC::RunElevated
-    Pop $0
-    Pop $1
-
-    ${If} $0 = 0
-      ; Elevation and inner instance succeeded
-      ${If} $1 = 1
-        ; Inner (elevated) instance completed the install -- quit the outer
-        Quit
-      ${EndIf}
-      ; Inner instance did not signal completion (e.g. user cancelled the inner installer)
-      ; Fall through to clean up
-    ${ElseIf} $0 = 1223
-      ; User cancelled the UAC consent dialog -- stay on directory page
-    ${Else}
-      ; Unexpected error elevating
-      MessageBox MB_OK|MB_ICONEXCLAMATION         "$(elevationErrorMsg) (error $0)"         /SD IDOK
+    ClearErrors
+    ExecShell "runas" "$EXEPATH"
+    ${If} ${Errors}
+      ; User cancelled the UAC consent dialog or the launch failed.
+      ; Clean up the pending registry key and stay on the directory page.
+      DeleteRegValue HKCU "${ELEVATION_PENDING_KEY}" "${ELEVATION_PENDING_VALUE}"
+      Abort
     ${EndIf}
 
-    ; Clean up the pending registry key (elevation cancelled or failed)
-    DeleteRegValue HKCU "${ELEVATION_PENDING_KEY}" "${ELEVATION_PENDING_VALUE}"
-    Abort ; Return to directory page
+    ; Elevated instance launched successfully -- it finishes the install on its
+    ; own (ExecShell does not wait), so quit this outer instance.
+    Quit
 
   _elevation_done:
 FunctionEnd
-; === END custom: on-demand elevation (write-probe + UAC relaunch) ===
+; === END custom: on-demand elevation (write-probe + runas relaunch) ===
 
 Function Skip
   Abort
