@@ -29,9 +29,9 @@ static SEND_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 const SENDER_LABEL: &str = "sc-dm-sender";
 const RESULT_HOST: &str = "sc-dm-result.tauri";
 const SEND_TIMEOUT: Duration = Duration::from_secs(180);
-/// How long to stay hidden waiting for a headless (no-captcha) send before revealing
-/// the window so the user can solve a DataDome challenge.
-const REVEAL_AFTER: Duration = Duration::from_secs(6);
+/// Document title the injected script sets when a DataDome challenge needs the
+/// user; the window stays hidden until Rust sees it.
+const REVEAL_TITLE: &str = "__sc_dm_reveal__";
 /// Response bodies larger than this are not shipped back through the sentinel URL.
 const MAX_RESULT_BODY: usize = 60_000;
 
@@ -104,6 +104,8 @@ fn build_init_script(oauth_token: &str, req: &WebviewRequest) -> String {
   var RESULT = 'https://{host}/?status=';
   var MAX_BODY = {max_body};
   var MAX_ATTEMPTS = 5;
+  var REVEAL_TITLE = {reveal_title};
+  var INTERSTITIAL_GRACE_MS = 8000;
 
   var done = false;
   var attempts = 0;
@@ -117,6 +119,11 @@ fn build_init_script(oauth_token: &str, req: &WebviewRequest) -> String {
     var url = RESULT + encodeURIComponent(status);
     if (responseBody && responseBody.length < MAX_BODY) {{ url += '&body=' + encodeURIComponent(responseBody); }}
     try {{ window.location.replace(url); }} catch (e) {{}}
+  }}
+
+  function reveal(reason) {{
+    log('revealing window: ' + reason);
+    try {{ document.title = REVEAL_TITLE; }} catch (e) {{}}
   }}
 
   function armRetry() {{
@@ -143,6 +150,8 @@ fn build_init_script(oauth_token: &str, req: &WebviewRequest) -> String {
     frame.src = url;
     frame.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;border:0;z-index:2147483647;background:#fff;';
     document.documentElement.appendChild(frame);
+    if (url.indexOf('/interstitial') === -1) {{ reveal('captcha'); }}
+    else {{ setTimeout(function() {{ if (!done && document.getElementById('sc-dm-challenge')) reveal('interstitial did not pass'); }}, INTERSTITIAL_GRACE_MS); }}
     var onMsg = function(ev) {{
       var origin = ev.origin || '';
       if (origin.indexOf('captcha-delivery.com') === -1 && origin.indexOf('soundcloud.com') === -1) return;
@@ -164,7 +173,7 @@ fn build_init_script(oauth_token: &str, req: &WebviewRequest) -> String {
       var url = null;
       try {{ url = JSON.parse(t).url || null; }} catch (e) {{}}
       if (url && url.indexOf('captcha-delivery.com') !== -1) {{ showChallenge(url); }}
-      else {{ log('403 without a challenge url; relying on the page tag'); }}
+      else {{ log('403 without a challenge url; relying on the page tag'); reveal('403 without challenge url'); }}
     }}, function() {{}});
   }}
 
@@ -181,7 +190,7 @@ fn build_init_script(oauth_token: &str, req: &WebviewRequest) -> String {
       if (res.ok) {{ res.text().then(function(t) {{ finish('ok', t); }}, function() {{ finish('ok', ''); }}); return; }}
       if (res.status === 403) {{ handleBlocked(res); return; }}
       finish('http_' + res.status, '');
-    }}).catch(function(err) {{ log('fetch error ' + err); armRetry(); }});
+    }}).catch(function(err) {{ log('fetch error ' + err); setTimeout(attempt, 2000); }});
   }}
 
   function start() {{
@@ -200,6 +209,7 @@ fn build_init_script(oauth_token: &str, req: &WebviewRequest) -> String {
         token = token,
         host = RESULT_HOST,
         max_body = MAX_RESULT_BODY,
+        reveal_title = serde_json::to_string(REVEAL_TITLE).unwrap_or_else(|_| "\"\"".to_string()),
     )
 }
 
@@ -298,6 +308,16 @@ async fn run_webview_send(app: &tauri::AppHandle, oauth_token: &str, req: Webvie
             .center()
             .visible(false)
             .initialization_script(script)
+            .on_document_title_changed(|window, title| {
+                if title != REVEAL_TITLE || window.is_visible().unwrap_or(false) {
+                    return;
+                }
+                log::info!("[webview_send] DataDome challenge detected; revealing window");
+                if let Err(e) = window.show() {
+                    log::error!("[webview_send] failed to show sender window: {}", e);
+                }
+                let _ = window.set_focus();
+            })
             .on_page_load(move |webview, payload| {
                 if payload.event() != PageLoadEvent::Finished {
                     return;
@@ -353,26 +373,13 @@ async fn run_webview_send(app: &tauri::AppHandle, oauth_token: &str, req: Webvie
         None => return Err("sender window closed before navigation".to_string()),
     }
 
-    // Stay hidden while the fetch runs. If it resolves quickly the send was headless;
-    // if nothing comes back within the reveal window, a captcha is almost certainly
-    // waiting — show the window so the user can solve it.
-    let mut result_rx = result_rx;
-    let outcome = tokio::select! {
-        biased;
-        received = &mut result_rx => received.unwrap_or_else(|_| Err(ANTIBOT_BLOCKED.to_string())),
-        _ = tokio::time::sleep(REVEAL_AFTER) => {
-            if let Some(window) = app.get_webview_window(SENDER_LABEL) {
-                let _ = window.show();
-                let _ = window.set_focus();
-                log::info!("[webview_send] no fast result; revealing window for captcha");
-            }
-            match tokio::time::timeout(SEND_TIMEOUT, result_rx).await {
-                Ok(Ok(result)) => result,
-                Ok(Err(_)) => Err(ANTIBOT_BLOCKED.to_string()),
-                Err(_) => Err("timed out waiting for SoundCloud".to_string()),
-            }
-        }
+    let started = std::time::Instant::now();
+    let outcome = match tokio::time::timeout(SEND_TIMEOUT, result_rx).await {
+        Ok(Ok(result)) => result,
+        Ok(Err(_)) => Err(ANTIBOT_BLOCKED.to_string()),
+        Err(_) => Err("timed out waiting for SoundCloud".to_string()),
     };
+    log::info!("[webview_send] result received {} ms after navigation", started.elapsed().as_millis());
     log::info!("[webview_send] outcome: {:?}", outcome.as_ref().map(|b| b.as_deref().map(str::len)));
 
     if let Some(window) = app.get_webview_window(SENDER_LABEL) {
