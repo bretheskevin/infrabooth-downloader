@@ -6,6 +6,16 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.37.0] - 2026-10-06
+
+### Added
+
+- Moteur audio natif pour une lecture plus fluide
+- Contrôle de la lecture depuis le Dock sur macOS
+
+### Fixed
+
+- Une fenêtre apparaissait pendant les téléchargements alors qu'aucune action n'était requise
 ## [1.36.0] - 2026-09-30
 
 ### Added

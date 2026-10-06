@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.37.0] - 2026-10-06
+
+### Added
+
+- Native audio engine for smoother playback
+- macOS Dock menu with playback controls
+
+### Fixed
+
+- A window popped up during downloads even when no action was needed
 ## [1.36.0] - 2026-09-30
 
 ### Added
