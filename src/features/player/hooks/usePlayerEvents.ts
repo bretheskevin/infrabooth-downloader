@@ -1,7 +1,6 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import type { PlayerMediaKeyEvent } from '@/bindings';
-import { featureFlags } from '@/lib/featureFlags';
 import { usePlayerStore } from '../store';
 import { subscribeDockMenu } from '../utils/dockMenu';
 import { PLAYER_MEDIA_KEY_EVENT, handleMediaKey, syncMediaMetadata } from '../utils/mediaControls';
@@ -22,11 +21,11 @@ export function usePlayerEvents(): void {
     const unsubscribe = usePlayerStore.subscribe((state, prevState) => {
       if (state.currentTrack !== prevState.currentTrack) syncMediaMetadata(state.currentTrack);
     });
-    const unsubscribeDockMenu = featureFlags.dockMenu ? subscribeDockMenu() : undefined;
+    const unsubscribeDockMenu = subscribeDockMenu();
 
     return () => {
       unsubscribe();
-      unsubscribeDockMenu?.();
+      unsubscribeDockMenu();
       void unlisten.then((fn) => fn());
     };
   }, []);
