@@ -480,6 +480,7 @@
     "play": "Lecture",
     "pause": "Pause",
     "shuffle": "Lecture aléatoire",
+    "notPlaying": "Aucune lecture en cours",
     "collapse": "Réduire le lecteur",
     "expand": "Agrandir le lecteur",
     "reorder": "Réorganiser",

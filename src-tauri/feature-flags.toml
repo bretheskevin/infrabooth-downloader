@@ -10,3 +10,6 @@
 # Rekordbox export/exclusion UI. Defaults on; seeded off on Windows. Set to true on Windows to enable.
 rekordbox = true
 
+# macOS Dock menu with playback controls. Off while the feature is being validated.
+dockMenu = false
+

@@ -14,6 +14,7 @@ export interface MediaKeyTarget {
   next: () => Promise<void>;
   previous: () => Promise<void>;
   seek: (positionMs: number) => void;
+  toggleShuffle: () => void;
 }
 
 export function toMediaMetadata(track: PlaybackItem | null): PlayerMediaMetadata | null {
@@ -53,6 +54,9 @@ export function handleMediaKey(action: PlayerMediaKeyAction, target: MediaKeyTar
       return;
     case 'seek':
       target.seek(action.positionMs);
+      return;
+    case 'toggleShuffle':
+      target.toggleShuffle();
       return;
   }
 }

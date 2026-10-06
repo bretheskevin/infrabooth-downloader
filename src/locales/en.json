@@ -480,6 +480,7 @@
     "play": "Play",
     "pause": "Pause",
     "shuffle": "Shuffle",
+    "notPlaying": "Not Playing",
     "collapse": "Collapse player",
     "expand": "Expand player",
     "reorder": "Reorder",

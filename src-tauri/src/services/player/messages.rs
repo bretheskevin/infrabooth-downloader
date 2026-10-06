@@ -47,6 +47,40 @@ pub struct PlayerMediaMetadata {
     pub duration_ms: u64,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DockMenuLabels {
+    pub play: String,
+    pub pause: String,
+    pub next: String,
+    pub previous: String,
+    pub shuffle: String,
+    pub not_playing: String,
+}
+
+impl Default for DockMenuLabels {
+    fn default() -> Self {
+        Self {
+            play: "Play".into(),
+            pause: "Pause".into(),
+            next: "Next".into(),
+            previous: "Previous".into(),
+            shuffle: "Shuffle".into(),
+            not_playing: "Not Playing".into(),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DockMenuState {
+    pub title: Option<String>,
+    pub is_playing: bool,
+    pub has_track: bool,
+    pub shuffle: bool,
+    pub labels: DockMenuLabels,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum EngineMsg {
     Load { url: String, start_ms: u64, generation: u32 },
@@ -85,5 +119,12 @@ mod tests {
         let json = r#"{"title":"T","artist":"A","artworkUrl":null,"durationMs":1000}"#;
         let metadata: PlayerMediaMetadata = serde_json::from_str(json).unwrap();
         assert_eq!(metadata, PlayerMediaMetadata { title: "T".into(), artist: "A".into(), artwork_url: None, duration_ms: 1000 });
+    }
+
+    #[test]
+    fn dock_menu_state_deserializes_from_camel_case() {
+        let json = r#"{"title":"T — A","isPlaying":true,"hasTrack":true,"shuffle":false,"labels":{"play":"Play","pause":"Pause","next":"Next","previous":"Previous","shuffle":"Shuffle","notPlaying":"Not Playing"}}"#;
+        let state: DockMenuState = serde_json::from_str(json).unwrap();
+        assert_eq!(state, DockMenuState { title: Some("T — A".into()), is_playing: true, has_track: true, shuffle: false, labels: DockMenuLabels::default() });
     }
 }

@@ -12,6 +12,8 @@ function Wrapper({ children }: { children: ReactNode }) {
 const mockPlayTrack = vi.fn();
 const mockSyncQueue = vi.fn();
 
+vi.mock('@/lib/i18n', () => ({ default: { t: (key: string) => key, on: vi.fn(), off: vi.fn(), language: 'en' } }));
+
 vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string) => {

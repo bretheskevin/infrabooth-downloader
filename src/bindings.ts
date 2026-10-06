@@ -436,6 +436,14 @@ async playerSeek(positionMs: number) : Promise<Result<null, ErrorResponse>> {
     else return { status: "error", error: e  as any };
 }
 },
+async playerSetDockState(state: DockMenuState) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_set_dock_state", { state }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async playerSetMediaMetadata(metadata: PlayerMediaMetadata | null) : Promise<Result<null, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("player_set_media_metadata", { metadata }) };
@@ -967,6 +975,8 @@ export type ConversationMessage = { content: string; sender_id: number; sent_at:
 export type ConversationSummary = { id: string; other_user: MessageUser; last_message_content: string; last_message_sender_id: number; last_message_at: string; read: boolean }
 export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null }
 export type CreatedPlaylist = { id: number; title: string; permalinkUrl: string }
+export type DockMenuLabels = { play: string; pause: string; next: string; previous: string; shuffle: string; notPlaying: string }
+export type DockMenuState = { title: string | null; isPlaying: boolean; hasTrack: boolean; shuffle: boolean; labels: DockMenuLabels }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null; filePath?: string | null }
 export type DownloadRequest = ({ 
 /**
@@ -1020,7 +1030,7 @@ export type PlayerEndedEvent = { loadGeneration: number }
 export type PlayerEngineState = "idle" | "loading" | "playing" | "paused"
 export type PlayerErrorEvent = { loadGeneration: number; message: string }
 export type PlayerFullyBufferedEvent = { loadGeneration: number }
-export type PlayerMediaKeyAction = { type: "play" } | { type: "pause" } | { type: "toggle" } | { type: "next" } | { type: "previous" } | { type: "seek"; positionMs: number }
+export type PlayerMediaKeyAction = { type: "play" } | { type: "pause" } | { type: "toggle" } | { type: "next" } | { type: "previous" } | { type: "seek"; positionMs: number } | { type: "toggleShuffle" }
 export type PlayerMediaKeyEvent = { action: PlayerMediaKeyAction }
 export type PlayerMediaMetadata = { title: string; artist: string; artworkUrl: string | null; durationMs: number }
 export type PlayerPreloadTrack = { trackId: number; url: string }

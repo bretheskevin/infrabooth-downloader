@@ -133,6 +133,7 @@ pub enum PlayerMediaKeyAction {
         #[serde(rename = "positionMs")]
         position_ms: u64,
     },
+    ToggleShuffle,
 }
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
@@ -231,5 +232,11 @@ mod player_event_tests {
         assert_eq!(toggle, r#"{"action":{"type":"toggle"}}"#);
         let seek = serde_json::to_string(&PlayerMediaKeyEvent { action: PlayerMediaKeyAction::Seek { position_ms: 4200 } }).unwrap();
         assert_eq!(seek, r#"{"action":{"type":"seek","positionMs":4200}}"#);
+    }
+
+    #[test]
+    fn media_key_event_serializes_toggle_shuffle() {
+        let shuffle = serde_json::to_string(&PlayerMediaKeyEvent { action: PlayerMediaKeyAction::ToggleShuffle }).unwrap();
+        assert_eq!(shuffle, r#"{"action":{"type":"toggleShuffle"}}"#);
     }
 }

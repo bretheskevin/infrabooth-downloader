@@ -1,7 +1,7 @@
 use tauri::State;
 
 use crate::models::error::ErrorResponse;
-use crate::services::player::messages::{EngineMsg, PlayerMediaMetadata, PlayerPreloadTrack};
+use crate::services::player::messages::{DockMenuState, EngineMsg, PlayerMediaMetadata, PlayerPreloadTrack};
 use crate::services::player::PlayerHandle;
 use crate::services::storage::AuthState;
 use crate::services::stream;
@@ -114,5 +114,13 @@ pub fn player_purge_cache(keep_track_ids: Vec<u64>, player: State<'_, PlayerHand
 pub fn player_set_media_metadata(metadata: Option<PlayerMediaMetadata>, app: tauri::AppHandle) -> Result<(), ErrorResponse> {
     log::debug!("[player::cmd] player_set_media_metadata present={}", metadata.is_some());
     crate::services::player::media_controls::set_metadata(&app, metadata);
+    Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn player_set_dock_state(state: DockMenuState, app: tauri::AppHandle) -> Result<(), ErrorResponse> {
+    log::debug!("[player::cmd] player_set_dock_state has_track={}", state.has_track);
+    crate::services::player::dock_menu::set_state(&app, state);
     Ok(())
 }

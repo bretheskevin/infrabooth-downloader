@@ -2,9 +2,10 @@ import { commands } from '@/bindings';
 
 export type FeatureFlags = {
   rekordbox: boolean;
+  dockMenu: boolean;
 };
 
-const DEFAULTS: FeatureFlags = { rekordbox: false };
+const DEFAULTS: FeatureFlags = { rekordbox: false, dockMenu: false };
 
 export function parseFeatureFlags(source: string, defaults: FeatureFlags = DEFAULTS): FeatureFlags {
   const flags: FeatureFlags = { ...defaults };

@@ -31,6 +31,7 @@ function makeTarget(state: PlaybackState): MediaKeyTarget {
     next: vi.fn().mockResolvedValue(undefined),
     previous: vi.fn().mockResolvedValue(undefined),
     seek: vi.fn(),
+    toggleShuffle: vi.fn(),
   };
 }
 
@@ -67,6 +68,12 @@ describe('media controls', () => {
     expect(target.pause).toHaveBeenCalledTimes(1);
     expect(target.next).toHaveBeenCalledTimes(1);
     expect(target.previous).toHaveBeenCalledTimes(1);
+  });
+
+  it('toggles shuffle from dock menu actions', () => {
+    const target = makeTarget('playing');
+    handleMediaKey({ type: 'toggleShuffle' }, target);
+    expect(target.toggleShuffle).toHaveBeenCalledTimes(1);
   });
 
   it('toggle pauses when playing or loading and resumes otherwise', () => {

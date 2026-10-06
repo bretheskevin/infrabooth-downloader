@@ -1,6 +1,9 @@
 pub mod crossfade;
 pub mod crypto;
 pub mod decoder;
+pub mod dock_menu;
+#[cfg(target_os = "macos")]
+mod dock_menu_macos;
 pub mod emitter;
 pub mod engine;
 #[cfg(test)]
