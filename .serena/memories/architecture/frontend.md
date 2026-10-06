@@ -73,7 +73,7 @@ Each follows pattern: components/ + hooks/ + api/ + store.ts + __test__/ + index
 
 ### Player
 - **player** — full audio player with crossfade support
-  - `audio-engine.ts` — dual-slot HLS.js player, crossfade ramps, state machine
+  - `audio-engine.ts` — thin wrapper over the native Rust player (commands + `player-*` events); see `mem:architecture/player`
   - Store split: playbackSlice + queueSlice + shuffleSlice + autoplaySlice + uiSlice
   - Components: PlayerContainer, ExpandedBar, MiniPill, Waveform, SeekBar, TransportControls, VolumeControl, QueuePanel, ScrollingText
 

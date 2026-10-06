@@ -13,6 +13,7 @@ pub mod metadata;
 pub mod oauth;
 pub mod paths;
 pub mod pipeline;
+pub mod player;
 pub mod rate_limit_choice;
 pub mod remote;
 

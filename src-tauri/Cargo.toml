@@ -20,6 +20,11 @@ tauri-build = { version = "2.5.4", features = [] }
 
 [dependencies]
 serde_json = "1.0"
+rodio = { version = "0.20.1", default-features = false }
+symphonia = { version = "0.5.4", default-features = false, features = ["aac", "isomp4", "mp3"] }
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc", "block-padding"] }
+souvlaki = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 log = "0.4"
 tauri = { version = "2.10.0", features = ["specta"] }

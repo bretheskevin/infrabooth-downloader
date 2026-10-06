@@ -1,48 +1,39 @@
 # Audio Player Architecture
 
-## Audio Engine (`src/features/player/audio-engine.ts`)
-- Dual-slot design: activeSlot + standbySlot for gapless crossfade
-- HLS.js integration for SoundCloud HLS streams
-- State machine: idle → loading → playing → paused → ended
-- Crossfade: volume ramps via requestAnimationFrame, configurable duration
-- HLS config: optimized buffer settings, retry policies
-- Loading watchdog: any `setState('loading')` arms a 5s timer (`LOADING_WATCHDOG_MS`); fire 1 calls `callbacks.onUrlExpired` (bounded by playbackSlice `MAX_URL_REFRESH_PER_TRACK`), fire 2 gives up via `callbacks.onError('Loading stalled after URL refresh')`; cleared on any non-loading state, reset in load/stop/destroy
-- Non-fatal HLS errors escalate to the fatal path after `HLS_NON_FATAL_THRESHOLD = 3` consecutive errors; counter resets on FRAG_LOADED, load, destroy
-- Recovery-path logs (load, deferred play, URL refresh, fatal network error) are at info level because release builds filter to Info
+Audio is played natively in Rust (`src-tauri/src/services/player/`). The webview only holds UI state and a thin engine wrapper; there is no `<audio>` element and no hls.js.
 
-### API (audioEngine object)
-load, play, pause, stop, seek, setVolume, getPosition, getState, isFullyBuffered
-preloadNext, startCrossfade, settleCrossfade, cancelCrossfade, isCrossfading
-setCallbacks (onStateChange, onProgress, onEnded, onError, onFullyBuffered, onCrossfadeComplete)
+## Rust engine (`src-tauri/src/services/player/`)
+- `runner.rs` — dedicated `player-engine` std thread: `recv_timeout` loop with 50 ms tick (`engine::TICK`), panic guard (`Engine::recover_from_panic`). Intercepts `PreloadSegments` / `PurgeCache` and hands them to `preload.rs` — the `Engine` never sees cache messages.
+- `engine.rs` — deterministic state machine (`idle | loading | playing | paused`), active + standby slots, deferred play-when-ready, seek-while-playing ⇒ loading, progress every 250 ms from the active slot only, end of track emits `paused` then `ended`, non-fatal network errors escalate after `NON_FATAL_THRESHOLD = 3`. Output stream opened lazily, released after 60 s idle (macOS sleep assertion), reopened on default-device change (polled every 2 s while playing). Tests with fakes in `engine_tests.rs`.
+- `watchdog.rs` — `LOADING_WATCHDOG` 5 s, two stages: stage 1 ⇒ `PlayerUrlExpired{position_ms}`, stage 2 ⇒ error "Loading stalled after URL refresh".
+- `crossfade.rs` — only the incoming sink fades in (`target * sin(p·π/2)` every 50 ms); outgoing keeps volume until the ramp ends. `set_volume` during crossfade only updates the target.
+- Pipeline per track: `pipeline.rs` (`StreamPipelineFactory`) → `head.rs` classifies HLS playlist vs progressive from one ranged GET → `hls.rs` (non-seekable `SegmentReader`; seeks restart the pipeline at the target segment, otherwise symphonia's isomp4 reader would scan to EOF) or `progressive.rs` (seekable range-chunk `ChunkReader`) → `decoder.rs` (symphonia 0.5.4 thread, AAC/MP3 only) → `feed.rs` (bounded PCM queue) → `output.rs` (`TrackSource` rodio 0.20.1 `Source`, `RodioOutput`).
+- `part_store.rs` — generic `PartStore<K>` (blocking `wait_for`, `fail`/`close`, async `wait_wake`) with a pluggable `Retention` (keep-predicate + `only_on_change`); `hls.rs` uses it as `SegmentStore` (`segment_store(start)`, usize keys), `progressive.rs` wraps it in `ChunkStore` (u64 keys, 1 chunk behind / 20 ahead).
+- `playlist.rs` m3u8 parser (`#EXT-X-KEY`, `#EXT-X-MAP`, media sequence); `crypto.rs` AES-128-CBC; `fetch.rs` rquest GET/Range with 403/410 ⇒ expired classification and retry.
+- `segment_cache.rs` — 64 MB FIFO, owner-tagged; `purge(keep)` only drops entries owned by tracks not kept.
+- `media_controls.rs` + `media_state.rs` — souvlaki OS media controls (macOS Now Playing / Windows SMTC). Created on the main thread via `run_on_main_thread` during setup (Windows uses the `main` window HWND), kept in a main-thread `thread_local!`. If init fails everything becomes a no-op. `TauriEventSink` (emitter.rs) forwards state/progress; `MediaStateTracker` only pushes position on state change, >2 s jump, or duration change.
+- Pinned crate versions (rodio 0.20.1, symphonia 0.5.4) — newer majors have breaking APIs.
+- `PlayerHandle::spawn` and `media_controls::init` must run in `lib.rs` setup AFTER the `tauri_plugin_log` plugin is registered, otherwise their startup logs are dropped.
+
+## IPC
+- Commands in `src-tauri/src/commands/player.rs` (`player_load/play/pause/seek/set_volume/stop/destroy/preload_next/start_crossfade/cancel_crossfade/settle_crossfade/preload_segments/purge_cache/set_media_metadata`) are sync fns that only enqueue into the engine channel (`player_set_media_metadata` goes straight to media controls on the main thread).
+- Events (`services/events.rs`, `player-*` names) carry a TS-allocated `load_generation`; `player-media-key` (no generation) carries `PlayerMediaKeyAction` (`play|pause|toggle|next|previous|seek{positionMs}`).
+- Playback transcoding uses `ScoreMode::Playback` in `stream.rs`: progressive MP3 > HLS MP3 > HLS AAC > progressive AAC > AES-128 HLS, Opus excluded, HQ bonus kept. Download scoring is separate.
+
+## Frontend
+- `audio-engine.ts` — thin wrapper with the original public API (`load, play, pause, stop, seek, setVolume, getPosition, getState, isFullyBuffered, preloadNext, startCrossfade, settleCrossfade, cancelCrossfade, isCrossfading, setCallbacks, destroy`) and `AudioEngineCallbacks`. Drops events whose generation differs; sync getters read a local snapshot (position interpolated with `performance.now()` while playing; `isCrossfading` set optimistically on `startCrossfade`). Exports `PLAYER_EVENTS`.
+- `player-commands.ts` — `sendPlayerCommand(name, call)` serializes every player invoke through one promise chain (so `load` → `play` never reorders) and logs failures; `flushPlayerCommands()` for tests.
+- `url-cache.ts` — URL resolution cache (`resolveWithCache`, `getCachedUrl`, TTL) stays in TS; `preloadQueueSegments` / segment purge delegate to Rust commands.
+- `utils/mediaControls.ts` + `hooks/usePlayerEvents.ts` — push `PlayerMediaMetadata` (title, artist, artwork 500px, duration) on track change (`null` clears), map `player-media-key` to store actions (play→resume, pause, next, previous, toggle, seek).
 
 ## Player Store (Zustand, sliced)
 - `playbackSlice` — current track, playing state, progress, duration. `resume()` refreshes an expired stream URL (via `resolveWithCache`) and reloads at the current position; skips the refresh when the URL is still cached or `audioEngine.isFullyBuffered()`
-- `queueSlice` — play queue management. Queue entries are `QueueItem` (= `PlaybackItem` + stable `uid`, from `store/queueItem.ts` `withUid`/`withUids`); `uid` is the React key and dnd-kit drag identity, so duplicate tracks in the queue reorder/remove correctly
-- `shuffleSlice` — shuffle mode
-- `autoplaySlice` — autoplay/continuous play
-- `uiSlice` — expanded bar, mini pill visibility
+- `queueSlice` — play queue. Entries are `QueueItem` (= `PlaybackItem` + stable `uid`, from `store/queueItem.ts` `withUid`/`withUids`); `uid` is the React key and dnd-kit drag identity
+- `shuffleSlice`, `autoplaySlice`, `uiSlice` (expanded bar, mini pill visibility)
 
 ## Components
-- PlayerContainer — main player wrapper
-- ExpandedBar — full player controls (visible when track loaded)
-- MiniPill — minimized player indicator
-- Waveform — waveform visualization
-- SeekBar — track seek control
-- TransportControls — play/pause/skip
-- VolumeControl — volume slider
-- QueuePanel + QueuePanelItem — play queue display
-- ScrollingText — marquee for long track titles; shared at `@/components/ScrollingText` (moved out of the player feature, also reused by the remote mobile app)
-- EqualizerBars — animated equalizer visualization
-- PlayOverlay — play button overlay on track artwork
+PlayerContainer, ExpandedBar, MiniPill, Waveform, SeekBar, TransportControls, VolumeControl, QueuePanel + QueuePanelItem, EqualizerBars, PlayOverlay. `ScrollingText` is shared at `@/components/ScrollingText` (also used by the remote app).
 
 ## Hooks
-- usePlayerEvents — binds audio engine callbacks to store
-- useKeyboardShortcuts — keyboard controls (space, arrows, etc.)
-- usePlayContext — provides play context for track lists; `playTrack(index)` always rebuilds the queue from the tracklist via `buildPlaybackQueue` (no longer skips to an existing queue entry)
-- useWaveform — waveform data fetching
-- useIsExpandedBarVisible, useIsMiniPillVisible — visibility logic
-
-## Playback URL Resolution
-- `resolvePlaybackUrl` command in Rust → resolves HLS/progressive stream URL
-- URL cache (`url-cache.ts`) — caches resolved URLs on frontend
-- Autoplay logic (`utils/autoplay.ts`, `utils/buildPlaybackQueue.ts`)
+- usePlayerEvents — binds engine callbacks to the store, native media keys + metadata, destroys the engine on unmount (mounted via `mem:architecture/player-hooks-provider`)
+- useKeyboardShortcuts, usePlayContext (`playTrack(index)` always rebuilds the queue via `buildPlaybackQueue`), useWaveform, useIsExpandedBarVisible, useIsMiniPillVisible

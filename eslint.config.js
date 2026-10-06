@@ -35,11 +35,6 @@ export default [
         ...globals.browser,
         ...globals.es2021,
         React: 'readonly',
-        MediaSessionPlaybackState: 'readonly',
-        MediaSessionAction: 'readonly',
-        MediaSessionActionHandler: 'readonly',
-        MediaImage: 'readonly',
-        MediaMetadata: 'readonly',
       },
     },
     plugins: {

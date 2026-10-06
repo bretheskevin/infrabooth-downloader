@@ -201,70 +201,81 @@ fn normalize_protocol(protocol: &str, url: &str) -> Protocol {
     Protocol::Unknown
 }
 
-/// Compute a priority score for a transcoding.
-///
-/// Higher score = better. `prefer_hls` controls protocol preference:
-/// - `false` (downloads): progressive > HLS (matches yt-dlp's _DEFAULT_FORMATS)
-/// - `true` (streaming): HLS > progressive (instant playback, only first segment needed)
-///
-/// HQ quality adds +100 to the score.
-/// Snipped/preview tracks get -1000 penalty.
-/// HLS Opus is excluded: our bundled ffmpeg cannot handle .opus segments in HLS playlists.
-fn score_transcoding(t: &Transcoding, prefer_hls: bool) -> i32 {
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ScoreMode {
+    Download,
+    Playback,
+}
+
+/// Higher score = better. HQ adds +100, snipped previews get -1000.
+/// Download: AAC > Opus > MP3, progressive > HLS (HLS Opus excluded: bundled ffmpeg rejects .opus segments).
+/// Playback (native symphonia engine, simplest wins): progressive MP3 > HLS MP3 > HLS AAC > progressive AAC > AES-128 HLS; Opus excluded.
+fn score_transcoding(t: &Transcoding, mode: ScoreMode) -> i32 {
     let protocol = normalize_protocol(&t.format.protocol, &t.url);
     let codec = extract_codec(&t.format.mime_type);
     let preset_base = t.preset.split('_').next().unwrap_or("");
 
-    if protocol == Protocol::Unknown {
+    if protocol == Protocol::Unknown || preset_base == "abr" {
         return -10000;
     }
-    if preset_base == "abr" {
+    let format_score = match mode {
+        ScoreMode::Download => download_format_score(&codec, &protocol),
+        ScoreMode::Playback => playback_format_score(&codec, &protocol),
+    };
+    let Some(format_score) = format_score else {
         return -10000;
-    }
-    // Bundled ffmpeg rejects .opus as HLS segment extension → filter out
-    if codec == Codec::Opus && matches!(protocol, Protocol::Hls | Protocol::HlsAes) {
-        return -10000;
-    }
+    };
 
+    let quality_bonus = if t.quality == "hq" { 100 } else { 0 };
+    let snipped_penalty = if t.snipped { -1000 } else { 0 };
+    format_score + quality_bonus + snipped_penalty
+}
+
+fn download_format_score(codec: &Codec, protocol: &Protocol) -> Option<i32> {
+    if *codec == Codec::Opus && matches!(protocol, Protocol::Hls | Protocol::HlsAes) {
+        return None;
+    }
     let codec_score = match codec {
         Codec::Aac => 4,
         Codec::Opus => 2,
         Codec::Mp3 => 0,
         Codec::Unknown => -1,
     };
-
-    let protocol_score = if prefer_hls {
-        match protocol {
-            Protocol::Hls => 1,
-            Protocol::Http => 0,
-            Protocol::HlsAes => -1,
-            Protocol::Unknown => -2,
-        }
-    } else {
-        match protocol {
-            Protocol::Http => 1,
-            Protocol::Hls => 0,
-            Protocol::HlsAes => -1,
-            Protocol::Unknown => -2,
-        }
+    let protocol_score = match protocol {
+        Protocol::Http => 1,
+        Protocol::Hls => 0,
+        Protocol::HlsAes => -1,
+        Protocol::Unknown => -2,
     };
+    Some(codec_score + protocol_score)
+}
 
-    let quality_bonus = if t.quality == "hq" { 100 } else { 0 };
-    let snipped_penalty = if t.snipped { -1000 } else { 0 };
-
-    codec_score + protocol_score + quality_bonus + snipped_penalty
+fn playback_format_score(codec: &Codec, protocol: &Protocol) -> Option<i32> {
+    match (codec, protocol) {
+        (Codec::Mp3, Protocol::Http) => Some(50),
+        (Codec::Mp3, Protocol::Hls) => Some(40),
+        (Codec::Aac, Protocol::Hls) => Some(30),
+        (Codec::Aac, Protocol::Http) => Some(20),
+        (Codec::Aac | Codec::Mp3, Protocol::HlsAes) => Some(10),
+        _ => None,
+    }
 }
 
 /// Select the best transcoding from available options (prefers progressive for downloads).
 #[cfg(test)]
 pub fn select_best_transcoding(transcodings: &[Transcoding]) -> Option<&Transcoding> {
-    ranked_transcodings(transcodings, false).into_iter().next()
+    ranked_transcodings(transcodings, ScoreMode::Download).into_iter().next()
+}
+
+#[cfg(test)]
+pub fn select_best_playback_transcoding(transcodings: &[Transcoding]) -> Option<&Transcoding> {
+    ranked_transcodings(transcodings, ScoreMode::Playback).into_iter().next()
 }
 
 /// Return all viable transcodings sorted by score (highest first).
-fn ranked_transcodings(transcodings: &[Transcoding], prefer_hls: bool) -> Vec<&Transcoding> {
-    let mut viable: Vec<&Transcoding> = transcodings.iter().filter(|t| score_transcoding(t, prefer_hls) > -10000).collect();
-    viable.sort_by_cached_key(|t| std::cmp::Reverse(score_transcoding(t, prefer_hls)));
+fn ranked_transcodings(transcodings: &[Transcoding], mode: ScoreMode) -> Vec<&Transcoding> {
+    let mut viable: Vec<&Transcoding> = transcodings.iter().filter(|t| score_transcoding(t, mode) > -10000).collect();
+    viable.sort_by_cached_key(|t| std::cmp::Reverse(score_transcoding(t, mode)));
     viable
 }
 
@@ -352,8 +363,8 @@ struct ResolveOptions<'a> {
     oauth_token: Option<&'a str>,
     /// Secret token for private tracks (from the `/s-xxx` share link).
     secret_token: Option<&'a str>,
-    /// `false` for downloads (progressive preferred), `true` for streaming (HLS preferred).
-    prefer_hls: bool,
+    /// `Download` for ffmpeg downloads, `Playback` for the native player.
+    mode: ScoreMode,
 }
 
 /// Resolved transcoding result from the shared core.
@@ -416,7 +427,7 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
 
         log::info!("[stream] Found {} transcodings for track", transcodings.len());
         for t in &transcodings {
-            let score = score_transcoding(t, opts.prefer_hls);
+            let score = score_transcoding(t, opts.mode);
             log::info!(
                 "[stream]   transcoding: protocol={}, mime={}, quality={}, preset={}, score={}",
                 t.format.protocol,
@@ -432,7 +443,7 @@ async fn resolve_inner(opts: ResolveOptions<'_>) -> Result<ResolvedTranscoding, 
             p.starts_with("ctr-") || p.starts_with("cbc-")
         });
 
-        let ranked = ranked_transcodings(&transcodings, opts.prefer_hls);
+        let ranked = ranked_transcodings(&transcodings, opts.mode);
         if ranked.is_empty() {
             return if has_drm {
                 Err(DownloadError::TrackUnavailable("DRM protected (FairPlay/Widevine CENC)".to_string()))
@@ -500,19 +511,18 @@ pub async fn resolve_stream_url(
         if secret_token.is_some() { "present" } else { "none" }
     );
 
-    let resolved = resolve_inner(ResolveOptions { track_id, track_url, oauth_token, secret_token, prefer_hls: false }).await?;
+    let resolved = resolve_inner(ResolveOptions { track_id, track_url, oauth_token, secret_token, mode: ScoreMode::Download }).await?;
 
     Ok(StreamInfo { url: resolved.cdn_url, codec: resolved.codec })
 }
 
-/// Resolve a SoundCloud track to an HLS playback URL via transcodings.
+/// Resolve a SoundCloud track to a playback URL (progressive or HLS) for the native audio engine.
 ///
 /// Tries direct /tracks/{id} first (faster), then falls back to URL resolve.
-/// Selects the best HLS transcoding for browser streaming.
 pub async fn resolve_playback_url(track_id: u64, track_url: &str, oauth_token: Option<&str>) -> Result<String, DownloadError> {
     log::info!("[stream] resolve_playback_url called for track_id={}, oauth={}", track_id, if oauth_token.is_some() { "present" } else { "none" });
 
-    let resolved = resolve_inner(ResolveOptions { track_id: Some(track_id), track_url, oauth_token, secret_token: None, prefer_hls: true }).await?;
+    let resolved = resolve_inner(ResolveOptions { track_id: Some(track_id), track_url, oauth_token, secret_token: None, mode: ScoreMode::Playback }).await?;
 
     Ok(resolved.cdn_url)
 }
@@ -718,6 +728,69 @@ mod tests {
         // If only HLS Opus is available, no suitable transcoding
         let transcodings = vec![make_transcoding("hls", "audio/ogg; codecs=\"opus\"", "sq", "opus_0", false)];
         assert!(select_best_transcoding(&transcodings).is_none());
+    }
+
+    // --- Playback scoring tests ---
+
+    #[test]
+    fn playback_prefers_progressive_mp3_over_hls_aac() {
+        let transcodings = vec![
+            make_transcoding("hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_0", false),
+            make_transcoding("progressive", "audio/mpeg", "sq", "mp3_0", false),
+        ];
+        let best = select_best_playback_transcoding(&transcodings).unwrap();
+        assert_eq!(best.format.protocol, "progressive");
+        assert!(best.format.mime_type.contains("mpeg"));
+    }
+
+    #[test]
+    fn playback_prefers_hls_mp3_over_hls_aac() {
+        let transcodings =
+            vec![make_transcoding("hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_0", false), make_transcoding("hls", "audio/mpeg", "sq", "mp3_0", false)];
+        assert_eq!(select_best_playback_transcoding(&transcodings).unwrap().preset, "mp3_0");
+    }
+
+    #[test]
+    fn playback_prefers_plain_hls_aac_over_encrypted() {
+        let transcodings = vec![
+            make_transcoding("encrypted-hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_enc", false),
+            make_transcoding("hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_plain", false),
+        ];
+        assert_eq!(select_best_playback_transcoding(&transcodings).unwrap().preset, "aac_plain");
+    }
+
+    #[test]
+    fn playback_falls_back_to_encrypted_hls() {
+        let transcodings = vec![make_transcoding("encrypted-hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_enc", false)];
+        assert_eq!(select_best_playback_transcoding(&transcodings).unwrap().preset, "aac_enc");
+    }
+
+    #[test]
+    fn playback_excludes_opus() {
+        let transcodings = vec![
+            make_transcoding("progressive", "audio/ogg; codecs=\"opus\"", "sq", "opus_0", false),
+            make_transcoding("hls", "audio/ogg; codecs=\"opus\"", "sq", "opus_1", false),
+        ];
+        assert!(select_best_playback_transcoding(&transcodings).is_none());
+    }
+
+    #[test]
+    fn playback_keeps_hq_bonus() {
+        let transcodings = vec![
+            make_transcoding("progressive", "audio/mpeg", "sq", "mp3_0", false),
+            make_transcoding("hls", "audio/mp4; codecs=\"mp4a.40.2\"", "hq", "aac_hq", false),
+        ];
+        assert_eq!(select_best_playback_transcoding(&transcodings).unwrap().quality, "hq");
+    }
+
+    #[test]
+    fn playback_skips_drm_and_snipped() {
+        let transcodings = vec![
+            make_transcoding("ctr-encrypted-hls", "audio/mp4; codecs=\"mp4a.40.2\"", "hq", "aac_drm", false),
+            make_transcoding("progressive", "audio/mpeg", "sq", "mp3_snip", true),
+            make_transcoding("hls", "audio/mp4; codecs=\"mp4a.40.2\"", "sq", "aac_ok", false),
+        ];
+        assert_eq!(select_best_playback_transcoding(&transcodings).unwrap().preset, "aac_ok");
     }
 
     // --- API v2 deserialization tests ---

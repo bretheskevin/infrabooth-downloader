@@ -1,392 +1,220 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { listen } from '@tauri-apps/api/event';
+import { error as logError } from '@tauri-apps/plugin-log';
 
-vi.mock('hls.js', () => {
-  const mockHls = vi.fn().mockImplementation(() => ({
-    loadSource: vi.fn(),
-    attachMedia: vi.fn(),
-    on: vi.fn(),
-    destroy: vi.fn(),
-    recoverMediaError: vi.fn(),
-  }));
+vi.mock('@/bindings', () => {
+  const ok = () => vi.fn().mockResolvedValue({ status: 'ok', data: null });
   return {
-    default: Object.assign(mockHls, {
-      isSupported: vi.fn().mockReturnValue(false),
-      Events: {
-        MANIFEST_PARSED: 'hlsManifestParsed',
-        BUFFER_EOS: 'hlsBufferEos',
-        ERROR: 'hlsError',
-        FRAG_LOADED: 'hlsFragLoaded',
-      },
-      ErrorTypes: { MEDIA_ERROR: 'mediaError', NETWORK_ERROR: 'networkError' },
-    }),
+    commands: {
+      playerLoad: ok(),
+      playerPlay: ok(),
+      playerPause: ok(),
+      playerSeek: ok(),
+      playerSetVolume: ok(),
+      playerStop: ok(),
+      playerDestroy: ok(),
+      playerPreloadNext: ok(),
+      playerStartCrossfade: ok(),
+      playerCancelCrossfade: ok(),
+      playerSettleCrossfade: ok(),
+    },
   };
 });
 
-window.HTMLMediaElement.prototype.play = vi.fn().mockResolvedValue(undefined);
-window.HTMLMediaElement.prototype.pause = vi.fn();
-window.HTMLMediaElement.prototype.load = vi.fn();
+type Handler = (event: { payload: unknown }) => void;
+const handlers = new Map<string, Handler>();
+vi.mocked(listen).mockImplementation(async (name, handler) => {
+  handlers.set(name as string, handler as unknown as Handler);
+  return () => {};
+});
 
-import { audioEngine } from '../audio-engine';
+import { commands } from '@/bindings';
+import { audioEngine, PLAYER_EVENTS, type AudioEngineCallbacks } from '../audio-engine';
+import { flushPlayerCommands } from '../player-commands';
 
-describe('audioEngine', () => {
-  beforeEach(() => {
+function makeCallbacks(): AudioEngineCallbacks {
+  return {
+    onStateChange: vi.fn(),
+    onProgress: vi.fn(),
+    onEnded: vi.fn(),
+    onError: vi.fn(),
+    onFullyBuffered: vi.fn(),
+    onCrossfadeComplete: vi.fn(),
+    onUrlExpired: vi.fn(),
+  };
+}
+
+function emit(name: string, payload: Record<string, unknown>) {
+  const handler = handlers.get(name);
+  if (!handler) throw new Error(`no listener for ${name}`);
+  handler({ payload });
+}
+
+async function loadAndGetGeneration(url = 'https://cdn/a.mp3', start = 0): Promise<number> {
+  audioEngine.load(url, start);
+  await flushPlayerCommands();
+  return vi.mocked(commands.playerLoad).mock.lastCall![2];
+}
+
+let cb: AudioEngineCallbacks;
+
+describe('audioEngine (native wrapper)', () => {
+  beforeEach(async () => {
     audioEngine.destroy();
+    cb = makeCallbacks();
+    audioEngine.setCallbacks(cb);
+    await flushPlayerCommands();
+    vi.clearAllMocks();
   });
 
-  it('starts in idle state', () => {
+  it('starts idle with zero position and no crossfade', () => {
     expect(audioEngine.getState()).toBe('idle');
-  });
-
-  it('reports zero position when idle', () => {
     expect(audioEngine.getPosition()).toEqual({ positionMs: 0, durationMs: 0 });
-  });
-
-  it('isCrossfading returns false by default', () => {
     expect(audioEngine.isCrossfading()).toBe(false);
+    expect(audioEngine.isFullyBuffered()).toBe(false);
   });
 
-  describe('preloadNext', () => {
-    it('does not throw when called', () => {
-      expect(() => audioEngine.preloadNext('https://example.com/next.m3u8')).not.toThrow();
-    });
+  it('load reports loading synchronously and sends playerLoad with a new generation', async () => {
+    const gen = await loadAndGetGeneration('https://cdn/x.m3u8', 42000);
+    expect(cb.onStateChange).toHaveBeenCalledWith('loading');
+    expect(audioEngine.getState()).toBe('loading');
+    expect(commands.playerLoad).toHaveBeenCalledWith('https://cdn/x.m3u8', 42000, gen);
+    expect(audioEngine.getPosition().positionMs).toBe(42000);
   });
 
-  describe('cancelCrossfade', () => {
-    it('is safe to call when not crossfading', () => {
-      expect(() => audioEngine.cancelCrossfade()).not.toThrow();
-    });
-
-    it('reverts to outgoing track when called during active crossfade', () => {
-      audioEngine.load('https://example.com/track-a');
-      audioEngine.preloadNext('https://example.com/track-b');
-
-      audioEngine.startCrossfade(3000, 1);
-      audioEngine.cancelCrossfade();
-
-      expect(audioEngine.isCrossfading()).toBe(false);
-      expect(audioEngine.getState()).not.toBe('idle');
-    });
+  it('sends commands in call order', async () => {
+    audioEngine.load('https://cdn/a.mp3');
+    audioEngine.play();
+    audioEngine.setVolume(0.4);
+    await flushPlayerCommands();
+    const order = [commands.playerLoad, commands.playerPlay, commands.playerSetVolume].map(
+      (fn) => vi.mocked(fn).mock.invocationCallOrder[0]!,
+    );
+    expect(order).toEqual([...order].sort((a, b) => a - b));
   });
 
-  describe('settleCrossfade', () => {
-    it('is safe to call when not crossfading', () => {
-      expect(() => audioEngine.settleCrossfade()).not.toThrow();
-    });
+  it('maps current-generation events to callbacks', async () => {
+    const gen = await loadAndGetGeneration();
+    emit(PLAYER_EVENTS.stateChanged, { loadGeneration: gen, state: 'playing' });
+    emit(PLAYER_EVENTS.progress, { loadGeneration: gen, positionMs: 1000, durationMs: 9000 });
+    emit(PLAYER_EVENTS.fullyBuffered, { loadGeneration: gen });
+    emit(PLAYER_EVENTS.urlExpired, { loadGeneration: gen, positionMs: 1500 });
+    emit(PLAYER_EVENTS.error, { loadGeneration: gen, message: 'boom' });
+    emit(PLAYER_EVENTS.ended, { loadGeneration: gen });
+    emit(PLAYER_EVENTS.crossfadeComplete, { loadGeneration: gen });
+    expect(cb.onStateChange).toHaveBeenLastCalledWith('playing');
+    expect(cb.onProgress).toHaveBeenCalledWith(1000, 9000);
+    expect(cb.onFullyBuffered).toHaveBeenCalled();
+    expect(cb.onUrlExpired).toHaveBeenCalledWith(1500);
+    expect(cb.onError).toHaveBeenCalledWith('boom');
+    expect(cb.onEnded).toHaveBeenCalled();
+    expect(cb.onCrossfadeComplete).toHaveBeenCalled();
   });
 
-  describe('setVolume', () => {
-    it('clamps out-of-range values without throwing', () => {
-      audioEngine.load('https://example.com/stream');
-      expect(() => audioEngine.setVolume(-0.5)).not.toThrow();
-      expect(() => audioEngine.setVolume(1.5)).not.toThrow();
-      expect(audioEngine.getState()).toBe('loading');
-    });
+  it('drops events from a superseded generation', async () => {
+    const stale = await loadAndGetGeneration('https://cdn/a.mp3');
+    await loadAndGetGeneration('https://cdn/b.mp3');
+    vi.mocked(cb.onProgress).mockClear();
+    emit(PLAYER_EVENTS.progress, { loadGeneration: stale, positionMs: 5, durationMs: 10 });
+    emit(PLAYER_EVENTS.ended, { loadGeneration: stale });
+    expect(cb.onProgress).not.toHaveBeenCalled();
+    expect(cb.onEnded).not.toHaveBeenCalled();
   });
 
-  describe('destroy', () => {
-    it('cleans up both slots', () => {
-      audioEngine.load('https://example.com/stream');
-      audioEngine.preloadNext('https://example.com/next');
-      audioEngine.destroy();
-      expect(audioEngine.getState()).toBe('idle');
-      expect(audioEngine.isCrossfading()).toBe(false);
-    });
+  it('does not re-fire onStateChange for a duplicate state', async () => {
+    const gen = await loadAndGetGeneration();
+    vi.mocked(cb.onStateChange).mockClear();
+    emit(PLAYER_EVENTS.stateChanged, { loadGeneration: gen, state: 'loading' });
+    expect(cb.onStateChange).not.toHaveBeenCalled();
   });
 
-  describe('isFullyBuffered', () => {
-    const mockBuffered = (endS: number): TimeRanges => ({ length: 1, start: () => 0, end: () => endS }) as unknown as TimeRanges;
-
-    it('returns false when no track is loaded', () => {
-      expect(audioEngine.isFullyBuffered()).toBe(false);
-    });
-
-    it('returns true when the buffered range spans the current position to the duration', () => {
-      audioEngine.load('https://example.com/stream');
-      const bufferedSpy = vi.spyOn(window.HTMLMediaElement.prototype, 'buffered', 'get').mockReturnValue(mockBuffered(180));
-      const durationSpy = vi.spyOn(window.HTMLMediaElement.prototype, 'duration', 'get').mockReturnValue(180);
-
-      expect(audioEngine.isFullyBuffered()).toBe(true);
-
-      bufferedSpy.mockRestore();
-      durationSpy.mockRestore();
-    });
-
-    it('returns false when the buffered range ends before the duration', () => {
-      audioEngine.load('https://example.com/stream');
-      const bufferedSpy = vi.spyOn(window.HTMLMediaElement.prototype, 'buffered', 'get').mockReturnValue(mockBuffered(90));
-      const durationSpy = vi.spyOn(window.HTMLMediaElement.prototype, 'duration', 'get').mockReturnValue(180);
-
-      expect(audioEngine.isFullyBuffered()).toBe(false);
-
-      bufferedSpy.mockRestore();
-      durationSpy.mockRestore();
-    });
+  it('interpolates position while playing and freezes it when paused', async () => {
+    const now = vi.spyOn(performance, 'now');
+    now.mockReturnValue(1000);
+    const gen = await loadAndGetGeneration();
+    emit(PLAYER_EVENTS.stateChanged, { loadGeneration: gen, state: 'playing' });
+    emit(PLAYER_EVENTS.progress, { loadGeneration: gen, positionMs: 2000, durationMs: 9000 });
+    now.mockReturnValue(1400);
+    expect(audioEngine.getPosition()).toEqual({ positionMs: 2400, durationMs: 9000 });
+    emit(PLAYER_EVENTS.stateChanged, { loadGeneration: gen, state: 'paused' });
+    now.mockReturnValue(5000);
+    expect(audioEngine.getPosition().positionMs).toBe(2400);
+    now.mockRestore();
   });
 
-  describe('HLS error handling', () => {
-    let hlsInstance: {
-      on: ReturnType<typeof vi.fn>;
-      loadSource: ReturnType<typeof vi.fn>;
-      attachMedia: ReturnType<typeof vi.fn>;
-      destroy: ReturnType<typeof vi.fn>;
-      recoverMediaError: ReturnType<typeof vi.fn>;
-    };
-
-    beforeEach(async () => {
-      const Hls = (await import('hls.js')).default;
-      vi.mocked(Hls.isSupported).mockReturnValue(true);
-
-      hlsInstance = {
-        on: vi.fn(),
-        loadSource: vi.fn(),
-        attachMedia: vi.fn(),
-        destroy: vi.fn(),
-        recoverMediaError: vi.fn(),
-      };
-      // Must use `function` keyword so `new Hls()` works as a constructor
-      vi.mocked(Hls).mockImplementation(function () {
-        return hlsInstance as unknown as InstanceType<typeof Hls>;
-      } as unknown as typeof Hls);
-    });
-
-    afterEach(async () => {
-      const Hls = (await import('hls.js')).default;
-      vi.mocked(Hls.isSupported).mockReturnValue(false);
-      audioEngine.destroy();
-    });
-
-    function triggerHlsEvent(eventName: string, data: unknown) {
-      const call = hlsInstance.on.mock.calls.find((args) => args[0] === eventName);
-      if (call) call[1]('event', data);
-    }
-
-    it('should call onUrlExpired on fatal NETWORK_ERROR', async () => {
-      const Hls = (await import('hls.js')).default;
-      const onUrlExpired = vi.fn();
-      audioEngine.setCallbacks({ onUrlExpired });
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      triggerHlsEvent(Hls.Events.ERROR, {
-        fatal: true,
-        type: Hls.ErrorTypes.NETWORK_ERROR,
-        details: 'fragLoadError',
-      });
-
-      expect(onUrlExpired).toHaveBeenCalledWith(0);
-    });
-
-    it('should not call onUrlExpired twice without a new load', async () => {
-      const Hls = (await import('hls.js')).default;
-      const onUrlExpired = vi.fn();
-      const onError = vi.fn();
-      audioEngine.setCallbacks({ onUrlExpired, onError });
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      triggerHlsEvent(Hls.Events.ERROR, {
-        fatal: true,
-        type: Hls.ErrorTypes.NETWORK_ERROR,
-        details: 'fragLoadError',
-      });
-      triggerHlsEvent(Hls.Events.ERROR, {
-        fatal: true,
-        type: Hls.ErrorTypes.NETWORK_ERROR,
-        details: 'fragLoadError',
-      });
-
-      expect(onUrlExpired).toHaveBeenCalledTimes(1);
-      expect(onError).toHaveBeenCalledTimes(1);
-    });
-
-    it('should recover from MEDIA_ERROR', async () => {
-      const Hls = (await import('hls.js')).default;
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      triggerHlsEvent(Hls.Events.ERROR, {
-        fatal: true,
-        type: Hls.ErrorTypes.MEDIA_ERROR,
-        details: 'bufferStalledError',
-      });
-
-      expect(hlsInstance.recoverMediaError).toHaveBeenCalled();
-    });
-
-    it('escalates to onUrlExpired after 3 consecutive non-fatal NETWORK_ERRORs', async () => {
-      const Hls = (await import('hls.js')).default;
-      const onUrlExpired = vi.fn();
-      const onError = vi.fn();
-      audioEngine.setCallbacks({ onUrlExpired, onError });
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      for (let i = 0; i < 2; i++) {
-        triggerHlsEvent(Hls.Events.ERROR, {
-          fatal: false,
-          type: Hls.ErrorTypes.NETWORK_ERROR,
-          details: 'fragLoadError',
-        });
-      }
-      expect(onUrlExpired).not.toHaveBeenCalled();
-
-      triggerHlsEvent(Hls.Events.ERROR, {
-        fatal: false,
-        type: Hls.ErrorTypes.NETWORK_ERROR,
-        details: 'fragLoadError',
-      });
-      expect(onUrlExpired).toHaveBeenCalledTimes(1);
-      expect(onError).not.toHaveBeenCalled();
-    });
-
-    it('resets the non-fatal error counter on FRAG_LOADED', async () => {
-      const Hls = (await import('hls.js')).default;
-      const onUrlExpired = vi.fn();
-      audioEngine.setCallbacks({ onUrlExpired });
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      for (let i = 0; i < 2; i++) {
-        triggerHlsEvent(Hls.Events.ERROR, {
-          fatal: false,
-          type: Hls.ErrorTypes.NETWORK_ERROR,
-          details: 'fragLoadError',
-        });
-      }
-      triggerHlsEvent(Hls.Events.FRAG_LOADED, {});
-      for (let i = 0; i < 2; i++) {
-        triggerHlsEvent(Hls.Events.ERROR, {
-          fatal: false,
-          type: Hls.ErrorTypes.NETWORK_ERROR,
-          details: 'fragLoadError',
-        });
-      }
-
-      expect(onUrlExpired).not.toHaveBeenCalled();
-    });
+  it('clears fully-buffered on load', async () => {
+    const gen = await loadAndGetGeneration();
+    emit(PLAYER_EVENTS.fullyBuffered, { loadGeneration: gen });
+    expect(audioEngine.isFullyBuffered()).toBe(true);
+    audioEngine.load('https://cdn/next.mp3');
+    expect(audioEngine.isFullyBuffered()).toBe(false);
   });
 
-  describe('loading watchdog', () => {
-    type Listener = () => void;
+  it('isCrossfading is optimistic and needs a standby', async () => {
+    const gen = await loadAndGetGeneration();
+    audioEngine.startCrossfade(3000, 1);
+    expect(audioEngine.isCrossfading()).toBe(false);
+    audioEngine.preloadNext('https://cdn/next.mp3');
+    audioEngine.startCrossfade(3000, 1);
+    expect(audioEngine.isCrossfading()).toBe(true);
+    audioEngine.cancelCrossfade();
+    expect(audioEngine.isCrossfading()).toBe(false);
+    audioEngine.preloadNext('https://cdn/next.mp3');
+    audioEngine.startCrossfade(3000, 1);
+    emit(PLAYER_EVENTS.crossfadeComplete, { loadGeneration: gen });
+    expect(audioEngine.isCrossfading()).toBe(false);
+    audioEngine.preloadNext('https://cdn/next.mp3');
+    audioEngine.startCrossfade(3000, 1);
+    audioEngine.settleCrossfade();
+    expect(audioEngine.isCrossfading()).toBe(false);
+    await flushPlayerCommands();
+    expect(commands.playerStartCrossfade).toHaveBeenCalledTimes(3);
+  });
 
-    class FakeAudioElement {
-      listeners = new Map<string, Listener[]>();
-      currentTime = 0;
-      duration = 0;
-      readyState = 0;
-      paused = true;
-      volume = 1;
-      src = '';
-      addEventListener(type: string, cb: Listener) {
-        this.listeners.set(type, [...(this.listeners.get(type) ?? []), cb]);
-      }
-      play() {
-        this.paused = false;
-        this.emit('playing');
-        return Promise.resolve();
-      }
-      pause() {
-        this.paused = true;
-        this.emit('pause');
-      }
-      load() {}
-      removeAttribute() {}
-      remove() {}
-      emit(type: string) {
-        for (const cb of this.listeners.get(type) ?? []) cb();
-      }
-    }
-
-    let createdAudio: FakeAudioElement[];
-
-    beforeEach(async () => {
-      const Hls = (await import('hls.js')).default;
-      vi.mocked(Hls.isSupported).mockReturnValue(true);
-      vi.useFakeTimers();
-      createdAudio = [];
-      vi.stubGlobal(
-        'Audio',
-        vi.fn().mockImplementation(function () {
-          const el = new FakeAudioElement();
-          createdAudio.push(el);
-          return el;
-        }),
-      );
+  it('ended clears an optimistic crossfade that never began', async () => {
+    const gen = await loadAndGetGeneration();
+    audioEngine.preloadNext('https://cdn/next.mp3');
+    audioEngine.startCrossfade(3000, 1);
+    let crossfadingWhenEnded: boolean | null = null;
+    vi.mocked(cb.onEnded).mockImplementation(() => {
+      crossfadingWhenEnded = audioEngine.isCrossfading();
     });
+    emit(PLAYER_EVENTS.ended, { loadGeneration: gen });
+    expect(crossfadingWhenEnded).toBe(false);
+  });
 
-    afterEach(async () => {
-      audioEngine.destroy();
-      vi.unstubAllGlobals();
-      vi.useRealTimers();
-      const Hls = (await import('hls.js')).default;
-      vi.mocked(Hls.isSupported).mockReturnValue(false);
+  it('seek while playing reports loading synchronously', async () => {
+    const gen = await loadAndGetGeneration();
+    emit(PLAYER_EVENTS.stateChanged, { loadGeneration: gen, state: 'playing' });
+    audioEngine.seek(5000);
+    expect(audioEngine.getState()).toBe('loading');
+    await flushPlayerCommands();
+    expect(commands.playerSeek).toHaveBeenCalledWith(5000);
+  });
+
+  it('clamps volume', async () => {
+    audioEngine.setVolume(1.5);
+    audioEngine.setVolume(-0.5);
+    await flushPlayerCommands();
+    expect(vi.mocked(commands.playerSetVolume).mock.calls).toEqual([[1], [0]]);
+  });
+
+  it('stop reports idle, bumps generation and resets position', async () => {
+    const gen = await loadAndGetGeneration('https://cdn/a.mp3', 3000);
+    audioEngine.stop();
+    expect(audioEngine.getState()).toBe('idle');
+    expect(audioEngine.getPosition()).toEqual({ positionMs: 0, durationMs: 0 });
+    await flushPlayerCommands();
+    expect(vi.mocked(commands.playerStop).mock.lastCall![0]).toBe(gen + 1);
+  });
+
+  it('logs command failures through the logger', async () => {
+    vi.mocked(commands.playerPlay).mockResolvedValueOnce({
+      status: 'error',
+      error: { code: 'PLAYER_ENGINE_UNAVAILABLE', message: 'gone' },
     });
-
-    it('fires onUrlExpired with the current position after 5s stuck in loading', () => {
-      const onUrlExpired = vi.fn();
-      const onError = vi.fn();
-      audioEngine.setCallbacks({ onUrlExpired, onError });
-      audioEngine.load('https://example.com/stream.m3u8');
-      createdAudio[0]!.currentTime = 12;
-
-      vi.advanceTimersByTime(5000);
-
-      expect(onUrlExpired).toHaveBeenCalledTimes(1);
-      expect(onUrlExpired).toHaveBeenCalledWith(12000);
-      expect(onError).not.toHaveBeenCalled();
-      expect(audioEngine.getState()).toBe('loading');
-    });
-
-    it('fires onError and returns to idle after a second 5s stall', () => {
-      const onUrlExpired = vi.fn();
-      const onError = vi.fn();
-      audioEngine.setCallbacks({ onUrlExpired, onError });
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      vi.advanceTimersByTime(5000);
-      vi.advanceTimersByTime(5000);
-
-      expect(onUrlExpired).toHaveBeenCalledTimes(1);
-      expect(onError).toHaveBeenCalledTimes(1);
-      expect(onError).toHaveBeenCalledWith('Loading stalled after URL refresh');
-      expect(audioEngine.getState()).toBe('idle');
-    });
-
-    it('restarts the watchdog cycle when a URL refresh triggers a fresh load', () => {
-      const onError = vi.fn();
-      const onUrlExpired = vi.fn(() => {
-        audioEngine.load('https://example.com/stream.m3u8');
-      });
-      audioEngine.setCallbacks({ onUrlExpired, onError });
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      vi.advanceTimersByTime(5000);
-      vi.advanceTimersByTime(5000);
-
-      expect(onUrlExpired).toHaveBeenCalledTimes(2);
-      expect(onError).not.toHaveBeenCalled();
-      expect(audioEngine.getState()).toBe('loading');
-    });
-
-    it('does not fire when playback starts before 5s', () => {
-      const onUrlExpired = vi.fn();
-      const onError = vi.fn();
-      audioEngine.setCallbacks({ onUrlExpired, onError });
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      createdAudio[0]!.emit('playing');
-      vi.advanceTimersByTime(10000);
-
-      expect(onUrlExpired).not.toHaveBeenCalled();
-      expect(onError).not.toHaveBeenCalled();
-    });
-
-    it('does not fire when the track is paused', () => {
-      const onUrlExpired = vi.fn();
-      const onError = vi.fn();
-      audioEngine.setCallbacks({ onUrlExpired, onError });
-      audioEngine.load('https://example.com/stream.m3u8');
-
-      audioEngine.pause();
-      vi.advanceTimersByTime(10000);
-
-      expect(onUrlExpired).not.toHaveBeenCalled();
-      expect(onError).not.toHaveBeenCalled();
-    });
+    audioEngine.play();
+    await flushPlayerCommands();
+    expect(logError).toHaveBeenCalledWith(expect.stringContaining('playerPlay failed: PLAYER_ENGINE_UNAVAILABLE gone'));
   });
 });

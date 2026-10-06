@@ -15,11 +15,13 @@ use commands::{
     get_notifications_page, get_owned_playlists_for_track, get_playlist_info, get_playlist_tracks, get_rekordbox_playlist_tree, get_selections,
     get_track_comments, get_track_info, get_unread_conversations_flag, get_unread_count, install_update, is_tls_verify_disabled, like_playlist, like_track,
     list_profiles, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, mark_conversation_read,
-    mark_notifications_seen, open_in_firefox, post_comment, push_remote_state, quit_rekordbox, refresh_auth, remove_playlist_from_library_cache,
-    remove_track_from_playlist, resolve_library_artwork, resolve_message_embed, resolve_playback_url, resolve_soundcloud_link, resolve_user,
-    respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_albums, search_playlists, search_tracks, search_users, send_message,
-    sign_out, start_download_queue, start_remote_server, stop_remote_server, test_ffmpeg, unfollow_user, unlike_playlist, unlike_track, update_playlist,
-    validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
+    mark_notifications_seen, open_in_firefox, player_cancel_crossfade, player_destroy, player_load, player_pause, player_play, player_preload_next,
+    player_preload_segments, player_purge_cache, player_seek, player_set_media_metadata, player_set_volume, player_settle_crossfade, player_start_crossfade,
+    player_stop, post_comment, push_remote_state, quit_rekordbox, refresh_auth, remove_playlist_from_library_cache, remove_track_from_playlist,
+    resolve_library_artwork, resolve_message_embed, resolve_playback_url, resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice,
+    restore_rekordbox_backup, scan_existing_tracks, search_albums, search_playlists, search_tracks, search_users, send_message, sign_out, start_download_queue,
+    start_remote_server, stop_remote_server, test_ffmpeg, unfollow_user, unlike_playlist, unlike_track, update_playlist, validate_download_path,
+    validate_soundcloud_url, RekordboxExportCancellation,
 };
 use services::cancellation::CancellationState;
 use services::events;
@@ -40,7 +42,9 @@ use tauri_plugin_log::{Target, TargetKind};
 
 use services::downloader::DownloadProgressEvent;
 use services::events::{
-    ArtistAlbumsBatchEvent, ArtistPlaylistsBatchEvent, ArtistProfilesBatchEvent, LibraryPlaylistsBatchEvent, TracksBatchEvent, WebviewSendStatusEvent,
+    ArtistAlbumsBatchEvent, ArtistPlaylistsBatchEvent, ArtistProfilesBatchEvent, LibraryPlaylistsBatchEvent, PlayerCrossfadeCompleteEvent, PlayerEndedEvent,
+    PlayerErrorEvent, PlayerFullyBufferedEvent, PlayerMediaKeyEvent, PlayerProgressEvent, PlayerStateChangedEvent, PlayerUrlExpiredEvent, TracksBatchEvent,
+    WebviewSendStatusEvent,
 };
 use services::queue::{QueueCancelledEvent, QueueCompleteEvent, QueueProgressEvent};
 use services::rekordbox::models::RekordboxExportProgressEvent;
@@ -137,7 +141,15 @@ pub fn run() {
             ArtistAlbumsBatchEvent,
             ArtistProfilesBatchEvent,
             RekordboxExportProgressEvent,
-            WebviewSendStatusEvent
+            WebviewSendStatusEvent,
+            PlayerStateChangedEvent,
+            PlayerProgressEvent,
+            PlayerEndedEvent,
+            PlayerErrorEvent,
+            PlayerFullyBufferedEvent,
+            PlayerCrossfadeCompleteEvent,
+            PlayerUrlExpiredEvent,
+            PlayerMediaKeyEvent
         ])
         .commands(collect_commands![
             check_auth,
@@ -178,6 +190,20 @@ pub fn run() {
             search_tracks,
             search_users,
             resolve_playback_url,
+            player_cancel_crossfade,
+            player_destroy,
+            player_load,
+            player_pause,
+            player_play,
+            player_preload_next,
+            player_preload_segments,
+            player_purge_cache,
+            player_seek,
+            player_set_media_metadata,
+            player_set_volume,
+            player_settle_crossfade,
+            player_start_crossfade,
+            player_stop,
             get_selections,
             get_followed_artists,
             get_track_comments,
@@ -356,6 +382,9 @@ pub fn run() {
             if let Ok(log_dir) = app.path().app_log_dir() {
                 log::info!("Log directory: {}", log_dir.display());
             }
+
+            app.manage(services::player::PlayerHandle::spawn(app.handle().clone()));
+            services::player::media_controls::init(app.handle());
 
             Ok(())
         })

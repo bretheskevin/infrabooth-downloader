@@ -2,7 +2,7 @@
 
 ## Purpose
 InfraBooth Downloader: Tauri 2.x desktop app for downloading audio from SoundCloud.
-Core features: OAuth auth (browser cookie extraction), batch downloads, FFmpeg conversion to MP3 320kbps, ID3 metadata embedding, Rekordbox database integration, built-in audio player with crossfade/HLS, library management, artist following with activity feed, new releases tracking.
+Core features: OAuth auth (browser cookie extraction), batch downloads, FFmpeg conversion to MP3 320kbps, ID3 metadata embedding, Rekordbox database integration, built-in native audio player with crossfade, library management, artist following with activity feed, new releases tracking.
 
 ## Tech Stack
 - **Frontend**: React 19 + TypeScript + Vite + Tailwind CSS + shadcn/ui
@@ -11,7 +11,7 @@ Core features: OAuth auth (browser cookie extraction), batch downloads, FFmpeg c
 - **Data fetching**: TanStack React Query
 - **i18n**: i18next (en, fr)
 - **IPC**: tauri-specta → auto-generated `src/bindings.ts`
-- **Audio**: HLS.js + Web Audio API with crossfade support
+- **Audio**: native Rust player (symphonia + rodio, in-process HLS/AES-128 + progressive) with crossfade; souvlaki OS media controls
 
 ## Target Platforms
 - macOS 10.15+ (Catalina), Windows 10+

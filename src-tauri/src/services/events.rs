@@ -9,6 +9,7 @@ use tauri::Emitter;
 
 use crate::models::artist::{ArtistPlaylist, ArtistProfile};
 use crate::services::library::LibraryPlaylist;
+use crate::services::player::emitter::{PlayerEngineState, PlayerEvent};
 use crate::services::playlist::TrackInfo;
 
 pub const DOWNLOAD_PROGRESS: &str = "download-progress";
@@ -28,6 +29,14 @@ pub const REKORDBOX_EXPORT_PROGRESS: &str = "rekordbox-export-progress";
 pub const LIKED_TRACKS_BATCH: &str = "liked-tracks-batch";
 pub const ARTIST_LIKED_TRACKS_BATCH: &str = "artist-liked-tracks-batch";
 pub const ARTIST_PLAYLISTS_BATCH: &str = "artist-playlists-batch";
+pub const PLAYER_STATE_CHANGED: &str = "player-state-changed";
+pub const PLAYER_PROGRESS: &str = "player-progress";
+pub const PLAYER_ENDED: &str = "player-ended";
+pub const PLAYER_ERROR: &str = "player-error";
+pub const PLAYER_FULLY_BUFFERED: &str = "player-fully-buffered";
+pub const PLAYER_CROSSFADE_COMPLETE: &str = "player-crossfade-complete";
+pub const PLAYER_URL_EXPIRED: &str = "player-url-expired";
+pub const PLAYER_MEDIA_KEY: &str = "player-media-key";
 pub const ARTIST_ALBUMS_BATCH: &str = "artist-albums-batch";
 pub const LIBRARY_PLAYLISTS_BATCH: &str = "library-playlists-batch";
 pub const ARTIST_FOLLOWERS_BATCH: &str = "artist-followers-batch";
@@ -109,5 +118,118 @@ pub fn make_profile_batch_emitter(app: &tauri::AppHandle, event_name: &'static s
     let app = app.clone();
     move |batch: &[ArtistProfile]| {
         let _ = app.emit(event_name, ArtistProfilesBatchEvent { entity_id, profiles: batch.to_vec() });
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Type)]
+#[serde(tag = "type", rename_all = "camelCase")]
+pub enum PlayerMediaKeyAction {
+    Play,
+    Pause,
+    Toggle,
+    Next,
+    Previous,
+    Seek {
+        #[serde(rename = "positionMs")]
+        position_ms: u64,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerMediaKeyEvent {
+    pub action: PlayerMediaKeyAction,
+}
+
+pub fn emit_player_media_key(app: &tauri::AppHandle, action: PlayerMediaKeyAction) {
+    if let Err(e) = app.emit(PLAYER_MEDIA_KEY, PlayerMediaKeyEvent { action }) {
+        log::warn!("[player::events] Failed to emit media key event: {}", e);
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerStateChangedEvent {
+    pub load_generation: u32,
+    pub state: PlayerEngineState,
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerProgressEvent {
+    pub load_generation: u32,
+    pub position_ms: u64,
+    pub duration_ms: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerEndedEvent {
+    pub load_generation: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerErrorEvent {
+    pub load_generation: u32,
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerFullyBufferedEvent {
+    pub load_generation: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerCrossfadeCompleteEvent {
+    pub load_generation: u32,
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerUrlExpiredEvent {
+    pub load_generation: u32,
+    pub position_ms: u64,
+}
+
+pub fn emit_player_event(app: &tauri::AppHandle, load_generation: u32, event: PlayerEvent) {
+    let result = match event {
+        PlayerEvent::StateChanged(state) => app.emit(PLAYER_STATE_CHANGED, PlayerStateChangedEvent { load_generation, state }),
+        PlayerEvent::Progress { position_ms, duration_ms } => app.emit(PLAYER_PROGRESS, PlayerProgressEvent { load_generation, position_ms, duration_ms }),
+        PlayerEvent::Ended => app.emit(PLAYER_ENDED, PlayerEndedEvent { load_generation }),
+        PlayerEvent::Error(message) => app.emit(PLAYER_ERROR, PlayerErrorEvent { load_generation, message }),
+        PlayerEvent::FullyBuffered => app.emit(PLAYER_FULLY_BUFFERED, PlayerFullyBufferedEvent { load_generation }),
+        PlayerEvent::CrossfadeComplete => app.emit(PLAYER_CROSSFADE_COMPLETE, PlayerCrossfadeCompleteEvent { load_generation }),
+        PlayerEvent::UrlExpired { position_ms } => app.emit(PLAYER_URL_EXPIRED, PlayerUrlExpiredEvent { load_generation, position_ms }),
+    };
+    if let Err(e) = result {
+        log::warn!("[player::events] Failed to emit player event (gen={}): {}", load_generation, e);
+    }
+}
+
+#[cfg(test)]
+mod player_event_tests {
+    use super::*;
+
+    #[test]
+    fn progress_event_serializes_camel_case() {
+        let json = serde_json::to_string(&PlayerProgressEvent { load_generation: 3, position_ms: 1000, duration_ms: 5000 }).unwrap();
+        assert_eq!(json, r#"{"loadGeneration":3,"positionMs":1000,"durationMs":5000}"#);
+    }
+
+    #[test]
+    fn state_event_serializes_lowercase_state() {
+        let json = serde_json::to_string(&PlayerStateChangedEvent { load_generation: 1, state: PlayerEngineState::Loading }).unwrap();
+        assert_eq!(json, r#"{"loadGeneration":1,"state":"loading"}"#);
+    }
+
+    #[test]
+    fn media_key_event_serializes_tagged_actions() {
+        let toggle = serde_json::to_string(&PlayerMediaKeyEvent { action: PlayerMediaKeyAction::Toggle }).unwrap();
+        assert_eq!(toggle, r#"{"action":{"type":"toggle"}}"#);
+        let seek = serde_json::to_string(&PlayerMediaKeyEvent { action: PlayerMediaKeyAction::Seek { position_ms: 4200 } }).unwrap();
+        assert_eq!(seek, r#"{"action":{"type":"seek","positionMs":4200}}"#);
     }
 }

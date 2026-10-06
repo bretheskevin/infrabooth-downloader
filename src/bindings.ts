@@ -364,6 +364,118 @@ async resolvePlaybackUrl(trackId: number, trackUrl: string) : Promise<Result<str
     else return { status: "error", error: e  as any };
 }
 },
+async playerCancelCrossfade() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_cancel_crossfade") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerDestroy(loadGeneration: number) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_destroy", { loadGeneration }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerLoad(url: string, startPositionMs: number, loadGeneration: number) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_load", { url, startPositionMs, loadGeneration }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerPause() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_pause") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerPlay() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_play") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerPreloadNext(url: string) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_preload_next", { url }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerPreloadSegments(tracks: PlayerPreloadTrack[]) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_preload_segments", { tracks }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerPurgeCache(keepTrackIds: number[]) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_purge_cache", { keepTrackIds }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerSeek(positionMs: number) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_seek", { positionMs }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerSetMediaMetadata(metadata: PlayerMediaMetadata | null) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_set_media_metadata", { metadata }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerSetVolume(volume: number) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_set_volume", { volume }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerSettleCrossfade() : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_settle_crossfade") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerStartCrossfade(durationMs: number, targetVolume: number) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_start_crossfade", { durationMs, targetVolume }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
+async playerStop(loadGeneration: number) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_stop", { loadGeneration }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async getSelections() : Promise<Result<Selection[], string>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("get_selections") };
@@ -797,6 +909,14 @@ artistPlaylistsBatchEvent: ArtistPlaylistsBatchEvent,
 artistProfilesBatchEvent: ArtistProfilesBatchEvent,
 downloadProgressEvent: DownloadProgressEvent,
 libraryPlaylistsBatchEvent: LibraryPlaylistsBatchEvent,
+playerCrossfadeCompleteEvent: PlayerCrossfadeCompleteEvent,
+playerEndedEvent: PlayerEndedEvent,
+playerErrorEvent: PlayerErrorEvent,
+playerFullyBufferedEvent: PlayerFullyBufferedEvent,
+playerMediaKeyEvent: PlayerMediaKeyEvent,
+playerProgressEvent: PlayerProgressEvent,
+playerStateChangedEvent: PlayerStateChangedEvent,
+playerUrlExpiredEvent: PlayerUrlExpiredEvent,
 queueCancelledEvent: QueueCancelledEvent,
 queueCompleteEvent: QueueCompleteEvent,
 queueProgressEvent: QueueProgressEvent,
@@ -809,6 +929,14 @@ artistPlaylistsBatchEvent: "artist-playlists-batch-event",
 artistProfilesBatchEvent: "artist-profiles-batch-event",
 downloadProgressEvent: "download-progress-event",
 libraryPlaylistsBatchEvent: "library-playlists-batch-event",
+playerCrossfadeCompleteEvent: "player-crossfade-complete-event",
+playerEndedEvent: "player-ended-event",
+playerErrorEvent: "player-error-event",
+playerFullyBufferedEvent: "player-fully-buffered-event",
+playerMediaKeyEvent: "player-media-key-event",
+playerProgressEvent: "player-progress-event",
+playerStateChangedEvent: "player-state-changed-event",
+playerUrlExpiredEvent: "player-url-expired-event",
 queueCancelledEvent: "queue-cancelled-event",
 queueCompleteEvent: "queue-complete-event",
 queueProgressEvent: "queue-progress-event",
@@ -887,6 +1015,18 @@ export type MessageUserEmbed = { id: number; username: string; avatar_url: strin
 export type MessagesPage = { items: ConversationMessage[]; other_user: MessageUser; current_user_id: number; next_offset: number | null }
 export type NotificationItem = { kind: "affiliation"; id: string; created_at: string; actor: ActorInfo } | { kind: "track_like"; id: string; created_at: string; actor: ActorInfo; track: TrackInfo } | { kind: "track_repost"; id: string; created_at: string; actor: ActorInfo; track: TrackInfo } | { kind: "comment"; id: string; created_at: string; actor: ActorInfo; track: TrackInfo; body: string } | { kind: "mention"; id: string; created_at: string; actor: ActorInfo; track: TrackInfo; body: string } | { kind: "playlist_like"; id: string; created_at: string; actor: ActorInfo; playlist: PlaylistSummary } | { kind: "playlist_repost"; id: string; created_at: string; actor: ActorInfo; playlist: PlaylistSummary }
 export type NotificationsPage = { items: NotificationItem[]; next_cursor: string | null }
+export type PlayerCrossfadeCompleteEvent = { loadGeneration: number }
+export type PlayerEndedEvent = { loadGeneration: number }
+export type PlayerEngineState = "idle" | "loading" | "playing" | "paused"
+export type PlayerErrorEvent = { loadGeneration: number; message: string }
+export type PlayerFullyBufferedEvent = { loadGeneration: number }
+export type PlayerMediaKeyAction = { type: "play" } | { type: "pause" } | { type: "toggle" } | { type: "next" } | { type: "previous" } | { type: "seek"; positionMs: number }
+export type PlayerMediaKeyEvent = { action: PlayerMediaKeyAction }
+export type PlayerMediaMetadata = { title: string; artist: string; artworkUrl: string | null; durationMs: number }
+export type PlayerPreloadTrack = { trackId: number; url: string }
+export type PlayerProgressEvent = { loadGeneration: number; positionMs: number; durationMs: number }
+export type PlayerStateChangedEvent = { loadGeneration: number; state: PlayerEngineState }
+export type PlayerUrlExpiredEvent = { loadGeneration: number; positionMs: number }
 export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }
 /**
  * Playlist information from SoundCloud API.

@@ -290,6 +290,32 @@ impl HasErrorCode for RekordboxError {
     }
 }
 
+#[derive(Debug, Error, Clone, PartialEq, Eq)]
+pub enum PlayerError {
+    #[error("Invalid stream data: {0}")]
+    InvalidStream(String),
+
+    #[error("Audio output error: {0}")]
+    Output(String),
+
+    #[error("Unsupported codec: {0}")]
+    UnsupportedCodec(String),
+
+    #[error("Audio engine unavailable")]
+    EngineUnavailable,
+}
+
+impl HasErrorCode for PlayerError {
+    fn code(&self) -> &'static str {
+        match self {
+            PlayerError::InvalidStream(_) => "PLAYER_INVALID_STREAM",
+            PlayerError::Output(_) => "PLAYER_OUTPUT",
+            PlayerError::UnsupportedCodec(_) => "PLAYER_UNSUPPORTED_CODEC",
+            PlayerError::EngineUnavailable => "PLAYER_ENGINE_UNAVAILABLE",
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -506,5 +532,25 @@ mod tests {
         let err = LikePlaylistError::ApiError(403, "Forbidden".to_string());
         let response: ErrorResponse = err.into();
         assert_eq!(response.code, "LIKE_PLAYLIST_API_ERROR");
+    }
+}
+
+#[cfg(test)]
+mod player_error_tests {
+    use super::*;
+
+    #[test]
+    fn player_error_codes() {
+        assert_eq!(PlayerError::InvalidStream("x".into()).code(), "PLAYER_INVALID_STREAM");
+        assert_eq!(PlayerError::Output("x".into()).code(), "PLAYER_OUTPUT");
+        assert_eq!(PlayerError::UnsupportedCodec("x".into()).code(), "PLAYER_UNSUPPORTED_CODEC");
+        assert_eq!(PlayerError::EngineUnavailable.code(), "PLAYER_ENGINE_UNAVAILABLE");
+    }
+
+    #[test]
+    fn player_error_converts_to_error_response() {
+        let response: ErrorResponse = PlayerError::InvalidStream("bad".into()).into();
+        assert_eq!(response.code, "PLAYER_INVALID_STREAM");
+        assert_eq!(response.message, "Invalid stream data: bad");
     }
 }
