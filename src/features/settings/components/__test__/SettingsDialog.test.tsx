@@ -11,6 +11,7 @@ vi.mock('react-i18next', () => ({
         'settings.title': 'Settings',
         'settings.description': 'Customize your app preferences',
         'settings.categoryGeneral': 'General',
+        'settings.categoryAudio': 'Audio',
         'settings.categoryPlaylists': 'Playlists',
         'settings.categoryRekordbox': 'Rekordbox',
         'settings.categoryRemote': 'Remote Control',
@@ -53,6 +54,14 @@ vi.mock('../PlaylistOrderSection', () => ({
   PlaylistOrderSection: () => <div data-testid="playlist-order-section">Playlist Order</div>,
 }));
 
+vi.mock('../CrossfadeSection', () => ({
+  CrossfadeSection: () => <div data-testid="crossfade-section">Crossfade</div>,
+}));
+
+vi.mock('../EqualizerSection', () => ({
+  EqualizerSection: () => <div data-testid="equalizer-section">Equalizer</div>,
+}));
+
 describe('SettingsDialog', () => {
   const defaultProps = {
     open: true,
@@ -80,12 +89,13 @@ describe('SettingsDialog', () => {
     expect(tablist).toHaveAttribute('aria-orientation', 'vertical');
 
     const tabs = screen.getAllByRole('tab');
-    expect(tabs).toHaveLength(5);
+    expect(tabs).toHaveLength(6);
     expect(tabs[0]).toHaveTextContent('General');
-    expect(tabs[1]).toHaveTextContent('Playlists');
-    expect(tabs[2]).toHaveTextContent('Rekordbox');
-    expect(tabs[3]).toHaveTextContent('Remote Control');
-    expect(tabs[4]).toHaveTextContent('About');
+    expect(tabs[1]).toHaveTextContent('Audio');
+    expect(tabs[2]).toHaveTextContent('Playlists');
+    expect(tabs[3]).toHaveTextContent('Rekordbox');
+    expect(tabs[4]).toHaveTextContent('Remote Control');
+    expect(tabs[5]).toHaveTextContent('About');
   });
 
   it('shows General settings by default with correct aria-selected', () => {
@@ -96,6 +106,15 @@ describe('SettingsDialog', () => {
     expect(screen.getByTestId('language-section')).toBeInTheDocument();
     expect(screen.getByTestId('theme-section')).toBeInTheDocument();
     expect(screen.getByTestId('download-location-section')).toBeInTheDocument();
+    expect(screen.queryByTestId('crossfade-section')).not.toBeInTheDocument();
+  });
+
+  it('switches to Audio settings with crossfade and equalizer', () => {
+    render(<SettingsDialog {...defaultProps} />);
+    fireEvent.click(screen.getByRole('tab', { name: /Audio/ }));
+    expect(screen.getByRole('tab', { name: /Audio/ })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByTestId('crossfade-section')).toBeInTheDocument();
+    expect(screen.getByTestId('equalizer-section')).toBeInTheDocument();
   });
 
   it('switches to Playlists settings when clicked', () => {
@@ -145,6 +164,9 @@ describe('SettingsDialog', () => {
     const tablist = screen.getByRole('tablist');
 
     // ArrowDown moves to next tab
+    fireEvent.keyDown(tablist, { key: 'ArrowDown' });
+    expect(screen.getByRole('tab', { name: /Audio/ })).toHaveAttribute('aria-selected', 'true');
+
     fireEvent.keyDown(tablist, { key: 'ArrowDown' });
     expect(screen.getByRole('tab', { name: /Playlists/ })).toHaveAttribute('aria-selected', 'true');
 

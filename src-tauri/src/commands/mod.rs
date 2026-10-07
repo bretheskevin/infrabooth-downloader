@@ -54,8 +54,8 @@ pub use search::{search_albums, search_playlists, search_tracks, search_users};
 pub mod player;
 pub use player::{
     player_cancel_crossfade, player_destroy, player_load, player_pause, player_play, player_preload_next, player_preload_segments, player_purge_cache,
-    player_seek, player_set_dock_state, player_set_media_metadata, player_set_volume, player_settle_crossfade, player_start_crossfade, player_stop,
-    resolve_playback_url,
+    player_seek, player_set_dock_state, player_set_equalizer, player_set_media_metadata, player_set_volume, player_settle_crossfade, player_start_crossfade,
+    player_stop, resolve_playback_url,
 };
 
 pub mod selections;

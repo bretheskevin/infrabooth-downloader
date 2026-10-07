@@ -1,8 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import type { EqualizerPreset } from '@/bindings';
 import { logger } from '@/lib/logger';
 import { getErrorString } from '@/lib/utils';
 import { makeSetter, makeClampedSetter, pickKeys } from './helpers';
+import { EQUALIZER_BAND_FREQUENCIES, clampGain, isBuiltInPreset, matchPreset, presetGains, sanitizeGains } from './utils/equalizerPresets';
 
 export type Theme = 'system' | 'light' | 'dark';
 export type MediaViewMode = 'card' | 'list';
@@ -19,6 +21,9 @@ interface SettingsState {
   streamMode: boolean;
   crossfadeEnabled: boolean;
   crossfadeDuration: number;
+  equalizerEnabled: boolean;
+  equalizerPreset: EqualizerPreset;
+  equalizerGains: number[];
   hideReposts: boolean;
   hideReleasesReposts: boolean;
   mediaViewMode: MediaViewMode;
@@ -36,6 +41,10 @@ interface SettingsState {
   setStreamMode: (value: boolean) => void;
   setCrossfadeEnabled: (value: boolean) => void;
   setCrossfadeDuration: (value: number) => void;
+  setEqualizerEnabled: (value: boolean) => void;
+  setEqualizerPreset: (preset: EqualizerPreset) => void;
+  setEqualizerBandGain: (index: number, db: number) => void;
+  resetEqualizer: () => void;
   setHideReposts: (value: boolean) => void;
   setHideReleasesReposts: (value: boolean) => void;
   setMediaViewMode: (mode: MediaViewMode) => void;
@@ -56,12 +65,26 @@ const PERSISTED_KEYS = [
   'streamMode',
   'crossfadeEnabled',
   'crossfadeDuration',
+  'equalizerEnabled',
+  'equalizerPreset',
+  'equalizerGains',
   'hideReposts',
   'hideReleasesReposts',
   'mediaViewMode',
   'playlistDownloadPaths',
   'remoteControlEnabled',
 ] as const satisfies readonly (keyof SettingsState)[];
+
+function sanitizeEqualizer(state: SettingsState): SettingsState {
+  const equalizerEnabled = state.equalizerEnabled === true;
+  const gains = sanitizeGains(state.equalizerGains);
+  if (gains) return { ...state, equalizerEnabled, equalizerGains: gains, equalizerPreset: matchPreset(gains) };
+  const fallback = isBuiltInPreset(state.equalizerPreset) ? state.equalizerPreset : 'flat';
+  void logger.warn(
+    `[settings] Persisted equalizer gains do not fit ${EQUALIZER_BAND_FREQUENCIES.length} bands, falling back to preset "${fallback}" (stored preset ${JSON.stringify(state.equalizerPreset)}, gains ${JSON.stringify(state.equalizerGains)})`,
+  );
+  return { ...state, equalizerEnabled, equalizerGains: presetGains(fallback), equalizerPreset: fallback };
+}
 
 export const useSettingsStore = create<SettingsState>()(
   persist(
@@ -77,6 +100,9 @@ export const useSettingsStore = create<SettingsState>()(
       streamMode: false,
       crossfadeEnabled: false,
       crossfadeDuration: 5,
+      equalizerEnabled: false,
+      equalizerPreset: 'flat',
+      equalizerGains: presetGains('flat'),
       hideReposts: false,
       hideReleasesReposts: false,
       mediaViewMode: 'card',
@@ -94,6 +120,18 @@ export const useSettingsStore = create<SettingsState>()(
       setStreamMode: makeSetter('streamMode', set),
       setCrossfadeEnabled: makeSetter('crossfadeEnabled', set),
       setCrossfadeDuration: makeClampedSetter('crossfadeDuration', set, 1, 12),
+      setEqualizerEnabled: makeSetter('equalizerEnabled', set),
+      setEqualizerPreset: (preset) => {
+        if (preset === 'custom') return;
+        set({ equalizerPreset: preset, equalizerGains: presetGains(preset) });
+      },
+      setEqualizerBandGain: (index, db) =>
+        set((state) => {
+          if (!Number.isInteger(index) || index < 0 || index >= state.equalizerGains.length) return state;
+          const equalizerGains = state.equalizerGains.map((gain, i) => (i === index ? clampGain(db) : gain));
+          return { equalizerGains, equalizerPreset: matchPreset(equalizerGains) };
+        }),
+      resetEqualizer: () => set({ equalizerPreset: 'flat', equalizerGains: presetGains('flat') }),
       setHideReposts: makeSetter('hideReposts', set),
       setHideReleasesReposts: makeSetter('hideReleasesReposts', set),
       setMediaViewMode: makeSetter('mediaViewMode', set),
@@ -108,6 +146,7 @@ export const useSettingsStore = create<SettingsState>()(
       name: 'sc-downloader-settings',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => pickKeys(state, PERSISTED_KEYS),
+      merge: (persisted, current) => sanitizeEqualizer({ ...current, ...(persisted as Partial<SettingsState>) }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           void logger.error(`Settings hydration error: ${getErrorString(error)}`);

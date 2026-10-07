@@ -2,6 +2,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::Sender;
 use std::sync::{Arc, Mutex};
 
+use super::equalizer::EqualizerSettings;
 use super::feed::Feed;
 use super::messages::{EngineMsg, PipelineId};
 use crate::models::error::PlayerError;
@@ -35,6 +36,7 @@ pub trait AudioOutput {
     fn release(&mut self);
     fn create_sink(&mut self, feed: Arc<Feed>) -> Result<Box<dyn SlotSink>, PlayerError>;
     fn default_device_changed(&mut self) -> bool;
+    fn set_equalizer(&mut self, settings: EqualizerSettings);
 }
 
 pub trait Close: Send + Sync {

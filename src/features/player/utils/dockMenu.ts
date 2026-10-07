@@ -1,5 +1,13 @@
-import { commands, type DockMenuLabels, type DockMenuSettings, type DockMenuState, type DockSettingAction } from '@/bindings';
+import {
+  commands,
+  type DockMenuLabels,
+  type DockMenuSettings,
+  type DockMenuState,
+  type DockSettingAction,
+  type EqualizerPreset,
+} from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
+import { BUILT_IN_EQUALIZER_PRESETS } from '@/features/settings/utils/equalizerPresets';
 import i18n from '@/lib/i18n';
 import { logger } from '@/lib/logger';
 import { sendPlayerCommand } from '../player-commands';
@@ -21,6 +29,8 @@ export interface DockSettingTarget {
   setCrossfadeEnabled: (value: boolean) => void;
   setCrossfadeDuration: (value: number) => void;
   setMaxConcurrentDownloads: (n: number) => void;
+  setEqualizerEnabled: (value: boolean) => void;
+  setEqualizerPreset: (preset: EqualizerPreset) => void;
 }
 
 function toDockMenuLabels(t: Translate): DockMenuLabels {
@@ -37,14 +47,25 @@ function toDockMenuLabels(t: Translate): DockMenuLabels {
     crossfadeSeconds: CROSSFADE_SECONDS.map((count) => t('settings.crossfadeSeconds', { count })),
     parallelDownloads: t('player.dockParallelDownloads'),
     sequential: t('player.dockSequential'),
+    equalizer: t('settings.equalizer'),
+    equalizerPreset: t('player.dockEqualizerPreset'),
+    equalizerPresetNames: BUILT_IN_EQUALIZER_PRESETS.map((id) => t(`settings.equalizerPresets.${id}`)),
   };
 }
 
-function toDockMenuSettings({ crossfadeEnabled, crossfadeDuration, maxConcurrentDownloads }: DockMenuSettings): DockMenuSettings {
+function toDockMenuSettings({
+  crossfadeEnabled,
+  crossfadeDuration,
+  maxConcurrentDownloads,
+  equalizerEnabled,
+  equalizerPreset,
+}: DockMenuSettings): DockMenuSettings {
   return {
     crossfadeEnabled,
     crossfadeDuration: Math.round(crossfadeDuration),
     maxConcurrentDownloads: Math.round(maxConcurrentDownloads),
+    equalizerEnabled,
+    equalizerPreset,
   };
 }
 
@@ -75,6 +96,12 @@ export function handleDockSetting(action: DockSettingAction, target: DockSetting
     case 'setMaxConcurrentDownloads':
       target.setMaxConcurrentDownloads(action.count);
       return;
+    case 'setEqualizer':
+      target.setEqualizerEnabled(action.enabled);
+      return;
+    case 'setEqualizerPreset':
+      target.setEqualizerPreset(action.preset);
+      return;
   }
 }
 
@@ -88,9 +115,9 @@ function syncDockMenu(): void {
   const key = JSON.stringify(dockState);
   if (key === lastSentKey) return;
   lastSentKey = key;
-  const { crossfadeEnabled, crossfadeDuration, maxConcurrentDownloads } = dockState.settings;
+  const { crossfadeEnabled, crossfadeDuration, maxConcurrentDownloads, equalizerEnabled, equalizerPreset } = dockState.settings;
   void logger.debug(
-    `[dock-menu] Sync: track=${currentTrack?.trackId ?? 'none'} playing=${dockState.isPlaying} shuffle=${isShuffled} crossfade=${crossfadeEnabled}/${crossfadeDuration}s parallel=${maxConcurrentDownloads} lang=${i18n.language}`,
+    `[dock-menu] Sync: track=${currentTrack?.trackId ?? 'none'} playing=${dockState.isPlaying} shuffle=${isShuffled} crossfade=${crossfadeEnabled}/${crossfadeDuration}s parallel=${maxConcurrentDownloads} eq=${equalizerEnabled}/${equalizerPreset} lang=${i18n.language}`,
   );
   sendPlayerCommand('playerSetDockState', () => commands.playerSetDockState(dockState));
 }

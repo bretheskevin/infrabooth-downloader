@@ -1,4 +1,4 @@
-export type SettingsCategory = 'general' | 'playlists' | 'rekordbox' | 'remote' | 'about';
+export type SettingsCategory = 'general' | 'audio' | 'playlists' | 'rekordbox' | 'remote' | 'about';
 
 export interface SettingsDialogProps {
   open: boolean;

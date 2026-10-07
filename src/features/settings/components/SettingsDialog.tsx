@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { SettingsSidebar } from './SettingsSidebar';
 import { GeneralSettings } from './GeneralSettings';
+import { AudioSettings } from './AudioSettings';
 import { PlaylistsSettings } from './PlaylistsSettings';
 import { RekordboxSettings } from './RekordboxSettings';
 import { AboutSettings } from './AboutSettings';
@@ -12,6 +13,7 @@ import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
 
 const CONTENT_COMPONENTS: Record<SettingsCategory, React.ComponentType> = {
   general: GeneralSettings,
+  audio: AudioSettings,
   playlists: PlaylistsSettings,
   rekordbox: RekordboxSettings,
   remote: RemoteControlSettings,

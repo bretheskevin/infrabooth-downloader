@@ -8,6 +8,7 @@ pub mod emitter;
 pub mod engine;
 #[cfg(test)]
 mod engine_tests;
+pub mod equalizer;
 pub mod feed;
 pub mod fetch;
 pub mod head;

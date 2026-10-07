@@ -10,6 +10,7 @@ use tauri::Emitter;
 use crate::models::artist::{ArtistPlaylist, ArtistProfile};
 use crate::services::library::LibraryPlaylist;
 use crate::services::player::emitter::{PlayerEngineState, PlayerEvent};
+use crate::services::player::equalizer::EqualizerPreset;
 use crate::services::playlist::TrackInfo;
 
 pub const DOWNLOAD_PROGRESS: &str = "download-progress";
@@ -156,6 +157,8 @@ pub enum DockSettingAction {
     SetCrossfade { enabled: bool },
     SetCrossfadeDuration { seconds: u8 },
     SetMaxConcurrentDownloads { count: u8 },
+    SetEqualizer { enabled: bool },
+    SetEqualizerPreset { preset: EqualizerPreset },
 }
 
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
@@ -271,5 +274,9 @@ mod player_event_tests {
         assert_eq!(duration, r#"{"action":{"type":"setCrossfadeDuration","seconds":7}}"#);
         let parallel = serde_json::to_string(&DockSettingEvent { action: DockSettingAction::SetMaxConcurrentDownloads { count: 1 } }).unwrap();
         assert_eq!(parallel, r#"{"action":{"type":"setMaxConcurrentDownloads","count":1}}"#);
+        let equalizer = serde_json::to_string(&DockSettingEvent { action: DockSettingAction::SetEqualizer { enabled: false } }).unwrap();
+        assert_eq!(equalizer, r#"{"action":{"type":"setEqualizer","enabled":false}}"#);
+        let preset = serde_json::to_string(&DockSettingEvent { action: DockSettingAction::SetEqualizerPreset { preset: EqualizerPreset::BassBoost } }).unwrap();
+        assert_eq!(preset, r#"{"action":{"type":"setEqualizerPreset","preset":"bassBoost"}}"#);
     }
 }

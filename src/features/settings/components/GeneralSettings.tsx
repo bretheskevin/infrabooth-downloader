@@ -4,7 +4,6 @@ import { LanguageSection } from './LanguageSection';
 import { ThemeSection } from './ThemeSection';
 import { DownloadLocationSection } from './DownloadLocationSection';
 import { StreamModeSection } from './StreamModeSection';
-import { CrossfadeSection } from './CrossfadeSection';
 import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
 
 export function GeneralSettings() {
@@ -19,8 +18,6 @@ export function GeneralSettings() {
       <ThemeSection />
       <Separator />
       <StreamModeSection />
-      <Separator />
-      <CrossfadeSection />
       {isDownloadEnabled && (
         <>
           <Separator />

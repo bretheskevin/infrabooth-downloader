@@ -9,8 +9,8 @@ use objc2::{sel, MainThreadMarker};
 use objc2_app_kit::NSApplication;
 
 use super::dock_menu::{
-    self, DockChoiceView, DockMenuView, ID_CROSSFADE, ID_CROSSFADE_DURATION_MENU, ID_NEXT, ID_PARALLEL_MENU, ID_PREVIOUS, ID_SETTINGS_MENU, ID_SHUFFLE,
-    ID_TITLE, ID_TOGGLE,
+    self, DockChoiceView, DockMenuView, ID_CROSSFADE, ID_CROSSFADE_DURATION_MENU, ID_EQUALIZER, ID_EQUALIZER_PRESET_MENU, ID_NEXT, ID_PARALLEL_MENU,
+    ID_PREVIOUS, ID_SETTINGS_MENU, ID_SHUFFLE, ID_TITLE, ID_TOGGLE,
 };
 
 struct DockMenu {
@@ -28,6 +28,9 @@ struct SettingsMenu {
     crossfade: CheckMenuItem,
     crossfade_duration: Submenu,
     crossfade_duration_items: Vec<CheckMenuItem>,
+    equalizer: CheckMenuItem,
+    equalizer_preset: Submenu,
+    equalizer_preset_items: Vec<CheckMenuItem>,
     parallel: Submenu,
     parallel_items: Vec<CheckMenuItem>,
 }
@@ -51,12 +54,14 @@ pub fn init(app: &tauri::AppHandle) {
 fn init_on_main_thread() {
     let view = dock_menu::current_view();
     log::info!(
-        "[player::dock_menu] Building Dock menu (title='{}', transport_enabled={}, crossfade={}, duration_choices={}, parallel_choices={})",
+        "[player::dock_menu] Building Dock menu (title='{}', transport_enabled={}, crossfade={}, duration_choices={}, parallel_choices={}, equalizer={}, preset_choices={})",
         view.title,
         view.transport_enabled,
         view.crossfade_checked,
         view.crossfade_duration_choices.len(),
-        view.parallel_choices.len()
+        view.parallel_choices.len(),
+        view.equalizer_checked,
+        view.equalizer_preset_choices.len()
     );
     let dock = match build_menu(&view) {
         Ok(dock) => dock,
@@ -94,11 +99,25 @@ fn build_settings_menu(view: &DockMenuView) -> Result<SettingsMenu, String> {
     let crossfade = CheckMenuItem::with_id(ID_CROSSFADE, &view.crossfade_label, true, view.crossfade_checked, None);
     let crossfade_duration_items = build_choice_items(&view.crossfade_duration_choices);
     let crossfade_duration = build_choice_submenu(ID_CROSSFADE_DURATION_MENU, &view.crossfade_duration_label, &crossfade_duration_items)?;
+    let equalizer = CheckMenuItem::with_id(ID_EQUALIZER, &view.equalizer_label, true, view.equalizer_checked, None);
+    let equalizer_preset_items = build_choice_items(&view.equalizer_preset_choices);
+    let equalizer_preset = build_choice_submenu(ID_EQUALIZER_PRESET_MENU, &view.equalizer_preset_label, &equalizer_preset_items)?;
     let parallel_items = build_choice_items(&view.parallel_choices);
     let parallel = build_choice_submenu(ID_PARALLEL_MENU, &view.parallel_label, &parallel_items)?;
-    let root = Submenu::with_id_and_items(ID_SETTINGS_MENU, &view.settings_label, true, &[&crossfade, &crossfade_duration, &parallel])
-        .map_err(|e| format!("Submenu::with_id_and_items({ID_SETTINGS_MENU}) failed: {e}"))?;
-    Ok(SettingsMenu { root, crossfade, crossfade_duration, crossfade_duration_items, parallel, parallel_items })
+    let root =
+        Submenu::with_id_and_items(ID_SETTINGS_MENU, &view.settings_label, true, &[&crossfade, &crossfade_duration, &equalizer, &equalizer_preset, &parallel])
+            .map_err(|e| format!("Submenu::with_id_and_items({ID_SETTINGS_MENU}) failed: {e}"))?;
+    Ok(SettingsMenu {
+        root,
+        crossfade,
+        crossfade_duration,
+        crossfade_duration_items,
+        equalizer,
+        equalizer_preset,
+        equalizer_preset_items,
+        parallel,
+        parallel_items,
+    })
 }
 
 fn build_choice_items(choices: &[DockChoiceView]) -> Vec<CheckMenuItem> {
@@ -181,6 +200,10 @@ fn apply_settings_view(settings: &SettingsMenu, view: &DockMenuView) {
     settings.crossfade.set_checked(view.crossfade_checked);
     settings.crossfade_duration.set_text(&view.crossfade_duration_label);
     apply_choices(&settings.crossfade_duration_items, &view.crossfade_duration_choices);
+    settings.equalizer.set_text(&view.equalizer_label);
+    settings.equalizer.set_checked(view.equalizer_checked);
+    settings.equalizer_preset.set_text(&view.equalizer_preset_label);
+    apply_choices(&settings.equalizer_preset_items, &view.equalizer_preset_choices);
     settings.parallel.set_text(&view.parallel_label);
     apply_choices(&settings.parallel_items, &view.parallel_choices);
 }

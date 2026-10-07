@@ -4,6 +4,7 @@ import type { DockSettingEvent, PlayerMediaKeyEvent } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
 import { usePlayerStore } from '../store';
 import { DOCK_SETTING_EVENT, handleDockSetting, subscribeDockMenu } from '../utils/dockMenu';
+import { subscribeEqualizer } from '../utils/equalizerSync';
 import { PLAYER_MEDIA_KEY_EVENT, handleMediaKey, syncMediaMetadata } from '../utils/mediaControls';
 
 export function usePlayerEvents(): void {
@@ -26,10 +27,12 @@ export function usePlayerEvents(): void {
       if (state.currentTrack !== prevState.currentTrack) syncMediaMetadata(state.currentTrack);
     });
     const unsubscribeDockMenu = subscribeDockMenu();
+    const unsubscribeEqualizer = subscribeEqualizer();
 
     return () => {
       unsubscribe();
       unsubscribeDockMenu();
+      unsubscribeEqualizer();
       void unlisten.then((fn) => fn());
       void unlistenDockSetting.then((fn) => fn());
     };

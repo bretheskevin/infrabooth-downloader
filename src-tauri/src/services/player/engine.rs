@@ -141,6 +141,7 @@ impl Engine {
             EngineMsg::Pause => self.pause(now),
             EngineMsg::Seek { position_ms } => self.seek(position_ms, now),
             EngineMsg::SetVolume { volume } => self.set_volume(volume),
+            EngineMsg::SetEqualizer { settings } => self.output.set_equalizer(settings),
             EngineMsg::Stop { generation } => self.stop(generation, now),
             EngineMsg::Destroy { generation } => self.destroy(generation, now),
             EngineMsg::PreloadNext { url } => self.preload_next(url),

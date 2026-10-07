@@ -444,6 +444,14 @@ async playerSetDockState(state: DockMenuState) : Promise<Result<null, ErrorRespo
     else return { status: "error", error: e  as any };
 }
 },
+async playerSetEqualizer(settings: EqualizerSettings) : Promise<Result<null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("player_set_equalizer", { settings }) };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async playerSetMediaMetadata(metadata: PlayerMediaMetadata | null) : Promise<Result<null, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("player_set_media_metadata", { metadata }) };
@@ -977,10 +985,10 @@ export type ConversationMessage = { content: string; sender_id: number; sent_at:
 export type ConversationSummary = { id: string; other_user: MessageUser; last_message_content: string; last_message_sender_id: number; last_message_at: string; read: boolean }
 export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null }
 export type CreatedPlaylist = { id: number; title: string; permalinkUrl: string }
-export type DockMenuLabels = { play: string; pause: string; next: string; previous: string; shuffle: string; notPlaying: string; settingsMenu: string; crossfade: string; crossfadeDuration: string; crossfadeSeconds: string[]; parallelDownloads: string; sequential: string }
-export type DockMenuSettings = { crossfadeEnabled: boolean; crossfadeDuration: number; maxConcurrentDownloads: number }
+export type DockMenuLabels = { play: string; pause: string; next: string; previous: string; shuffle: string; notPlaying: string; settingsMenu: string; crossfade: string; crossfadeDuration: string; crossfadeSeconds: string[]; parallelDownloads: string; sequential: string; equalizer: string; equalizerPreset: string; equalizerPresetNames: string[] }
+export type DockMenuSettings = { crossfadeEnabled: boolean; crossfadeDuration: number; maxConcurrentDownloads: number; equalizerEnabled: boolean; equalizerPreset: EqualizerPreset }
 export type DockMenuState = { title: string | null; isPlaying: boolean; hasTrack: boolean; shuffle: boolean; settings: DockMenuSettings; labels: DockMenuLabels }
-export type DockSettingAction = { type: "setCrossfade"; enabled: boolean } | { type: "setCrossfadeDuration"; seconds: number } | { type: "setMaxConcurrentDownloads"; count: number }
+export type DockSettingAction = { type: "setCrossfade"; enabled: boolean } | { type: "setCrossfadeDuration"; seconds: number } | { type: "setMaxConcurrentDownloads"; count: number } | { type: "setEqualizer"; enabled: boolean } | { type: "setEqualizerPreset"; preset: EqualizerPreset }
 export type DockSettingEvent = { action: DockSettingAction }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null; filePath?: string | null }
 export type DownloadRequest = ({ 
@@ -1016,6 +1024,8 @@ downloadUrl: string | null;
  * Secret token for private tracks (from the `/s-xxx` share link)
  */
 secretToken: string | null }) & { album: string | null; trackNumber: number | null; totalTracks: number | null; outputDir: string | null }
+export type EqualizerPreset = "flat" | "bassBoost" | "trebleBoost" | "vocal" | "electronic" | "rock" | "acoustic" | "custom"
+export type EqualizerSettings = { enabled: boolean; gainsDb: number[] }
 export type ErrorResponse = { code: string; message: string }
 export type ExportResult = { exportedCount: number; skippedCount: number; playlistName: string; errors: string[] }
 export type ExportTrackRequest = { sourcePath: string }

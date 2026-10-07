@@ -1,6 +1,7 @@
 use tauri::State;
 
 use crate::models::error::ErrorResponse;
+use crate::services::player::equalizer::EqualizerSettings;
 use crate::services::player::messages::{DockMenuState, EngineMsg, PlayerMediaMetadata, PlayerPreloadTrack};
 use crate::services::player::PlayerHandle;
 use crate::services::storage::AuthState;
@@ -49,6 +50,13 @@ pub fn player_pause(player: State<'_, PlayerHandle>) -> Result<(), ErrorResponse
 #[specta::specta]
 pub fn player_seek(position_ms: u64, player: State<'_, PlayerHandle>) -> Result<(), ErrorResponse> {
     dispatch(&player, "player_seek", EngineMsg::Seek { position_ms })
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn player_set_equalizer(settings: EqualizerSettings, player: State<'_, PlayerHandle>) -> Result<(), ErrorResponse> {
+    log::debug!("[player::cmd] player_set_equalizer enabled={} gains={:?}", settings.enabled, settings.gains_db);
+    dispatch(&player, "player_set_equalizer", EngineMsg::SetEqualizer { settings })
 }
 
 #[tauri::command]

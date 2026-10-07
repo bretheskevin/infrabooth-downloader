@@ -31,6 +31,7 @@ vi.mock('../url-cache', () => ({
 
 import { commands } from '@/bindings';
 import { useSettingsStore } from '@/features/settings/store';
+import { presetGains } from '@/features/settings/utils/equalizerPresets';
 import { usePlayerStore } from '../store';
 import { flushPlayerCommands } from '../player-commands';
 import { handleDockSetting, subscribeDockMenu, toDockMenuState, type DockSettingTarget } from '../utils/dockMenu';
@@ -48,23 +49,41 @@ const track: PlaybackItem = {
 };
 
 const t = (key: string, options?: { count: number }) => (options ? `${key}:${options.count}` : key);
-const defaultSettings = { crossfadeEnabled: false, crossfadeDuration: 5, maxConcurrentDownloads: 3 };
+const defaultSettings = {
+  crossfadeEnabled: false,
+  crossfadeDuration: 5,
+  maxConcurrentDownloads: 3,
+  equalizerEnabled: false,
+  equalizerPreset: 'flat' as const,
+};
 
 describe('dock menu state', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     usePlayerStore.setState({ currentTrack: null, state: 'stopped', isShuffled: false, positionMs: 0 });
-    useSettingsStore.setState(defaultSettings);
+    useSettingsStore.setState({ ...defaultSettings, equalizerGains: presetGains('flat') });
   });
 
   it('builds the state for a playing track with settings and translated labels', () => {
-    const settings = { crossfadeEnabled: true, crossfadeDuration: 7, maxConcurrentDownloads: 1 };
+    const settings = {
+      crossfadeEnabled: true,
+      crossfadeDuration: 7,
+      maxConcurrentDownloads: 1,
+      equalizerEnabled: true,
+      equalizerPreset: 'rock' as const,
+    };
     expect(toDockMenuState({ currentTrack: track, state: 'playing', isShuffled: true }, settings, t)).toEqual({
       title: 'Song — Artist',
       isPlaying: true,
       hasTrack: true,
       shuffle: true,
-      settings: { crossfadeEnabled: true, crossfadeDuration: 7, maxConcurrentDownloads: 1 },
+      settings: {
+        crossfadeEnabled: true,
+        crossfadeDuration: 7,
+        maxConcurrentDownloads: 1,
+        equalizerEnabled: true,
+        equalizerPreset: 'rock',
+      },
       labels: {
         play: 'player.play',
         pause: 'player.pause',
@@ -78,6 +97,11 @@ describe('dock menu state', () => {
         crossfadeSeconds: Array.from({ length: 12 }, (_, i) => `settings.crossfadeSeconds:${i + 1}`),
         parallelDownloads: 'player.dockParallelDownloads',
         sequential: 'player.dockSequential',
+        equalizer: 'settings.equalizer',
+        equalizerPreset: 'player.dockEqualizerPreset',
+        equalizerPresetNames: ['flat', 'bassBoost', 'trebleBoost', 'vocal', 'electronic', 'rock', 'acoustic'].map(
+          (id) => `settings.equalizerPresets.${id}`,
+        ),
       },
     });
   });
@@ -111,10 +135,16 @@ describe('dock menu state', () => {
   it('rounds settings values so Rust receives integers', () => {
     const state = toDockMenuState(
       { currentTrack: null, state: 'stopped', isShuffled: false },
-      { crossfadeEnabled: false, crossfadeDuration: 4.6, maxConcurrentDownloads: 2.2 },
+      { ...defaultSettings, crossfadeDuration: 4.6, maxConcurrentDownloads: 2.2 },
       t,
     );
-    expect(state.settings).toEqual({ crossfadeEnabled: false, crossfadeDuration: 5, maxConcurrentDownloads: 2 });
+    expect(state.settings).toEqual({
+      crossfadeEnabled: false,
+      crossfadeDuration: 5,
+      maxConcurrentDownloads: 2,
+      equalizerEnabled: false,
+      equalizerPreset: 'flat',
+    });
   });
 
   it('pushes again when a dock-relevant setting changes', async () => {
@@ -125,9 +155,32 @@ describe('dock menu state', () => {
 
     const pushed = vi.mocked(commands.playerSetDockState).mock.calls.map(([s]) => s.settings);
     expect(pushed).toEqual([
-      { crossfadeEnabled: false, crossfadeDuration: 5, maxConcurrentDownloads: 3 },
-      { crossfadeEnabled: true, crossfadeDuration: 5, maxConcurrentDownloads: 3 },
-      { crossfadeEnabled: true, crossfadeDuration: 5, maxConcurrentDownloads: 1 },
+      { crossfadeEnabled: false, crossfadeDuration: 5, maxConcurrentDownloads: 3, equalizerEnabled: false, equalizerPreset: 'flat' },
+      { crossfadeEnabled: true, crossfadeDuration: 5, maxConcurrentDownloads: 3, equalizerEnabled: false, equalizerPreset: 'flat' },
+      { crossfadeEnabled: true, crossfadeDuration: 5, maxConcurrentDownloads: 1, equalizerEnabled: false, equalizerPreset: 'flat' },
+    ]);
+    unsubscribe();
+  });
+});
+
+describe('dock menu equalizer state', () => {
+  it('pushes when the equalizer toggle or preset changes but not on gain-only drags that keep the preset', async () => {
+    vi.clearAllMocks();
+    useSettingsStore.setState({ equalizerEnabled: false, equalizerPreset: 'flat', equalizerGains: presetGains('flat') });
+    const unsubscribe = subscribeDockMenu();
+    useSettingsStore.getState().setEqualizerEnabled(true);
+    useSettingsStore.getState().setEqualizerPreset('rock');
+    useSettingsStore.getState().setEqualizerBandGain(0, 3);
+    useSettingsStore.getState().setEqualizerBandGain(0, 2.5);
+    await flushPlayerCommands();
+    const pushed = vi
+      .mocked(commands.playerSetDockState)
+      .mock.calls.map(([s]) => [s.settings.equalizerEnabled, s.settings.equalizerPreset]);
+    expect(pushed).toEqual([
+      [false, 'flat'],
+      [true, 'flat'],
+      [true, 'rock'],
+      [true, 'custom'],
     ]);
     unsubscribe();
   });
@@ -138,6 +191,8 @@ describe('dock setting actions', () => {
     setCrossfadeEnabled: vi.fn(),
     setCrossfadeDuration: vi.fn(),
     setMaxConcurrentDownloads: vi.fn(),
+    setEqualizerEnabled: vi.fn(),
+    setEqualizerPreset: vi.fn(),
   });
 
   it('applies the crossfade toggle value', () => {
@@ -157,6 +212,23 @@ describe('dock setting actions', () => {
     const target = makeTarget();
     handleDockSetting({ type: 'setMaxConcurrentDownloads', count: 1 }, target);
     expect(target.setMaxConcurrentDownloads).toHaveBeenCalledWith(1);
+  });
+
+  it('applies the equalizer toggle value', () => {
+    const target = makeTarget();
+    handleDockSetting({ type: 'setEqualizer', enabled: true }, target);
+    expect(target.setEqualizerEnabled).toHaveBeenCalledWith(true);
+  });
+
+  it('applies the equalizer preset', () => {
+    const target = makeTarget();
+    handleDockSetting({ type: 'setEqualizerPreset', preset: 'vocal' }, target);
+    expect(target.setEqualizerPreset).toHaveBeenCalledWith('vocal');
+  });
+
+  it('applies a Dock preset to the real settings store gains', () => {
+    handleDockSetting({ type: 'setEqualizerPreset', preset: 'bassBoost' }, useSettingsStore.getState());
+    expect(useSettingsStore.getState().equalizerGains).toEqual([6, 3, 0, 0, 0]);
   });
 
   it('updates the real settings store through its setters', () => {

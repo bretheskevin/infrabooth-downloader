@@ -5,6 +5,7 @@ use std::time::{Duration, Instant};
 
 use super::emitter::{PlayerEngineState as S, PlayerEvent, PlayerEventSink};
 use super::engine::Engine;
+use super::equalizer::{EqualizerSettings, BAND_COUNT};
 use super::feed::{AudioSpec, Feed};
 use super::messages::{EngineMsg, NetworkErrorKind, PipelineEvent, PipelineId};
 use super::ports::{AudioOutput, Pipeline, PipelineFactory, PipelineRequest, SlotSink};
@@ -48,6 +49,7 @@ impl Drop for FakeSink {
 struct FakeOutput {
     sinks: Arc<Mutex<Vec<SinkHandle>>>,
     open: Arc<AtomicBool>,
+    equalizer: Arc<Mutex<Vec<EqualizerSettings>>>,
 }
 impl AudioOutput for FakeOutput {
     fn ensure_open(&mut self) -> Result<(), PlayerError> {
@@ -65,6 +67,9 @@ impl AudioOutput for FakeOutput {
         let handle: SinkHandle = Arc::default();
         self.sinks.lock().unwrap().push(handle.clone());
         Ok(Box::new(FakeSink(handle)))
+    }
+    fn set_equalizer(&mut self, settings: EqualizerSettings) {
+        self.equalizer.lock().unwrap().push(settings);
     }
     fn default_device_changed(&mut self) -> bool {
         false
@@ -103,6 +108,7 @@ struct Harness {
     sinks: Arc<Mutex<Vec<SinkHandle>>>,
     pipelines: Arc<Mutex<Vec<Started>>>,
     open: Arc<AtomicBool>,
+    equalizer: Arc<Mutex<Vec<EqualizerSettings>>>,
     t0: Instant,
     _rx: Receiver<EngineMsg>,
 }
@@ -113,14 +119,15 @@ impl Harness {
         let sinks = Arc::new(Mutex::new(Vec::new()));
         let pipelines = Arc::new(Mutex::new(Vec::new()));
         let open = Arc::new(AtomicBool::new(false));
+        let equalizer = Arc::new(Mutex::new(Vec::new()));
         let (tx, rx) = mpsc::channel();
         let engine = Engine::new(
             Box::new(RecordingSink(events.clone())),
-            Box::new(FakeOutput { sinks: sinks.clone(), open: open.clone() }),
+            Box::new(FakeOutput { sinks: sinks.clone(), open: open.clone(), equalizer: equalizer.clone() }),
             Box::new(FakeFactory(pipelines.clone())),
             tx,
         );
-        Self { engine, events, sinks, pipelines, open, t0: Instant::now(), _rx: rx }
+        Self { engine, events, sinks, pipelines, open, equalizer, t0: Instant::now(), _rx: rx }
     }
     fn at(&self, ms: u64) -> Instant {
         self.t0 + Duration::from_millis(ms)
@@ -343,6 +350,16 @@ fn set_volume_clamps_and_applies_to_active_sink() {
     assert_eq!(h.sink(0).lock().unwrap().volume, 1.0);
     h.send(EngineMsg::SetVolume { volume: -1.0 }, 30);
     assert_eq!(h.sink(0).lock().unwrap().volume, 0.0);
+}
+
+#[test]
+fn set_equalizer_is_forwarded_to_the_output_without_opening_it() {
+    let mut h = Harness::new();
+    let settings = EqualizerSettings { enabled: true, gains_db: vec![3.0; BAND_COUNT] };
+    h.send(EngineMsg::SetEqualizer { settings: settings.clone() }, 0);
+    assert_eq!(*h.equalizer.lock().unwrap(), vec![settings]);
+    assert!(!h.open.load(Ordering::SeqCst));
+    assert!(h.take().is_empty());
 }
 
 #[test]

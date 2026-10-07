@@ -1,6 +1,6 @@
 import { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Settings2, Download, Disc3, Info, Heart, Smartphone } from 'lucide-react';
+import { Settings2, Download, Disc3, Info, Heart, Smartphone, SlidersVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { SettingsCategory, SettingsSidebarProps } from './types';
 import { useIsDownloadEnabled } from '../hooks/useIsDownloadEnabled';
@@ -8,6 +8,7 @@ import { featureFlags } from '@/lib/featureFlags';
 
 const CATEGORIES: { id: SettingsCategory; icon: React.ElementType; labelKey: string }[] = [
   { id: 'general', icon: Settings2, labelKey: 'settings.categoryGeneral' },
+  { id: 'audio', icon: SlidersVertical, labelKey: 'settings.categoryAudio' },
   { id: 'playlists', icon: Download, labelKey: 'settings.categoryPlaylists' },
   { id: 'rekordbox', icon: Disc3, labelKey: 'settings.categoryRekordbox' },
   { id: 'remote', icon: Smartphone, labelKey: 'settings.categoryRemote' },
