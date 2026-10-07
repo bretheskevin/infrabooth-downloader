@@ -33,6 +33,7 @@ Run `bash .claude/skills/create-new-version/scripts/release-context.sh` to get:
    - **Fixed**: Bug fixes
    - **Removed**: Deleted features (user-facing only)
    - Skip internal changes: CI, tests, configs, refactoring
+   - **Feature-flagged work**: Check `src-tauri/feature-flags.toml`. Skip any feature whose flag still defaults to `false` — users cannot see it yet. List it only in the release where its flag is flipped to `true` or removed, written as if the feature were new in that release (usually **Added**).
 
 3. **Writing rules for changelog entries:**
    - **Ultra-concise**: 5-12 words max per item. No full sentences, no dashes or parenthetical details. Think app store release notes.
