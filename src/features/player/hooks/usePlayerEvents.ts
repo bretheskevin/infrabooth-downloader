@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import type { PlayerMediaKeyEvent } from '@/bindings';
+import type { DockSettingEvent, PlayerMediaKeyEvent } from '@/bindings';
+import { useSettingsStore } from '@/features/settings/store';
 import { usePlayerStore } from '../store';
-import { subscribeDockMenu } from '../utils/dockMenu';
+import { DOCK_SETTING_EVENT, handleDockSetting, subscribeDockMenu } from '../utils/dockMenu';
 import { PLAYER_MEDIA_KEY_EVENT, handleMediaKey, syncMediaMetadata } from '../utils/mediaControls';
 
 export function usePlayerEvents(): void {
@@ -18,6 +19,9 @@ export function usePlayerEvents(): void {
     const unlisten = listen<PlayerMediaKeyEvent>(PLAYER_MEDIA_KEY_EVENT, (event) => {
       handleMediaKey(event.payload.action, usePlayerStore.getState());
     });
+    const unlistenDockSetting = listen<DockSettingEvent>(DOCK_SETTING_EVENT, (event) => {
+      handleDockSetting(event.payload.action, useSettingsStore.getState());
+    });
     const unsubscribe = usePlayerStore.subscribe((state, prevState) => {
       if (state.currentTrack !== prevState.currentTrack) syncMediaMetadata(state.currentTrack);
     });
@@ -27,6 +31,7 @@ export function usePlayerEvents(): void {
       unsubscribe();
       unsubscribeDockMenu();
       void unlisten.then((fn) => fn());
+      void unlistenDockSetting.then((fn) => fn());
     };
   }, []);
 }

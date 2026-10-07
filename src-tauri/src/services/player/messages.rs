@@ -1,3 +1,4 @@
+use std::ops::RangeInclusive;
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use serde::Deserialize;
@@ -56,6 +57,12 @@ pub struct DockMenuLabels {
     pub previous: String,
     pub shuffle: String,
     pub not_playing: String,
+    pub settings_menu: String,
+    pub crossfade: String,
+    pub crossfade_duration: String,
+    pub crossfade_seconds: Vec<String>,
+    pub parallel_downloads: String,
+    pub sequential: String,
 }
 
 impl Default for DockMenuLabels {
@@ -67,7 +74,30 @@ impl Default for DockMenuLabels {
             previous: "Previous".into(),
             shuffle: "Shuffle".into(),
             not_playing: "Not Playing".into(),
+            settings_menu: "Settings".into(),
+            crossfade: "Crossfade".into(),
+            crossfade_duration: "Crossfade duration".into(),
+            crossfade_seconds: CROSSFADE_DURATION_RANGE.map(|seconds| format!("{seconds}s")).collect(),
+            parallel_downloads: "Parallel downloads".into(),
+            sequential: "Sequential".into(),
         }
+    }
+}
+
+pub(super) const CROSSFADE_DURATION_RANGE: RangeInclusive<u8> = 1..=12;
+pub(super) const PARALLEL_RANGE: RangeInclusive<u8> = 1..=10;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Type)]
+#[serde(rename_all = "camelCase")]
+pub struct DockMenuSettings {
+    pub crossfade_enabled: bool,
+    pub crossfade_duration: u8,
+    pub max_concurrent_downloads: u8,
+}
+
+impl Default for DockMenuSettings {
+    fn default() -> Self {
+        Self { crossfade_enabled: false, crossfade_duration: 5, max_concurrent_downloads: 3 }
     }
 }
 
@@ -78,6 +108,7 @@ pub struct DockMenuState {
     pub is_playing: bool,
     pub has_track: bool,
     pub shuffle: bool,
+    pub settings: DockMenuSettings,
     pub labels: DockMenuLabels,
 }
 
@@ -122,9 +153,31 @@ mod tests {
     }
 
     #[test]
+    fn dock_settings_defaults_fall_within_their_menu_ranges() {
+        let defaults = DockMenuSettings::default();
+        assert!(CROSSFADE_DURATION_RANGE.contains(&defaults.crossfade_duration));
+        assert!(PARALLEL_RANGE.contains(&defaults.max_concurrent_downloads));
+    }
+
+    #[test]
     fn dock_menu_state_deserializes_from_camel_case() {
-        let json = r#"{"title":"T — A","isPlaying":true,"hasTrack":true,"shuffle":false,"labels":{"play":"Play","pause":"Pause","next":"Next","previous":"Previous","shuffle":"Shuffle","notPlaying":"Not Playing"}}"#;
+        let json = r#"{"title":"T — A","isPlaying":true,"hasTrack":true,"shuffle":false,
+            "settings":{"crossfadeEnabled":true,"crossfadeDuration":7,"maxConcurrentDownloads":1},
+            "labels":{"play":"Play","pause":"Pause","next":"Next","previous":"Previous","shuffle":"Shuffle","notPlaying":"Not Playing",
+            "settingsMenu":"Settings","crossfade":"Crossfade","crossfadeDuration":"Crossfade duration",
+            "crossfadeSeconds":["1s","2s","3s","4s","5s","6s","7s","8s","9s","10s","11s","12s"],
+            "parallelDownloads":"Parallel downloads","sequential":"Sequential"}}"#;
         let state: DockMenuState = serde_json::from_str(json).unwrap();
-        assert_eq!(state, DockMenuState { title: Some("T — A".into()), is_playing: true, has_track: true, shuffle: false, labels: DockMenuLabels::default() });
+        assert_eq!(
+            state,
+            DockMenuState {
+                title: Some("T — A".into()),
+                is_playing: true,
+                has_track: true,
+                shuffle: false,
+                settings: DockMenuSettings { crossfade_enabled: true, crossfade_duration: 7, max_concurrent_downloads: 1 },
+                labels: DockMenuLabels::default(),
+            }
+        );
     }
 }

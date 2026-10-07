@@ -7,6 +7,7 @@ import type { TrackStatus } from '@/features/queue/types/track';
 import type { AppError } from '@/features/queue/types/errors';
 import type { DownloadState } from '@/types/download';
 import { queueTrackToDownloadState } from '@/features/queue/utils/transforms';
+import { requestAttentionIfUnfocused } from '@/features/queue/utils/requestAttentionIfUnfocused';
 import type { QueueState } from './types';
 import { createQueueStateSlice } from './queueStateSlice';
 import { createQueueProgressSlice } from './queueProgressSlice';
@@ -46,6 +47,7 @@ function setupQueueEventListeners() {
   listen<QueueCompleteEvent>('queue-complete', (event) => {
     void logger.info(`[queueStore] queue-complete: completed=${event.payload.completed}, failed=${event.payload.failed}`);
     store.getState().setQueueComplete(event.payload);
+    void requestAttentionIfUnfocused();
   });
 
   listen<QueueCancelledEvent>('queue-cancelled', (event) => {

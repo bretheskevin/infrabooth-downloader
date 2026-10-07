@@ -37,6 +37,7 @@ pub const PLAYER_FULLY_BUFFERED: &str = "player-fully-buffered";
 pub const PLAYER_CROSSFADE_COMPLETE: &str = "player-crossfade-complete";
 pub const PLAYER_URL_EXPIRED: &str = "player-url-expired";
 pub const PLAYER_MEDIA_KEY: &str = "player-media-key";
+pub const DOCK_SETTING: &str = "dock-setting";
 pub const ARTIST_ALBUMS_BATCH: &str = "artist-albums-batch";
 pub const LIBRARY_PLAYLISTS_BATCH: &str = "library-playlists-batch";
 pub const ARTIST_FOLLOWERS_BATCH: &str = "artist-followers-batch";
@@ -148,6 +149,28 @@ pub fn emit_player_media_key(app: &tauri::AppHandle, action: PlayerMediaKeyActio
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Type)]
+#[serde(tag = "type", rename_all = "camelCase")]
+#[allow(clippy::enum_variant_names)]
+pub enum DockSettingAction {
+    SetCrossfade { enabled: bool },
+    SetCrossfadeDuration { seconds: u8 },
+    SetMaxConcurrentDownloads { count: u8 },
+}
+
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct DockSettingEvent {
+    pub action: DockSettingAction,
+}
+
+pub fn emit_dock_setting(app: &tauri::AppHandle, action: DockSettingAction) {
+    log::info!("[player::events] Emitting dock setting action {:?}", action);
+    if let Err(e) = app.emit(DOCK_SETTING, DockSettingEvent { action }) {
+        log::warn!("[player::events] Failed to emit dock setting event {:?}: {}", action, e);
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
 #[serde(rename_all = "camelCase")]
 pub struct PlayerStateChangedEvent {
@@ -238,5 +261,15 @@ mod player_event_tests {
     fn media_key_event_serializes_toggle_shuffle() {
         let shuffle = serde_json::to_string(&PlayerMediaKeyEvent { action: PlayerMediaKeyAction::ToggleShuffle }).unwrap();
         assert_eq!(shuffle, r#"{"action":{"type":"toggleShuffle"}}"#);
+    }
+
+    #[test]
+    fn dock_setting_event_serializes_tagged_actions() {
+        let crossfade = serde_json::to_string(&DockSettingEvent { action: DockSettingAction::SetCrossfade { enabled: true } }).unwrap();
+        assert_eq!(crossfade, r#"{"action":{"type":"setCrossfade","enabled":true}}"#);
+        let duration = serde_json::to_string(&DockSettingEvent { action: DockSettingAction::SetCrossfadeDuration { seconds: 7 } }).unwrap();
+        assert_eq!(duration, r#"{"action":{"type":"setCrossfadeDuration","seconds":7}}"#);
+        let parallel = serde_json::to_string(&DockSettingEvent { action: DockSettingAction::SetMaxConcurrentDownloads { count: 1 } }).unwrap();
+        assert_eq!(parallel, r#"{"action":{"type":"setMaxConcurrentDownloads","count":1}}"#);
     }
 }

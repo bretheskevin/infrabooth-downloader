@@ -2,13 +2,16 @@ use std::cell::RefCell;
 use std::ffi::c_void;
 use std::sync::atomic::{AtomicBool, AtomicPtr, Ordering};
 
-use muda::{CheckMenuItem, ContextMenu, Menu, MenuItem, PredefinedMenuItem};
+use muda::{CheckMenuItem, ContextMenu, IsMenuItem, Menu, MenuItem, PredefinedMenuItem, Submenu};
 use objc2::ffi::class_addMethod;
 use objc2::runtime::{AnyClass, AnyObject, Imp, Sel};
 use objc2::{sel, MainThreadMarker};
 use objc2_app_kit::NSApplication;
 
-use super::dock_menu::{self, DockMenuView, ID_NEXT, ID_PREVIOUS, ID_SHUFFLE, ID_TITLE, ID_TOGGLE};
+use super::dock_menu::{
+    self, DockChoiceView, DockMenuView, ID_CROSSFADE, ID_CROSSFADE_DURATION_MENU, ID_NEXT, ID_PARALLEL_MENU, ID_PREVIOUS, ID_SETTINGS_MENU, ID_SHUFFLE,
+    ID_TITLE, ID_TOGGLE,
+};
 
 struct DockMenu {
     menu: Menu,
@@ -17,6 +20,16 @@ struct DockMenu {
     next: MenuItem,
     previous: MenuItem,
     shuffle: CheckMenuItem,
+    settings: SettingsMenu,
+}
+
+struct SettingsMenu {
+    root: Submenu,
+    crossfade: CheckMenuItem,
+    crossfade_duration: Submenu,
+    crossfade_duration_items: Vec<CheckMenuItem>,
+    parallel: Submenu,
+    parallel_items: Vec<CheckMenuItem>,
 }
 
 thread_local! {
@@ -37,7 +50,14 @@ pub fn init(app: &tauri::AppHandle) {
 
 fn init_on_main_thread() {
     let view = dock_menu::current_view();
-    log::info!("[player::dock_menu] Building Dock menu (title='{}', transport_enabled={})", view.title, view.transport_enabled);
+    log::info!(
+        "[player::dock_menu] Building Dock menu (title='{}', transport_enabled={}, crossfade={}, duration_choices={}, parallel_choices={})",
+        view.title,
+        view.transport_enabled,
+        view.crossfade_checked,
+        view.crossfade_duration_choices.len(),
+        view.parallel_choices.len()
+    );
     let dock = match build_menu(&view) {
         Ok(dock) => dock,
         Err(message) => {
@@ -62,9 +82,32 @@ fn build_menu(view: &DockMenuView) -> Result<DockMenu, String> {
     let next = MenuItem::with_id(ID_NEXT, &view.next_label, view.transport_enabled, None);
     let previous = MenuItem::with_id(ID_PREVIOUS, &view.previous_label, view.transport_enabled, None);
     let shuffle = CheckMenuItem::with_id(ID_SHUFFLE, &view.shuffle_label, view.transport_enabled, view.shuffle_checked, None);
-    let separator = PredefinedMenuItem::separator();
-    let menu = Menu::with_items(&[&title, &toggle, &next, &previous, &separator, &shuffle]).map_err(|e| format!("Menu::with_items failed: {e}"))?;
-    Ok(DockMenu { menu, title, toggle, next, previous, shuffle })
+    let settings = build_settings_menu(view)?;
+    let transport_separator = PredefinedMenuItem::separator();
+    let settings_separator = PredefinedMenuItem::separator();
+    let menu = Menu::with_items(&[&title, &toggle, &next, &previous, &transport_separator, &shuffle, &settings_separator, &settings.root])
+        .map_err(|e| format!("Menu::with_items failed: {e}"))?;
+    Ok(DockMenu { menu, title, toggle, next, previous, shuffle, settings })
+}
+
+fn build_settings_menu(view: &DockMenuView) -> Result<SettingsMenu, String> {
+    let crossfade = CheckMenuItem::with_id(ID_CROSSFADE, &view.crossfade_label, true, view.crossfade_checked, None);
+    let crossfade_duration_items = build_choice_items(&view.crossfade_duration_choices);
+    let crossfade_duration = build_choice_submenu(ID_CROSSFADE_DURATION_MENU, &view.crossfade_duration_label, &crossfade_duration_items)?;
+    let parallel_items = build_choice_items(&view.parallel_choices);
+    let parallel = build_choice_submenu(ID_PARALLEL_MENU, &view.parallel_label, &parallel_items)?;
+    let root = Submenu::with_id_and_items(ID_SETTINGS_MENU, &view.settings_label, true, &[&crossfade, &crossfade_duration, &parallel])
+        .map_err(|e| format!("Submenu::with_id_and_items({ID_SETTINGS_MENU}) failed: {e}"))?;
+    Ok(SettingsMenu { root, crossfade, crossfade_duration, crossfade_duration_items, parallel, parallel_items })
+}
+
+fn build_choice_items(choices: &[DockChoiceView]) -> Vec<CheckMenuItem> {
+    choices.iter().map(|choice| CheckMenuItem::with_id(choice.id.as_str(), &choice.label, true, choice.checked, None)).collect()
+}
+
+fn build_choice_submenu(id: &str, label: &str, items: &[CheckMenuItem]) -> Result<Submenu, String> {
+    let refs: Vec<&dyn IsMenuItem> = items.iter().map(|item| item as &dyn IsMenuItem).collect();
+    Submenu::with_id_and_items(id, label, true, &refs).map_err(|e| format!("Submenu::with_id_and_items({id}) failed: {e}"))
 }
 
 extern "C-unwind" fn application_dock_menu(_this: *mut AnyObject, _cmd: Sel, _sender: *mut AnyObject) -> *mut AnyObject {
@@ -129,4 +172,22 @@ fn apply_view(dock: &DockMenu, view: &DockMenuView) {
     dock.shuffle.set_text(&view.shuffle_label);
     dock.shuffle.set_enabled(view.transport_enabled);
     dock.shuffle.set_checked(view.shuffle_checked);
+    apply_settings_view(&dock.settings, view);
+}
+
+fn apply_settings_view(settings: &SettingsMenu, view: &DockMenuView) {
+    settings.root.set_text(&view.settings_label);
+    settings.crossfade.set_text(&view.crossfade_label);
+    settings.crossfade.set_checked(view.crossfade_checked);
+    settings.crossfade_duration.set_text(&view.crossfade_duration_label);
+    apply_choices(&settings.crossfade_duration_items, &view.crossfade_duration_choices);
+    settings.parallel.set_text(&view.parallel_label);
+    apply_choices(&settings.parallel_items, &view.parallel_choices);
+}
+
+fn apply_choices(items: &[CheckMenuItem], choices: &[DockChoiceView]) {
+    for (item, choice) in items.iter().zip(choices) {
+        item.set_text(&choice.label);
+        item.set_checked(choice.checked);
+    }
 }

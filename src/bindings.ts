@@ -915,6 +915,7 @@ export const events = __makeEvents__<{
 artistAlbumsBatchEvent: ArtistAlbumsBatchEvent,
 artistPlaylistsBatchEvent: ArtistPlaylistsBatchEvent,
 artistProfilesBatchEvent: ArtistProfilesBatchEvent,
+dockSettingEvent: DockSettingEvent,
 downloadProgressEvent: DownloadProgressEvent,
 libraryPlaylistsBatchEvent: LibraryPlaylistsBatchEvent,
 playerCrossfadeCompleteEvent: PlayerCrossfadeCompleteEvent,
@@ -935,6 +936,7 @@ webviewSendStatusEvent: WebviewSendStatusEvent
 artistAlbumsBatchEvent: "artist-albums-batch-event",
 artistPlaylistsBatchEvent: "artist-playlists-batch-event",
 artistProfilesBatchEvent: "artist-profiles-batch-event",
+dockSettingEvent: "dock-setting-event",
 downloadProgressEvent: "download-progress-event",
 libraryPlaylistsBatchEvent: "library-playlists-batch-event",
 playerCrossfadeCompleteEvent: "player-crossfade-complete-event",
@@ -975,8 +977,11 @@ export type ConversationMessage = { content: string; sender_id: number; sent_at:
 export type ConversationSummary = { id: string; other_user: MessageUser; last_message_content: string; last_message_sender_id: number; last_message_at: string; read: boolean }
 export type ConversationsPage = { items: ConversationSummary[]; current_user_id: number; next_offset: number | null }
 export type CreatedPlaylist = { id: number; title: string; permalinkUrl: string }
-export type DockMenuLabels = { play: string; pause: string; next: string; previous: string; shuffle: string; notPlaying: string }
-export type DockMenuState = { title: string | null; isPlaying: boolean; hasTrack: boolean; shuffle: boolean; labels: DockMenuLabels }
+export type DockMenuLabels = { play: string; pause: string; next: string; previous: string; shuffle: string; notPlaying: string; settingsMenu: string; crossfade: string; crossfadeDuration: string; crossfadeSeconds: string[]; parallelDownloads: string; sequential: string }
+export type DockMenuSettings = { crossfadeEnabled: boolean; crossfadeDuration: number; maxConcurrentDownloads: number }
+export type DockMenuState = { title: string | null; isPlaying: boolean; hasTrack: boolean; shuffle: boolean; settings: DockMenuSettings; labels: DockMenuLabels }
+export type DockSettingAction = { type: "setCrossfade"; enabled: boolean } | { type: "setCrossfadeDuration"; seconds: number } | { type: "setMaxConcurrentDownloads"; count: number }
+export type DockSettingEvent = { action: DockSettingAction }
 export type DownloadProgressEvent = { trackId: string; status: string; percent?: number | null; downloadedBytes?: number | null; totalBytes?: number | null; error?: ErrorResponse | null; filePath?: string | null }
 export type DownloadRequest = ({ 
 /**
