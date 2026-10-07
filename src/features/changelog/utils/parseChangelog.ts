@@ -118,3 +118,14 @@ export function compareVersions(a: string, b: string): number {
   }
   return 0;
 }
+
+export function getMissedEntries(entries: ChangelogEntry[], lastSeenVersion: string, currentVersion: string): ChangelogEntry[] {
+  return entries
+    .filter(
+      (entry) =>
+        entry.sections.length > 0 &&
+        compareVersions(entry.version, lastSeenVersion) > 0 &&
+        compareVersions(entry.version, currentVersion) <= 0,
+    )
+    .sort((a, b) => compareVersions(b.version, a.version));
+}

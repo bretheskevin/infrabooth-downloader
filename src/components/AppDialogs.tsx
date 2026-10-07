@@ -20,13 +20,13 @@ interface AppDialogsProps {
 export function AppDialogs({ pendingDownload, onConfirmReplace, onCancelReplace }: AppDialogsProps) {
   const { isOpen: rateLimitOpen, handleRetry: handleRateLimitRetry, handleStop: handleRateLimitStop } = useRateLimitDialog();
 
-  const { showWhatsNew, version, date, sections, dismiss } = useChangelogCheck();
+  const { showWhatsNew, previousVersion, entries, dismiss } = useChangelogCheck();
 
   return (
     <>
       <RateLimitDialog open={rateLimitOpen} onRetry={handleRateLimitRetry} onStop={handleRateLimitStop} />
       <DownloadConflictDialog open={pendingDownload !== null} onConfirm={onConfirmReplace} onCancel={onCancelReplace} />
-      <WhatsNewDialog open={showWhatsNew} onDismiss={dismiss} version={version} date={date} sections={sections} />
+      <WhatsNewDialog open={showWhatsNew} onDismiss={dismiss} previousVersion={previousVersion} entries={entries} />
       <ShareTrackDialog />
       <Toaster />
     </>

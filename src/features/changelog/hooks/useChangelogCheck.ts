@@ -3,16 +3,45 @@ import { useTranslation } from 'react-i18next';
 import { getVersion } from '@tauri-apps/api/app';
 import { logger } from '@/lib/logger';
 import { useChangelogStore } from '../store';
-import { parseChangelog } from '../utils/parseChangelog';
-import type { ChangelogSection } from '../utils/parseChangelog';
+import { compareVersions, getMissedEntries, parseChangelog } from '../utils/parseChangelog';
+import type { ChangelogEntry } from '../utils/parseChangelog';
 import { CHANGELOGS, changelogEn } from '../utils/changelogs';
+
+function resolveMissedEntries(currentVersion: string, lastSeenVersion: string | null, language: string): ChangelogEntry[] {
+  void logger.info(`[Changelog] Version check: current=${currentVersion}, lastSeen=${lastSeenVersion ?? 'none'}, language=${language}`);
+  const { setLastSeenVersion } = useChangelogStore.getState();
+
+  if (lastSeenVersion === null) {
+    void logger.info(`[Changelog] Fresh install, storing ${currentVersion} without showing What's New`);
+    setLastSeenVersion(currentVersion);
+    return [];
+  }
+  if (lastSeenVersion === currentVersion) {
+    void logger.debug(`[Changelog] Version unchanged (${currentVersion}), nothing to show`);
+    return [];
+  }
+  if (compareVersions(lastSeenVersion, currentVersion) > 0) {
+    void logger.warn(`[Changelog] Downgrade detected (${lastSeenVersion} -> ${currentVersion}), skipping What's New and keeping lastSeen`);
+    return [];
+  }
+
+  const missed = getMissedEntries(parseChangelog(CHANGELOGS[language] ?? changelogEn), lastSeenVersion, currentVersion);
+  if (missed.length === 0) {
+    void logger.info(`[Changelog] No release notes between ${lastSeenVersion} and ${currentVersion}, storing ${currentVersion} silently`);
+    setLastSeenVersion(currentVersion);
+    return [];
+  }
+
+  void logger.info(`[Changelog] Showing What's New for ${missed.length} version(s): ${missed.map((e) => e.version).join(', ')}`);
+  return missed;
+}
 
 export function useChangelogCheck() {
   const { i18n } = useTranslation();
   const [showWhatsNew, setShowWhatsNew] = useState(false);
   const [version, setVersion] = useState('');
-  const [date, setDate] = useState<string | null>(null);
-  const [sections, setSections] = useState<ChangelogSection[]>([]);
+  const [previousVersion, setPreviousVersion] = useState<string | null>(null);
+  const [entries, setEntries] = useState<ChangelogEntry[]>([]);
 
   const hasHydrated = useChangelogStore((s) => s._hasHydrated);
   const lastSeenVersion = useChangelogStore((s) => s.lastSeenVersion);
@@ -23,22 +52,11 @@ export function useChangelogCheck() {
     getVersion()
       .then((currentVersion) => {
         setVersion(currentVersion);
+        const missed = resolveMissedEntries(currentVersion, lastSeenVersion, i18n.language);
+        if (missed.length === 0) return;
 
-        // First install — silently set version, no dialog
-        if (lastSeenVersion === null) {
-          useChangelogStore.getState().setLastSeenVersion(currentVersion);
-          return;
-        }
-
-        // Same version — nothing to show
-        if (lastSeenVersion === currentVersion) return;
-
-        // Version changed — resolve changelog from bundled files (locale-aware)
-        const entries = parseChangelog(CHANGELOGS[i18n.language] ?? changelogEn);
-        const entry = entries.find((e) => e.version === currentVersion);
-
-        setSections(entry?.sections ?? []);
-        setDate(entry?.date ?? null);
+        setEntries(missed);
+        setPreviousVersion(lastSeenVersion);
         setShowWhatsNew(true);
       })
       .catch((err) => {
@@ -48,11 +66,12 @@ export function useChangelogCheck() {
   }, [hasHydrated, lastSeenVersion]);
 
   const dismiss = useCallback(() => {
+    void logger.info(`[Changelog] What's New dismissed, storing lastSeen=${version || 'unknown'}`);
     setShowWhatsNew(false);
     if (version) {
       useChangelogStore.getState().setLastSeenVersion(version);
     }
   }, [version]);
 
-  return { showWhatsNew, version, date, sections, dismiss };
+  return { showWhatsNew, previousVersion, entries, dismiss };
 }

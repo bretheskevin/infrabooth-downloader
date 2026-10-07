@@ -470,6 +470,9 @@
   },
   "changelog": {
     "whatsNew": "Nouveautés de la v{{version}}",
+    "whatsNewSince": "Nouveautés depuis la v{{version}}",
+    "updateCount_one": "{{count}} mise à jour",
+    "updateCount_other": "{{count}} mises à jour",
     "released": "Publié le {{date}}",
     "gotIt": "Compris",
     "title": "Nouveautés",

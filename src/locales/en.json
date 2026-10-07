@@ -470,6 +470,9 @@
   },
   "changelog": {
     "whatsNew": "What's new in v{{version}}",
+    "whatsNewSince": "What's new since v{{version}}",
+    "updateCount_one": "{{count}} update",
+    "updateCount_other": "{{count}} updates",
     "released": "Released {{date}}",
     "gotIt": "Got it",
     "title": "Changelog",

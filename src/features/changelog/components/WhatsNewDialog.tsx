@@ -1,15 +1,15 @@
 import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ChangelogEntry } from './ChangelogEntry';
-import type { ChangelogSection } from '../utils/parseChangelog';
+import type { ChangelogEntry as ChangelogEntryData } from '../utils/parseChangelog';
 
 interface WhatsNewDialogProps {
   open: boolean;
   onDismiss: () => void;
-  version: string;
-  date: string | null;
-  sections: ChangelogSection[];
+  previousVersion: string | null;
+  entries: ChangelogEntryData[];
 }
 
 function formatDate(dateStr: string, locale: string): string {
@@ -18,9 +18,42 @@ function formatDate(dateStr: string, locale: string): string {
   return new Intl.DateTimeFormat(locale, { dateStyle: 'long' }).format(parsed);
 }
 
-export function WhatsNewDialog({ open, onDismiss, version, date, sections }: WhatsNewDialogProps) {
+function getHeaderText(
+  entries: ChangelogEntryData[],
+  previousVersion: string | null,
+  t: TFunction,
+  locale: string,
+): { title: string; description: string } {
+  if (entries.length > 1) {
+    return {
+      title: t('changelog.whatsNewSince', { version: previousVersion ?? '' }),
+      description: t('changelog.updateCount', { count: entries.length }),
+    };
+  }
+  const latest = entries[0];
+  const formattedDate = latest?.date ? formatDate(latest.date, locale) : null;
+  return {
+    title: t('changelog.whatsNew', { version: latest?.version ?? '' }),
+    description: formattedDate ? t('changelog.released', { date: formattedDate }) : t('changelog.description'),
+  };
+}
+
+function MissedVersionItem({ entry, locale }: { entry: ChangelogEntryData; locale: string }) {
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <span className="font-semibold text-sm">v{entry.version}</span>
+        {entry.date && <span className="text-xs text-muted-foreground">{`· ${formatDate(entry.date, locale)}`}</span>}
+      </div>
+      <ChangelogEntry sections={entry.sections} />
+    </div>
+  );
+}
+
+export function WhatsNewDialog({ open, onDismiss, previousVersion, entries }: WhatsNewDialogProps) {
   const { t, i18n } = useTranslation();
-  const formattedDate = date ? formatDate(date, i18n.language) : null;
+  const { title, description } = getHeaderText(entries, previousVersion, t, i18n.language);
+  const isMultiVersion = entries.length > 1;
 
   return (
     <Dialog
@@ -31,14 +64,20 @@ export function WhatsNewDialog({ open, onDismiss, version, date, sections }: Wha
     >
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{t('changelog.whatsNew', { version })}</DialogTitle>
-          <DialogDescription>
-            {formattedDate ? t('changelog.released', { date: formattedDate }) : t('changelog.description')}
-          </DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <div className="max-h-[60vh] overflow-y-auto pr-1">
-          <ChangelogEntry sections={sections} />
+          {isMultiVersion ? (
+            <div className="space-y-4">
+              {entries.map((entry) => (
+                <MissedVersionItem key={entry.version} entry={entry} locale={i18n.language} />
+              ))}
+            </div>
+          ) : (
+            <ChangelogEntry sections={entries[0]?.sections ?? []} />
+          )}
         </div>
 
         <DialogFooter>

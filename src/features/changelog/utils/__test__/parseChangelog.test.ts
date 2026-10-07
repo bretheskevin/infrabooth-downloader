@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { parseChangelog, parseVersionEntry, compareVersions } from '../parseChangelog';
+import { parseChangelog, parseVersionEntry, compareVersions, getMissedEntries } from '../parseChangelog';
+import type { ChangelogEntry } from '../parseChangelog';
 
 const SAMPLE_CHANGELOG = `# Changelog
 
@@ -172,5 +173,47 @@ describe('compareVersions', () => {
 
   it('should compare patch versions', () => {
     expect(compareVersions('1.0.2', '1.0.1')).toBeGreaterThan(0);
+  });
+});
+
+describe('getMissedEntries', () => {
+  const entry = (version: string, items: string[] = [`Change in ${version}`]): ChangelogEntry => ({
+    version,
+    date: null,
+    sections: items.length > 0 ? [{ category: 'added', items }] : [],
+  });
+
+  const ENTRIES: ChangelogEntry[] = [entry('1.4.0'), entry('1.5.0'), entry('1.6.0'), entry('1.7.0'), entry('1.8.0')];
+
+  const versionsOf = (entries: ChangelogEntry[]) => entries.map((e) => e.version);
+
+  it('returns every missed version newest first on a 3-version jump', () => {
+    expect(versionsOf(getMissedEntries(ENTRIES, '1.4.0', '1.7.0'))).toEqual(['1.7.0', '1.6.0', '1.5.0']);
+  });
+
+  it('returns a single entry on a single-version jump', () => {
+    expect(versionsOf(getMissedEntries(ENTRIES, '1.6.0', '1.7.0'))).toEqual(['1.7.0']);
+  });
+
+  it('excludes versions <= lastSeen and > current', () => {
+    const result = versionsOf(getMissedEntries(ENTRIES, '1.5.0', '1.7.0'));
+    expect(result).not.toContain('1.4.0');
+    expect(result).not.toContain('1.5.0');
+    expect(result).not.toContain('1.8.0');
+    expect(result).toEqual(['1.7.0', '1.6.0']);
+  });
+
+  it('drops entries without any section', () => {
+    const entries = [entry('1.5.0'), entry('1.5.1', []), entry('1.6.0')];
+    expect(versionsOf(getMissedEntries(entries, '1.4.0', '1.6.0'))).toEqual(['1.6.0', '1.5.0']);
+  });
+
+  it('returns an empty array when no version is in range', () => {
+    expect(getMissedEntries(ENTRIES, '1.8.0', '1.8.1')).toEqual([]);
+  });
+
+  it('compares versions numerically', () => {
+    const entries = [entry('1.9.0'), entry('1.10.0')];
+    expect(versionsOf(getMissedEntries(entries, '1.9.0', '1.10.0'))).toEqual(['1.10.0']);
   });
 });
