@@ -11,6 +11,7 @@ use super::output::RodioOutput;
 use super::pipeline::StreamPipelineFactory;
 use super::preload;
 use super::segment_cache::SegmentCache;
+use super::spectrum;
 
 pub fn start(app: tauri::AppHandle, tx: Sender<EngineMsg>, rx: Receiver<EngineMsg>) {
     let spawned = std::thread::Builder::new().name("player-engine".into()).spawn(move || run(app, tx, rx));
@@ -22,7 +23,11 @@ pub fn start(app: tauri::AppHandle, tx: Sender<EngineMsg>, rx: Receiver<EngineMs
 
 fn run(app: tauri::AppHandle, tx: Sender<EngineMsg>, rx: Receiver<EngineMsg>) {
     let cache = Arc::new(SegmentCache::default());
-    let mut engine = Engine::new(Box::new(TauriEventSink::new(app)), Box::new(RodioOutput::default()), Box::new(StreamPipelineFactory::new(cache.clone())), tx);
+    let (shared_spectrum, spectrum_consumer) = spectrum::SharedSpectrum::new(spectrum::RING_CAPACITY);
+    let shared_spectrum = Arc::new(shared_spectrum);
+    spectrum::start_worker(app.clone(), shared_spectrum.clone(), spectrum_consumer);
+    let mut engine =
+        Engine::new(Box::new(TauriEventSink::new(app)), Box::new(RodioOutput::new(shared_spectrum)), Box::new(StreamPipelineFactory::new(cache.clone())), tx);
     let mut last_tick = Instant::now();
     loop {
         match rx.recv_timeout(TICK.saturating_sub(last_tick.elapsed())) {

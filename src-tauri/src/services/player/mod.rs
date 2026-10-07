@@ -25,6 +25,7 @@ pub mod preload;
 pub mod progressive;
 pub mod runner;
 pub mod segment_cache;
+pub mod spectrum;
 pub mod watchdog;
 
 use std::sync::mpsc::{self, Sender};

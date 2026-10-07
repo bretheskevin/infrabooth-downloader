@@ -8,6 +8,7 @@ import {
   type PlayerErrorEvent,
   type PlayerFullyBufferedEvent,
   type PlayerProgressEvent,
+  type PlayerSpectrumEvent,
   type PlayerStateChangedEvent,
   type PlayerUrlExpiredEvent,
   type Result,
@@ -46,6 +47,7 @@ export const PLAYER_EVENTS = {
   fullyBuffered: 'player-fully-buffered',
   crossfadeComplete: 'player-crossfade-complete',
   urlExpired: 'player-url-expired',
+  spectrum: 'player-spectrum',
 } as const;
 
 interface Snapshot {
@@ -66,6 +68,7 @@ let callbacks: AudioEngineCallbacks = { ...DEFAULT_CALLBACKS };
 let generation = 0;
 let snapshot: Snapshot = initialSnapshot();
 let listenersReady: Promise<void> | null = null;
+let spectrumListener: ((bands: number[]) => void) | null = null;
 
 function interpolatedPositionMs(): number {
   if (snapshot.state !== 'playing') return snapshot.positionMs;
@@ -118,6 +121,7 @@ async function registerListeners(): Promise<void> {
       callbacks.onCrossfadeComplete();
     }),
     subscribe<PlayerUrlExpiredEvent>(PLAYER_EVENTS.urlExpired, (p) => callbacks.onUrlExpired(p.positionMs)),
+    subscribe<PlayerSpectrumEvent>(PLAYER_EVENTS.spectrum, (p) => spectrumListener?.(p.bands)),
   ]);
   const failure = results.find((r) => r.status === 'rejected');
   if (!failure) return;
@@ -151,6 +155,11 @@ function resetForNewGeneration(positionMs: number) {
 export const audioEngine = {
   setCallbacks(cb: Partial<AudioEngineCallbacks>) {
     callbacks = { ...DEFAULT_CALLBACKS, ...cb };
+    void ensureListeners();
+  },
+
+  setSpectrumListener(listener: ((bands: number[]) => void) | null) {
+    spectrumListener = listener;
     void ensureListeners();
   },
 

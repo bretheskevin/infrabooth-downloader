@@ -61,6 +61,8 @@ axum = { version = "0.8", features = ["ws"] }
 local-ip-address = "0.6"
 rust-embed = { version = "8" }
 mime_guess = "2"
+rustfft = "6"
+ringbuf = "0.4"
 
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]

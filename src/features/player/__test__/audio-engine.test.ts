@@ -121,6 +121,18 @@ describe('audioEngine (native wrapper)', () => {
     expect(cb.onEnded).not.toHaveBeenCalled();
   });
 
+  it('forwards current-generation spectrum frames and drops superseded ones', async () => {
+    const listener = vi.fn();
+    audioEngine.setSpectrumListener(listener);
+    const stale = await loadAndGetGeneration('https://cdn/a.mp3');
+    const gen = await loadAndGetGeneration('https://cdn/b.mp3');
+    emit(PLAYER_EVENTS.spectrum, { loadGeneration: stale, bands: [0.9] });
+    emit(PLAYER_EVENTS.spectrum, { loadGeneration: gen, bands: [0.5, 0.25] });
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenCalledWith([0.5, 0.25]);
+    audioEngine.setSpectrumListener(null);
+  });
+
   it('does not re-fire onStateChange for a duplicate state', async () => {
     const gen = await loadAndGetGeneration();
     vi.mocked(cb.onStateChange).mockClear();

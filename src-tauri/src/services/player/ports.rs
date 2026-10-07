@@ -37,6 +37,7 @@ pub trait AudioOutput {
     fn create_sink(&mut self, feed: Arc<Feed>) -> Result<Box<dyn SlotSink>, PlayerError>;
     fn default_device_changed(&mut self) -> bool;
     fn set_equalizer(&mut self, settings: EqualizerSettings);
+    fn set_spectrum_generation(&mut self, _generation: u32) {}
 }
 
 pub trait Close: Send + Sync {

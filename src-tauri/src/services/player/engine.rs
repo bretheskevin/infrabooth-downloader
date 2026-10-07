@@ -194,6 +194,7 @@ impl Engine {
     fn load(&mut self, url: String, start_ms: u64, generation: u32, now: Instant) {
         log::info!("[player::engine] Load gen={} start={}ms url={}", generation, start_ms, url_prefix(&url));
         self.generation = generation;
+        self.output.set_spectrum_generation(generation);
         self.play_when_ready = false;
         self.url_refresh_attempted = false;
         self.non_fatal_errors = 0;

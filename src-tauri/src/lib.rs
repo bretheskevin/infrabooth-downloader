@@ -43,8 +43,8 @@ use tauri_plugin_log::{Target, TargetKind};
 use services::downloader::DownloadProgressEvent;
 use services::events::{
     ArtistAlbumsBatchEvent, ArtistPlaylistsBatchEvent, ArtistProfilesBatchEvent, DockSettingEvent, LibraryPlaylistsBatchEvent, PlayerCrossfadeCompleteEvent,
-    PlayerEndedEvent, PlayerErrorEvent, PlayerFullyBufferedEvent, PlayerMediaKeyEvent, PlayerProgressEvent, PlayerStateChangedEvent, PlayerUrlExpiredEvent,
-    TracksBatchEvent, WebviewSendStatusEvent,
+    PlayerEndedEvent, PlayerErrorEvent, PlayerFullyBufferedEvent, PlayerMediaKeyEvent, PlayerProgressEvent, PlayerSpectrumEvent, PlayerStateChangedEvent,
+    PlayerUrlExpiredEvent, TracksBatchEvent, WebviewSendStatusEvent,
 };
 use services::queue::{QueueCancelledEvent, QueueCompleteEvent, QueueProgressEvent};
 use services::rekordbox::models::RekordboxExportProgressEvent;
@@ -144,6 +144,7 @@ pub fn run() {
             WebviewSendStatusEvent,
             PlayerStateChangedEvent,
             PlayerProgressEvent,
+            PlayerSpectrumEvent,
             PlayerEndedEvent,
             PlayerErrorEvent,
             PlayerFullyBufferedEvent,

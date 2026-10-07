@@ -932,6 +932,7 @@ playerErrorEvent: PlayerErrorEvent,
 playerFullyBufferedEvent: PlayerFullyBufferedEvent,
 playerMediaKeyEvent: PlayerMediaKeyEvent,
 playerProgressEvent: PlayerProgressEvent,
+playerSpectrumEvent: PlayerSpectrumEvent,
 playerStateChangedEvent: PlayerStateChangedEvent,
 playerUrlExpiredEvent: PlayerUrlExpiredEvent,
 queueCancelledEvent: QueueCancelledEvent,
@@ -953,6 +954,7 @@ playerErrorEvent: "player-error-event",
 playerFullyBufferedEvent: "player-fully-buffered-event",
 playerMediaKeyEvent: "player-media-key-event",
 playerProgressEvent: "player-progress-event",
+playerSpectrumEvent: "player-spectrum-event",
 playerStateChangedEvent: "player-state-changed-event",
 playerUrlExpiredEvent: "player-url-expired-event",
 queueCancelledEvent: "queue-cancelled-event",
@@ -1050,6 +1052,7 @@ export type PlayerMediaKeyEvent = { action: PlayerMediaKeyAction }
 export type PlayerMediaMetadata = { title: string; artist: string; artworkUrl: string | null; durationMs: number }
 export type PlayerPreloadTrack = { trackId: number; url: string }
 export type PlayerProgressEvent = { loadGeneration: number; positionMs: number; durationMs: number }
+export type PlayerSpectrumEvent = { loadGeneration: number; bands: number[] }
 export type PlayerStateChangedEvent = { loadGeneration: number; state: PlayerEngineState }
 export type PlayerUrlExpiredEvent = { loadGeneration: number; positionMs: number }
 export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: string | null; contains_track: boolean }

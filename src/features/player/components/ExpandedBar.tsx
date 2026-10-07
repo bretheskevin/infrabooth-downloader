@@ -13,6 +13,7 @@ import { ScrollingText } from '@/components/ScrollingText';
 import { SeekBar } from './SeekBar';
 import { PreviousButton, PlayPauseButton, NextButton, ShuffleButton } from './TransportButtons';
 import { VolumeControl } from './VolumeControl';
+import { SpectrumAnalyzer } from './SpectrumAnalyzer';
 import { TrackActionsDropdown } from '@/components/TrackActionsDropdown';
 import { useArtistProfileStore } from '@/features/artist-profile';
 import { useLikeTrack } from '@/hooks/useLikeTrack';
@@ -53,13 +54,14 @@ export function ExpandedBar() {
       className="fixed bottom-0 left-0 right-0 z-40 bg-background border-t shadow-[0_-8px_24px_rgba(0,0,0,0.15)] animate-in slide-in-from-bottom duration-300"
       style={{ height: `${EXPANDED_BAR_HEIGHT}px` }}
     >
-      <div className="flex items-center gap-2 px-4 pt-3">
+      <SpectrumAnalyzer className="absolute inset-y-0 left-0 z-0 w-1/3" />
+      <div className="relative z-10 flex items-center gap-2 px-4 pt-3">
         <span className="text-[10px] text-muted-foreground min-w-[32px] text-right tabular-nums">{formatDuration(positionMs)}</span>
         <SeekBar waveformUrl={currentTrack.waveformUrl ?? undefined} className="flex-1 h-8" />
         <span className="text-[10px] text-muted-foreground min-w-[32px] tabular-nums">{formatDuration(durationMs)}</span>
       </div>
 
-      <div className="flex items-center gap-3 px-4 pb-3.5 pt-1">
+      <div className="relative z-10 flex items-center gap-3 px-4 pb-3.5 pt-1">
         <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className="h-8 w-8 rounded-md bg-secondary flex-shrink-0 overflow-hidden">
             {currentTrack.artworkUrl && (

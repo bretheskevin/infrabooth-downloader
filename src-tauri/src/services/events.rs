@@ -37,6 +37,7 @@ pub const PLAYER_ERROR: &str = "player-error";
 pub const PLAYER_FULLY_BUFFERED: &str = "player-fully-buffered";
 pub const PLAYER_CROSSFADE_COMPLETE: &str = "player-crossfade-complete";
 pub const PLAYER_URL_EXPIRED: &str = "player-url-expired";
+pub const PLAYER_SPECTRUM: &str = "player-spectrum";
 pub const PLAYER_MEDIA_KEY: &str = "player-media-key";
 pub const DOCK_SETTING: &str = "dock-setting";
 pub const ARTIST_ALBUMS_BATCH: &str = "artist-albums-batch";
@@ -221,6 +222,20 @@ pub struct PlayerUrlExpiredEvent {
     pub position_ms: u64,
 }
 
+#[derive(Debug, Clone, Serialize, Type, tauri_specta::Event)]
+#[serde(rename_all = "camelCase")]
+pub struct PlayerSpectrumEvent {
+    pub load_generation: u32,
+    pub bands: Vec<f32>,
+}
+
+/// Emitted by the spectrum worker thread, bypassing the engine and `TauriEventSink`.
+pub fn emit_player_spectrum(app: &tauri::AppHandle, load_generation: u32, bands: &[f32]) {
+    if let Err(e) = app.emit(PLAYER_SPECTRUM, PlayerSpectrumEvent { load_generation, bands: bands.to_vec() }) {
+        log::warn!("[player::events] Failed to emit spectrum event: {}", e);
+    }
+}
+
 pub fn emit_player_event(app: &tauri::AppHandle, load_generation: u32, event: PlayerEvent) {
     let result = match event {
         PlayerEvent::StateChanged(state) => app.emit(PLAYER_STATE_CHANGED, PlayerStateChangedEvent { load_generation, state }),
@@ -244,6 +259,13 @@ mod player_event_tests {
     fn progress_event_serializes_camel_case() {
         let json = serde_json::to_string(&PlayerProgressEvent { load_generation: 3, position_ms: 1000, duration_ms: 5000 }).unwrap();
         assert_eq!(json, r#"{"loadGeneration":3,"positionMs":1000,"durationMs":5000}"#);
+    }
+
+    #[test]
+    fn spectrum_event_serializes_camel_case() -> Result<(), serde_json::Error> {
+        let json = serde_json::to_string(&PlayerSpectrumEvent { load_generation: 2, bands: vec![0.5, 0.25] })?;
+        assert_eq!(json, r#"{"loadGeneration":2,"bands":[0.5,0.25]}"#);
+        Ok(())
     }
 
     #[test]

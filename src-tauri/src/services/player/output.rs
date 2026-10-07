@@ -7,6 +7,7 @@ use rodio::{OutputStream, OutputStreamHandle, Sink, Source};
 use super::equalizer::{Equalizer, EqualizerSettings, SharedEqualizer, BAND_COUNT};
 use super::feed::{AudioSpec, Feed, PopResult};
 use super::ports::{AudioOutput, SlotSink};
+use super::spectrum::{SharedSpectrum, SpectrumTap};
 use crate::models::error::PlayerError;
 
 const CHUNK_SAMPLES: usize = 2048;
@@ -19,13 +20,15 @@ pub struct TrackSource {
     local: Vec<f32>,
     pos: usize,
     equalizer: Equalizer,
+    spectrum: SpectrumTap,
 }
 
 impl TrackSource {
-    pub fn new(feed: Arc<Feed>, spec: AudioSpec, equalizer: Arc<SharedEqualizer>) -> Self {
+    pub fn new(feed: Arc<Feed>, spec: AudioSpec, equalizer: Arc<SharedEqualizer>, spectrum: Arc<SharedSpectrum>) -> Self {
         let epoch = feed.epoch();
         let equalizer = Equalizer::new(equalizer, spec.sample_rate, spec.channels);
-        Self { feed, epoch, spec, local: Vec::with_capacity(CHUNK_SAMPLES), pos: 0, equalizer }
+        let spectrum = SpectrumTap::new(spectrum);
+        Self { feed, epoch, spec, local: Vec::with_capacity(CHUNK_SAMPLES), pos: 0, equalizer, spectrum }
     }
 
     fn refill(&mut self) -> bool {
@@ -35,6 +38,7 @@ impl TrackSource {
             PopResult::Data => {
                 self.feed.set_starved(false);
                 self.equalizer.process(&mut self.local);
+                self.spectrum.push(self.spec, &self.local);
                 true
             }
             PopResult::Drained => {
@@ -97,11 +101,17 @@ impl SlotSink for RodioSlotSink {
     }
 }
 
-#[derive(Default)]
 pub struct RodioOutput {
     stream: Option<(OutputStream, OutputStreamHandle)>,
     device_name: Option<String>,
     equalizer: Arc<SharedEqualizer>,
+    spectrum: Arc<SharedSpectrum>,
+}
+
+impl RodioOutput {
+    pub fn new(spectrum: Arc<SharedSpectrum>) -> Self {
+        Self { stream: None, device_name: None, equalizer: Arc::default(), spectrum }
+    }
 }
 
 fn default_device_name() -> Option<String> {
@@ -119,7 +129,7 @@ impl RodioOutput {
             PlayerError::Output(e.to_string())
         })?;
         sink.pause();
-        sink.append(TrackSource::new(feed, spec, self.equalizer.clone()));
+        sink.append(TrackSource::new(feed, spec, self.equalizer.clone(), self.spectrum.clone()));
         Ok(sink)
     }
 }
@@ -164,6 +174,10 @@ impl AudioOutput for RodioOutput {
         self.equalizer.set(params);
     }
 
+    fn set_spectrum_generation(&mut self, generation: u32) {
+        self.spectrum.set_generation(generation);
+    }
+
     fn default_device_changed(&mut self) -> bool {
         if self.stream.is_none() {
             return false;
@@ -181,6 +195,8 @@ impl AudioOutput for RodioOutput {
 mod tests {
     use super::*;
     use crate::services::player::equalizer::EqualizerParams;
+    use ringbuf::traits::Observer;
+    use ringbuf::HeapCons;
 
     const SPEC: AudioSpec = AudioSpec { sample_rate: 1000, channels: 2 };
 
@@ -194,7 +210,7 @@ mod tests {
     fn passes_samples_through() {
         let feed = feed();
         feed.push(feed.epoch(), &[0.25, -0.25]);
-        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default());
+        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default(), spectrum().0);
         assert_eq!(source.next(), Some(0.25));
         assert_eq!(source.next(), Some(-0.25));
         assert!(!feed.is_starved());
@@ -205,7 +221,7 @@ mod tests {
     #[test]
     fn outputs_frame_aligned_silence_when_starved() {
         let feed = feed();
-        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default());
+        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default(), spectrum().0);
         let silence: Vec<f32> = (0..SILENCE_FRAMES * 2).map(|_| source.next().unwrap()).collect();
         assert!(silence.iter().all(|s| *s == 0.0));
         assert!(feed.is_starved());
@@ -216,7 +232,7 @@ mod tests {
     fn ends_when_drained() {
         let feed = feed();
         feed.finish(feed.epoch());
-        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default());
+        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default(), spectrum().0);
         assert_eq!(source.next(), None);
         assert!(feed.is_drained());
     }
@@ -224,7 +240,7 @@ mod tests {
     #[test]
     fn follows_epoch_after_reset() {
         let feed = feed();
-        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default());
+        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default(), spectrum().0);
         let epoch = feed.reset(500);
         feed.push(epoch, &[0.5, 0.5]);
         assert_eq!(source.next(), Some(0.0));
@@ -240,7 +256,7 @@ mod tests {
         feed.push(feed.epoch(), &[0.25, -0.25]);
         let equalizer = Arc::new(SharedEqualizer::default());
         equalizer.set(EqualizerParams { enabled: true, gains_db: [0.0; BAND_COUNT] });
-        let mut source = TrackSource::new(feed.clone(), SPEC, equalizer);
+        let mut source = TrackSource::new(feed.clone(), SPEC, equalizer, spectrum().0);
         assert_eq!(source.next(), Some(0.25));
         assert_eq!(source.next(), Some(-0.25));
     }
@@ -255,10 +271,44 @@ mod tests {
         let mut gains_db = [0.0; BAND_COUNT];
         gains_db[0] = -6.0;
         equalizer.set(EqualizerParams { enabled: true, gains_db });
-        let mut source = TrackSource::new(feed.clone(), SPEC, equalizer);
+        let mut source = TrackSource::new(feed.clone(), SPEC, equalizer, spectrum().0);
         let left = source.next().unwrap();
         let right = source.next().unwrap();
         assert!(left.is_finite() && (left - 1.0).abs() > 1e-3, "left impulse should be filtered, got {left}");
         assert_eq!(right, 0.0);
+    }
+
+    fn spectrum() -> (Arc<SharedSpectrum>, HeapCons<f32>) {
+        let (shared, consumer) = SharedSpectrum::new(64);
+        (Arc::new(shared), consumer)
+    }
+
+    #[test]
+    fn pushes_played_samples_into_the_spectrum_ring() {
+        let feed = feed();
+        feed.push(feed.epoch(), &[0.25, -0.25]);
+        let (shared, consumer) = spectrum();
+        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default(), shared);
+        assert_eq!(source.next(), Some(0.25));
+        assert_eq!(consumer.occupied_len(), 2);
+    }
+
+    #[test]
+    fn a_preloaded_source_does_not_override_the_spectrum_format_until_it_plays() {
+        let feed = feed();
+        feed.push(feed.epoch(), &[0.25, -0.25]);
+        let (shared, _consumer) = spectrum();
+        let mut source = TrackSource::new(feed.clone(), SPEC, Arc::default(), shared.clone());
+        assert_ne!(shared.sample_rate(), SPEC.sample_rate);
+        source.next();
+        assert_eq!(shared.sample_rate(), SPEC.sample_rate);
+    }
+
+    #[test]
+    fn forwards_the_generation_to_the_shared_spectrum() {
+        let (shared, _consumer) = spectrum();
+        let mut output = RodioOutput::new(shared.clone());
+        AudioOutput::set_spectrum_generation(&mut output, 42);
+        assert_eq!(shared.generation(), 42);
     }
 }
