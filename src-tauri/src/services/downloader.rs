@@ -324,12 +324,15 @@ struct OriginalDownload {
     format: OriginalFormat,
 }
 
+type ActiveChild = Arc<Mutex<Option<CommandChild>>>;
+type ActivePid = Arc<Mutex<Option<u32>>>;
+
 /// Context for FFmpeg conversion operations.
 /// Groups parameters needed for process management and cleanup.
 struct FfmpegContext<'a> {
     cancel_rx: &'a Option<watch::Receiver<bool>>,
-    active_child: &'a Option<Arc<Mutex<Option<CommandChild>>>>,
-    active_pid: &'a Option<Arc<Mutex<Option<u32>>>>,
+    active_child: &'a Option<ActiveChild>,
+    active_pid: &'a Option<ActivePid>,
     output_dir: &'a Path,
     base_name: &'a str,
 }
@@ -480,9 +483,9 @@ async fn convert_original_file<R: tauri::Runtime>(
 /// Prepares the download context by building output paths and extracting cancellation handles.
 ///
 /// Returns (output_path, base_name, FfmpegContext).
-fn prepare_download_context<'a>(
-    config: &PipelineConfig, cancellation: &'a Option<CancellationHandles>,
-) -> (PathBuf, String, Option<watch::Receiver<bool>>, Option<Arc<Mutex<Option<CommandChild>>>>, Option<Arc<Mutex<Option<u32>>>>) {
+fn prepare_download_context(
+    config: &PipelineConfig, cancellation: &Option<CancellationHandles>,
+) -> (PathBuf, String, Option<watch::Receiver<bool>>, Option<ActiveChild>, Option<ActivePid>) {
     let (base_name, _display_title) = build_base_filename(&config.playlist_context, &config.metadata.artist, &config.metadata.title);
     let output_file = config.output_dir.join(format!("{}.mp3", base_name));
 
@@ -517,11 +520,11 @@ async fn execute_transcoding_download<R: tauri::Runtime>(
 
 /// Check if cancellation has been requested.
 fn is_cancelled(cancel_rx: &Option<watch::Receiver<bool>>) -> bool {
-    cancel_rx.as_ref().map_or(false, |crx| *crx.borrow())
+    cancel_rx.as_ref().is_some_and(|crx| *crx.borrow())
 }
 
 /// Kill the active child process and clean up partial files.
-async fn cancel_and_cleanup(active_child: &Option<Arc<Mutex<Option<CommandChild>>>>, output_dir: &Path, base_name: &str, output_file: &Path) {
+async fn cancel_and_cleanup(active_child: &Option<ActiveChild>, output_dir: &Path, base_name: &str, output_file: &Path) {
     if let Some(ref active_child_mutex) = active_child {
         let mut guard = active_child_mutex.lock().await;
         if let Some(child) = guard.take() {
@@ -594,9 +597,10 @@ fn handle_ffmpeg_termination(
 /// Process the ffmpeg event loop: handles stdout progress, stderr errors,
 /// cancellation, and termination.
 async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
-    app: &AppHandle<R>, rx: &mut tauri::async_runtime::Receiver<CommandEvent>, track_id: &str, duration_ms: u64, bytes_per_ms: u64,
-    cancel_rx: &Option<watch::Receiver<bool>>, active_child: &Option<Arc<Mutex<Option<CommandChild>>>>, output_dir: &Path, base_name: &str, output_file: &Path,
+    app: &AppHandle<R>, rx: &mut tauri::async_runtime::Receiver<CommandEvent>, track_id: &str, duration_ms: u64, bytes_per_ms: u64, ctx: &FfmpegContext<'_>,
+    output_file: &Path,
 ) -> Result<(), DownloadError> {
+    let &FfmpegContext { cancel_rx, active_child, output_dir, base_name, .. } = ctx;
     let mut last_error: Option<String> = None;
     let mut last_percent: f32 = 0.0;
     let mut last_downloaded_bytes: Option<u64> = None;
@@ -659,8 +663,7 @@ async fn run_ffmpeg_sidecar<R: tauri::Runtime>(
     }
 
     // Run event loop
-    run_ffmpeg_event_loop(app, &mut rx, track_id, duration_ms, bytes_per_ms, ctx.cancel_rx, ctx.active_child, ctx.output_dir, ctx.base_name, output_file)
-        .await?;
+    run_ffmpeg_event_loop(app, &mut rx, track_id, duration_ms, bytes_per_ms, ctx, output_file).await?;
 
     // Verify output file exists
     if !output_file.exists() {

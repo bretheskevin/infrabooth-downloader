@@ -259,7 +259,7 @@ pub async fn fetch_owned_playlists_for_track(
 
     let owned: Vec<&LibraryPlaylist> = playlists.iter().filter(|p| p.is_owned).collect();
 
-    let to_fetch: Vec<(u64, Option<String>, bool, Option<Option<String>>)> = owned
+    let to_fetch: Vec<_> = owned
         .iter()
         .filter(|p| cache.get_track_ids(p.id).is_none())
         .map(|p| (p.id, p.secret_token.clone(), p.artwork_url.is_some(), cache.get_artwork(p.id)))

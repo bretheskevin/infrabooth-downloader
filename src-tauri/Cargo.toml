@@ -73,3 +73,6 @@ tauri-plugin-updater = "2"
 muda = { version = "0.17", default-features = false }
 objc2 = "0.6"
 objc2-app-kit = { version = "0.3", default-features = false, features = ["std", "NSApplication", "NSResponder"] }
+
+[lints.rust]
+warnings = "deny"

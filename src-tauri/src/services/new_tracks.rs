@@ -146,16 +146,11 @@ impl RawStreamPlaylist {
     }
 }
 
+#[derive(Default)]
 struct NewTracksCacheInner {
     artists: Option<Vec<FollowedArtist>>,
     activity: HashMap<u64, Vec<ActivityItem>>,
     releases: HashMap<u64, Vec<ReleaseActivityItem>>,
-}
-
-impl Default for NewTracksCacheInner {
-    fn default() -> Self {
-        Self { artists: None, activity: HashMap::new(), releases: HashMap::new() }
-    }
 }
 
 #[derive(Default)]

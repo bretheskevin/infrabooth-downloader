@@ -45,6 +45,7 @@ impl PlaylistXml {
         }
     }
 
+    #[cfg(test)]
     pub fn read(db_dir: &Path) -> Result<Self, RekordboxError> {
         let xml_path = db_dir.join(MASTER_PLAYLISTS_XML);
         let content = fs::read_to_string(&xml_path).map_err(|e| RekordboxError::XmlError(format!("Cannot read XML: {}", e)))?;

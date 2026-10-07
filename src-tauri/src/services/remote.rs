@@ -158,6 +158,7 @@ async fn handle_ws(mut socket: WebSocket, state: AppState) {
     }
 }
 
+#[expect(clippy::result_large_err, reason = "axum early-return response; built at most once per request")]
 async fn authorized_client_id(token: &str, expected: &str, tag: &str) -> Result<String, Response> {
     if !token_matches(token, expected) {
         return Err((StatusCode::UNAUTHORIZED, "Unauthorized").into_response());

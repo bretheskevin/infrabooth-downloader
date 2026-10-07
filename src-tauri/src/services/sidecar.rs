@@ -20,10 +20,8 @@ pub async fn get_sidecar_version<R: tauri::Runtime, E>(
                     version = line.trim().to_string();
                 }
             }
-            CommandEvent::Terminated(payload) => {
-                if payload.code != Some(0) {
-                    return Err(not_found_err());
-                }
+            CommandEvent::Terminated(payload) if payload.code != Some(0) => {
+                return Err(not_found_err());
             }
             _ => {}
         }

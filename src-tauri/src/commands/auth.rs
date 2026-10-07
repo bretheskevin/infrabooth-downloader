@@ -217,12 +217,12 @@ fn is_firefox_installed_macos() -> bool {
 pub fn check_firefox_installed() -> bool {
     #[cfg(target_os = "windows")]
     {
-        return find_firefox_exe().is_some();
+        find_firefox_exe().is_some()
     }
 
     #[cfg(target_os = "macos")]
     {
-        return is_firefox_installed_macos();
+        is_firefox_installed_macos()
     }
 
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
@@ -238,13 +238,13 @@ pub fn open_in_firefox() -> Result<(), String> {
     {
         let firefox = find_firefox_exe().ok_or_else(|| "Firefox not found".to_string())?;
         std::process::Command::new(firefox).arg(SOUNDCLOUD_URL).spawn().map_err(|e| format!("Failed to launch Firefox: {e}"))?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(target_os = "macos")]
     {
         std::process::Command::new("open").args(["-a", "Firefox", SOUNDCLOUD_URL]).spawn().map_err(|e| format!("Failed to launch Firefox: {e}"))?;
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]

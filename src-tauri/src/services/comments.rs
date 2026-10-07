@@ -294,7 +294,7 @@ mod tests {
         }
         let raw_page = RawCommentsPage { collection: comments, next_href: Some("https://api-v2.soundcloud.com/tracks/123/comments?offset=20".to_string()) };
         let has_next = raw_page.next_href.is_some() && raw_page.collection.len() == 20;
-        let next_offset = if has_next { Some(0 + 20) } else { None };
+        let next_offset = if has_next { Some(20) } else { None };
         assert_eq!(next_offset, Some(20));
     }
 
@@ -308,7 +308,7 @@ mod tests {
         }
         let raw_page = RawCommentsPage { collection: comments, next_href: None };
         let has_next = raw_page.next_href.is_some() && raw_page.collection.len() == 20;
-        let next_offset = if has_next { Some(0 + 20) } else { None };
+        let next_offset = if has_next { Some(20) } else { None };
         assert_eq!(next_offset, None);
     }
 
@@ -323,7 +323,7 @@ mod tests {
         let raw_page = RawCommentsPage { collection: comments, next_href: Some("https://api-v2.soundcloud.com/tracks/123/comments?offset=5".to_string()) };
         let limit: u32 = 20;
         let has_next = raw_page.next_href.is_some() && raw_page.collection.len() == limit as usize;
-        let next_offset = if has_next { Some(0 + limit) } else { None };
+        let next_offset = if has_next { Some(limit) } else { None };
         assert_eq!(next_offset, None);
     }
 

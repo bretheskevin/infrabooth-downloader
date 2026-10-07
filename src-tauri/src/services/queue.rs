@@ -1,7 +1,7 @@
 use serde::Serialize;
 use specta::Type;
 use std::collections::{HashMap, HashSet, VecDeque};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, Runtime};
@@ -86,6 +86,13 @@ pub struct QueueProcessContext {
     pub max_concurrent: usize,
 }
 
+#[derive(Default)]
+struct QueueControl {
+    paused: Arc<AtomicBool>,
+    stopped: Arc<AtomicBool>,
+    pause_notify: Arc<Notify>,
+}
+
 /// Execute a single download task: download, convert, and map the result to a TrackOutcome.
 async fn execute_download<R: Runtime>(
     app: AppHandle<R>, config: PipelineConfig, child_handle: Arc<Mutex<Option<tauri_plugin_shell::process::CommandChild>>>,
@@ -158,10 +165,10 @@ async fn wait_for_user_choice<T: Copy>(
 
 /// Handle rate-limited outcome: pause queue, emit event, wait for user choice.
 async fn handle_rate_limit<R: Runtime>(
-    app: &AppHandle<R>, ctx: &QueueProcessContext, progress: &mut QueueProgress, track_lookup: &HashMap<String, (usize, QueueItem)>, paused: &Arc<AtomicBool>,
-    stopped: &Arc<AtomicBool>, pause_notify: &Arc<Notify>, track_id: String, reset_time: Option<String>,
+    app: &AppHandle<R>, ctx: &QueueProcessContext, progress: &mut QueueProgress, track_lookup: &HashMap<String, (usize, QueueItem)>, control: &QueueControl,
+    track_id: String, reset_time: Option<String>,
 ) {
-    paused.store(true, Ordering::SeqCst);
+    control.paused.store(true, Ordering::SeqCst);
 
     let _ = app.emit(
         events::DOWNLOAD_RATE_LIMITED,
@@ -196,14 +203,14 @@ async fn handle_rate_limit<R: Runtime>(
             progress.pending.push_front(idx);
         }
         Some(PauseAction::Stop) => {
-            stopped.store(true, Ordering::SeqCst);
+            control.stopped.store(true, Ordering::SeqCst);
             progress.pending.clear();
         }
         None => { /* cancelled */ }
     }
 
-    paused.store(false, Ordering::SeqCst);
-    pause_notify.notify_waiters();
+    control.paused.store(false, Ordering::SeqCst);
+    control.pause_notify.notify_waiters();
 }
 
 /// Download queue manager for processing multiple tracks.
@@ -274,9 +281,7 @@ impl DownloadQueue {
 
         let semaphore = Arc::new(Semaphore::new(ctx.max_concurrent));
         let mut join_set: JoinSet<TrackOutcome> = JoinSet::new();
-        let paused = Arc::new(AtomicBool::new(false));
-        let stopped = Arc::new(AtomicBool::new(false));
-        let pause_notify = Arc::new(Notify::new());
+        let control = QueueControl::default();
 
         let track_lookup: HashMap<String, (usize, QueueItem)> =
             self.items.iter().enumerate().map(|(i, item)| (item.core.track_id.clone(), (i, item.clone()))).collect();
@@ -289,21 +294,21 @@ impl DownloadQueue {
                 break;
             }
 
-            if paused.load(Ordering::SeqCst) {
+            if control.paused.load(Ordering::SeqCst) {
                 let mut cancel_rx_clone = ctx.cancel_rx.clone();
                 tokio::select! {
-                    _ = pause_notify.notified() => continue,
+                    _ = control.pause_notify.notified() => continue,
                     Ok(()) = cancel_rx_clone.changed() => continue,
                 }
             }
 
             // Phase 1: Drain all completed tasks (non-blocking)
             while let Some(result) = join_set.try_join_next() {
-                Self::handle_outcome(result, &app, &ctx, &paused, &stopped, &pause_notify, &track_lookup, &mut progress).await;
+                Self::handle_outcome(result, &app, &ctx, &control, &track_lookup, &mut progress).await;
             }
 
             // Phase 2: Spawn as many tasks as permits allow
-            self.spawn_pending_tasks(&app, &ctx, &semaphore, &mut join_set, &mut progress, &mut started_count, &mut started_indices, &paused).await;
+            self.spawn_pending_tasks(&app, &ctx, &semaphore, &mut join_set, &mut progress, &mut started_count, &mut started_indices, &control.paused).await;
 
             // Phase 3: Check if we're done
             if progress.pending.is_empty() && join_set.is_empty() {
@@ -312,14 +317,14 @@ impl DownloadQueue {
 
             // Phase 4: Wait for a task to complete (blocking)
             if let Some(result) = join_set.join_next().await {
-                Self::handle_outcome(result, &app, &ctx, &paused, &stopped, &pause_notify, &track_lookup, &mut progress).await;
+                Self::handle_outcome(result, &app, &ctx, &control, &track_lookup, &mut progress).await;
             }
         }
 
         Self::drain_remaining(&mut join_set, &mut progress).await;
         self.is_processing = false;
         ctx.active_processes.lock().await.clear();
-        self.emit_final_event(&app, &ctx, &stopped, &progress);
+        self.emit_final_event(&app, &ctx, &control.stopped, &progress);
 
         QueueResult { completed: progress.completed, failed: progress.failed }
     }
@@ -360,7 +365,7 @@ impl DownloadQueue {
     }
 
     /// Build a PipelineConfig for a queue item.
-    fn build_pipeline_config(&self, item: &QueueItem, output_dir: &PathBuf, oauth_token: &Option<String>) -> PipelineConfig {
+    fn build_pipeline_config(&self, item: &QueueItem, output_dir: &Path, oauth_token: &Option<String>) -> PipelineConfig {
         // Skip playlist context for single tracks — numbering is meaningless
         let playlist_context = match item.track_number {
             Some(track_num) if self.total_tracks > 1 => Some(PlaylistContext { track_position: track_num, total_tracks: self.total_tracks }),
@@ -370,7 +375,7 @@ impl DownloadQueue {
         PipelineConfig {
             track_url: item.core.track_url.clone(),
             track_id: item.core.track_id.clone(),
-            output_dir: output_dir.clone(),
+            output_dir: output_dir.to_path_buf(),
             metadata: TrackMetadata {
                 title: item.core.title.clone(),
                 artist: item.core.artist.clone(),
@@ -424,8 +429,8 @@ impl DownloadQueue {
 
     /// Handle a completed task outcome from the JoinSet.
     async fn handle_outcome<R: Runtime>(
-        result: Result<TrackOutcome, tokio::task::JoinError>, app: &AppHandle<R>, ctx: &QueueProcessContext, paused: &Arc<AtomicBool>,
-        stopped: &Arc<AtomicBool>, pause_notify: &Arc<Notify>, track_lookup: &HashMap<String, (usize, QueueItem)>, progress: &mut QueueProgress,
+        result: Result<TrackOutcome, tokio::task::JoinError>, app: &AppHandle<R>, ctx: &QueueProcessContext, control: &QueueControl,
+        track_lookup: &HashMap<String, (usize, QueueItem)>, progress: &mut QueueProgress,
     ) {
         let outcome = match result {
             Ok(o) => o,
@@ -451,7 +456,7 @@ impl DownloadQueue {
             }
             TrackOutcome::RateLimited { track_id, reset_time } => {
                 log::warn!("[queue] Track {} rate limited, pausing queue", track_id);
-                handle_rate_limit(app, ctx, progress, track_lookup, paused, stopped, pause_notify, track_id, reset_time).await;
+                handle_rate_limit(app, ctx, progress, track_lookup, control, track_id, reset_time).await;
             }
         }
     }
