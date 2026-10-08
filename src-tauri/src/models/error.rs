@@ -316,6 +316,15 @@ impl HasErrorCode for PlayerError {
     }
 }
 
+#[derive(Debug, Error, PartialEq, Eq)]
+pub enum ResolveLinkError {
+    #[error("{0}")]
+    Invalid(String),
+
+    #[error("{0}")]
+    Fetch(String),
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

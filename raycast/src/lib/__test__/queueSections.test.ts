@@ -29,6 +29,8 @@ const state = (overrides: Partial<RemoteState>): RemoteState => ({
   downloadingTrackIds: [],
   downloadedTrackIds: [],
   isSignedIn: true,
+  downloadPath: "",
+  downloadQueueBusy: false,
   ...overrides,
 });
 

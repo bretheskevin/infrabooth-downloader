@@ -18,3 +18,11 @@ describe("handleStreamLine", () => {
     expect(run).toThrow("/api/x failed: rate limited");
   });
 });
+
+describe("ApiError detail", () => {
+  it("exposes the backend detail separately from the message", () => {
+    const error = new ApiError("/api/resolve-link", 400, "Not a SoundCloud URL");
+    expect(error.detail).toBe("Not a SoundCloud URL");
+    expect(error.message).toBe("/api/resolve-link failed: Not a SoundCloud URL");
+  });
+});

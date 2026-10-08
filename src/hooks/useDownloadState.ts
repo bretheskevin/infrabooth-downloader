@@ -62,6 +62,11 @@ function processEvent(event: DownloadProgressEvent) {
   });
 }
 
+export function applyDownloadEvent(event: DownloadProgressEvent) {
+  addManagedTrack(event.trackId);
+  processEvent(event);
+}
+
 let listenerInitialized = false;
 let unlistenFn: (() => void) | undefined;
 
@@ -86,10 +91,7 @@ if (import.meta.hot) {
 export function useDownloadState() {
   const { states, completedCount } = useDownloadStateStore();
 
-  const updateFromEvent = useCallback((event: DownloadProgressEvent) => {
-    addManagedTrack(event.trackId);
-    processEvent(event);
-  }, []);
+  const updateFromEvent = useCallback((event: DownloadProgressEvent) => applyDownloadEvent(event), []);
 
   const getTrackState = useCallback((trackId: string) => states.get(trackId), [states]);
 

@@ -1,6 +1,6 @@
 # InfraBooth Downloader
 
-Search SoundCloud and control the [InfraBooth Downloader](https://github.com/bretheskevin/infrabooth-downloader/releases) desktop player without leaving Raycast.
+Search SoundCloud, download links and control the [InfraBooth Downloader](https://github.com/bretheskevin/infrabooth-downloader/releases) desktop player without leaving Raycast.
 
 ## Requirements
 
@@ -14,3 +14,4 @@ None. When both Raycast and InfraBooth Downloader are installed, the desktop app
 
 - **Search SoundCloud**: search tracks and playlists. Before you type, your liked tracks (Tracks) or your library playlists (Playlists) are shown; press Enter on a playlist to browse its tracks. A third type, Mixed for you, lists your personal SoundCloud mixes (Your Mix 1–10). Press ⌘T to cycle through the types. Add to the queue, play now, download tracks, or open them on SoundCloud.
 - **Now Playing**: browse the Up Next queue on the left, with the current track's artwork and live progress on the right. Play or pause (↵), play any queued track (↵), skip (⌘→ / ⌘←), toggle shuffle (⌘S), change the volume (⌥⌘↑ / ⌥⌘↓), mute (⌘M), and download the selected track (⌘D).
+- **Download SoundCloud Link**: paste a SoundCloud track, playlist or album link (it is pre-filled when the clipboard already holds one). The form previews the link's title, artist or owner, and duration or track count, and shows the destination folder: the app's download folder by default, or pick another one for this download only. Press ⌘↵ to start the download in InfraBooth Downloader. Playlists go through the app's download queue, so only one runs at a time.

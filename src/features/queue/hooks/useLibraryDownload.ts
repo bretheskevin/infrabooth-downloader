@@ -5,8 +5,7 @@ import { useQueueStore } from '../store';
 import { cancelDownloadQueue } from '../api/download';
 import { waitForQueueIdle } from '../store';
 import { trackInfoToQueueTrack } from '../utils/transforms';
-import { dispatchDownloadQueue } from '../utils/dispatchDownloadQueue';
-import { useSettingsStore } from '@/features/settings';
+import { startPlaylistDownload } from '../utils/startPlaylistDownload';
 import { logger } from '@/lib/logger';
 import type { TrackInfo } from '@/bindings';
 
@@ -20,32 +19,11 @@ export function useLibraryDownload() {
   const { t } = useTranslation();
   const [pendingDownload, setPendingDownload] = useState<PendingDownload | null>(null);
 
-  const executeDownload = useCallback(async (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => {
-    const { isComplete, failedCount, clearQueue } = useQueueStore.getState();
-    const { downloadPath, maxConcurrentDownloads, preservePlaylistOrder } = useSettingsStore.getState();
-
-    if (isComplete && failedCount > 0) return;
-    if (isComplete) clearQueue();
-
-    const effectiveOutputDir = outputDir || downloadPath || null;
-    const queueTracks = tracks.map(trackInfoToQueueTrack);
-    const { enqueueTracks, setOutputDir, setInitializing } = useQueueStore.getState();
-
-    try {
-      await dispatchDownloadQueue({
-        queueTracks,
-        albumName: playlistTitle,
-        outputDir: effectiveOutputDir,
-        maxConcurrent: maxConcurrentDownloads,
-        preserveOrder: preservePlaylistOrder,
-        enqueueTracks,
-        setOutputDir,
-        setInitializing,
-      });
-    } catch (error) {
-      logger.error(`[useLibraryDownload] Download failed: ${error}`);
-    }
-  }, []);
+  const executeDownload = useCallback(
+    (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) =>
+      startPlaylistDownload(tracks.map(trackInfoToQueueTrack), playlistTitle, outputDir),
+    [],
+  );
 
   const handleDownloadTracks = useCallback(
     (tracks: TrackInfo[], playlistTitle: string, outputDir?: string) => {

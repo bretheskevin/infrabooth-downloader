@@ -29,6 +29,8 @@ const makeState = (overrides: Partial<RemoteState> = {}): RemoteState => ({
   downloadingTrackIds: [],
   downloadedTrackIds: [],
   isSignedIn: false,
+  downloadPath: '',
+  downloadQueueBusy: false,
   ...overrides,
 });
 

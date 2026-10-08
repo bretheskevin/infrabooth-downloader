@@ -33,6 +33,7 @@ pub mod playlist_tracks_cache;
 pub mod queue;
 pub mod rekordbox;
 pub mod related;
+pub mod resolve_link;
 pub mod search;
 pub mod selections;
 pub mod sidecar;

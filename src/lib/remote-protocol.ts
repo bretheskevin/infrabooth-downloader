@@ -1,3 +1,5 @@
+import type { TrackInfo } from '@/bindings';
+
 export interface RemoteTrack {
   trackId: number;
   trackUrl: string;
@@ -23,7 +25,8 @@ export type RemoteCommand =
   | { type: 'playTracks'; tracks: RemoteTrack[]; startIndex: number }
   | { type: 'queueTrack'; track: RemoteTrack }
   | { type: 'queueTracks'; tracks: RemoteTrack[] }
-  | { type: 'downloadTrack'; track: RemoteTrack };
+  | { type: 'downloadTrack'; track: RemoteTrack; outputDir?: string; secretToken?: string | null; downloadUrl?: string | null }
+  | { type: 'downloadPlaylist'; title: string; tracks: TrackInfo[]; outputDir?: string };
 
 export interface RemoteState {
   state: 'stopped' | 'loading' | 'playing' | 'paused';
@@ -41,4 +44,6 @@ export interface RemoteState {
   downloadingTrackIds: number[];
   downloadedTrackIds: number[];
   isSignedIn: boolean;
+  downloadPath: string;
+  downloadQueueBusy: boolean;
 }

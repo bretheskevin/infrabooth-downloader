@@ -2,16 +2,87 @@ import { useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { commands } from '@/bindings';
 import { logger } from '@/lib/logger';
+import { applyDownloadEvent, useDownloadStateStore } from '@/hooks/useDownloadState';
 import { usePlayerStore } from '@/features/player/store';
 import { useSettingsStore, type Theme } from '@/features/settings/store';
 import { useRemoteStore } from '../store';
 import { useLocalApiActive } from './useLocalApiActive';
 import { useAuthStore } from '@/features/auth/store';
+import { useQueueStore } from '@/features/queue/store';
+import { isDownloadQueueBusy } from '@/features/queue/utils/queueBusy';
+import { startPlaylistDownload } from '@/features/queue/utils/startPlaylistDownload';
+import { trackInfoToQueueTrack } from '@/features/queue/utils/transforms';
 import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
 
 function resolveTheme(theme: Theme): 'light' | 'dark' {
   if (theme !== 'system') return theme;
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+type DownloadTrackCommand = Extract<RemoteCommand, { type: 'downloadTrack' }>;
+type DownloadPlaylistCommand = Extract<RemoteCommand, { type: 'downloadPlaylist' }>;
+
+function markTrackRowFailed(trackId: string, message: string): void {
+  if (useDownloadStateStore.getState().states.get(trackId)?.status !== 'downloading') return;
+  applyDownloadEvent({
+    trackId,
+    status: 'failed',
+    percent: null,
+    downloadedBytes: null,
+    totalBytes: null,
+    error: { code: 'DOWNLOAD_ERROR', message },
+  });
+}
+
+function downloadRemoteTrack({ track, outputDir: outputDirOverride, secretToken, downloadUrl }: DownloadTrackCommand): void {
+  const outputDir = outputDirOverride || useSettingsStore.getState().downloadPath || null;
+  const { trackId } = track;
+  void logger.info(
+    `[remote] downloadTrack ${trackId} "${track.title}" outputDir=${outputDir ?? '<system default>'} (override=${outputDirOverride ?? 'none'}), secretToken=${secretToken ? 'yes' : 'no'}, downloadUrl=${downloadUrl ? 'yes' : 'no'}`,
+  );
+  const rowId = String(trackId);
+  useRemoteStore.getState().markDownloading(trackId);
+  applyDownloadEvent({ trackId: rowId, status: 'downloading', percent: 0, downloadedBytes: null, totalBytes: null, error: null });
+  void commands
+    .downloadTrackFull({
+      trackId: rowId,
+      trackUrl: track.trackUrl,
+      title: track.title,
+      artist: track.artist,
+      artworkUrl: track.artworkUrl,
+      durationMs: track.durationMs,
+      downloadUrl: downloadUrl ?? null,
+      secretToken: secretToken ?? null,
+      album: null,
+      trackNumber: null,
+      totalTracks: null,
+      outputDir,
+    })
+    .then((result) => {
+      if (result.status === 'ok') {
+        useRemoteStore.getState().markDownloaded(trackId);
+      } else {
+        void logger.error(`[remote] Download failed: ${result.error.message}`);
+        markTrackRowFailed(rowId, result.error.message);
+      }
+    })
+    .catch((e) => {
+      void logger.error(`[remote] Download failed: ${e}`);
+      markTrackRowFailed(rowId, String(e));
+    })
+    .finally(() => useRemoteStore.getState().clearDownloading(trackId));
+}
+
+function downloadRemotePlaylist({ title, tracks, outputDir }: DownloadPlaylistCommand): void {
+  const queue = useQueueStore.getState();
+  if (isDownloadQueueBusy(queue)) {
+    void logger.warn(
+      `[remote] downloadPlaylist "${title}" ignored: queue busy (processing=${queue.isProcessing}, cancelling=${queue.isCancelling}, complete=${queue.isComplete}, failed=${queue.failedCount})`,
+    );
+    return;
+  }
+  void logger.info(`[remote] downloadPlaylist "${title}": ${tracks.length} tracks, outputDir override=${outputDir ?? 'none'}`);
+  void startPlaylistDownload(tracks.map(trackInfoToQueueTrack), title, outputDir);
 }
 
 export function dispatchCommand(cmd: RemoteCommand): void {
@@ -56,43 +127,19 @@ export function dispatchCommand(cmd: RemoteCommand): void {
     case 'queueTracks':
       cmd.tracks.forEach((track) => s.addToQueue(track));
       break;
-    case 'downloadTrack': {
-      const outputDir = useSettingsStore.getState().downloadPath || null;
-      const { trackId } = cmd.track;
-      useRemoteStore.getState().markDownloading(trackId);
-      void commands
-        .downloadTrackFull({
-          trackId: String(trackId),
-          trackUrl: cmd.track.trackUrl,
-          title: cmd.track.title,
-          artist: cmd.track.artist,
-          artworkUrl: cmd.track.artworkUrl,
-          durationMs: cmd.track.durationMs,
-          downloadUrl: null,
-          secretToken: null,
-          album: null,
-          trackNumber: null,
-          totalTracks: null,
-          outputDir,
-        })
-        .then((result) => {
-          if (result.status === 'ok') {
-            useRemoteStore.getState().markDownloaded(trackId);
-          } else {
-            void logger.error(`[remote] Download failed: ${result.error.message}`);
-          }
-        })
-        .catch((e) => void logger.error(`[remote] Download failed: ${e}`))
-        .finally(() => useRemoteStore.getState().clearDownloading(trackId));
+    case 'downloadTrack':
+      downloadRemoteTrack(cmd);
       break;
-    }
+    case 'downloadPlaylist':
+      downloadRemotePlaylist(cmd);
+      break;
   }
 }
 
 export function buildRemoteState(): RemoteState {
   const { state, currentTrack, positionMs, durationMs, volume, queue, cursor, isShuffled, manualQueueCount, stationQueueCount } =
     usePlayerStore.getState();
-  const { language, theme } = useSettingsStore.getState();
+  const { language, theme, downloadPath } = useSettingsStore.getState();
   const { downloadingTrackIds, downloadedTrackIds } = useRemoteStore.getState();
   const { isSignedIn } = useAuthStore.getState();
   return {
@@ -111,6 +158,8 @@ export function buildRemoteState(): RemoteState {
     downloadingTrackIds,
     downloadedTrackIds,
     isSignedIn,
+    downloadPath,
+    downloadQueueBusy: isDownloadQueueBusy(useQueueStore.getState()),
   };
 }
 
@@ -130,6 +179,24 @@ function isPositionOnlyChange(prev: ReturnType<typeof usePlayerStore.getState>, 
     prev.manualQueueCount === next.manualQueueCount &&
     prev.stationQueueCount === next.stationQueueCount
   );
+}
+
+function subscribeToStoreChanges(): () => void {
+  const unsubscribers = [
+    useRemoteStore.subscribe((next, prev) => {
+      if (next.downloadingTrackIds !== prev.downloadingTrackIds || next.downloadedTrackIds !== prev.downloadedTrackIds) pushState();
+    }),
+    useSettingsStore.subscribe((next, prev) => {
+      if (next.language !== prev.language || next.theme !== prev.theme || next.downloadPath !== prev.downloadPath) pushState();
+    }),
+    useAuthStore.subscribe((next, prev) => {
+      if (next.isSignedIn !== prev.isSignedIn) pushState();
+    }),
+    useQueueStore.subscribe((next, prev) => {
+      if (isDownloadQueueBusy(next) !== isDownloadQueueBusy(prev)) pushState();
+    }),
+  ];
+  return () => unsubscribers.forEach((unsubscribe) => unsubscribe());
 }
 
 export function useRemoteBridge(): void {
@@ -183,19 +250,7 @@ export function useRemoteBridge(): void {
       }
     });
 
-    const unsubscribeRemote = useRemoteStore.subscribe((next, prev) => {
-      if (next.downloadingTrackIds !== prev.downloadingTrackIds || next.downloadedTrackIds !== prev.downloadedTrackIds) {
-        pushState();
-      }
-    });
-
-    const unsubscribeSettings = useSettingsStore.subscribe((next, prev) => {
-      if (next.language !== prev.language || next.theme !== prev.theme) pushState();
-    });
-
-    const unsubscribeAuth = useAuthStore.subscribe((next, prev) => {
-      if (next.isSignedIn !== prev.isSignedIn) pushState();
-    });
+    const unsubscribeStores = subscribeToStoreChanges();
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleSystemThemeChange = () => {
@@ -206,9 +261,7 @@ export function useRemoteBridge(): void {
     return () => {
       void unlistenPromise.then((unlisten) => unlisten());
       unsubscribe();
-      unsubscribeRemote();
-      unsubscribeSettings();
-      unsubscribeAuth();
+      unsubscribeStores();
       mediaQuery.removeEventListener('change', handleSystemThemeChange);
       if (throttleTimer) clearTimeout(throttleTimer);
     };

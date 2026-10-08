@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join } from "node:path";
-import type { RemoteCommand, RemoteTrack } from "@/lib/remote-protocol";
+import type { RemoteCommand, RemoteState, RemoteTrack } from "@/lib/remote-protocol";
 import { filterPersonalMixes } from "@/lib/selections";
 import { mapTrack, type TrackInfoJson } from "@remote/lib/trackMapping";
 import {
@@ -12,6 +12,7 @@ import {
   type Mix,
   type SelectionJson,
 } from "./mapping";
+import { mapResolvedLink, type ResolvedLink, type ResolvedLinkJson } from "./resolveLink";
 
 const DISCOVERY_FILE = join(homedir(), "Library", "Application Support", "com.infrabooth.downloader", "raycast.json");
 
@@ -26,7 +27,7 @@ export class ApiError extends Error {
   constructor(
     readonly path: string,
     readonly status: number,
-    detail?: string,
+    readonly detail?: string,
   ) {
     super(detail ? `${path} failed: ${detail}` : `${path} failed with status ${status}`);
     this.name = "ApiError";
@@ -70,7 +71,10 @@ async function request(path: string, params: Record<string, string> = {}, init?:
   }
   if (response.status === 401) throw new AppNotRunningError("token rejected");
   if (response.status === 403) throw new SignedOutError(path);
-  if (!response.ok) throw new ApiError(path, response.status);
+  if (!response.ok) {
+    const detail = (await response.text().catch(() => "")).trim();
+    throw new ApiError(path, response.status, detail || undefined);
+  }
   return response;
 }
 
@@ -94,6 +98,14 @@ export async function sendCommand(command: RemoteCommand): Promise<void> {
       body: JSON.stringify(command),
     },
   );
+}
+
+export function getState(): Promise<RemoteState> {
+  return getJson<RemoteState>("/api/state");
+}
+
+export async function resolveLink(url: string): Promise<ResolvedLink> {
+  return mapResolvedLink(await getJson<ResolvedLinkJson>("/api/resolve-link", { url }));
 }
 
 export async function searchTracks(query: string): Promise<RemoteTrack[]> {

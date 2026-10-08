@@ -17,7 +17,9 @@ use specta::Type;
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::sync::{broadcast, mpsc, oneshot, watch, Mutex};
 
+use crate::models::error::ResolveLinkError;
 use crate::services::playlist_tracks_cache::PlaylistTracksCache;
+use crate::services::resolve_link::{self, ResolvedLink};
 use crate::services::{client_id, events, library, playlist, search, selections};
 
 #[derive(Embed)]
@@ -119,6 +121,13 @@ struct PlaylistTracksQuery {
     token: String,
     #[serde(default)]
     stream: bool,
+}
+
+#[derive(Deserialize)]
+struct LinkQuery {
+    url: String,
+    #[serde(alias = "t")]
+    token: String,
 }
 
 fn serve_asset(path: &str) -> Response {
@@ -627,6 +636,40 @@ async fn command_handler(AxumState(state): AxumState<AppState>, Query(params): Q
     .into_response()
 }
 
+fn resolve_link_response(result: Result<ResolvedLink, ResolveLinkError>) -> Response {
+    match result {
+        Ok(link) => Json(link).into_response(),
+        Err(ResolveLinkError::Invalid(message)) => (StatusCode::BAD_REQUEST, message).into_response(),
+        Err(ResolveLinkError::Fetch(message)) => (StatusCode::BAD_GATEWAY, message).into_response(),
+    }
+}
+
+fn log_resolve_result(url: &str, result: &Result<ResolvedLink, ResolveLinkError>) {
+    match result {
+        Ok(ResolvedLink::Track { track }) => log::info!("[remote] resolve-link: {url} -> track {} '{}'", track.id, track.title),
+        Ok(ResolvedLink::Playlist { playlist }) => log::info!(
+            "[remote] resolve-link: {url} -> playlist {} '{}' ({} of {} tracks resolved)",
+            playlist.id,
+            playlist.title,
+            playlist.tracks.len(),
+            playlist.track_count
+        ),
+        Err(e) => log::warn!("[remote] resolve-link: {url} failed: {e:?}"),
+    }
+}
+
+async fn resolve_link_handler(AxumState(state): AxumState<AppState>, Query(params): Query<LinkQuery>) -> Response {
+    if !state.authorize(&params.token) {
+        log::warn!("[remote] resolve-link: unauthorized");
+        return (StatusCode::UNAUTHORIZED, "Unauthorized").into_response();
+    }
+    log::info!("[remote] resolve-link: url={}", params.url);
+    let oauth_token = state.app_handle.state::<crate::services::storage::AuthState>().get_token();
+    let result = resolve_link::resolve_link(&params.url, oauth_token.as_deref()).await;
+    log_resolve_result(&params.url, &result);
+    resolve_link_response(result)
+}
+
 fn build_router(app_state: AppState) -> Router {
     Router::new()
         .route("/", get(root_handler))
@@ -640,6 +683,7 @@ fn build_router(app_state: AppState) -> Router {
         .route("/api/library-artwork", get(library_artwork_handler))
         .route("/api/library-artworks", get(library_artworks_handler))
         .route("/api/selections", get(selections_handler))
+        .route("/api/resolve-link", get(resolve_link_handler))
         .route("/api/state", get(state_handler))
         .route("/api/command", post(command_handler))
         .route("/{*path}", get(static_handler))
@@ -826,5 +870,30 @@ mod tests {
         let status = relay_command(true, body.clone(), |c| emitted.push(c));
         assert_eq!(status, StatusCode::ACCEPTED);
         assert_eq!(emitted, vec![body]);
+    }
+
+    #[tokio::test]
+    async fn resolve_link_response_maps_invalid_links_to_bad_request() -> TestResult {
+        let response = resolve_link_response(Err(ResolveLinkError::Invalid("Not a SoundCloud URL".to_string())));
+        assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+        assert_eq!(body_string(response).await?, "Not a SoundCloud URL");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn resolve_link_response_maps_fetch_failures_to_bad_gateway() -> TestResult {
+        let response = resolve_link_response(Err(ResolveLinkError::Fetch("Not found".to_string())));
+        assert_eq!(response.status(), StatusCode::BAD_GATEWAY);
+        assert_eq!(body_string(response).await?, "Not found");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn resolve_link_response_returns_tagged_json() -> TestResult {
+        let response = resolve_link_response(Ok(ResolvedLink::Track { track: crate::services::playlist::test_track_info() }));
+        assert_eq!(response.status(), StatusCode::OK);
+        let json: serde_json::Value = serde_json::from_str(&body_string(response).await?)?;
+        assert_eq!(json["kind"], "track");
+        Ok(())
     }
 }
