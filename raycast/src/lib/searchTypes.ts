@@ -22,7 +22,7 @@ interface SearchTypeConfig {
 
 export const SEARCH_TYPES: Record<SearchType, SearchTypeConfig> = {
   tracks: {
-    title: "Tracks",
+    title: "Liked Tracks",
     icon: Icon.Music,
     libraryTitle: "Liked Tracks",
     placeholder: "Search tracks…",
