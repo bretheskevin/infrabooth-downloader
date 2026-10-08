@@ -108,12 +108,25 @@ export async function resolveLink(url: string): Promise<ResolvedLink> {
   return mapResolvedLink(await getJson<ResolvedLinkJson>("/api/resolve-link", { url }));
 }
 
-export async function searchTracks(query: string): Promise<RemoteTrack[]> {
-  return (await getJson<TrackInfoJson[]>("/api/search", { q: query })).map(mapTrack);
+export interface SearchPage {
+  limit: number;
+  offset: number;
 }
 
-export async function searchPlaylists(query: string): Promise<LibraryPlaylist[]> {
-  return (await getJson<LibraryPlaylistJson[]>("/api/search-playlists", { q: query })).map(mapPlaylist);
+function searchParams(query: string, page?: SearchPage): Record<string, string> {
+  return page ? { q: query, limit: String(page.limit), offset: String(page.offset) } : { q: query };
+}
+
+export async function searchTracks(query: string, page?: SearchPage): Promise<RemoteTrack[]> {
+  return (await getJson<TrackInfoJson[]>("/api/search", searchParams(query, page))).map(mapTrack);
+}
+
+export async function searchPlaylists(query: string, page?: SearchPage): Promise<LibraryPlaylist[]> {
+  return (await getJson<LibraryPlaylistJson[]>("/api/search-playlists", searchParams(query, page))).map(mapPlaylist);
+}
+
+export async function searchAlbums(query: string, page?: SearchPage): Promise<LibraryPlaylist[]> {
+  return (await getJson<LibraryPlaylistJson[]>("/api/search-albums", searchParams(query, page))).map(mapPlaylist);
 }
 
 function playlistParams(id: number, secret: string | null): Record<string, string> {

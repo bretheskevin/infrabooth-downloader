@@ -8,14 +8,15 @@ export type Results =
   | { kind: "playlists"; playlists: LibraryPlaylist[] }
   | { kind: "mixes"; mixes: Mix[] };
 
-export type SearchType = "tracks" | "playlists" | "mixes";
+export type SearchType = "tracks" | "playlists" | "mixes" | "online";
+export type LibrarySearchType = Exclude<SearchType, "online">;
 
-export const SEARCH_TYPE_ORDER: SearchType[] = ["tracks", "playlists", "mixes"];
+export const SEARCH_TYPE_ORDER: SearchType[] = ["tracks", "playlists", "mixes", "online"];
 
 interface SearchTypeConfig {
   title: string;
   icon: Image.ImageLike;
-  libraryTitle: string;
+  libraryTitle?: string;
   placeholder: string;
   search?: (query: string) => Promise<Results>;
 }
@@ -40,6 +41,11 @@ export const SEARCH_TYPES: Record<SearchType, SearchTypeConfig> = {
     icon: Icon.Shuffle,
     libraryTitle: "Mixed for you",
     placeholder: "Filter your mixes…",
+  },
+  online: {
+    title: "Search Online",
+    icon: Icon.Globe,
+    placeholder: "Search SoundCloud or paste a link…",
   },
 };
 

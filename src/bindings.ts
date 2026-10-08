@@ -1062,7 +1062,7 @@ export type PlaylistForTrackPicker = { id: number; title: string; artwork_url: s
 /**
  * Playlist information from SoundCloud API.
  */
-export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[] }
+export type PlaylistInfo = { id: number; title: string; user: UserInfo; artwork_url: string | null; track_count: number; tracks: TrackInfo[]; secret_token: string | null }
 export type PlaylistSearchResponse = { collection: ArtistPlaylist[]; total_results: number | null }
 export type PlaylistSummary = { id: number; title: string; artwork_url: string | null; permalink_url: string; track_count: number; user: UserInfo }
 export type ProfileSummary = { key: string; browser: string; profile: string; username: string; avatarUrl: string | null; plan: string | null }

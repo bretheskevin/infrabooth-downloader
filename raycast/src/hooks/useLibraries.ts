@@ -9,7 +9,7 @@ import {
 } from "../lib/api";
 import { handleError } from "../lib/feedback";
 import type { LibraryPlaylist } from "../lib/mapping";
-import type { Results, SearchType } from "../lib/searchTypes";
+import type { LibrarySearchType, Results } from "../lib/searchTypes";
 import { useStreamedList } from "./useStreamedList";
 
 interface LibraryState {
@@ -22,7 +22,7 @@ export function withArtworks(playlists: LibraryPlaylist[], artworks: PlaylistArt
   return playlists.map((p) => (p.artworkUrl ? p : { ...p, artworkUrl: byId.get(p.id) ?? null }));
 }
 
-export function useLibraries(): Record<SearchType, LibraryState> {
+export function useLibraries(): Record<LibrarySearchType, LibraryState> {
   const liked = useStreamedList<RemoteTrack>("liked-tracks", streamLikedTracks, "Loading liked tracks failed");
   const playlists = useStreamedList<LibraryPlaylist>(
     "library-playlists",

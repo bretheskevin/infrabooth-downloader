@@ -98,7 +98,9 @@ pub fn extract_secret_token(input: &str) -> Option<String> {
         }
     }
 
-    parsed.path_segments()?.rev().find(|seg| seg.starts_with("s-") && seg.len() > 2).map(str::to_string)
+    let segments: Vec<&str> = parsed.path_segments()?.collect();
+    let token_index = if segments.get(1) == Some(&"sets") { 3 } else { 2 };
+    segments.get(token_index).filter(|seg| seg.starts_with("s-") && seg.len() > 2).map(|seg| seg.to_string())
 }
 
 fn invalid_format_error() -> ValidationResult {
@@ -313,6 +315,13 @@ mod tests {
     #[test]
     fn test_extract_secret_token_none_for_public_url() {
         assert_eq!(extract_secret_token("https://soundcloud.com/artist/track"), None);
+    }
+
+    #[test]
+    fn test_extract_secret_token_ignores_slugs_and_usernames_starting_with_s_dash() {
+        assert_eq!(extract_secret_token("https://soundcloud.com/s-man/sets/my-set"), None);
+        assert_eq!(extract_secret_token("https://soundcloud.com/owner/sets/s-mix"), None);
+        assert_eq!(extract_secret_token("https://soundcloud.com/s-man/s-track"), None);
     }
 
     #[test]

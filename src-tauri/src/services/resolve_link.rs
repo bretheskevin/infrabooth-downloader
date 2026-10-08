@@ -106,12 +106,14 @@ mod tests {
             artwork_url: None,
             track_count: 1,
             tracks: vec![test_track_info()],
+            secret_token: Some("s-AbC12".to_string()),
         };
         let json = serde_json::to_value(ResolvedLink::Playlist { playlist })?;
         assert_eq!(json["kind"], "playlist");
         assert_eq!(json["playlist"]["title"], "Set");
         assert_eq!(json["playlist"]["track_count"], 1);
         assert_eq!(json["playlist"]["tracks"].as_array().map(Vec::len), Some(1));
+        assert_eq!(json["playlist"]["secret_token"], "s-AbC12");
         Ok(())
     }
 }

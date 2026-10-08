@@ -77,7 +77,16 @@ describe("buildDownloadCommand", () => {
   });
 
   it("sends the raw playlist tracks in downloadPlaylist", () => {
-    const playlist = { title: "My Set", owner: "Owner", artworkUrl: null, trackCount: 1, tracks: [raw] };
+    const playlist = {
+      id: 9,
+      ownerId: 3,
+      title: "My Set",
+      owner: "Owner",
+      artworkUrl: null,
+      trackCount: 1,
+      tracks: [raw],
+      secretToken: null,
+    };
     const command = buildDownloadCommand({ kind: "playlist", playlist }, "/x");
     expect(command).toEqual({ type: "downloadPlaylist", title: "My Set", tracks: [raw], outputDir: "/x" });
     expect(command.type === "downloadPlaylist" && command.tracks[0]).toBe(raw);

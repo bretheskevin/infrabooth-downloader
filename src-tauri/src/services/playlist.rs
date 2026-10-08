@@ -168,6 +168,7 @@ struct RawPlaylistInfo {
     pub artwork_url: Option<String>,
     pub track_count: u32,
     pub tracks: Vec<RawTrackInfo>,
+    pub secret_token: Option<String>,
 }
 
 /// Hydration data structure from SoundCloud web page.
@@ -186,6 +187,7 @@ struct HydrationPlaylist {
     artwork_url: Option<String>,
     track_count: u32,
     tracks: Vec<Value>,
+    secret_token: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -206,6 +208,7 @@ pub struct PlaylistInfo {
     pub artwork_url: Option<String>,
     pub track_count: u32,
     pub tracks: Vec<TrackInfo>,
+    pub secret_token: Option<String>,
 }
 
 impl From<RawPlaylistInfo> for PlaylistInfo {
@@ -217,6 +220,7 @@ impl From<RawPlaylistInfo> for PlaylistInfo {
             artwork_url: raw.artwork_url,
             track_count: raw.track_count,
             tracks: raw.tracks.into_iter().map(TrackInfo::from).collect(),
+            secret_token: raw.secret_token,
         }
     }
 }
@@ -543,7 +547,7 @@ async fn fetch_system_playlist(slug: &str, oauth_token: Option<&str>) -> Result<
 
     log::info!("[soundcloud] Final system playlist has {} of {} tracks", ordered_tracks.len(), track_count);
 
-    Ok(PlaylistInfo { id: 0, title: raw.title, user, artwork_url: artwork, track_count, tracks: ordered_tracks })
+    Ok(PlaylistInfo { id: 0, title: raw.title, user, artwork_url: artwork, track_count, tracks: ordered_tracks, secret_token: None })
 }
 
 /// Fetches playlist info using the API v2 (fallback for private playlists).
@@ -566,13 +570,25 @@ pub async fn fetch_playlist_info(url: &str, oauth_token: Option<&str>) -> Result
         return fetch_system_playlist(slug, oauth_token).await;
     }
 
+    let mut playlist = fetch_user_playlist(&url, oauth_token).await?;
+    if playlist.secret_token.is_none() {
+        playlist.secret_token = crate::services::url_validator::extract_secret_token(&url);
+        if playlist.secret_token.is_some() {
+            log::info!("[soundcloud] Playlist {} secret token recovered from URL {}", playlist.id, url);
+        }
+    }
+    log::info!("[soundcloud] Playlist {} secret token: {}", playlist.id, if playlist.secret_token.is_some() { "present" } else { "none" });
+    Ok(playlist)
+}
+
+async fn fetch_user_playlist(url: &str, oauth_token: Option<&str>) -> Result<PlaylistInfo, ScApiError> {
     log::info!("[soundcloud] Fetching playlist via web hydration for URL: {}", url);
 
-    let hydration = match fetch_hydration_data(&url).await {
+    let hydration = match fetch_hydration_data(url).await {
         Ok(h) => h,
         Err(e) => {
             log::warn!("[soundcloud] Web hydration failed: {}, falling back to API v2", e);
-            return fetch_playlist_info_via_api(&url, oauth_token).await;
+            return fetch_playlist_info_via_api(url, oauth_token).await;
         }
     };
 
@@ -580,7 +596,7 @@ pub async fn fetch_playlist_info(url: &str, oauth_token: Option<&str>) -> Result
         Ok(p) => p,
         Err(e) => {
             log::warn!("[soundcloud] Failed to extract playlist from hydration: {}, falling back to API v2", e);
-            return fetch_playlist_info_via_api(&url, oauth_token).await;
+            return fetch_playlist_info_via_api(url, oauth_token).await;
         }
     };
 
@@ -598,6 +614,7 @@ pub async fn fetch_playlist_info(url: &str, oauth_token: Option<&str>) -> Result
         artwork_url: playlist_data.artwork_url,
         track_count: playlist_data.track_count,
         tracks: ordered_tracks,
+        secret_token: playlist_data.secret_token,
     })
 }
 
@@ -820,6 +837,7 @@ mod tests {
             "id": 999,
             "title": "My Playlist",
             "user": {"id": 10, "username": "playlist_owner"},
+            "secret_token": "s-AbC12",
             "artwork_url": "https://i1.sndcdn.com/artworks-playlist-large.jpg",
             "track_count": 2,
             "tracks": [
@@ -848,6 +866,7 @@ mod tests {
         assert_eq!(playlist.tracks.len(), 2);
         assert_eq!(playlist.tracks[0].title, "Track 1");
         assert_eq!(playlist.tracks[1].title, "Track 2");
+        assert_eq!(playlist.secret_token.as_deref(), Some("s-AbC12"));
     }
 
     #[test]
@@ -864,6 +883,7 @@ mod tests {
         let playlist = PlaylistInfo::from(raw);
         assert_eq!(playlist.track_count, 0);
         assert!(playlist.tracks.is_empty());
+        assert_eq!(playlist.secret_token, None);
     }
 
     #[test]
@@ -917,6 +937,7 @@ mod tests {
                 permalink_url: "https://soundcloud.com/artist/track-1".to_string(),
                 ..test_track_info()
             }],
+            secret_token: None,
         };
         let json = serde_json::to_string(&playlist).unwrap();
         assert!(json.contains("\"id\":999"));

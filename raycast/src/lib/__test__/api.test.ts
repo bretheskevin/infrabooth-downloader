@@ -1,5 +1,9 @@
-import { describe, expect, it, vi } from "vitest";
-import { ApiError, handleStreamLine } from "../api";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { ApiError, handleStreamLine, searchAlbums, searchPlaylists, searchTracks } from "../api";
+
+vi.mock("node:fs/promises", () => ({
+  readFile: vi.fn(async () => JSON.stringify({ port: 4321, token: "tok" })),
+}));
 
 describe("handleStreamLine", () => {
   it("forwards batch items without completing", () => {
@@ -24,5 +28,43 @@ describe("ApiError detail", () => {
     const error = new ApiError("/api/resolve-link", 400, "Not a SoundCloud URL");
     expect(error.detail).toBe("Not a SoundCloud URL");
     expect(error.message).toBe("/api/resolve-link failed: Not a SoundCloud URL");
+  });
+});
+
+describe("search page params", () => {
+  const fetchMock = vi.fn<typeof fetch>(async () => new Response("[]", { status: 200 }));
+
+  beforeEach(() => {
+    fetchMock.mockClear();
+    vi.stubGlobal("fetch", fetchMock);
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function requestedUrl(): URL {
+    return new URL(String(fetchMock.mock.calls[0][0]));
+  }
+
+  it("forwards limit and offset as query params", async () => {
+    await searchTracks("house", { limit: 10, offset: 20 });
+    const url = requestedUrl();
+    expect(url.pathname).toBe("/api/search");
+    expect(Object.fromEntries(url.searchParams)).toEqual({ q: "house", limit: "10", offset: "20", token: "tok" });
+  });
+
+  it("omits paging params when no page is given", async () => {
+    await searchPlaylists("house");
+    const url = requestedUrl();
+    expect(url.pathname).toBe("/api/search-playlists");
+    expect(Object.fromEntries(url.searchParams)).toEqual({ q: "house", token: "tok" });
+  });
+
+  it("searches albums on the albums route", async () => {
+    await searchAlbums("house", { limit: 20, offset: 40 });
+    const url = requestedUrl();
+    expect(url.pathname).toBe("/api/search-albums");
+    expect(url.searchParams.get("offset")).toBe("40");
   });
 });

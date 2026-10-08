@@ -6,13 +6,14 @@ import { PlaylistListItem } from "./PlaylistListItem";
 import { TrackListItem } from "./TrackListItem";
 
 interface ResultsSectionProps {
-  title: string;
+  title?: string;
   results: Results | undefined;
   playAsList: boolean;
   extraActions: ReactNode;
+  footer?: ReactNode;
 }
 
-export function ResultsSection({ title, results, playAsList, extraActions }: ResultsSectionProps) {
+export function ResultsSection({ title, results, playAsList, extraActions, footer }: ResultsSectionProps) {
   if (!results) return null;
   if (results.kind === "tracks") {
     return (
@@ -27,6 +28,7 @@ export function ResultsSection({ title, results, playAsList, extraActions }: Res
             }
           />
         ))}
+        {footer}
       </List.Section>
     );
   }
@@ -36,6 +38,7 @@ export function ResultsSection({ title, results, playAsList, extraActions }: Res
         {results.mixes.map((mix) => (
           <MixListItem key={mix.id} mix={mix} extraActions={extraActions} />
         ))}
+        {footer}
       </List.Section>
     );
   }
@@ -44,6 +47,7 @@ export function ResultsSection({ title, results, playAsList, extraActions }: Res
       {results.playlists.map((playlist) => (
         <PlaylistListItem key={playlist.id} playlist={playlist} extraActions={extraActions} />
       ))}
+      {footer}
     </List.Section>
   );
 }

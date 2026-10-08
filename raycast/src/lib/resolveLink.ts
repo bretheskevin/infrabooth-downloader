@@ -1,24 +1,19 @@
-import type { TrackInfo } from "@/bindings";
+import type { PlaylistInfo, TrackInfo } from "@/bindings";
 import type { RemoteTrack } from "@/lib/remote-protocol";
+import type { LibraryPlaylist } from "./mapping";
 import { mapTrack } from "@remote/lib/trackMapping";
 
-export interface PlaylistInfoJson {
-  id: number;
-  title: string;
-  user: { id: number; username: string; avatar_url: string | null };
-  artwork_url: string | null;
-  track_count: number;
-  tracks: TrackInfo[];
-}
-
-export type ResolvedLinkJson = { kind: "track"; track: TrackInfo } | { kind: "playlist"; playlist: PlaylistInfoJson };
+export type ResolvedLinkJson = { kind: "track"; track: TrackInfo } | { kind: "playlist"; playlist: PlaylistInfo };
 
 export interface ResolvedPlaylist {
+  id: number;
+  ownerId: number;
   title: string;
   owner: string;
   artworkUrl: string | null;
   trackCount: number;
   tracks: TrackInfo[];
+  secretToken: string | null;
 }
 
 export type ResolvedLink =
@@ -38,15 +33,44 @@ export function mapResolvedLink(json: ResolvedLinkJson): ResolvedLink {
   return {
     kind: "playlist",
     playlist: {
+      id: playlist.id,
+      ownerId: playlist.user.id,
       title: playlist.title,
       owner: playlist.user.username,
       artworkUrl: playlist.artwork_url,
       trackCount: playlist.track_count,
       tracks: playlist.tracks,
+      secretToken: playlist.secret_token ?? null,
     },
   };
 }
 
 export function resolvedTitle(link: ResolvedLink): string {
   return link.kind === "track" ? link.track.title : link.playlist.title;
+}
+
+function withScheme(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}
+
+export function toLibraryPlaylist(playlist: ResolvedPlaylist, link: string): LibraryPlaylist {
+  return {
+    id: playlist.id,
+    title: playlist.title,
+    username: playlist.owner,
+    userId: playlist.ownerId,
+    artworkUrl: playlist.artworkUrl,
+    trackCount: playlist.trackCount,
+    duration: playlist.tracks.reduce((total, track) => total + track.duration, 0),
+    permalinkUrl: withScheme(link),
+    isOwned: false,
+    isPublic: playlist.secretToken === null,
+    secretToken: playlist.secretToken,
+  };
+}
+
+const SYSTEM_PLAYLIST_ID = 0;
+
+export function systemPlaylistTracks(playlist: ResolvedPlaylist): RemoteTrack[] | undefined {
+  return playlist.id === SYSTEM_PLAYLIST_ID ? playlist.tracks.map(mapTrack) : undefined;
 }

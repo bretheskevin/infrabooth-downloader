@@ -98,11 +98,22 @@ struct StreamableQuery {
     stream: bool,
 }
 
+const DEFAULT_SEARCH_LIMIT: u32 = 20;
+const MAX_SEARCH_LIMIT: u32 = 50;
+
 #[derive(Deserialize)]
 struct SearchQuery {
     q: String,
+    limit: Option<u32>,
+    offset: Option<u32>,
     #[serde(alias = "t")]
     token: String,
+}
+
+impl SearchQuery {
+    fn page(&self) -> (u32, u32) {
+        (self.limit.unwrap_or(DEFAULT_SEARCH_LIMIT).clamp(1, MAX_SEARCH_LIMIT), self.offset.unwrap_or(0))
+    }
 }
 
 #[derive(Deserialize)]
@@ -240,11 +251,15 @@ async fn search_handler(AxumState(state): AxumState<AppState>, Query(params): Qu
         Ok(id) => id,
         Err(r) => return r,
     };
-
-    match search::search_tracks(&cid, &params.q, 20, 0).await {
-        Ok(response) => Json(response.collection).into_response(),
+    let (limit, offset) = params.page();
+    log::info!("[remote] search q={:?} limit={limit} offset={offset}", params.q);
+    match search::search_tracks(&cid, &params.q, limit, offset).await {
+        Ok(response) => {
+            log::info!("[remote] search q={:?} returned {} tracks", params.q, response.collection.len());
+            Json(response.collection).into_response()
+        }
         Err(e) => {
-            log::error!("[remote] search: {}", e);
+            log::error!("[remote] search q={:?} limit={limit} offset={offset}: {e}", params.q);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
         }
     }
@@ -271,13 +286,16 @@ async fn search_playlists_handler(AxumState(state): AxumState<AppState>, Query(p
         Ok(id) => id,
         Err(r) => return r,
     };
-    match search::search_playlists(&cid, &params.q, 20, 0).await {
+    let (limit, offset) = params.page();
+    log::info!("[remote] search-playlists q={:?} limit={limit} offset={offset}", params.q);
+    match search::search_playlists(&cid, &params.q, limit, offset).await {
         Ok(response) => {
             let playlists: Vec<library::LibraryPlaylist> = response.collection.into_iter().map(artist_playlist_to_library).collect();
+            log::info!("[remote] search-playlists q={:?} returned {} playlists", params.q, playlists.len());
             Json(playlists).into_response()
         }
         Err(e) => {
-            log::error!("[remote] search-playlists: {}", e);
+            log::error!("[remote] search-playlists q={:?} limit={limit} offset={offset}: {e}", params.q);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
         }
     }
@@ -288,13 +306,16 @@ async fn search_albums_handler(AxumState(state): AxumState<AppState>, Query(para
         Ok(id) => id,
         Err(r) => return r,
     };
-    match search::search_albums(&cid, &params.q, 20, 0).await {
+    let (limit, offset) = params.page();
+    log::info!("[remote] search-albums q={:?} limit={limit} offset={offset}", params.q);
+    match search::search_albums(&cid, &params.q, limit, offset).await {
         Ok(response) => {
-            let playlists: Vec<library::LibraryPlaylist> = response.collection.into_iter().map(artist_playlist_to_library).collect();
-            Json(playlists).into_response()
+            let albums: Vec<library::LibraryPlaylist> = response.collection.into_iter().map(artist_playlist_to_library).collect();
+            log::info!("[remote] search-albums q={:?} returned {} albums", params.q, albums.len());
+            Json(albums).into_response()
         }
         Err(e) => {
-            log::error!("[remote] search-albums: {}", e);
+            log::error!("[remote] search-albums q={:?} limit={limit} offset={offset}: {e}", params.q);
             (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
         }
     }
@@ -894,6 +915,33 @@ mod tests {
         assert_eq!(response.status(), StatusCode::OK);
         let json: serde_json::Value = serde_json::from_str(&body_string(response).await?)?;
         assert_eq!(json["kind"], "track");
+        Ok(())
+    }
+
+    fn search_query(uri: &str) -> TestResult<SearchQuery> {
+        let uri: axum::http::Uri = uri.parse()?;
+        let Query(params) = Query::<SearchQuery>::try_from_uri(&uri)?;
+        Ok(params)
+    }
+
+    #[test]
+    fn search_query_page_defaults_to_first_twenty() -> TestResult {
+        let params = search_query("http://x/api/search?q=house&token=t")?;
+        assert_eq!(params.page(), (20, 0));
+        Ok(())
+    }
+
+    #[test]
+    fn search_query_page_reads_limit_and_offset() -> TestResult {
+        let params = search_query("http://x/api/search?q=house&token=t&limit=10&offset=30")?;
+        assert_eq!(params.page(), (10, 30));
+        Ok(())
+    }
+
+    #[test]
+    fn search_query_page_clamps_limit() -> TestResult {
+        assert_eq!(search_query("http://x/api/search?q=a&token=t&limit=500")?.page(), (50, 0));
+        assert_eq!(search_query("http://x/api/search?q=a&token=t&limit=0")?.page(), (1, 0));
         Ok(())
     }
 }

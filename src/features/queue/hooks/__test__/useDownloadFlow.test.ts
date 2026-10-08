@@ -66,6 +66,7 @@ const mockPlaylist: PlaylistInfo = {
   user: { id: 0, username: 'TestUser', avatar_url: null },
   artwork_url: 'https://example.com/art.jpg',
   track_count: 2,
+  secret_token: null,
   tracks: [
     createMockTrackInfo({
       id: 1,

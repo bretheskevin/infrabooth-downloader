@@ -56,6 +56,7 @@ const mockPlaylist: PlaylistInfo = {
   user: { id: 0, username: 'testuser', avatar_url: null },
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 47,
+  secret_token: null,
   tracks: [
     createMockTrackInfo({ id: 1, title: 'Track 1', user: { id: 0, username: 'testuser', avatar_url: null }, permalink_url: '' }),
     createMockTrackInfo({
@@ -74,6 +75,7 @@ const mockSingleTrackPlaylist: PlaylistInfo = {
   user: { id: 0, username: 'testuser', avatar_url: null },
   artwork_url: 'https://i1.sndcdn.com/artworks-xxx-large.jpg',
   track_count: 1,
+  secret_token: null,
   tracks: [createMockTrackInfo({ id: 1, title: 'Track 1', user: { id: 0, username: 'testuser', avatar_url: null }, permalink_url: '' })],
 };
 
@@ -83,6 +85,7 @@ const mockPlaylistNoArtwork: PlaylistInfo = {
   user: { id: 0, username: 'anotheruser', avatar_url: null },
   artwork_url: null,
   track_count: 12,
+  secret_token: null,
   tracks: [createMockTrackInfo({ id: 1, title: 'Track 1', user: { id: 0, username: 'anotheruser', avatar_url: null }, permalink_url: '' })],
 };
 
@@ -92,6 +95,7 @@ const mockPlaylistWithTrackArtwork: PlaylistInfo = {
   user: { id: 0, username: 'someuser', avatar_url: null },
   artwork_url: null,
   track_count: 3,
+  secret_token: null,
   tracks: [
     createMockTrackInfo({
       id: 1,

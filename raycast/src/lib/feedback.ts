@@ -34,10 +34,10 @@ export async function handleError(error: unknown, title: string): Promise<void> 
   await showFailureToast(error, { title });
 }
 
-export function reportLoadError(error: Error): void {
+export function reportLoadError(error: Error, context: string): void {
   if (error instanceof AppNotRunningError) {
     void showAppNotRunningToast();
     return;
   }
-  console.error("[download-link] load failed", error);
+  console.error(`[${context}] load failed`, error);
 }

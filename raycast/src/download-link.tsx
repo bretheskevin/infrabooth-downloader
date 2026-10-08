@@ -22,7 +22,7 @@ function submitBlockedReason({ error, isLoading }: { error?: string; isLoading: 
 
 export default function DownloadLink() {
   const clipboard = usePromise(readClipboardLink);
-  const appState = usePromise(getState, [], { onError: reportLoadError });
+  const appState = usePromise(getState, [], { onError: (error) => reportLoadError(error, "download-link") });
   const [typedLink, setTypedLink] = useState<string>();
   const [pickedDirs, setPickedDirs] = useState<string[]>();
 
