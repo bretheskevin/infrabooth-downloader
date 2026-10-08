@@ -100,6 +100,6 @@ pub use messages::{
 };
 
 pub mod remote;
-pub use remote::{push_remote_state, start_remote_server, stop_remote_server};
+pub use remote::{is_local_api_active, push_remote_state, start_remote_server, stop_remote_server};
 
 pub use crate::services::paths::persist_json;

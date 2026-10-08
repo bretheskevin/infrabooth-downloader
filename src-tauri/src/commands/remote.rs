@@ -1,4 +1,7 @@
+use tauri::Manager;
+
 use crate::models::error::ErrorResponse;
+use crate::services::raycast::LocalApiState;
 use crate::services::remote::{self, RemoteServerInfo};
 
 #[tauri::command]
@@ -17,6 +20,14 @@ pub async fn stop_remote_server(app: tauri::AppHandle) -> Result<(), ErrorRespon
 #[tauri::command]
 #[specta::specta]
 pub async fn push_remote_state(state_json: String, app: tauri::AppHandle) -> Result<(), ErrorResponse> {
-    remote::broadcast_state(&app, state_json).await;
+    remote::broadcast_state(&app, state_json);
     Ok(())
+}
+
+#[tauri::command]
+#[specta::specta]
+pub fn is_local_api_active(app: tauri::AppHandle) -> bool {
+    let active = app.state::<LocalApiState>().is_active();
+    log::debug!("[remote] is_local_api_active -> {active}");
+    active
 }

@@ -5,6 +5,7 @@ import { logger } from '@/lib/logger';
 import { usePlayerStore } from '@/features/player/store';
 import { useSettingsStore, type Theme } from '@/features/settings/store';
 import { useRemoteStore } from '../store';
+import { useLocalApiActive } from './useLocalApiActive';
 import { useAuthStore } from '@/features/auth/store';
 import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
 
@@ -28,6 +29,9 @@ export function dispatchCommand(cmd: RemoteCommand): void {
     case 'previous':
       void s.previous();
       break;
+    case 'toggleShuffle':
+      s.toggleShuffle();
+      break;
     case 'seek':
       s.seek(cmd.positionMs);
       break;
@@ -48,6 +52,9 @@ export function dispatchCommand(cmd: RemoteCommand): void {
       break;
     case 'queueTrack':
       s.addToQueue(cmd.track);
+      break;
+    case 'queueTracks':
+      cmd.tracks.forEach((track) => s.addToQueue(track));
       break;
     case 'downloadTrack': {
       const outputDir = useSettingsStore.getState().downloadPath || null;
@@ -83,7 +90,8 @@ export function dispatchCommand(cmd: RemoteCommand): void {
 }
 
 export function buildRemoteState(): RemoteState {
-  const { state, currentTrack, positionMs, durationMs, volume, queue, cursor } = usePlayerStore.getState();
+  const { state, currentTrack, positionMs, durationMs, volume, queue, cursor, isShuffled, manualQueueCount, stationQueueCount } =
+    usePlayerStore.getState();
   const { language, theme } = useSettingsStore.getState();
   const { downloadingTrackIds, downloadedTrackIds } = useRemoteStore.getState();
   const { isSignedIn } = useAuthStore.getState();
@@ -95,6 +103,9 @@ export function buildRemoteState(): RemoteState {
     volume,
     queue,
     cursor,
+    shuffle: isShuffled,
+    manualQueueCount,
+    stationQueueCount,
     language,
     theme: resolveTheme(theme),
     downloadingTrackIds,
@@ -114,13 +125,18 @@ function isPositionOnlyChange(prev: ReturnType<typeof usePlayerStore.getState>, 
     prev.durationMs === next.durationMs &&
     prev.volume === next.volume &&
     prev.queue === next.queue &&
-    prev.cursor === next.cursor
+    prev.cursor === next.cursor &&
+    prev.isShuffled === next.isShuffled &&
+    prev.manualQueueCount === next.manualQueueCount &&
+    prev.stationQueueCount === next.stationQueueCount
   );
 }
 
 export function useRemoteBridge(): void {
   const serverInfo = useRemoteStore((s) => s.serverInfo);
   const remoteControlEnabled = useSettingsStore((s) => s.remoteControlEnabled);
+  const localApiActive = useLocalApiActive();
+  const active = serverInfo !== null || localApiActive;
   const hasAttemptedRef = useRef(false);
 
   useEffect(() => {
@@ -134,20 +150,18 @@ export function useRemoteBridge(): void {
   }, [remoteControlEnabled, serverInfo]);
 
   useEffect(() => {
-    if (!serverInfo) return;
+    if (!active) return;
 
+    void logger.info(`[remote] bridge active (phone remote running: ${useRemoteStore.getState().serverInfo !== null})`);
     pushState();
 
-    let unlisten: (() => void) | null = null;
-    listen<string>('remote-command', (event) => {
+    const unlistenPromise = listen<string>('remote-command', (event) => {
       try {
         const cmd = JSON.parse(event.payload) as RemoteCommand;
         dispatchCommand(cmd);
       } catch (e) {
         void logger.error(`[remote] Failed to parse command: ${e}`);
       }
-    }).then((fn) => {
-      unlisten = fn;
     });
 
     let throttleTimer: ReturnType<typeof setTimeout> | null = null;
@@ -190,7 +204,7 @@ export function useRemoteBridge(): void {
     mediaQuery.addEventListener('change', handleSystemThemeChange);
 
     return () => {
-      unlisten?.();
+      void unlistenPromise.then((unlisten) => unlisten());
       unsubscribe();
       unsubscribeRemote();
       unsubscribeSettings();
@@ -198,5 +212,5 @@ export function useRemoteBridge(): void {
       mediaQuery.removeEventListener('change', handleSystemThemeChange);
       if (throttleTimer) clearTimeout(throttleTimer);
     };
-  }, [serverInfo]);
+  }, [active]);
 }

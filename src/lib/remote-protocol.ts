@@ -14,6 +14,7 @@ export type RemoteCommand =
   | { type: 'resume' }
   | { type: 'next' }
   | { type: 'previous' }
+  | { type: 'toggleShuffle' }
   | { type: 'seek'; positionMs: number }
   | { type: 'setVolume'; volume: number }
   | { type: 'skipTo'; index: number }
@@ -21,6 +22,7 @@ export type RemoteCommand =
   | { type: 'reorderQueue'; fromIndex: number; toIndex: number }
   | { type: 'playTracks'; tracks: RemoteTrack[]; startIndex: number }
   | { type: 'queueTrack'; track: RemoteTrack }
+  | { type: 'queueTracks'; tracks: RemoteTrack[] }
   | { type: 'downloadTrack'; track: RemoteTrack };
 
 export interface RemoteState {
@@ -31,6 +33,9 @@ export interface RemoteState {
   volume: number;
   queue: RemoteTrack[];
   cursor: number;
+  shuffle: boolean;
+  manualQueueCount: number;
+  stationQueueCount: number;
   language: string;
   theme: 'light' | 'dark';
   downloadingTrackIds: number[];

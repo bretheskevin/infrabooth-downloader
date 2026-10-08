@@ -176,6 +176,7 @@ pub async fn sign_out(app: AppHandle) -> Result<(), String> {
     let state = app.state::<AuthState>();
     state.clear();
     app.state::<LibraryCache>().clear();
+    app.state::<crate::services::playlist_tracks_cache::PlaylistTracksCache>().clear();
     app.state::<crate::services::selections::SelectionCache>().clear();
     app.state::<crate::services::new_tracks::NewTracksCache>().clear();
     app.state::<crate::services::notifications::NotificationsCache>().clear();

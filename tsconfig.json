@@ -28,6 +28,6 @@
     "noUncheckedIndexedAccess": true
   },
   "include": ["src"],
-  "exclude": ["src/bindings.ts", "src-remote"],
+  "exclude": ["src/bindings.ts", "src-remote", "raycast"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

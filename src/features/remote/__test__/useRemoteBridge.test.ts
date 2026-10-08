@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { useQueryClient } from '@tanstack/react-query';
+import { listen } from '@tauri-apps/api/event';
 import type { RemoteTrack } from '@/lib/remote-protocol';
+import { createQueryWrapper } from '@/test/queryWrapper';
 
 const {
   mockPause,
@@ -11,7 +15,11 @@ const {
   mockSkipTo,
   mockPlay,
   mockAddToQueue,
+  mockToggleShuffle,
   mockDownloadTrackFull,
+  mockIsLocalApiActive,
+  mockPushRemoteState,
+  remoteStoreState,
 } = vi.hoisted(() => ({
   mockPause: vi.fn(),
   mockResume: vi.fn(),
@@ -22,7 +30,11 @@ const {
   mockSkipTo: vi.fn().mockResolvedValue(undefined),
   mockPlay: vi.fn().mockResolvedValue(undefined),
   mockAddToQueue: vi.fn(),
+  mockToggleShuffle: vi.fn(),
   mockDownloadTrackFull: vi.fn().mockResolvedValue({ status: 'ok' }),
+  mockIsLocalApiActive: vi.fn().mockResolvedValue(false),
+  mockPushRemoteState: vi.fn().mockResolvedValue({ status: 'ok', data: null }),
+  remoteStoreState: { serverInfo: null as { url: string; port: number; token: string } | null },
 }));
 
 vi.mock('@tauri-apps/api/event', () => ({
@@ -44,6 +56,8 @@ vi.mock('@/lib/logger', () => ({
 vi.mock('@/bindings', () => ({
   commands: {
     downloadTrackFull: mockDownloadTrackFull,
+    isLocalApiActive: mockIsLocalApiActive,
+    pushRemoteState: mockPushRemoteState,
   },
 }));
 
@@ -57,6 +71,9 @@ vi.mock('@/features/player/store', () => ({
       volume: 0.8,
       queue: [],
       cursor: 0,
+      isShuffled: true,
+      manualQueueCount: 2,
+      stationQueueCount: 3,
       pause: mockPause,
       resume: mockResume,
       next: mockNext,
@@ -66,42 +83,48 @@ vi.mock('@/features/player/store', () => ({
       skipTo: mockSkipTo,
       play: mockPlay,
       addToQueue: mockAddToQueue,
+      toggleShuffle: mockToggleShuffle,
     })),
     subscribe: vi.fn().mockReturnValue(vi.fn()),
   },
 }));
 
-vi.mock('@/features/settings/store', () => ({
-  useSettingsStore: {
-    getState: vi.fn(() => ({
-      language: 'en',
-      theme: 'dark',
-      downloadPath: '/downloads',
-      remoteControlEnabled: false,
-      setRemoteControlEnabled: vi.fn(),
-    })),
+vi.mock('@/features/settings/store', () => {
+  const getState = vi.fn(() => ({
+    language: 'en',
+    theme: 'dark',
+    downloadPath: '/downloads',
+    remoteControlEnabled: false,
+    setRemoteControlEnabled: vi.fn(),
+  }));
+  const useSettingsStore = Object.assign((selector: (s: ReturnType<typeof getState>) => unknown) => selector(getState()), {
+    getState,
     subscribe: vi.fn().mockReturnValue(vi.fn()),
-  },
-}));
+  });
+  return { useSettingsStore };
+});
 
-vi.mock('../store', () => ({
-  useRemoteStore: {
-    getState: vi.fn(() => ({
-      serverInfo: null,
-      starting: false,
-      downloadingTrackIds: [],
-      downloadedTrackIds: [],
-      enable: vi.fn().mockResolvedValue(undefined),
-      disable: vi.fn().mockResolvedValue(undefined),
-      markDownloading: vi.fn(),
-      clearDownloading: vi.fn(),
-      markDownloaded: vi.fn(),
-    })),
+vi.mock('../store', () => {
+  const getState = vi.fn(() => ({
+    serverInfo: remoteStoreState.serverInfo,
+    starting: false,
+    downloadingTrackIds: [],
+    downloadedTrackIds: [],
+    enable: vi.fn().mockResolvedValue(undefined),
+    disable: vi.fn().mockResolvedValue(undefined),
+    markDownloading: vi.fn(),
+    clearDownloading: vi.fn(),
+    markDownloaded: vi.fn(),
+  }));
+  const useRemoteStore = Object.assign((selector: (s: ReturnType<typeof getState>) => unknown) => selector(getState()), {
+    getState,
     subscribe: vi.fn().mockReturnValue(vi.fn()),
-  },
-}));
+  });
+  return { useRemoteStore };
+});
 
-import { dispatchCommand, buildRemoteState } from '../hooks/useRemoteBridge';
+import { usePlayerStore } from '@/features/player/store';
+import { dispatchCommand, buildRemoteState, useRemoteBridge } from '../hooks/useRemoteBridge';
 
 const mockTrack: RemoteTrack = {
   trackId: 42,
@@ -164,6 +187,18 @@ describe('dispatchCommand', () => {
     expect(mockAddToQueue).toHaveBeenCalledWith(mockTrack);
   });
 
+  it('dispatches queueTracks command by queueing each track in order', () => {
+    const second = { ...mockTrack, trackId: 43 };
+    dispatchCommand({ type: 'queueTracks', tracks: [mockTrack, second] });
+    expect(mockAddToQueue).toHaveBeenNthCalledWith(1, mockTrack);
+    expect(mockAddToQueue).toHaveBeenNthCalledWith(2, second);
+  });
+
+  it('dispatches toggleShuffle command', () => {
+    dispatchCommand({ type: 'toggleShuffle' });
+    expect(mockToggleShuffle).toHaveBeenCalled();
+  });
+
   it('dispatches downloadTrack command', () => {
     dispatchCommand({ type: 'downloadTrack', track: mockTrack });
     expect(mockDownloadTrackFull).toHaveBeenCalledWith({
@@ -194,11 +229,65 @@ describe('buildRemoteState', () => {
       volume: 0.8,
       queue: [],
       cursor: 0,
+      shuffle: true,
+      manualQueueCount: 2,
+      stationQueueCount: 3,
       language: 'en',
       theme: 'dark',
       downloadingTrackIds: [],
       downloadedTrackIds: [],
       isSignedIn: false,
     });
+  });
+});
+
+describe('useRemoteBridge activation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockIsLocalApiActive.mockResolvedValue(false);
+    remoteStoreState.serverInfo = null;
+  });
+
+  it('activates via the local API when the phone remote is off', async () => {
+    mockIsLocalApiActive.mockResolvedValue(true);
+    renderHook(() => useRemoteBridge(), { wrapper: createQueryWrapper() });
+    await waitFor(() => expect(mockPushRemoteState).toHaveBeenCalled());
+    expect(listen).toHaveBeenCalledWith('remote-command', expect.any(Function));
+  });
+
+  it('activates via the phone remote when the local API is inactive', async () => {
+    remoteStoreState.serverInfo = { url: 'http://192.168.1.2:1234/?t=x', port: 1234, token: 'x' };
+    renderHook(() => useRemoteBridge(), { wrapper: createQueryWrapper() });
+    await waitFor(() => expect(mockPushRemoteState).toHaveBeenCalled());
+    expect(listen).toHaveBeenCalledWith('remote-command', expect.any(Function));
+  });
+
+  it('stays inactive when neither the phone remote nor the local API is running', async () => {
+    const { result } = renderHook(
+      () => {
+        useRemoteBridge();
+        return useQueryClient().getQueryState(['remote', 'localApiActive'])?.status;
+      },
+      { wrapper: createQueryWrapper() },
+    );
+    await waitFor(() => expect(result.current).toBe('success'));
+    expect(mockPushRemoteState).not.toHaveBeenCalled();
+    expect(listen).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { field: 'isShuffled', next: true, prev: false },
+    { field: 'manualQueueCount', next: 1, prev: 0 },
+    { field: 'stationQueueCount', next: 5, prev: 0 },
+  ] as const)('pushes immediately when only $field changes', async ({ field, next, prev }) => {
+    mockIsLocalApiActive.mockResolvedValue(true);
+    renderHook(() => useRemoteBridge(), { wrapper: createQueryWrapper() });
+    await waitFor(() => expect(usePlayerStore.subscribe).toHaveBeenCalled());
+    const listener = vi.mocked(usePlayerStore.subscribe).mock.calls[0]?.[0];
+    if (!listener) throw new Error('player store subscriber was not registered');
+    mockPushRemoteState.mockClear();
+    const base = usePlayerStore.getState();
+    listener({ ...base, [field]: next }, { ...base, [field]: prev });
+    expect(mockPushRemoteState).toHaveBeenCalledTimes(1);
   });
 });

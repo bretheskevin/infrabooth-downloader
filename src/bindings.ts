@@ -913,6 +913,9 @@ async pushRemoteState(stateJson: string) : Promise<Result<null, ErrorResponse>> 
     if(e instanceof Error) throw e;
     else return { status: "error", error: e  as any };
 }
+},
+async isLocalApiActive() : Promise<boolean> {
+    return await TAURI_INVOKE("is_local_api_active");
 }
 }
 

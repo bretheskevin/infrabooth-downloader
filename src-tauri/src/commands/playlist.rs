@@ -7,6 +7,7 @@ use crate::services::http::{extract_datadome_from_response, sanitize_error_body,
 use crate::services::library::LibraryCache;
 use crate::services::playlist::build_playlist_url;
 use crate::services::playlist::{fetch_playlist_info, fetch_track_info, PlaylistInfo, TrackInfo};
+use crate::services::playlist_tracks_cache::PlaylistTracksCache;
 use crate::services::storage::AuthState;
 use crate::services::url_validator::validate_url;
 use crate::services::webview_send;
@@ -141,6 +142,7 @@ where
     send_playlist_write(app, &token, HttpMethod::Put, put_url, Some(serde_json::json!({"playlist": {"tracks": new_track_ids.clone()}})), operation).await?;
 
     app.state::<LibraryCache>().set_track_ids(playlist_id, new_track_ids.into_iter().collect());
+    app.state::<PlaylistTracksCache>().invalidate(playlist_id);
 
     Ok(())
 }
@@ -242,6 +244,7 @@ pub async fn delete_playlist(playlist_id: u64, app: tauri::AppHandle) -> Result<
     let url = format!("{}/playlists/{}?client_id={}", API_V2_BASE, playlist_id, client_id);
 
     send_playlist_write(&app, &token, HttpMethod::Delete, url, None, "delete-playlist").await?;
+    app.state::<PlaylistTracksCache>().invalidate(playlist_id);
 
     log::info!("[delete_playlist] Successfully deleted playlist {}", playlist_id);
     Ok(())
@@ -269,6 +272,7 @@ pub async fn update_playlist(playlist_id: u64, title: String, sharing: Option<St
     }
 
     send_playlist_write(&app, &token, HttpMethod::Put, url, Some(serde_json::json!({ "playlist": playlist })), "update-playlist").await?;
+    app.state::<PlaylistTracksCache>().invalidate(playlist_id);
 
     log::info!("[update_playlist] Successfully updated playlist {}", playlist_id);
     Ok(())

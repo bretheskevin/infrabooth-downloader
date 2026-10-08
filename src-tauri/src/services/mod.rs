@@ -15,6 +15,7 @@ pub mod paths;
 pub mod pipeline;
 pub mod player;
 pub mod rate_limit_choice;
+pub mod raycast;
 pub mod remote;
 
 pub mod artist;
@@ -28,6 +29,7 @@ pub mod messages;
 pub mod new_tracks;
 pub mod notifications;
 pub mod playlist;
+pub mod playlist_tracks_cache;
 pub mod queue;
 pub mod rekordbox;
 pub mod related;

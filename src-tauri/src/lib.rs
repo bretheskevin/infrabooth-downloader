@@ -13,11 +13,11 @@ use commands::{
     get_artist_playlists, get_artist_profile, get_artist_releases, get_conversation_messages, get_conversations_page, get_default_download_path,
     get_default_rekordbox_data_directory_parent, get_feature_flags, get_followed_artists, get_library_playlists, get_liked_tracks, get_log_path,
     get_notifications_page, get_owned_playlists_for_track, get_playlist_info, get_playlist_tracks, get_rekordbox_playlist_tree, get_selections,
-    get_track_comments, get_track_info, get_unread_conversations_flag, get_unread_count, install_update, is_tls_verify_disabled, like_playlist, like_track,
-    list_profiles, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen, mark_conversation_read,
-    mark_notifications_seen, open_in_firefox, player_cancel_crossfade, player_destroy, player_load, player_pause, player_play, player_preload_next,
-    player_preload_segments, player_purge_cache, player_seek, player_set_dock_state, player_set_equalizer, player_set_media_metadata, player_set_volume,
-    player_settle_crossfade, player_start_crossfade, player_stop, post_comment, push_remote_state, quit_rekordbox, refresh_auth,
+    get_track_comments, get_track_info, get_unread_conversations_flag, get_unread_count, install_update, is_local_api_active, is_tls_verify_disabled,
+    like_playlist, like_track, list_profiles, list_rekordbox_backups, list_rekordbox_playlists, mark_artist_releases_seen, mark_artist_seen,
+    mark_conversation_read, mark_notifications_seen, open_in_firefox, player_cancel_crossfade, player_destroy, player_load, player_pause, player_play,
+    player_preload_next, player_preload_segments, player_purge_cache, player_seek, player_set_dock_state, player_set_equalizer, player_set_media_metadata,
+    player_set_volume, player_settle_crossfade, player_start_crossfade, player_stop, post_comment, push_remote_state, quit_rekordbox, refresh_auth,
     remove_playlist_from_library_cache, remove_track_from_playlist, resolve_library_artwork, resolve_message_embed, resolve_playback_url,
     resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_albums, search_playlists,
     search_tracks, search_users, send_message, sign_out, start_download_queue, start_remote_server, stop_remote_server, test_ffmpeg, unfollow_user,
@@ -30,6 +30,7 @@ use services::liked_tracks::LikedTracksCache;
 use services::messages::MessagesCache;
 use services::new_tracks::{NewTracksCache, SeenArtistsState};
 use services::notifications::{LastSeenActivityState, NotificationsCache};
+use services::playlist_tracks_cache::PlaylistTracksCache;
 use services::rate_limit_choice::RateLimitChoiceState;
 use services::selections::SelectionCache;
 use services::storage::AuthState;
@@ -262,6 +263,7 @@ pub fn run() {
             start_remote_server,
             stop_remote_server,
             push_remote_state,
+            is_local_api_active,
         ]);
 
     // Export TypeScript bindings in debug mode
@@ -281,6 +283,7 @@ pub fn run() {
         .manage(AuthState::default())
         .manage(LibraryCache::default())
         .manage(LikedTracksCache::default())
+        .manage(PlaylistTracksCache::default())
         .manage(SelectionCache::default())
         .manage(NewTracksCache::default())
         .manage(NotificationsCache::default())
@@ -289,6 +292,8 @@ pub fn run() {
         .manage(RekordboxExportCancellation::default())
         .manage(Arc::new(RateLimitChoiceState::default()))
         .manage(services::remote::RemoteServerState::default())
+        .manage(services::remote::RemoteHub::default())
+        .manage(services::raycast::LocalApiState::default())
         .invoke_handler(builder.invoke_handler())
         .setup(move |app| {
             builder.mount_events(app);
@@ -390,9 +395,15 @@ pub fn run() {
             app.manage(services::player::PlayerHandle::spawn(app.handle().clone()));
             services::player::media_controls::init(app.handle());
             services::player::dock_menu::init(app.handle());
+            services::raycast::init(app.handle());
 
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                services::raycast::remove_discovery_file(app);
+            }
+        });
 }

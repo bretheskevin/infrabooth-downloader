@@ -104,6 +104,15 @@ pub async fn get_playlist_tracks(playlist_id: u64, secret_token: Option<String>,
 #[tauri::command]
 #[specta::specta]
 pub async fn get_liked_tracks(app: tauri::AppHandle) -> Result<Vec<TrackInfo>, String> {
+    let user_id = super::require_user_id(&app)?;
+    let emitter = events::make_batch_emitter(&app, events::LIKED_TRACKS_BATCH, user_id);
+    load_liked_tracks(&app, user_id, emitter).await
+}
+
+pub async fn load_liked_tracks<F>(app: &tauri::AppHandle, user_id: u64, on_batch: F) -> Result<Vec<TrackInfo>, String>
+where
+    F: Fn(&[TrackInfo]),
+{
     let cache = app.state::<LikedTracksCache>();
 
     if let Some(cached) = cache.get_if_complete() {
@@ -113,12 +122,9 @@ pub async fn get_liked_tracks(app: tauri::AppHandle) -> Result<Vec<TrackInfo>, S
 
     log::info!("[get_liked_tracks] Cache miss, fetching from API");
 
-    let (token, cid) = super::require_auth_and_cid(&app).await?;
-    let user_id = super::require_user_id(&app)?;
+    let (token, cid) = super::require_auth_and_cid(app).await?;
 
-    let emitter = events::make_batch_emitter(&app, events::LIKED_TRACKS_BATCH, user_id);
-
-    match fetch_all_liked_tracks(&token, &cid, user_id, emitter).await {
+    match fetch_all_liked_tracks(&token, &cid, user_id, on_batch).await {
         Ok(tracks) => {
             log::info!("[get_liked_tracks] Fetched {} tracks from API", tracks.len());
             cache.set(tracks.clone());

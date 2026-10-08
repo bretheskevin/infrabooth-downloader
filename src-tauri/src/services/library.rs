@@ -119,6 +119,11 @@ impl LibraryCache {
         inner.complete = true;
     }
 
+    pub fn enrich(&self, playlists: Vec<LibraryPlaylist>) -> Vec<LibraryPlaylist> {
+        let inner = self.inner.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        enrich_playlists(playlists, &inner.artwork)
+    }
+
     pub fn set_and_enrich(&self, playlists: Vec<LibraryPlaylist>) -> Vec<LibraryPlaylist> {
         let mut inner = self.inner.lock().expect("LibraryCache lock poisoned");
         inner.playlists = playlists.clone();

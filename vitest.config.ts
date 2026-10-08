@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 
@@ -14,6 +14,7 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/**/__test__/*.test.{ts,tsx}', 'src-remote/**/__test__/*.test.{ts,tsx}'],
+    exclude: [...configDefaults.exclude, 'raycast/**'],
     setupFiles: ['./src/test/setup-localStorage.ts', './src/test/setup-tauri.ts'],
   },
 });
