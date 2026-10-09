@@ -11,6 +11,7 @@
     "prepare": "husky",
     "preview": "vite preview",
     "tauri": "tauri",
+    "sync:raycast": "node scripts/sync-raycast-shared.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p src-remote/tsconfig.json",
