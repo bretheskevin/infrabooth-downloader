@@ -1,6 +1,7 @@
 import { Action, ActionPanel, Icon, List } from "@raycast/api";
 import type { ReactNode } from "react";
 import { playNow, sendWithToast } from "../lib/commands";
+import { formatTrackCount } from "../lib/downloadLink";
 import type { Mix } from "../lib/mapping";
 import { TrackListItem } from "./TrackListItem";
 
@@ -23,7 +24,7 @@ export function MixListItem({ mix, extraActions }: { mix: Mix; extraActions?: Re
     <List.Item
       title={mix.title}
       icon={mix.artworkUrl ?? Icon.Shuffle}
-      accessories={[{ text: `${mix.tracks.length} tracks` }]}
+      accessories={[{ text: formatTrackCount(mix.tracks.length, mix.tracks.length) }]}
       actions={
         <ActionPanel>
           <Action.Push title="Show Tracks" icon={Icon.List} target={<MixTracks mix={mix} />} />
@@ -31,7 +32,10 @@ export function MixListItem({ mix, extraActions }: { mix: Mix; extraActions?: Re
             title="Add to Queue"
             icon={Icon.Plus}
             onAction={() =>
-              sendWithToast({ type: "queueTracks", tracks: mix.tracks }, `Added ${mix.tracks.length} tracks to queue`)
+              sendWithToast(
+                { type: "queueTracks", tracks: mix.tracks },
+                `Added ${formatTrackCount(mix.tracks.length, mix.tracks.length)} to queue`,
+              )
             }
           />
           <Action title="Play Now" icon={Icon.Play} onAction={() => playNow(mix.tracks, 0)} />

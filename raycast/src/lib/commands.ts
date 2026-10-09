@@ -1,6 +1,6 @@
 import { showHUD, showToast, Toast } from "@raycast/api";
 import { getPlaylistTracks, getState, sendCommand } from "./api";
-import { buildDownloadCommand } from "./downloadLink";
+import { buildDownloadCommand, formatTrackCount } from "./downloadLink";
 import { handleError } from "./feedback";
 import type { LibraryPlaylist } from "./mapping";
 import { resolvedTitle, type ResolvedLink } from "./resolveLink";
@@ -52,7 +52,7 @@ export async function queuePlaylist(playlist: LibraryPlaylist): Promise<void> {
     const { toast, tracks } = loaded;
     await sendCommand({ type: "queueTracks", tracks });
     toast.style = Toast.Style.Success;
-    toast.title = `Added ${tracks.length} tracks to queue`;
+    toast.title = `Added ${formatTrackCount(tracks.length, tracks.length)} to queue`;
   } catch (error) {
     await handleError(error, SEND_FAILED);
   }

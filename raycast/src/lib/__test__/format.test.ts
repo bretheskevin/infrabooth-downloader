@@ -23,6 +23,10 @@ describe("format", () => {
   });
 
   it("escapes markdown control characters", () => {
-    expect(escapeMarkdown("a*b_c [d] `e` #f")).toBe("a\\*b\\_c \\[d\\] \\`e\\` \\#f");
+    expect(escapeMarkdown("a*b_c `e` #f")).toBe("a\\*b\\_c \\`e\\` \\#f");
+  });
+
+  it("leaves brackets alone so Raycast does not render them as math", () => {
+    expect(escapeMarkdown("Track [FREE DL]")).toBe("Track [FREE DL]");
   });
 });

@@ -1,6 +1,7 @@
 import { Action, ActionPanel, Icon, List, Keyboard } from "@raycast/api";
 import { playPlaylist, queuePlaylist } from "../lib/commands";
 import type { LibraryPlaylist } from "../lib/mapping";
+import { formatTrackCount } from "../lib/downloadLink";
 import { playlistItemId } from "../lib/prefetch";
 import type { ReactNode } from "react";
 import { PlaylistTracks } from "./PlaylistTracks";
@@ -12,7 +13,7 @@ export function PlaylistListItem({ playlist, extraActions }: { playlist: Library
       title={playlist.title}
       subtitle={playlist.username}
       icon={playlist.artworkUrl ?? Icon.List}
-      accessories={[{ text: `${playlist.trackCount} tracks` }]}
+      accessories={[{ text: formatTrackCount(playlist.trackCount, playlist.trackCount) }]}
       actions={
         <ActionPanel>
           <Action.Push title="Show Tracks" icon={Icon.List} target={<PlaylistTracks playlist={playlist} />} />
