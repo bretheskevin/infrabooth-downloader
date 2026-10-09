@@ -6,6 +6,18 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.38.0] - 2026-10-09
+
+### Added
+
+- Égaliseur 5 bandes avec préréglages dans les réglages Audio
+- Visualiseur de spectre en direct dans le lecteur étendu
+- Réglages du fondu enchaîné, de l'égaliseur et des téléchargements dans le menu du Dock sur macOS
+- Rebond de l'icône du Dock à la fin des téléchargements en arrière-plan sur macOS
+
+### Changed
+
+- Affichage des nouveautés de toutes les versions manquées
 ## [1.37.0] - 2026-10-06
 
 ### Added
