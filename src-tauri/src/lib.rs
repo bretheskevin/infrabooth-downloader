@@ -24,6 +24,7 @@ use commands::{
     unlike_playlist, unlike_track, update_playlist, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
 };
 use services::cancellation::CancellationState;
+#[cfg(target_os = "macos")]
 use services::events;
 use services::library::LibraryCache;
 use services::liked_tracks::LikedTracksCache;

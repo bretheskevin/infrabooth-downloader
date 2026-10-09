@@ -24,6 +24,7 @@ pub const ARTIST_TRACKS_BATCH: &str = "artist-tracks-batch";
 pub const AUTH_STATE_CHANGED: &str = "auth-state-changed";
 pub const AUTH_REAUTH_NEEDED: &str = "auth-reauth-needed";
 pub const AUTH_PROFILE_SELECTION_NEEDED: &str = "auth-profile-selection-needed";
+#[cfg(target_os = "macos")]
 pub const OPEN_SETTINGS: &str = "open-settings";
 pub const UPDATE_DOWNLOAD_PROGRESS: &str = "update-download-progress";
 pub const REKORDBOX_EXPORT_PROGRESS: &str = "rekordbox-export-progress";
