@@ -1,4 +1,4 @@
-import { join } from "node:path";
+import { join, sep } from "node:path";
 import type { RemoteCommand } from "@/lib/remote-protocol";
 import { ApiError } from "./api";
 import type { ResolvedLink } from "./resolveLink";
@@ -10,9 +10,9 @@ export function extractSoundCloudLink(text: string | undefined): string | undefi
   return candidate && SOUNDCLOUD_LINK.test(candidate) ? candidate : undefined;
 }
 
-export function shortenHome(path: string, home: string): string {
+export function shortenHome(path: string, home: string, separator: string = sep): string {
   if (path === home) return "~";
-  return path.startsWith(`${home}/`) ? `~${path.slice(home.length)}` : path;
+  return path.startsWith(`${home}${separator}`) ? `~${path.slice(home.length)}` : path;
 }
 
 export function defaultDownloadDir(appDownloadPath: string, home: string): string {

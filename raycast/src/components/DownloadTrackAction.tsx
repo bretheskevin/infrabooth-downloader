@@ -1,5 +1,6 @@
 import { Action, Icon } from "@raycast/api";
 import { sendWithToast } from "../lib/commands";
+import { crossPlatformShortcut } from "../lib/shortcuts";
 import type { RemoteTrack } from "@/lib/remote-protocol";
 
 export function DownloadTrackAction({ track }: { track: RemoteTrack }) {
@@ -7,7 +8,7 @@ export function DownloadTrackAction({ track }: { track: RemoteTrack }) {
     <Action
       title="Download"
       icon={Icon.Download}
-      shortcut={{ modifiers: ["cmd"], key: "d" }}
+      shortcut={crossPlatformShortcut(["cmd"], "d")}
       onAction={() => sendWithToast({ type: "downloadTrack", track }, `Downloading “${track.title}”`)}
     />
   );

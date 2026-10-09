@@ -40,22 +40,33 @@ fn find_raycast_app(applications_dir: &Path, home: &Path) -> Option<PathBuf> {
 }
 
 #[cfg(target_os = "macos")]
-fn detect_raycast() -> Option<PathBuf> {
+fn should_start_local_api() -> bool {
     let Some(home) = dirs::home_dir() else {
         log::warn!("[raycast] home directory unavailable, skipping detection");
-        return None;
+        return false;
     };
-    let found = find_raycast_app(Path::new("/Applications"), &home);
-    if found.is_none() {
-        log::info!("[raycast] Raycast not installed, local API stays off");
+    match find_raycast_app(Path::new("/Applications"), &home) {
+        Some(path) => {
+            log::info!("[raycast] Raycast found at {}", path.display());
+            true
+        }
+        None => {
+            log::info!("[raycast] Raycast not installed, local API stays off");
+            false
+        }
     }
-    found
 }
 
-#[cfg(not(target_os = "macos"))]
-fn detect_raycast() -> Option<PathBuf> {
-    log::info!("[raycast] local API is macOS-only, skipping");
-    None
+#[cfg(target_os = "windows")]
+fn should_start_local_api() -> bool {
+    log::info!("[raycast] Windows: Raycast install location is not detectable, starting local API unconditionally");
+    true
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "windows")))]
+fn should_start_local_api() -> bool {
+    log::info!("[raycast] local API is only available on macOS and Windows, skipping");
+    false
 }
 
 fn write_discovery_file(dir: &Path, port: u16, token: &str) -> io::Result<PathBuf> {
@@ -98,10 +109,10 @@ pub fn remove_discovery_file(app: &AppHandle) {
 }
 
 pub fn init(app: &AppHandle) {
-    let Some(raycast_path) = detect_raycast() else {
+    if !should_start_local_api() {
         return;
-    };
-    log::info!("[raycast] Raycast found at {}, starting local API", raycast_path.display());
+    }
+    log::info!("[raycast] starting local API");
     app.state::<LocalApiState>().active.store(true, Ordering::SeqCst);
     let app = app.clone();
     tauri::async_runtime::spawn(async move { launch(app).await });

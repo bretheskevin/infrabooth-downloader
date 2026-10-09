@@ -1,7 +1,8 @@
-import { Action, type Keyboard } from "@raycast/api";
+import { Action } from "@raycast/api";
 import { nextSearchType, SEARCH_TYPES, type SearchType } from "../lib/searchTypes";
+import { crossPlatformShortcut } from "../lib/shortcuts";
 
-const CYCLE_SHORTCUT: Keyboard.Shortcut = { modifiers: ["cmd"], key: "t" };
+const CYCLE_SHORTCUT = crossPlatformShortcut(["cmd"], "t");
 
 interface SwitchTypeActionProps {
   current: SearchType;

@@ -51,6 +51,11 @@ describe("paths", () => {
     expect(shortenHome("/Volumes/Drive", HOME)).toBe("/Volumes/Drive");
   });
 
+  it("shortens Windows paths under the home directory", () => {
+    expect(shortenHome("C:\\Users\\me\\Music", "C:\\Users\\me", "\\")).toBe("~\\Music");
+    expect(shortenHome("D:\\Music", "C:\\Users\\me", "\\")).toBe("D:\\Music");
+  });
+
   it("uses the system Downloads folder when the app has no download path", () => {
     expect(defaultDownloadDir("", HOME)).toBe("/Users/me/Downloads");
     expect(defaultDownloadDir("/Music/DJ", HOME)).toBe("/Music/DJ");

@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { posix, win32 } from "node:path";
 import type { RemoteCommand, RemoteState, RemoteTrack } from "@/lib/remote-protocol";
 import { filterPersonalMixes } from "@/lib/selections";
 import { mapTrack, type TrackInfoJson } from "@remote/lib/trackMapping";
@@ -14,7 +14,16 @@ import {
 } from "./mapping";
 import { mapResolvedLink, type ResolvedLink, type ResolvedLinkJson } from "./resolveLink";
 
-const DISCOVERY_FILE = join(homedir(), "Library", "Application Support", "com.infrabooth.downloader", "raycast.json");
+const APP_IDENTIFIER = "com.infrabooth.downloader";
+
+export function discoveryFilePath(platform: NodeJS.Platform, home: string, appData: string | undefined): string {
+  if (platform === "win32") {
+    return win32.join(appData ?? win32.join(home, "AppData", "Roaming"), APP_IDENTIFIER, "raycast.json");
+  }
+  return posix.join(home, "Library", "Application Support", APP_IDENTIFIER, "raycast.json");
+}
+
+const DISCOVERY_FILE = discoveryFilePath(process.platform, homedir(), process.env.APPDATA);
 
 export class AppNotRunningError extends Error {
   constructor(reason: string) {

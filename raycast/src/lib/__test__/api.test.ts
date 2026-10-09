@@ -1,9 +1,29 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiError, handleStreamLine, searchAlbums, searchPlaylists, searchTracks } from "../api";
+import { ApiError, discoveryFilePath, handleStreamLine, searchAlbums, searchPlaylists, searchTracks } from "../api";
 
 vi.mock("node:fs/promises", () => ({
   readFile: vi.fn(async () => JSON.stringify({ port: 4321, token: "tok" })),
 }));
+
+describe("discoveryFilePath", () => {
+  it("uses Application Support on macOS", () => {
+    expect(discoveryFilePath("darwin", "/Users/me", undefined)).toBe(
+      "/Users/me/Library/Application Support/com.infrabooth.downloader/raycast.json",
+    );
+  });
+
+  it("uses APPDATA on Windows", () => {
+    expect(discoveryFilePath("win32", "C:\\Users\\me", "C:\\Users\\me\\AppData\\Roaming")).toBe(
+      "C:\\Users\\me\\AppData\\Roaming\\com.infrabooth.downloader\\raycast.json",
+    );
+  });
+
+  it("falls back to the roaming profile folder when APPDATA is unset", () => {
+    expect(discoveryFilePath("win32", "C:\\Users\\me", undefined)).toBe(
+      "C:\\Users\\me\\AppData\\Roaming\\com.infrabooth.downloader\\raycast.json",
+    );
+  });
+});
 
 describe("handleStreamLine", () => {
   it("forwards batch items without completing", () => {

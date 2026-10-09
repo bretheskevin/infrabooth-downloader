@@ -1,5 +1,6 @@
 import { Action, ActionPanel, Icon, Keyboard } from "@raycast/api";
 import { sendControl } from "../lib/commands";
+import { crossPlatformShortcut } from "../lib/shortcuts";
 import type { RemoteState, RemoteTrack } from "@/lib/remote-protocol";
 import { stepVolume, toggleMuteVolume } from "../lib/volume";
 import { DownloadTrackAction } from "./DownloadTrackAction";
@@ -34,13 +35,13 @@ export function NowPlayingActions({ state, track, index }: Props) {
         <Action
           title="Next Track"
           icon={Icon.Forward}
-          shortcut={{ modifiers: ["cmd"], key: "arrowRight" }}
+          shortcut={crossPlatformShortcut(["cmd"], "arrowRight")}
           onAction={() => sendControl({ type: "next" })}
         />
         <Action
           title="Previous Track"
           icon={Icon.Rewind}
-          shortcut={{ modifiers: ["cmd"], key: "arrowLeft" }}
+          shortcut={crossPlatformShortcut(["cmd"], "arrowLeft")}
           onAction={() => sendControl({ type: "previous" })}
         />
         <Action
@@ -54,19 +55,19 @@ export function NowPlayingActions({ state, track, index }: Props) {
         <Action
           title="Increase Volume"
           icon={Icon.SpeakerUp}
-          shortcut={{ modifiers: ["opt", "cmd"], key: "arrowUp" }}
+          shortcut={crossPlatformShortcut(["opt", "cmd"], "arrowUp")}
           onAction={() => sendControl({ type: "setVolume", volume: stepVolume(state.volume, 1) })}
         />
         <Action
           title="Decrease Volume"
           icon={Icon.SpeakerDown}
-          shortcut={{ modifiers: ["opt", "cmd"], key: "arrowDown" }}
+          shortcut={crossPlatformShortcut(["opt", "cmd"], "arrowDown")}
           onAction={() => sendControl({ type: "setVolume", volume: stepVolume(state.volume, -1) })}
         />
         <Action
           title={isMuted ? "Unmute" : "Mute"}
           icon={isMuted ? Icon.SpeakerOn : Icon.SpeakerOff}
-          shortcut={{ modifiers: ["cmd"], key: "m" }}
+          shortcut={crossPlatformShortcut(["cmd"], "m")}
           onAction={async () => sendControl({ type: "setVolume", volume: await toggleMuteVolume(state.volume) })}
         />
       </ActionPanel.Section>
