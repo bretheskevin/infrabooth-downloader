@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, CheckCircle2, Folder, Loader2, RefreshCw, X } from 'lucide-react';
+import { Folder, Loader2, RefreshCw, X } from 'lucide-react';
 import type { RekordboxStatus } from '@/bindings';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -15,36 +14,26 @@ import { useSettingsStore } from '@/features/settings/store';
 import { useFolderSelection } from '@/hooks';
 import { useRekordboxDetection } from '@/features/rekordbox-export/hooks/useRekordboxDetection';
 
-const STATUS_BADGE_CONFIG = {
-  running: {
-    icon: AlertCircle,
-    labelKey: 'settings.rekordboxRunningBadge',
-    className: 'border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  },
-  found: {
-    icon: CheckCircle2,
-    labelKey: 'settings.rekordboxFound',
-    className: 'border-green-500/20 bg-green-500/10 text-green-600 dark:text-green-400',
-  },
-  notFound: {
-    icon: AlertCircle,
-    labelKey: 'settings.rekordboxNotFoundBadge',
-    className: 'border-destructive/20 bg-destructive/10 text-destructive',
-  },
+const STATUS_CONFIG = {
+  running: { labelKey: 'settings.rekordboxRunningBadge', dotClassName: 'bg-amber-500' },
+  found: { labelKey: 'settings.rekordboxFound', dotClassName: 'bg-emerald-500' },
+  notFound: { labelKey: 'settings.rekordboxNotFoundBadge', dotClassName: 'bg-destructive' },
 } as const;
 
-function StatusBadge({ variant }: { variant: keyof typeof STATUS_BADGE_CONFIG }) {
+type StatusVariant = keyof typeof STATUS_CONFIG;
+
+function StatusIndicator({ variant }: { variant: StatusVariant }) {
   const { t } = useTranslation();
-  const { icon: Icon, labelKey, className } = STATUS_BADGE_CONFIG[variant];
+  const { labelKey, dotClassName } = STATUS_CONFIG[variant];
   return (
-    <Badge variant="outline" className={cn('w-fit gap-1', className)}>
-      <Icon className="h-3.5 w-3.5" />
+    <span data-status={variant} className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+      <span aria-hidden className={cn('size-1.5 rounded-full', dotClassName)} />
       {t(labelKey)}
-    </Badge>
+    </span>
   );
 }
 
-function getStatusVariant(result: RekordboxStatus | undefined): keyof typeof STATUS_BADGE_CONFIG | null {
+function getStatusVariant(result: RekordboxStatus | undefined): StatusVariant | null {
   if (!result) return null;
   if (result.found && result.isRunning) return 'running';
   if (result.found) return 'found';
@@ -86,9 +75,9 @@ export function RekordboxSettings() {
   return (
     <div className="space-y-6" data-testid="rekordbox-settings">
       <div className="space-y-1" data-testid="rekordbox-header">
-        <div className="flex items-center gap-2">
+        <div className="flex items-baseline gap-3">
           <h2 className="text-lg font-semibold">{t('settings.categoryRekordbox')}</h2>
-          {statusVariant && <StatusBadge variant={statusVariant} />}
+          {statusVariant && <StatusIndicator variant={statusVariant} />}
         </div>
         <p className="text-sm text-muted-foreground">{t('settings.rekordboxDescription')}</p>
       </div>

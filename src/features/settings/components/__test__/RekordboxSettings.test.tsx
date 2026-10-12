@@ -89,8 +89,7 @@ describe('RekordboxSettings', () => {
 
     const successBadge = await screen.findByText('Detected');
     expect(successBadge).toBeInTheDocument();
-    expect(successBadge).toHaveClass('bg-green-500/10');
-    expect(successBadge).toHaveClass('text-green-600');
+    expect(successBadge).toHaveAttribute('data-status', 'found');
     expect(screen.queryByText('Rekordbox data directory')).not.toBeInTheDocument();
   });
 
@@ -103,7 +102,7 @@ describe('RekordboxSettings', () => {
     const successBadge = await screen.findByText('Detected');
     const header = screen.getByTestId('rekordbox-header');
     expect(header).toContainElement(successBadge);
-    expect(successBadge).toHaveClass('bg-green-500/10');
+    expect(successBadge).toHaveAttribute('data-status', 'found');
     expect(mockDetectRekordbox).toHaveBeenCalledTimes(1);
     expect(mockDetectRekordbox).toHaveBeenCalledWith('/Users/test/saved/master.db');
   });
@@ -140,8 +139,7 @@ describe('RekordboxSettings', () => {
     const header = screen.getByTestId('rekordbox-header');
     const runningBadge = await screen.findByText('Running');
     expect(header).toContainElement(runningBadge);
-    expect(runningBadge).toHaveClass('bg-amber-500/10');
-    expect(runningBadge).toHaveClass('text-amber-600');
+    expect(runningBadge).toHaveAttribute('data-status', 'running');
     expect(screen.getByText('Close Rekordbox before exporting or managing playlists.')).toBeInTheDocument();
   });
 
@@ -154,8 +152,7 @@ describe('RekordboxSettings', () => {
     const header = screen.getByTestId('rekordbox-header');
     const notFoundBadge = await screen.findByText('Not found');
     expect(header).toContainElement(notFoundBadge);
-    expect(notFoundBadge).toHaveClass('bg-destructive/10');
-    expect(notFoundBadge).toHaveClass('text-destructive');
+    expect(notFoundBadge).toHaveAttribute('data-status', 'notFound');
     expect(
       await screen.findByText('Rekordbox not found automatically. Choose your Rekordbox data directory if you use a custom location.'),
     ).toBeInTheDocument();
