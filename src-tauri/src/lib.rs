@@ -375,12 +375,14 @@ pub fn run() {
                         let target = record.target();
                         let clean_target = if target.contains("node_modules") { "webview" } else { target };
                         out.finish(format_args!(
-                            "[{:04}-{:02}-{:02} {:02}:{:02}][{}][{}] {}",
+                            "[{:04}-{:02}-{:02} {:02}:{:02}:{:02}.{:03}][{}][{}] {}",
                             now.year(),
                             now.month() as u8,
                             now.day(),
                             now.hour(),
                             now.minute(),
+                            now.second(),
+                            now.millisecond(),
                             record.level(),
                             clean_target,
                             message

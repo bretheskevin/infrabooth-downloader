@@ -146,8 +146,10 @@
     "cancelled": "Téléchargement annulé",
     "preserveOrder": "Numéroter les pistes",
     "preserveOrderDescription": "Préfixer les noms de fichiers avec la position (ex: 01 - Artiste - Titre)",
-    "alreadyDownloaded": "{{count}} déjà téléchargé(s)",
-    "skippedCount": "({{count}} ignoré(s))",
+    "alreadyDownloaded_one": "{{count}} déjà téléchargé",
+    "alreadyDownloaded_other": "{{count}} déjà téléchargés",
+    "skippedCount_one": "({{count}} ignoré)",
+    "skippedCount_other": "({{count}} ignorés)",
     "dock": {
       "title": "Téléchargements",
       "preparing": "Préparation...",

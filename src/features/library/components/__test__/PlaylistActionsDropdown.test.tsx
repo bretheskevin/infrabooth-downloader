@@ -276,7 +276,8 @@ describe('PlaylistActionsDropdown', () => {
     hookReturn.errorCode = 'REKORDBOX_RUNNING';
     hookReturn.error = 'Rekordbox is running — close it before making changes';
     render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
-    expect(screen.getByText('rekordboxRunning')).toBeInTheDocument();
+    expect(screen.getByText('runningTitle')).toBeInTheDocument();
+    expect(screen.getByText('runningMessage')).toBeInTheDocument();
   });
 
   it('shows Close Rekordbox button when errorCode is REKORDBOX_RUNNING', async () => {
@@ -285,7 +286,7 @@ describe('PlaylistActionsDropdown', () => {
     hookReturn.errorCode = 'REKORDBOX_RUNNING';
     hookReturn.error = 'Rekordbox is running';
     render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
-    const quitBtn = screen.getByRole('button', { name: 'backupCloseRekordbox' });
+    const quitBtn = screen.getByRole('button', { name: 'quitAndExport' });
     expect(quitBtn).toBeInTheDocument();
     await user.click(quitBtn);
     expect(mockQuitAndRetry).toHaveBeenCalledOnce();
@@ -296,18 +297,18 @@ describe('PlaylistActionsDropdown', () => {
     hookReturn.errorCode = 'UNKNOWN';
     hookReturn.error = 'Something went wrong';
     render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
-    expect(screen.queryByRole('button', { name: 'backupCloseRekordbox' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'quitAndExport' })).not.toBeInTheDocument();
   });
 
-  it('disables Close button while quitting Rekordbox', () => {
+  it('disables Cancel button while quitting Rekordbox', () => {
     hookReturn.phase = 'error';
     hookReturn.errorCode = 'REKORDBOX_RUNNING';
     hookReturn.error = 'Rekordbox is running';
     hookReturn.isQuitting = true;
     render(<PlaylistActionsDropdown tracks={[mockTrack]} playlistName="My Playlist" />);
-    const closeBtn = screen.getByRole('button', { name: 'close' });
-    expect(closeBtn).toBeDisabled();
-    const quitBtn = screen.getByRole('button', { name: 'backupCloseRekordbox' });
+    const cancelBtn = screen.getByRole('button', { name: 'cancel' });
+    expect(cancelBtn).toBeDisabled();
+    const quitBtn = screen.getByRole('button', { name: 'quitAndExport' });
     expect(quitBtn).toBeDisabled();
   });
 

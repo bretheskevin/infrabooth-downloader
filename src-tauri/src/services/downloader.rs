@@ -5,9 +5,11 @@
 
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter};
 use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::{process::CommandEvent, ShellExt};
+use tokio::io::AsyncWriteExt;
 use tokio::sync::{watch, Mutex};
 
 use crate::models::error::DownloadError;
@@ -327,6 +329,33 @@ struct OriginalDownload {
 type ActiveChild = Arc<Mutex<Option<CommandChild>>>;
 type ActivePid = Arc<Mutex<Option<u32>>>;
 
+/// Share of the overall progress bar given to fetching an original file;
+/// the remaining share covers its FFmpeg conversion.
+const ORIGINAL_DOWNLOAD_SHARE: f32 = 0.8;
+
+/// Original files (WAV/FLAC) can take minutes on slow links, so the shared
+/// client's total timeout must not apply to their body. Instead we bound the
+/// wait for response headers and abort only when the body stalls.
+const ORIGINAL_HEADERS_TIMEOUT: Duration = Duration::from_secs(30);
+const ORIGINAL_IDLE_TIMEOUT: Duration = Duration::from_secs(30);
+const ORIGINAL_MAX_DURATION: Duration = Duration::from_secs(2 * 60 * 60);
+
+#[derive(Clone, Copy)]
+struct ProgressRange {
+    start: f32,
+    span: f32,
+}
+
+impl ProgressRange {
+    const FULL: Self = Self { start: 0.0, span: 1.0 };
+    const ORIGINAL_FETCH: Self = Self { start: 0.0, span: ORIGINAL_DOWNLOAD_SHARE };
+    const ORIGINAL_CONVERSION: Self = Self { start: ORIGINAL_DOWNLOAD_SHARE, span: 1.0 - ORIGINAL_DOWNLOAD_SHARE };
+
+    fn map(self, fraction: f32) -> f32 {
+        self.start + fraction.clamp(0.0, 1.0) * self.span
+    }
+}
+
 /// Context for FFmpeg conversion operations.
 /// Groups parameters needed for process management and cleanup.
 struct FfmpegContext<'a> {
@@ -335,6 +364,7 @@ struct FfmpegContext<'a> {
     active_pid: &'a Option<ActivePid>,
     output_dir: &'a Path,
     base_name: &'a str,
+    progress_range: ProgressRange,
 }
 
 /// Append common FFmpeg output arguments to an args vector.
@@ -362,75 +392,30 @@ fn append_common_ffmpeg_args(args: &mut Vec<String>, output_path: &Path) {
     args.push(output_str);
 }
 
-async fn try_original_download(
-    download_url: &str, oauth_token: Option<&str>, output_dir: &Path, base_name: &str, cancel_rx: &Option<watch::Receiver<bool>>,
+async fn try_original_download<R: tauri::Runtime>(
+    app: &AppHandle<R>, config: &PipelineConfig, base_name: &str, cancel_rx: &Option<watch::Receiver<bool>>,
 ) -> Option<OriginalDownload> {
+    let track_id = config.track_id.as_str();
     if is_cancelled(cancel_rx) {
         return None;
     }
 
-    if !crate::services::http::is_trusted_domain(download_url) {
-        log::warn!("[downloader] Refusing to send credentials to untrusted domain: {}", download_url);
-        return None;
-    }
-
     let client = &*crate::services::http::HTTP_CLIENT;
+    let redirect_uri = fetch_original_redirect(client, config).await?;
+    log::info!("[downloader] Following original download redirect to CDN for track {}", track_id);
 
-    let mut request = client.get(download_url);
-    if let Some(token) = oauth_token {
-        request = request.header("Authorization", format!("OAuth {}", token));
-    }
-
-    let response = request.send().await.ok()?;
-    if !response.status().is_success() {
-        log::info!("[downloader] Original download failed: {}", response.status());
+    if is_cancelled(cancel_rx) {
         return None;
     }
 
-    // SoundCloud returns JSON with redirectUri pointing to the actual file
-    let body = response.bytes().await.ok()?;
-
-    // Try to parse as JSON redirect, otherwise treat as audio
-    let (audio_bytes, content_type) = if let Ok(json) = serde_json::from_slice::<serde_json::Value>(&body) {
-        let redirect_uri = json.get("redirectUri")?.as_str()?;
-
-        if !crate::services::http::is_trusted_domain(redirect_uri) {
-            log::warn!("[downloader] Refusing to follow redirect to untrusted domain: {}", redirect_uri);
-            return None;
-        }
-
-        log::info!("[downloader] Following redirect to CDN");
-
-        if is_cancelled(cancel_rx) {
-            return None;
-        }
-
-        let mut audio_resp = client.get(redirect_uri).send().await.ok()?;
-        if !audio_resp.status().is_success() {
-            return None;
-        }
-
-        let ct = audio_resp.headers().get(rquest::header::CONTENT_TYPE).and_then(|v| v.to_str().ok()).unwrap_or("").to_string();
-
-        // Stream in chunks with cancellation checks instead of buffering entire response
-        let capacity = audio_resp.content_length().unwrap_or(0) as usize;
-        let mut bytes = Vec::with_capacity(capacity);
-        while let Some(chunk) = audio_resp.chunk().await.ok()? {
-            if is_cancelled(cancel_rx) {
-                log::info!("[downloader] Cancellation detected during original download");
-                return None;
-            }
-            bytes.extend_from_slice(&chunk);
-        }
-
-        (bytes, ct)
-    } else {
-        log::debug!("[downloader] Original download response was not JSON redirect, skipping");
+    let audio_resp = send_original_cdn_request(client, &redirect_uri, track_id).await?;
+    if !audio_resp.status().is_success() {
+        log::info!("[downloader] Original CDN download failed for track {}: {}", track_id, audio_resp.status());
         return None;
-    };
+    }
 
-    let format = detect_format_from_content_type(&content_type);
-
+    let content_type = audio_resp.headers().get(rquest::header::CONTENT_TYPE).and_then(|v| v.to_str().ok()).unwrap_or("");
+    let format = detect_format_from_content_type(content_type);
     let extension = match format {
         OriginalFormat::Wav => "wav",
         OriginalFormat::Flac => "flac",
@@ -439,12 +424,168 @@ async fn try_original_download(
         OriginalFormat::Unknown => "bin",
     };
 
-    let temp_path = output_dir.join(format!("{}.original.{}", base_name, extension));
-    std::fs::write(&temp_path, &audio_bytes).ok()?;
+    let temp_path = config.output_dir.join(format!("{}.original.{}", base_name, extension));
+    let Some(written) = stream_original_to_file(app, audio_resp, &temp_path, track_id, cancel_rx).await else {
+        let _ = tokio::fs::remove_file(&temp_path).await;
+        return None;
+    };
 
-    log::info!("[downloader] Downloaded original: {:?} ({:?}, {} bytes)", temp_path, format, audio_bytes.len());
-
+    log::info!("[downloader] Downloaded original: {:?} ({:?}, {} bytes)", temp_path, format, written);
     Some(OriginalDownload { temp_path, format })
+}
+
+/// Ask SoundCloud for the original file; it answers with JSON whose
+/// `redirectUri` points to the actual file on the CDN.
+async fn fetch_original_redirect(client: &rquest::Client, config: &PipelineConfig) -> Option<String> {
+    let download_url = config.download_url.as_deref()?;
+    let track_id = config.track_id.as_str();
+    if !crate::services::http::is_trusted_domain(download_url) {
+        log::warn!("[downloader] Refusing to send credentials to untrusted domain: {}", download_url);
+        return None;
+    }
+
+    let mut request = client.get(download_url);
+    if let Some(token) = config.oauth_token.as_deref() {
+        request = request.header("Authorization", format!("OAuth {}", token));
+    }
+
+    let response = match request.send().await {
+        Ok(resp) => resp,
+        Err(e) => {
+            log::warn!("[downloader] Original download request failed for track {}: {}", track_id, e);
+            return None;
+        }
+    };
+    if !response.status().is_success() {
+        log::info!("[downloader] Original download failed for track {}: {}", track_id, response.status());
+        return None;
+    }
+
+    let body = match response.bytes().await {
+        Ok(body) => body,
+        Err(e) => {
+            log::warn!("[downloader] Failed to read original download response for track {}: {}", track_id, e);
+            return None;
+        }
+    };
+    let Ok(json) = serde_json::from_slice::<serde_json::Value>(&body) else {
+        log::debug!("[downloader] Original download response was not JSON redirect, skipping");
+        return None;
+    };
+    let redirect_uri = json.get("redirectUri")?.as_str()?;
+
+    if !crate::services::http::is_trusted_domain(redirect_uri) {
+        log::warn!("[downloader] Refusing to follow redirect to untrusted domain: {}", redirect_uri);
+        return None;
+    }
+    Some(redirect_uri.to_string())
+}
+
+async fn send_original_cdn_request(client: &rquest::Client, url: &str, track_id: &str) -> Option<rquest::Response> {
+    let request = client.get(url).timeout(ORIGINAL_MAX_DURATION).read_timeout(ORIGINAL_IDLE_TIMEOUT).send();
+    match tokio::time::timeout(ORIGINAL_HEADERS_TIMEOUT, request).await {
+        Ok(Ok(resp)) => Some(resp),
+        Ok(Err(e)) => {
+            log::warn!("[downloader] Original CDN request failed for track {}: {}", track_id, e);
+            None
+        }
+        Err(_) => {
+            log::warn!("[downloader] Original CDN request for track {} got no response within {:?}", track_id, ORIGINAL_HEADERS_TIMEOUT);
+            None
+        }
+    }
+}
+
+/// Resolves once cancellation is requested; never resolves without a cancel channel.
+async fn cancelled(cancel_rx: &Option<watch::Receiver<bool>>) {
+    let Some(mut rx) = cancel_rx.clone() else { return std::future::pending().await };
+    if rx.wait_for(|&cancelled| cancelled).await.is_err() {
+        std::future::pending::<()>().await;
+    }
+}
+
+/// Stream the original file body to `path`, emitting download progress.
+/// Returns the number of bytes written, or `None` on failure or cancellation.
+async fn stream_original_to_file<R: tauri::Runtime>(
+    app: &AppHandle<R>, mut response: rquest::Response, path: &Path, track_id: &str, cancel_rx: &Option<watch::Receiver<bool>>,
+) -> Option<u64> {
+    let total_bytes = response.content_length().filter(|&len| len > 0);
+    log::info!("[downloader] Streaming original for track {} to {:?} (content_length={:?})", track_id, path, total_bytes);
+
+    let mut file = match tokio::fs::File::create(path).await {
+        Ok(file) => file,
+        Err(e) => {
+            log::warn!("[downloader] Failed to create original file {:?}: kind={:?}, os_error={:?}, {}", path, e.kind(), e.raw_os_error(), e);
+            return None;
+        }
+    };
+
+    let mut reporter = OriginalProgressReporter::new(track_id, total_bytes);
+    loop {
+        let next = tokio::select! {
+            chunk = response.chunk() => chunk,
+            _ = cancelled(cancel_rx) => {
+                log::info!("[downloader] Cancellation detected during original download for track {}", track_id);
+                return None;
+            }
+        };
+        let chunk = match next {
+            Ok(Some(chunk)) => chunk,
+            Ok(None) => break,
+            Err(e) => {
+                log::warn!("[downloader] Original download interrupted for track {} after {} bytes: {}", track_id, reporter.downloaded, e);
+                return None;
+            }
+        };
+        if let Err(e) = file.write_all(&chunk).await {
+            log::warn!("[downloader] Failed to write original file {:?}: kind={:?}, os_error={:?}, {}", path, e.kind(), e.raw_os_error(), e);
+            return None;
+        }
+        reporter.advance(app, chunk.len() as u64);
+    }
+
+    if let Err(e) = file.flush().await {
+        log::warn!("[downloader] Failed to flush original file {:?}: kind={:?}, os_error={:?}, {}", path, e.kind(), e.raw_os_error(), e);
+        return None;
+    }
+    Some(reporter.downloaded)
+}
+
+/// Emits throttled progress while an original file downloads. Without a known
+/// size it still reports bytes (at 0 %) so the UI shows activity.
+struct OriginalProgressReporter<'a> {
+    track_id: &'a str,
+    total_bytes: Option<u64>,
+    downloaded: u64,
+    last_emitted_percent: f32,
+    last_emitted_bytes: u64,
+}
+
+impl<'a> OriginalProgressReporter<'a> {
+    const UNKNOWN_SIZE_EMIT_STEP_BYTES: u64 = 1024 * 1024;
+
+    fn new(track_id: &'a str, total_bytes: Option<u64>) -> Self {
+        Self { track_id, total_bytes, downloaded: 0, last_emitted_percent: -1.0, last_emitted_bytes: 0 }
+    }
+
+    fn advance<R: tauri::Runtime>(&mut self, app: &AppHandle<R>, chunk_len: u64) {
+        self.downloaded += chunk_len;
+        let percent = match self.total_bytes {
+            Some(total) => ProgressRange::ORIGINAL_FETCH.map(self.downloaded as f32 / total as f32),
+            None => 0.0,
+        };
+        let should_emit = match self.total_bytes {
+            Some(_) => percent - self.last_emitted_percent >= 0.01,
+            None => self.downloaded - self.last_emitted_bytes >= Self::UNKNOWN_SIZE_EMIT_STEP_BYTES,
+        };
+        if !should_emit {
+            return;
+        }
+        self.last_emitted_percent = percent;
+        self.last_emitted_bytes = self.downloaded;
+        let event = DownloadProgressEvent::downloading(self.track_id.to_string(), percent, Some(self.downloaded), self.total_bytes);
+        let _ = app.emit(events::DOWNLOAD_PROGRESS, event);
+    }
 }
 
 /// Convert an original download file to MP3, or copy if already MP3.
@@ -467,7 +608,8 @@ async fn convert_original_file<R: tauri::Runtime>(
     let bytes_per_ms = (output_bitrate_kbps(original.format) / 8) as u64;
 
     // Run conversion
-    let result = run_ffmpeg_sidecar(app, &args, track_id, duration_ms, bytes_per_ms, output_file, ctx).await;
+    let conversion_ctx = FfmpegContext { progress_range: ProgressRange::ORIGINAL_CONVERSION, ..*ctx };
+    let result = run_ffmpeg_sidecar(app, &args, track_id, duration_ms, bytes_per_ms, output_file, &conversion_ctx).await;
 
     // Always clean up temp file (on success or error)
     let _ = std::fs::remove_file(&original.temp_path);
@@ -504,9 +646,10 @@ async fn execute_transcoding_download<R: tauri::Runtime>(
     app: &AppHandle<R>, config: &PipelineConfig, output_file: &Path, ctx: &FfmpegContext<'_>,
 ) -> Result<PathBuf, DownloadError> {
     let track_id_num = config.track_id.parse::<u64>().ok();
+    let resolve_started_at = Instant::now();
     let stream_info = stream::resolve_stream_url(&config.track_url, track_id_num, config.secret_token.as_deref(), config.oauth_token.as_deref()).await?;
 
-    log::info!("[downloader] Resolved stream URL for track {}", config.track_id);
+    log::info!("[downloader] Resolved stream URL for track {} in {} ms", config.track_id, resolve_started_at.elapsed().as_millis());
     log::info!("[downloader] Encoding strategy for track {}: codec={:?}", config.track_id, stream_info.codec);
 
     let args = build_ffmpeg_args(&stream_info, output_file);
@@ -535,33 +678,49 @@ async fn cancel_and_cleanup(active_child: &Option<ActiveChild>, output_dir: &Pat
     let _ = std::fs::remove_file(output_file);
 }
 
-/// Process FFmpeg stdout lines, parse progress, and emit events.
-fn process_ffmpeg_stdout<R: tauri::Runtime>(
-    app: &AppHandle<R>, line_bytes: &[u8], track_id: &str, duration_ms: u64, estimated_total_bytes: Option<u64>, last_percent: &mut f32,
-    last_downloaded_bytes: &mut Option<u64>,
-) {
-    let raw_line = bytes_to_string(line_bytes);
-    for line in raw_line.lines() {
-        let line = line.trim();
-        if line.is_empty() {
-            continue;
-        }
+/// Tracks FFmpeg progress for one run and emits download events from its stdout.
+struct FfmpegProgress {
+    duration_ms: u64,
+    estimated_total_bytes: Option<u64>,
+    range: ProgressRange,
+    last_downloaded_bytes: Option<u64>,
+    spawned_at: Instant,
+    first_progress_logged: bool,
+}
 
-        if let Some(progress) = parse_ffmpeg_progress(line, duration_ms) {
-            if let Some(pct) = progress.percent {
-                *last_percent = pct;
-            }
+impl FfmpegProgress {
+    fn new(duration_ms: u64, bytes_per_ms: u64, range: ProgressRange) -> Self {
+        Self {
+            duration_ms,
+            estimated_total_bytes: if duration_ms > 0 { Some(duration_ms * bytes_per_ms) } else { None },
+            range,
+            last_downloaded_bytes: None,
+            spawned_at: Instant::now(),
+            first_progress_logged: false,
+        }
+    }
+
+    /// Process FFmpeg stdout lines, parse progress, and emit events.
+    fn handle_stdout<R: tauri::Runtime>(&mut self, app: &AppHandle<R>, line_bytes: &[u8], track_id: &str) {
+        let raw_line = bytes_to_string(line_bytes);
+        for line in raw_line.lines().map(str::trim).filter(|l| !l.is_empty()) {
+            let Some(progress) = parse_ffmpeg_progress(line, self.duration_ms) else { continue };
             if progress.downloaded_bytes.is_some() {
-                *last_downloaded_bytes = progress.downloaded_bytes;
+                self.last_downloaded_bytes = progress.downloaded_bytes;
             }
-
-            if progress.percent.is_some() {
-                let _ = app.emit(
-                    events::DOWNLOAD_PROGRESS,
-                    DownloadProgressEvent::downloading(track_id.to_string(), *last_percent, *last_downloaded_bytes, estimated_total_bytes),
-                );
-            }
+            let Some(pct) = progress.percent else { continue };
+            self.log_first_progress(track_id);
+            let event = DownloadProgressEvent::downloading(track_id.to_string(), self.range.map(pct), self.last_downloaded_bytes, self.estimated_total_bytes);
+            let _ = app.emit(events::DOWNLOAD_PROGRESS, event);
         }
+    }
+
+    fn log_first_progress(&mut self, track_id: &str) {
+        if self.first_progress_logged {
+            return;
+        }
+        self.first_progress_logged = true;
+        log::info!("[downloader] Track {}: first ffmpeg progress {} ms after spawn", track_id, self.spawned_at.elapsed().as_millis());
     }
 }
 
@@ -600,11 +759,9 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
     app: &AppHandle<R>, rx: &mut tauri::async_runtime::Receiver<CommandEvent>, track_id: &str, duration_ms: u64, bytes_per_ms: u64, ctx: &FfmpegContext<'_>,
     output_file: &Path,
 ) -> Result<(), DownloadError> {
-    let &FfmpegContext { cancel_rx, active_child, output_dir, base_name, .. } = ctx;
+    let &FfmpegContext { cancel_rx, active_child, output_dir, base_name, progress_range, .. } = ctx;
     let mut last_error: Option<String> = None;
-    let mut last_percent: f32 = 0.0;
-    let mut last_downloaded_bytes: Option<u64> = None;
-    let estimated_total_bytes: Option<u64> = if duration_ms > 0 { Some(duration_ms * bytes_per_ms) } else { None };
+    let mut progress = FfmpegProgress::new(duration_ms, bytes_per_ms, progress_range);
 
     loop {
         if is_cancelled(cancel_rx) {
@@ -620,7 +777,7 @@ async fn run_ffmpeg_event_loop<R: tauri::Runtime>(
 
         match event {
             Some(CommandEvent::Stdout(line_bytes)) => {
-                process_ffmpeg_stdout(app, &line_bytes, track_id, duration_ms, estimated_total_bytes, &mut last_percent, &mut last_downloaded_bytes);
+                progress.handle_stdout(app, &line_bytes, track_id);
             }
             Some(CommandEvent::Stderr(line_bytes)) => {
                 if let Some(err) = process_ffmpeg_stderr(&line_bytes, &mut last_error) {
@@ -662,8 +819,9 @@ async fn run_ffmpeg_sidecar<R: tauri::Runtime>(
         *guard = Some(child);
     }
 
-    // Run event loop
+    let started_at = Instant::now();
     run_ffmpeg_event_loop(app, &mut rx, track_id, duration_ms, bytes_per_ms, ctx, output_file).await?;
+    log::info!("[downloader] Track {}: ffmpeg finished in {} ms", track_id, started_at.elapsed().as_millis());
 
     // Verify output file exists
     if !output_file.exists() {
@@ -687,17 +845,26 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
         return Err(DownloadError::Cancelled);
     }
 
-    let ctx =
-        FfmpegContext { cancel_rx: &cancel_rx, active_child: &active_child, active_pid: &active_pid, output_dir: &config.output_dir, base_name: &base_name };
+    let ctx = FfmpegContext {
+        cancel_rx: &cancel_rx,
+        active_child: &active_child,
+        active_pid: &active_pid,
+        output_dir: &config.output_dir,
+        base_name: &base_name,
+        progress_range: ProgressRange::FULL,
+    };
 
-    // Try original download first (if available)
-    if let Some(ref download_url) = config.download_url {
+    if config.download_url.is_some() {
         log::info!("[downloader] Attempting original download for track {}", config.track_id);
+        let attempt_started_at = Instant::now();
+        let original = try_original_download(app, config, &base_name, &cancel_rx).await;
+        let elapsed_ms = attempt_started_at.elapsed().as_millis();
 
-        if let Some(original) = try_original_download(download_url, config.oauth_token.as_deref(), &config.output_dir, &base_name, &cancel_rx).await {
+        if let Some(original) = original {
+            log::info!("[downloader] Original download for track {} took {} ms", config.track_id, elapsed_ms);
             return convert_original_file(app, &original, &output_file, &config.track_id, config.duration_ms, &ctx).await;
         }
-        log::info!("[downloader] Original download unavailable, using transcoding stream");
+        log::info!("[downloader] Original download unavailable for track {} after {} ms, using transcoding stream", config.track_id, elapsed_ms);
     }
 
     // Fall back to transcoding path
@@ -707,6 +874,27 @@ pub async fn download_track_to_mp3<R: tauri::Runtime>(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_progress_range_full_is_identity() {
+        assert_eq!(ProgressRange::FULL.map(0.0), 0.0);
+        assert_eq!(ProgressRange::FULL.map(0.5), 0.5);
+        assert_eq!(ProgressRange::FULL.map(1.0), 1.0);
+    }
+
+    #[test]
+    fn test_progress_range_original_phases_are_contiguous() {
+        assert_eq!(ProgressRange::ORIGINAL_FETCH.map(0.0), 0.0);
+        assert_eq!(ProgressRange::ORIGINAL_FETCH.map(1.0), ORIGINAL_DOWNLOAD_SHARE);
+        assert_eq!(ProgressRange::ORIGINAL_CONVERSION.map(0.0), ORIGINAL_DOWNLOAD_SHARE);
+        assert!((ProgressRange::ORIGINAL_CONVERSION.map(1.0) - 1.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn test_progress_range_clamps_out_of_bounds_fraction() {
+        assert_eq!(ProgressRange::ORIGINAL_FETCH.map(-0.5), 0.0);
+        assert_eq!(ProgressRange::ORIGINAL_FETCH.map(2.0), ORIGINAL_DOWNLOAD_SHARE);
+    }
 
     // parse_ffmpeg_progress tests
 
