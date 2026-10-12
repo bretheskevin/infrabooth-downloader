@@ -6,6 +6,16 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.38.3] - 2026-10-12
+
+### Changed
+
+- Accélération des téléchargements des morceaux AAC
+- Clarification de la fenêtre d'export et de l'indicateur Rekordbox
+
+### Fixed
+
+- Le volume était quasi inaudible en bas du curseur
 ## [1.38.2] - 2026-10-12
 
 ### Fixed
