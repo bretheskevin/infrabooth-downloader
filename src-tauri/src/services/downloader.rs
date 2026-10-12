@@ -269,7 +269,10 @@ pub fn classify_ffmpeg_exit_error(stderr: &str) -> DownloadError {
 fn build_ffmpeg_args(stream_info: &StreamInfo, output_path: &Path) -> Vec<String> {
     let mut args: Vec<String> = Vec::new();
 
-    // Input
+    // SoundCloud AAC files are fragmented MP4 with a `sidx` per ~30 KB fragment. On a
+    // seekable input FFmpeg seeks through every fragment before decoding, one HTTP
+    // range request each, which delays the first audio by tens of seconds.
+    args.extend_from_slice(&["-seekable".to_string(), "0".to_string()]);
     args.extend_from_slice(&["-i".to_string(), stream_info.url.clone()]);
 
     // Output codec and quality — codec-aware encoding
@@ -1135,6 +1138,13 @@ mod tests {
     fn assert_common_ffmpeg_args(args: &[String]) {
         assert!(args.windows(2).any(|w| w == ["-map", "0:a:0"]));
         assert!(args.windows(2).any(|w| w == ["-map_metadata", "-1"]));
+    }
+
+    #[test]
+    fn test_build_ffmpeg_args_disables_input_seeking_before_input() {
+        let stream_info = StreamInfo { url: "https://cf-aac-media.sndcdn.com/track.m4a".to_string(), codec: StreamCodec::Aac };
+        let args = build_ffmpeg_args(&stream_info, Path::new("/tmp/output.mp3"));
+        assert_eq!(args[..3], ["-seekable", "0", "-i"]);
     }
 
     #[test]
