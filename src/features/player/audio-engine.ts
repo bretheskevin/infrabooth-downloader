@@ -19,7 +19,15 @@ import { sendPlayerCommand } from './player-commands';
 
 export type AudioEngineState = PlayerEngineState;
 
-const toPerceptualGain = (volume: number) => clamp(volume, 0, 1) ** 3;
+const VOLUME_RANGE_DB = 36;
+const SILENCE_RAMP_END = 0.1;
+
+const toPerceptualGain = (volume: number) => {
+  const v = clamp(volume, 0, 1);
+  const gain = 10 ** ((VOLUME_RANGE_DB * (v - 1)) / 20);
+  // dB curves never reach silence, so fade linearly to zero at the bottom of the slider
+  return v < SILENCE_RAMP_END ? gain * (v / SILENCE_RAMP_END) : gain;
+};
 
 export interface AudioEngineCallbacks {
   onStateChange: (state: AudioEngineState) => void;

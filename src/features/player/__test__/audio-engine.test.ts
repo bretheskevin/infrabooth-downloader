@@ -216,8 +216,15 @@ describe('audioEngine (native wrapper)', () => {
     audioEngine.preloadNext('https://cdn/next.mp3');
     audioEngine.startCrossfade(3000, 0.5);
     await flushPlayerCommands();
-    expect(commands.playerSetVolume).toHaveBeenCalledWith(0.125);
-    expect(commands.playerStartCrossfade).toHaveBeenCalledWith(3000, 0.125);
+    expect(vi.mocked(commands.playerSetVolume).mock.calls[0]?.[0]).toBeCloseTo(0.1259, 4);
+    expect(vi.mocked(commands.playerStartCrossfade).mock.calls[0]?.[1]).toBeCloseTo(0.1259, 4);
+  });
+
+  it('maps slider extremes to silence and full gain', async () => {
+    audioEngine.setVolume(0);
+    audioEngine.setVolume(1);
+    await flushPlayerCommands();
+    expect(vi.mocked(commands.playerSetVolume).mock.calls).toEqual([[0], [1]]);
   });
 
   it('stop reports idle, bumps generation and resets position', async () => {
