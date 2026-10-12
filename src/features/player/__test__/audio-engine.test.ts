@@ -211,6 +211,15 @@ describe('audioEngine (native wrapper)', () => {
     expect(vi.mocked(commands.playerSetVolume).mock.calls).toEqual([[1], [0]]);
   });
 
+  it('maps slider volume to a perceptual gain curve', async () => {
+    audioEngine.setVolume(0.5);
+    audioEngine.preloadNext('https://cdn/next.mp3');
+    audioEngine.startCrossfade(3000, 0.5);
+    await flushPlayerCommands();
+    expect(commands.playerSetVolume).toHaveBeenCalledWith(0.125);
+    expect(commands.playerStartCrossfade).toHaveBeenCalledWith(3000, 0.125);
+  });
+
   it('stop reports idle, bumps generation and resets position', async () => {
     const gen = await loadAndGetGeneration('https://cdn/a.mp3', 3000);
     audioEngine.stop();

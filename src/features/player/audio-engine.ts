@@ -19,6 +19,8 @@ import { sendPlayerCommand } from './player-commands';
 
 export type AudioEngineState = PlayerEngineState;
 
+const toPerceptualGain = (volume: number) => clamp(volume, 0, 1) ** 3;
+
 export interface AudioEngineCallbacks {
   onStateChange: (state: AudioEngineState) => void;
   onProgress: (positionMs: number, durationMs: number) => void;
@@ -186,8 +188,8 @@ export const audioEngine = {
   },
 
   setVolume(volume: number) {
-    const clamped = clamp(volume, 0, 1);
-    send('playerSetVolume', () => commands.playerSetVolume(clamped));
+    const gain = toPerceptualGain(volume);
+    send('playerSetVolume', () => commands.playerSetVolume(gain));
   },
 
   stop() {
@@ -222,7 +224,7 @@ export const audioEngine = {
   startCrossfade(durationMs: number, targetVolume: number) {
     if (!snapshot.hasStandby) return;
     snapshot.crossfading = true;
-    send('playerStartCrossfade', () => commands.playerStartCrossfade(durationMs, targetVolume));
+    send('playerStartCrossfade', () => commands.playerStartCrossfade(durationMs, toPerceptualGain(targetVolume)));
   },
 
   cancelCrossfade() {
