@@ -76,7 +76,9 @@ vi.mock('react-i18next', () => ({
   useTranslation: () => ({
     t: (key: string, opts?: Record<string, unknown>) => {
       if (key === 'rekordboxExport.confirmMessage') return `Export ${opts?.count} tracks as "${opts?.playlist}"?`;
-      if (key === 'rekordboxExport.summaryLine') return `${opts?.exported} exported · ${opts?.skipped} skipped · ${opts?.errors} errors`;
+      if (key === 'rekordboxExport.summaryExported') return `${opts?.count} exported`;
+      if (key === 'rekordboxExport.summarySkipped') return `${opts?.count} skipped`;
+      if (key === 'rekordboxExport.summaryErrors') return `${opts?.count} errors`;
       if (key === 'rekordboxExport.pendingCount') return `${opts?.count} tracks waiting...`;
       if (key === 'rekordboxExport.moreCount') return `+ ${opts?.count} more`;
       const parts = key.split('.');

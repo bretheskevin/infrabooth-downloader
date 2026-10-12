@@ -18,11 +18,11 @@ export function CompletePhaseContent({ result, groups, onClose }: CompletePhaseC
       <DialogHeader>
         <DialogTitle>{t('rekordboxExport.complete')}</DialogTitle>
         <DialogDescription>
-          {t('rekordboxExport.summaryLine', {
-            exported: result.exportedCount,
-            skipped: result.skippedCount,
-            errors: result.errors.length,
-          })}
+          {[
+            t('rekordboxExport.summaryExported', { count: result.exportedCount }),
+            t('rekordboxExport.summarySkipped', { count: result.skippedCount }),
+            t('rekordboxExport.summaryErrors', { count: result.errors.length }),
+          ].join(' · ')}
         </DialogDescription>
       </DialogHeader>
       <div className="max-h-48 overflow-y-auto overflow-x-hidden">
