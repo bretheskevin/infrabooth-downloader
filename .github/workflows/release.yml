@@ -117,6 +117,29 @@ jobs:
             echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
           fi
 
+      # Tauri's APPLE_CERTIFICATE import only accepts Apple-issued certificates, so the
+      # self-signed one is imported manually. A stable signature keeps macOS privacy
+      # permissions (Full Disk Access) across updates.
+      - name: Import macOS signing certificate
+        if: contains(matrix.platform, 'macos')
+        shell: bash
+        env:
+          MACOS_CERTIFICATE: ${{ secrets.MACOS_CERTIFICATE }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/signing.keychain-db"
+          KEYCHAIN_PASSWORD=$(openssl rand -hex 16)
+          echo "$MACOS_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" -P "$MACOS_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/cert.p12"
+          security find-identity -p codesigning "$KEYCHAIN"
+          echo "APPLE_SIGNING_IDENTITY=InfraBooth Downloader" >> "$GITHUB_ENV"
+
       - name: Build Tauri app
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
@@ -124,6 +147,14 @@ jobs:
           # Windows: allow duplicate OpenSSL/BoringSSL symbols (rquest uses BoringSSL, SQLCipher uses OpenSSL)
           RUSTFLAGS: ${{ matrix.platform == 'windows-latest' && '-Clink-args=/FORCE:MULTIPLE' || '' }}
         run: npm run tauri build -- --target ${{ matrix.target }}
+
+      - name: Verify macOS signature
+        if: contains(matrix.platform, 'macos')
+        shell: bash
+        run: |
+          APP="src-tauri/target/${{ matrix.target }}/release/bundle/macos/InfraBooth Downloader.app"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+          codesign -d -r- "$APP" 2>&1 | grep -q 'certificate leaf = H"7cc9b3ee866020fdd11c4accda97c283cd32b613"'
 
       - name: Rename macOS artifacts
         if: contains(matrix.platform, 'macos')
