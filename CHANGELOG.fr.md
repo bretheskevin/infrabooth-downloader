@@ -6,6 +6,11 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.38.1] - 2026-10-12
+
+### Fixed
+
+- Le son était trop fort même avec un volume bas
 ## [1.38.0] - 2026-10-09
 
 ### Added
