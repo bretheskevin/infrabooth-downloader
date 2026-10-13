@@ -4,10 +4,20 @@ use crate::models::error::ErrorResponse;
 use crate::services::raycast::LocalApiState;
 use crate::services::remote::{self, RemoteServerInfo};
 
+fn remote_error(message: String) -> ErrorResponse {
+    ErrorResponse { code: "REMOTE_ERROR".to_string(), message }
+}
+
 #[tauri::command]
 #[specta::specta]
 pub async fn start_remote_server(app: tauri::AppHandle) -> Result<RemoteServerInfo, ErrorResponse> {
-    remote::start_server(app).await.map_err(|e| ErrorResponse { code: "REMOTE_ERROR".to_string(), message: e })
+    remote::start_server(app).await.map_err(remote_error)
+}
+
+#[tauri::command]
+#[specta::specta]
+pub async fn reset_remote_link(app: tauri::AppHandle) -> Result<Option<RemoteServerInfo>, ErrorResponse> {
+    remote::reset_link(app).await.map_err(remote_error)
 }
 
 #[tauri::command]

@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import type { EqualizerPreset } from '@/bindings';
 import { logger } from '@/lib/logger';
+import { DEFAULT_VISUALIZER_SETTINGS, sanitizeVisualizerSettings, type VisualizerSettings } from '@/lib/remote-protocol';
 import { getErrorString } from '@/lib/utils';
 import { makeSetter, makeClampedSetter, pickKeys } from './helpers';
 import { EQUALIZER_BAND_FREQUENCIES, clampGain, isBuiltInPreset, matchPreset, presetGains, sanitizeGains } from './utils/equalizerPresets';
@@ -29,6 +30,7 @@ interface SettingsState {
   mediaViewMode: MediaViewMode;
   playlistDownloadPaths: Record<string, string>;
   remoteControlEnabled: boolean;
+  visualizerSettings: VisualizerSettings;
   _hasHydrated: boolean;
   setDownloadPath: (path: string) => void;
   setRekordboxPathOverride: (path: string) => void;
@@ -49,6 +51,7 @@ interface SettingsState {
   setHideReleasesReposts: (value: boolean) => void;
   setMediaViewMode: (mode: MediaViewMode) => void;
   setRemoteControlEnabled: (value: boolean) => void;
+  setVisualizerSettings: (settings: VisualizerSettings) => void;
   setPlaylistDownloadPath: (playlistId: string, path: string) => void;
   _setHasHydrated: (state: boolean) => void;
 }
@@ -73,6 +76,7 @@ const PERSISTED_KEYS = [
   'mediaViewMode',
   'playlistDownloadPaths',
   'remoteControlEnabled',
+  'visualizerSettings',
 ] as const satisfies readonly (keyof SettingsState)[];
 
 function sanitizeEqualizer(state: SettingsState): SettingsState {
@@ -84,6 +88,10 @@ function sanitizeEqualizer(state: SettingsState): SettingsState {
     `[settings] Persisted equalizer gains do not fit ${EQUALIZER_BAND_FREQUENCIES.length} bands, falling back to preset "${fallback}" (stored preset ${JSON.stringify(state.equalizerPreset)}, gains ${JSON.stringify(state.equalizerGains)})`,
   );
   return { ...state, equalizerEnabled, equalizerGains: presetGains(fallback), equalizerPreset: fallback };
+}
+
+function sanitizePersisted(state: SettingsState): SettingsState {
+  return { ...sanitizeEqualizer(state), visualizerSettings: sanitizeVisualizerSettings(state.visualizerSettings) };
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -108,6 +116,7 @@ export const useSettingsStore = create<SettingsState>()(
       mediaViewMode: 'card',
       playlistDownloadPaths: {},
       remoteControlEnabled: false,
+      visualizerSettings: DEFAULT_VISUALIZER_SETTINGS,
       _hasHydrated: false,
       setDownloadPath: makeSetter('downloadPath', set),
       setRekordboxPathOverride: makeSetter('rekordboxPathOverride', set),
@@ -136,6 +145,7 @@ export const useSettingsStore = create<SettingsState>()(
       setHideReleasesReposts: makeSetter('hideReleasesReposts', set),
       setMediaViewMode: makeSetter('mediaViewMode', set),
       setRemoteControlEnabled: makeSetter('remoteControlEnabled', set),
+      setVisualizerSettings: makeSetter('visualizerSettings', set),
       setPlaylistDownloadPath: (playlistId, path) =>
         set((state) => ({
           playlistDownloadPaths: { ...state.playlistDownloadPaths, [playlistId]: path },
@@ -146,7 +156,7 @@ export const useSettingsStore = create<SettingsState>()(
       name: 'sc-downloader-settings',
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => pickKeys(state, PERSISTED_KEYS),
-      merge: (persisted, current) => sanitizeEqualizer({ ...current, ...(persisted as Partial<SettingsState>) }),
+      merge: (persisted, current) => sanitizePersisted({ ...current, ...(persisted as Partial<SettingsState>) }),
       onRehydrateStorage: () => (state, error) => {
         if (error) {
           void logger.error(`Settings hydration error: ${getErrorString(error)}`);

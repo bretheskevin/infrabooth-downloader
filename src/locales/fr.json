@@ -251,7 +251,14 @@
       "startError": "Impossible de démarrer le serveur distant",
       "copyUrl": "Copier l'URL",
       "urlCopied": "URL copiée dans le presse-papiers",
-      "scanInstructions": "Scannez ce QR code avec votre téléphone pour ouvrir la télécommande"
+      "scanInstructions": "Scannez ce QR code avec votre téléphone pour ouvrir la télécommande",
+      "resetLink": "Réinitialiser le lien",
+      "resetLinkDescription": "Le lien reste identique entre les redémarrages pour qu'un raccourci sur l'écran d'accueil continue de fonctionner. La réinitialisation génère une nouvelle adresse et un nouveau jeton.",
+      "resetLinkConfirmTitle": "Réinitialiser le lien de la télécommande ?",
+      "resetLinkConfirmDescription": "Tous les téléphones déjà associés, y compris les raccourcis sur l'écran d'accueil, cesseront de fonctionner jusqu'à ce que vous scanniez le nouveau QR code.",
+      "resetLinkConfirm": "Réinitialiser",
+      "resetLinkSuccess": "Lien de la télécommande réinitialisé",
+      "resetLinkError": "Échec de la réinitialisation du lien"
     },
     "concurrentDownloads": "Téléchargements simultanés",
     "concurrentDownloadsDescription": "Nombre de pistes à télécharger simultanément (1-10)",
@@ -832,6 +839,20 @@
     "searchPlaylistsPrompt": "Rechercher des playlists sur SoundCloud",
     "searchAlbumsPrompt": "Rechercher des albums sur SoundCloud",
     "libraryTabsPlaylists": "Playlists",
-    "libraryTabsTracks": "Titres"
+    "libraryTabsTracks": "Titres",
+    "visualizer": "Visualiseur",
+    "visualizerOpen": "Ouvrir le visualiseur",
+    "close": "Fermer",
+    "visualizerExit": "Quitter le visualiseur",
+    "visualizerEnterFullscreen": "Passer en plein écran",
+    "visualizerExitFullscreen": "Quitter le plein écran",
+    "visualizerFullscreenHint": "Sur iPhone : touchez Partager, puis Sur l'écran d'accueil pour ouvrir en plein écran",
+    "visualizerStyleBars": "Barres",
+    "visualizerStyleMirrored": "Miroir",
+    "visualizerStyleRadial": "Radial",
+    "visualizerStyleWave": "Vague",
+    "visualizerTrackInfo": "Infos du morceau",
+    "visualizerBlurredBackground": "Fond flouté de la pochette",
+    "visualizerArtworkColor": "Couleur de la pochette"
   }
 }

@@ -249,7 +249,14 @@
       "startError": "Failed to start remote server",
       "copyUrl": "Copy URL",
       "urlCopied": "URL copied to clipboard",
-      "scanInstructions": "Scan this QR code with your phone to open the remote control"
+      "scanInstructions": "Scan this QR code with your phone to open the remote control",
+      "resetLink": "Reset link",
+      "resetLinkDescription": "The link stays the same across restarts so a Home Screen shortcut keeps working. Resetting it generates a new address and token.",
+      "resetLinkConfirmTitle": "Reset the remote link?",
+      "resetLinkConfirmDescription": "Every phone paired so far, including Home Screen shortcuts, will stop working until you scan the new QR code.",
+      "resetLinkConfirm": "Reset link",
+      "resetLinkSuccess": "Remote link reset",
+      "resetLinkError": "Failed to reset the remote link"
     },
     "concurrentDownloads": "Concurrent downloads",
     "concurrentDownloadsDescription": "Number of tracks to download simultaneously (1-10)",
@@ -828,6 +835,20 @@
     "searchPlaylistsPrompt": "Search for playlists on SoundCloud",
     "searchAlbumsPrompt": "Search for albums on SoundCloud",
     "libraryTabsPlaylists": "Playlists",
-    "libraryTabsTracks": "Tracks"
+    "libraryTabsTracks": "Tracks",
+    "visualizer": "Visualizer",
+    "visualizerOpen": "Open visualizer",
+    "close": "Close",
+    "visualizerExit": "Exit visualizer",
+    "visualizerEnterFullscreen": "Enter fullscreen",
+    "visualizerExitFullscreen": "Exit fullscreen",
+    "visualizerFullscreenHint": "On iPhone: tap Share, then Add to Home Screen to open fullscreen",
+    "visualizerStyleBars": "Bars",
+    "visualizerStyleMirrored": "Mirrored",
+    "visualizerStyleRadial": "Radial",
+    "visualizerStyleWave": "Wave",
+    "visualizerTrackInfo": "Track info",
+    "visualizerBlurredBackground": "Blurred artwork background",
+    "visualizerArtworkColor": "Color from artwork"
   }
 }

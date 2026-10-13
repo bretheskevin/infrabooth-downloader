@@ -11,6 +11,43 @@ export interface RemoteTrack {
   waveformUrl: string | null;
 }
 
+export const VISUALIZER_STYLE_IDS = ['bars', 'mirrored', 'radial', 'wave'] as const;
+
+export type VisualizerStyle = (typeof VISUALIZER_STYLE_IDS)[number];
+
+export interface VisualizerSettings {
+  style: VisualizerStyle;
+  showTrackInfo: boolean;
+  blurredBackground: boolean;
+  artworkColor: boolean;
+}
+
+export const DEFAULT_VISUALIZER_SETTINGS: VisualizerSettings = {
+  style: 'bars',
+  showTrackInfo: true,
+  blurredBackground: true,
+  artworkColor: false,
+};
+
+function isVisualizerStyle(value: unknown): value is VisualizerStyle {
+  return typeof value === 'string' && (VISUALIZER_STYLE_IDS as readonly string[]).includes(value);
+}
+
+function readBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback;
+}
+
+export function sanitizeVisualizerSettings(value: unknown): VisualizerSettings {
+  if (typeof value !== 'object' || value === null) return { ...DEFAULT_VISUALIZER_SETTINGS };
+  const record = value as Record<string, unknown>;
+  return {
+    style: isVisualizerStyle(record.style) ? record.style : DEFAULT_VISUALIZER_SETTINGS.style,
+    showTrackInfo: readBoolean(record.showTrackInfo, DEFAULT_VISUALIZER_SETTINGS.showTrackInfo),
+    blurredBackground: readBoolean(record.blurredBackground, DEFAULT_VISUALIZER_SETTINGS.blurredBackground),
+    artworkColor: readBoolean(record.artworkColor, DEFAULT_VISUALIZER_SETTINGS.artworkColor),
+  };
+}
+
 export type RemoteCommand =
   | { type: 'pause' }
   | { type: 'resume' }
@@ -26,7 +63,12 @@ export type RemoteCommand =
   | { type: 'queueTrack'; track: RemoteTrack }
   | { type: 'queueTracks'; tracks: RemoteTrack[] }
   | { type: 'downloadTrack'; track: RemoteTrack; outputDir?: string; secretToken?: string | null; downloadUrl?: string | null }
-  | { type: 'downloadPlaylist'; title: string; tracks: TrackInfo[]; outputDir?: string };
+  | { type: 'downloadPlaylist'; title: string; tracks: TrackInfo[]; outputDir?: string }
+  | { type: 'setVisualizerSettings'; settings: VisualizerSettings };
+
+export const REMOTE_SPECTRUM_BAND_COUNT = 24;
+
+export type RemoteSocketControl = { type: 'setSpectrum'; enabled: boolean };
 
 export interface RemoteState {
   state: 'stopped' | 'loading' | 'playing' | 'paused';
@@ -46,4 +88,5 @@ export interface RemoteState {
   isSignedIn: boolean;
   downloadPath: string;
   downloadQueueBusy: boolean;
+  visualizer: VisualizerSettings;
 }

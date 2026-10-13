@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { Loader2, Copy, Check } from 'lucide-react';
+import { Loader2, Copy, Check, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import QRCode from 'react-qr-code';
@@ -7,6 +7,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useSettingsStore } from '@/features/settings/store';
 import { useRemoteStore } from '../store';
 
@@ -16,6 +17,13 @@ export function RemoteControlSettings() {
   const serverInfo = useRemoteStore((s) => s.serverInfo);
   const starting = useRemoteStore((s) => s.starting);
   const [copied, setCopied] = useState(false);
+  const [confirmingReset, setConfirmingReset] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  function disableAfterFailure(messageKey: string) {
+    useSettingsStore.getState().setRemoteControlEnabled(false);
+    toast.error(t(messageKey));
+  }
 
   async function handleToggle(enabled: boolean) {
     useSettingsStore.getState().setRemoteControlEnabled(enabled);
@@ -23,8 +31,7 @@ export function RemoteControlSettings() {
       try {
         await useRemoteStore.getState().enable();
       } catch {
-        useSettingsStore.getState().setRemoteControlEnabled(false);
-        toast.error(t('settings.remote.startError'));
+        disableAfterFailure('settings.remote.startError');
       }
     } else {
       await useRemoteStore.getState().disable();
@@ -37,6 +44,19 @@ export function RemoteControlSettings() {
     setCopied(true);
     toast.success(t('settings.remote.urlCopied'));
     setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleResetLink() {
+    setResetting(true);
+    try {
+      await useRemoteStore.getState().resetLink();
+      toast.success(t('settings.remote.resetLinkSuccess'));
+    } catch {
+      disableAfterFailure('settings.remote.resetLinkError');
+    } finally {
+      setResetting(false);
+      setConfirmingReset(false);
+    }
   }
 
   return (
@@ -73,6 +93,20 @@ export function RemoteControlSettings() {
               </Button>
             </div>
             <p className="text-sm text-muted-foreground text-center">{t('settings.remote.scanInstructions')}</p>
+            <Button variant="outline" size="sm" onClick={() => setConfirmingReset(true)}>
+              <RefreshCw className="h-4 w-4" />
+              {t('settings.remote.resetLink')}
+            </Button>
+            <p className="text-xs text-muted-foreground text-center">{t('settings.remote.resetLinkDescription')}</p>
+            <ConfirmDialog
+              open={confirmingReset}
+              onOpenChange={setConfirmingReset}
+              title={t('settings.remote.resetLinkConfirmTitle')}
+              description={t('settings.remote.resetLinkConfirmDescription')}
+              confirmLabel={t('settings.remote.resetLinkConfirm')}
+              onConfirm={() => void handleResetLink()}
+              isLoading={resetting}
+            />
           </div>
         </>
       )}

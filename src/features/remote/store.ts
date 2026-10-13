@@ -9,6 +9,7 @@ interface RemoteStore {
   downloadedTrackIds: number[];
   enable: () => Promise<void>;
   disable: () => Promise<void>;
+  resetLink: () => Promise<void>;
   markDownloading: (trackId: number) => void;
   clearDownloading: (trackId: number) => void;
   markDownloaded: (trackId: number) => void;
@@ -43,5 +44,16 @@ export const useRemoteStore = create<RemoteStore>()((set, get) => ({
       void logger.error(`[remote] Failed to stop server: ${result.error.message}`);
     }
     set({ serverInfo: null });
+  },
+  resetLink: async () => {
+    void logger.info('[remote] Resetting link');
+    const result = await commands.resetRemoteLink();
+    if (result.status === 'error') {
+      void logger.error(`[remote] Failed to reset link: ${result.error.message}`);
+      set({ serverInfo: null });
+      throw new Error(result.error.message);
+    }
+    set({ serverInfo: result.data });
+    void logger.info(`[remote] Link reset, server now on port ${result.data?.port ?? 'n/a'}`);
   },
 }));

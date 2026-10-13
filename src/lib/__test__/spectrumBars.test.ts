@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isSettled, smoothTowards, withTaperedTail } from '../utils/spectrumBars';
+import { isSettled, smoothTowards, withTaperedTail } from '@/lib/spectrumBars';
 
 describe('smoothTowards', () => {
   it('jumps straight to the target when the band count changes', () => {

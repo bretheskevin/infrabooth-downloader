@@ -12,7 +12,7 @@ import { useQueueStore } from '@/features/queue/store';
 import { isDownloadQueueBusy } from '@/features/queue/utils/queueBusy';
 import { startPlaylistDownload } from '@/features/queue/utils/startPlaylistDownload';
 import { trackInfoToQueueTrack } from '@/features/queue/utils/transforms';
-import type { RemoteCommand, RemoteState } from '@/lib/remote-protocol';
+import { sanitizeVisualizerSettings, type RemoteCommand, type RemoteState } from '@/lib/remote-protocol';
 
 function resolveTheme(theme: Theme): 'light' | 'dark' {
   if (theme !== 'system') return theme;
@@ -85,6 +85,12 @@ function downloadRemotePlaylist({ title, tracks, outputDir }: DownloadPlaylistCo
   void startPlaylistDownload(tracks.map(trackInfoToQueueTrack), title, outputDir);
 }
 
+function applyVisualizerSettings(received: unknown): void {
+  const settings = sanitizeVisualizerSettings(received);
+  void logger.info(`[remote] setVisualizerSettings received=${JSON.stringify(received)} resolved=${JSON.stringify(settings)}`);
+  useSettingsStore.getState().setVisualizerSettings(settings);
+}
+
 export function dispatchCommand(cmd: RemoteCommand): void {
   const s = usePlayerStore.getState();
   switch (cmd.type) {
@@ -133,13 +139,16 @@ export function dispatchCommand(cmd: RemoteCommand): void {
     case 'downloadPlaylist':
       downloadRemotePlaylist(cmd);
       break;
+    case 'setVisualizerSettings':
+      applyVisualizerSettings(cmd.settings);
+      break;
   }
 }
 
 export function buildRemoteState(): RemoteState {
   const { state, currentTrack, positionMs, durationMs, volume, queue, cursor, isShuffled, manualQueueCount, stationQueueCount } =
     usePlayerStore.getState();
-  const { language, theme, downloadPath } = useSettingsStore.getState();
+  const { language, theme, downloadPath, visualizerSettings } = useSettingsStore.getState();
   const { downloadingTrackIds, downloadedTrackIds } = useRemoteStore.getState();
   const { isSignedIn } = useAuthStore.getState();
   return {
@@ -160,6 +169,7 @@ export function buildRemoteState(): RemoteState {
     isSignedIn,
     downloadPath,
     downloadQueueBusy: isDownloadQueueBusy(useQueueStore.getState()),
+    visualizer: visualizerSettings,
   };
 }
 
@@ -187,7 +197,13 @@ function subscribeToStoreChanges(): () => void {
       if (next.downloadingTrackIds !== prev.downloadingTrackIds || next.downloadedTrackIds !== prev.downloadedTrackIds) pushState();
     }),
     useSettingsStore.subscribe((next, prev) => {
-      if (next.language !== prev.language || next.theme !== prev.theme || next.downloadPath !== prev.downloadPath) pushState();
+      if (
+        next.language !== prev.language ||
+        next.theme !== prev.theme ||
+        next.downloadPath !== prev.downloadPath ||
+        next.visualizerSettings !== prev.visualizerSettings
+      )
+        pushState();
     }),
     useAuthStore.subscribe((next, prev) => {
       if (next.isSignedIn !== prev.isSignedIn) pushState();

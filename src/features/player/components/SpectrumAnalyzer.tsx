@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@/lib/utils';
-import { subscribeSpectrum } from '../utils/spectrumBus';
-import { isSettled, smoothTowards, withTaperedTail } from '../utils/spectrumBars';
+import { subscribeSpectrum } from '@/lib/spectrumBus';
+import { isSettled, smoothTowards, withTaperedTail } from '@/lib/spectrumBars';
 
 const BAR_GAP = 2;
 const BAR_OPACITY = 0.275;

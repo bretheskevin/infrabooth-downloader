@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import type { AnimationEvent } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { RemoteState, RemoteCommand } from '@/lib/remote-protocol';
 import { t } from '@remote/lib/i18n';
+import PanelIconButton from '@remote/components/PanelIconButton';
 import QueueList from './QueueList';
 
 interface Props {
@@ -36,9 +36,9 @@ export default function QueuePanel({ state, send, language, onClose }: Props) {
             {state?.queue.length ?? 0} {t('tracks', language)}
           </p>
         </div>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground" onClick={() => setClosing(true)}>
+        <PanelIconButton aria-label={t('close', language)} onClick={() => setClosing(true)}>
           <ChevronDown />
-        </Button>
+        </PanelIconButton>
       </div>
       <div className="flex-1 overflow-y-auto">
         <QueueList state={state} send={send} language={language} />

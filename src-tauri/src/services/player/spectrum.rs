@@ -232,6 +232,7 @@ fn run_worker(app: tauri::AppHandle, spectrum: Arc<SharedSpectrum>, mut consumer
         }
         if !silent || emitting {
             crate::services::events::emit_player_spectrum(&app, spectrum.generation(), &bands);
+            crate::services::remote::publish_spectrum(&app, &bands);
             emitting = !silent;
         }
         std::thread::sleep(FRAME_INTERVAL.saturating_sub(frame_start.elapsed()));

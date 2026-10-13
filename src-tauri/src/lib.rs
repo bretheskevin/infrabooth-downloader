@@ -18,7 +18,7 @@ use commands::{
     mark_conversation_read, mark_notifications_seen, open_in_firefox, player_cancel_crossfade, player_destroy, player_load, player_pause, player_play,
     player_preload_next, player_preload_segments, player_purge_cache, player_seek, player_set_dock_state, player_set_equalizer, player_set_media_metadata,
     player_set_volume, player_settle_crossfade, player_start_crossfade, player_stop, post_comment, push_remote_state, quit_rekordbox, refresh_auth,
-    remove_playlist_from_library_cache, remove_track_from_playlist, resolve_library_artwork, resolve_message_embed, resolve_playback_url,
+    remove_playlist_from_library_cache, remove_track_from_playlist, reset_remote_link, resolve_library_artwork, resolve_message_embed, resolve_playback_url,
     resolve_soundcloud_link, resolve_user, respond_to_rate_limit_choice, restore_rekordbox_backup, scan_existing_tracks, search_albums, search_playlists,
     search_tracks, search_users, send_message, sign_out, start_download_queue, start_remote_server, stop_remote_server, test_ffmpeg, unfollow_user,
     unlike_playlist, unlike_track, update_playlist, validate_download_path, validate_soundcloud_url, RekordboxExportCancellation,
@@ -263,6 +263,7 @@ pub fn run() {
             clear_liked_tracks_cache,
             start_remote_server,
             stop_remote_server,
+            reset_remote_link,
             push_remote_state,
             is_local_api_active,
         ]);

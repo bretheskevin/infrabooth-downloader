@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { emitSpectrum, subscribeSpectrum } from '../utils/spectrumBus';
+import { emitSpectrum, subscribeSpectrum } from '@/lib/spectrumBus';
 
 describe('spectrumBus', () => {
   it('delivers bands to subscribers', () => {

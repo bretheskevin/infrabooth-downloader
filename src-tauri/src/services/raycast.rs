@@ -1,11 +1,11 @@
-use std::io::{self, Write};
+use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
 
-use crate::services::remote;
+use crate::services::{private_file, remote, remote_link};
 
 const DISCOVERY_FILE_NAME: &str = "raycast.json";
 
@@ -70,19 +70,8 @@ fn should_start_local_api() -> bool {
 }
 
 fn write_discovery_file(dir: &Path, port: u16, token: &str) -> io::Result<PathBuf> {
-    std::fs::create_dir_all(dir)?;
     let json = serde_json::to_vec(&Discovery { port, token }).map_err(io::Error::other)?;
-    let mut temp = tempfile::NamedTempFile::new_in(dir)?;
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        temp.as_file().set_permissions(std::fs::Permissions::from_mode(0o600))?;
-    }
-    temp.write_all(&json)?;
-    temp.as_file().sync_all()?;
-    let path = dir.join(DISCOVERY_FILE_NAME);
-    temp.persist(&path).map_err(|e| e.error)?;
-    Ok(path)
+    private_file::write_atomic_private(dir, DISCOVERY_FILE_NAME, &json)
 }
 
 fn delete_discovery_file(dir: &Path) -> io::Result<bool> {
@@ -104,7 +93,7 @@ pub fn remove_discovery_file(app: &AppHandle) {
     match delete_discovery_file(&dir) {
         Ok(true) => log::info!("[raycast] discovery file removed from {}", dir.display()),
         Ok(false) => log::debug!("[raycast] no discovery file to remove in {}", dir.display()),
-        Err(e) => log::error!("[raycast] discovery file removal failed in {}: kind={:?} os_error={:?} {e}", dir.display(), e.kind(), e.raw_os_error()),
+        Err(e) => log::error!("[raycast] discovery file removal failed in {}: {}", dir.display(), private_file::describe_io_error(&e)),
     }
 }
 
@@ -119,7 +108,7 @@ pub fn init(app: &AppHandle) {
 }
 
 async fn launch(app: AppHandle) {
-    let token = remote::generate_token();
+    let token = remote_link::generate_token();
     let port = match remote::start_local_api(&app, token.clone()).await {
         Ok(port) => port,
         Err(e) => {
@@ -135,11 +124,8 @@ async fn launch(app: AppHandle) {
             return;
         }
     };
-    let write_dir = dir.clone();
-    match tokio::task::spawn_blocking(move || write_discovery_file(&write_dir, port, &token)).await {
-        Ok(Ok(path)) => log::info!("[raycast] discovery file written to {} (port {port})", path.display()),
-        Ok(Err(e)) => log::error!("[raycast] discovery file write failed in {}: kind={:?} os_error={:?} {e}", dir.display(), e.kind(), e.raw_os_error()),
-        Err(e) => log::error!("[raycast] discovery file write task failed in {}: {e}", dir.display()),
+    if let Some(path) = private_file::write_off_thread("raycast", "discovery file", dir, move |dir| write_discovery_file(dir, port, &token)).await {
+        log::info!("[raycast] discovery file written to {} (port {port})", path.display());
     }
 }
 

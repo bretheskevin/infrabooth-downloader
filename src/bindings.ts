@@ -906,6 +906,14 @@ async stopRemoteServer() : Promise<Result<null, ErrorResponse>> {
     else return { status: "error", error: e  as any };
 }
 },
+async resetRemoteLink() : Promise<Result<RemoteServerInfo | null, ErrorResponse>> {
+    try {
+    return { status: "ok", data: await TAURI_INVOKE("reset_remote_link") };
+} catch (e) {
+    if(e instanceof Error) throw e;
+    else return { status: "error", error: e  as any };
+}
+},
 async pushRemoteState(stateJson: string) : Promise<Result<null, ErrorResponse>> {
     try {
     return { status: "ok", data: await TAURI_INVOKE("push_remote_state", { stateJson }) };

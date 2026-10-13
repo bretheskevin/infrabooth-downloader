@@ -7,7 +7,7 @@ import { audioEngine } from '../audio-engine';
 import { DOCK_SETTING_EVENT, handleDockSetting, subscribeDockMenu } from '../utils/dockMenu';
 import { subscribeEqualizer } from '../utils/equalizerSync';
 import { PLAYER_MEDIA_KEY_EVENT, handleMediaKey, syncMediaMetadata } from '../utils/mediaControls';
-import { emitSpectrum } from '../utils/spectrumBus';
+import { emitSpectrum } from '@/lib/spectrumBus';
 
 export function usePlayerEvents(): void {
   useEffect(() => {

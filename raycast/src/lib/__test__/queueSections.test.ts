@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { RemoteState, RemoteTrack } from "../../shared/remote-protocol";
+import { DEFAULT_VISUALIZER_SETTINGS, type RemoteState, type RemoteTrack } from "../../shared/remote-protocol";
 import { buildQueueSections } from "../queueSections";
 
 const track = (trackId: number): RemoteTrack => ({
@@ -31,6 +31,7 @@ const state = (overrides: Partial<RemoteState>): RemoteState => ({
   isSignedIn: true,
   downloadPath: "",
   downloadQueueBusy: false,
+  visualizer: DEFAULT_VISUALIZER_SETTINGS,
   ...overrides,
 });
 

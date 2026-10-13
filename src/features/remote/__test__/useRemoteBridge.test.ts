@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { listen } from '@tauri-apps/api/event';
-import type { RemoteTrack } from '@/lib/remote-protocol';
+import { DEFAULT_VISUALIZER_SETTINGS, type RemoteTrack } from '@/lib/remote-protocol';
 import { createMockTrackInfo } from '@/test/factories';
 import { createQueryWrapper } from '@/test/queryWrapper';
 
@@ -21,6 +21,8 @@ const {
   mockStartPlaylistDownload,
   mockIsLocalApiActive,
   mockPushRemoteState,
+  mockSetVisualizerSettings,
+  mockVisualizerSettings,
   remoteStoreState,
   queueStoreState,
 } = vi.hoisted(() => ({
@@ -38,6 +40,8 @@ const {
   mockStartPlaylistDownload: vi.fn().mockResolvedValue(undefined),
   mockIsLocalApiActive: vi.fn().mockResolvedValue(false),
   mockPushRemoteState: vi.fn().mockResolvedValue({ status: 'ok', data: null }),
+  mockSetVisualizerSettings: vi.fn(),
+  mockVisualizerSettings: { style: 'mirrored', showTrackInfo: true, blurredBackground: false, artworkColor: true } as const,
   remoteStoreState: { serverInfo: null as { url: string; port: number; token: string } | null },
   queueStoreState: { isProcessing: false, isCancelling: false, isComplete: false, failedCount: 0 },
 }));
@@ -100,8 +104,10 @@ vi.mock('@/features/settings/store', () => {
     language: 'en',
     theme: 'dark',
     downloadPath: '/downloads',
+    visualizerSettings: mockVisualizerSettings,
     remoteControlEnabled: false,
     setRemoteControlEnabled: vi.fn(),
+    setVisualizerSettings: mockSetVisualizerSettings,
   }));
   const useSettingsStore = Object.assign((selector: (s: ReturnType<typeof getState>) => unknown) => selector(getState()), {
     getState,
@@ -272,6 +278,17 @@ describe('dispatchCommand', () => {
     expect(mockStartPlaylistDownload).toHaveBeenCalledWith([trackInfoToQueueTrack(info)], 'My Set', '/custom');
   });
 
+  it('stores the visualizer settings sent by a remote', () => {
+    const settings = { style: 'wave' as const, showTrackInfo: false, blurredBackground: true, artworkColor: false };
+    dispatchCommand({ type: 'setVisualizerSettings', settings });
+    expect(mockSetVisualizerSettings).toHaveBeenCalledWith(settings);
+  });
+
+  it('sanitizes malformed visualizer settings before storing them', () => {
+    dispatchCommand({ type: 'setVisualizerSettings', settings: { style: 'laser', showTrackInfo: 'no' } as never });
+    expect(mockSetVisualizerSettings).toHaveBeenCalledWith(DEFAULT_VISUALIZER_SETTINGS);
+  });
+
   it('ignores a playlist download while the download queue is busy', () => {
     queueStoreState.isProcessing = true;
     dispatchCommand({ type: 'downloadPlaylist', title: 'My Set', tracks: [createMockTrackInfo()] });
@@ -300,6 +317,7 @@ describe('buildRemoteState', () => {
       isSignedIn: false,
       downloadPath: '/downloads',
       downloadQueueBusy: false,
+      visualizer: mockVisualizerSettings,
     });
   });
 
@@ -373,7 +391,10 @@ describe('useRemoteBridge activation', () => {
     expect(mockPushRemoteState).toHaveBeenCalledTimes(1);
   });
 
-  it('pushes when the download path setting changes', async () => {
+  it.each([
+    { field: 'downloadPath', next: '/new' },
+    { field: 'visualizerSettings', next: { ...mockVisualizerSettings, style: 'wave' } },
+  ] as const)('pushes when the $field setting changes', async ({ field, next }) => {
     mockIsLocalApiActive.mockResolvedValue(true);
     renderHook(() => useRemoteBridge(), { wrapper: createQueryWrapper() });
     await waitFor(() => expect(useSettingsStore.subscribe).toHaveBeenCalled());
@@ -382,7 +403,7 @@ describe('useRemoteBridge activation', () => {
     mockPushRemoteState.mockClear();
     const base = useSettingsStore.getState();
     const asSettings = (s: object) => s as unknown as SettingsState;
-    listener(asSettings({ ...base, downloadPath: '/new' }), asSettings({ ...base, downloadPath: '/downloads' }));
+    listener(asSettings({ ...base, [field]: next }), asSettings(base));
     expect(mockPushRemoteState).toHaveBeenCalledTimes(1);
   });
 });

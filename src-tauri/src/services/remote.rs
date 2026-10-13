@@ -1,7 +1,8 @@
 use std::future::Future;
+use std::path::PathBuf;
 
 use axum::{
-    body::Body,
+    body::{Body, Bytes},
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         Path as AxumPath, Query, State as AxumState,
@@ -19,8 +20,9 @@ use tokio::sync::{broadcast, mpsc, oneshot, watch, Mutex};
 
 use crate::models::error::ResolveLinkError;
 use crate::services::playlist_tracks_cache::PlaylistTracksCache;
+use crate::services::remote_link::{self, RemoteLink};
 use crate::services::resolve_link::{self, ResolvedLink};
-use crate::services::{client_id, events, library, playlist, search, selections};
+use crate::services::{client_id, events, library, paths, playlist, private_file, search, selections};
 
 #[derive(Embed)]
 #[folder = "remote-dist/"]
@@ -39,16 +41,20 @@ pub struct RunningServer {
     pub port: u16,
 }
 
+const SPECTRUM_CHANNEL_CAPACITY: usize = 4;
+
 pub struct RemoteHub {
     state_tx: broadcast::Sender<String>,
     last_state: watch::Sender<Option<String>>,
+    spectrum_tx: broadcast::Sender<Bytes>,
 }
 
 impl Default for RemoteHub {
     fn default() -> Self {
         let (state_tx, _) = broadcast::channel(64);
         let (last_state, _) = watch::channel(None);
-        Self { state_tx, last_state }
+        let (spectrum_tx, _) = broadcast::channel(SPECTRUM_CHANNEL_CAPACITY);
+        Self { state_tx, last_state, spectrum_tx }
     }
 }
 
@@ -56,6 +62,13 @@ impl RemoteHub {
     pub fn publish(&self, state_json: String) {
         self.last_state.send_replace(Some(state_json.clone()));
         let _ = self.state_tx.send(state_json);
+    }
+
+    pub fn publish_spectrum(&self, bands: &[f32]) -> bool {
+        if self.spectrum_tx.receiver_count() == 0 {
+            return false;
+        }
+        self.spectrum_tx.send(Bytes::from(quantize_spectrum(bands))).is_ok()
     }
 }
 
@@ -69,6 +82,7 @@ struct AppState {
     token: String,
     app_handle: AppHandle,
     state_tx: broadcast::Sender<String>,
+    spectrum_tx: broadcast::Sender<Bytes>,
     last_state: watch::Receiver<Option<String>>,
     closed: watch::Receiver<()>,
 }
@@ -80,7 +94,7 @@ impl AppState {
 }
 
 struct ListenerConfig {
-    bind_addr: &'static str,
+    listener: tokio::net::TcpListener,
     token: String,
 }
 
@@ -196,6 +210,60 @@ async fn ws_handler(ws: WebSocketUpgrade, Query(params): Query<TokenQuery>, Axum
     ws.on_upgrade(move |socket| handle_ws(socket, state))
 }
 
+fn quantize_spectrum(bands: &[f32]) -> Vec<u8> {
+    bands.iter().map(|band| (band.clamp(0.0, 1.0) * 255.0).round() as u8).collect()
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "type", rename_all = "camelCase")]
+enum SocketControl {
+    SetSpectrum { enabled: bool },
+}
+
+fn parse_spectrum_toggle(text: &str) -> Option<bool> {
+    serde_json::from_str::<SocketControl>(text).ok().map(|SocketControl::SetSpectrum { enabled }| enabled)
+}
+
+fn apply_spectrum_toggle(spectrum_tx: &broadcast::Sender<Bytes>, spectrum_rx: &mut Option<broadcast::Receiver<Bytes>>, enabled: bool) {
+    match (enabled, spectrum_rx.is_some()) {
+        (true, false) => {
+            *spectrum_rx = Some(spectrum_tx.subscribe());
+            log::info!("[remote] spectrum subscribed (receivers={})", spectrum_tx.receiver_count());
+        }
+        (false, true) => {
+            *spectrum_rx = None;
+            log::info!("[remote] spectrum unsubscribed (receivers={})", spectrum_tx.receiver_count());
+        }
+        _ => log::debug!("[remote] spectrum toggle enabled={enabled} already applied"),
+    }
+}
+
+async fn next_spectrum_frame(spectrum_rx: &mut Option<broadcast::Receiver<Bytes>>) -> Result<Bytes, broadcast::error::RecvError> {
+    match spectrum_rx {
+        Some(rx) => rx.recv().await,
+        None => std::future::pending().await,
+    }
+}
+
+fn handle_incoming_text(state: &AppState, spectrum_rx: &mut Option<broadcast::Receiver<Bytes>>, text: &str) {
+    match parse_spectrum_toggle(text) {
+        Some(enabled) => apply_spectrum_toggle(&state.spectrum_tx, spectrum_rx, enabled),
+        None => {
+            let _ = state.app_handle.emit(events::REMOTE_COMMAND, text.to_string());
+        }
+    }
+}
+
+async fn forward_message(socket: &mut WebSocket, message: Message, kind: &str) -> bool {
+    match socket.send(message).await {
+        Ok(()) => true,
+        Err(e) => {
+            log::info!("[remote] {kind} send failed, closing websocket: {e}");
+            false
+        }
+    }
+}
+
 async fn handle_ws(mut socket: WebSocket, state: AppState) {
     let initial_state = state.last_state.borrow().clone();
     if let Some(current) = initial_state {
@@ -203,6 +271,7 @@ async fn handle_ws(mut socket: WebSocket, state: AppState) {
     }
 
     let mut broadcast_rx = state.state_tx.subscribe();
+    let mut spectrum_rx: Option<broadcast::Receiver<Bytes>> = None;
     let mut closed = state.closed.clone();
 
     loop {
@@ -213,9 +282,7 @@ async fn handle_ws(mut socket: WebSocket, state: AppState) {
             }
             msg = socket.recv() => {
                 match msg {
-                    Some(Ok(Message::Text(text))) => {
-                        let _ = state.app_handle.emit(events::REMOTE_COMMAND, text.to_string());
-                    }
+                    Some(Ok(Message::Text(text))) => handle_incoming_text(&state, &mut spectrum_rx, text.as_str()),
                     Some(Ok(Message::Close(_))) | None | Some(Err(_)) => break,
                     _ => {}
                 }
@@ -223,7 +290,7 @@ async fn handle_ws(mut socket: WebSocket, state: AppState) {
             result = broadcast_rx.recv() => {
                 match result {
                     Ok(state_json) => {
-                        if socket.send(Message::Text(state_json.into())).await.is_err() {
+                        if !forward_message(&mut socket, Message::Text(state_json.into()), "state").await {
                             break;
                         }
                     }
@@ -231,7 +298,25 @@ async fn handle_ws(mut socket: WebSocket, state: AppState) {
                     Err(broadcast::error::RecvError::Closed) => break,
                 }
             }
+            frame = next_spectrum_frame(&mut spectrum_rx) => {
+                match frame {
+                    Ok(bytes) => {
+                        if !forward_message(&mut socket, Message::Binary(bytes), "spectrum frame").await {
+                            break;
+                        }
+                    }
+                    Err(broadcast::error::RecvError::Lagged(_)) => {}
+                    Err(broadcast::error::RecvError::Closed) => {
+                        log::warn!("[remote] spectrum channel closed, dropping socket subscription");
+                        spectrum_rx = None;
+                    }
+                }
+            }
         }
+    }
+
+    if spectrum_rx.take().is_some() {
+        log::info!("[remote] websocket closed, spectrum unsubscribed (receivers={})", state.spectrum_tx.receiver_count());
     }
 }
 
@@ -715,17 +800,23 @@ async fn serve<F>(app_handle: &AppHandle, config: ListenerConfig, shutdown: F) -
 where
     F: Future<Output = ()> + Send + 'static,
 {
-    let ListenerConfig { bind_addr, token } = config;
+    let ListenerConfig { listener, token } = config;
     let hub = app_handle.state::<RemoteHub>();
     let (closed_tx, closed_rx) = watch::channel(());
-    let app_state =
-        AppState { token, app_handle: app_handle.clone(), state_tx: hub.state_tx.clone(), last_state: hub.last_state.subscribe(), closed: closed_rx };
+    let app_state = AppState {
+        token,
+        app_handle: app_handle.clone(),
+        state_tx: hub.state_tx.clone(),
+        spectrum_tx: hub.spectrum_tx.clone(),
+        last_state: hub.last_state.subscribe(),
+        closed: closed_rx,
+    };
 
-    let listener = tokio::net::TcpListener::bind(bind_addr).await.map_err(|e| {
-        log::error!("[remote] bind {bind_addr} failed: kind={:?} os_error={:?} {e}", e.kind(), e.raw_os_error());
+    let local_addr = listener.local_addr().map_err(|e| {
+        log::error!("[remote] local_addr failed: {}", private_file::describe_io_error(&e));
         e.to_string()
     })?;
-    let port = listener.local_addr().map_err(|e| e.to_string())?.port();
+    let port = local_addr.port();
 
     // Upgraded websockets outlive axum's graceful shutdown, so they watch `closed` to drop with their listener.
     let server = axum::serve(listener, build_router(app_state)).with_graceful_shutdown(async move {
@@ -734,59 +825,109 @@ where
     });
     tokio::spawn(async move {
         if let Err(e) = server.await {
-            log::error!("[remote] server error on {bind_addr}: {e}");
+            log::error!("[remote] server error on {local_addr}: {e}");
         }
     });
 
-    log::info!("[remote] listener bound on {bind_addr} (port {port})");
+    log::info!("[remote] listener bound on {local_addr}");
     Ok(port)
 }
 
-pub async fn start_server(app_handle: AppHandle) -> Result<RemoteServerInfo, String> {
-    let token = generate_token();
-    let lan_ip = local_ip_address::local_ip().map_err(|e| e.to_string())?;
+fn bind_error(addr: &str, e: std::io::Error) -> String {
+    log::error!("[remote] bind {addr} failed: {}", private_file::describe_io_error(&e));
+    e.to_string()
+}
+
+fn link_dir(app_handle: &AppHandle) -> Option<PathBuf> {
+    paths::get_app_data_dir(app_handle).inspect_err(|e| log::error!("[remote] {e}, link will not be persisted")).ok()
+}
+
+async fn persist_link(dir: Option<PathBuf>, link: RemoteLink) {
+    let Some(dir) = dir else { return };
+    let port = link.port;
+    if let Some(path) = private_file::write_off_thread("remote", "link", dir, move |dir| remote_link::save(dir, &link)).await {
+        log::info!("[remote] link saved to {} (port {port})", path.display());
+    }
+}
+
+async fn start_with_link(app_handle: &AppHandle, slot: &mut Option<RunningServer>, link: RemoteLink, dir: Option<PathBuf>) -> Result<RemoteServerInfo, String> {
+    let lan_ip = local_ip_address::local_ip().map_err(|e| {
+        log::error!("[remote] LAN IP lookup failed: {e}");
+        e.to_string()
+    })?;
+    let listener = remote_link::bind_lan(link.port).await.map_err(|e| bind_error(&format!("0.0.0.0 (preferred port {})", link.port), e))?;
     let (shutdown_tx, shutdown_rx) = oneshot::channel();
 
-    let config = ListenerConfig { bind_addr: "0.0.0.0:0", token: token.clone() };
-    let port = serve(&app_handle, config, async move {
+    let config = ListenerConfig { listener, token: link.token.clone() };
+    let port = serve(app_handle, config, async move {
         let _ = shutdown_rx.await;
     })
     .await?;
 
-    let url = format!("http://{}:{}/?t={}", lan_ip, port, token);
+    if port != link.port {
+        persist_link(dir, RemoteLink { port, token: link.token.clone() }).await;
+    }
 
-    let server_state = app_handle.state::<RemoteServerState>();
-    let mut guard = server_state.inner.lock().await;
-    *guard = Some(RunningServer { shutdown_tx, port });
-
+    let url = format!("http://{}:{}/?t={}", lan_ip, port, link.token);
+    *slot = Some(RunningServer { shutdown_tx, port });
     log::info!("[remote] server started on port {}", port);
 
-    Ok(RemoteServerInfo { url, port, token })
+    Ok(RemoteServerInfo { url, port, token: link.token })
+}
+
+fn stop_running(slot: &mut Option<RunningServer>) -> bool {
+    let Some(server) = slot.take() else { return false };
+    let _ = server.shutdown_tx.send(());
+    log::info!("[remote] server stopped on port {}", server.port);
+    true
+}
+
+// The lifecycle lock is held across bind/serve so a concurrent stop or reset cannot slip between
+// stopping the old listener and registering the new one (which would orphan a running server).
+pub async fn start_server(app_handle: AppHandle) -> Result<RemoteServerInfo, String> {
+    let server_state = app_handle.state::<RemoteServerState>();
+    let mut slot = server_state.inner.lock().await;
+    if stop_running(&mut slot) {
+        log::info!("[remote] start requested while running, restarting with the saved link");
+    }
+    let dir = link_dir(&app_handle);
+    let link = dir.as_deref().map(remote_link::load_or_fresh).unwrap_or_else(RemoteLink::fresh);
+    start_with_link(&app_handle, &mut slot, link, dir).await
+}
+
+pub async fn reset_link(app_handle: AppHandle) -> Result<Option<RemoteServerInfo>, String> {
+    let server_state = app_handle.state::<RemoteServerState>();
+    let mut slot = server_state.inner.lock().await;
+    let was_running = stop_running(&mut slot);
+    log::info!("[remote] resetting link (server was running: {was_running})");
+    let dir = link_dir(&app_handle);
+    let link = RemoteLink::fresh();
+    persist_link(dir.clone(), link.clone()).await;
+    if !was_running {
+        return Ok(None);
+    }
+    start_with_link(&app_handle, &mut slot, link, dir).await.map(Some)
 }
 
 pub async fn start_local_api(app_handle: &AppHandle, token: String) -> Result<u16, String> {
-    let config = ListenerConfig { bind_addr: "127.0.0.1:0", token };
-    serve(app_handle, config, std::future::pending()).await
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.map_err(|e| bind_error("127.0.0.1:0", e))?;
+    serve(app_handle, ListenerConfig { listener, token }, std::future::pending()).await
 }
 
 pub async fn stop_server(app_handle: &AppHandle) {
     let server_state = app_handle.state::<RemoteServerState>();
-    let mut guard = server_state.inner.lock().await;
-    if let Some(server) = guard.take() {
-        let _ = server.shutdown_tx.send(());
-        log::info!("[remote] server stopped on port {}", server.port);
-    }
+    let mut slot = server_state.inner.lock().await;
+    stop_running(&mut slot);
 }
 
 pub fn broadcast_state(app_handle: &AppHandle, state_json: String) {
     app_handle.state::<RemoteHub>().publish(state_json);
 }
 
-pub(crate) fn generate_token() -> String {
-    use rand::Rng;
-    let mut bytes = [0u8; 16];
-    rand::rng().fill_bytes(&mut bytes);
-    bytes.iter().map(|b| format!("{:02x}", b)).collect()
+pub fn publish_spectrum(app_handle: &AppHandle, bands: &[f32]) {
+    if let Some(hub) = app_handle.try_state::<RemoteHub>() {
+        hub.publish_spectrum(bands);
+    }
 }
 
 #[cfg(test)]
@@ -942,6 +1083,71 @@ mod tests {
     fn search_query_page_clamps_limit() -> TestResult {
         assert_eq!(search_query("http://x/api/search?q=a&token=t&limit=500")?.page(), (50, 0));
         assert_eq!(search_query("http://x/api/search?q=a&token=t&limit=0")?.page(), (1, 0));
+        Ok(())
+    }
+
+    #[test]
+    fn quantize_spectrum_maps_unit_range_to_bytes() {
+        assert_eq!(quantize_spectrum(&[0.0, 0.5, 1.0, 1.5, -0.2]), vec![0u8, 128, 255, 255, 0]);
+    }
+
+    #[test]
+    fn parse_spectrum_toggle_reads_set_spectrum() {
+        assert_eq!(parse_spectrum_toggle(r#"{"type":"setSpectrum","enabled":true}"#), Some(true));
+        assert_eq!(parse_spectrum_toggle(r#"{"type":"setSpectrum","enabled":false}"#), Some(false));
+    }
+
+    #[test]
+    fn parse_spectrum_toggle_ignores_other_messages() {
+        assert_eq!(parse_spectrum_toggle(r#"{"type":"pause"}"#), None);
+        assert_eq!(parse_spectrum_toggle(r#"{"type":"setSpectrum"}"#), None);
+        assert_eq!(parse_spectrum_toggle("not json"), None);
+    }
+
+    #[test]
+    fn apply_spectrum_toggle_subscribes_once_and_unsubscribes() {
+        let (tx, _) = broadcast::channel::<Bytes>(4);
+        let mut rx = None;
+        apply_spectrum_toggle(&tx, &mut rx, true);
+        assert!(rx.is_some());
+        assert_eq!(tx.receiver_count(), 1);
+        apply_spectrum_toggle(&tx, &mut rx, true);
+        assert_eq!(tx.receiver_count(), 1);
+        apply_spectrum_toggle(&tx, &mut rx, false);
+        assert!(rx.is_none());
+        assert_eq!(tx.receiver_count(), 0);
+    }
+
+    #[test]
+    fn hub_publish_spectrum_skips_work_without_subscribers() {
+        let hub = RemoteHub::default();
+        assert!(!hub.publish_spectrum(&[0.5]));
+    }
+
+    #[test]
+    fn hub_publish_spectrum_delivers_quantized_frame() -> TestResult {
+        let hub = RemoteHub::default();
+        let mut rx = hub.spectrum_tx.subscribe();
+        assert!(hub.publish_spectrum(&[0.0, 0.5, 1.0]));
+        let frame = rx.try_recv()?;
+        assert_eq!(&frame[..], &[0u8, 128, 255]);
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn next_spectrum_frame_is_pending_without_subscription() {
+        let mut rx: Option<broadcast::Receiver<Bytes>> = None;
+        let result = tokio::time::timeout(std::time::Duration::from_millis(20), next_spectrum_frame(&mut rx)).await;
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn next_spectrum_frame_yields_published_frames() -> TestResult {
+        let hub = RemoteHub::default();
+        let mut rx = Some(hub.spectrum_tx.subscribe());
+        hub.publish_spectrum(&[1.0, 0.0]);
+        let frame = next_spectrum_frame(&mut rx).await?;
+        assert_eq!(&frame[..], &[255u8, 0]);
         Ok(())
     }
 }

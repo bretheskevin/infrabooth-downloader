@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { sendPlayToggle } from '@remote/lib/playToggle';
-import type { RemoteState, RemoteTrack } from '@/lib/remote-protocol';
+import { DEFAULT_VISUALIZER_SETTINGS, type RemoteState, type RemoteTrack } from '@/lib/remote-protocol';
 
 const track: RemoteTrack = {
   trackId: 1,
@@ -31,6 +31,7 @@ const makeState = (overrides: Partial<RemoteState> = {}): RemoteState => ({
   isSignedIn: false,
   downloadPath: '',
   downloadQueueBusy: false,
+  visualizer: DEFAULT_VISUALIZER_SETTINGS,
   ...overrides,
 });
 

@@ -14,9 +14,11 @@ pub mod oauth;
 pub mod paths;
 pub mod pipeline;
 pub mod player;
+pub mod private_file;
 pub mod rate_limit_choice;
 pub mod raycast;
 pub mod remote;
+pub mod remote_link;
 
 pub mod artist;
 pub mod artist_playlists;
