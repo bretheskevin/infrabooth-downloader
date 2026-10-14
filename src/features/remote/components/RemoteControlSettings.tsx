@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useSettingsStore } from '@/features/settings/store';
 import { useRemoteStore } from '../store';
+import { copyToClipboard } from '@/lib/clipboard';
 
 export function RemoteControlSettings() {
   const { t } = useTranslation();
@@ -40,7 +41,10 @@ export function RemoteControlSettings() {
 
   async function handleCopyUrl() {
     if (!serverInfo) return;
-    await navigator.clipboard.writeText(serverInfo.url);
+    if (!(await copyToClipboard(serverInfo.url, 'remote'))) {
+      toast.error(t('common.copyFailed'));
+      return;
+    }
     setCopied(true);
     toast.success(t('settings.remote.urlCopied'));
     setTimeout(() => setCopied(false), 2000);

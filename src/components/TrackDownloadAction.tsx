@@ -1,8 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import { Check, Download, Loader2, RotateCw } from 'lucide-react';
+import { Check, Download, Loader2, Lock, RotateCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { DownloadState } from '@/types/download';
+import { isDrmProtectedMessage } from '@/lib/errorMessages';
 
 interface TrackDownloadActionProps {
   state: DownloadState;
@@ -64,6 +65,25 @@ export function TrackDownloadAction({ state, onDownload, onRetry, variant = 'gho
         </TooltipTrigger>
         <TooltipContent side="left">
           <p>{t('library.detail.alreadyDownloaded')}</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  if (state.status === 'error' && isDrmProtectedMessage(state.error)) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div
+            className="h-8 w-8 rounded-md bg-warning/10 flex items-center justify-center text-warning"
+            aria-label={t('errors.drmProtected')}
+          >
+            <Lock className="h-4 w-4" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="left">
+          <p>{t('errors.drmProtected')}</p>
+          <p className="opacity-80">{t('errors.drmProtectedDetail')}</p>
         </TooltipContent>
       </Tooltip>
     );

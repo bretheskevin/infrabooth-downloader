@@ -4,6 +4,7 @@ import { useSettingsStore } from '@/features/settings/store';
 import { startDownloadQueue } from '@/features/queue/api/download';
 import { queueTrackToDownloadRequest } from '@/features/queue/utils/transforms';
 import { logger } from '@/lib/logger';
+import { isRetryableFailure } from '@/lib/errorMessages';
 
 interface UseRetryTracksReturn {
   isRetrying: boolean;
@@ -37,10 +38,10 @@ async function executeRetry(tracks: Track[], logMessage: string): Promise<void> 
 
 export function useRetryTracks(): UseRetryTracksReturn {
   const isRetrying = useQueueStore((state) => state.isRetrying);
-  const failedCount = useQueueStore((state) => state.failedCount);
+  const hasRetryableFailures = useQueueStore((state) => state.tracks.some(isRetryableFailure));
   const isProcessing = useQueueStore((state) => state.isProcessing);
 
-  const canRetry = failedCount > 0 && !isProcessing && !isRetrying;
+  const canRetry = hasRetryableFailures && !isProcessing && !isRetrying;
 
   const retryAllFailed = useCallback(async () => {
     const { prepareRetryFailed } = useQueueStore.getState();

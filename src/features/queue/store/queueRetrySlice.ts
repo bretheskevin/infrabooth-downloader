@@ -1,5 +1,6 @@
 import type { StateCreator } from 'zustand';
 import { logger } from '@/lib/logger';
+import { isRetryableFailure } from '@/lib/errorMessages';
 import type { QueueState, QueueRetrySlice } from './types';
 
 export const createQueueRetrySlice: StateCreator<QueueState, [], [], QueueRetrySlice> = (set, get) => ({
@@ -7,20 +8,22 @@ export const createQueueRetrySlice: StateCreator<QueueState, [], [], QueueRetryS
 
   prepareRetryFailed: () => {
     const { tracks } = get();
-    const failedTracks = tracks.filter((t) => t.status === 'failed');
+    const failedTracks = tracks.filter(isRetryableFailure);
+    const skippedCount = tracks.filter((t) => t.status === 'failed').length - failedTracks.length;
 
     if (failedTracks.length === 0) {
-      void logger.warn('[queueStore] No failed tracks to retry');
+      void logger.warn(`[queueStore] No retryable failed tracks (${skippedCount} DRM-protected skipped)`);
       return [];
     }
 
-    void logger.info(`[queueStore] Preparing retry for ${failedTracks.length} failed tracks`);
+    void logger.info(`[queueStore] Preparing retry for ${failedTracks.length} failed tracks (${skippedCount} DRM-protected skipped)`);
 
+    const retryIds = new Set(failedTracks.map((t) => t.id));
     set((s) => ({
-      tracks: s.tracks.map((track) => (track.status === 'failed' ? { ...track, status: 'pending' as const, error: undefined } : track)),
+      tracks: s.tracks.map((track) => (retryIds.has(track.id) ? { ...track, status: 'pending' as const, error: undefined } : track)),
       isComplete: false,
       isCancelled: false,
-      failedCount: 0,
+      failedCount: skippedCount,
       isRetrying: false,
     }));
 
@@ -29,10 +32,10 @@ export const createQueueRetrySlice: StateCreator<QueueState, [], [], QueueRetryS
 
   prepareRetrySingle: (trackId) => {
     const { tracks } = get();
-    const track = tracks.find((t) => t.id === trackId && t.status === 'failed');
+    const track = tracks.find((t) => t.id === trackId && isRetryableFailure(t));
 
     if (!track) {
-      void logger.warn(`[queueStore] Track ${trackId} not found or not failed`);
+      void logger.warn(`[queueStore] Track ${trackId} not found, not failed, or DRM-protected`);
       return null;
     }
 

@@ -27,9 +27,13 @@ vi.mock('@/lib/logger', () => ({
   },
 }));
 
+const failedTrack = { id: '1', status: 'failed', error: { code: 'DOWNLOAD_FAILED', message: 'ffmpeg exited' } };
+const drmTrack = { id: '2', status: 'failed', error: { code: 'DOWNLOAD_FAILED', message: 'DRM protected (FairPlay/Widevine CENC)' } };
+
 const createMockState = (overrides = {}) => ({
   isRetrying: false,
   failedCount: 0,
+  tracks: [] as unknown[],
   isProcessing: false,
   outputDir: '/test/downloads',
   prepareRetryFailed: vi.fn(() => []),
@@ -55,7 +59,7 @@ describe('useRetryTracks', () => {
     });
 
     it('should return false when processing', () => {
-      const mockState = createMockState({ failedCount: 2, isProcessing: true });
+      const mockState = createMockState({ failedCount: 2, isProcessing: true, tracks: [failedTrack] });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
 
@@ -64,7 +68,16 @@ describe('useRetryTracks', () => {
     });
 
     it('should return false when already retrying', () => {
-      const mockState = createMockState({ failedCount: 2, isRetrying: true });
+      const mockState = createMockState({ failedCount: 2, isRetrying: true, tracks: [failedTrack] });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
+
+      const { result } = renderHook(() => useRetryTracks());
+      expect(result.current.canRetry).toBe(false);
+    });
+
+    it('should return false when every failure is DRM-protected', () => {
+      const mockState = createMockState({ failedCount: 1, tracks: [drmTrack] });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
 
@@ -73,7 +86,7 @@ describe('useRetryTracks', () => {
     });
 
     it('should return true when has failures and not processing', () => {
-      const mockState = createMockState({ failedCount: 2 });
+      const mockState = createMockState({ failedCount: 2, tracks: [failedTrack, drmTrack] });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(useQueueStore).mockImplementation((selector: any) => (typeof selector === 'function' ? selector(mockState) : mockState));
 

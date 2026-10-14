@@ -7,7 +7,9 @@ import { RemoteControlSettings } from '../components/RemoteControlSettings';
 import { useSettingsStore } from '@/features/settings/store';
 import { useRemoteStore } from '../store';
 
-const { mockResetRemoteLink } = vi.hoisted(() => ({ mockResetRemoteLink: vi.fn() }));
+const { mockResetRemoteLink, mockWriteText } = vi.hoisted(() => ({ mockResetRemoteLink: vi.fn(), mockWriteText: vi.fn() }));
+
+vi.mock('@tauri-apps/plugin-clipboard-manager', () => ({ writeText: mockWriteText }));
 
 vi.mock('@/bindings', () => ({
   commands: {
@@ -63,5 +65,29 @@ describe('RemoteControlSettings reset link', () => {
     expect(useRemoteStore.getState().serverInfo).toBeNull();
     expect(useSettingsStore.getState().remoteControlEnabled).toBe(false);
     expect(screen.queryByTestId('qr')).toBeNull();
+  });
+});
+
+describe('RemoteControlSettings copy URL', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useRemoteStore.setState({ serverInfo: oldInfo, starting: false });
+    useSettingsStore.setState({ remoteControlEnabled: true });
+  });
+
+  it('copies the remote URL through the Tauri clipboard', async () => {
+    mockWriteText.mockResolvedValue(undefined);
+    render(<RemoteControlSettings />);
+    await userEvent.click(screen.getByRole('button', { name: 'settings.remote.copyUrl' }));
+    expect(mockWriteText).toHaveBeenCalledWith(oldInfo.url);
+    expect(toast.success).toHaveBeenCalledWith('settings.remote.urlCopied');
+  });
+
+  it('shows an error when the clipboard write fails', async () => {
+    mockWriteText.mockRejectedValue(new Error('denied'));
+    render(<RemoteControlSettings />);
+    await userEvent.click(screen.getByRole('button', { name: 'settings.remote.copyUrl' }));
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('common.copyFailed'));
+    expect(toast.success).not.toHaveBeenCalled();
   });
 });

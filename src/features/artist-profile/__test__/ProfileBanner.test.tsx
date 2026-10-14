@@ -28,12 +28,12 @@ vi.mock('../store', () => ({
   useArtistProfileStore: { getState: () => ({ goBack: mockGoBack }) },
 }));
 
+const { mockWriteText } = vi.hoisted(() => ({ mockWriteText: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('@tauri-apps/plugin-clipboard-manager', () => ({ writeText: mockWriteText }));
+
 describe('ProfileBanner', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.assign(navigator, {
-      clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
-    });
   });
 
   const defaults = {
@@ -96,6 +96,6 @@ describe('ProfileBanner', () => {
     render(<ProfileBanner {...defaults} />);
     await userEvent.pointer({ keys: '[MouseRight]', target: screen.getByText('Test Artist') });
     await userEvent.click(await screen.findByText('trackMenu.copyLink'));
-    expect(navigator.clipboard.writeText).toHaveBeenCalledWith('https://soundcloud.com/test-artist');
+    expect(mockWriteText).toHaveBeenCalledWith('https://soundcloud.com/test-artist');
   });
 });

@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { ERROR_CODE_TO_I18N_KEY, getErrorSeverity, isUnavailableError } from '@/lib/errorMessages';
+import { ERROR_CODE_TO_I18N_KEY, getErrorSeverity, isDrmProtectedError, isUnavailableError } from '@/lib/errorMessages';
 import type { TrackStatus } from '@/features/queue/types/track';
 import type { AppError } from '@/features/queue/types/errors';
 
@@ -25,6 +25,9 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
 
   const getStatusText = (): string => {
     if (status === 'failed' && error) {
+      if (isDrmProtectedError(error)) {
+        return t('errors.drmProtected');
+      }
       // Check for unavailable error first (DOWNLOAD_FAILED with unavailability patterns)
       if (isUnavailableError(error)) {
         return t('errors.trackUnavailable');
@@ -49,7 +52,7 @@ export function TrackStatusLabel({ status, error, className }: TrackStatusLabelP
   const getColorClass = (): string => {
     if (status === 'failed' && error) {
       // Unavailable tracks use warning color - external failure, not app error
-      if (isUnavailableError(error)) {
+      if (isUnavailableError(error) || isDrmProtectedError(error)) {
         return 'text-warning';
       }
       // Other warning-severity errors (geo-blocked)

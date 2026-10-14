@@ -9,6 +9,8 @@ import {
   isUnavailableError,
   getUnavailableMessage,
   getUnavailableDetail,
+  getErrorDisplayMessage,
+  getErrorDetailMessage,
 } from '../errorMessages';
 import type { TFunction } from 'i18next';
 import type { AppError } from '@/features/queue/types/errors';
@@ -305,6 +307,24 @@ describe('errorMessages', () => {
 
     it('should return the unavailable detail message', () => {
       expect(getUnavailableDetail(mockT)).toBe('This track may have been removed or made private');
+    });
+  });
+
+  describe('DRM protected errors', () => {
+    const mockT = ((key: string) => key) as TFunction;
+    const drmError: AppError = { code: 'DOWNLOAD_FAILED', message: 'DRM protected (FairPlay/Widevine CENC)' };
+
+    it('should return the DRM display message instead of the generic failure', () => {
+      expect(getErrorDisplayMessage(drmError, mockT)).toBe('errors.drmProtected');
+    });
+
+    it('should return the DRM detail message', () => {
+      expect(getErrorDetailMessage(drmError, mockT)).toBe('errors.drmProtectedDetail');
+    });
+
+    it('should keep the generic message for other download failures', () => {
+      const error: AppError = { code: 'DOWNLOAD_FAILED', message: 'ffmpeg exited with code 1' };
+      expect(getErrorDisplayMessage(error, mockT)).toBe('errors.downloadFailed');
     });
   });
 });

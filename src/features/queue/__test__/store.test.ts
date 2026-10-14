@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { useQueueStore } from '../store';
 import type { Track } from '@/features/queue/types/track';
 import type { QueueCompleteEvent } from '@/bindings';
+import { createMockTrack } from '@/test/factories';
 
 describe('queueStore', () => {
   const mockTracks: Track[] = [
@@ -320,6 +321,36 @@ describe('queueStore', () => {
       expect(state.isComplete).toBe(false);
       expect(state.completedCount).toBe(0);
       expect(state.failedCount).toBe(0);
+    });
+  });
+
+  describe('retry with DRM-protected tracks', () => {
+    const drmError = { code: 'DOWNLOAD_FAILED' as const, message: 'DRM protected (FairPlay/Widevine CENC)' };
+    const ffmpegError = { code: 'DOWNLOAD_FAILED' as const, message: 'ffmpeg exited with code 1' };
+
+    beforeEach(() => {
+      useQueueStore.setState({
+        tracks: [
+          createMockTrack({ id: 'track-1', status: 'failed', error: ffmpegError }),
+          createMockTrack({ id: 'track-2', status: 'failed', error: drmError }),
+        ],
+        failedCount: 2,
+      });
+    });
+
+    it('prepareRetryFailed should skip DRM-protected tracks', () => {
+      const retried = useQueueStore.getState().prepareRetryFailed();
+
+      expect(retried.map((t) => t.id)).toEqual(['track-1']);
+      const state = useQueueStore.getState();
+      expect(state.tracks.map((t) => t.status)).toEqual(['pending', 'failed']);
+      expect(state.tracks[1]?.error).toEqual(drmError);
+      expect(state.failedCount).toBe(1);
+    });
+
+    it('prepareRetrySingle should refuse a DRM-protected track', () => {
+      expect(useQueueStore.getState().prepareRetrySingle('track-2')).toBeNull();
+      expect(useQueueStore.getState().tracks[1]?.status).toBe('failed');
     });
   });
 });

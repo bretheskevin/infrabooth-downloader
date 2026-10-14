@@ -26,11 +26,13 @@ export function getErrorMessage(code: ErrorCode, t: TFunction): string {
 
 export function getErrorDisplayMessage(error: AppError | undefined, t: TFunction): string | null {
   if (!error) return null;
+  if (isDrmProtectedError(error)) return t('errors.drmProtected');
   return t(ERROR_CODE_TO_I18N_KEY[error.code] || 'errors.downloadFailed');
 }
 
 export function getErrorDetailMessage(error: AppError | undefined, t: TFunction): string | null {
   if (!error) return null;
+  if (isDrmProtectedError(error)) return t('errors.drmProtectedDetail');
   const detailKey = ERROR_CODE_TO_DETAIL_KEY[error.code];
   if (detailKey) {
     return t(detailKey);
@@ -93,11 +95,19 @@ export function getApiErrorMessage(error: unknown, t: TFunction, fallbackKey: st
 
 const DRM_PATTERNS = ['drm protected'] as const;
 
+export function isDrmProtectedMessage(message?: string): boolean {
+  const normalized = message?.toLowerCase() || '';
+  return DRM_PATTERNS.some((pattern) => normalized.includes(pattern));
+}
+
 export function isDrmProtectedError(error?: AppError): boolean {
   if (!error) return false;
   if (error.code !== 'DOWNLOAD_FAILED') return false;
-  const message = error.message?.toLowerCase() || '';
-  return DRM_PATTERNS.some((pattern) => message.includes(pattern));
+  return isDrmProtectedMessage(error.message);
+}
+
+export function isRetryableFailure(track: { status: string; error?: AppError }): boolean {
+  return track.status === 'failed' && !isDrmProtectedError(track.error);
 }
 
 /**

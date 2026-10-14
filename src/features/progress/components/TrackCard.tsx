@@ -8,7 +8,9 @@ import { GeoBlockTooltip } from './GeoBlockTooltip';
 import { GeoBlockDetails } from './GeoBlockDetails';
 import { UnavailableTrackTooltip } from './UnavailableTrackTooltip';
 import { UnavailableTrackDetails } from './UnavailableTrackDetails';
-import { isGeoBlockedError, isUnavailableError } from '@/lib/errorMessages';
+import { StatusTooltip } from './StatusTooltip';
+import { StatusDetails } from './StatusDetails';
+import { isDrmProtectedError, isGeoBlockedError, isUnavailableError } from '@/lib/errorMessages';
 import { useTranslation } from 'react-i18next';
 import type { Track } from '@/features/queue/types/track';
 
@@ -25,6 +27,7 @@ export const TrackCard = memo(function TrackCard({ track, isCurrentTrack, isInit
   const isActive = track.status === 'downloading' || track.status === 'converting';
   const isGeoBlocked = isGeoBlockedError(track.error);
   const isUnavailable = isUnavailableError(track.error);
+  const isDrmProtected = isDrmProtectedError(track.error);
 
   const showInitializing = isInitializing && track.status === 'pending';
 
@@ -46,6 +49,13 @@ export const TrackCard = memo(function TrackCard({ track, isCurrentTrack, isInit
     }
     if (isUnavailable && !isTouchDevice) {
       return <UnavailableTrackTooltip>{statusBadge}</UnavailableTrackTooltip>;
+    }
+    if (isDrmProtected && !isTouchDevice) {
+      return (
+        <StatusTooltip descriptionId="drm-protected-description" mainText={t('errors.drmProtectedDetail')}>
+          {statusBadge}
+        </StatusTooltip>
+      );
     }
     return statusBadge;
   };
@@ -94,6 +104,11 @@ export const TrackCard = memo(function TrackCard({ track, isCurrentTrack, isInit
         {isUnavailable && isTouchDevice && (
           <div className="mt-1.5">
             <UnavailableTrackDetails />
+          </div>
+        )}
+        {isDrmProtected && isTouchDevice && (
+          <div className="mt-1.5">
+            <StatusDetails content={<p>{t('errors.drmProtectedDetail')}</p>} />
           </div>
         )}
       </div>

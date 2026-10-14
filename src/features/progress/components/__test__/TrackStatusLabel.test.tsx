@@ -21,6 +21,7 @@ vi.mock('react-i18next', () => ({
         'errors.conversionFailed': 'Conversion failed',
         'errors.trackUnavailable': 'Track unavailable',
         'errors.trackUnavailableDetail': 'This track may have been removed or made private',
+        'errors.drmProtected': 'DRM protected — cannot be downloaded',
       };
       return translations[key] || key;
     },
@@ -74,6 +75,11 @@ describe('TrackStatusLabel', () => {
     it('should display network error message', () => {
       render(<TrackStatusLabel status="failed" error={{ code: 'NETWORK_ERROR', message: 'Connection lost' }} />);
       expect(screen.getByText('Network error')).toBeInTheDocument();
+    });
+
+    it('should display DRM message in warning color for DRM-protected tracks', () => {
+      render(<TrackStatusLabel status="failed" error={{ code: 'DOWNLOAD_FAILED', message: 'DRM protected (FairPlay/Widevine CENC)' }} />);
+      expect(screen.getByText('DRM protected — cannot be downloaded')).toHaveClass('text-warning');
     });
   });
 
