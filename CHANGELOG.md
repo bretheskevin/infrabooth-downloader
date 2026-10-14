@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [1.39.0] - 2026-10-14
+
+### Added
+
+- Full-screen spectrum visualizer on the phone remote, in several styles colored by the track artwork
+
+### Changed
+
+- Remote link stays the same after restarting the app, and can be reset
+
+### Fixed
+
+- DRM-protected tracks showed a generic error and offered useless retries
+- Copying links sometimes did nothing
 ## [1.38.3] - 2026-10-12
 
 ### Changed

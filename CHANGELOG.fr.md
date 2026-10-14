@@ -6,6 +6,20 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.39.0] - 2026-10-14
+
+### Added
+
+- Visualiseur de spectre plein écran sur la télécommande mobile, avec plusieurs styles aux couleurs de la pochette
+
+### Changed
+
+- Lien de la télécommande conservé après redémarrage, avec option de réinitialisation
+
+### Fixed
+
+- L'application affichait une erreur générique pour les morceaux protégés par DRM et proposait de les relancer inutilement
+- La copie des liens ne fonctionnait pas toujours
 ## [1.38.3] - 2026-10-12
 
 ### Changed
