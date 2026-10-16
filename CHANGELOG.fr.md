@@ -6,6 +6,16 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/)
 et ce projet adhère au [Versionnage Sémantique](https://semver.org/lang/fr/).
 
 ## [Unreleased]
+## [1.39.1] - 2026-10-16
+
+### Fixed
+
+- Télécommande mobile : la barre d'état était illisible en thème clair
+## [1.39.1] - 2026-10-16
+
+### Fixed
+
+- Télécommande mobile : la barre d'état était illisible en thème clair
 ## [1.39.0] - 2026-10-14
 
 ### Added
