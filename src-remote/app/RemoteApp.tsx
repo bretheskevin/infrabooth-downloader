@@ -3,6 +3,7 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useRemoteSocket } from '@remote/hooks/useRemoteSocket';
 import { useRemoteTheme } from '@remote/hooks/useRemoteTheme';
+import StatusBarBackdrop from '@remote/components/StatusBarBackdrop';
 import { t as dictT } from '@remote/lib/i18n';
 import { TranslationProvider } from '@/lib/translation';
 import MiniBar from '@remote/features/now-playing/components/MiniBar';
@@ -29,11 +30,12 @@ export default function RemoteApp({ host, token }: Props) {
   const [visualizerOpen, setVisualizerOpen] = useState(false);
   const language = state?.language ?? 'en';
   const t = useCallback((k: string) => dictT(k, language), [language]);
-  useRemoteTheme(state?.theme);
+  useRemoteTheme(state?.theme, visualizerOpen);
 
   if (!connected && !visualizerOpen) {
     return (
       <div className="h-dvh flex flex-col items-center justify-center gap-4">
+        <StatusBarBackdrop />
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
         <p className="text-muted-foreground">{dictT('reconnecting', language)}</p>
       </div>
@@ -53,6 +55,7 @@ export default function RemoteApp({ host, token }: Props) {
   return (
     <TranslationProvider t={t}>
       <div className="h-dvh flex flex-col relative pt-[env(safe-area-inset-top)]">
+        <StatusBarBackdrop />
         <div className="flex-1 overflow-y-auto relative">
           <div className={effectiveTab === 'search' ? '' : 'hidden'}>
             <SearchTab host={host} token={token} send={send} language={language} state={state} />

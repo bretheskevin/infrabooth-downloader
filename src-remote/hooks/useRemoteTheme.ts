@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 
-export function useRemoteTheme(theme: 'light' | 'dark' | undefined): void {
+export function useRemoteTheme(theme: 'light' | 'dark' | undefined, forceDark: boolean): void {
   useEffect(() => {
-    if (!theme) return;
-    document.documentElement.classList.toggle('dark', theme === 'dark');
-  }, [theme]);
+    const effectiveTheme = forceDark ? 'dark' : theme;
+    if (!effectiveTheme) return;
+    document.documentElement.classList.toggle('dark', effectiveTheme === 'dark');
+  }, [theme, forceDark]);
 }
